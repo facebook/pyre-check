@@ -114,7 +114,8 @@ type override =
 
 
 type inconsistent_override = {
-  overridden_method: Annotated.Method.t;
+  overridden_method: Access.t;
+  parent: Access.t;
   override: override;
 }
 [@@deriving compare, eq, show, sexp, hash]
@@ -512,7 +513,7 @@ let messages ~detailed:_ ~define location kind =
            (Access.show_sanitized name)
            start_line)
       ]
-  | InconsistentOverride { overridden_method; override } ->
+  | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
         | WeakenedPostcondition { actual; expected } ->
@@ -539,8 +540,7 @@ let messages ~detailed:_ ~define location kind =
         Format.asprintf
           "`%a` overloads method defined in `%a` inconsistently. %s"
           Access.pp define_name
-          Access.pp
-          (Annotated.Method.parent overridden_method |> Annotated.Class.name)
+          Access.pp parent
           detail
       ]
   | MissingArgument { callee; name } ->
@@ -1296,11 +1296,10 @@ let filter ~configuration ~resolution errors =
     in
     (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
     let is_override_on_dunder_method { kind; _ } =
-      let get_name overridden = overridden |> Annotated.Class.Method.name |> Access.show in
       match kind with
-      | InconsistentOverride { overridden_method; override }
-        when String.is_prefix ~prefix:"__" (get_name overridden_method) &&
-             String.is_suffix ~suffix:"__" (get_name overridden_method) ->
+      | InconsistentOverride { overridden_method; override; _ }
+        when String.is_prefix ~prefix:"__" (Access.show overridden_method) &&
+             String.is_suffix ~suffix:"__" (Access.show overridden_method) ->
           begin
             match override with
             | StrengthenedPrecondition (NotFound _) -> true

@@ -89,7 +89,8 @@ type override =
 [@@deriving compare, eq, show, sexp, hash]
 
 type inconsistent_override = {
-  overridden_method: Annotated.Method.t;
+  overridden_method: Access.t;
+  parent: Access.t;
   override: override;
 }
 [@@deriving compare, eq, show, sexp, hash]

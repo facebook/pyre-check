@@ -15,8 +15,16 @@ let overrides_of_source ~environment ~source =
   let open Annotated in
   let resolution = Environment.resolution environment () in
   let filter_overrides child_method =
-    Method.overrides child_method ~resolution
-    >>| fun ancestor_method -> (Method.name ancestor_method, Method.name child_method)
+    Class.overrides
+      (Method.parent child_method)
+      ~name:(Statement.Define.unqualified_name (Method.define child_method))
+      ~resolution
+    >>| fun ancestor ->
+    let ancestor_parent =
+      Attribute.parent ancestor
+      |> Class.name
+    in
+    ( ancestor_parent @ Attribute.access ancestor, Method.name child_method)
   in
   let record_overrides map (ancestor_method, child_method) =
     let update_children = function

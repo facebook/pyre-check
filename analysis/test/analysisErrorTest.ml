@@ -479,8 +479,8 @@ let test_filter _ =
 
   let inconsistent_override name override =
     InconsistentOverride {
-      overridden_method =
-        Annotated.Class.Method.create ~define:(define_value ~name ()) ~parent:(mock_parent);
+      overridden_method = Access.create name;
+      parent = Annotated.Class.name mock_parent;
       override;
     }
   in

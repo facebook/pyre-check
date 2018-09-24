@@ -1094,36 +1094,41 @@ let test_metaclasses _ =
     "Meta"
 
 
-let test_method_overloads _ =
+let test_overloads _ =
   let resolution =
     populate {|
       class Foo:
-        def foo(): pass
+        def Foo.foo(): pass
       class Bar(Foo):
         pass
       class Baz(Bar):
-        def foo(): pass
-        def baz(): pass
+        def Baz.foo(): pass
+        def Baz.baz(): pass
     |}
     |> fun environment -> Environment.resolution environment ()
   in
-  let foo, baz =
-    Resolution.class_definition resolution (Type.Primitive ~~"Baz")
-    >>| Class.create
-    >>| Class.methods
-    >>| (fun methods ->
-        match methods with
-        | [foo; bar] -> foo, bar
-        | _ -> failwith "Could not find `foo` and `bar`")
-    |> value
+  let definition =
+    let definition =
+      Resolution.class_definition resolution (Type.Primitive ~~"Baz")
+      >>| Class.create
+    in
+    Option.value_exn ~message:"Missing definition."  definition
   in
 
-  assert_is_none (Method.overrides ~resolution baz);
-  let overloads = Method.overrides ~resolution foo in
+  assert_is_none (Class.overrides definition ~resolution ~name:(Access.create "baz"));
+  let overloads = Class.overrides definition ~resolution ~name:(Access.create "foo") in
   assert_is_some overloads;
   assert_equal
     ~cmp:Access.equal
-    (Method.parent (Option.value_exn overloads) |> Class.name)
+    ~printer:Access.show
+    (Attribute.access (Option.value_exn overloads))
+    (Access.create "foo");
+  assert_equal
+    ~cmp:Access.equal
+    ~printer:Access.show
+    (Option.value_exn overloads
+     |> Attribute.parent
+     |> Class.name)
     (Access.create "Foo")
 
 
@@ -1229,22 +1234,22 @@ let test_method_implements _ =
 
 let () =
   "class">:::[
-    "generics">::test_generics;
-    "superclasses">::test_superclasses;
-    "get_decorator">::test_get_decorator;
+    "attributes">::test_class_attributes;
+    "constraints">::test_constraints;
     "constructors">::test_constructors;
+    "fallback_attribute">::test_fallback_attribute;
+    "generics">::test_generics;
+    "get_decorator">::test_get_decorator;
+    "implements">::test_implements;
+    "inferred_generic_base">::test_inferred_generic_base;
+    "is_protocol">::test_is_protocol;
     "metaclasses">::test_metaclasses;
     "methods">::test_methods;
-    "is_protocol">::test_is_protocol;
-    "implements">::test_implements;
-    "attributes">::test_class_attributes;
-    "fallback_attribute">::test_fallback_attribute;
-    "constraints">::test_constraints;
-    "inferred_generic_base">::test_inferred_generic_base;
+    "overloads">::test_overloads;
+    "superclasses">::test_superclasses;
   ]
   |> Test.run;
   "method">:::[
-    "overloads">::test_method_overloads;
     "implements">::test_method_implements;
   ]
   |> Test.run

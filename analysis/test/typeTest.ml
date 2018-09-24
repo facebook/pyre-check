@@ -928,6 +928,29 @@ let test_with_return_annotation _ =
     "typing.Callable('foo')[..., int][[int], int]"
     "typing.Callable('foo')[..., str][[int], str]"
 
+
+let test_overload_parameters _ =
+  let assert_parameters callable expected =
+    let { Type.Callable.overloads; _ } =
+      Type.create ~aliases:(fun _ -> None) (parse_single_expression callable)
+      |> function
+      | Type.Callable callable -> callable
+      | _ -> failwith ("Could not extract callable from " ^ callable)
+    in
+    let parameters =
+      List.hd_exn overloads
+      |> Type.Callable.Overload.parameters
+      |> Option.value ~default:[]
+      |> List.map ~f:Type.Callable.Parameter.annotation
+      |> List.map ~f:Type.show
+    in
+    assert_equal parameters expected
+  in
+  assert_parameters "typing.Callable('foo')[[int], str]" ["int"];
+  assert_parameters "typing.Callable('foo')[[int, str], str]" ["int"; "str"];
+  assert_parameters "typing.Callable('foo')[[], str]" []
+
+
 let () =
   "type">:::[
     "create">::test_create;
@@ -955,5 +978,6 @@ let () =
   "callable">:::[
     "from_overloads">::test_from_overloads;
     "with_return_annotation">::test_with_return_annotation;
+    "overload_parameters">::test_overload_parameters;
   ]
   |> Test.run

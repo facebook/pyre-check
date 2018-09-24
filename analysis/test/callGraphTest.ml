@@ -268,8 +268,14 @@ let test_method_overrides _ =
     let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
     let expected_overrides = Access.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Access.equal in
+    let printer map =
+      map
+      |> Access.Map.sexp_of_t (List.sexp_of_t Access.sexp_of_t)
+      |> Sexp.to_string
+    in
     assert_equal
       ~cmp:(Access.Map.equal equal_elements)
+      ~printer
       expected_overrides
       overrides_map
   in

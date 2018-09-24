@@ -166,36 +166,6 @@ module Method = struct
       annotation
 
 
-  let overrides { define; parent } ~resolution =
-    (* TODO(T29839823): this should just be looking up attributes. *)
-    let find_overrides sofar annotation =
-      match sofar with
-      | Some _ -> sofar
-      | None ->
-          Resolution.class_definition resolution annotation
-          >>= (fun ({ Node.value = { Class.body; _ }; _ } as parent) ->
-              let find_override { Node.value = statement; _ } =
-                match statement with
-                | Statement.Define other ->
-                    let name_matches =
-                      Access.equal
-                        (Define.unqualified_name define)
-                        (Define.unqualified_name other)
-                    in
-                    if name_matches then Some other else None
-                | _ ->
-                    None
-              in
-              List.find_map ~f:find_override body
-              >>| fun define ->
-              create ~define ~parent:(create_parent parent))
-    in
-    successors_fold
-      parent
-      ~resolution
-      ~initial:None
-      ~f:find_overrides
-
   let implements
       { define; _ }
       ~protocol_method:{ define = protocol; _ } =
@@ -938,3 +908,23 @@ let constructor definition ~resolution =
       Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
   | _ ->
       signature
+
+
+let overrides definition ~resolution ~name =
+  let find_override parent =
+    let potential_override =
+      attribute
+        ~transitive:false
+        ~class_attributes:true
+        parent
+        ~resolution
+        ~name
+        ~instantiated:(annotation parent ~resolution)
+    in
+    if Attribute.defined potential_override then
+      Some potential_override
+    else
+      None
+  in
+  superclasses definition ~resolution
+  |> List.find_map ~f:find_override

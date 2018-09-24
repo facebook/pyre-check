@@ -1660,6 +1660,20 @@ module Callable = struct
         let sexp_of_t = sexp_of_t type_sexp_of_t
         let t_of_sexp = t_of_sexp type_t_of_sexp
       end)
+
+    let name = function
+      | Anonymous { index; _ } -> Identifier.create (Format.sprintf "$%d" index)
+      | Named { name; _ } -> Identifier.create (Access.show name)
+      | Variable { name; _ } -> Identifier.create ("*" ^ (Access.show name))
+      | Keywords { name; _ } -> Identifier.create ("*" ^ (Access.show name))
+
+
+    let annotation = function
+      | Anonymous { annotation; _ }
+      | Named { annotation; _ }
+      | Variable { annotation; _ }
+      | Keywords { annotation; _ } ->
+          annotation
   end
 
   include Record.Callable
@@ -1698,6 +1712,16 @@ module Callable = struct
         ~f:(fun overload  -> { overload with annotation = return_annotation })
     in
     { initial with overloads }
+
+
+  module Overload = struct
+    let parameters { parameters; _ } =
+      match parameters with
+      | Defined parameters -> Some parameters
+      | Undefined -> None
+
+    let return_annotation { annotation; _ } = annotation
+  end
 end
 
 

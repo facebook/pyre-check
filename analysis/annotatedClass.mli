@@ -55,8 +55,6 @@ module Method : sig
     -> Type.t Int.Map.t
   val return_annotation: t -> resolution: Resolution.t -> Type.t
 
-  val overrides: t -> resolution: Resolution.t -> t option
-
   val implements: t -> protocol_method: t -> bool
 end
 
@@ -165,3 +163,5 @@ val attribute
 val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Attribute.t option
 
 val constructor: t -> resolution: Resolution.t -> Type.t
+
+val overrides: t -> resolution: Resolution.t -> name: Access.t -> Attribute.t option

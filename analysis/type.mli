@@ -212,6 +212,9 @@ module Callable : sig
     [@@deriving compare, eq, sexp, show, hash]
 
     module Map : Core.Map.S with type Key.t = parameter
+
+    val name: parameter -> Identifier.t
+    val annotation: parameter -> type_t
   end
 
   include module type of struct include Record.Callable end
@@ -224,6 +227,12 @@ module Callable : sig
   val map: t -> f:(type_t -> type_t) -> t option
 
   val with_return_annotation: return_annotation: type_t -> t -> t
+
+  module Overload: sig
+    val parameters: type_t overload -> Parameter.parameter list option
+
+    val return_annotation: type_t overload -> type_t
+  end
 end
 
 val to_yojson: t -> Yojson.Safe.json
