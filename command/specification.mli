@@ -15,7 +15,6 @@ val base_command_line_arguments
      -> bool
      -> bool
      -> string option
-     -> string option
      -> int
      -> string
      -> string option

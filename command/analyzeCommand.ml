@@ -22,7 +22,6 @@ let run_analysis
     recursive_infer
     sequential
     filter_directories
-    filter_directories_semicolon
     number_of_workers
     log_identifier
     logger
@@ -32,12 +31,6 @@ let run_analysis
     local_root
     () =
   let filter_directories =
-    let filter_directories =
-      if Option.is_some filter_directories then
-        filter_directories
-      else
-        filter_directories_semicolon
-    in
     filter_directories
     >>| String.split_on_chars ~on:[';']
     >>| List.map ~f:String.strip
