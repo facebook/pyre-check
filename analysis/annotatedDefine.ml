@@ -12,8 +12,6 @@ open Statement
 
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
-module Attribute = Class.Attribute
-module Method = Class.Method
 
 
 type t = Define.t
