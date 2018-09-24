@@ -348,17 +348,6 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   List.filter_map ~f:extract_define body
 
 
-let has_method definition ~name =
-  let check_method_name { Define.name = define_name; _ } =
-    List.tl define_name
-    >>| Access.show
-    >>| String.equal name
-    |> Option.value ~default:false
-  in
-  methods definition
-  |> List.exists ~f:(fun define -> Method.define define |> check_method_name)
-
-
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
   let is_protocol { Argument.name; value } =
     match name, Expression.show value with
@@ -928,3 +917,10 @@ let overrides definition ~resolution ~name =
   in
   superclasses definition ~resolution
   |> List.find_map ~f:find_override
+
+
+let has_method definition ~resolution ~name =
+  attribute definition ~resolution ~name ~instantiated:(annotation definition ~resolution)
+  |> Attribute.annotation
+  |> Annotation.annotation
+  |> Type.is_callable

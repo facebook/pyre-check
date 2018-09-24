@@ -348,12 +348,16 @@ let test_methods _ =
 
 let test_has_method _ =
   let get_actual source target_method =
+    let resolution =
+      populate source
+      |> fun environment -> Environment.resolution environment ()
+    in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.has_method ~name:target_method
+          |> Class.has_method ~resolution ~name:(Access.create target_method)
         in
         actual
     | _ ->

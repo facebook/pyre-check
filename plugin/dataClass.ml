@@ -90,7 +90,11 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
             }
           in
           let methods =
-            if init && not (Annotated.Class.has_method annotated_class ~name:"__init__") then
+            if init && not (
+                Annotated.Class.has_method
+                  annotated_class
+                  ~resolution
+                  ~name:(Access.create "__init__")) then
               let parameters =
                 let collect_parameters parameters { Node.value; _ } =
                   match value with
@@ -145,13 +149,21 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
               []
           in
           let methods =
-            if repr && not (Annotated.Class.has_method annotated_class ~name:"__repr__") then
+            if repr && not (
+                Annotated.Class.has_method
+                  annotated_class
+                  ~resolution
+                  ~name:(Access.create "__repr__")) then
               create_method ~name:"__repr__" ~parameters:[] ~return_annotation:"str" :: methods
             else
               methods
           in
           let methods =
-            if eq && not (Annotated.Class.has_method annotated_class ~name:"__eq__") then
+            if eq && not (
+                Annotated.Class.has_method
+                  annotated_class
+                  ~resolution
+                  ~name:(Access.create "__eq__")) then
               create_method
                 ~name:"__eq__"
                 ~parameters:[Parameter.create ~name:(Identifier.create "o") ()]

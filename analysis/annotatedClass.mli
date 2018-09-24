@@ -87,7 +87,6 @@ val immediate_superclasses
 
 
 val methods: t -> Method.t list
-val has_method: t -> name: string -> bool
 
 val is_protocol: t -> bool
 val implements: t -> protocol: t -> bool
@@ -165,3 +164,5 @@ val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Att
 val constructor: t -> resolution: Resolution.t -> Type.t
 
 val overrides: t -> resolution: Resolution.t -> name: Access.t -> Attribute.t option
+
+val has_method: t -> resolution: Resolution.t -> name: Access.t -> bool
