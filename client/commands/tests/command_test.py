@@ -13,7 +13,11 @@ from ...filesystem import AnalysisDirectory
 
 
 def mock_arguments(
-    no_watchman=False, terminal=False, save_initial_state_to=None
+    no_watchman=False,
+    terminal=False,
+    save_initial_state_to=None,
+    load_initial_state_from=None,
+    changed_files_path=None,
 ) -> MagicMock:
     arguments = MagicMock()
     arguments.current_directory = "."
@@ -27,6 +31,8 @@ def mock_arguments(
     arguments.no_watchman = no_watchman
     arguments.original_directory = "/original/directory/"
     arguments.save_initial_state_to = save_initial_state_to
+    arguments.load_initial_state_from = load_initial_state_from
+    arguments.changed_files_path = changed_files_path
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.show_parse_errors = False

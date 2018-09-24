@@ -24,7 +24,10 @@ class Start(Reporting):
         self._terminal = arguments.terminal
         self._no_watchman = arguments.no_watchman
         self._number_of_workers = configuration.number_of_workers
+        # Saved state.
         self._save_initial_state_to = arguments.save_initial_state_to
+        self._changed_files_path = arguments.changed_files_path
+        self._load_initial_state_from = arguments.load_initial_state_from
 
     def _run(self) -> None:
         while True:
@@ -78,6 +81,32 @@ class Start(Reporting):
             os.path.dirname(self._save_initial_state_to)
         ):
             flags.extend(["-save-initial-state-to", self._save_initial_state_to])
+        if (
+            self._load_initial_state_from is not None
+            and self._changed_files_path is not None
+        ):
+            flags.extend(
+                [
+                    "-load-state-from",
+                    self._load_initial_state_from,
+                    "-changed-files-path",
+                    self._changed_files_path,
+                ]
+            )
+        elif (
+            self._load_initial_state_from is None
+            and self._changed_files_path is not None
+        ):
+            LOG.error(
+                "--load-initial-state-from must be set if --changed-files-path is set."
+            )
+        elif (
+            self._load_initial_state_from is not None
+            and self._changed_files_path is None
+        ):
+            LOG.error(
+                "--changed-files-path must be set if --load-initial-state-from is set."
+            )
         flags.extend(
             [
                 "-workers",

@@ -165,3 +165,68 @@ class StartTest(unittest.TestCase):
                 "path1,path2",
             ],
         )
+
+        # Check load-initial-state-from.
+        arguments = mock_arguments(
+            load_initial_state_from="/tmp/pyre_shared_memory",
+            changed_files_path="/tmp/changed_files",
+        )
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-load-state-from",
+                "/tmp/pyre_shared_memory",
+                "-changed-files-path",
+                "/tmp/changed_files",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+        # Both changed-files-path and load-initial-state-from must be not-None.
+        arguments = mock_arguments(changed_files_path="/tmp/changed_files")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+        # Check load-initial-state-from.
+        arguments = mock_arguments(changed_files_path="/tmp/changed_files")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )

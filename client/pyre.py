@@ -208,6 +208,12 @@ def main() -> int:
         action="store_true",
         help="Do not spawn a watchman client in the background.",
     )
+    start.add_argument(
+        "--load-initial-state-from", default=None, type=str, help=argparse.SUPPRESS
+    )
+    start.add_argument(
+        "--changed-files-path", default=None, type=str, help=argparse.SUPPRESS
+    )
     start.set_defaults(command=commands.Start)
 
     stop = parsed_commands.add_parser(commands.Stop.NAME)
