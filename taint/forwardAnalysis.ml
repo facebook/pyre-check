@@ -81,6 +81,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_expression argument state
       |> ForwardState.join_trees taint_accumulator
 
+
     and apply_call_targets arguments state call_targets =
       let apply_call_target call_target =
         let existing_model =
@@ -146,6 +147,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.map call_targets ~f:apply_call_target
           |> List.fold ~init:ForwardState.empty_tree ~f:ForwardState.join_trees
 
+
     and analyze_call ?key ~callee arguments state =
       match callee with
       | Global access ->
@@ -191,6 +193,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let taint = List.fold_left ~f:(analyze_argument state) arguments ~init:callee_taint in
           taint
 
+
     and analyze_normalized_expression ?key state expression =
       match expression with
       | Access { expression; member; } ->
@@ -215,6 +218,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             "Analyzing identifier: %a"
             Identifier.pp identifier;
           ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
+
 
     and analyze_expression ?key expression state =
       match expression.Node.value with
@@ -300,6 +304,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
   and Analyzer : Fixpoint.Fixpoint with type state = FixpointState.t = Fixpoint.Make(FixpointState)
 end
+
 
 let extract_source_model _parameters exit_taint =
   let return_taint = ForwardState.read Root.LocalResult exit_taint in
