@@ -231,31 +231,31 @@ let rec pp format annotation =
                 let parameter = function
                   | Parameter.Anonymous { Parameter.index; annotation } ->
                       Format.asprintf
-                        "Anonymous(%d, %s)"
+                        "Anonymous(%d, %a)"
                         index
-                        (show annotation)
+                        pp annotation
                   | Parameter.Named { Parameter.name; annotation; default } ->
                       Format.asprintf
-                        "Named(%a, %s%s)"
+                        "Named(%a, %a%s)"
                         Access.pp_sanitized name
-                        (show annotation)
+                        pp annotation
                         (if default then ", default" else "")
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       Format.asprintf
-                        "Variable(%a, %s)"
+                        "Variable(%a, %a)"
                         Access.pp_sanitized name
-                        (show annotation)
+                        pp annotation
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
                       Format.asprintf
-                        "Keywords(%a, %s)"
+                        "Keywords(%a, %a)"
                         Access.pp_sanitized name
-                        (show annotation)
+                        pp annotation
                 in
                 List.map parameters ~f:parameter
                 |> String.concat ~sep:", "
                 |> fun parameters -> Format.asprintf "[%s]" parameters
           in
-          Format.asprintf "%s, %s" parameters (show annotation)
+          Format.asprintf "%s, %a" parameters pp annotation
         in
         List.map overloads ~f:overload
         |> String.concat ~sep:"]["
@@ -268,9 +268,7 @@ let rec pp format annotation =
   | Optional Bottom ->
       Format.fprintf format "None"
   | Optional parameter ->
-      Format.fprintf format
-        "typing.Optional[%s]"
-        (show parameter)
+      Format.fprintf format "typing.Optional[%a]" pp parameter
   | Parametric { name; parameters }
     when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
       Format.fprintf format "None"
@@ -288,10 +286,10 @@ let rec pp format annotation =
       let parameters =
         match tuple with
         | Bounded parameters ->
-            (List.map parameters ~f:show
-             |> String.concat ~sep:", ")
+            List.map parameters ~f:show
+            |> String.concat ~sep:", "
         | Unbounded parameter  ->
-            (show parameter) ^ ", ..."
+            Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
   | Union parameters ->
