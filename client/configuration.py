@@ -57,6 +57,7 @@ class _ConfigurationFile:
             "coverage",
             "differential",
             "push_blocking",
+            "saved_state",
             "taint_models_path",
         }
 
