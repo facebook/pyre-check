@@ -114,7 +114,7 @@ let test_simple_source _ =
     ~source:
       {|
       def simple_source():
-        return taint()
+        return __testSource()
       |}
     ~expect:[
       {
@@ -130,7 +130,7 @@ let test_local_copy _ =
     ~source:
       {|
       def copy_source():
-        var = taint()
+        var = __testSource()
         return var
       |}
     ~expect:[
@@ -148,7 +148,7 @@ let test_class_model _ =
       {|
         class Foo:
           def bar():
-            return taint()
+            return __testSource()
       |}
     ~expect:[
       {
@@ -165,7 +165,7 @@ let test_apply_method_model_at_call_site _ =
       {|
         class Foo:
           def qux():
-            return taint()
+            return __testSource()
 
         class Bar:
           def qux():
@@ -188,7 +188,7 @@ let test_apply_method_model_at_call_site _ =
       {|
         class Foo:
           def qux():
-            return taint()
+            return __testSource()
 
         class Bar:
           def qux():
@@ -211,7 +211,7 @@ let test_apply_method_model_at_call_site _ =
       {|
         class Foo:
           def qux():
-            return taint()
+            return __testSource()
 
         class Bar:
           def qux():
@@ -233,7 +233,7 @@ let test_apply_method_model_at_call_site _ =
       {|
         class Foo:
           def qux():
-            return taint()
+            return __testSource()
 
         class Bar:
           def qux():
@@ -255,7 +255,7 @@ let test_apply_method_model_at_call_site _ =
       {|
         class Foo:
           def qux():
-            return taint()
+            return __testSource()
 
         class Bar:
           def qux():
@@ -290,7 +290,7 @@ let test_apply_method_model_at_call_site _ =
 
         class Baz:
           def qux():
-            return taint()
+            return __testSource()
 
         def taint_with_union_type(condition):
           if condition:
@@ -312,27 +312,15 @@ let test_apply_method_model_at_call_site _ =
 
 
 let test_taint_in_taint_out_application _ =
-  let model_source =
-    {|
-      def taint() -> TaintSource[TestSource]: ...
-
-      def tito(x: TaintInTaintOut[LocalReturn]): ...
-
-      def no_tito(x): ...
-    |}
-    |> Test.trim_extra_indentation
-  in
-  Service.StaticAnalysis.add_models ~model_source;
-
   assert_taint
     ~source:
       {|
         def simple_source():
-          return taint()
+          return __testSource()
 
         def taint_with_tito():
           y = simple_source()
-          x = tito(y)
+          x = __tito(y)
           return x
       |}
     ~expect:[
@@ -347,11 +335,11 @@ let test_taint_in_taint_out_application _ =
     ~source:
       {|
         def simple_source():
-          return taint()
+          return __testSource()
 
         def no_tito_taint():
           y = simple_source()
-          x = no_tito(y)
+          x = __no_tito(y)
           return x
       |}
     ~expect:[
@@ -364,7 +352,6 @@ let test_taint_in_taint_out_application _ =
 
 
 let () =
-  Service.StaticAnalysis.add_models ~model_source:"def taint() -> TaintSource[TestSource]: ...";
   "taint">:::[
     "no_model">::test_no_model;
     "simple">::test_simple_source;
@@ -374,4 +361,4 @@ let () =
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
     "test_union">::test_taint_in_taint_out_application;
   ]
-  |> Test.run
+  |> Test.run_with_taint_models

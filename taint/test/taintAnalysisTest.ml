@@ -282,17 +282,7 @@ let test_fixpoint _ =
 
 
 let () =
-  let model_source =
-    {|
-      def __testSink(arg: TaintSink[TestSink]): ...
-      def __testSource() -> TaintSource[TestSource]: ...
-      def __eval(arg: TaintSink[RemoteCodeExecution]): ...
-      def __userControlled() -> TaintSource[UserControlled]: ...
-    |}
-    |> Test.trim_extra_indentation
-  in
-  Service.StaticAnalysis.add_models ~model_source;
   "taint">:::[
     "fixpoint">::test_fixpoint;
   ]
-  |> Test.run
+  |> Test.run_with_taint_models

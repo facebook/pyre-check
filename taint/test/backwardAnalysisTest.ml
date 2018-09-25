@@ -203,8 +203,6 @@ let test_call_taint_in_taint_out _ =
     ()
 
 let test_sink _ =
-  Service.StaticAnalysis.add_models
-    ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     ~source:
       {|
@@ -226,15 +224,13 @@ let test_sink _ =
 
 
 let test_rce_sink _ =
-  Service.StaticAnalysis.add_models
-    ~model_source:"def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...";
   assert_taint
     ~source:
       {|
       def test_rce_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-        __testRCESink(command_unsafe)
+        __eval(command_unsafe)
       |}
     ~expected:[
       {
@@ -249,24 +245,16 @@ let test_rce_sink _ =
 
 
 let test_rce_and_test_sink _ =
-  let model_source =
-    {|
-      def __testRCESink(parameter: TaintSink[RemoteCodeExecution]): ...
-      def __testSink(parameter: TaintSink[TestSink]): ...
-    |}
-    |> Test.trim_extra_indentation
-  in
-  Service.StaticAnalysis.add_models ~model_source;
   assert_taint
     ~source:
       {|
       def test_rce_and_test_sink(test_only, rce_only, both):
         __testSink(test_only)
-        __testRCESink(rce_only)
+        __eval(rce_only)
         if True:
           __testSink(both)
         else:
-          __testRCESink(both)
+          __eval(both)
       |}
     ~expected:[
       {
@@ -310,7 +298,6 @@ let test_tito_sink _ =
 
 
 let test_apply_method_model_at_call_site _ =
-  Service.StaticAnalysis.add_models ~model_source:"def __testSink(parameter: TaintSink[TestSink]): ...";
   assert_taint
     ~source:
       {|
@@ -494,4 +481,4 @@ let () =
     "test_tito_sink">::test_tito_sink;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
   ]
-  |> Test.run
+  |> Test.run_with_taint_models

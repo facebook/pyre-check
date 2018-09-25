@@ -26,6 +26,31 @@ let () =
   initialize ()
 
 
+let trim_extra_indentation source =
+  let is_non_empty line =
+    not (String.for_all ~f:Char.is_whitespace line) in
+  let minimum_indent lines =
+    let indent line =
+      String.to_list line
+      |> List.take_while ~f:Char.is_whitespace
+      |> List.length in
+    List.filter lines ~f:is_non_empty
+    |> List.map ~f:indent
+    |> List.fold ~init:Int.max_value ~f:Int.min in
+  let strip_line minimum_indent line =
+    if not (is_non_empty line) then
+      line
+    else
+      String.slice line minimum_indent (String.length line) in
+  let strip_lines minimum_indent = List.map ~f:(strip_line minimum_indent) in
+  let lines =
+    String.rstrip source
+    |> String.split ~on:'\n' in
+  let minimum_indent = minimum_indent lines in
+  strip_lines minimum_indent lines
+  |> String.concat ~sep:"\n"
+
+
 let run tests =
   let rec bracket test =
     let bracket_test test context =
@@ -45,6 +70,22 @@ let run tests =
   tests
   |> bracket
   |> run_test_tt_main
+
+
+let run_with_taint_models tests =
+  let model_source =
+    {|
+      def __testSink(arg: TaintSink[TestSink]): ...
+      def __testSource() -> TaintSource[TestSource]: ...
+      def __tito(x: TaintInTaintOut[LocalReturn]): ...
+      def __no_tito(x): ...
+      def __eval(arg: TaintSink[RemoteCodeExecution]): ...
+      def __userControlled() -> TaintSource[UserControlled]: ...
+    |}
+    |> trim_extra_indentation
+  in
+  Service.StaticAnalysis.add_models ~model_source;
+  run tests
 
 
 let parse_untrimmed
@@ -114,31 +155,6 @@ let parse_untrimmed
       if not silent then
         Printf.printf "%s" error;
       failwith "Could not parse test"
-
-
-let trim_extra_indentation source =
-  let is_non_empty line =
-    not (String.for_all ~f:Char.is_whitespace line) in
-  let minimum_indent lines =
-    let indent line =
-      String.to_list line
-      |> List.take_while ~f:Char.is_whitespace
-      |> List.length in
-    List.filter lines ~f:is_non_empty
-    |> List.map ~f:indent
-    |> List.fold ~init:Int.max_value ~f:Int.min in
-  let strip_line minimum_indent line =
-    if not (is_non_empty line) then
-      line
-    else
-      String.slice line minimum_indent (String.length line) in
-  let strip_lines minimum_indent = List.map ~f:(strip_line minimum_indent) in
-  let lines =
-    String.rstrip source
-    |> String.split ~on:'\n' in
-  let minimum_indent = minimum_indent lines in
-  strip_lines minimum_indent lines
-  |> String.concat ~sep:"\n"
 
 
 let parse
