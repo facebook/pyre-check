@@ -126,6 +126,24 @@ let real_path path =
   | Relative _ -> absolute path |> create_absolute
 
 
+let list ?(filter = fun _ -> true) ~root =
+  let rec list sofar path =
+    if Core.Sys.is_directory path = `Yes then
+      match Core.Sys.ls_dir path with
+      | entries ->
+          let collect sofar entry =
+            list sofar (path ^/ entry) in
+          List.fold ~init:sofar ~f:collect entries
+      | exception Sys_error _ ->
+          Log.error "Could not list `%s`" path;
+          sofar
+    else if filter path then
+      (create_relative ~root ~relative:path) :: sofar
+    else
+      sofar in
+  list [] (absolute root)
+
+
 let directory_contains ?(follow_symlinks = false) ~directory path =
   try
     let path =

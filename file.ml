@@ -67,24 +67,6 @@ let write { path; content } =
       Log.error "No contents to write to `%s`" path
 
 
-let list ?(filter = fun _ -> true) ~root =
-  let rec list sofar path =
-    if Core.Sys.is_directory path = `Yes then
-      match Core.Sys.ls_dir path with
-      | entries ->
-          let collect sofar entry =
-            list sofar (path ^/ entry) in
-          List.fold ~init:sofar ~f:collect entries
-      | exception Sys_error _ ->
-          Log.error "Could not list `%s`" path;
-          sofar
-    else if filter path then
-      (Path.create_relative ~root ~relative:path) :: sofar
-    else
-      sofar in
-  list [] (Path.absolute root)
-
-
 module Handle = struct
   type t = string
   [@@deriving compare, eq, show, sexp, hash]

@@ -20,11 +20,6 @@ val lines: t -> (string list) option
 
 val write: t -> unit
 
-val list
-  :  ?filter:(string -> bool)
-  -> root: Path.t
-  -> Path.t list
-
 module Handle : sig
   type t
   [@@deriving compare, eq, show, sexp, hash]

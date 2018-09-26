@@ -41,6 +41,7 @@ val real_path: t -> t
 
 val is_directory: t -> bool
 val file_exists: t -> bool
+val list: ?filter:(string -> bool) -> root: t -> t list
 val directory_contains: ?follow_symlinks:bool -> directory:t -> t -> bool
 
 val remove: t -> unit

@@ -166,14 +166,14 @@ let find_stubs
           in
           String.is_suffix path ~suffix:".pyi" && not (is_python_2_stub path)
         in
-        File.list ~filter:is_stub ~root
+        Path.list ~filter:is_stub ~root
       in
       List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))
     in
     let modules =
       let modules root =
         Log.info "Finding external sources in `%a`..." Path.pp root;
-        File.list ~filter:(String.is_suffix ~suffix:".py") ~root
+        Path.list ~filter:(String.is_suffix ~suffix:".py") ~root
       in
       List.map ~f:modules search_path
     in
@@ -205,7 +205,7 @@ let find_stubs
 
 let find_sources ?(filter = fun _ -> true) { Configuration.local_root; _ } =
   let filter path = String.is_suffix ~suffix:".py" path && filter path in
-  File.list ~filter ~root:local_root
+  Path.list ~filter ~root:local_root
 
 
 type result = {

@@ -167,7 +167,7 @@ let listen_for_changed_files
     watchman_directory
     ({ Configuration.local_root; _ } as configuration) =
   let symlinks =
-    File.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
+    Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
     |> build_symlink_map
   in
   let socket_path =
