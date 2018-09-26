@@ -49,7 +49,7 @@ let test_saved_state context =
       ~saved_state:(ServerConfiguration.Save saved_state_path)
       configuration
   in
-  let _ = Commands.Server.start server_configuration in
+  let _ = Commands.Start.run server_configuration in
 
   (* Wait until the server initializes before stopping. *)
   let socket = Operations.connect ~retries:3 ~configuration in
@@ -79,7 +79,7 @@ let test_saved_state context =
     in
     ServerConfiguration.create ~saved_state configuration
   in
-  let _ = Commands.Server.start server_configuration in
+  let _ = Commands.Start.run server_configuration in
 
   let socket = Operations.connect ~retries:3 ~configuration in
   (* Query the new server for environment information. *)
@@ -106,7 +106,7 @@ let test_saved_state context =
         changed_files_path;
       }
     in
-    Commands.Server.start
+    Commands.Start.run
       (ServerConfiguration.create ~saved_state configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
@@ -136,7 +136,7 @@ let test_saved_state context =
         changed_files_path;
       }
     in
-    Commands.Server.start
+    Commands.Start.run
       (ServerConfiguration.create ~saved_state configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
@@ -176,7 +176,7 @@ let test_invalid_configuration context =
       ~saved_state:(ServerConfiguration.Save saved_state_path)
       configuration
   in
-  let _ = Commands.Server.start server_configuration in
+  let _ = Commands.Start.run server_configuration in
   connect ();
   CommandTest.stop_server server_configuration;
 

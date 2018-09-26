@@ -51,7 +51,7 @@ let test_watchman_exists context =
   in
 
   let tear_down (pid_path, lock_path, pid) _ =
-    Commands.Server.stop ~graceful:true "." ();
+    Commands.Stop.run ~graceful:true "." ();
     Signal.send_i Signal.int (`Pid (Pid.of_int pid));
     Path.remove pid_path;
     Path.remove lock_path;
@@ -103,7 +103,7 @@ let test_watchman_client context =
       ]
   in
   let cleanup () =
-    Commands.Server.stop ~graceful:true "." ();
+    Commands.Stop.run ~graceful:true "." ();
   in
   let configuration =
     Configuration.create
@@ -215,8 +215,8 @@ let test_different_root context =
   CommandTest.start_server () |> ignore;
 
   let cleanup () =
-    Command.run ~argv:["_"; "-graceful"] Commands.Server.stop_command;
-    Commands.Server.stop ~graceful:true "." ();
+    Command.run ~argv:["_"; "-graceful"] Commands.Stop.command;
+    Commands.Stop.run ~graceful:true "." ();
   in
   CommandTest.protect
     ~f:(fun () -> assert_watchman_response_ok "files/a.py" "files/other/c.py")

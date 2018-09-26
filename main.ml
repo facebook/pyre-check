@@ -16,8 +16,8 @@ let commands = [
   "rage", Rage.command;
   "incremental", Incremental.command;
   "persistent", Persistent.command;
-  "start", Server.start_command;
-  "stop", Server.stop_command;
+  "start", Start.command;
+  "stop", Stop.command;
   "watchman", Watchman.command;
 ]
 

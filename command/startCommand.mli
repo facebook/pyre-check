@@ -7,8 +7,5 @@ open Core
 
 open Server
 
-val start: ServerConfiguration.t -> int
-val start_command: Command.t
-
-val stop: ?graceful: bool -> string -> unit -> unit
-val stop_command: Command.t
+val run: ServerConfiguration.t -> int
+val command: Command.t

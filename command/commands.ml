@@ -10,5 +10,6 @@ module Incremental = IncrementalCommand
 module Persistent = PersistentCommand
 module Query = QueryCommand
 module Rage = RageCommand
-module Server = ServerCommand
+module Start = StartCommand
+module Stop = StopCommand
 module Watchman = WatchmanCommand

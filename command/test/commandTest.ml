@@ -42,7 +42,7 @@ let mock_server_configuration
 
 
 let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
-  Commands.Server.start (mock_server_configuration ~local_root ?expected_version ())
+  Commands.Start.run (mock_server_configuration ~local_root ?expected_version ())
 
 
 let environment () =
@@ -135,6 +135,6 @@ let stop_server {
     socket_path;
     _;
   } =
-  Command.run ~argv:["_"; "-graceful"; Path.absolute local_root] Commands.Server.stop_command;
+  Command.run ~argv:["_"; "-graceful"; Path.absolute local_root] Commands.Stop.command;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
   clean_environment ()
