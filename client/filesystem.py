@@ -212,7 +212,9 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
             else:
                 lock_command = fcntl.LOCK_EX
 
+            print("Calling lockf with {}".format(str(lock_command)))
             fcntl.lockf(lockfile.fileno(), lock_command)
+            print("Success.")
             yield lockfile.fileno()
             fcntl.lockf(lockfile.fileno(), fcntl.LOCK_UN)
 

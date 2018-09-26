@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import errno
 import logging
 import os
 from typing import List, Optional
@@ -32,10 +33,10 @@ class Start(Reporting):
         self._load_initial_state_from = arguments.load_initial_state_from
 
     def _run(self) -> None:
+        blocking = False
         while True:
             # Be optimistic in grabbing the lock in order to provide users with
             # a message when the lock is being waited on.
-            blocking = False
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
                     Monitor(
@@ -66,9 +67,12 @@ class Start(Reporting):
                     self._analysis_directory.prepare()
                     self._call_client(command=self.NAME).check()
                     return
-            except OSError:
-                blocking = True
-                LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())
+            except OSError as exception:
+                if exception.errno == errno.EAGAIN:
+                    blocking = True
+                    LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())
+                else:
+                    raise exception
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
