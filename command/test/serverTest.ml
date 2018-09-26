@@ -100,7 +100,8 @@ let test_language_server_protocol_json_format context =
 
 let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
-  Command.run ~argv:["_"; "-graceful"] Commands.Stop.command;
+  Commands.Stop.stop ~local_root:"."
+  |> ignore;
   let { ServerConfiguration.socket_path; _ } =
     ServerConfiguration.create (Configuration.create ())
   in
@@ -134,7 +135,8 @@ let test_server_exits_on_directory_removal context =
 
 let test_stop_handles_unix_errors context =
   let long_path = bracket_tmpdir ~suffix:(String.init ~f:(fun _ -> 'a') 140) context in
-  Command.run ~argv:["_"; "-graceful"; long_path] Commands.Stop.command
+  Commands.Stop.stop ~local_root:long_path
+  |> ignore
 
 
 let configuration = Configuration.create ~infer:true ()
@@ -550,7 +552,8 @@ let test_connect _ =
   Unix.nanosleep 0.5
   |> ignore;
   let cleanup () =
-    Commands.Stop.run ~graceful:true "." ();
+    Commands.Stop.stop ~local_root:"."
+    |> ignore;
     CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
   in
   Exn.protect

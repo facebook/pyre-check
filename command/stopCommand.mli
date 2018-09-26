@@ -6,5 +6,7 @@
 
 open Core
 
-val run: ?graceful: bool -> string -> unit -> unit
+(* Exposed for testing. *)
+val stop: local_root: string -> int
+
 val command: Command.t

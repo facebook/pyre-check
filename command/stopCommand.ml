@@ -17,11 +17,8 @@ module Time = Core_kernel.Time_ns.Span
 exception NotRunning
 
 
-let run_stop graceful local_root () =
+let stop ~local_root =
   let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
-  (* Force an immediate process exit from this function only if
-     performing a non-graceful shutdown. *)
-  let exit_strategy = if graceful then ignore else exit in
   try
     let in_channel, _ =
       match Socket.open_connection (ServerConfiguration.socket_path configuration) with
@@ -73,19 +70,21 @@ let run_stop graceful local_root () =
     in
     match poll_for_deletion (ServerConfiguration.socket_path configuration) with
     | exit_code ->
-        exit_strategy exit_code
+        exit_code
     | exception ServerConfiguration.ServerNotRunning ->
         (* Our job is done if the server is not running. *)
-        exit_strategy 0
+        0
   with
   | NotRunning
   | Unix.Unix_error _
   | ServerConfiguration.ServerNotRunning ->
       Log.warning "No servers running";
-      exit_strategy 1
+      1
 
-let run ?(graceful=false) local_root () =
-  run_stop graceful local_root ()
+
+let run local_root () =
+  let code = stop ~local_root in
+  exit code
 
 
 let command =
@@ -93,6 +92,5 @@ let command =
     ~summary:"Stop the server"
     Command.Spec.(
       empty
-      +> flag "-graceful" no_arg ~doc:"Perform a graceful exit"
       +> anon (maybe_with_default "." ("source-root" %: string)))
-    run_stop
+    run

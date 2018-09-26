@@ -135,6 +135,7 @@ let stop_server {
     socket_path;
     _;
   } =
-  Command.run ~argv:["_"; "-graceful"; Path.absolute local_root] Commands.Stop.command;
+  Commands.Stop.stop ~local_root:(Path.absolute local_root)
+  |> ignore;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
   clean_environment ()
