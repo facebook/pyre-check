@@ -161,6 +161,19 @@ let directory_contains ?(follow_symlinks = false) ~directory path =
       false
 
 
+(* Walk up from the root to try and find a directory/target. *)
+let search_upwards ~target ~root =
+  let rec directory_has_target directory =
+    if Sys.is_file (directory ^/ target) = `Yes then
+      Some (create_absolute directory)
+    else if Filename.dirname directory = directory then
+      None
+    else
+      directory_has_target (Filename.dirname directory)
+  in
+  directory_has_target (absolute root)
+
+
 let remove path =
   try
     Sys.remove (absolute path)

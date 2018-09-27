@@ -22,6 +22,7 @@
   pyrelib.ast
   pyrelib.analysis
   pyrelib.experimental
+  pyrelib.fetchSavedState
   pyrelib.pyre
   pyrelib.server
   pyrelib.network

@@ -14,6 +14,8 @@ module Server: sig
   val root: Configuration.t -> Path.t
 
   val log_path: Configuration.t -> Path.t
+
+  val saved_state_path: Configuration.t -> Path.t
 end
 
 module Watchman: sig

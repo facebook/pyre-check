@@ -23,6 +23,7 @@
   pyrelib.analysis
   pyrelib.configuration
   pyrelib.experimental
+  pyrelib.fetchSavedState
   pyrelib.memory
   pyrelib.network
   pyrelib.languageServer

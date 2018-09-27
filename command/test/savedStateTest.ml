@@ -72,10 +72,11 @@ let test_saved_state context =
         Test.write_file ("changed_files", "")
         |> File.path
       in
-      ServerConfiguration.Load {
-        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
-        changed_files_path;
-      }
+      ServerConfiguration.Load
+        (ServerConfiguration.LoadFromFiles {
+            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+            changed_files_path;
+          })
     in
     ServerConfiguration.create ~saved_state configuration
   in
@@ -101,10 +102,11 @@ let test_saved_state context =
         Test.write_file ("changed_files", "")
         |> File.path
       in
-      ServerConfiguration.Load {
-        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
-        changed_files_path;
-      }
+      ServerConfiguration.Load
+        (ServerConfiguration.LoadFromFiles {
+            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+            changed_files_path;
+          })
     in
     Commands.Start.run
       (ServerConfiguration.create ~saved_state configuration)
@@ -131,10 +133,11 @@ let test_saved_state context =
            Path.absolute (Path.create_relative ~root:local_root ~relative:"a.py"))
         |> File.path
       in
-      ServerConfiguration.Load {
-        ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
-        changed_files_path;
-      }
+      ServerConfiguration.Load
+        (ServerConfiguration.LoadFromFiles {
+            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+            changed_files_path;
+          })
     in
     Commands.Start.run
       (ServerConfiguration.create ~saved_state configuration)
@@ -202,10 +205,11 @@ let test_invalid_configuration context =
       Test.write_file ("changed_files", "")
       |> File.path
     in
-    ServerConfiguration.Load {
-      ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
-      changed_files_path;
-    }
+    ServerConfiguration.Load
+      (ServerConfiguration.LoadFromFiles {
+          ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+          changed_files_path;
+        })
   in
   assert_raises
     Server.SavedState.IncompatibleState

@@ -3,6 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+exception IncompatibleState
 
 val load
   :  server_configuration: ServerConfiguration.t
@@ -10,7 +11,6 @@ val load
   -> connections: State.connections ref
   -> State.t
 
-exception IncompatibleState
 val save
   :  configuration: Configuration.t
   -> errors: (Analysis.Error.t list) File.Handle.Table.t

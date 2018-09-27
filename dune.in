@@ -1,4 +1,5 @@
 (copy_files# %VERSION%/*.ml{,i})
+(copy_files# %VERSION%/test/*.ml{,i})
 
 
 (env
@@ -48,6 +49,16 @@
  (libraries
   core))
 
+(library
+ (name fetchSavedState)
+ (modules fetchSavedState)
+ (public_name pyrelib.fetchSavedState)
+ (libraries
+  pyrelib.network
+  pyrePath
+  pyre
+  core
+  yojson))
 
 (library
  (name statistics)
@@ -154,6 +165,17 @@
   pyrelib.path
   pyrelib.file
   pyrelib.version))
+
+
+(tests
+ (names
+  fetchSavedStateTest)
+  (modules fetchSavedStateTest)
+  (libraries
+   pyrelib
+   pyrelib.fetchSavedState
+   oUnit
+   test))
 
 
 (executable

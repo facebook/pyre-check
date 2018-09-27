@@ -26,6 +26,10 @@ module Server = struct
   let log_path configuration =
     let root = root configuration in
     Path.create_relative ~root ~relative:"server.stdout"
+
+  let saved_state_path configuration =
+    let root = root configuration in
+    Path.create_relative ~root ~relative:"server.state"
 end
 
 

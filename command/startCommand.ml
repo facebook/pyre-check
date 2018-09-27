@@ -578,6 +578,7 @@ let run_start_command
     load_state_from
     save_state_to
     changed_files_path
+    saved_state_project
     verbose
     expected_version
     sections
@@ -627,16 +628,18 @@ let run_start_command
   in
   let log_path = log_path >>| Path.create_absolute in
   let saved_state =
-    match save_state_to with
-    | Some path ->
+    match save_state_to, saved_state_project with
+    | Some path, _ ->
         Some (ServerConfiguration.Save path)
-    | None ->
+    | None, Some project_name ->
+        Some (ServerConfiguration.Load (ServerConfiguration.LoadFromProject project_name))
+    | None, None ->
         match load_state_from, changed_files_path with
         | Some shared_memory_path, Some changed_files_path ->
-            Some (Load {
+            Some (Load (ServerConfiguration.LoadFromFiles {
                 ServerConfiguration.shared_memory_path = Path.create_absolute shared_memory_path;
                 changed_files_path = Path.create_absolute changed_files_path;
-              })
+              }))
         | Some _, None ->
             Log.error "-changed-files-path must be set when -load-state-from is passed in.";
             exit 1
@@ -685,5 +688,9 @@ let command =
         "-changed-files-path"
         (optional string)
         ~doc:"Pyre will reanalyze the paths listed in path if started from a saved state."
+      +> flag
+        "-saved-state-project"
+        (optional string)
+        ~doc:"Pyre will attempt to fetch the project's saved state from the project name."
       ++ Specification.base_command_line_arguments)
     run_start_command

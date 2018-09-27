@@ -7,11 +7,14 @@ open Pyre
 
 exception ServerNotRunning
 
-
-type load = {
+type load_parameters = {
   shared_memory_path: Path.t;
   changed_files_path: Path.t;
 }
+
+type load =
+  | LoadFromFiles of load_parameters
+  | LoadFromProject of string
 
 type saved_state =
   | Save of string

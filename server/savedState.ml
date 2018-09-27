@@ -15,16 +15,58 @@ exception IncompatibleState
 
 let load
     ~server_configuration:{
-    ServerConfiguration.configuration;
+    ServerConfiguration.configuration = ({
+        Configuration.expected_version;
+        project_root;
+        _;
+      } as configuration);
     saved_state;
     _;
   }
     ~lock
     ~connections =
-  let { ServerConfiguration.shared_memory_path; changed_files_path } =
+  let shared_memory_path, changed_files =
     match saved_state with
-    | Some (Load parameters) ->
-        parameters
+    | Some (Load (LoadFromFiles parameters)) ->
+        let { ServerConfiguration.shared_memory_path; changed_files_path } = parameters in
+        let files =
+          let to_file serialized =
+            Path.create_absolute serialized
+            |> File.create
+          in
+          File.content (File.create changed_files_path)
+          >>| String.split_lines
+          >>| List.map ~f:to_file
+          |> Option.value ~default:[]
+        in
+        shared_memory_path, files
+
+    | Some (Load (LoadFromProject project_name)) ->
+        if Option.is_none expected_version then
+          begin
+            Log.warning "An expected version must be passed in in order to load from saved states.";
+            raise IncompatibleState
+          end;
+
+        Log.log ~section:`Server "Loading from saved state project `%s`..." project_name;
+        let target_path = Constants.Server.saved_state_path configuration in
+        Log.log ~section:`Server "Loading saved state to `%s`..." (Path.absolute target_path);
+        let loaded_state =
+          Path.search_upwards ~target:".watchmanconfig" ~root:project_root
+          >>= fun watchman_root ->
+          FetchSavedState.load
+            ~watchman_root
+            ~project_name
+            ~version:(Option.value_exn expected_version)
+            ~target_path
+        in
+        begin
+          match loaded_state with
+          | Some { FetchSavedState.saved_state_path; changed_files } ->
+              saved_state_path, List.map changed_files ~f:File.create
+          | None ->
+              raise IncompatibleState
+        end
     | _ ->
         raise IncompatibleState
   in
@@ -39,21 +81,14 @@ let load
   if not (Configuration.equal old_configuration configuration) then
     raise IncompatibleState;
 
-  let files =
-    let to_file serialized =
-      Path.create_absolute serialized
-      |> File.create
-    in
-    File.content (File.create changed_files_path)
-    >>| String.split_lines
-    >>| List.map ~f:to_file
-    |> Option.value ~default:[]
-  in
-  Log.info "Reanalyzing %d files which have been modified." (List.length files);
+  Log.info "Reanalyzing %d files which have been modified." (List.length changed_files);
   let deferred_requests =
     [
       Protocol.Request.TypeCheckRequest
-        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ());
+        (Protocol.TypeCheckRequest.create
+           ~update_environment_with:changed_files
+           ~check:changed_files
+           ());
     ]
   in
   let errors =

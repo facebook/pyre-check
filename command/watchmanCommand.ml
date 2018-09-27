@@ -234,19 +234,6 @@ let listen_for_changed_files
   |> ignore
 
 
-(* Walk up from the project root to try and find a .watchmanconfig. *)
-let find_watchman_directory { Configuration.project_root; _ } =
-  let rec directory_has_watchman_config directory =
-    if Sys.is_file (directory ^/ ".watchmanconfig") = `Yes then
-      Some (Path.create_absolute directory)
-    else if Filename.dirname directory = directory then
-      None
-    else
-      directory_has_watchman_config (Filename.dirname directory)
-  in
-  directory_has_watchman_config (Path.absolute project_root)
-
-
 let initialize watchman_directory configuration =
   Version.log_version_banner ();
   Log.info
@@ -283,13 +270,15 @@ let setup configuration pid =
 let run_watchman_daemon_entry : run_watchman_daemon_entry =
   Daemon.register_entry_point
     "watchman_daemon"
-    (fun configuration (parent_in_channel, parent_out_channel) ->
+    (fun
+      ({ Configuration.project_root; _ } as configuration)
+      (parent_in_channel, parent_out_channel) ->
        Daemon.close_in parent_in_channel;
        Daemon.close_out parent_out_channel;
        (* Detach from a controlling terminal *)
        Unix.Terminal_io.setsid () |> ignore;
        setup configuration (Unix.getpid () |> Pid.to_int);
-       let watchman_directory = find_watchman_directory configuration in
+       let watchman_directory = Path.search_upwards ~target:".watchmanconfig" ~root:project_root in
        match watchman_directory with
        | None ->
            exit 1
@@ -369,7 +358,9 @@ let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_
            Pid.of_int pid
          end
        else
-         let watchman_directory = find_watchman_directory configuration in
+         let watchman_directory =
+           Path.search_upwards ~target:".watchmanconfig" ~root:project_root
+         in
          match watchman_directory with
          | None -> exit 1
          | Some watchman_directory ->
