@@ -437,7 +437,39 @@ let fold ~resolution ~initial ~f access =
           | None, _ ->
               (* Module or global variable. *)
               begin
-                match Resolution.get_local resolution ~access:lead with
+                let annotation =
+                  match Resolution.get_local resolution ~access:lead with
+                  | Some annotation ->
+                      Some annotation
+                  | _ ->
+                      (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
+                      let getattr =
+                        Resolution.get_local
+                          resolution
+                          ~access:(
+                            qualifier @
+                            [Access.Identifier (Identifier.create "__getattr__")]
+                          )
+                        >>| Annotation.annotation
+                      in
+                      let correct_getattr_arity overload =
+                        Type.Callable.Overload.parameters overload
+                        >>| (fun parameters -> List.length parameters == 1)
+                        |> Option.value ~default:false
+                      in
+                      match getattr with
+                      | Some (Callable { overloads = [overload]; _ })
+                        when correct_getattr_arity overload ->
+                          Some (
+                            Annotation.create_immutable
+                              ~global:true
+                              ~original:(Some Type.Top)
+                              (Type.Callable.Overload.return_annotation overload)
+                          )
+                      | _ ->
+                          None
+                in
+                match annotation with
                 | Some resolved ->
                     (* Locally known variable (either local or global). *)
                     let suppressed =

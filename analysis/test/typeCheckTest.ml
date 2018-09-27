@@ -6201,6 +6201,126 @@ let test_check_data_class _ =
     []
 
 
+let test_check_getattr _ =
+  let assert_test_getattr source =
+    let getattr_stub =
+      {
+        qualifier = Access.create "has_getattr";
+        handle = "has_getattr.pyi";
+        source =
+          {|
+            from typing import Any
+            def __getattr__(name: str) -> Any: ...
+          |};
+      }
+    in
+    let getattr_stub_str =
+      {
+        qualifier = Access.create "has_getattr_str";
+        handle = "has_getattr_str.pyi";
+        source =
+          {|
+            def __getattr__(name: str) -> str: ...
+          |};
+      }
+    in
+    let getattr_stub_untyped =
+      {
+        qualifier = Access.create "has_getattr_untyped";
+        handle = "has_getattr_untyped.pyi";
+        source =
+          {|
+            def __getattr__(name): ...
+          |};
+      }
+    in
+    let getattr_stub_invalid_arity =
+      {
+        qualifier = Access.create "has_getattr_invalid_arity";
+        handle = "has_getattr_invalid_arity.pyi";
+        source =
+          {|
+            def __getattr__(x: int, y: str) -> str: ...
+          |};
+      }
+    in
+    let getattr_stub_not_callable =
+      {
+        qualifier = Access.create "has_getattr_not_callable";
+        handle = "has_getattr_not_callable.pyi";
+        source =
+          {|
+            __getattr__ = 3
+          |};
+      }
+    in
+    assert_type_errors
+      ~update_environment_with:[
+        getattr_stub;
+        getattr_stub_str;
+        getattr_stub_untyped;
+        getattr_stub_invalid_arity;
+        getattr_stub_not_callable;
+      ]
+      source
+  in
+  assert_test_getattr
+    {|
+      import has_getattr
+      def foo() -> None:
+        has_getattr.any_attribute
+    |}
+    [];
+  assert_test_getattr
+    {|
+      import has_getattr_str
+      def foo() -> str:
+        return has_getattr_str.any_attribute
+    |}
+    [];
+  assert_test_getattr
+    {|
+      import has_getattr_untyped
+      def foo() -> None:
+        has_getattr_untyped.any_attribute
+    |}
+    [];
+  assert_test_getattr
+    {|
+      from has_getattr import any_attribute
+      def foo() -> None:
+        any_attribute
+    |}
+    [];
+  assert_test_getattr
+    {|
+      from has_getattr_str import any_attribute
+      def foo() -> str:
+        return any_attribute
+    |}
+    [];
+  assert_test_getattr
+    {|
+      import has_getattr_invalid_arity
+      def foo() -> None:
+         has_getattr_invalid_arity.any_attribute
+    |}
+    [
+      "Undefined attribute [16]: Module `has_getattr_invalid_arity` " ^
+      "has no attribute `any_attribute`."
+    ];
+  assert_test_getattr
+    {|
+      import has_getattr_not_callable
+      def foo() -> None:
+         has_getattr_not_callable.any_attribute
+    |}
+    [
+      "Undefined attribute [16]: Module `has_getattr_not_callable` " ^
+      "has no attribute `any_attribute`."
+    ]
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -6268,5 +6388,6 @@ let () =
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;
     "check_dataclass">::test_check_data_class;
+    "check_getattr">::test_check_getattr;
   ]
   |> Test.run

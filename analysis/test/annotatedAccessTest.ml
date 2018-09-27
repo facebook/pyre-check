@@ -50,6 +50,11 @@ let test_fold _ =
         ~handle:"empty/stub/submodule.py"
         "class Suppressed: ...";
       parse
+        ~qualifier:(Access.create "has_getattr")
+        ~handle:"has_getattr.pyi"
+        "def __getattr__(name: str) -> Any: ..."
+      |> Preprocessing.preprocess;
+      parse
         ~qualifier:[]
         {|
           integer: int = 1
@@ -169,7 +174,10 @@ let test_fold _ =
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 
   assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }];
-  assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }]
+  assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }];
+
+  assert_fold "empty.stub.any_attribute" [{ annotation = Type.Top; element = Value }];
+  assert_fold "has_getattr.any_attribute" [{ annotation = parse_annotation "Any"; element = Value }]
 
 
 let assert_resolved sources access expected =
