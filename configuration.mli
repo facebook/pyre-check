@@ -58,3 +58,36 @@ val get_global: unit -> t option
 val localize: t -> local_debug:bool -> local_strict:bool -> declare:bool -> t
 
 val pyre_root: t -> Path.t
+
+module ServerConfiguration: sig
+  type load_parameters = {
+    shared_memory_path: Path.t;
+    changed_files_path: Path.t;
+  }
+
+  type load =
+    | LoadFromFiles of load_parameters
+    | LoadFromProject of string
+
+  type saved_state =
+    | Save of string
+    | Load of load
+
+  type nonrec t = {
+    (* Server-specific configuration options *)
+    socket_path: Path.t;
+    socket_link: Path.t;
+    lock_path: Path.t;
+    pid_path: Path.t;
+    log_path: Path.t;
+    daemonize: bool;
+    use_watchman: bool;
+    watchman_creation_timeout: float;
+    saved_state: saved_state option;
+    (* Analysis configuration *)
+    configuration: t;
+  }
+
+  val set_global: t -> unit
+  val get_global: unit -> t option
+end

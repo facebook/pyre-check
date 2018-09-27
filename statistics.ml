@@ -28,13 +28,45 @@ let sample
     ?(normals = [])
     ?(metadata = true)
     () =
+  let open Configuration in
   let local_root, start_time, log_identifier =
-    match Configuration.get_global () with
-    | Some { Configuration.local_root; start_time; log_identifier; _ } ->
+    match get_global () with
+    | Some { local_root; start_time; log_identifier; _ } ->
         Path.last local_root, start_time, log_identifier
     | _ ->
         Log.warning "Trying to log without a global configuration";
         "LOGGED WITHOUT CONFIGURATION", 0.0, "no configuration"
+  in
+  let server_configuration_metadata =
+    match ServerConfiguration.get_global () with
+    | Some { ServerConfiguration.socket_path; saved_state; use_watchman; _ } ->
+        let saved_state_metadata =
+          match saved_state with
+          | Some
+              (ServerConfiguration.Load
+                 (ServerConfiguration.LoadFromFiles {
+                     ServerConfiguration.shared_memory_path;
+                     changed_files_path;
+                   })) ->
+              [
+                "shared_memory_path", Path.absolute shared_memory_path;
+                "changed_files_path", Path.absolute changed_files_path;
+              ]
+          | Some
+              (ServerConfiguration.Load
+                 (ServerConfiguration.LoadFromProject
+                    name)) ->
+              ["saved_state_project", name]
+          | Some (ServerConfiguration.Save project) ->
+              ["save_state_to", project]
+          | None ->
+              []
+        in
+        ("socket_path", Path.absolute socket_path) ::
+        ("use_watchman", Bool.to_string use_watchman) ::
+        saved_state_metadata
+    | None ->
+        []
   in
   let normals =
     if metadata then
@@ -44,7 +76,9 @@ let sample
         "username", username;
         "hostname", hostname;
         "identifier", log_identifier;
-      ] @ normals
+      ] @
+      server_configuration_metadata @
+      normals
     else
       normals
   in

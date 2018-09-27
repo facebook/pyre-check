@@ -61,16 +61,16 @@ let run
     (fun () ->
        let socket =
          try
-           Server.Operations.connect ~retries:3 ~configuration
-         with Server.Operations.ConnectionFailure ->
-           raise ServerConfiguration.ServerNotRunning
+           Operations.connect ~retries:3 ~configuration
+         with Operations.ConnectionFailure ->
+           raise Operations.ServerNotRunning
        in
 
-       Socket.write socket Server.Protocol.Request.FlushTypeErrorsRequest;
+       Socket.write socket Protocol.Request.FlushTypeErrorsRequest;
 
        let response_json =
          match Socket.read socket with
-         | Server.Protocol.TypeCheckResponse errors ->
+         | Protocol.TypeCheckResponse errors ->
              errors
              |> List.map ~f:snd
              |> List.concat
@@ -84,10 +84,10 @@ let run
        Log.print "%s" (Yojson.Safe.to_string response_json))
     |> Scheduler.run_process ~configuration
   with
-  | ServerConfiguration.ServerNotRunning ->
+  | Operations.ServerNotRunning ->
       Log.print "Server is not running.\n";
       exit 1
-  | Server.Operations.VersionMismatch _ ->
+  | Operations.VersionMismatch _ ->
       Log.print "The running server has an incompatible version with the current version.\n";
       exit 1
 

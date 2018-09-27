@@ -113,3 +113,42 @@ let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict 
 
 let pyre_root { local_root; _ } =
   Path.append local_root ~element:".pyre"
+
+
+module ServerConfiguration = struct
+  type load_parameters = {
+    shared_memory_path: Path.t;
+    changed_files_path: Path.t;
+  }
+
+  type load =
+    | LoadFromFiles of load_parameters
+    | LoadFromProject of string
+
+  type saved_state =
+    | Save of string
+    | Load of load
+
+  type nonrec t = {
+    (* Server-specific configuration options *)
+    socket_path: Path.t;
+    socket_link: Path.t;
+    lock_path: Path.t;
+    pid_path: Path.t;
+    log_path: Path.t;
+    daemonize: bool;
+    use_watchman: bool;
+    watchman_creation_timeout: float;
+    saved_state: saved_state option;
+    (* Analysis configuration *)
+    configuration: t;
+  }
+
+  (* Required to appease the compiler. *)
+  let global: t option ref = ref None
+
+  let set_global configuration =
+    global := Some configuration
+
+  let get_global () = !global
+end

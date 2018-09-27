@@ -437,6 +437,7 @@ let serve
   Version.log_version_banner ();
   (fun () ->
      Log.log ~section:`Server "Starting daemon server loop...";
+     Configuration.ServerConfiguration.set_global server_configuration;
      let request_queue = Squeue.create 25 in
      let lock = Mutex.create () in
      let connections =
@@ -650,7 +651,7 @@ let run_start_command
             None
   in
   run
-    (ServerConfiguration.create
+    (Operations.create_configuration
        ~daemonize:(not terminal)
        ~use_watchman
        ?log_path

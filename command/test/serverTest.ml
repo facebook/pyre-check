@@ -8,6 +8,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Configuration
 open Expression
 open Pyre
 open PyreParser
@@ -103,7 +104,7 @@ let test_server_stops _ =
   Commands.Stop.stop ~local_root:"."
   |> ignore;
   let { ServerConfiguration.socket_path; _ } =
-    ServerConfiguration.create (Configuration.create ())
+    Operations.create_configuration (Configuration.create ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
   CommandTest.with_timeout
@@ -1008,7 +1009,7 @@ let test_incremental_attribute_caching context =
   let configuration =
     Configuration.create ~local_root:directory ~project_root:directory ()
   in
-  let server_configuration = ServerConfiguration.create configuration in
+  let server_configuration = Operations.create_configuration configuration in
   let environment =
     Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler ~configuration

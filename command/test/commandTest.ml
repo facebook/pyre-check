@@ -36,7 +36,7 @@ let mock_server_configuration
     ?expected_version
     () =
   let temporary = Filename.temp_file "" "" in
-  Server.ServerConfiguration.create
+  Server.Operations.create_configuration
     ~log_path:(Path.create_absolute temporary)
     (mock_analysis_configuration ~local_root ?expected_version ())
 
@@ -128,7 +128,7 @@ let poll_for_deletion path =
 
 
 let stop_server {
-    Server.ServerConfiguration.configuration = {
+    Configuration.ServerConfiguration.configuration = {
       Configuration.local_root;
       _;
     };

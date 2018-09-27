@@ -21,7 +21,7 @@ let stop ~local_root =
   let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
   try
     let in_channel, _ =
-      match Socket.open_connection (ServerConfiguration.socket_path configuration) with
+      match Socket.open_connection (Operations.socket_path configuration) with
       | `Success socket -> socket
       | `Failure -> raise NotRunning
     in
@@ -68,16 +68,16 @@ let stop ~local_root =
       in
       poll ()
     in
-    match poll_for_deletion (ServerConfiguration.socket_path configuration) with
+    match poll_for_deletion (Operations.socket_path configuration) with
     | exit_code ->
         exit_code
-    | exception ServerConfiguration.ServerNotRunning ->
+    | exception Operations.ServerNotRunning ->
         (* Our job is done if the server is not running. *)
         0
   with
   | NotRunning
   | Unix.Unix_error _
-  | ServerConfiguration.ServerNotRunning ->
+  | Operations.ServerNotRunning ->
       Log.warning "No servers running";
       1
 

@@ -6,11 +6,12 @@
 open Core
 
 open Pyre
+open Path.AppendOperator
 open Network
-open ServerConfiguration
 open State
 open Service
 open Constants
+open Configuration
 
 
 type version_mismatch = {
@@ -18,6 +19,57 @@ type version_mismatch = {
   expected_version: string;
 }
 [@@deriving show]
+
+
+exception ServerNotRunning
+
+(* Socket paths in OCaml are limited to a length of +-100 characters. We work around this by
+   creating the socket in a temporary directory and symlinking to it from the pyre directory. *)
+let socket_path ?(create=false) configuration =
+  let link_path = Service.Constants.Server.root configuration ^| "server.sock" in
+  if Path.file_exists link_path || not create then
+    try
+      Unix.readlink (Path.absolute link_path)
+      |> Path.create_absolute
+    with
+    | Unix.Unix_error _ -> raise ServerNotRunning
+  else
+    begin
+      let socket_path =
+        let pid = Pid.to_string (Unix.getpid ()) in
+        Path.create_relative
+          ~root:(Path.create_absolute Filename.temp_dir_name)
+          ~relative:("pyre_" ^ pid ^ ".sock")
+      in
+      (try Unix.unlink (Path.absolute link_path) with | Unix.Unix_error _ -> ());
+      Unix.symlink ~src:(Path.absolute socket_path) ~dst:(Path.absolute link_path);
+      socket_path
+    end
+
+
+let create_configuration
+    ?(daemonize = true)
+    ?log_path
+    ?(use_watchman = false)
+    ?saved_state
+    configuration =
+  let server_root = Service.Constants.Server.root configuration in
+  (* Allow absolute log_path path (e.g., for /dev/null) *)
+  let log_path =
+    Option.value log_path ~default:(Service.Constants.Server.log_path configuration)
+  in
+  {
+    ServerConfiguration.socket_path = socket_path ~create:true configuration;
+    socket_link = server_root ^| "server.sock";
+    lock_path = server_root ^| "server.lock";
+    pid_path = server_root ^| "server.pid";
+    log_path;
+    daemonize;
+    use_watchman;
+    watchman_creation_timeout = 5.0 (* Seconds. *);
+    saved_state;
+    configuration;
+  }
 
 
 exception ConnectionFailure
@@ -74,7 +126,7 @@ let start
     ~lock
     ~connections
     ~configuration:({
-        configuration;
+        ServerConfiguration.configuration;
         saved_state;
         _;
       } as server_configuration)
@@ -105,7 +157,14 @@ let start
 
 let stop
     ~reason
-    ~configuration:{ configuration; lock_path; socket_path; pid_path; socket_link; _ }
+    ~configuration:{
+    ServerConfiguration.configuration;
+    lock_path;
+    socket_path;
+    pid_path;
+    socket_link;
+    _;
+  }
     ~socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   let watchman_pid =
@@ -144,12 +203,12 @@ let connect ~retries ~configuration:({ Configuration.expected_version; _ } as co
     (* The socket path is computed in each iteration because the server might set up a symlink
        after a connection attempt - in that case, we want to avoid using the stale file. *)
     try
-      let socket_path = ServerConfiguration.socket_path configuration in
-      if Path.file_exists socket_path then
+      let path = socket_path configuration in
+      if Path.file_exists path then
         begin
           match
             (Unix.handle_unix_error
-               (fun () -> Socket.open_connection (ServerConfiguration.socket_path configuration)))
+               (fun () -> Socket.open_connection (socket_path configuration)))
           with
           | `Success socket ->
               Log.info "Connected to server";

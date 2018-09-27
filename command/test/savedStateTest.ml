@@ -6,6 +6,7 @@
 open OUnit2
 open Core
 
+open Configuration
 open Server
 
 open Pyre
@@ -45,7 +46,7 @@ let test_saved_state context =
 
   (* Spawn a server that saves its state on initialization. *)
   let server_configuration =
-    ServerConfiguration.create
+    Operations.create_configuration
       ~saved_state:(ServerConfiguration.Save saved_state_path)
       configuration
   in
@@ -78,7 +79,7 @@ let test_saved_state context =
             changed_files_path;
           })
     in
-    ServerConfiguration.create ~saved_state configuration
+    Operations.create_configuration ~saved_state configuration
   in
   let _ = Commands.Start.run server_configuration in
 
@@ -109,7 +110,7 @@ let test_saved_state context =
           })
     in
     Commands.Start.run
-      (ServerConfiguration.create ~saved_state configuration)
+      (Operations.create_configuration ~saved_state configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
   Network.Socket.write socket (Request.FlushTypeErrorsRequest);
@@ -140,7 +141,7 @@ let test_saved_state context =
           })
     in
     Commands.Start.run
-      (ServerConfiguration.create ~saved_state configuration)
+      (Operations.create_configuration ~saved_state configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
   Network.Socket.write socket (Request.FlushTypeErrorsRequest);
@@ -175,7 +176,7 @@ let test_invalid_configuration context =
   in
   (* Generate a saved state. *)
   let server_configuration =
-    ServerConfiguration.create
+    Operations.create_configuration
       ~saved_state:(ServerConfiguration.Save saved_state_path)
       configuration
   in
@@ -189,7 +190,7 @@ let test_invalid_configuration context =
   assert_raises Operations.ConnectionFailure connect;
 
   let socket =
-    let path = ServerConfiguration.socket_path ~create:true configuration in
+    let path = Operations.socket_path ~create:true configuration in
     Network.Socket.initialize_unix_socket path
   in
   let connections = ref {
@@ -216,7 +217,7 @@ let test_invalid_configuration context =
     (fun () ->
        Server.SavedState.load
          ~server_configuration:(
-           ServerConfiguration.create
+           Operations.create_configuration
              ~saved_state
              incompatible_configuration)
          ~lock:(Mutex.create ())

@@ -7,6 +7,8 @@
 open Core
 
 open Pyre
+
+open Configuration
 open Service
 
 
