@@ -18,10 +18,10 @@ type t = {
 [@@deriving compare, eq, show, sexp, hash]
 
 val create
-  :  ignored_line:int
-  -> codes:int list
-  -> location:Location.t
-  -> kind:kind
+  :  ignored_line: int
+  -> codes: int list
+  -> location: Location.t
+  -> kind: kind
   -> t
 
 val ignored_line: t -> int

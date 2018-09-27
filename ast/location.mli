@@ -27,7 +27,7 @@ module Reference : sig
   module Set : Set.S with type Elt.t = t
   include Hashable with type t := t
 
-  val create: start:Lexing.position -> stop:Lexing.position -> t
+  val create: start: Lexing.position -> stop: Lexing.position -> t
   val any: t
 end
 
@@ -35,7 +35,7 @@ module Instantiated : sig
   type  t = string location
   [@@deriving compare, eq, sexp, show, hash]
 
-  val create: start:Lexing.position -> stop:Lexing.position -> t
+  val create: start: Lexing.position -> stop: Lexing.position -> t
   val any: t
 
   val pp_start: Format.formatter -> t -> unit
@@ -52,4 +52,4 @@ val path: 'path location -> 'path
 type t = Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
-val create: start:Lexing.position -> stop:Lexing.position -> t
+val create: start: Lexing.position -> stop: Lexing.position -> t
