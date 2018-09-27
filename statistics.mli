@@ -18,7 +18,7 @@ val flush: unit -> unit
 val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
-  -> ?section:Log.section
+  -> ?section: Log.section
   -> ?category: string
   -> name: string
   -> timer: Timer.t
