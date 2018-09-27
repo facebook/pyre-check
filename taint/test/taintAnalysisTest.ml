@@ -365,7 +365,12 @@ let test_integration _ =
       with Unix.Unix_error _ ->
         failwith (Format.asprintf "Could not read `.expect` file for %a" Path.pp path)
     in
-    assert_equal ~printer:Fn.id ~cmp:String.equal expected serialized_models
+    assert_equal
+      ~printer:ident
+      ~cmp:String.equal
+      ~pp_diff:(Test.diff ~print:String.pp)
+      expected
+      serialized_models
   in
   List.iter test_paths ~f:run_test
 
