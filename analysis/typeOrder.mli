@@ -99,7 +99,7 @@ val successors: (module Handler) -> Type.t -> Type.t list
 val predecessors: (module Handler) -> Type.t -> Type.t list
 val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
-val less_or_equal: (module Handler) -> left:Type.t -> right:Type.t -> bool
+val less_or_equal: (module Handler) -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val join: (module Handler) -> Type.t -> Type.t -> Type.t
@@ -114,12 +114,12 @@ val widen
 
 val instantiate_parameters
   :  (module Handler)
-  -> source:Type.t
-  -> target:Type.t
+  -> source: Type.t
+  -> target: Type.t
   -> Type.t List.t Option.t
 
 val add_backedges: (module Handler) -> bottom: Type.t -> unit
-val deduplicate: (module Handler) -> annotations:Type.t list -> unit
+val deduplicate: (module Handler) -> annotations: Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
 val connect_annotations_to_top
   :  (module Handler)

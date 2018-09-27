@@ -57,7 +57,7 @@ val module_definition: t -> Access.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 val class_representation: t -> Type.t -> class_representation option
 
-val less_or_equal: t -> left:Type.t -> right:Type.t -> bool
+val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
 val join: t -> Type.t -> Type.t -> Type.t
 val meet: t -> Type.t -> Type.t -> Type.t
 val widen

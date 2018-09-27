@@ -121,10 +121,10 @@ val callable
   -> unit
   -> t
 val complex: t
-val dictionary: key:t -> value:t -> t
+val dictionary: key: t -> value: t -> t
 val ellipses: t
 val float: t
-val generator: ?async:bool -> t -> t
+val generator: ?async: bool -> t -> t
 val generic: t
 val integer: t
 val iterable: t -> t

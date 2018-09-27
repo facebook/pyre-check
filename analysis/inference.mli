@@ -14,7 +14,7 @@ module State : sig
   val initial_backward
     :  ?configuration: Configuration.t
     -> Statement.Define.t Node.t
-    -> forward:t
+    -> forward: t
     -> t
 
   val update_only_existing_annotations: t -> t -> t
@@ -25,8 +25,8 @@ module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 val backward_fixpoint
   :  Cfg.t
-  -> initial_forward:State.t
-  -> initialize_backward:(forward:State.t -> State.t)
+  -> initial_forward: State.t
+  -> initialize_backward: (forward: State.t -> State.t)
   -> Fixpoint.t
 
 val infer

@@ -126,7 +126,7 @@ module Attribute : sig
   val defined: t -> bool
   val class_attribute: t -> bool
 
-  val instantiate: t -> constraints:Type.t Type.Map.t -> t
+  val instantiate: t -> constraints: Type.t Type.Map.t -> t
 end
 
 module AttributesCache : sig
@@ -138,7 +138,7 @@ val attributes
   -> ?class_attributes: bool
   -> ?include_generated_attributes: bool
   -> t
-  -> resolution:Resolution.t
+  -> resolution: Resolution.t
   -> Attribute.t list
 val attribute_fold
   :  ?transitive: bool

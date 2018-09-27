@@ -46,7 +46,7 @@ module type ERROR = sig
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t
   val code: t -> int
-  val description: t -> detailed:bool -> string
+  val description: t -> detailed: bool -> string
 
   val to_json: detailed: bool -> t -> Yojson.Safe.json
 end
