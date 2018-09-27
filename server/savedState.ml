@@ -12,7 +12,7 @@ open Configuration
 open Service
 
 
-exception IncompatibleState
+exception IncompatibleState of string
 
 
 let load
@@ -47,7 +47,7 @@ let load
         if Option.is_none expected_version then
           begin
             Log.warning "An expected version must be passed in in order to load from saved states.";
-            raise IncompatibleState
+            raise (IncompatibleState "version mismatch")
           end;
 
         Log.log ~section:`Server "Loading from saved state project `%s`..." project_name;
@@ -67,10 +67,10 @@ let load
           | Some { FetchSavedState.saved_state_path; changed_files } ->
               saved_state_path, List.map changed_files ~f:File.create
           | None ->
-              raise IncompatibleState
+              raise (IncompatibleState "unable to fetch state")
         end
     | _ ->
-        raise IncompatibleState
+        raise (IncompatibleState "unexpected saved state parameters")
   in
   Log.info "Initializing server from saved state at %s" (Path.absolute shared_memory_path);
 
@@ -81,7 +81,7 @@ let load
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let old_configuration = EnvironmentSharedMemory.StoredConfiguration.find_unsafe "configuration" in
   if not (Configuration.equal old_configuration configuration) then
-    raise IncompatibleState;
+    raise (IncompatibleState "configuration mismatch");
 
   Log.info "Reanalyzing %d files which have been modified." (List.length changed_files);
   let deferred_requests =

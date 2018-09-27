@@ -136,10 +136,16 @@ let start
     | Some (Load _) ->
         begin
           try
-            SavedState.load ~server_configuration ~lock ~connections
+            let state = SavedState.load ~server_configuration ~lock ~connections in
+            Statistics.event ~name:"saved state success" ();
+            state
           (* Fall back to starting from scratch if we can't load a saved state. *)
-          with SavedState.IncompatibleState ->
+          with SavedState.IncompatibleState reason ->
             Log.warning "Unable to load saved state, falling back to a full start.";
+              Statistics.event
+                ~name:"saved state failure"
+                ~normals:["reason", reason]
+                ();
             start_from_scratch ?old_state ~lock ~connections ~configuration ()
         end
       | _ ->

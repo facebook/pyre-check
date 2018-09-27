@@ -6,7 +6,7 @@
 
 open Configuration
 
-exception IncompatibleState
+exception IncompatibleState of string
 
 val load
   :  server_configuration: ServerConfiguration.t

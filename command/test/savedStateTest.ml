@@ -213,7 +213,7 @@ let test_invalid_configuration context =
         })
   in
   assert_raises
-    Server.SavedState.IncompatibleState
+    (Server.SavedState.IncompatibleState "configuration mismatch")
     (fun () ->
        Server.SavedState.load
          ~server_configuration:(
