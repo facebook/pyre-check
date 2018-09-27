@@ -576,9 +576,9 @@ def main():
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_infer_performance",
-                arguments,
-                configuration,
-                ints={
+                arguments=arguments,
+                configuration=configuration,
+                integers={
                     "exit_code": exit_code,
                     "runtime": int((time.time() - start) * 1000),  # ms
                     "stubs_generated": len(stubs),

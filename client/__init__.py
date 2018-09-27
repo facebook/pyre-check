@@ -7,6 +7,7 @@ import json
 import logging
 import multiprocessing
 import os
+import platform
 import shlex
 import subprocess
 import sys
@@ -165,38 +166,44 @@ def number_of_workers() -> int:
 
 def log_statistics(
     category: str,
-    arguments: Namespace,
+    arguments: Optional[Namespace] = None,
     # this is typed as a Any because configuration imports __init__
-    configuration: Any,
-    ints: Optional[Dict[str, int]] = None,
+    configuration: Optional[Any] = None,
+    integers: Optional[Dict[str, int]] = None,
     normals: Optional[Dict[str, str]] = None,
+    logger: Optional[str] = None,
 ) -> None:
+    integers = integers or {}
+    normals = normals or {}
+    if configuration:
+        normals = {**normals, "version": configuration.version_hash}
+        if not logger:
+            logger = configuration.logger
+    if not logger:
+        raise ValueError("Logger must either be given or in configuration")
+    if arguments:
+        normals = {
+            **normals,
+            "analysis_directory": str(arguments.analysis_directory or []),
+            "arguments": str(arguments),
+            "target": str(arguments.target or []),
+        }
     try:
-        ints = ints or {}
-        normals = normals or {}
         statistics = {
-            "int": ints,
+            "int": integers,
             "normal": {
                 **normals,
-                "arguments": str(arguments),
                 "command_line": " ".join(sys.argv),
-                "host": os.getenv("HOSTNAME") or "",
-                "analysis_directory": str(arguments.analysis_directory or []),
-                "target": str(arguments.target or []),
-                "user": os.getenv("USER") or "",
-                "version": configuration.version_hash,
+                "host": platform.node() or "",
+                "platform": platform.system() or "",
+                "user": os.getenv("USER", ""),
             },
         }
         subprocess.run(
-            "{} {} {}".format(
-                shlex.quote(configuration.logger),
-                shlex.quote(category),
-                shlex.quote(json.dumps(statistics)),
-            ),
-            shell=True,
+            [logger, category], input=json.dumps(statistics), encoding="ascii"
         )
     except Exception:
-        LOG.warning("Unable to log using `%s`", configuration.logger)
+        LOG.warning("Unable to log using `%s`", logger)
         LOG.info(traceback.format_exc())
 
 

@@ -368,9 +368,9 @@ def main() -> int:
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",
-                arguments,
-                configuration,
-                ints={
+                arguments=arguments,
+                configuration=configuration,
+                integers={
                     "exit_code": exit_code,
                     "runtime": int((time.time() - start) * 1000),
                 },
