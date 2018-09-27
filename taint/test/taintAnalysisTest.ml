@@ -281,8 +281,68 @@ let test_fixpoint _ =
     }
 
 
+let test_integration _ =
+  let test_paths =
+    (* Shameful things happen here... *)
+    let not_expect path =
+      String.is_suffix path ~suffix:".expect"
+      |> not
+    in
+    Path.current_working_directory ()
+    |> Path.show
+    |> String.chop_suffix_exn ~suffix:"_build/default/taint/test"
+    |> (fun root -> Path.create_absolute root)
+    |> (fun root -> Path.create_relative ~root ~relative:"taint/test/integration/")
+    |> (fun root -> Path.list ~filter:not_expect ~root)
+  in
+  let run_test path =
+    let serialized_models =
+      let source =
+        File.create path
+        |> File.content
+        |> (fun content -> Option.value_exn content)
+      in
+      let call_graph, all_callables = create_call_graph source in
+      Analysis.compute_fixpoint
+        ~configuration:Test.mock_configuration
+        ~scheduler:(Scheduler.mock ())
+        ~analyses:[Taint.Analysis.abstract_kind]
+        ~caller_map:(CallGraph.reverse call_graph)
+        ~all_callables
+        Fixpoint.Epoch.initial
+      |> ignore;
+      let serialized_model callable: string =
+        Fixpoint.get_model callable
+        |> (fun model -> Option.value_exn model)
+        |> Result.get_model Taint.Result.kind
+        |> (fun model -> Option.value_exn model)
+        |> Taint.Result.show_call_model
+      in
+      List.map all_callables ~f:serialized_model
+      |> List.sort ~compare:String.compare
+      |> String.concat ~sep:"\n"
+      |> String.strip
+    in
+    let expected =
+      try
+        Path.show path
+        |> (fun path -> path ^ ".expect")
+        |> Path.create_absolute
+        |> File.create
+        |> File.content
+        |> (fun content -> Option.value_exn content)
+        |> String.strip
+      with Unix.Unix_error _ ->
+        failwith (Format.asprintf "Could not read `.expect` file for %a" Path.pp path)
+    in
+    assert_equal ~printer:Fn.id ~cmp:String.equal expected serialized_models
+  in
+  List.iter test_paths ~f:run_test
+
+
 let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
+    "integration">::test_integration;
   ]
   |> Test.run_with_taint_models

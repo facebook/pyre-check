@@ -1,0 +1,28 @@
+{ TaintResult.forward =
+  { TaintResult.Forward.source_taint =
+    AccessPath.Root.LocalResult -> (map((Root(TestSource))))
+ };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+{ TaintResult.forward =
+  { TaintResult.Forward.source_taint =
+    AccessPath.Root.LocalResult -> (map((Root(TestSource))))
+ };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+  backward =
+  { TaintResult.Backward.taint_in_taint_out = ;
+    sink_taint =
+    AccessPath.Root.Parameter {position = 0} -> (map((Root(TestSink))))
+ }
+  }
+{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+  backward =
+  { TaintResult.Backward.taint_in_taint_out = ;
+    sink_taint =
+    AccessPath.Root.Parameter {position = 0} -> (map((Root(TestSink))))
+ }
+  }
+{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
