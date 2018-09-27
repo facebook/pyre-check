@@ -34,6 +34,7 @@ module TypeQuery: sig
     | Meet of Access.t * Access.t
     | Methods of Access.t
     | NormalizeType of Access.t
+    | SaveServerState of Pyre.Path.t
     | Signature of Access.t
     | Superclasses of Access.t
     | Type of Expression.t
@@ -70,6 +71,7 @@ module TypeQuery: sig
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
     | FoundSignature of found_signature list
+    | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
   [@@deriving eq, show, to_yojson]

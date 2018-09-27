@@ -61,6 +61,12 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Methods (access name))
         | "normalize_type", [name] ->
             Request.TypeQueryRequest (NormalizeType (access name))
+        | "save_server_state", [path] ->
+            Request.TypeQueryRequest
+              (SaveServerState
+                 (Path.create_absolute
+                    ~follow_symbolic_links:false
+                    (string path)))
         | "signature", [name] ->
             Request.TypeQueryRequest (Signature (access name))
         | "superclasses", [name] ->

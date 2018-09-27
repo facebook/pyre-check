@@ -78,6 +78,7 @@ let report_statistics () =
 
 
 let save_shared_memory ~path =
+  collect `aggressive;
   SharedMem.save_table path
 
 

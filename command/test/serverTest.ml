@@ -288,7 +288,7 @@ let test_protocol_type_check _ =
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
-let test_query _ =
+let test_query context =
   let assert_type_query_response ~source ~query response =
     let query = Commands.Query.parse_query ~root:(Path.current_working_directory ()) query in
     assert_response ~source ~request:query (Some (Protocol.TypeQueryResponse response))
@@ -538,7 +538,16 @@ let test_query _ =
     |}
     ~query:"type(foo(bar))"
     (Protocol.TypeQuery.Error
-       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.")
+       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.");
+
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  assert_type_query_response
+    ~source:""
+    ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success ()));
+
+  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"))
+
 
 
 let test_connect _ =

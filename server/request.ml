@@ -461,6 +461,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
         parse_and_validate expression
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
+    | TypeQuery.SaveServerState path ->
+        let path = Path.absolute path in
+        Log.info "Saving server state into `%s`" path;
+        Memory.save_shared_memory ~path;
+        TypeQuery.Response (TypeQuery.Success ())
+
     | TypeQuery.Signature function_name ->
         let keep_known_annotation annotation =
           match annotation with

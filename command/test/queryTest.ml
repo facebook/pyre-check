@@ -97,7 +97,14 @@ let test_parse_query _ =
   assert_fails_to_parse "attributes(C, D)";
 
   assert_parses "signature(a.b)" (Signature (Access.create "a.b"));
-  assert_fails_to_parse "signature(a.b, a.c)"
+  assert_fails_to_parse "signature(a.b, a.c)";
+
+  assert_parses "save_server_state('state')"
+    (SaveServerState
+       (Path.create_absolute
+          ~follow_symbolic_links:false
+          "state"));
+  assert_fails_to_parse "save_server_state(state)"
 
 
 let () =
