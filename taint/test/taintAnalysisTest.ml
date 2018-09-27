@@ -312,18 +312,16 @@ let test_fixpoint _ =
 
 
 let test_integration _ =
+  TaintIntegrationTest.Files.dummy_dependency |> ignore;
+
   let test_paths =
     (* Shameful things happen here... *)
-    let not_expect path =
-      String.is_suffix path ~suffix:".expect"
-      |> not
-    in
     Path.current_working_directory ()
     |> Path.show
     |> String.chop_suffix_exn ~suffix:"_build/default/taint/test"
     |> (fun root -> Path.create_absolute root)
     |> (fun root -> Path.create_relative ~root ~relative:"taint/test/integration/")
-    |> (fun root -> Path.list ~filter:not_expect ~root)
+    |> (fun root -> Path.list ~filter:(String.is_suffix ~suffix:".py") ~root)
   in
   let run_test path =
     let serialized_models =

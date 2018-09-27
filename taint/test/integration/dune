@@ -1,0 +1,10 @@
+(rule
+ (targets files.ml)
+ (deps (glob_files "*.py") (glob_files "*.expect"))
+ (action (bash "echo \"let dummy_dependency = {|`date`|}\" > files.ml")))
+
+
+(library
+ (name taintIntegrationTest)
+ (public_name pyrelib.taintIntegrationTest)
+ (modules files))

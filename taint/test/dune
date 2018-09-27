@@ -13,4 +13,5 @@
   pyrelib.test
   pyrelib.ast
   pyrelib.interprocedural
-  pyrelib.taint))
+  pyrelib.taint
+  pyrelib.taintIntegrationTest))
