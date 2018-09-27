@@ -1357,6 +1357,7 @@ let rec mismatch_with_any left right =
   let compatible left right =
     let symmetric left right =
       (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
+      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
       (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
       (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
       (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||

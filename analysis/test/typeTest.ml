@@ -678,6 +678,16 @@ let test_mismatch_with_any _ =
 
   assert_true
     (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.Object ~value:Type.bool)
+       (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.dictionary ~key:Type.integer ~value:Type.bool)
+       (Type.parametric "collections.OrderedDict" [Type.Object; Type.bool]));
+
+  assert_true
+    (Type.mismatch_with_any
        (Type.iterable Type.string)
        (Type.parametric "typing.List" [Type.Object]));
 
