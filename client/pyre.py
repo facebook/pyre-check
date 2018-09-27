@@ -41,9 +41,9 @@ def main() -> int:
 
     def executable_file(file_path: str) -> str:
         if not os.path.isfile(file_path):
-            raise EnvironmentException(f"{file_path} is not a valid file")
+            raise EnvironmentException("%s is not a valid file" % file_path)
         if not os.access(file_path, os.X_OK):
-            raise EnvironmentException(f"{file_path} is not an executable file")
+            raise EnvironmentException("%s is not an executable file" % file_path)
         return file_path
 
     parser = argparse.ArgumentParser(
