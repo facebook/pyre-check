@@ -82,9 +82,16 @@ let start
   let ({ State.errors; _ } as state) =
     match saved_state with
     | Some (Load _) ->
-        SavedState.load ~server_configuration ~lock ~connections
-    | _ ->
-        start_from_scratch ?old_state ~lock ~connections ~configuration ()
+        begin
+          try
+            SavedState.load ~server_configuration ~lock ~connections
+          (* Fall back to starting from scratch if we can't load a saved state. *)
+          with SavedState.IncompatibleState ->
+            Log.warning "Unable to load saved state, falling back to a full start.";
+            start_from_scratch ?old_state ~lock ~connections ~configuration ()
+        end
+      | _ ->
+          start_from_scratch ?old_state ~lock ~connections ~configuration ()
   in
   begin
     match saved_state with
