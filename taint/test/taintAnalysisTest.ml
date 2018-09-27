@@ -73,59 +73,88 @@ let create_call_graph ?(test_file = "test_file") source =
   call_graph, callables
 
 
-let create_model { define_name; returns; taint_sink_parameters; tito_parameters; _ } =
-  let expect_source_taint model source =
-    let forward =
-      let source_taint =
-        ForwardState.assign_weak
-          ~root:Root.LocalResult
-          ~path:[]
-          (ForwardTaint.singleton source
-           |> ForwardState.create_leaf)
-          model.forward.source_taint
-      in
-      Taint.Result.Forward.{ source_taint }
+let check_model_expectation
+    models
+    { define_name; returns; taint_sink_parameters; tito_parameters; _ }
+  =
+  let expect_source_taint source_taint =
+    let actual =
+      ForwardState.read_access_path
+        ~root:Root.LocalResult
+        ~path:[]
+        source_taint
+      |> ForwardState.collapse
+      |> ForwardTaint.leaves
+      |> List.map ~f:Sources.show
     in
-    { model with forward }
-  in
-  let expect_sink_taint model { position; sinks } =
-    let taint_sink_parameters model taint_sink_kind =
-      let backward =
-        let sink_taint =
-          BackwardState.assign_weak
-            ~root:(Root.Parameter { position })
-            ~path:[]
-            (BackwardTaint.singleton taint_sink_kind
-             |> BackwardState.create_leaf)
-            model.backward.sink_taint
-        in
-        { model.backward with sink_taint }
-      in
-      { model with backward }
+    let expected =
+      List.map ~f:Sources.show returns
     in
-    List.fold sinks ~init:model ~f:taint_sink_parameters
+    if not (SSet.equal (SSet.of_list actual) (SSet.of_list expected)) then
+      Format.sprintf
+        "Model for %s has wrong return taint: [%s] expected [%s]"
+        define_name
+        (String.concat ~sep:", " actual)
+        (String.concat ~sep:", " expected)
+      |> assert_failure
   in
-  let expect_taint_in_taint_out model position =
-    let backward =
-      let taint_in_taint_out =
-        BackwardState.assign_weak
+  let check_positions what taint expected =
+    let add_position root positions =
+      match root with
+      | Root.Parameter { position; } -> position :: positions
+      | _ -> positions
+    in
+    let actual =
+      BackwardState.fold
+        ~f:(fun root _ positions -> add_position root positions)
+        ~init:[]
+        taint
+    in
+    if not (ISet.equal (ISet.of_list actual) (ISet.of_list expected)) then
+      Format.sprintf
+        "Model for %s has wrong %s parameter positions: [%s] expected [%s]"
+        define_name
+        what
+        (String.concat ~sep:", " (List.map ~f:string_of_int actual))
+        (String.concat ~sep:", " (List.map ~f:string_of_int expected))
+      |> assert_failure
+  in
+  let expect_sink_taint sink_taint =
+    let expect_sink_parameter { position; sinks } =
+      let actual =
+        BackwardState.read_access_path
           ~root:(Root.Parameter { position })
           ~path:[]
-          (BackwardTaint.singleton LocalReturn
-           |> BackwardState.create_leaf)
-          model.backward.taint_in_taint_out
+          sink_taint
+        |> BackwardState.collapse
+        |> BackwardTaint.leaves
+        |> List.map ~f:Sinks.show
       in
-      { model.backward with taint_in_taint_out }
+      let expected =
+        List.map ~f:Sinks.show sinks
+      in
+      if not (SSet.equal (SSet.of_list actual) (SSet.of_list expected)) then
+        Format.sprintf
+          "Model for %s has wrong sinks for parameter %d: [%s] expected [%s]"
+          define_name
+          position
+          (String.concat ~sep:", " actual)
+          (String.concat ~sep:", " expected)
+        |> assert_failure
     in
-    { model with backward }
+    let expected_positions = List.map ~f:(fun { position; _ } -> position) taint_sink_parameters in
+    check_positions "sink" sink_taint expected_positions;
+    List.iter ~f:expect_sink_parameter taint_sink_parameters
   in
   let call_target = Callable.create_real (Access.create define_name) in
-  Taint.Result.empty_model
-  |> (fun model -> List.fold returns ~init:model ~f:expect_source_taint)
-  |> (fun model -> List.fold taint_sink_parameters ~init:model ~f:expect_sink_taint)
-  |> (fun model -> List.fold tito_parameters ~init:model ~f:expect_taint_in_taint_out)
-  |> (fun model -> { call_target; model })
-
+  match List.find models ~f:(fun model -> model.call_target = call_target) with
+  | None ->
+      Format.sprintf "Model for %s not found" define_name
+      |> assert_failure
+  | Some model ->
+      expect_source_taint model.model.forward.source_taint;
+      expect_sink_taint model.model.backward.sink_taint;
+      check_positions "tito" model.model.backward.taint_in_taint_out tito_parameters
 
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
@@ -184,7 +213,6 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
     List.iter2_exn ~f:(assert_error define1) error_patterns errors
   in
   let models = List.filter_map expect ~f:read_analysis_model in
-  let expect_models = List.map expect ~f:create_model in
   let results = List.filter_map expect ~f:read_analysis_result in
   let expect_results =
     let create_result_patterns { define_name; errors; _ } = define_name, errors in
@@ -192,15 +220,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   in
   assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
-  assert_equal
-    (List.length expect_models)
-    (List.length models)
-    ~msg:"Number of define outcomes"
-    ~printer:Int.to_string;
-  assert_equal
-    expect_models
-    models
-    ~printer:(fun model -> Sexp.to_string [%message (model: Model.t list)]);
+  List.iter ~f:(check_model_expectation models) expect;
   List.iter2_exn expect_results results ~f:assert_errors
 
 
@@ -236,14 +256,24 @@ let test_fixpoint _ =
           returns = [];
           taint_sink_parameters = [];
           tito_parameters = [];
-          errors = [{ code = 5001; pattern = ".*UserControlled.*RemoteCodeExecution" }];
+          errors = [
+            {
+              code = 5001;
+              pattern = ".*User controlled data may lead to remote code execution.*";
+            };
+          ]
         };
         {
           define_name = "match_flows";
           returns = [];
           taint_sink_parameters = [];
           tito_parameters = [];
-          errors = [{ code= 5002; pattern = ".*TestSource.*TestSink" }];
+          errors = [
+            {
+              code = 5002;
+              pattern = ".*Flow from test source to test sink.*";
+            }
+          ];
         };
         {
           define_name = "qux";
