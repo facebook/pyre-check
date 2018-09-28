@@ -38,7 +38,7 @@ let test_handle _ =
   let assert_handle ~absolute ~handle =
     let path = Path.create_absolute ~follow_symbolic_links:false in
     let configuration =
-      Configuration.create
+      Configuration.Analysis.create
         ~local_root:(path "/root")
         ~search_path:[path "/root/stubs"; path "/external"]
         ~typeshed:(path "/typeshed")

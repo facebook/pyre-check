@@ -18,7 +18,9 @@ exception NotRunning
 
 
 let stop ~local_root =
-  let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
+  let configuration =
+    Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
+  in
   try
     let in_channel, _ =
       match Socket.open_connection (Operations.socket_path configuration) with

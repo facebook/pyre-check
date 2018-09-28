@@ -15,7 +15,7 @@ open TypeCheck
 
 
 let initialize () =
-  Memory.get_heap_handle (Configuration.create ())
+  Memory.get_heap_handle (Configuration.Analysis.create ())
   |> ignore;
   Log.initialize_for_tests ();
   Statistics.disable ();
@@ -185,7 +185,8 @@ let parse_list named_sources =
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
   in
   Service.Parser.parse_sources
-    ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
+    ~configuration:(
+      Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
     ~scheduler:(Scheduler.mock ())
     ~files:(List.map ~f:create_file named_sources)
 
@@ -335,7 +336,7 @@ let bracket_tmpfile ?suffix context =
 
 (* Common type checking and analysis setup functions. *)
 let mock_configuration =
-  Configuration.create ()
+  Configuration.Analysis.create ()
 
 
 let typeshed_stubs = (* Yo dawg... *)
@@ -692,7 +693,7 @@ let assert_type_errors
         environment
       in
       let configuration =
-        Configuration.create ~debug ~strict ~declare ~infer ()
+        Configuration.Analysis.create ~debug ~strict ~declare ~infer ()
       in
       check_errors configuration environment ?mode_override source
     in

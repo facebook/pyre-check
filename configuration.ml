@@ -8,111 +8,115 @@ open Core
 open Pyre
 
 
-type t = {
-  start_time: float;
-  infer: bool;
-  recursive_infer: bool;
-  parallel: bool;
-  filter_directories: (Path.t list) option;
-  number_of_workers: int;
-  local_root: Path.t;
-  sections: string list;
-  debug: bool;
-  project_root: Path.t;
-  search_path: Path.t list;
-  typeshed: Path.t option;
-  verbose: bool;
-  expected_version: string option;
-  strict: bool;
-  declare: bool;
-  show_error_traces: bool;
-  log_identifier: string;
-  logger: string option;
-}
-[@@deriving show]
-
-
-let equal first second =
-  first.infer = second.infer &&
-  first.recursive_infer = second.recursive_infer &&
-  Option.equal (List.equal ~equal:Path.equal) first.filter_directories second.filter_directories &&
-  Path.equal first.local_root second.local_root &&
-  first.debug = second.debug &&
-  Path.equal first.project_root second.project_root &&
-  List.equal ~equal:Path.equal first.search_path second.search_path &&
-  Option.equal Path.equal first.typeshed second.typeshed &&
-  first.expected_version = second.expected_version &&
-  first.strict = second.strict &&
-  first.declare = second.declare
-
-
-let create
-    ?(start_time = Unix.time())
-    ?(infer = false)
-    ?(recursive_infer = false)
-    ?(parallel = true)
-    ?filter_directories
-    ?(number_of_workers = 4)
-    ?(local_root = Path.current_working_directory ())
-    ?(sections = [])
-    ?(project_root = Path.create_absolute "/")
-    ?(search_path = [])
-    ?typeshed
-    ?(verbose = false)
-    ?expected_version
-    ?(strict = false)
-    ?(declare = false)
-    ?(debug = false)
-    ?(show_error_traces = false)
-    ?(log_identifier = "")
-    ?logger
-    () =
-  {
-    start_time;
-    infer;
-    recursive_infer;
-    parallel;
-    filter_directories;
-    number_of_workers;
-    local_root;
-    sections;
-    debug;
-    project_root;
-    search_path;
-    typeshed;
-    verbose;
-    expected_version;
-    strict;
-    declare;
-    show_error_traces;
-    log_identifier;
-    logger;
+module Analysis = struct
+  type t = {
+    start_time: float;
+    infer: bool;
+    recursive_infer: bool;
+    parallel: bool;
+    filter_directories: (Path.t list) option;
+    number_of_workers: int;
+    local_root: Path.t;
+    sections: string list;
+    debug: bool;
+    project_root: Path.t;
+    search_path: Path.t list;
+    typeshed: Path.t option;
+    verbose: bool;
+    expected_version: string option;
+    strict: bool;
+    declare: bool;
+    show_error_traces: bool;
+    log_identifier: string;
+    logger: string option;
   }
+  [@@deriving show]
+
+  let equal first second =
+    first.infer = second.infer &&
+    first.recursive_infer = second.recursive_infer &&
+    Option.equal
+      (List.equal ~equal:Path.equal)
+      first.filter_directories
+      second.filter_directories &&
+    Path.equal first.local_root second.local_root &&
+    first.debug = second.debug &&
+    Path.equal first.project_root second.project_root &&
+    List.equal ~equal:Path.equal first.search_path second.search_path &&
+    Option.equal Path.equal first.typeshed second.typeshed &&
+    first.expected_version = second.expected_version &&
+    first.strict = second.strict &&
+    first.declare = second.declare
 
 
-let global =
-  ref None
+  let create
+      ?(start_time = Unix.time())
+      ?(infer = false)
+      ?(recursive_infer = false)
+      ?(parallel = true)
+      ?filter_directories
+      ?(number_of_workers = 4)
+      ?(local_root = Path.current_working_directory ())
+      ?(sections = [])
+      ?(project_root = Path.create_absolute "/")
+      ?(search_path = [])
+      ?typeshed
+      ?(verbose = false)
+      ?expected_version
+      ?(strict = false)
+      ?(declare = false)
+      ?(debug = false)
+      ?(show_error_traces = false)
+      ?(log_identifier = "")
+      ?logger
+      () =
+    {
+      start_time;
+      infer;
+      recursive_infer;
+      parallel;
+      filter_directories;
+      number_of_workers;
+      local_root;
+      sections;
+      debug;
+      project_root;
+      search_path;
+      typeshed;
+      verbose;
+      expected_version;
+      strict;
+      declare;
+      show_error_traces;
+      log_identifier;
+      logger;
+    }
 
 
-let set_global configuration =
-  global := Some configuration
+  let global: t option ref =
+    ref None
 
 
-let get_global () =
-  !global
+  let set_global configuration =
+    global := Some configuration
 
 
-let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict ~declare =
-  {
-    configuration with
-    debug = debug || local_debug;
-    strict = strict || local_strict;
-    declare;
-  }
+  let get_global () =
+    !global
 
 
-let pyre_root { local_root; _ } =
-  Path.append local_root ~element:".pyre"
+  let localize ({ debug; strict; _ } as configuration) ~local_debug ~local_strict ~declare =
+    {
+      configuration with
+      debug = debug || local_debug;
+      strict = strict || local_strict;
+      declare;
+    }
+
+
+  let pyre_root { local_root; _ } =
+    Path.append local_root ~element:".pyre"
+end
 
 
 module Server = struct
@@ -129,7 +133,7 @@ module Server = struct
     | Save of string
     | Load of load
 
-  type nonrec t = {
+  type t = {
     (* Server-specific configuration options *)
     socket_path: Path.t;
     socket_link: Path.t;
@@ -141,7 +145,7 @@ module Server = struct
     watchman_creation_timeout: float;
     saved_state: saved_state option;
     (* Analysis configuration *)
-    configuration: t;
+    configuration: Analysis.t;
   }
 
   (* Required to appease the compiler. *)
@@ -155,9 +159,9 @@ end
 
 
 module StaticAnalysis = struct
-  type nonrec t = {
+  type t = {
     result_json_path: Path.t option;
     (* Analysis configuration *)
-    configuration: t;
+    configuration: Analysis.t;
   }
 end

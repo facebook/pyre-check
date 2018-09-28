@@ -12,7 +12,7 @@ open Interprocedural
 open Statement
 
 
-let configuration = Configuration.create ()
+let configuration = Configuration.Analysis.create ()
 
 
 let environment ?(sources = []) ?(configuration = configuration) () =

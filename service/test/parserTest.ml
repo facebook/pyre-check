@@ -15,7 +15,7 @@ open Pyre
 
 let test_parse_stubs_modules_list _ =
   let root = Path.current_working_directory () in
-  let configuration = Configuration.create ~local_root:root () in
+  let configuration = Configuration.Analysis.create ~local_root:root () in
   let files =
     let create_stub_with_relative relative =
       File.create ~content:"def f()->int: ...\n" (Path.create_relative ~root ~relative)
@@ -36,7 +36,7 @@ let test_parse_stubs_modules_list _ =
   in
   let handles =
     Service.Parser.parse_sources
-      ~configuration:(Configuration.create ())
+      ~configuration:(Configuration.Analysis.create ())
       ~scheduler:(Scheduler.mock ())
       ~files
   in
@@ -103,7 +103,7 @@ let test_find_stubs context =
     write_file local_root "ttypes.pyi";
 
     Service.Parser.find_stubs
-      ~configuration:(Configuration.create ~local_root ~search_path:[module_root] ())
+      ~configuration:(Configuration.Analysis.create ~local_root ~search_path:[module_root] ())
     |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
@@ -129,7 +129,7 @@ let test_parse_typeshed context =
     write_file typeshed_root ".skipme/e.pyi";
 
     Service.Parser.find_stubs
-      ~configuration:(Configuration.create ~local_root ~typeshed:typeshed_root ())
+      ~configuration:(Configuration.Analysis.create ~local_root ~typeshed:typeshed_root ())
     |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
@@ -142,7 +142,7 @@ let test_parse_typeshed context =
 
 let test_parse_source _ =
   let root = Path.current_working_directory () in
-  let configuration = Configuration.create ~local_root:root () in
+  let configuration = Configuration.Analysis.create ~local_root:root () in
   let file =
     File.create
       ~content:"def foo()->int:\n    return 1\n"
@@ -150,7 +150,8 @@ let test_parse_source _ =
   in
   let handles =
     Service.Parser.parse_sources
-      ~configuration:(Configuration.create ~local_root:(Path.current_working_directory ()) ())
+      ~configuration:(
+        Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
       ~files:[file]
   in
@@ -207,7 +208,7 @@ let test_parse_sources context =
       ~src:((Path.absolute link_root) ^/ "seemingly_unrelated.pyi")
       ~dst:((Path.absolute local_root) ^/ "d.pyi");
 
-    let configuration = Configuration.create ~local_root ~search_path:[module_root] () in
+    let configuration = Configuration.Analysis.create ~local_root ~search_path:[module_root] () in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     let stubs =
       stubs
@@ -234,7 +235,7 @@ let test_parse_sources context =
   let local_root = Path.create_absolute (bracket_tmpdir context) in
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let stub_handles, source_handles =
-    let configuration = Configuration.create ~local_root ~search_path:[stub_root] () in
+    let configuration = Configuration.Analysis.create ~local_root ~search_path:[stub_root] () in
 
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
@@ -273,7 +274,9 @@ let test_parse_sources context =
 
 
 let test_register_modules _ =
-  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
+  let configuration =
+    Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
+  in
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
       File.handle ~configuration file
@@ -289,7 +292,9 @@ let test_register_modules _ =
     (* Build environment. *)
     Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier [file]);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
-    let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
+    let configuration =
+      Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
+    in
     let sources =
       Service.Parser.parse_sources
         ~configuration

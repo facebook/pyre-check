@@ -27,17 +27,17 @@ val process_type_query_request
   -> response
 val process_display_type_errors_request
   :  state: State.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> files: File.t list
   -> response
 val process_type_check_request
   :  state: State.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> request: Protocol.TypeCheckRequest.t
   -> response
 val process_get_definition_request
   :  state: State.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> request: Protocol.DefinitionRequest.t
   -> response
 

@@ -70,7 +70,7 @@ end
 (** Provides a default in-process environment handler constructed from an
     [Environment.t]. Use [Environment_service.handler] if interfacing from outside
     [Analysis]. *)
-val handler: t -> configuration: Configuration.t -> (module Handler)
+val handler: t -> configuration: Configuration.Analysis.t -> (module Handler)
 
 val resolution
   :  (module Handler)

@@ -25,7 +25,7 @@ let run is_parallel local_root () =
     raise (Invalid_argument (Format.asprintf "`%s` is not a directory" local_root));
 
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~parallel:is_parallel
       ~local_root:(Path.create_absolute local_root)
       ()

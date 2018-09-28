@@ -52,7 +52,7 @@ type t = {
 }
 [@@deriving compare, eq, show]
 
-val mode: t -> configuration: Configuration.t -> mode
+val mode: t -> configuration: Configuration.Analysis.t -> mode
 
 val create
   :  ?docstring: string option

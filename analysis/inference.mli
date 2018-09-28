@@ -12,7 +12,7 @@ module State : sig
   include module type of struct include TypeCheck.State end
 
   val initial_backward
-    :  ?configuration: Configuration.t
+    :  ?configuration: Configuration.Analysis.t
     -> Statement.Define.t Node.t
     -> forward: t
     -> t
@@ -30,7 +30,7 @@ val backward_fixpoint
   -> Fixpoint.t
 
 val infer
-  :  Configuration.t
+  :  Configuration.Analysis.t
   -> (module Environment.Handler)
   -> ?mode_override: Source.mode
   -> Source.t

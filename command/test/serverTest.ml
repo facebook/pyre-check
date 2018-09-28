@@ -103,7 +103,7 @@ let test_server_stops _ =
   Commands.Stop.stop ~local_root:"."
   |> ignore;
   let { Configuration.Server.socket_path; _ } =
-    Operations.create_configuration (Configuration.create ())
+    Operations.create_configuration (Configuration.Analysis.create ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
   CommandTest.with_timeout
@@ -139,7 +139,7 @@ let test_stop_handles_unix_errors context =
   |> ignore
 
 
-let configuration = Configuration.create ~infer:true ()
+let configuration = Configuration.Analysis.create ~infer:true ()
 
 
 let environment () =
@@ -1006,7 +1006,7 @@ let test_language_scheduler_definition context =
 let test_incremental_attribute_caching context =
   let directory = bracket_tmpdir context |> Path.create_absolute in
   let configuration =
-    Configuration.create ~local_root:directory ~project_root:directory ()
+    Configuration.Analysis.create ~local_root:directory ~project_root:directory ()
   in
   let server_configuration = Operations.create_configuration configuration in
   let environment =

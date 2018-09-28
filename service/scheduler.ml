@@ -21,7 +21,7 @@ let entry =
 
 
 let create
-    ~configuration:({ Configuration.parallel; number_of_workers; _ } as configuration)
+    ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
     ?(bucket_multiplier = 10)
     () =
   let heap_handle = Memory.get_heap_handle configuration in
@@ -38,9 +38,11 @@ let create
   { workers; number_of_workers; bucket_multiplier; is_parallel = parallel }
 
 
-let run_process ~configuration:({ Configuration.verbose; sections; _ } as configuration) process =
+let run_process
+    ~configuration:({ Configuration.Analysis.verbose; sections; _ } as configuration)
+    process =
   Log.initialize ~verbose ~sections;
-  Configuration.set_global configuration;
+  Configuration.Analysis.set_global configuration;
   try
     let result = process () in
     Statistics.flush ();
@@ -110,7 +112,7 @@ let single_job { workers; _ } ~f work =
 
 
 let mock () =
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   Memory.get_heap_handle configuration |> ignore;
   { workers = []; number_of_workers = 1; bucket_multiplier = 1; is_parallel = false }
 

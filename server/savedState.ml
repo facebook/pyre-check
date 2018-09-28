@@ -17,7 +17,7 @@ exception IncompatibleState of string
 let load
     ~server_configuration:{
     Configuration.Server.configuration = ({
-        Configuration.expected_version;
+        Configuration.Analysis.expected_version;
         project_root;
         _;
       } as configuration);
@@ -79,7 +79,7 @@ let load
 
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let old_configuration = EnvironmentSharedMemory.StoredConfiguration.find_unsafe "configuration" in
-  if not (Configuration.equal old_configuration configuration) then
+  if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
 
   Log.info "Reanalyzing %d files which have been modified." (List.length changed_files);

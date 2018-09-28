@@ -147,7 +147,7 @@ let handler
       globals;
       dependencies;
     }
-    ~configuration:{ Configuration.infer; _ } =
+    ~configuration:{ Configuration.Analysis.infer; _ } =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
 
   (module struct

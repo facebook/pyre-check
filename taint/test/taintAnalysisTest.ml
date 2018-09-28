@@ -62,7 +62,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   TypeCheck.check configuration environment source |> ignore;
   let call_graph =
     Service.StaticAnalysis.record_and_merge_call_graph
@@ -168,7 +168,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let call_graph, all_callables = create_call_graph source in
   let caller_map = CallGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   let iterations =
     Analysis.compute_fixpoint
       ~configuration

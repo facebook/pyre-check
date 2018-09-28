@@ -7,7 +7,7 @@ include module type of Hack_parallel.Std.SharedMem
   with type handle = Hack_parallel.Std.SharedMem.handle
 
 
-val get_heap_handle: Configuration.t -> handle
+val get_heap_handle: Configuration.Analysis.t -> handle
 
 val worker_garbage_control: Gc.control
 

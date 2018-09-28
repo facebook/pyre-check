@@ -9,8 +9,8 @@ open! Test  (* Suppresses logging. *)
 
 
 let () =
-  let configuration = Configuration.create () in
-  Configuration.set_global configuration
+  let configuration = Configuration.Analysis.create () in
+  Configuration.Analysis.set_global configuration
 
 
 let test_request_sample_format _ =

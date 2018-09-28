@@ -93,7 +93,7 @@ let undefined_attribute actual =
   }
 
 
-let configuration = Configuration.create ()
+let configuration = Configuration.Analysis.create ()
 
 
 let test_due_to_analysis_limitations _ =

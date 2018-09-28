@@ -102,7 +102,7 @@ let parse_query ~root query =
 
 let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
-  let configuration = Configuration.create ~local_root () in
+  let configuration = Configuration.Analysis.create ~local_root () in
   (fun () ->
      let response =
        try

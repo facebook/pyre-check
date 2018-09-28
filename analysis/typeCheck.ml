@@ -9,7 +9,6 @@ open Pyre
 
 open Ast
 open Expression
-open Configuration
 open Statement
 
 module Error = AnalysisError
@@ -19,7 +18,7 @@ module State = struct
   type nested_define = Define.t
 
   and t = {
-    configuration: Configuration.t;
+    configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
     errors: Error.t Location.Reference.Map.t;
     define: Define.t Node.t;
@@ -111,7 +110,7 @@ module State = struct
 
 
   let create
-      ?(configuration = Configuration.create ())
+      ?(configuration = Configuration.Analysis.create ())
       ?(bottom = false)
       ~resolution
       ~define
@@ -405,7 +404,7 @@ module State = struct
 
 
   let rec initial
-      ?(configuration = Configuration.create ())
+      ?(configuration = Configuration.Analysis.create ())
       ~resolution
       ({
         Node.location;
@@ -2181,7 +2180,7 @@ let check
             | None -> name
           in
           Path.create_relative
-            ~root:(Configuration.pyre_root configuration)
+            ~root:(Configuration.Analysis.pyre_root configuration)
             ~relative:(Format.asprintf "cfgs%a.dot" Access.pp name)
           |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
           |> File.write

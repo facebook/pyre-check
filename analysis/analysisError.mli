@@ -194,7 +194,7 @@ val join_at_define
 
 val join_at_source: resolution: Resolution.t -> t list -> t list
 
-val filter: configuration: Configuration.t -> resolution: Resolution.t -> t list -> t list
+val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t -> t list -> t list
 val suppress: mode: Source.mode -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t

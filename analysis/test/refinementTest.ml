@@ -13,7 +13,7 @@ open Test
 
 
 let resolution =
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   Environment.Builder.create ()
   |> Environment.handler ~configuration
   |> fun handler -> Environment.resolution handler ()

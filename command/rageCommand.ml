@@ -27,7 +27,9 @@ let run_rage local_root () =
     "Actual binary version: %s\nBinary build info: %s\n"
     (Version.version ())
     (Version.build_info ());
-  let configuration = Configuration.create ~local_root:(Path.create_absolute local_root) () in
+  let configuration =
+    Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
+  in
   let logs = get_watchman_watched_directories () :: Service.Rage.get_logs configuration in
   List.iter ~f:display_log logs
 

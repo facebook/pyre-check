@@ -6,10 +6,14 @@
 open Analysis
 
 
-val register_ignores: configuration: Configuration.t -> Scheduler.t -> File.Handle.t list -> unit
+val register_ignores
+  :  configuration: Configuration.Analysis.t
+  -> Scheduler.t
+  -> File.Handle.t list
+  -> unit
 
 val ignore
-  :  configuration: Configuration.t
+  :  configuration: Configuration.Analysis.t
   -> Scheduler.t
   -> File.Handle.t list
   -> Error.t list

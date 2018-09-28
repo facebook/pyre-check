@@ -18,14 +18,14 @@ type version_mismatch = {
 
 exception ServerNotRunning
 
-val socket_path: ?create: bool -> Configuration.t -> Path.t
+val socket_path: ?create: bool -> Configuration.Analysis.t -> Path.t
 
 val create_configuration :
   ?daemonize: bool ->
   ?log_path: PyrePath.t ->
   ?use_watchman: bool ->
   ?saved_state: Configuration.Server.saved_state ->
-  Configuration.t ->
+  Configuration.Analysis.t ->
   Configuration.Server.t
 
 exception ConnectionFailure
@@ -44,4 +44,4 @@ val stop
   -> socket: Unix.File_descr.t
   -> unit
 
-val connect: retries: int -> configuration: Configuration.t -> Socket.t
+val connect: retries: int -> configuration: Configuration.Analysis.t -> Socket.t

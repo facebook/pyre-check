@@ -38,7 +38,7 @@ let run_analysis
     >>| List.map ~f:Path.create_absolute
   in
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~verbose
       ?expected_version
       ~sections

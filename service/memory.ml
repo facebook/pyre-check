@@ -61,7 +61,7 @@ let initialize log_level =
       configuration
 
 
-let get_heap_handle { Configuration.debug; _ } =
+let get_heap_handle { Configuration.Analysis.debug; _ } =
   let log_level =
     if debug then
       1

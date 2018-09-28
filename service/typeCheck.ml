@@ -27,7 +27,7 @@ type analyze_source_results = {
 let analyze_sources
     ~scheduler
     ~configuration:({
-        Configuration.project_root;
+        Configuration.Analysis.project_root;
         filter_directories;
         _;
       } as configuration)
@@ -35,7 +35,7 @@ let analyze_sources
     ~handles =
   let open Analysis in
   let analyze_source
-      ~configuration:({ Configuration.infer; _ } as configuration)
+      ~configuration:({ Configuration.Analysis.infer; _ } as configuration)
       ~environment
       ~source:({ Source.handle; metadata; _ } as source) =
     let open Analysis in
@@ -50,7 +50,7 @@ let analyze_sources
       | _ -> false, false
     in
     let configuration =
-      Configuration.localize
+      Configuration.Analysis.localize
         configuration
         ~local_debug:debug
         ~local_strict
@@ -183,7 +183,7 @@ let analyze_sources
 let check
     ~scheduler:original_scheduler
     ~configuration:({
-        Configuration.project_root;
+        Configuration.Analysis.project_root;
         local_root;
         search_path;
         typeshed;

@@ -117,7 +117,9 @@ module Set = Set.Make(struct
 
 exception NonexistentHandle of string
 
-let handle ~configuration:{ Configuration.local_root; search_path; typeshed; _ } { path; _ } =
+let handle
+    ~configuration:{ Configuration.Analysis.local_root; search_path; typeshed; _ }
+    { path; _ } =
   (* Have an ordering of search_path > typeshed > local_root with the parser. search_path precedes
    * local_root due to the possibility of having a subdirectory of the root in the search path. *)
   let possible_roots =

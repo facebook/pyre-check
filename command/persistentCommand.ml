@@ -105,7 +105,7 @@ let communicate server_socket =
 let run_command expected_version log_identifier local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~local_root
       ~log_identifier
       ?expected_version
@@ -115,7 +115,7 @@ let run_command expected_version log_identifier local_root () =
      (* Log stderr to file *)
      let log_path =
        let persistent_client_directory =
-         Configuration.pyre_root configuration
+         Configuration.Analysis.pyre_root configuration
          |> Path.append ~element:"persistent"
          |> Path.absolute
        in

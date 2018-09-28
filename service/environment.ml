@@ -91,7 +91,7 @@ let build
     begin
       let type_order_file =
         Path.create_relative
-          ~root:(Configuration.pyre_root configuration)
+          ~root:(Configuration.Analysis.pyre_root configuration)
           ~relative:"type_order.dot"
       in
       let (module Handler: Environment.Handler) = handler in

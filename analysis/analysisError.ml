@@ -1315,7 +1315,7 @@ let filter ~configuration ~resolution errors =
     is_override_on_dunder_method error
   in
   match configuration with
-  | { Configuration.debug = true; _ } -> errors
+  | { Configuration.Analysis.debug = true; _ } -> errors
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 

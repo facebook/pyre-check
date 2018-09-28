@@ -14,7 +14,7 @@ open Inference
 open Test
 
 
-let configuration = Configuration.create ~infer:true ()
+let configuration = Configuration.Analysis.create ~infer:true ()
 
 
 let create
@@ -387,7 +387,7 @@ let assert_infer
        ~f:fields_of_error
        (check_errors
           ~mode_override:Source.Infer
-          (Configuration.create ~debug ~infer ~recursive_infer ()) environment source)
+          (Configuration.Analysis.create ~debug ~infer ~recursive_infer ()) environment source)
      |> List.concat
      |> List.map ~f:to_string)
 

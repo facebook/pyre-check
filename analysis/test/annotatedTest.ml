@@ -11,7 +11,7 @@ open Test
 
 
 let configuration =
-  Configuration.create ()
+  Configuration.Analysis.create ()
 
 
 let populate_with_sources sources =

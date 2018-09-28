@@ -14,12 +14,12 @@ type result = {
 
 val analyze_sources
   :  scheduler: Scheduler.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list
   -> Error.t list * Coverage.t
 
 val check
   :  scheduler: Scheduler.t option
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> result

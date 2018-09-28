@@ -12,7 +12,7 @@ open Pyre
 open Test
 
 
-let configuration = Configuration.create ()
+let configuration = Configuration.Analysis.create ()
 
 
 let show_location { Location.path; start; stop } =
@@ -35,7 +35,7 @@ let generate_lookup source =
       ~handle:"test.py" source
     |> Preprocessing.preprocess
   in
-  let configuration = Configuration.create ~debug:true ~infer:false () in
+  let configuration = Configuration.Analysis.create ~debug:true ~infer:false () in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [parsed];
   TypeCheck.check configuration environment parsed |> ignore;

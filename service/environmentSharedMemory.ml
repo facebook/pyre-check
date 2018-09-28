@@ -147,7 +147,7 @@ module OrderKeyValue = struct
 end
 
 module ConfigurationValue = struct
-  type t = Configuration.t
+  type t = Configuration.Analysis.t
   let prefix = Prefix.make ()
   let description = "Configuration"
 end

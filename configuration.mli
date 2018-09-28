@@ -5,59 +5,60 @@
 
 open Pyre
 
+module Analysis: sig
+  type t = {
+    start_time: float;
+    infer: bool;
+    recursive_infer: bool;
+    parallel: bool;
+    filter_directories: (Path.t list) option;
+    number_of_workers: int;
+    local_root: Path.t;
+    sections: string list;
+    debug: bool;
+    project_root: Path.t;
+    search_path: Path.t list;
+    typeshed: Path.t option;
+    verbose: bool;
+    expected_version: string option;
+    strict: bool;
+    declare: bool;
+    show_error_traces: bool;
+    log_identifier: string;
+    logger: string option;
+  }
+  [@@deriving show, eq]
 
-type t = {
-  start_time: float;
-  infer: bool;
-  recursive_infer: bool;
-  parallel: bool;
-  filter_directories: (Path.t list) option;
-  number_of_workers: int;
-  local_root: Path.t;
-  sections: string list;
-  debug: bool;
-  project_root: Path.t;
-  search_path: Path.t list;
-  typeshed: Path.t option;
-  verbose: bool;
-  expected_version: string option;
-  strict: bool;
-  declare: bool;
-  show_error_traces: bool;
-  log_identifier: string;
-  logger: string option;
-}
-[@@deriving show, eq]
+  val create
+    :  ?start_time: float
+    -> ?infer: bool
+    -> ?recursive_infer: bool
+    -> ?parallel: bool
+    -> ?filter_directories: Path.t list
+    -> ?number_of_workers: int
+    -> ?local_root: Path.t
+    -> ?sections: string list
+    -> ?project_root: Path.t
+    -> ?search_path: Path.t list
+    -> ?typeshed: Path.t
+    -> ?verbose: bool
+    -> ?expected_version: string
+    -> ?strict: bool
+    -> ?declare: bool
+    -> ?debug: bool
+    -> ?show_error_traces: bool
+    -> ?log_identifier: string
+    -> ?logger: string
+    -> unit
+    -> t
 
-val create
-  :  ?start_time: float
-  -> ?infer: bool
-  -> ?recursive_infer: bool
-  -> ?parallel: bool
-  -> ?filter_directories: Path.t list
-  -> ?number_of_workers: int
-  -> ?local_root: Path.t
-  -> ?sections: string list
-  -> ?project_root: Path.t
-  -> ?search_path: Path.t list
-  -> ?typeshed: Path.t
-  -> ?verbose: bool
-  -> ?expected_version: string
-  -> ?strict: bool
-  -> ?declare: bool
-  -> ?debug: bool
-  -> ?show_error_traces: bool
-  -> ?log_identifier: string
-  -> ?logger: string
-  -> unit
-  -> t
+  val set_global: t -> unit
+  val get_global: unit -> t option
 
-val set_global: t -> unit
-val get_global: unit -> t option
+  val localize: t -> local_debug: bool -> local_strict: bool -> declare: bool -> t
 
-val localize: t -> local_debug: bool -> local_strict: bool -> declare: bool -> t
-
-val pyre_root: t -> Path.t
+  val pyre_root: t -> Path.t
+end
 
 module Server: sig
   type load_parameters = {
@@ -73,7 +74,7 @@ module Server: sig
     | Save of string
     | Load of load
 
-  type nonrec t = {
+  type t = {
     (* Server-specific configuration options *)
     socket_path: Path.t;
     socket_link: Path.t;
@@ -85,7 +86,7 @@ module Server: sig
     watchman_creation_timeout: float;
     saved_state: saved_state option;
     (* Analysis configuration *)
-    configuration: t;
+    configuration: Analysis.t;
   }
 
   val set_global: t -> unit
@@ -93,9 +94,9 @@ module Server: sig
 end
 
 module StaticAnalysis: sig
-  type nonrec t = {
+  type t = {
     result_json_path: Path.t option;
     (* Analysis configuration *)
-    configuration: t;
+    configuration: Analysis.t;
   }
 end

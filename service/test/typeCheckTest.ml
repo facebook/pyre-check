@@ -12,7 +12,7 @@ open Test
 
 let assert_errors ?filter_directories ~root ~files errors =
   let configuration =
-    Configuration.create ?filter_directories ~project_root:root ~local_root:root ()
+    Configuration.Analysis.create ?filter_directories ~project_root:root ~local_root:root ()
   in
   let scheduler = Scheduler.mock () in
   let add_file file =

@@ -9,7 +9,7 @@ open Pyre
 
 
 type state = {
-  configuration: Configuration.t;
+  configuration: Configuration.Analysis.t;
   watchman_directory: Path.t;
   symlinks: Path.t Path.Map.t;
 }

@@ -12,7 +12,7 @@ open Expression
 open Test
 
 
-let configuration = Configuration.create ()
+let configuration = Configuration.Analysis.create ()
 
 
 let populate source =

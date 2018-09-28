@@ -141,14 +141,14 @@ let start
           (* Fall back to starting from scratch if we can't load a saved state. *)
           with SavedState.IncompatibleState reason ->
             Log.warning "Unable to load saved state, falling back to a full start.";
-              Statistics.event
-                ~name:"saved state failure"
-                ~normals:["reason", reason]
-                ();
+            Statistics.event
+              ~name:"saved state failure"
+              ~normals:["reason", reason]
+              ();
             start_from_scratch ?old_state ~lock ~connections ~configuration ()
         end
-      | _ ->
-          start_from_scratch ?old_state ~lock ~connections ~configuration ()
+    | _ ->
+        start_from_scratch ?old_state ~lock ~connections ~configuration ()
   in
   begin
     match saved_state with
@@ -199,7 +199,9 @@ let stop
   exit 0
 
 
-let connect ~retries ~configuration:({ Configuration.expected_version; _ } as configuration) =
+let connect
+    ~retries
+    ~configuration:({ Configuration.Analysis.expected_version; _ } as configuration) =
   let rec connect attempt =
     if attempt >= retries then begin
       Log.error "Could not connect to server after %d retries" attempt;

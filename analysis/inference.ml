@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Configuration
 open Expression
 open Pyre
 open Statement
@@ -20,7 +19,7 @@ module State = struct
 
 
   let initial_backward
-      ?(configuration = Configuration.create ())
+      ?(configuration = Configuration.Analysis.create ())
       define
       ~forward:{ resolution; errors; _ } =
     let expected_return =

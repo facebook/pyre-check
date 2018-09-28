@@ -16,7 +16,7 @@ module Time = Core_kernel.Time_ns.Span
 
 
 type state = {
-  configuration: Configuration.t;
+  configuration: Configuration.Analysis.t;
   watchman_directory: Path.t;
   symlinks: Path.t Path.Map.t;
 }
@@ -107,7 +107,7 @@ let set_symlink ({ configuration = { local_root; search_path; _ }; symlinks; _ }
 
 let process_response
     ({
-      configuration = { Configuration.local_root = root; _ };
+      configuration = { Configuration.Analysis.local_root = root; _ };
       watchman_directory;
       _;
     } as state)
@@ -165,7 +165,7 @@ let process_response
 let listen_for_changed_files
     server_socket
     watchman_directory
-    ({ Configuration.local_root; _ } as configuration) =
+    ({ Configuration.Analysis.local_root; _ } as configuration) =
   let symlinks =
     Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
     |> build_symlink_map
@@ -255,7 +255,7 @@ let initialize watchman_directory configuration =
 
 
 type run_watchman_daemon_entry =
-  (Configuration.t, unit Daemon.in_channel, unit Daemon.out_channel) Daemon.entry
+  (Configuration.Analysis.t, unit Daemon.in_channel, unit Daemon.out_channel) Daemon.entry
 
 
 let setup configuration pid =
@@ -271,20 +271,20 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
   Daemon.register_entry_point
     "watchman_daemon"
     (fun
-      ({ Configuration.project_root; _ } as configuration)
+      ({ Configuration.Analysis.project_root; _ } as configuration)
       (parent_in_channel, parent_out_channel) ->
-       Daemon.close_in parent_in_channel;
-       Daemon.close_out parent_out_channel;
-       (* Detach from a controlling terminal *)
-       Unix.Terminal_io.setsid () |> ignore;
-       setup configuration (Unix.getpid () |> Pid.to_int);
-       let watchman_directory = Path.search_upwards ~target:".watchmanconfig" ~root:project_root in
-       match watchman_directory with
-       | None ->
-           exit 1
-       | Some watchman_directory ->
-           let server_socket = initialize watchman_directory configuration in
-           listen_for_changed_files server_socket watchman_directory configuration)
+      Daemon.close_in parent_in_channel;
+      Daemon.close_out parent_out_channel;
+      (* Detach from a controlling terminal *)
+      Unix.Terminal_io.setsid () |> ignore;
+      setup configuration (Unix.getpid () |> Pid.to_int);
+      let watchman_directory = Path.search_upwards ~target:".watchmanconfig" ~root:project_root in
+      match watchman_directory with
+      | None ->
+          exit 1
+      | Some watchman_directory ->
+          let server_socket = initialize watchman_directory configuration in
+          listen_for_changed_files server_socket watchman_directory configuration)
 
 let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_root =
   try
@@ -295,7 +295,7 @@ let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_
       |> Option.value ~default:local_root
     in
     let configuration =
-      Configuration.create
+      Configuration.Analysis.create
         ~verbose
         ~sections
         ~local_root

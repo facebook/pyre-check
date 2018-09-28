@@ -38,8 +38,10 @@ let test_watchman_exists context =
            ~relative:".watchmanconfig"))
   then
     Out_channel.write_all ".watchmanconfig" ~data:"{}";
-  let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
-  let watchman_root = (Configuration.pyre_root configuration) ^| "watchman" in
+  let configuration =
+    Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
+  in
+  let watchman_root = (Configuration.Analysis.pyre_root configuration) ^| "watchman" in
   let pid_path = watchman_root ^| "watchman.pid" in
   let lock_path = watchman_root ^| "watchman.lock" in
   let set_up _ =
@@ -107,7 +109,7 @@ let test_watchman_client context =
     |> ignore
   in
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~local_root:root
       ()
   in
@@ -164,7 +166,7 @@ let test_different_root context =
   Out_channel.write_all ~data:"" (root ^ "/search/stub.py");
   let local_root = Path.create_absolute (root ^ "/files") in
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~local_root
       ~search_path:[Path.create_absolute (root ^ "/search")]
       ()

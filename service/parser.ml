@@ -127,7 +127,7 @@ let log_parse_errors_count ~not_parsed ~description =
 
 
 let find_stubs
-    ~configuration:{ Configuration.local_root; typeshed; search_path; _ } =
+    ~configuration:{ Configuration.Analysis.local_root; typeshed; search_path; _ } =
   let paths =
     let stubs =
       let typeshed_directories =
@@ -203,7 +203,7 @@ let find_stubs
   paths
 
 
-let find_sources ?(filter = fun _ -> true) { Configuration.local_root; _ } =
+let find_sources ?(filter = fun _ -> true) { Configuration.Analysis.local_root; _ } =
   let filter path = String.is_suffix ~suffix:".py" path && filter path in
   Path.list ~filter ~root:local_root
 
@@ -214,7 +214,7 @@ type result = {
 }
 
 
-let parse_all scheduler ~configuration:({ Configuration.local_root; _ } as configuration) =
+let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration) =
   let stubs =
     let timer = Timer.start () in
     let stub_paths = find_stubs ~configuration in

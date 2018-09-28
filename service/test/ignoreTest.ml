@@ -43,7 +43,7 @@ let assert_errors
     expected_errors =
   let root = Path.current_working_directory () in
   let configuration =
-    Configuration.create ~local_root:root ~project_root:(Path.create_absolute "/") ()
+    Configuration.Analysis.create ~local_root:root ~project_root:(Path.create_absolute "/") ()
   in
   let scheduler = Scheduler.mock () in
   let handles =

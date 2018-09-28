@@ -45,7 +45,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
 
 let initialize sources =
   let configuration =
-    Configuration.create
+    Configuration.Analysis.create
       ~project_root:(Path.current_working_directory ())
       ()
   in
@@ -171,7 +171,9 @@ let test_process_display_type_errors_request _ =
           ~errors:(serialized_errors errors |> File.Handle.Table.of_alist_exn)
           ()
       in
-      let configuration = Configuration.create ~local_root:(Path.current_working_directory ()) () in
+      let configuration =
+        Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
+      in
       let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
       Request.process_display_type_errors_request ~state ~configuration ~files
       |> function

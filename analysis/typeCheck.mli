@@ -36,7 +36,7 @@ module State : sig
      The join takes the union of keys and does an element-wise join on the
      values. *)
   and t = {
-    configuration: Configuration.t;
+    configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
     errors: Error.t Location.Reference.Map.t;
     define: Define.t Node.t;
@@ -47,7 +47,7 @@ module State : sig
   [@@deriving eq, show]
 
   val create
-    :  ?configuration: Configuration.t
+    :  ?configuration: Configuration.Analysis.t
     -> ?bottom: bool
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
@@ -59,7 +59,7 @@ module State : sig
   val coverage: t -> Coverage.t
 
   val initial
-    :  ?configuration: Configuration.t
+    :  ?configuration: Configuration.Analysis.t
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
@@ -87,7 +87,7 @@ module Result : sig
 end
 
 val check
-  :  Configuration.t
+  :  Configuration.Analysis.t
   -> (module Environment.Handler)
   -> ?mode_override: Source.mode
   -> Source.t

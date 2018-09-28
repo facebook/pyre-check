@@ -14,7 +14,7 @@ val one_analysis_pass:
 
 (* Returns number of iterations. *)
 val compute_fixpoint
-  :  configuration:Configuration.t
+  :  configuration:Configuration.Analysis.t
   -> scheduler:Scheduler.t
   -> analyses:Kind.abstract list
   -> caller_map:Analysis.CallGraph.t
@@ -26,6 +26,6 @@ val summaries: Callable.t -> Yojson.Safe.json list
 
 val extract_errors:
   Scheduler.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.Analysis.t
   -> Callable.t list
   -> InterproceduralError.t list

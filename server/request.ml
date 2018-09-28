@@ -10,7 +10,7 @@ open Analysis
 open Network
 
 open State
-open Configuration
+open Configuration.Analysis
 open Configuration.Server
 open Protocol
 open Request

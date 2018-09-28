@@ -26,7 +26,7 @@ let value option =
   Option.value_exn option
 
 
-let configuration = Configuration.create ~infer:true ()
+let configuration = Configuration.Analysis.create ~infer:true ()
 
 
 let plain_populate sources =
@@ -1378,7 +1378,7 @@ let test_purge _ =
 
 let test_infer_protocols _ =
   let open Analysis in
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   let type_sources = Test.typeshed_stubs in
   let assert_protocols ?classes_to_infer source expected_edges =
     let expected_edges =

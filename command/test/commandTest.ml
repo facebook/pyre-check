@@ -23,7 +23,7 @@ let mock_analysis_configuration
     ?(local_root = Path.current_working_directory ())
     ?expected_version
     () =
-  Configuration.create
+  Configuration.Analysis.create
     ~debug:false
     ~parallel:false
     ?expected_version
@@ -46,7 +46,7 @@ let start_server ?(local_root = Path.current_working_directory ()) ?expected_ver
 
 
 let environment () =
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   let environment = Environment.Builder.create () in
   Service.Environment.populate
     (Environment.handler ~configuration environment)
@@ -59,7 +59,7 @@ let environment () =
 
 
 let make_errors ?handle ?qualifier source =
-  let configuration = Configuration.create () in
+  let configuration = Configuration.Analysis.create () in
   let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
   let environment_handler = Environment.handler ~configuration (environment ()) in
   Service.Environment.populate environment_handler [source];
@@ -129,7 +129,7 @@ let poll_for_deletion path =
 
 let stop_server {
     Configuration.Server.configuration = {
-      Configuration.local_root;
+      Configuration.Analysis.local_root;
       _;
     };
     socket_path;

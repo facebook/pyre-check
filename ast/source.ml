@@ -196,14 +196,14 @@ type t = {
 
 let mode source ~configuration =
   match configuration, source with
-  | { Configuration.infer = true; _ }, _ ->
+  | { Configuration.Analysis.infer = true; _ }, _ ->
       Infer
 
-  | { Configuration.strict = true; _ }, _
+  | { Configuration.Analysis.strict = true; _ }, _
   | _, { metadata = { Metadata.local_mode = Strict; _ }; _ } ->
       Strict
 
-  | { Configuration.declare = true; _ }, _
+  | { Configuration.Analysis.declare = true; _ }, _
   | _, { metadata = { Metadata.local_mode = Declare; _ }; _ } ->
       Declare
 

@@ -28,7 +28,7 @@ let sample
     ?(normals = [])
     ?(metadata = true)
     () =
-  let open Configuration in
+  let open Configuration.Analysis in
   let local_root, start_time, log_identifier =
     match get_global () with
     | Some { local_root; start_time; log_identifier; _ } ->
@@ -101,8 +101,8 @@ let sample
 
 let flush () =
   let flush_category ~key ~data =
-    Configuration.get_global ()
-    >>= (fun { Configuration.logger = logger; _ } -> logger)
+    Configuration.Analysis.get_global ()
+    >>= (fun { Configuration.Analysis.logger = logger; _ } -> logger)
     >>| (fun logger -> Format.sprintf "%s %s" logger key)
     >>| (fun command ->
         let out_channel = Unix.open_process_out command in

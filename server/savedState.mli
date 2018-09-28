@@ -13,7 +13,7 @@ val load
   -> State.t
 
 val save
-  :  configuration: Configuration.t
+  :  configuration: Configuration.Analysis.t
   -> errors: (Analysis.Error.t list) File.Handle.Table.t
   -> saved_state_path: string
   -> unit
