@@ -5377,6 +5377,27 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
       "The overriding method is not annotated but should return a subtype of `int`.";
     ];
+
+  (* Starred arguments. *)
+  assert_type_errors
+    {|
+      class C:
+        def f(self, *args: int) -> None: ...
+      class D(C):
+        def f(self, *args: int) -> None: ...
+    |}
+    [];
+
+  (* Keyword arguments. *)
+  assert_type_errors
+    {|
+      class C:
+        def f(self, **kwargs: str) -> None: ...
+      class D(C):
+        def f(self, **kwargs: str) -> None: ...
+    |}
+    [];
+
   (* TODO(T29679691): We should also warn when parameter annotations are missing. *)
   assert_type_errors
     ~strict:false

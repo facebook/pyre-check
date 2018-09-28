@@ -1664,7 +1664,7 @@ module Callable = struct
       | Anonymous { index; _ } -> Identifier.create (Format.sprintf "$%d" index)
       | Named { name; _ } -> Identifier.create (Access.show name)
       | Variable { name; _ } -> Identifier.create ("*" ^ (Access.show name))
-      | Keywords { name; _ } -> Identifier.create ("*" ^ (Access.show name))
+      | Keywords { name; _ } -> Identifier.create ("**" ^ (Access.show name))
 
 
     let annotation = function
