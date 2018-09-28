@@ -30,7 +30,7 @@ val add_models: model_source: string -> unit
 val analyze
   :  ?taint_models_directory: string
   -> scheduler: Scheduler.t
-  -> configuration: Configuration.t
+  -> configuration: Configuration.StaticAnalysis.t
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list
   -> unit

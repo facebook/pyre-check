@@ -91,3 +91,11 @@ module Server: sig
   val set_global: t -> unit
   val get_global: unit -> t option
 end
+
+module StaticAnalysis: sig
+  type nonrec t = {
+    result_json_path: Path.t option;
+    (* Analysis configuration *)
+    configuration: t;
+  }
+end

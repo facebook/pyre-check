@@ -11,6 +11,7 @@ open Pyre
 let run_analysis
     _taint
     taint_models_directory
+    result_json_path
     verbose
     expected_version
     sections
@@ -58,6 +59,10 @@ let run_analysis
       ~local_root:(Path.create_absolute local_root)
       ()
   in
+  let result_json_path =
+    result_json_path
+    >>| Path.create_absolute ~follow_symbolic_links:false
+  in
   (fun () ->
      let timer = Timer.start () in
      let bucket_multiplier =
@@ -71,7 +76,7 @@ let run_analysis
        Service.StaticAnalysis.analyze
          ?taint_models_directory
          ~scheduler
-         ~configuration
+         ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path }
          ~environment
          ~handles
          ()
@@ -110,5 +115,9 @@ let command =
         "-taint-models"
         (optional file)
         ~doc:"directory A directory containing models to introduce taint."
+      +> flag
+        "-save-results-to"
+        (optional file)
+        ~doc:"file A JSON file that Pyre Analyze will save its' results to."
       ++ Specification.base_command_line_arguments)
     run_analysis

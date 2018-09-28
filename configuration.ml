@@ -152,3 +152,12 @@ module Server = struct
 
   let get_global () = !global
 end
+
+
+module StaticAnalysis = struct
+  type nonrec t = {
+    result_json_path: Path.t option;
+    (* Analysis configuration *)
+    configuration: t;
+  }
+end

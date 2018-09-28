@@ -86,7 +86,13 @@ let add_models ~model_source =
   List.iter models ~f:add_model_to_memory
 
 
-let analyze ?taint_models_directory ~scheduler ~configuration ~environment ~handles:paths () =
+let analyze
+    ?taint_models_directory
+    ~scheduler
+    ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path = _ }
+    ~environment
+    ~handles:paths
+    () =
   (* Add models *)
   let () =
     match taint_models_directory with
