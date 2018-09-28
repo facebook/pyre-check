@@ -33,6 +33,7 @@ def mock_arguments(
     arguments.save_initial_state_to = save_initial_state_to
     arguments.load_initial_state_from = load_initial_state_from
     arguments.changed_files_path = changed_files_path
+    arguments.save_results_to = None
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.show_parse_errors = False

@@ -46,6 +46,10 @@ def main() -> int:
             raise EnvironmentException("%s is not an executable file" % file_path)
         return file_path
 
+    def writable_path(path: str) -> str:
+        assert_readable_directory(os.path.dirname(path))
+        return path
+
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -189,6 +193,12 @@ def main() -> int:
         default=None,
         type=readable_directory,
         help="Location of taint models",
+    )
+    analyze.add_argument(
+        "--save-results-to",
+        default=None,
+        type=writable_path,
+        help="JSON file to write analysis results to.",
     )
 
     persistent = parsed_commands.add_parser(commands.Persistent.NAME)

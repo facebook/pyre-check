@@ -17,11 +17,14 @@ class Analyze(Check):
         self._taint_models_path = (
             arguments.taint_models_path or configuration.taint_models_path
         )
+        self._save_results_to = arguments.save_results_to
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
         if self._taint_models_path:
             flags.extend(["-taint-models", self._taint_models_path])
+        if self._save_results_to:
+            flags.extend(["-save-results-to", self._save_results_to])
         return flags
 
     def _run(self, retries: int = 1) -> None:
