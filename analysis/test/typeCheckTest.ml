@@ -459,6 +459,21 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
   assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
   assert_forward "[element for element in [1]]" (Type.list Type.integer);
+  assert_forward
+    ~precondition:["x", Type.list Type.integer]
+    ~postcondition:["x", Type.list Type.integer]
+    "[*x]"
+    (Type.list Type.integer);
+  assert_forward
+    ~precondition:["x", Type.list Type.integer]
+    ~postcondition:["x", Type.list Type.integer]
+    "[1, *x]"
+    (Type.list Type.integer);
+  assert_forward
+    ~precondition:["x", Type.list Type.integer]
+    ~postcondition:["x", Type.list Type.integer]
+    "['', *x]"
+    (Type.list (Type.union [Type.string; Type.integer]));
 
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
@@ -466,6 +481,21 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "{undefined}" (Type.set Type.Top);
   assert_forward ~errors:(`Undefined 2) "{undefined, undefined}" (Type.set Type.Top);
   assert_forward "{element for element in [1]}" (Type.set Type.integer);
+  assert_forward
+    ~precondition:["x", Type.list Type.integer]
+    ~postcondition:["x", Type.list Type.integer]
+    "{*x}"
+    (Type.set Type.integer);
+  assert_forward
+    ~precondition:["x", Type.list Type.integer]
+    ~postcondition:["x", Type.list Type.integer]
+    "{1, *x}"
+    (Type.set Type.integer);
+  assert_forward
+    ~precondition:["x", Type.set Type.integer]
+    ~postcondition:["x", Type.set Type.integer]
+    "{'', *x}"
+    (Type.set (Type.union [Type.string; Type.integer]));
 
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
@@ -1915,7 +1945,14 @@ let test_check _ =
       def f() -> int:
         return None.__sizeof__()
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def f(x: typing.List[int]) -> typing.Set[str]:
+        return {1, *x}
+    |}
+    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."]
 
 
 let test_check_assign _ =

@@ -755,8 +755,20 @@ module State = struct
     in
     let forward_elements ~state ~elements =
       let forward_element { state = ({ resolution; _ } as state); resolved } expression =
-        let { state; resolved = new_resolved } = forward_expression ~state ~expression in
-        { state; resolved = Resolution.join resolution resolved new_resolved }
+        match Node.value expression with
+        | Expression.Starred (Expression.Starred.Once expression) ->
+            let { state; resolved = new_resolved } = forward_expression ~state ~expression in
+            let parameter =
+              match Resolution.join resolution new_resolved (Type.iterable Type.Bottom) with
+              | Type.Parametric { Type.parameters = [parameter]; _ } ->
+                  parameter
+              | _ ->
+                  Type.Object
+            in
+            { state; resolved = Resolution.join resolution resolved parameter }
+        | _ ->
+            let { state; resolved = new_resolved } = forward_expression ~state ~expression in
+            { state; resolved = Resolution.join resolution resolved new_resolved }
       in
       List.fold elements ~init:{ state; resolved = Type.Bottom } ~f:forward_element
     in
