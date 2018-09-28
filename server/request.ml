@@ -11,7 +11,7 @@ open Network
 
 open State
 open Configuration
-open ServerConfiguration
+open Configuration.Server
 open Protocol
 open Request
 

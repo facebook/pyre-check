@@ -44,6 +44,6 @@ val process_get_definition_request
 val process
   :  socket: Unix.File_descr.t
   -> state: State.t
-  -> configuration: Configuration.ServerConfiguration.t
+  -> configuration: Configuration.Server.t
   -> request: Protocol.Request.t
   -> response

@@ -6,7 +6,6 @@
 open OUnit2
 open Core
 
-open Configuration
 open Server
 
 open Pyre
@@ -47,7 +46,7 @@ let test_saved_state context =
   (* Spawn a server that saves its state on initialization. *)
   let server_configuration =
     Operations.create_configuration
-      ~saved_state:(ServerConfiguration.Save saved_state_path)
+      ~saved_state:(Configuration.Server.Save saved_state_path)
       configuration
   in
   let _ = Commands.Start.run server_configuration in
@@ -73,9 +72,9 @@ let test_saved_state context =
         Test.write_file ("changed_files", "")
         |> File.path
       in
-      ServerConfiguration.Load
-        (ServerConfiguration.LoadFromFiles {
-            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+      Configuration.Server.Load
+        (Configuration.Server.LoadFromFiles {
+            Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
             changed_files_path;
           })
     in
@@ -103,9 +102,9 @@ let test_saved_state context =
         Test.write_file ("changed_files", "")
         |> File.path
       in
-      ServerConfiguration.Load
-        (ServerConfiguration.LoadFromFiles {
-            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+      Configuration.Server.Load
+        (Configuration.Server.LoadFromFiles {
+            Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
             changed_files_path;
           })
     in
@@ -134,9 +133,9 @@ let test_saved_state context =
            Path.absolute (Path.create_relative ~root:local_root ~relative:"a.py"))
         |> File.path
       in
-      ServerConfiguration.Load
-        (ServerConfiguration.LoadFromFiles {
-            ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+      Configuration.Server.Load
+        (Configuration.Server.LoadFromFiles {
+            Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
             changed_files_path;
           })
     in
@@ -177,7 +176,7 @@ let test_invalid_configuration context =
   (* Generate a saved state. *)
   let server_configuration =
     Operations.create_configuration
-      ~saved_state:(ServerConfiguration.Save saved_state_path)
+      ~saved_state:(Configuration.Server.Save saved_state_path)
       configuration
   in
   let _ = Commands.Start.run server_configuration in
@@ -206,9 +205,9 @@ let test_invalid_configuration context =
       Test.write_file ("changed_files", "")
       |> File.path
     in
-    ServerConfiguration.Load
-      (ServerConfiguration.LoadFromFiles {
-          ServerConfiguration.shared_memory_path = Path.create_absolute saved_state_path;
+    Configuration.Server.Load
+      (Configuration.Server.LoadFromFiles {
+          Configuration.Server.shared_memory_path = Path.create_absolute saved_state_path;
           changed_files_path;
         })
   in

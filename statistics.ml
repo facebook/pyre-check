@@ -38,14 +38,14 @@ let sample
         "LOGGED WITHOUT CONFIGURATION", 0.0, "no configuration"
   in
   let server_configuration_metadata =
-    match ServerConfiguration.get_global () with
-    | Some { ServerConfiguration.socket_path; saved_state; use_watchman; _ } ->
+    match Configuration.Server.get_global () with
+    | Some { Configuration.Server.socket_path; saved_state; use_watchman; _ } ->
         let saved_state_metadata =
           match saved_state with
           | Some
-              (ServerConfiguration.Load
-                 (ServerConfiguration.LoadFromFiles {
-                     ServerConfiguration.shared_memory_path;
+              (Configuration.Server.Load
+                 (Configuration.Server.LoadFromFiles {
+                     Configuration.Server.shared_memory_path;
                      changed_files_path;
                    })) ->
               [
@@ -53,11 +53,11 @@ let sample
                 "changed_files_path", Path.absolute changed_files_path;
               ]
           | Some
-              (ServerConfiguration.Load
-                 (ServerConfiguration.LoadFromProject
+              (Configuration.Server.Load
+                 (Configuration.Server.LoadFromProject
                     name)) ->
               ["saved_state_project", name]
-          | Some (ServerConfiguration.Save project) ->
+          | Some (Configuration.Server.Save project) ->
               ["save_state_to", project]
           | None ->
               []

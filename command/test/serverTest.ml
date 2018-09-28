@@ -8,7 +8,6 @@ open OUnit2
 
 open Analysis
 open Ast
-open Configuration
 open Expression
 open Pyre
 open PyreParser
@@ -103,7 +102,7 @@ let test_server_stops _ =
   let pid = Pid.of_int (CommandTest.start_server ()) in
   Commands.Stop.stop ~local_root:"."
   |> ignore;
-  let { ServerConfiguration.socket_path; _ } =
+  let { Configuration.Server.socket_path; _ } =
     Operations.create_configuration (Configuration.create ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
@@ -553,7 +552,7 @@ let test_query context =
 
 let test_connect _ =
   CommandTest.start_server ~expected_version:"A" () |> ignore;
-  let { ServerConfiguration.configuration; socket_path; _ } =
+  let { Configuration.Server.configuration; socket_path; _ } =
     CommandTest.mock_server_configuration ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is

@@ -59,7 +59,7 @@ val localize: t -> local_debug: bool -> local_strict: bool -> declare: bool -> t
 
 val pyre_root: t -> Path.t
 
-module ServerConfiguration: sig
+module Server: sig
   type load_parameters = {
     shared_memory_path: Path.t;
     changed_files_path: Path.t;

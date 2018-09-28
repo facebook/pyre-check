@@ -8,7 +8,6 @@ open Core
 
 open Pyre
 
-open Configuration
 open Service
 
 
@@ -17,7 +16,7 @@ exception IncompatibleState of string
 
 let load
     ~server_configuration:{
-    ServerConfiguration.configuration = ({
+    Configuration.Server.configuration = ({
         Configuration.expected_version;
         project_root;
         _;
@@ -30,7 +29,7 @@ let load
   let shared_memory_path, changed_files =
     match saved_state with
     | Some (Load (LoadFromFiles parameters)) ->
-        let { ServerConfiguration.shared_memory_path; changed_files_path } = parameters in
+        let { Configuration.Server.shared_memory_path; changed_files_path } = parameters in
         let files =
           let to_file serialized =
             Path.create_absolute serialized

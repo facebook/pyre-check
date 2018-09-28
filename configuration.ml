@@ -115,7 +115,7 @@ let pyre_root { local_root; _ } =
   Path.append local_root ~element:".pyre"
 
 
-module ServerConfiguration = struct
+module Server = struct
   type load_parameters = {
     shared_memory_path: Path.t;
     changed_files_path: Path.t;

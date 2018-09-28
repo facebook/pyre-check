@@ -9,10 +9,8 @@ open Core
 open Pyre
 
 open Network
-open Configuration
 open Scheduler
 open Server
-open ServerConfiguration
 open State
 open Protocol
 
@@ -24,7 +22,7 @@ exception AlreadyRunning
 
 let spawn_watchman_client
     {
-      configuration = { sections; project_root; local_root; search_path; _ };
+      Configuration.Server.configuration = { sections; project_root; local_root; search_path; _ };
       _;
     } =
   WatchmanCommand.run_command
@@ -38,7 +36,7 @@ let spawn_watchman_client
 
 let computation_thread request_queue configuration state =
   let failure_threshold = 5 in
-  let rec loop ({ pid_path; _ } as configuration) state =
+  let rec loop ({ Configuration.Server.pid_path; _ } as configuration) state =
     let errors_to_lsp_responses error_map =
       let diagnostic_to_response = function
         | Ok diagnostic_error ->
@@ -250,7 +248,7 @@ let computation_thread request_queue configuration state =
 
 let request_handler_thread
     ({
-      configuration = ({ expected_version; local_root; _ });
+      Configuration.Server.configuration = ({ expected_version; local_root; _ });
       use_watchman;
       watchman_creation_timeout;
       _;
@@ -432,12 +430,12 @@ let request_handler_thread
 (** Main server either as a daemon or in terminal *)
 let serve
     ~socket
-    ~server_configuration:({ configuration; _ } as server_configuration)
+    ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
     ~watchman_pid =
   Version.log_version_banner ();
   (fun () ->
      Log.log ~section:`Server "Starting daemon server loop...";
-     Configuration.ServerConfiguration.set_global server_configuration;
+     Configuration.Server.set_global server_configuration;
      let request_queue = Squeue.create 25 in
      let lock = Mutex.create () in
      let connections =
@@ -482,7 +480,7 @@ let serve
 
 
 (* Create lock file and pid file. Used for both daemon mode and in-terminal *)
-let acquire_lock ~server_configuration:{ lock_path; pid_path; _ } =
+let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_path; _ } =
   let pid = Unix.getpid () |> Pid.to_int in
   if not (Lock.grab (Path.absolute lock_path)) then
     raise AlreadyRunning;
@@ -493,7 +491,7 @@ let acquire_lock ~server_configuration:{ lock_path; pid_path; _ } =
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
-  ((Socket.t * ServerConfiguration.t * Pid.t option),
+  ((Socket.t * Configuration.Server.t * Pid.t option),
    unit Daemon.in_channel,
    unit Daemon.out_channel) Daemon.entry
 
@@ -514,7 +512,7 @@ let run_server_daemon_entry : run_server_daemon_entry =
 
 
 let run ({
-    lock_path;
+    Configuration.Server.lock_path;
     socket_path;
     log_path;
     daemonize;
@@ -631,14 +629,14 @@ let run_start_command
   let saved_state =
     match save_state_to, saved_state_project with
     | Some path, _ ->
-        Some (ServerConfiguration.Save path)
+        Some (Configuration.Server.Save path)
     | None, Some project_name ->
-        Some (ServerConfiguration.Load (ServerConfiguration.LoadFromProject project_name))
+        Some (Configuration.Server.Load (Configuration.Server.LoadFromProject project_name))
     | None, None ->
         match load_state_from, changed_files_path with
         | Some shared_memory_path, Some changed_files_path ->
-            Some (Load (ServerConfiguration.LoadFromFiles {
-                ServerConfiguration.shared_memory_path = Path.create_absolute shared_memory_path;
+            Some (Load (Configuration.Server.LoadFromFiles {
+                Configuration.Server.shared_memory_path = Path.create_absolute shared_memory_path;
                 changed_files_path = Path.create_absolute changed_files_path;
               }))
         | Some _, None ->

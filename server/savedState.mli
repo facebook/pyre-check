@@ -4,12 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Configuration
-
 exception IncompatibleState of string
 
 val load
-  :  server_configuration: ServerConfiguration.t
+  :  server_configuration: Configuration.Server.t
   -> lock: Mutex.t
   -> connections: State.connections ref
   -> State.t

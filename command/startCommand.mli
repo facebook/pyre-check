@@ -5,5 +5,5 @@
 
 open Core
 
-val run: Configuration.ServerConfiguration.t -> int
+val run: Configuration.Server.t -> int
 val command: Command.t

@@ -24,9 +24,9 @@ val create_configuration :
   ?daemonize: bool ->
   ?log_path: PyrePath.t ->
   ?use_watchman: bool ->
-  ?saved_state: Configuration.ServerConfiguration.saved_state ->
+  ?saved_state: Configuration.Server.saved_state ->
   Configuration.t ->
-  Configuration.ServerConfiguration.t
+  Configuration.Server.t
 
 exception ConnectionFailure
 exception VersionMismatch of version_mismatch
@@ -35,12 +35,12 @@ val start
   :  ?old_state: State.t
   -> lock: Mutex.t
   -> connections: State.connections ref
-  -> configuration: Configuration.ServerConfiguration.t
+  -> configuration: Configuration.Server.t
   -> unit
   -> State.t
 val stop
   :  reason: string
-  -> configuration: Configuration.ServerConfiguration.t
+  -> configuration: Configuration.Server.t
   -> socket: Unix.File_descr.t
   -> unit
 

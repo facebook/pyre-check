@@ -128,7 +128,7 @@ let poll_for_deletion path =
 
 
 let stop_server {
-    Configuration.ServerConfiguration.configuration = {
+    Configuration.Server.configuration = {
       Configuration.local_root;
       _;
     };

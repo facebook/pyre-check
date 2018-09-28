@@ -11,7 +11,6 @@ open Network
 open State
 open Service
 open Constants
-open Configuration
 
 
 type version_mismatch = {
@@ -59,7 +58,7 @@ let create_configuration
     Option.value log_path ~default:(Service.Constants.Server.log_path configuration)
   in
   {
-    ServerConfiguration.socket_path = socket_path ~create:true configuration;
+    Configuration.Server.socket_path = socket_path ~create:true configuration;
     socket_link = server_root ^| "server.sock";
     lock_path = server_root ^| "server.lock";
     pid_path = server_root ^| "server.pid";
@@ -126,7 +125,7 @@ let start
     ~lock
     ~connections
     ~configuration:({
-        ServerConfiguration.configuration;
+        Configuration.Server.configuration;
         saved_state;
         _;
       } as server_configuration)
@@ -164,7 +163,7 @@ let start
 let stop
     ~reason
     ~configuration:{
-    ServerConfiguration.configuration;
+    Configuration.Server.configuration;
     lock_path;
     socket_path;
     pid_path;
