@@ -170,6 +170,12 @@ def main() -> int:
         default=None,
         help="Path to serialize pyre's initial state to.",
     )
+    parser.add_argument(
+        "--load-initial-state-from", default=None, type=str, help=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--changed-files-path", default=None, type=str, help=argparse.SUPPRESS
+    )
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(
@@ -217,12 +223,6 @@ def main() -> int:
         "--no-watchman",
         action="store_true",
         help="Do not spawn a watchman client in the background.",
-    )
-    start.add_argument(
-        "--load-initial-state-from", default=None, type=str, help=argparse.SUPPRESS
-    )
-    start.add_argument(
-        "--changed-files-path", default=None, type=str, help=argparse.SUPPRESS
     )
     start.set_defaults(command=commands.Start)
 
