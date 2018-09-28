@@ -461,7 +461,8 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
                         let sequence = Type.parametric "typing.Sequence" [Type.Object] in
                         if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
                           (* Try to extract first parameter. *)
-                          Type.parameters annotation
+                          let _, parameters = Type.split annotation in
+                          parameters
                           |> List.hd
                           |> Option.value ~default:Type.Top
                         else

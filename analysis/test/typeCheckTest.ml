@@ -1845,7 +1845,7 @@ let test_check _ =
     |}
     [
       "Incompatible return type [7]: Expected `typing.Iterable[str]` but " ^
-      "got `typing.Sequence[int]`.";
+      "got `typing.Tuple[int, ...]`.";
     ];
 
   assert_type_errors

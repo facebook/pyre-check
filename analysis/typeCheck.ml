@@ -536,7 +536,7 @@ module State = struct
             if String.is_prefix ~prefix:"**" (Identifier.show name) then
               Type.dictionary ~key:Type.string ~value:annotation
             else if String.is_prefix ~prefix:"*" (Identifier.show name) then
-              Type.sequence annotation
+              Type.Tuple (Type.Unbounded annotation)
             else
               annotation
           in
