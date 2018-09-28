@@ -746,6 +746,37 @@ let test_forward_statement _ =
     "assert isinstance(x, str)"
     ["x", Type.integer];
 
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert not isinstance(x, int)"
+    ["x", Type.integer];
+
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert not isinstance(x, float)"
+    ["x", Type.integer];
+
+  assert_forward
+    ~bottom:false
+    ["x", Type.float]
+    "assert not isinstance(x, int)"
+    ["x", Type.float];
+
+  (* Works for general expressions. *)
+  assert_forward
+    ~bottom:true
+    ["x", Type.integer]
+    "assert not isinstance(x + 1, int)"
+    ["x", Type.integer];
+
+ assert_forward
+    ~bottom:false
+    ["x", Type.Bottom]
+    "assert not isinstance(x, int)"
+    ["x", Type.Bottom];
+
   (* Raise. *)
   assert_forward [] "raise 1" [];
   assert_forward ~errors:(`Undefined 1) [] "raise undefined" [];

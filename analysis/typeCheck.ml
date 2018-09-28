@@ -1620,6 +1620,31 @@ module State = struct
               >>| Annotation.annotation
               >>| (fun existing -> not (compatible ~existing))
               |> Option.value ~default:false
+
+          | UnaryOperator {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand = {
+                Node.value =
+                  Access [
+                    Access.Identifier name;
+                    Access.Call {
+                      Node.value = [
+                        { Argument.name = None; value };
+                        { Argument.name = None; value = annotation };
+                      ];
+                      _;
+                    };
+                  ];
+                _;
+              };
+            } when Identifier.show name = "isinstance" ->
+              let checked_instance = Resolution.parse_annotation resolution annotation in
+              let { resolved; _ } = forward_expression ~state ~expression:value in
+              if Type.equal resolved Type.Bottom || Type.is_unknown resolved then
+                false
+              else
+                Resolution.less_or_equal resolution ~left:resolved ~right:checked_instance
+
           | _ ->
               false
         in
