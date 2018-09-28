@@ -82,7 +82,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       |> ForwardState.join_trees taint_accumulator
 
 
-    and apply_call_targets arguments state call_targets =
+    and apply_call_targets location arguments state call_targets =
       let apply_call_target call_target =
         let existing_model =
           Interprocedural.Fixpoint.get_model call_target
@@ -128,6 +128,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let result_taint =
               ForwardState.read AccessPath.Root.LocalResult forward.source_taint
+              |> ForwardState.apply_call location [ call_target ]
             in
             ForwardState.join_root_element result_taint tito
         | None ->
@@ -148,12 +149,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           |> List.fold ~init:ForwardState.empty_tree ~f:ForwardState.join_trees
 
 
-    and analyze_call ?key ~callee arguments state =
+    and analyze_call ?key location ~callee arguments state =
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.create_real access in
-          apply_call_targets arguments state [call_target]
+          apply_call_targets location arguments state [call_target]
       | Access { expression; member = method_name } ->
           let access = as_access expression in
           let receiver_type =
@@ -184,7 +185,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 (* TODO(T32332602): handle additional call expressions here *)
                 []
           in
-          let taint = apply_call_targets arguments state call_targets in
+          let taint = apply_call_targets location arguments state call_targets in
           taint
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
@@ -207,7 +208,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           taint
       | Call { callee; arguments; } ->
-          analyze_call ?key ~callee arguments.value state
+          analyze_call ?key arguments.location ~callee arguments.value state
       | Expression expression ->
           analyze_expression expression state
       | Global _ ->

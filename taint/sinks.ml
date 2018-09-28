@@ -11,6 +11,12 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+let show = function
+  | LocalReturn -> "LocalReturn"
+  | RemoteCodeExecution -> "RemoteCodeExecution"
+  | TestSink -> "TestSink"
+
+
 let create = function
   | "LocalReturn" -> LocalReturn
   | "RemoteCodeExecution" -> RemoteCodeExecution

@@ -52,6 +52,13 @@ let create_call_graph ?(test_file = "test_file") source =
     Test.parse source
     |> Preprocessing.preprocess
   in
+  let () =
+    Preprocessing.defines source
+    |> List.map ~f:Callable.create
+    |> Fixpoint.KeySet.of_list
+    |> Fixpoint.remove_new
+  in
+  let () = Ast.SharedMemory.Sources.remove ~handles:[handle] in
   let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
@@ -340,16 +347,31 @@ let test_integration _ =
         Fixpoint.Epoch.initial
       |> ignore;
       let serialized_model callable: string =
-        Fixpoint.get_model callable
-        |> (fun model -> Option.value_exn model)
-        |> Result.get_model Taint.Result.kind
-        |> (fun model -> Option.value_exn model)
-        |> Taint.Result.show_call_model
+        let model =
+          Fixpoint.get_model callable
+          |> (fun model -> Option.value_exn model)
+          |> Result.get_model Taint.Result.kind
+          |> (fun model -> Option.value_exn model)
+          |> Taint.Result.show_call_model
+          |> Format.sprintf "Callable %s\n%s\n" (Callable.show callable)
+        in
+        let errors =
+          let to_json_string error =
+            Error.to_json ~detailed:false error
+            |> Yojson.Safe.to_string
+            |> Format.sprintf "%s\n"
+          in
+          Fixpoint.get_result callable
+          |> Result.get_result Taint.Result.kind
+          >>| List.map ~f:to_json_string
+          >>| String.concat ~sep:""
+          |> Option.value ~default:""
+        in
+        Format.sprintf "Model\n%sErrors\n%s" model errors
       in
       List.map all_callables ~f:serialized_model
       |> List.sort ~compare:String.compare
-      |> String.concat ~sep:"\n"
-      |> String.strip
+      |> String.concat ~sep:""
     in
     let expected =
       try
@@ -359,16 +381,40 @@ let test_integration _ =
         |> File.create
         |> File.content
         |> (fun content -> Option.value_exn content)
-        |> String.strip
       with Unix.Unix_error _ ->
         failwith (Format.asprintf "Could not read `.expect` file for %a" Path.pp path)
     in
-    assert_equal
-      ~printer:ident
-      ~cmp:String.equal
-      ~pp_diff:(Test.diff ~print:String.pp)
-      expected
-      serialized_models
+    let write_output () =
+      try
+        Path.show path
+        |> (fun path -> path ^ ".output")
+        |> Path.create_absolute ~follow_symbolic_links:false
+        |> File.create ~content:serialized_models
+        |> File.write
+      with Unix.Unix_error _ ->
+        failwith (Format.asprintf "Could not write `.output` file for %a" Path.pp path)
+    in
+    let remove_old_output () =
+      try
+        Path.show path
+        |> (fun path -> path ^ ".output")
+        |> Sys.remove
+      with Sys_error _ ->
+        (* be silent *)
+        ()
+    in
+    if String.equal expected serialized_models then
+      remove_old_output ()
+    else begin
+      write_output ();
+      Printf.printf "Expectations differ for %s" (Path.show path);
+      assert_equal
+        ~printer:ident
+        ~cmp:String.equal
+        ~pp_diff:(Test.diff ~print:String.pp)
+        expected
+        serialized_models
+    end
   in
   List.iter test_paths ~f:run_test
 

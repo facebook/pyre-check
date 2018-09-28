@@ -1,26 +1,46 @@
-{ TaintResult.forward =
-  { TaintResult.Forward.source_taint =
-    AccessPath.Root.LocalResult -> (map((Root(TestSource))))
- };
-  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
-{ TaintResult.forward =
-  { TaintResult.Forward.source_taint =
-    AccessPath.Root.LocalResult -> (map((Root(TestSource))))
- };
-  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+Model
+Callable `RealTarget (bad)
 { TaintResult.forward = { TaintResult.Forward.source_taint =  };
   backward =
   { TaintResult.Backward.taint_in_taint_out = ;
     sink_taint =
-    AccessPath.Root.Parameter {position = 0} -> (map((Root(TestSink))))
- }
+    AccessPath.Root.Parameter {position = 0} -> via call@test.py:13:7-13:12[`RealTarget (qux)] -> {TestSink}
+
+    }
   }
+Errors
+Model
+Callable `RealTarget (bar)
+{ TaintResult.forward =
+  { TaintResult.Forward.source_taint =
+    AccessPath.Root.LocalResult -> via call@test.py:5:23-5:25[`RealTarget (__testSource)] -> {TestSource}
+
+    };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+Errors
+Model
+Callable `RealTarget (match_flows)
+{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+  backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+Errors
+{"line":22,"column":8,"path":"test.py","code":5002,"name":"Flow from test source to test sink.","description":"Flow from test source to test sink. [5002]: Flow from via call@test.py:21:19-21:21[`RealTarget (some_source)] -> {TestSource} to via call@test.py:13:7-13:12[`RealTarget (qux)] -> {TestSink} detected.","inference":null,"define":"match_flows"}
+Model
+Callable `RealTarget (qux)
 { TaintResult.forward = { TaintResult.Forward.source_taint =  };
   backward =
   { TaintResult.Backward.taint_in_taint_out = ;
     sink_taint =
-    AccessPath.Root.Parameter {position = 0} -> (map((Root(TestSink))))
- }
+    AccessPath.Root.Parameter {position = 0} -> via call@test.py:9:14-9:19[`RealTarget (__testSink)] -> {TestSink}
+
+    }
   }
-{ TaintResult.forward = { TaintResult.Forward.source_taint =  };
+Errors
+Model
+Callable `RealTarget (some_source)
+{ TaintResult.forward =
+  { TaintResult.Forward.source_taint =
+    AccessPath.Root.LocalResult -> via call@test.py:17:14-17:16[`RealTarget (bar)] -> {TestSource}
+
+    };
   backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
+Errors

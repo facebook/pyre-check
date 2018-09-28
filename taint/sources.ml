@@ -12,6 +12,11 @@ type t =
 [@@deriving compare, sexp, show, hash]
 
 
+let show = function
+  | TestSource -> "TestSource"
+  | UserControlled -> "UserControlled"
+
+
 let create = function
   | "TestSource" -> TestSource
   | "UserControlled" -> UserControlled

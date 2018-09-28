@@ -86,7 +86,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_expression taint argument state
 
 
-    and apply_call_targets arguments state call_taint call_targets =
+    and apply_call_targets location arguments state call_taint call_targets =
       let analyze_call_target call_target =
         let existing_model =
           Interprocedural.Fixpoint.get_model call_target
@@ -103,6 +103,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 BackwardState.read
                   (AccessPath.Root.Parameter { position })
                   backward.sink_taint
+                |> BackwardState.apply_call location [ call_target ]
               in
               let taint_in_taint_out =
                 BackwardState.read
@@ -131,12 +132,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.map call_targets ~f:analyze_call_target
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
-    and analyze_call ?key ~callee arguments state taint =
+    and analyze_call ?key location ~callee arguments state taint =
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.create_real access in
-          apply_call_targets arguments state taint [call_target]
+          apply_call_targets location arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
           let access = as_access receiver in
@@ -153,7 +154,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             | Some { annotation = Primitive primitive ; _ } ->
                 let access = Access.create_from_identifiers [primitive; method_name] in
                 let call_target = Interprocedural.Callable.create_real access in
-                apply_call_targets arguments state taint [call_target]
+                apply_call_targets location arguments state taint [call_target]
             | Some { annotation = Union annotations; _ } ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
@@ -164,7 +165,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                       None
                 in
                 List.filter_map annotations ~f:filter_receivers
-                |> apply_call_targets arguments state taint
+                |> apply_call_targets location arguments state taint
             | _ ->
                 let state = List.fold_right ~f:(analyze_argument taint) arguments ~init:state in
                 analyze_normalized_expression state taint receiver
@@ -188,7 +189,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           analyze_normalized_expression state taint expression
       | Call { callee; arguments; } ->
-          analyze_call ?key ~callee arguments.value state taint
+          analyze_call ?key arguments.location ~callee arguments.value state taint
       | Expression expression ->
           analyze_expression taint expression state
       | Global _ ->
