@@ -575,113 +575,113 @@ module State = struct
              ~name:(Statement.Define.unqualified_name define)
            >>| fun overridden_attribute ->
            (* Check strengthening of postcondition. *)
-             match Annotation.annotation (Attribute.annotation overridden_attribute) with
-             | Type.Callable { Type.Callable.overloads = [single_overload]; _ } ->
-                 let original_method = Method.create ~define ~parent:definition in
-                 let errors =
-                   let expected = Type.Callable.Overload.return_annotation single_overload in
-                   let actual = Method.return_annotation original_method ~resolution in
-                   if Type.is_resolved expected &&
-                      not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
-                     let error =
-                       Error.create
-                         ~location
-                         ~kind:(Error.InconsistentOverride {
-                             Error.overridden_method = Statement.Define.unqualified_name define;
-                             parent = Class.name (Attribute.parent overridden_attribute);
-                             override = Error.WeakenedPostcondition { Error.actual; expected };
-                           })
-                         ~define:define_node
-                     in
-                     Map.set ~key:location ~data:error errors
-                   else
-                     errors
-                 in
-                 (* Check weakening of precondition. *)
-                 let parameters =
-                   let remove_unused_parameter_denotation ~key ~data map =
-                     Identifier.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
+           match Annotation.annotation (Attribute.annotation overridden_attribute) with
+           | Type.Callable { Type.Callable.overloads = [single_overload]; _ } ->
+               let original_method = Method.create ~define ~parent:definition in
+               let errors =
+                 let expected = Type.Callable.Overload.return_annotation single_overload in
+                 let actual = Method.return_annotation original_method ~resolution in
+                 if Type.is_resolved expected &&
+                    not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+                   let error =
+                     Error.create
+                       ~location
+                       ~kind:(Error.InconsistentOverride {
+                           Error.overridden_method = Statement.Define.unqualified_name define;
+                           parent = Class.name (Attribute.parent overridden_attribute);
+                           override = Error.WeakenedPostcondition { Error.actual; expected };
+                         })
+                       ~define:define_node
                    in
-                   Method.parameter_annotations original_method ~resolution
-                   |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
+                   Map.set ~key:location ~data:error errors
+                 else
+                   errors
+               in
+               (* Check weakening of precondition. *)
+               let parameters =
+                 let remove_unused_parameter_denotation ~key ~data map =
+                   Identifier.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                  in
-                 let parameter errors parameter =
-                   let expected = Type.Callable.Parameter.annotation parameter in
-                   let name = Type.Callable.Parameter.name parameter in
-                   match Map.find parameters name with
-                   | Some actual ->
-                       begin
-                         try
-                           if not (Type.equal Type.Top expected) &&
-                              not (Resolution.less_or_equal
-                                     resolution
-                                     ~left:expected
-                                     ~right:actual) then
-                             let error =
-                               Error.create
-                                 ~location
-                                 ~kind:(Error.InconsistentOverride {
-                                     Error.overridden_method =
-                                       Statement.Define.unqualified_name define;
-                                     parent = Class.name (Attribute.parent overridden_attribute);
-                                     override =
-                                       Error.StrengthenedPrecondition
-                                         (Error.Found { Error.actual; expected });
-                                   })
-                                 ~define:define_node
-                             in
-                             Map.set ~key:location ~data:error errors
-                           else
-                             errors
-                         with TypeOrder.Untracked _ ->
-                           (* TODO(T27409168): Error here. *)
-                           errors
-                       end
-                   | None ->
-                       let has_keyword_and_anonymous_starred_parameters =
-                         let starred =
-                           let collect_starred_parameters ~key ~data:_ starred =
-                             if String.is_prefix (Identifier.show key) ~prefix:"*" then
-                               key :: starred
-                             else
-                               starred
+                 Method.parameter_annotations original_method ~resolution
+                 |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
+               in
+               let parameter errors parameter =
+                 let expected = Type.Callable.Parameter.annotation parameter in
+                 let name = Type.Callable.Parameter.name parameter in
+                 match Map.find parameters name with
+                 | Some actual ->
+                     begin
+                       try
+                         if not (Type.equal Type.Top expected) &&
+                            not (Resolution.less_or_equal
+                                   resolution
+                                   ~left:expected
+                                   ~right:actual) then
+                           let error =
+                             Error.create
+                               ~location
+                               ~kind:(Error.InconsistentOverride {
+                                   Error.overridden_method =
+                                     Statement.Define.unqualified_name define;
+                                   parent = Class.name (Attribute.parent overridden_attribute);
+                                   override =
+                                     Error.StrengthenedPrecondition
+                                       (Error.Found { Error.actual; expected });
+                                 })
+                               ~define:define_node
                            in
-                           Map.fold ~f:collect_starred_parameters ~init:[] parameters
-                         in
-                         let count_stars parameter =
-                           Identifier.show parameter
-                           |> String.take_while ~f:(fun character -> character = '*')
-                           |> String.length
-                         in
-                         List.exists ~f:(fun parameter -> count_stars parameter = 1) starred
-                         && List.exists ~f:(fun parameter -> count_stars parameter = 2) starred
-                       in
-                       if has_keyword_and_anonymous_starred_parameters then
+                           Map.set ~key:location ~data:error errors
+                         else
+                           errors
+                       with TypeOrder.Untracked _ ->
+                         (* TODO(T27409168): Error here. *)
                          errors
-                       else
-                         let parameter_name =
-                           Identifier.show_sanitized name
-                           |> Identifier.create
-                           |> fun name -> [Expression.Access.Identifier name]
+                     end
+                 | None ->
+                     let has_keyword_and_anonymous_starred_parameters =
+                       let starred =
+                         let collect_starred_parameters ~key ~data:_ starred =
+                           if String.is_prefix (Identifier.show key) ~prefix:"*" then
+                             key :: starred
+                           else
+                             starred
                          in
-                         let error =
-                           Error.create
-                             ~location
-                             ~kind:(Error.InconsistentOverride {
-                                 Error.overridden_method = Statement.Define.unqualified_name define;
-                                 parent = Class.name (Attribute.parent overridden_attribute);
-                                 override =
-                                   Error.StrengthenedPrecondition (Error.NotFound parameter_name);
-                               })
-                             ~define:define_node
-                         in
-                         Map.set ~key:location ~data:error errors
-                 in
-                 Type.Callable.Overload.parameters single_overload
-                 |> Option.value ~default:[]
-                 |> List.fold ~init:errors ~f:parameter
-             | _ ->
-                 errors)
+                         Map.fold ~f:collect_starred_parameters ~init:[] parameters
+                       in
+                       let count_stars parameter =
+                         Identifier.show parameter
+                         |> String.take_while ~f:(fun character -> character = '*')
+                         |> String.length
+                       in
+                       List.exists ~f:(fun parameter -> count_stars parameter = 1) starred
+                       && List.exists ~f:(fun parameter -> count_stars parameter = 2) starred
+                     in
+                     if has_keyword_and_anonymous_starred_parameters then
+                       errors
+                     else
+                       let parameter_name =
+                         Identifier.show_sanitized name
+                         |> Identifier.create
+                         |> fun name -> [Expression.Access.Identifier name]
+                       in
+                       let error =
+                         Error.create
+                           ~location
+                           ~kind:(Error.InconsistentOverride {
+                               Error.overridden_method = Statement.Define.unqualified_name define;
+                               parent = Class.name (Attribute.parent overridden_attribute);
+                               override =
+                                 Error.StrengthenedPrecondition (Error.NotFound parameter_name);
+                             })
+                           ~define:define_node
+                       in
+                       Map.set ~key:location ~data:error errors
+               in
+               Type.Callable.Overload.parameters single_overload
+               |> Option.value ~default:[]
+               |> List.fold ~init:errors ~f:parameter
+           | _ ->
+               errors)
           |> Option.value ~default:errors
       with
       | TypeOrder.Untracked annotation ->
@@ -712,19 +712,29 @@ module State = struct
         Comprehension.target;
         iterator = { Node.location; _ } as iterator;
         conditions;
-        _;
+        async;
       } =
-      (* TODO(T23723699): check async. *)
       (* Propagate the target type information. *)
       let iterator =
         let value =
-          Access (Expression.access iterator @ [
-              Access.Identifier (Identifier.create "__iter__");
-              Access.Call (Node.create ~location []);
-              Access.Identifier (Identifier.create "__next__");
-              Access.Call (Node.create ~location []);
-            ])
-          |> Node.create ~location
+          if async then
+            Access (Expression.access iterator @ [
+                Access.Identifier (Identifier.create "__aiter__");
+                Access.Call (Node.create ~location []);
+                Access.Identifier (Identifier.create "__anext__");
+                Access.Call (Node.create ~location []);
+              ])
+            |> Node.create ~location
+            |> (fun target -> Await target)
+            |> Node.create ~location
+          else
+            Access (Expression.access iterator @ [
+                Access.Identifier (Identifier.create "__iter__");
+                Access.Call (Node.create ~location []);
+                Access.Identifier (Identifier.create "__next__");
+                Access.Call (Node.create ~location []);
+              ])
+            |> Node.create ~location
         in
         Assign { Assign.target; annotation = None; value; parent = None }
         |> Node.create ~location
@@ -810,49 +820,49 @@ module State = struct
         }] when Identifier.show isinstance = "isinstance" ->
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
-       let state =
-         let { state; _ } = forward_expression ~state ~expression in
-         let state, annotations =
-           let rec collect_types (state, collected) = function
-             | { Node.value = Tuple annotations; _ } ->
-                 let (state, new_annotations) =
-                   List.fold annotations ~init:(state, []) ~f:collect_types
-                 in
-                 state, new_annotations @ collected
-             | expression ->
-                 let { state; resolved } = forward_expression ~state ~expression in
-                 let new_annotations =
-                   match resolved with
-                   | Type.Tuple (Type.Bounded annotations) ->
-                       List.map
-                         annotations
-                         ~f:(fun annotation -> annotation, Node.location expression)
-                   | Type.Tuple (Type.Unbounded annotation)
-                   | annotation ->
-                       [annotation, Node.location expression]
-                 in
-                 state, new_annotations @ collected
-           in
-           collect_types (state, []) annotations
-         in
-         match List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation)) with
-         | Some (non_meta, location) ->
-             Error.create
-               ~location
-               ~kind:(Error.IncompatibleParameterType {
-                   Error.name = None;
-                   position = 2;
-                   callee = Some [Access.Identifier isinstance];
-                   mismatch = {
-                     Error.actual = non_meta;
-                     expected = Type.meta Type.Object;
-                   }})
-               ~define
-             |> add_error ~state
-         | None ->
-             state
-       in
-       { state; resolved = Type.bool }
+        let state =
+          let { state; _ } = forward_expression ~state ~expression in
+          let state, annotations =
+            let rec collect_types (state, collected) = function
+              | { Node.value = Tuple annotations; _ } ->
+                  let (state, new_annotations) =
+                    List.fold annotations ~init:(state, []) ~f:collect_types
+                  in
+                  state, new_annotations @ collected
+              | expression ->
+                  let { state; resolved } = forward_expression ~state ~expression in
+                  let new_annotations =
+                    match resolved with
+                    | Type.Tuple (Type.Bounded annotations) ->
+                        List.map
+                          annotations
+                          ~f:(fun annotation -> annotation, Node.location expression)
+                    | Type.Tuple (Type.Unbounded annotation)
+                    | annotation ->
+                        [annotation, Node.location expression]
+                  in
+                  state, new_annotations @ collected
+            in
+            collect_types (state, []) annotations
+          in
+          match List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation)) with
+          | Some (non_meta, location) ->
+              Error.create
+                ~location
+                ~kind:(Error.IncompatibleParameterType {
+                    Error.name = None;
+                    position = 2;
+                    callee = Some [Access.Identifier isinstance];
+                    mismatch = {
+                      Error.actual = non_meta;
+                      expected = Type.meta Type.Object;
+                    }})
+                ~define
+              |> add_error ~state
+          | None ->
+              state
+        in
+        { state; resolved = Type.bool }
     | Access access ->
         (* Walk through the access. *)
         let _, state, resolved =

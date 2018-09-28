@@ -771,7 +771,7 @@ let test_forward_statement _ =
     "assert not isinstance(x + 1, int)"
     ["x", Type.integer];
 
- assert_forward
+  assert_forward
     ~bottom:false
     ["x", Type.Bottom]
     "assert not isinstance(x, int)"
@@ -5325,6 +5325,13 @@ let test_check_async _ =
       async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
         async for item in g:
           yield takes_int(item)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      async def read(self, file: typing.AsyncIterable[str]) -> typing.List[str]:
+        return [data async for data in file]
     |}
     []
 
