@@ -213,8 +213,7 @@ let connect ~retries ~configuration:({ Configuration.expected_version; _ } as co
       if Path.file_exists path then
         begin
           match
-            (Unix.handle_unix_error
-               (fun () -> Socket.open_connection (socket_path configuration)))
+            (Unix.handle_unix_error (fun () -> Socket.open_connection path))
           with
           | `Success socket ->
               Log.info "Connected to server";
