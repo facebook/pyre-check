@@ -53,7 +53,7 @@ def run_fixme(arguments, result) -> None:
                 sorted_descriptions = sorted(list(descriptions[number]))
 
                 description = ""
-                if arguments.comment:
+                if hasattr(arguments, "comment") and arguments.comment:
                     description = ": " + arguments.comment
                 else:
                     description = ": " + ", ".join(sorted_descriptions)
