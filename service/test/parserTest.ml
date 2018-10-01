@@ -197,6 +197,7 @@ let test_parse_sources context =
     write_file local_root "b.py";
 
     write_file local_root "c.py";
+    write_file local_root ".pyre/resource_cache/typeshed/ignoreme.py";
 
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";

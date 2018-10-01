@@ -204,7 +204,11 @@ let find_stubs
 
 
 let find_sources ?(filter = fun _ -> true) { Configuration.Analysis.local_root; _ } =
-  let filter path = String.is_suffix ~suffix:".py" path && filter path in
+  let filter path =
+    String.is_suffix ~suffix:".py" path &&
+    not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
+    filter path
+  in
   Path.list ~filter ~root:local_root
 
 
