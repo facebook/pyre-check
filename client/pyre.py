@@ -176,6 +176,9 @@ def main() -> int:
     parser.add_argument(
         "--changed-files-path", default=None, type=str, help=argparse.SUPPRESS
     )
+    parser.add_argument(
+        "--saved-state-project", default=None, type=str, help=argparse.SUPPRESS
+    )
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(

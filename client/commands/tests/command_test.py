@@ -15,6 +15,7 @@ from ...filesystem import AnalysisDirectory
 def mock_arguments(
     no_watchman=False,
     terminal=False,
+    saved_state_project=None,
     save_initial_state_to=None,
     load_initial_state_from=None,
     changed_files_path=None,
@@ -30,6 +31,7 @@ def mock_arguments(
     arguments.logging_sections = None
     arguments.no_watchman = no_watchman
     arguments.original_directory = "/original/directory/"
+    arguments.saved_state_project = saved_state_project
     arguments.save_initial_state_to = save_initial_state_to
     arguments.load_initial_state_from = load_initial_state_from
     arguments.changed_files_path = changed_files_path

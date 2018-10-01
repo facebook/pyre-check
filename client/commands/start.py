@@ -31,6 +31,7 @@ class Start(Reporting):
         self._changed_files_path = arguments.changed_files_path  # type: Optional[str]
         # type: Optional[str]
         self._load_initial_state_from = arguments.load_initial_state_from
+        self._saved_state_project = arguments.saved_state_project  # type: Optiona[str]
 
     def _run(self) -> None:
         blocking = False
@@ -87,6 +88,8 @@ class Start(Reporting):
             os.path.dirname(self._save_initial_state_to)
         ):
             flags.extend(["-save-initial-state-to", self._save_initial_state_to])
+        if self._saved_state_project:
+            flags.extend(["-saved-state-project", self._saved_state_project])
         if (
             self._load_initial_state_from is not None
             and self._changed_files_path is not None

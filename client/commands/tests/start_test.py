@@ -301,3 +301,24 @@ class StartTest(unittest.TestCase):
                 "path1,path2",
             ],
         )
+        # Check --saved-state-project.
+        arguments = mock_arguments(saved_state_project="pyre/saved_state")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-saved-state-project",
+                "pyre/saved_state",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
