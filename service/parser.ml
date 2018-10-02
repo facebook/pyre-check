@@ -55,7 +55,7 @@ let parse_modules_job ~configuration ~files =
           Module.create
             ~qualifier
             ~local_mode
-            ~path:(File.Handle.show handle)
+            ~handle
             ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
             statements
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module

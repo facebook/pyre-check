@@ -750,8 +750,8 @@ let process_type_check_request
         (File.handle ~configuration file
          |> fun handle -> Some (Source.qualifier ~handle)
          >>= Handler.module_definition
-         >>= Module.path
-         >>| (fun existing_path -> File.Handle.show handle = existing_path))
+         >>= Module.handle
+         >>| (fun existing_handle -> File.Handle.equal handle existing_handle))
         |> Option.value ~default:true
       in
       List.filter ~f:keep sources

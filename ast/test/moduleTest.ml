@@ -24,15 +24,20 @@ let test_empty_stub _ =
      |> Module.empty_stub)
 
 
-let test_path _ =
+let test_handle _ =
   assert_equal
     (Module.create ~qualifier:[] ~local_mode:Source.Default ~stub:true []
-     |> Module.path)
+     |> Module.handle)
     None;
   assert_equal
-    (Module.create ~qualifier:[] ~local_mode:Source.Default ~path:"voodoo.py" ~stub:false []
-     |> Module.path)
-    (Some "voodoo.py")
+    (Module.create
+       ~qualifier:[]
+       ~local_mode:Source.Default
+       ~handle:(File.Handle.create "voodoo.py")
+       ~stub:false
+       []
+     |> Module.handle)
+    (Some (File.Handle.create "voodoo.py"))
 
 
 let test_aliased_export _ =
@@ -228,6 +233,7 @@ let test_wildcard_exports _ =
 let () =
   "module">:::[
     "empty_stub">::test_empty_stub;
+    "handle">::test_handle;
     "aliased_export">::test_aliased_export;
     "wildcard_exports">::test_wildcard_exports;
   ]

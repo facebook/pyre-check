@@ -324,7 +324,7 @@ let handler
             Module.create
               ~qualifier
               ~local_mode
-              ?path:(handle >>| File.Handle.show)
+              ?handle
               ~stub
               statements)
           modules

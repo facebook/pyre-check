@@ -12,7 +12,7 @@ type t
 val create
   :  qualifier: Access.t
   -> local_mode: Source.mode
-  -> ?path: string
+  -> ?handle: File.Handle.t
   -> stub: bool
   -> Statement.t list
   -> t
@@ -20,7 +20,7 @@ val create
 val empty_stub: t -> bool
 val from_empty_stub: access: Access.t -> module_definition: (Access.t -> t option) -> bool
 
-val path: t -> string option
+val handle: t -> File.Handle.t option
 
 val wildcard_exports: t -> Access.t list
 

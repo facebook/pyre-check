@@ -77,8 +77,8 @@ let build
     (* If a stub matching a handle's qualifier already exists, we shouldn't override. *)
     let should_keep { Source.handle; qualifier; _ } =
       Handler.module_definition qualifier
-      >>= Module.path
-      >>| String.equal (File.Handle.show handle)
+      >>= Module.handle
+      >>| File.Handle.equal handle
       |> Option.value ~default:true
     in
     let sources = get_sources sources in
@@ -135,7 +135,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
             (Module.create
                ~qualifier
                ~local_mode
-               ?path:(handle >>| File.Handle.show)
+               ?handle
                ~stub
                statements)
       end
