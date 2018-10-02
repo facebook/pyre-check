@@ -620,6 +620,44 @@ let test_qualify _ =
         return None
       else:
         return $local_qualifier$variable
+    |};
+
+  assert_qualify
+    {|
+       a: x = ...
+       def x():
+         ...
+    |}
+    {|
+       $local_qualifier$a: qualifier.x = ...
+       def qualifier.x(): ...
+    |};
+
+  assert_qualify
+    {|
+       def f(a: x): ...
+       def x(): ...
+    |}
+    {|
+       def qualifier.f($parameter$a: qualifier.x): ...
+       def qualifier.x():
+         ...
+    |};
+
+  assert_qualify
+    {|
+      class C:
+        def f(parameter: x):
+          ...
+        def x():
+          ...
+    |}
+    {|
+      class qualifier.C:
+        def qualifier.C.f($parameter$parameter: qualifier.C.x):
+          ...
+        def qualifier.C.x():
+          ...
     |}
 
 
