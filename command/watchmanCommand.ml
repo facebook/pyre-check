@@ -166,72 +166,88 @@ let listen_for_changed_files
     server_socket
     watchman_directory
     ({ Configuration.Analysis.local_root; _ } as configuration) =
-  let symlinks =
-    Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
-    |> build_symlink_map
-  in
-  let socket_path =
-    let open Yojson.Safe in
-    Unix.open_process_in "watchman get-sockname --no-pretty"
-    |> from_channel
-    |> Util.member "sockname"
-    |> Util.to_string
-  in
-  Log.info "Watchman socket path is %s" socket_path;
-  let in_channel, out_channel = Unix.open_connection (Unix.ADDR_UNIX socket_path) in
-  Out_channel.output_lines
-    out_channel
-    [Yojson.to_string (subscription watchman_directory)];
-  Out_channel.flush out_channel;
-  let watchman_socket = Unix.descr_of_in_channel in_channel in
-  let rec loop state =
-    try
-      let ready =
-        Unix.select
-          ~read:[watchman_socket; server_socket]
-          ~write:[]
-          ~except:[]
-          ~timeout:(`After (Time.of_int_sec 5))
-          ()
-        |> fun { Unix.Select_fds.read; _ } -> read
-      in
-      let handle_socket state socket =
-        let handle_watchman state socket =
-          let in_channel = Unix.in_channel_of_descr socket in
-          In_channel.input_line in_channel
-          >>= process_response state
-          >>| (fun (state, response) ->
-              Log.info "Writing response %s" (Protocol.Request.show response);
-              Socket.write server_socket response;
-              state)
-          |> Option.value ~default:state
-        in
+  try
+    (fun () ->
+       let symlinks =
+         Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
+         |> build_symlink_map
+       in
+       let socket_path =
+         let open Yojson.Safe in
+         Unix.open_process_in "watchman get-sockname --no-pretty"
+         |> from_channel
+         |> Util.member "sockname"
+         |> Util.to_string
+       in
+       Log.info "Watchman socket path is %s" socket_path;
+       let in_channel, out_channel = Unix.open_connection (Unix.ADDR_UNIX socket_path) in
+       Out_channel.output_lines
+         out_channel
+         [Yojson.to_string (subscription watchman_directory)];
+       Out_channel.flush out_channel;
+       let watchman_socket = Unix.descr_of_in_channel in_channel in
+       let rec loop state =
+         try
+           let ready =
+             Unix.select
+               ~read:[watchman_socket; server_socket]
+               ~write:[]
+               ~except:[]
+               ~timeout:(`After (Time.of_int_sec 5))
+               ()
+             |> fun { Unix.Select_fds.read; _ } -> read
+           in
+           let handle_socket state socket =
+             let handle_watchman state socket =
+               let in_channel = Unix.in_channel_of_descr socket in
+               In_channel.input_line in_channel
+               >>= process_response state
+               >>| (fun (state, response) ->
+                   Log.info "Writing response %s" (Protocol.Request.show response);
+                   Socket.write server_socket response;
+                   state)
+               |> Option.value ~default:state
+             in
 
-        if socket = watchman_socket then
-          handle_watchman state socket
-        else
-          begin
-            Socket.read server_socket |> ignore;
-            state
-          end
-      in
-      let state = List.fold ~init:state ~f:handle_socket ready in
-      loop state
-    with
-    | End_of_file ->
-        Log.info "A socket was closed.";
-        stop_watchman (Some server_socket) configuration
-  in
-  begin
-    In_channel.input_line in_channel
-    >>= fun subscriber_response ->
-    Log.info "Watchman subscriber response: %s" subscriber_response;
-    (* Throw away the the first update that includes all the files *)
-    In_channel.input_line in_channel
-    >>= fun _ ->
-    loop { configuration; watchman_directory; symlinks }
-  end
-  |> ignore
+             if socket = watchman_socket then
+               handle_watchman state socket
+             else
+               begin
+                 Socket.read server_socket |> ignore;
+                 state
+               end
+           in
+           let state = List.fold ~init:state ~f:handle_socket ready in
+           loop state
+         with
+         | End_of_file ->
+             Log.info "A socket was closed.";
+             stop_watchman (Some server_socket) configuration
+       in
+       begin
+         In_channel.input_line in_channel
+         >>= fun subscriber_response ->
+         Log.info "Watchman subscriber response: %s" subscriber_response;
+         (* Throw away the the first update that includes all the files *)
+         In_channel.input_line in_channel
+         >>= fun _ ->
+         loop { configuration; watchman_directory; symlinks }
+       end
+       |> ignore)
+    |> Scheduler.run_process ~configuration
+  with uncaught_exception ->
+    Statistics.event
+      ~section:`Error
+      ~flush:true
+      ~name:"uncaught exception"
+      ~integers:[]
+      ~normals:[
+        "exception", Exn.to_string uncaught_exception;
+        "exception backtrace", Printexc.get_backtrace ();
+        "exception origin", "watchman";
+      ]
+      ();
+    raise uncaught_exception
 
 
 let initialize watchman_directory configuration =
@@ -287,102 +303,86 @@ let run_watchman_daemon_entry : run_watchman_daemon_entry =
           listen_for_changed_files server_socket watchman_directory configuration)
 
 let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_root =
-  try
-    let local_root = Path.create_absolute local_root in
-    let project_root =
-      project_root
-      >>| Path.create_absolute
-      |> Option.value ~default:local_root
+  let local_root = Path.create_absolute local_root in
+  let project_root =
+    project_root
+    >>| Path.create_absolute
+    |> Option.value ~default:local_root
+  in
+  let configuration =
+    Configuration.Analysis.create
+      ~verbose
+      ~sections
+      ~local_root
+      ~search_path
+      ~project_root
+      ()
+  in
+  (* Warn if watchman isn't picking up on changes in the current working directory. *)
+  let () =
+    let input =
+      let channel = Unix.open_process_in "watchman watch-list" in
+      protect
+        ~f:(fun () -> In_channel.input_all channel)
+        ~finally:(fun () -> In_channel.close channel)
     in
-    let configuration =
-      Configuration.Analysis.create
-        ~verbose
-        ~sections
-        ~local_root
-        ~search_path
-        ~project_root
-        ()
+    let watchman_watches_root =
+      let directory_contains_root directory =
+        Path.directory_contains ~directory:(Path.create_absolute directory) project_root
+      in
+      try
+        let watch_list = Yojson.Safe.from_string input in
+        Yojson.Safe.Util.member "roots" watch_list
+        |> Yojson.Safe.Util.to_list
+        |> List.map ~f:Yojson.Safe.Util.to_string
+        |> List.exists ~f:directory_contains_root
+      with Yojson.Json_error _ ->
+        false
     in
-    (fun () ->
-       (* Warn if watchman isn't picking up on changes in the current working directory. *)
-       let () =
-         let input =
-           let channel = Unix.open_process_in "watchman watch-list" in
-           protect
-             ~f:(fun () -> In_channel.input_all channel)
-             ~finally:(fun () -> In_channel.close channel)
-         in
-         let watchman_watches_root =
-           let directory_contains_root directory =
-             Path.directory_contains ~directory:(Path.create_absolute directory) project_root
-           in
-           try
-             let watch_list = Yojson.Safe.from_string input in
-             Yojson.Safe.Util.member "roots" watch_list
-             |> Yojson.Safe.Util.to_list
-             |> List.map ~f:Yojson.Safe.Util.to_string
-             |> List.exists ~f:directory_contains_root
-           with Yojson.Json_error _ ->
-             false
-         in
-         if not watchman_watches_root then
-           begin
-             Log.info "watchman watch-list output: %s" input;
-             Log.warning
-               "Unable to find `%s` in watchman's watched directories, type errors might be inaccurate."
-               (Path.absolute local_root);
-             Log.warning
-               "Documentation to integrate watchman is available at `%s`."
-               "https://pyre-check.org/docs/watchman-integration.html";
-           end;
-       in
-       Unix.handle_unix_error
-         (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
-       if not (Lock.check (Path.absolute (lock_path configuration))) then
-         failwith "Watchman client exists (lock is held). Exiting.";
+    if not watchman_watches_root then
+      begin
+        Log.info "watchman watch-list output: %s" input;
+        Log.warning
+          "Unable to find `%s` in watchman's watched directories, type errors might be inaccurate."
+          (Path.absolute local_root);
+        Log.warning
+          "Documentation to integrate watchman is available at `%s`."
+          "https://pyre-check.org/docs/watchman-integration.html";
+      end;
+  in
+  Unix.handle_unix_error
+    (fun () -> Unix.mkdir_p (watchman_root configuration |> Path.absolute));
+  if not (Lock.check (Path.absolute (lock_path configuration))) then
+    failwith "Watchman client exists (lock is held). Exiting.";
 
-       if daemonize then
-         begin
-           let stdin = Daemon.null_fd () in
-           let log_path = Log.rotate (Path.absolute (log_path configuration)) in
-           let stdout = Daemon.fd_of_path log_path in
-           Log.debug "Spawning the watchman daemon now.";
-           let { Daemon.pid; _ } as handle =
-             Daemon.spawn
-               (stdin, stdout, stdout)
-               run_watchman_daemon_entry
-               configuration
-           in
-           Daemon.close handle;
-           Log.debug "Watchman daemon pid: %d" pid;
-           Pid.of_int pid
-         end
-       else
-         let watchman_directory =
-           Path.search_upwards ~target:".watchmanconfig" ~root:project_root
-         in
-         match watchman_directory with
-         | None -> exit 1
-         | Some watchman_directory ->
-             let server_socket = initialize watchman_directory configuration in
-             let pid = Unix.getpid () |> Pid.to_int in
-             setup configuration pid;
-             listen_for_changed_files server_socket watchman_directory configuration;
-             Unix.getpid ())
-    |> Scheduler.run_process ~configuration
-  with uncaught_exception ->
-    Statistics.event
-      ~section:`Error
-      ~flush:true
-      ~name:"uncaught exception"
-      ~integers:[]
-      ~normals:[
-        "exception", Exn.to_string uncaught_exception;
-        "exception backtrace", Printexc.get_backtrace ();
-        "exception origin", "watchman";
-      ]
-      ();
-    raise uncaught_exception
+  if daemonize then
+    begin
+      let stdin = Daemon.null_fd () in
+      let log_path = Log.rotate (Path.absolute (log_path configuration)) in
+      let stdout = Daemon.fd_of_path log_path in
+      Log.debug "Spawning the watchman daemon now.";
+      let { Daemon.pid; _ } as handle =
+        Daemon.spawn
+          (stdin, stdout, stdout)
+          run_watchman_daemon_entry
+          configuration
+      in
+      Daemon.close handle;
+      Log.debug "Watchman daemon pid: %d" pid;
+      Pid.of_int pid
+    end
+  else
+    let watchman_directory =
+      Path.search_upwards ~target:".watchmanconfig" ~root:project_root
+    in
+    match watchman_directory with
+    | None -> exit 1
+    | Some watchman_directory ->
+        let server_socket = initialize watchman_directory configuration in
+        let pid = Unix.getpid () |> Pid.to_int in
+        setup configuration pid;
+        listen_for_changed_files server_socket watchman_directory configuration;
+        Unix.getpid ()
 
 
 let run daemonize verbose sections search_path project_root local_root () =
