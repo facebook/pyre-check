@@ -165,14 +165,11 @@ module Make(Analysis : ANALYSIS_PROVIDED) = struct
       Analyzer : ANALYZER
       with type result := Analysis.result
        and type call_model := Analysis.call_model
-    ) =
-  struct
-    include Register(struct
-        include Analysis
-        let kind = kind
-        include Analyzer
-      end)
-  end
+    ) = Register(struct
+      include Analysis
+      let kind = kind
+      include Analyzer
+    end)
 
   include Analysis
 end
