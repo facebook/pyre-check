@@ -23,7 +23,7 @@ type source_expectation = {
 }
 
 
-let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expect () =
+let assert_taint ?(qualifier = Access.create "qualifier") source expect =
   let source =
     parse ~qualifier source
     |> Preprocessing.preprocess
@@ -92,18 +92,16 @@ let test_no_model _ =
   let assert_no_model _ =
     assert_taint
       ?qualifier:None
-      ~source:
-        {|
-        def copy_source():
-          pass
-        |}
-      ~expect:[
+      {|
+      def copy_source():
+        pass
+      |}
+      [
         {
           define_name = "does_not_exist";
           returns = [];
         };
       ]
-      ()
   in
   assert_raises
     (OUnitTest.OUnit_failure "no model for does_not_exist")
@@ -112,244 +110,222 @@ let test_no_model _ =
 
 let test_simple_source _ =
   assert_taint
-    ~source:
-      {|
+    {|
       def simple_source():
         return __testSource()
-      |}
-    ~expect:[
+    |}
+    [
       {
         define_name = "qualifier.simple_source";
         returns = [Sources.TestSource];
       };
     ]
-    ()
 
 
 let test_local_copy _ =
   assert_taint
-    ~source:
-      {|
+    {|
       def copy_source():
         var = __testSource()
         return var
-      |}
-    ~expect:[
+    |}
+    [
       {
         define_name = "qualifier.copy_source";
         returns = [Sources.TestSource];
       };
     ]
-    ()
 
 
 let test_class_model _ =
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def bar():
-            return __testSource()
-      |}
-    ~expect:[
+    {|
+      class Foo:
+        def bar():
+          return __testSource()
+    |}
+    [
       {
         define_name = "qualifier.Foo.bar";
         returns = [Sources.TestSource];
       };
     ]
-    ()
 
 
 let test_apply_method_model_at_call_site _ =
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return __testSource()
+    {|
+      class Foo:
+        def qux():
+          return __testSource()
 
-        class Bar:
-          def qux():
-            return not_tainted()
+      class Bar:
+        def qux():
+          return not_tainted()
 
-        def taint_across_methods():
-          f = Foo()
-          return f.qux()
-      |}
-    ~expect:[
+      def taint_across_methods():
+        f = Foo()
+        return f.qux()
+    |}
+    [
       {
         define_name = "qualifier.taint_across_methods";
         returns = [Sources.TestSource];
       };
-    ]
-    ();
+    ];
 
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return __testSource()
+    {|
+      class Foo:
+        def qux():
+          return __testSource()
 
-        class Bar:
-          def qux():
-            return not_tainted()
+      class Bar:
+        def qux():
+          return not_tainted()
 
-        def taint_across_methods():
-          f = Bar()
-          return f.qux()
-      |}
-    ~expect:[
+      def taint_across_methods():
+        f = Bar()
+        return f.qux()
+    |}
+    [
       {
         define_name = "qualifier.taint_across_methods";
         returns = [];
       };
-    ]
-    ();
+    ];
 
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return __testSource()
+    {|
+      class Foo:
+        def qux():
+          return __testSource()
 
-        class Bar:
-          def qux():
-            return not_tainted()
+      class Bar:
+        def qux():
+          return not_tainted()
 
-        def taint_across_methods(f: Foo):
-          return f.qux()
-      |}
-    ~expect:[
+      def taint_across_methods(f: Foo):
+        return f.qux()
+    |}
+    [
       {
         define_name = "qualifier.taint_across_methods";
         returns = [Sources.TestSource];
       }
-    ]
-    ();
+    ];
 
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return __testSource()
+    {|
+      class Foo:
+        def qux():
+          return __testSource()
 
-        class Bar:
-          def qux():
-            return not_tainted()
+      class Bar:
+        def qux():
+          return not_tainted()
 
-        def taint_across_methods(f: Bar):
-          return f.qux()
-      |}
-    ~expect:[
+      def taint_across_methods(f: Bar):
+        return f.qux()
+    |}
+    [
       {
         define_name = "qualifier.taint_across_methods";
         returns = [];
       };
-    ]
-    ();
+    ];
 
   assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return __testSource()
+    {|
+      class Foo:
+        def qux():
+          return __testSource()
 
-        class Bar:
-          def qux():
-            return not_tainted()
+      class Bar:
+        def qux():
+          return not_tainted()
 
-        def taint_with_union_type(condition):
-          if condition:
-            f = Foo()
-          else:
-            f = Bar()
+      def taint_with_union_type(condition):
+        if condition:
+          f = Foo()
+        else:
+          f = Bar()
 
-          return f.qux()
-      |}
-    ~expect:[
+        return f.qux()
+    |}
+    [
+      {
+        define_name = "qualifier.taint_with_union_type";
+        returns = [Sources.TestSource];
+      };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def qux():
+          return not_tainted()
+
+      class Bar:
+        def qux():
+          return not_tainted()
+
+      class Baz:
+        def qux():
+          return __testSource()
+
+      def taint_with_union_type(condition):
+        if condition:
+          f = Foo()
+        elif condition > 1:
+          f = Bar()
+        else:
+          f = Baz()
+
+        return f.qux()
+    |}
+    [
       {
         define_name = "qualifier.taint_with_union_type";
         returns = [Sources.TestSource];
       };
     ]
-    ();
-
-  assert_taint
-    ~source:
-      {|
-        class Foo:
-          def qux():
-            return not_tainted()
-
-        class Bar:
-          def qux():
-            return not_tainted()
-
-        class Baz:
-          def qux():
-            return __testSource()
-
-        def taint_with_union_type(condition):
-          if condition:
-            f = Foo()
-          elif condition > 1:
-            f = Bar()
-          else:
-            f = Baz()
-
-          return f.qux()
-      |}
-    ~expect:[
-      {
-        define_name = "qualifier.taint_with_union_type";
-        returns = [Sources.TestSource];
-      };
-    ]
-    ()
 
 
 let test_taint_in_taint_out_application _ =
   assert_taint
-    ~source:
-      {|
-        def simple_source():
-          return __testSource()
+    {|
+      def simple_source():
+        return __testSource()
 
-        def taint_with_tito():
-          y = simple_source()
-          x = __tito(y)
-          return x
-      |}
-    ~expect:[
+      def taint_with_tito():
+        y = simple_source()
+        x = __tito(y)
+        return x
+    |}
+    [
       {
         define_name = "qualifier.simple_source";
         returns = [Sources.TestSource];
       };
-    ]
-    ();
+    ];
 
   assert_taint
-    ~source:
-      {|
-        def simple_source():
-          return __testSource()
+    {|
+      def simple_source():
+        return __testSource()
 
-        def no_tito_taint():
-          y = simple_source()
-          x = __no_tito(y)
-          return x
-      |}
-    ~expect:[
+      def no_tito_taint():
+        y = simple_source()
+        x = __no_tito(y)
+        return x
+    |}
+    [
       {
         define_name = "qualifier.no_tito_taint";
         returns = [];
       };
     ]
-    ()
 
 
 let () =
