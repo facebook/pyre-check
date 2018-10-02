@@ -1952,7 +1952,15 @@ let test_check _ =
       def f(x: typing.List[int]) -> typing.Set[str]:
         return {1, *x}
     |}
-    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."]
+    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        bar, baz = list(range(2))
+        return bar
+    |}
+    []
 
 
 let test_check_assign _ =

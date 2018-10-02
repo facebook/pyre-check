@@ -808,7 +808,8 @@ let constructor definition ~resolution =
   let class_annotation = annotation definition ~resolution in
   let return_annotation =
     match class_annotation with
-    | Type.Primitive name ->
+    | Type.Primitive name
+    | Type.Parametric { Type.name; _ } ->
         let generics = generics definition ~resolution in
         (* Tuples are special. *)
         if Identifier.show name = "tuple" then
@@ -817,8 +818,7 @@ let constructor definition ~resolution =
               Type.Tuple (Type.Unbounded tuple_variable)
           | _ ->
               Type.Tuple (Type.Unbounded Type.Object)
-        else
-        if List.is_empty generics then
+        else if List.is_empty generics then
           class_annotation
         else
           Type.Parametric { Type.name; parameters = generics }
