@@ -509,7 +509,7 @@ let messages ~detailed:_ ~define location kind =
       [
         message;
         (Format.asprintf
-           "%s incorrectly used on line %d."
+           "Redeclare `%s` on line %d to override previously declared type."
            (Access.show_sanitized name)
            start_line)
       ]
@@ -1363,6 +1363,9 @@ let suppress ~mode error =
 
   let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
     match kind with
+    | IncompatibleVariableType _ ->
+        due_to_analysis_limitations error ||
+        (Define.is_untyped define && not (Define.is_toplevel define))
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
     | MissingReturnAnnotation _

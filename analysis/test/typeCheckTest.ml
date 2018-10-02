@@ -928,7 +928,7 @@ let test_show_error_traces _ =
     |}
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
-      "type `str`. constant incorrectly used on line 5.";
+      "type `str`. Redeclare `constant` on line 5 to override previously declared type.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -3920,6 +3920,22 @@ let test_check_immutables _ =
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
       "type `str`.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def expects_str(x: str) -> None:
+        pass
+
+      def foo(x: int, y: typing.Any) -> None:
+        x = y
+        expects_str(x)
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
+      "type `typing.Any`.";
+      "Incompatible parameter type [6]: Expected `str` but got `int`."
     ];
 
   assert_type_errors
