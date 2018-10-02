@@ -113,52 +113,58 @@ let process_response
     } as state)
     serialized_response =
   let open Yojson.Safe in
-  let response = from_string serialized_response in
-  let keys = Util.keys response in
-  if List.mem ~equal:String.equal keys "files" then
-    begin
-      Log.info "Processing response %s" serialized_response;
-      (* If a list of updated files exists, default to typechecking. *)
-      response
-      |> Util.member "files"
-      |> Util.to_list
-      |> Util.filter_string
-      |> fun files ->
-      Log.info "Updated files: %a" Sexp.pp [%message (files: string list)];
-      let relativize_to_root path =
-        match Path.get_relative_to_root ~root ~path with
-        | None -> path
-        | Some relative -> Path.create_relative ~root ~relative
-      in
-      let paths =
-        List.map
-          ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative)
-          files
+  let response =
+    try
+      let response = from_string serialized_response in
+      let keys = Util.keys response in
+      if List.mem ~equal:String.equal keys "files" then
+        Some response
+      else
+        None
+    with Yojson.Json_error error ->
+      Log.error "Json_error: %s" error;
+      Log.info "Erroring watchman response: %s" serialized_response;
+      None
+  in
+  response >>| fun response ->
+  Log.info "Processing response %s" serialized_response;
+  (* If a list of updated files exists, default to typechecking. *)
+  response
+  |> Util.member "files"
+  |> Util.to_list
+  |> Util.filter_string
+  |> fun files ->
+  Log.info "Updated files: %a" Sexp.pp [%message (files: string list)];
+  let relativize_to_root path =
+    match Path.get_relative_to_root ~root ~path with
+    | None -> path
+    | Some relative -> Path.create_relative ~root ~relative
+  in
+  let paths =
+    List.map
+      ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative)
+      files
         |> List.map ~f:relativize_to_root
-      in
-      let ({ symlinks; _ } as state) =
-        List.fold
-          paths
-          ~init:state
-          ~f:(fun state path -> set_symlink state ~path)
-      in
-      let files =
-        List.filter_map
+  in
+  let ({ symlinks; _ } as state) =
+    List.fold
+      paths
+      ~init:state
+      ~f:(fun state path -> set_symlink state ~path)
+  in
+  let files =
+    List.filter_map
           ~f:(fun path ->
-              Map.find symlinks path
-              >>| File.create)
+          Map.find symlinks path
+          >>| File.create)
           paths
-      in
-      let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
-      Some
-        (state,
-         Protocol.Request.TypeCheckRequest
-           (Protocol.TypeCheckRequest.create
-              ~update_environment_with:files
-              ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ()))
-    end
-  else
-    None
+  in
+  let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
+  (state,
+   Protocol.Request.TypeCheckRequest
+     (Protocol.TypeCheckRequest.create
+        ~update_environment_with:files
+        ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ()))
 
 
 (** Main entry called whether spawned as a daemon or not *)
