@@ -50,7 +50,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") source expect =
         "Analyzing %s"
         (Interprocedural.Callable.show call_target)
     in
-    let forward, _errors = ForwardAnalysis.run define in
+    let forward, _errors = ForwardAnalysis.run ~environment ~define in
     let model = { Taint.Result.empty_model with forward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
@@ -289,6 +289,44 @@ let test_apply_method_model_at_call_site _ =
         define_name = "qualifier.taint_with_union_type";
         returns = [Sources.TestSource];
       };
+    ];
+
+  assert_taint
+    {|
+      class Indirect:
+        def direct(self) -> Direct: ...
+
+      class Direct:
+        def source():
+          return __testSource()
+
+      def taint_indirect_concatenated_call(indirect: Indirect):
+        direct = indirect.direct()
+        return direct.source()
+    |}
+    [
+      {
+        define_name = "qualifier.taint_indirect_concatenated_call";
+        returns = [Sources.TestSource];
+      }
+    ];
+  assert_taint
+    {|
+      class Indirect:
+        def direct(self) -> Direct: ...
+
+      class Direct:
+        def source():
+          return __testSource()
+
+      def taint_indirect_concatenated_call(indirect: Indirect):
+        return indirect.direct().source()
+    |}
+    [
+      {
+        define_name = "qualifier.taint_indirect_concatenated_call";
+        returns = [Sources.TestSource];
+      }
     ]
 
 

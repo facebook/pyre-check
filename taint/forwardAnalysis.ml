@@ -26,6 +26,7 @@ end
 
 module type FUNCTION_CONTEXT = sig
   val definition: Define.t Node.t
+  val environment: (module Environment.Handler)
 
   val add_flow_candidate: Flow.candidate -> unit
   val generate_errors: unit -> Interprocedural.Error.t list
@@ -158,20 +159,36 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access { expression; member = method_name } ->
           let access = as_access expression in
           let receiver_type =
-            key
-            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-            >>| Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
-            >>= Fn.flip Int.Map.find key
-            >>| Access.Map.of_tree
-            >>= Fn.flip Access.Map.find access
+            let resolution =
+              let annotations =
+                (key
+                 >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
+                 >>| Int.Map.Tree.fold
+                   ~init:Int.Map.empty
+                   ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+                 >>= Fn.flip Int.Map.find key
+                 >>| Access.Map.of_tree)
+                |> Option.value ~default:Access.Map.empty
+              in
+              Environment.resolution FunctionContext.environment ~annotations ()
+            in
+            let expression =
+              Expression.Access access
+              |> Node.create_with_default_location
+            in
+            let annotation = Resolution.resolve resolution expression in
+            if Type.equal annotation Type.Top then
+              None
+            else
+              Some annotation
           in
           let call_targets =
             match receiver_type with
-            | Some { annotation = Primitive receiver ; _ } ->
+            | Some (Type.Primitive receiver) ->
                 let access = Access.create_from_identifiers [receiver; method_name] in
                 let call_target = Interprocedural.Callable.create_real access in
                 [call_target]
-            | Some { annotation = Union annotations; _ } ->
+            | Some (Type.Union annotations) ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
                       Access.create_from_identifiers [receiver; method_name]
@@ -312,9 +329,10 @@ let extract_source_model _parameters exit_taint =
   ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
-let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
+let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as define) =
   let module Context = struct
     let definition = define
+    let environment = environment
 
     let candidates = Location.Reference.Table.create ()
 

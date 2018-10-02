@@ -85,7 +85,11 @@ type result_t = result_pkg Kind.Map.t
 module type ANALYZER = sig
   type result
   type call_model
-  val analyze: Callable.real_target -> Define.t Node.t -> result * call_model
+  val analyze
+    :  callable: Callable.real_target
+    -> environment:(module Analysis.Environment.Handler)
+    -> define: Define.t Node.t
+    -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)
   val init: types:string list -> functions:Callable.t list -> unit

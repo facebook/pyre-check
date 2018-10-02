@@ -10,12 +10,15 @@ module Kind = AnalysisKind
 val one_analysis_pass:
   analyses:Kind.abstract list
   -> Fixpoint.step
-  -> callables:Callable.t list -> unit
+  -> environment: (module Analysis.Environment.Handler)
+  -> callables:Callable.t list
+  -> unit
 
 (* Returns number of iterations. *)
 val compute_fixpoint
   :  configuration:Configuration.Analysis.t
   -> scheduler:Scheduler.t
+  -> environment: (module Analysis.Environment.Handler)
   -> analyses:Kind.abstract list
   -> caller_map:Analysis.CallGraph.t
   -> all_callables:Callable.t list

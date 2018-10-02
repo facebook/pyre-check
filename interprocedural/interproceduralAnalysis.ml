@@ -177,12 +177,12 @@ let widen_if_necessary step callable new_model result =
         }
 
 
-let analyze_define step analyses callable define =
+let analyze_define step analyses callable environment define =
   let analyze (Result.Analysis { Result.kind; analysis; }) =
     let open Result in
     let akind = Kind.abstract kind in
     let module Analysis = (val analysis) in
-    let method_result, method_model = Analysis.analyze callable define in
+    let method_result, method_model = Analysis.analyze ~callable ~environment ~define in
     (
       akind,
       Pkg { kind = ModelPart kind; value = method_model; },
@@ -218,7 +218,7 @@ let analyze_overrides _step _callable =
   }
 
 
-let analyze_callable analyses step callable =
+let analyze_callable analyses step callable environment =
   let () = (* Verify invariants *)
     let open Fixpoint in
     match Fixpoint.get_meta_data callable with
@@ -263,7 +263,7 @@ let analyze_callable analyses step callable =
               result = Result.empty_result;
             }
         | Some define ->
-            analyze_define step analyses callable define
+            analyze_define step analyses callable environment define
       end
   | #Callable.override_target as callable ->
       analyze_overrides step callable
@@ -316,10 +316,10 @@ let summaries callable =
 
 
 (* Called on a worker with a set of functions to analyze. *)
-let one_analysis_pass ~analyses step ~callables =
+let one_analysis_pass ~analyses step ~environment ~callables =
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
-    let result = analyze_callable analyses step callable in
+    let result = analyze_callable analyses step callable environment in
     Fixpoint.add_state step callable result
   in
   List.iter callables ~f:analyze_and_cache
@@ -387,7 +387,14 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
   callables_to_reanalyze
 
 
-let compute_fixpoint ~configuration ~scheduler ~analyses ~caller_map ~all_callables epoch =
+let compute_fixpoint
+    ~configuration
+    ~scheduler
+    ~environment
+    ~analyses
+    ~caller_map
+    ~all_callables
+    epoch =
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
      components. *)
   let max_iterations = 100 in
@@ -434,7 +441,7 @@ let compute_fixpoint ~configuration ~scheduler ~analyses ~caller_map ~all_callab
         Scheduler.map_reduce
           scheduler
           ~configuration
-          ~map:(fun _ callables -> one_analysis_pass ~analyses step ~callables)
+          ~map:(fun _ callables -> one_analysis_pass ~analyses step ~environment ~callables)
           ~initial:()
           ~reduce:(fun _ _ -> ())
           ~inputs:callables_to_analyze

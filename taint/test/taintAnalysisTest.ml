@@ -169,10 +169,12 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let caller_map = CallGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
   let configuration = Configuration.Analysis.create () in
+  let environment = Test.environment () in
   let iterations =
     Analysis.compute_fixpoint
       ~configuration
       ~scheduler
+      ~environment
       ~analyses
       ~caller_map
       ~all_callables
@@ -338,9 +340,11 @@ let test_integration _ =
         |> (fun content -> Option.value_exn content)
       in
       let call_graph, all_callables = create_call_graph source in
+      let environment = Test.environment () in
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())
+        ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
         ~caller_map:(CallGraph.reverse call_graph)
         ~all_callables

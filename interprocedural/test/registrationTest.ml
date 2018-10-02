@@ -38,7 +38,8 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
 include SimpleAnalysis.Register(struct
     let init ~types:_ ~functions:_ = ()
 
-    let analyze _callable _body = "some result", 5
+    let analyze ~callable:_ ~environment:_ ~define:_ =
+      "some result", 5
   end)
 
 

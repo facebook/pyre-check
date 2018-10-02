@@ -70,7 +70,7 @@ module ResultA = Interprocedural.Result.Make(struct
 module AnalysisA = ResultA.Register(struct
     let init ~types:_ ~functions:_ = ()
 
-    let analyze _callable _body =
+    let analyze ~callable:_ ~environment:_ ~define:_ =
       "A", 5
   end)
 
@@ -117,7 +117,7 @@ module ResultB = Interprocedural.Result.Make(struct
 module AnalysisB = ResultB.Register(struct
     let init ~types:_ ~functions:_ = ()
 
-    let analyze _callable _body =
+    let analyze ~callable:_ ~environment:_ ~define:_ =
       7, "B"
   end)
 
@@ -137,7 +137,8 @@ let test_unknown_function_analysis _ =
     |> List.map ~f:(fun access -> Callable.create_real access)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0; } in
-  let () = Analysis.one_analysis_pass step ~analyses ~callables:targets in
+  let environment = environment () in
+  let () = Analysis.one_analysis_pass step ~analyses ~environment ~callables:targets in
   let check_obscure_model target =
     match Fixpoint.get_model target with
     | None ->
@@ -183,7 +184,8 @@ let test_meta_data _ =
     List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:Callable.create_real in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0; } in
-  let () = Analysis.one_analysis_pass step1 ~analyses ~callables:targets in
+  let environment = environment () in
+  let () = Analysis.one_analysis_pass step1 ~analyses ~environment ~callables:targets in
   (* All obscure functions should reach fixpoint in 1st step *)
   let () = List.iter ~f:(check_meta_data ~step:step1 ~is_partial:false) targets in
   ()

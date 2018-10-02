@@ -176,6 +176,7 @@ let analyze
     Interprocedural.Analysis.compute_fixpoint
       ~configuration
       ~scheduler
+      ~environment
       ~analyses
       ~caller_map
       ~all_callables
