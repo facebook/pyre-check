@@ -219,6 +219,7 @@ let test_register_aliases _ =
       let register
           ({
             Source.handle;
+            path;
             qualifier;
             statements;
             metadata = { Source.Metadata.local_mode; _ };
@@ -228,6 +229,7 @@ let test_register_aliases _ =
         Handler.register_module
           ~qualifier
           ~local_mode
+          ~path
           ~handle:(Some handle)
           ~stub
           ~statements;

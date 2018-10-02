@@ -120,7 +120,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Protocols.get "Protocols"
     |> Option.value ~default:[]
 
-  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
+  let register_module ~qualifier ~local_mode ~path ~handle ~stub ~statements =
     let is_registered_empty_stub =
       Ast.SharedMemory.Modules.get ~qualifier
       >>| Module.empty_stub
@@ -135,6 +135,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
             (Module.create
                ~qualifier
                ~local_mode
+               ?path
                ?handle
                ~stub
                statements)

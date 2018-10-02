@@ -12,13 +12,14 @@ open Statement
 type t = {
   aliased_exports: (Access.t * Access.t) list;
   empty_stub: bool;
+  path: Path.t option;
   handle: File.Handle.t option;
   wildcard_exports: Access.t list;
 }
 [@@deriving compare, eq, sexp]
 
 
-let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
+let pp format { aliased_exports; empty_stub; path; handle; wildcard_exports } =
   let aliased_exports =
     List.map aliased_exports
       ~f:(fun (source, target) -> Format.asprintf "%a -> %a" Access.pp source Access.pp target)
@@ -28,12 +29,18 @@ let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
     List.map wildcard_exports ~f:(Format.asprintf "%a" Access.pp)
     |> String.concat ~sep:", "
   in
+  let path =
+    path
+    >>| Path.absolute
+    |> Option.value ~default:"unknown path"
+  in
   Format.fprintf format
-    "%s: [%s, empty_stub = %b, __all__ = [%s]]"
+    "%s: [%s, empty_stub = %b, __all__ = [%s], path = %s]"
     (Option.value ~default:"unknown path" (handle >>| File.Handle.show))
     aliased_exports
     empty_stub
     wildcard_exports
+    path
 
 
 let show =
@@ -61,6 +68,10 @@ let from_empty_stub ~access ~module_definition =
   is_empty_stub ~lead:[] ~tail:access
 
 
+let path { path; _ } =
+  path
+
+
 let handle { handle; _ } =
   handle
 
@@ -69,7 +80,7 @@ let wildcard_exports { wildcard_exports; _ } =
   wildcard_exports
 
 
-let create ~qualifier ~local_mode ?handle ~stub statements =
+let create ~qualifier ~local_mode ?path ?handle ~stub statements =
   let aliased_exports =
     let aliased_exports { Node.value; _ } =
       match value with
@@ -159,6 +170,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
   {
     aliased_exports;
     empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
+    path;
     handle;
     wildcard_exports = (Option.value dunder_all ~default:toplevel_public);
   }

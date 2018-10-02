@@ -3,6 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+
+open Pyre
+
 open Ast
 open Statement
 
@@ -48,6 +51,7 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
+    -> path: Path.t option
     -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list

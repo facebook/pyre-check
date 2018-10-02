@@ -47,6 +47,7 @@ let parse_modules_job ~configuration ~files =
         let add_module_from_source
             {
               Source.qualifier;
+              path;
               handle;
               statements;
               metadata = { Source.Metadata.local_mode; _ };
@@ -55,6 +56,7 @@ let parse_modules_job ~configuration ~files =
           Module.create
             ~qualifier
             ~local_mode
+            ?path
             ~handle
             ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
             statements
