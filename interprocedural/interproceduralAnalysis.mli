@@ -26,7 +26,7 @@ val compute_fixpoint
   -> Fixpoint.Epoch.t
   -> int
 
-val summaries: Callable.t -> Yojson.Safe.json list
+val externalize: Callable.t -> Yojson.Safe.json list
 
 val extract_errors:
   Scheduler.t

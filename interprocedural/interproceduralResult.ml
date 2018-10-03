@@ -25,7 +25,7 @@ module type ANALYSIS_PROVIDED = sig
   val reached_fixpoint: iteration:int -> previous:call_model -> next:call_model -> bool
 
   val get_errors: result -> InterproceduralError.t list
-  val summary: Callable.t -> result option -> call_model -> Yojson.Safe.json option
+  val externalize: Callable.t -> result option -> call_model -> Yojson.Safe.json list
 
   val show_call_model: call_model -> string
 end

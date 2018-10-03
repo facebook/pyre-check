@@ -140,31 +140,47 @@ module ResultArgument = struct
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
     }
 
-
   let get_errors result =
     List.map ~f:Flow.generate_error result
 
+  let issues_to_json _callable result =
+    match result with
+    | None -> []
+    | Some issues ->
+        let errors = List.map ~f:Flow.generate_error issues in
+        let emitter json =
+          `Assoc ["kind", `String "issue"; "data", json]
+        in
+        List.map
+          ~f:(fun error -> Interprocedural.Error.to_json ~detailed:true error |> emitter)
+          errors
+
+  let model_to_json callable model =
+    let callable_name = Interprocedural.Callable.external_target_name callable in
+    let model_json =
+      `Assoc [
+        "callable", `String callable_name;
+        "sources", Forward.to_json model.forward;
+        "sinks", Backward.to_json_sinks model.backward;
+        "tito", Backward.to_json_tito model.backward;
+      ]
+    in
+    `Assoc [
+      "kind", `String "model";
+      "data", model_json;
+    ]
 
   let reached_fixpoint ~iteration ~previous ~next =
     Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward
     && Backward.reached_fixpoint ~iteration ~previous:previous.backward ~next:next.backward
 
-  let summary callable _result model =
+  (* Emit both issues and models for external processing *)
+  let externalize callable result model =
+    let issues = issues_to_json callable result in
     if is_empty model then
-      None
+      issues
     else
-      let callable_name = Interprocedural.Callable.external_target_name callable in
-      let sources = Forward.to_json model.forward in
-      let sinks = Backward.to_json_sinks model.backward in
-      let tito = Backward.to_json_tito model.backward in
-      Some (
-        `Assoc [
-          "callable", `String callable_name;
-          "sources", sources;
-          "sinks", sinks;
-          "tito", tito;
-        ]
-      )
+      model_to_json callable model :: issues
 end
 
 

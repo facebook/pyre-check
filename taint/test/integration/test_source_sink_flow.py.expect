@@ -1,15 +1,5 @@
-Model
-Errors
-{"line":22,"column":8,"path":"test.py","code":5002,"name":"Flow from test source to test sink.","description":"Flow from test source to test sink. [5002]: Flow from via call@test.py:21:19-21:21[some_source] -> {TestSource} to via call@test.py:22:8-22:9[bad] -> {TestSink} detected.","inference":null,"define":"match_flows"}
-Model
-{"callable":"bad","sources":[],"sinks":[{"port":"formal(0)","taint":[{"call":{"position":{"filename":"test.py","line":13,"start":7,"end":12},"resolves_to":["qux"]},"leaves":[{"leaf":{"kind":"TestSink"}}]}]}],"tito":[]}
-Errors
-Model
-{"callable":"bar","sources":[{"port":"result","taint":[{"root":{"filename":"test.py","line":5,"start":23,"end":25},"leaves":[{"leaf":{"kind":"TestSource"}}]}]}],"sinks":[],"tito":[]}
-Errors
-Model
-{"callable":"qux","sources":[],"sinks":[{"port":"formal(0)","taint":[{"root":{"filename":"test.py","line":9,"start":14,"end":19},"leaves":[{"leaf":{"kind":"TestSink"}}]}]}],"tito":[]}
-Errors
-Model
-{"callable":"some_source","sources":[{"port":"result","taint":[{"call":{"position":{"filename":"test.py","line":17,"start":14,"end":16},"resolves_to":["bar"]},"leaves":[{"leaf":{"kind":"TestSource"}}]}]}],"sinks":[],"tito":[]}
-Errors
+{"kind":"issue","data":{"line":22,"column":8,"path":"test.py","code":5002,"name":"Flow from test source to test sink.","description":"Flow from test source to test sink. [5002]: Flow from via call@test.py:21:19-21:21[some_source] -> {TestSource} to via call@test.py:22:8-22:9[bad] -> {TestSink} detected.","inference":null,"define":"match_flows"}}
+{"kind":"model","data":{"callable":"bad","sources":[],"sinks":[{"port":"formal(0)","taint":[{"call":{"position":{"filename":"test.py","line":13,"start":7,"end":12},"resolves_to":["qux"]},"leaves":[{"leaf":{"kind":"TestSink"}}]}]}],"tito":[]}}
+{"kind":"model","data":{"callable":"bar","sources":[{"port":"result","taint":[{"root":{"filename":"test.py","line":5,"start":23,"end":25},"leaves":[{"leaf":{"kind":"TestSource"}}]}]}],"sinks":[],"tito":[]}}
+{"kind":"model","data":{"callable":"qux","sources":[],"sinks":[{"port":"formal(0)","taint":[{"root":{"filename":"test.py","line":9,"start":14,"end":19},"leaves":[{"leaf":{"kind":"TestSink"}}]}]}],"tito":[]}}
+{"kind":"model","data":{"callable":"some_source","sources":[{"port":"result","taint":[{"call":{"position":{"filename":"test.py","line":17,"start":14,"end":16},"resolves_to":["bar"]},"leaves":[{"leaf":{"kind":"TestSource"}}]}]}],"sinks":[],"tito":[]}}

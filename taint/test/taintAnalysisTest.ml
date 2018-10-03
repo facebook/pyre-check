@@ -352,25 +352,12 @@ let test_integration _ =
         Fixpoint.Epoch.initial
       |> ignore;
       let serialized_model callable: string =
-        let models =
-          Interprocedural.Analysis.summaries callable
+        let externalization =
+          Interprocedural.Analysis.externalize callable
           |> List.map ~f:(fun json -> Yojson.Safe.to_string ~std:true json ^ "\n")
           |> String.concat ~sep:""
         in
-        let errors =
-          let to_json_string error =
-            Error.to_json ~detailed:false error
-            |> Yojson.Safe.to_string
-            |> Format.sprintf "%s\n"
-          in
-          Fixpoint.get_result callable
-          |> Result.get_result Taint.Result.kind
-          >>| List.map ~f:Flow.generate_error
-          >>| List.map ~f:to_json_string
-          >>| String.concat ~sep:""
-          |> Option.value ~default:""
-        in
-        Format.sprintf "Model\n%sErrors\n%s" models errors
+        externalization
       in
       List.map all_callables ~f:serialized_model
       |> List.sort ~compare:String.compare

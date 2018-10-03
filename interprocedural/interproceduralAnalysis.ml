@@ -281,7 +281,8 @@ let get_errors results =
   |> List.map ~f:get_diagnostics
   |> List.concat_no_order
 
-let summaries_internal callable models results =
+
+let externalize_all_analyses callable models results =
   let open Result in
   let merge _ model_opt result_opt =
     match model_opt with
@@ -295,25 +296,30 @@ let summaries_internal callable models results =
     match result_option with
     | None ->
         let module Analysis = (val (Result.get_analysis kind1)) in
-        Analysis.summary callable None model
+        Analysis.externalize callable None model
     | Some (Pkg { kind = ResultPart kind2; value = result; }) ->
         match Result.Kind.are_equal kind1 kind2 with
         | Kind.Equal ->
             let module Analysis = (val (Result.get_analysis kind1)) in
-            Analysis.summary callable (Some result) model
+            Analysis.externalize callable (Some result) model
         | Kind.Distinct -> failwith "kind mismatch"
   in
   Kind.Map.bindings merged
-  |> List.filter_map ~f:get_summaries
+  |> List.concat_map ~f:get_summaries
 
 
-let summaries callable =
+let externalize callable =
   match Fixpoint.get_model callable with
   | Some models ->
       let results = Fixpoint.get_result callable in
-      summaries_internal callable models results
+      externalize_all_analyses callable models results
   | None ->
       []
+
+
+let emit_externalization emitter callable =
+  externalize callable
+  |> List.iter ~f:emitter
 
 
 (* Called on a worker with a set of functions to analyze. *)
@@ -483,38 +489,21 @@ let extract_errors scheduler ~configuration all_callables =
   |> List.concat_no_order
 
 
-let emit_issue_json emitter callable =
-  let errors = Fixpoint.get_result callable |> get_errors in
-  let emitter json =
-    emitter (`Assoc ["kind", `String "issue"; "data", json])
-  in
-  List.iter ~f:(fun error -> InterproceduralError.to_json ~detailed:true error |> emitter) errors
-
-
-let emit_model_json emitter callable =
-  let emitter json =
-    emitter (`Assoc ["kind", `String "model"; "data", json])
-  in
-  summaries callable
-  |> List.iter ~f:emitter
-
-
-let emit_json_array_elements out_buffer =
-  let seen_element = ref false in
-  fun json ->
-    if !seen_element then
-      begin
-        Bi_outbuf.add_string out_buffer ",\n";
-        Json.to_outbuf out_buffer json;
-      end
-    else
-      begin
-        seen_element := true;
-        Json.to_outbuf out_buffer json;
-      end
-
-
 let save_results result_json_path all_callables =
+  let emit_json_array_elements out_buffer =
+    let seen_element = ref false in
+    fun json ->
+      if !seen_element then
+        begin
+          Bi_outbuf.add_string out_buffer ",\n";
+          Json.to_outbuf out_buffer json;
+        end
+      else
+        begin
+          seen_element := true;
+          Json.to_outbuf out_buffer json;
+        end
+  in
   match result_json_path with
   | None -> ()
   | Some filepath ->
@@ -522,8 +511,7 @@ let save_results result_json_path all_callables =
       let out_buffer = Bi_outbuf.create_channel_writer out_channel in
       let array_emitter = emit_json_array_elements out_buffer in
       Bi_outbuf.add_string out_buffer "[\n";
-      List.iter ~f:(emit_issue_json array_emitter) all_callables;
-      List.iter ~f:(emit_model_json array_emitter) all_callables;
+      List.iter ~f:(emit_externalization array_emitter) all_callables;
       Bi_outbuf.add_string out_buffer "]\n";
       Bi_outbuf.flush_output_writer out_buffer;
       close_out out_channel;

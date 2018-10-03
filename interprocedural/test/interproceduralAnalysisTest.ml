@@ -51,19 +51,19 @@ module ResultA = Interprocedural.Result.Make(struct
     let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
-    let summary callable result_option model =
+    let externalize callable result_option model =
       let result_json = match result_option with
         | None -> `Null
         | Some result -> `String result
       in
-      Some (
+      [
         `Assoc [
           "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `Int model;
-          "result", result_json
+          "result", result_json;
         ]
-      )
+      ]
   end)
 
 
@@ -98,19 +98,19 @@ module ResultB = Interprocedural.Result.Make(struct
     let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
-    let summary callable result_option model =
+    let externalize callable result_option model =
       let result_json = match result_option with
         | None -> `Null
         | Some result -> `Int result
       in
-      Some (
+      [
         `Assoc [
           "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `String model;
           "result", result_json;
         ]
-      )
+      ]
   end)
 
 
@@ -148,9 +148,9 @@ let test_unknown_function_analysis _ =
         assert_equal (Result.get_model ResultA.kind models) (Some ResultA.obscure_model);
         assert_equal (Result.get_model ResultB.kind models) (Some ResultB.obscure_model)
   in
-  let summaries = List.concat_map ~f:Analysis.summaries targets in
+  let externalized = List.concat_map ~f:Analysis.externalize targets in
   List.iter ~f:check_obscure_model targets;
-  assert_summaries summaries ~expected:[
+  assert_summaries externalized ~expected:[
     {| {"analysis":"analysisA","name":"fun_a (real)","model":-1,"result":null} |};
     {| {"analysis":"analysisB","name":"fun_a (real)","model":"obscure","result":null} |};
     {| {"analysis":"analysisA","name":"fun_b (real)","model":-1,"result":null} |};

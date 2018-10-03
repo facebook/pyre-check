@@ -31,7 +31,7 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
     let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
-    let summary _ _ _ = None
+    let externalize _ _ _ = []
   end)
 
 
