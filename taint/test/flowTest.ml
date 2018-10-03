@@ -147,7 +147,8 @@ let test_no_errors _ =
     in
     let errors =
       generate_source_sink_matches ~location ~source_tree ~sink_tree
-      |> generate_errors ~define
+      |> generate_issues ~define
+      |> List.map ~f:generate_error
     in
     assert_equal
       ~msg:"Errors"
@@ -192,7 +193,8 @@ let test_errors _ =
     in
     let errors =
       generate_source_sink_matches ~location ~source_tree ~sink_tree
-      |> generate_errors ~define
+      |> generate_issues ~define
+      |> List.map ~f:generate_error
     in
     assert_equal
       ~msg:"Error"

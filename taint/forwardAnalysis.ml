@@ -29,7 +29,7 @@ module type FUNCTION_CONTEXT = sig
   val environment: (module Environment.Handler)
 
   val add_flow_candidate: Flow.candidate -> unit
-  val generate_errors: unit -> Interprocedural.Error.t list
+  val generate_issues: unit -> Flow.issue list
 end
 
 
@@ -343,10 +343,10 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
         ~key:candidate.Flow.location
         ~data:candidate
 
-    let generate_errors () =
-      let accumulate ~key:_ ~data:candidate errors =
-        let new_errors = Flow.generate_errors ~define:definition candidate in
-        List.rev_append new_errors errors
+    let generate_issues () =
+      let accumulate ~key:_ ~data:candidate issues =
+        let new_issues = Flow.generate_issues ~define candidate in
+        List.rev_append new_issues issues
       in
       Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
   end
@@ -369,16 +369,16 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
     let () = Log.log ~section:`Taint "Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint; }
   in
-  let errors = Context.generate_errors () in
+  let issues = Context.generate_issues () in
   let () =
     Log.log
       ~section:`Taint
-      "Errors %s"
-      (Sexp.to_string [%message (errors: Interprocedural.Error.t list)])
+      "Issues %s"
+      (Sexp.to_string [%message (issues: Flow.issue list)])
   in
   let model =
     exit_state
     >>| extract_model
     |> Option.value ~default:TaintResult.Forward.empty
   in
-  model, errors
+  model, issues

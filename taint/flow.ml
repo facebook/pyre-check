@@ -26,6 +26,15 @@ type candidate = {
 [@@deriving sexp]
 
 
+type issue = {
+  code: int;
+  flow: flow;
+  issue_location: Ast.Location.t;
+  define: Ast.Statement.Define.t Ast.Node.t;
+}
+[@@deriving sexp]
+
+
 (* Compute all flows from paths in ~source tree to corresponding paths in
    ~sink tree, while avoiding duplication as much as possible.
    Strategy:
@@ -126,44 +135,14 @@ let rules = [
 ]
 
 
-let make_error define location code name flows =
-  let get_source_taint { source_taint; _ } = source_taint in
-  let get_sink_taint { sink_taint; _ } = sink_taint in
-  let join_source_taint source_taints =
-    List.fold source_taints ~init:ForwardTaint.bottom ~f:ForwardTaint.join
-  in
-  let join_sink_taint sink_taints =
-    List.fold sink_taints ~init:BackwardTaint.bottom ~f:BackwardTaint.join
-  in
-  let join_flows flows =
-    {
-      source_taint = join_source_taint (List.map flows ~f:get_source_taint);
-      sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint);
-    }
-  in
-  let flow = join_flows flows in
-  (* TODO(T32467565) emit trace roots. *)
-  let messages = [
-    Format.sprintf
-      "Flow from %s to %s detected."
-      (ForwardTaint.show flow.source_taint)
-      (BackwardTaint.show flow.sink_taint)
-  ]
-  in
-  let kind = { Interprocedural.Error.name; messages; code; } in
-  Interprocedural.Error.create ~location ~define ~kind
-
-
-let any_sources source_list source =
-  List.exists ~f:((=) source) source_list
-
-
-let any_sinks sink_list sink =
-  List.exists ~f:((=) sink) sink_list
-
-
-let generate_errors ~define { location; flows; } =
-  let apply_rule (errors, remaining_flows) { sources; sinks; code; name; } =
+let generate_issues ~define { location; flows; } =
+  let apply_rule (issues, remaining_flows) { sources; sinks; code; _ } =
+    let any_sources source_list source =
+      List.exists ~f:((=) source) source_list
+    in
+    let any_sinks sink_list sink =
+      List.exists ~f:((=) sink) sink_list
+    in
     let { matched; rest; } =
       partition_flows
         ~sources:(any_sources sources)
@@ -172,10 +151,47 @@ let generate_errors ~define { location; flows; } =
     in
     match matched with
     | [] ->
-        (errors, rest)
+        (issues, rest)
     | matched ->
-        let new_error = make_error define location code name matched in
-        new_error :: errors, rest
+        let join_flows flows =
+          let get_source_taint { source_taint; _ } = source_taint in
+          let get_sink_taint { sink_taint; _ } = sink_taint in
+          let join_source_taint source_taints =
+            List.fold source_taints ~init:ForwardTaint.bottom ~f:ForwardTaint.join
+          in
+          let join_sink_taint sink_taints =
+            List.fold sink_taints ~init:BackwardTaint.bottom ~f:BackwardTaint.join
+          in
+          {
+            source_taint = join_source_taint (List.map flows ~f:get_source_taint);
+            sink_taint = join_sink_taint (List.map flows ~f:get_sink_taint);
+          }
+        in
+        let flow = join_flows matched in
+        let issue = {
+          code;
+          flow;
+          issue_location = location;
+          define;
+        }
+        in
+        issue :: issues, rest
   in
-  let errors, _ = List.fold ~f:apply_rule ~init:([], flows) rules in
-  errors
+  let issues, _ = List.fold ~f:apply_rule ~init:([], flows) rules in
+  issues
+
+
+let generate_error { code; flow; issue_location; define } =
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
+  | None -> failwith "issue with code that has no rule"
+  | Some { name; _; } ->
+      (* TODO(T32467565) emit trace roots. *)
+      let messages = [
+        Format.sprintf
+          "Flow from %s to %s detected."
+          (ForwardTaint.show flow.source_taint)
+          (BackwardTaint.show flow.sink_taint)
+      ]
+      in
+      let kind = { Interprocedural.Error.name; messages; code; } in
+      Interprocedural.Error.create ~location:issue_location ~define ~kind

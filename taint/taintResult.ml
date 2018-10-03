@@ -3,8 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
 
-module Error = Interprocedural.Error
 open Domains
 
 
@@ -102,7 +102,7 @@ type call_model = {
 [@@deriving show, sexp]
 
 
-type result = Error.t list
+type result = Flow.issue list
 
 
 module ResultArgument = struct
@@ -141,7 +141,9 @@ module ResultArgument = struct
     }
 
 
-  let get_errors result = result
+  let get_errors result =
+    List.map ~f:Flow.generate_error result
+
 
   let reached_fixpoint ~iteration ~previous ~next =
     Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward

@@ -190,6 +190,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
     let call_target = Callable.create_real (Access.create define_name) in
     Fixpoint.get_result call_target
     |> Result.get_result Taint.Result.kind
+    >>| List.map ~f:Flow.generate_error
     >>| (fun result -> define_name, result)
   in
   let assert_error define { code; pattern } error =
@@ -364,6 +365,7 @@ let test_integration _ =
           in
           Fixpoint.get_result callable
           |> Result.get_result Taint.Result.kind
+          >>| List.map ~f:Flow.generate_error
           >>| List.map ~f:to_json_string
           >>| String.concat ~sep:""
           |> Option.value ~default:""
