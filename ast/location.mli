@@ -46,6 +46,7 @@ val reference: Instantiated.t -> Reference.t
 
 val line: 'path location -> int
 val column: 'path location -> int
+val stop_column: 'path location -> int
 val path: 'path location -> 'path
 
 (* Shortcuts to make this more palatable. *)

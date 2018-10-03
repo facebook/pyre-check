@@ -351,13 +351,10 @@ let test_integration _ =
         Fixpoint.Epoch.initial
       |> ignore;
       let serialized_model callable: string =
-        let model =
-          Fixpoint.get_model callable
-          |> (fun model -> Option.value_exn model)
-          |> Result.get_model Taint.Result.kind
-          |> (fun model -> Option.value_exn model)
-          |> Taint.Result.show_call_model
-          |> Format.sprintf "Callable %s\n%s\n" (Callable.show callable)
+        let models =
+          Interprocedural.Analysis.summaries callable
+          |> List.map ~f:(fun json -> Yojson.Safe.to_string ~std:true json ^ "\n")
+          |> String.concat ~sep:""
         in
         let errors =
           let to_json_string error =
@@ -371,7 +368,7 @@ let test_integration _ =
           >>| String.concat ~sep:""
           |> Option.value ~default:""
         in
-        Format.sprintf "Model\n%sErrors\n%s" model errors
+        Format.sprintf "Model\n%sErrors\n%s" models errors
       in
       List.map all_callables ~f:serialized_model
       |> List.sort ~compare:String.compare

@@ -22,6 +22,7 @@ type t = {
   path: AccessPathTree.Label.path;
 }
 
+val create: Root.t -> AccessPathTree.Label.path -> t
 
 val of_accesses: Access.t -> t option
 
@@ -42,3 +43,5 @@ type normalized_expression =
 val normalize_access: Access.t -> normalized_expression
 
 val as_access: normalized_expression -> Access.t
+
+val to_json: t -> Yojson.Safe.json

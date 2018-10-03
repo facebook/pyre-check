@@ -144,6 +144,10 @@ let column { start = { column; _ }; _ } =
   column
 
 
+let stop_column { stop = { column; _ }; _ } =
+  column
+
+
 let path { path; _ } =
   path
 

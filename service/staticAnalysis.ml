@@ -77,7 +77,7 @@ let add_models ~model_source =
   let open Taint in
   let open Interprocedural in
   let add_model_to_memory Model.{ call_target; model } =
-    Log.info "Adding taint model %S to shared memory" (Callable.target_name call_target);
+    Log.info "Adding taint model %S to shared memory" (Callable.external_target_name call_target);
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
@@ -89,7 +89,7 @@ let add_models ~model_source =
 let analyze
     ?taint_models_directory
     ~scheduler
-    ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path = _ }
+    ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path }
     ~environment
     ~handles:paths
     () =
@@ -182,6 +182,7 @@ let analyze
       ~all_callables
       Interprocedural.Fixpoint.Epoch.initial
   in
+  let () = Interprocedural.Analysis.save_results result_json_path all_callables in
   let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
   Log.info "Fixpoint iterations: %d" iterations;

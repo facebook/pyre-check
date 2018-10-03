@@ -25,6 +25,9 @@ type t = {
 }
 
 
+let create root path = { root; path; }
+
+
 let of_access path access_element =
   match path, access_element with
   | Some path, Access.Identifier id ->
@@ -114,3 +117,13 @@ let rec as_access = function
   | Access { expression; member; } ->
       let left = as_access expression in
       left @ [Access.Identifier member]
+
+
+let to_json { root; path; } =
+  let open Root in
+  let root_name = function
+    | LocalResult -> "result"
+    | Parameter { position } -> Format.sprintf "formal(%d)" position
+    | Variable name -> Format.sprintf "local(%s)" (Identifier.show name)
+  in
+  `String (root_name root ^ AccessPathTree.Label.show_path path)

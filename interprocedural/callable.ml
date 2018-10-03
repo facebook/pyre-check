@@ -89,13 +89,14 @@ let get_definition (`RealTarget access as callable) =
   >>= List.find ~f:(define_matches access)
 
 
-let show callable =
-  show (callable :> t)
-
-
-let target_name = function
+let show = function
   | `RealTarget target -> Format.sprintf "%s (real)" (Access.show target)
   | `OverrideTarget target -> Format.sprintf "%s (override)" (Access.show target)
+
+
+let external_target_name = function
+  | `RealTarget target -> Format.sprintf "%s" (Access.show target)
+  | `OverrideTarget target -> Format.sprintf "O{%s}" (Access.show target)
 
 
 let compare target1 target2 =

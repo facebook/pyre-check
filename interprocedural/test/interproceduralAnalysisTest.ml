@@ -51,19 +51,19 @@ module ResultA = Interprocedural.Result.Make(struct
     let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
-    let summaries callable result_option model =
+    let summary callable result_option model =
       let result_json = match result_option with
         | None -> `Null
         | Some result -> `String result
       in
-      [
+      Some (
         `Assoc [
           "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `Int model;
           "result", result_json
         ]
-      ]
+      )
   end)
 
 
@@ -98,19 +98,19 @@ module ResultB = Interprocedural.Result.Make(struct
     let reached_fixpoint ~iteration:_ ~previous ~next =
       next <= previous
 
-    let summaries callable result_option model =
+    let summary callable result_option model =
       let result_json = match result_option with
         | None -> `Null
         | Some result -> `Int result
       in
-      [
+      Some (
         `Assoc [
           "analysis", `String name;
           "name", `String (Callable.show callable);
           "model", `String model;
           "result", result_json;
         ]
-      ]
+      )
   end)
 
 
@@ -151,12 +151,12 @@ let test_unknown_function_analysis _ =
   let summaries = List.concat_map ~f:Analysis.summaries targets in
   List.iter ~f:check_obscure_model targets;
   assert_summaries summaries ~expected:[
-    {| {"analysis":"analysisA","name":"`RealTarget (fun_a)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"`RealTarget (fun_a)","model":"obscure","result":null} |};
-    {| {"analysis":"analysisA","name":"`RealTarget (fun_b)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"`RealTarget (fun_b)","model":"obscure","result":null} |};
-    {| {"analysis":"analysisA","name":"`RealTarget (fun_c)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"`RealTarget (fun_c)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_a (real)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_a (real)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_b (real)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_b (real)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_c (real)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_c (real)","model":"obscure","result":null} |};
   ]
 
 

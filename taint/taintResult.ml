@@ -18,6 +18,9 @@ module Forward = struct
     source_taint = ForwardState.empty;
   }
 
+  let is_empty { source_taint } =
+    ForwardState.is_empty source_taint
+
   let obscure = empty
 
   let join { source_taint = left; } { source_taint = right; } =
@@ -35,6 +38,8 @@ module Forward = struct
       ~next:{ source_taint = next; } =
     ForwardState.less_or_equal ~left:next ~right:previous
 
+  let to_json { source_taint } =
+    ForwardState.to_json source_taint
 end
 
 
@@ -49,6 +54,10 @@ module Backward = struct
     sink_taint = BackwardState.empty;
     taint_in_taint_out = BackwardState.empty;
   }
+
+  let is_empty { sink_taint; taint_in_taint_out } =
+    BackwardState.is_empty sink_taint &&
+    BackwardState.is_empty taint_in_taint_out
 
   let obscure = empty
 
@@ -76,6 +85,12 @@ module Backward = struct
       ~next:{ sink_taint = sink_taint_next; taint_in_taint_out = tito_next; } =
     BackwardState.less_or_equal ~left:sink_taint_next ~right:sink_taint_previous
     && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
+
+  let to_json_sinks { sink_taint; _ } =
+    BackwardState.to_json sink_taint
+
+  let to_json_tito { taint_in_taint_out; _ } =
+    BackwardState.to_json taint_in_taint_out
 
 end
 
@@ -109,6 +124,10 @@ module ResultArgument = struct
     backward = Backward.empty;
   }
 
+  let is_empty { forward; backward } =
+    Forward.is_empty forward &&
+    Backward.is_empty backward
+
   let join ~iteration:_ left right =
     {
       forward = Forward.join left.forward right.forward;
@@ -128,8 +147,22 @@ module ResultArgument = struct
     Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward
     && Backward.reached_fixpoint ~iteration ~previous:previous.backward ~next:next.backward
 
-  let summaries _callable _result _model =
-    []
+  let summary callable _result model =
+    if is_empty model then
+      None
+    else
+      let callable_name = Interprocedural.Callable.external_target_name callable in
+      let sources = Forward.to_json model.forward in
+      let sinks = Backward.to_json_sinks model.backward in
+      let tito = Backward.to_json_tito model.backward in
+      Some (
+        `Assoc [
+          "callable", `String callable_name;
+          "sources", sources;
+          "sinks", sinks;
+          "tito", tito;
+        ]
+      )
 end
 
 

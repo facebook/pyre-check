@@ -30,6 +30,7 @@ module type TAINT_SET = sig
   val singleton: Leaf.t -> t
   val add: t -> Leaf.t -> t
   val of_list: Leaf.t list -> t
+  val to_json: t -> Yojson.Safe.json list
 
 end
 
@@ -65,6 +66,16 @@ module Set(Element: SET_ARG) : TAINT_SET with type Leaf.t = Element.t = struct
     |> List.map ~f:Element.show
     |> String.concat ~sep:", "
     |> Format.sprintf "{%s}"
+
+  let to_json set =
+    let element_to_json element =
+      let kind = `String (Element.show element) in
+      `Assoc [
+        "leaf", `Assoc ["kind", kind];
+      ]
+    in
+    leaves set
+    |> List.map ~f:element_to_json
 end
 
 
@@ -113,17 +124,63 @@ module TraceInfo = struct
     | Declaration -> "declaration"
     | Origin location ->
         let instantiated =
-          Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
+          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
         in
         Format.sprintf "@%s" (Location.Instantiated.show instantiated)
     | CallSite { location; callees; } ->
         let instantiated =
-          Ast.Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
+          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
         in
         Format.sprintf
           "via call@%s[%s]"
           (Location.Instantiated.show instantiated)
-          (String.concat ~sep:" " (List.map ~f:Interprocedural.Callable.show callees))
+          (String.concat
+             ~sep:" "
+             (List.map ~f:Interprocedural.Callable.external_target_name callees))
+
+  let location_to_json location : Yojson.Safe.json =
+    let path = Location.path location in
+    let line = Location.line location in
+    let column = Location.column location in
+    let end_column =
+      Location.stop_column location  (* Note: not correct for multiple line span *)
+    in
+    `Assoc [
+      "filename", `String path;
+      "line", `Int line;
+      "start", `Int column;
+      "end", `Int end_column;
+    ]
+
+  (* Returns the (dictionary key * json) to emit *)
+  let to_json trace : string * Yojson.Safe.json =
+    match trace with
+    | Declaration ->
+        "decl", `Null
+    | Origin location ->
+        let location_json =
+          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
+          |> location_to_json
+        in
+        "root", location_json
+    | CallSite { location; callees; } ->
+        let location_json =
+          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
+          |> location_to_json
+        in
+        let callee_json =
+          List.map
+            ~f:(fun callable -> `String (Interprocedural.Callable.external_target_name callable))
+            callees
+        in
+        let call_json =
+          `Assoc [
+            "position", location_json;
+            "resolves_to", `List callee_json;
+          ]
+        in
+        "call", call_json
+
 end
 
 
@@ -136,6 +193,8 @@ module type TAINT_DOMAIN = sig
 
   (* Add trace info at call-site *)
   val apply_call: Location.t -> callees: Interprocedural.Callable.t list -> t -> t
+
+  val to_json: t -> Yojson.Safe.json
 end
 
 
@@ -173,16 +232,30 @@ module MakeTaint(TaintSet : TAINT_SET) :
     in
     Map.fold taint ~init:Map.bottom ~f:translate
 
-  let show t =
+  let show taint =
     let show_pair (trace, elements) =
       Format.sprintf "%s -> %s" (TraceInfo.show trace) (TaintSet.show elements)
     in
     let pairs =
-      Map.to_alist t
+      Map.to_alist taint
       |> List.map ~f:show_pair
     in
     String.concat ~sep:"\n" pairs
 
+  let to_json taint =
+    let element_to_json (trace, elements) =
+      let trace_pair = TraceInfo.to_json trace in
+      let leaves = TaintSet.to_json elements in
+      `Assoc [
+        trace_pair;
+        "leaves", `List leaves;
+      ]
+    in
+    let elements =
+      to_alist taint
+      |> List.map ~f:element_to_json
+    in
+    `List elements
 end
 
 
@@ -198,6 +271,21 @@ module MakeTaintTree(Taint : TAINT_DOMAIN) = struct
 
   let apply_call location ~callees taint_tree =
     filter_map_tree ~f:(Taint.apply_call location ~callees) taint_tree
+
+  let to_json taint =
+    let element_to_json ~root ~path ~path_element:_ ~element json_list =
+      let port =
+        AccessPath.create root path
+        |> AccessPath.to_json
+      in
+      (`Assoc [
+          "port", port;
+          "taint", Taint.to_json element;
+        ]
+      ) :: json_list
+    in
+    let paths = fold_paths ~f:element_to_json ~init:[] taint in
+    `List paths
 end
 
 
