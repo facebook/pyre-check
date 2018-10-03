@@ -162,52 +162,74 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           apply_call_targets location arguments state [call_target]
       | Access { expression; member = method_name } ->
           let access = as_access expression in
-          let receiver_type =
-            let resolution =
-              let annotations =
-                (key
-                 >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-                 >>| Int.Map.Tree.fold
-                   ~init:Int.Map.empty
-                   ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
-                 >>= Fn.flip Int.Map.find key
-                 >>| Access.Map.of_tree)
-                |> Option.value ~default:Access.Map.empty
-              in
-              Environment.resolution FunctionContext.environment ~annotations ()
+          let resolution =
+            let annotations =
+              (key
+               >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
+               >>| Int.Map.Tree.fold
+                 ~init:Int.Map.empty
+                 ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+               >>= Fn.flip Int.Map.find key
+               >>| Access.Map.of_tree)
+              |> Option.value ~default:Access.Map.empty
             in
-            let expression =
-              Expression.Access access
-              |> Node.create_with_default_location
-            in
-            let annotation = Resolution.resolve resolution expression in
-            if Type.equal annotation Type.Top then
-              None
-            else
-              Some annotation
+            Environment.resolution FunctionContext.environment ~annotations ()
           in
-          let call_targets =
-            match receiver_type with
-            | Some (Type.Primitive receiver) ->
-                let access = Access.create_from_identifiers [receiver; method_name] in
-                let call_target = Interprocedural.Callable.create_real access in
-                [call_target]
-            | Some (Type.Union annotations) ->
-                let filter_receivers = function
-                  | Type.Primitive receiver ->
-                      Access.create_from_identifiers [receiver; method_name]
-                      |> Interprocedural.Callable.create_real
-                      |> Option.some
-                  | _ ->
-                      None
+          let hardcoded_taint =
+            match List.rev access, Identifier.show method_name with
+            | (Access.Identifier get) :: lead, "__getitem__"
+              when Identifier.show get = "GET" ->
+                let receiver_type =
+                  let expression =
+                    Expression.Access lead
+                    |> Node.create_with_default_location
+                  in
+                  Resolution.resolve resolution expression
+                  |> Type.show
                 in
-                List.filter_map annotations ~f:filter_receivers
+                if receiver_type = "django.http.Request" then
+                  ForwardTaint.singleton Sources.UserControlled
+                  |> ForwardState.create_leaf
+                else
+                  ForwardState.empty_tree
             | _ ->
-                (* TODO(T32332602): handle additional call expressions here *)
-                []
+                ForwardState.empty_tree
           in
-          let taint = apply_call_targets location arguments state call_targets in
-          taint
+          let inferred_taint =
+            let call_targets =
+              let receiver_type =
+                let expression =
+                  Expression.Access access
+                  |> Node.create_with_default_location
+                in
+                let annotation = Resolution.resolve resolution expression in
+                if Type.equal annotation Type.Top then
+                  None
+                else
+                  Some annotation
+              in
+              match receiver_type with
+              | Some (Type.Primitive receiver) ->
+                  let access = Access.create_from_identifiers [receiver; method_name] in
+                  let call_target = Interprocedural.Callable.create_real access in
+                  [call_target]
+              | Some (Type.Union annotations) ->
+                  let filter_receivers = function
+                    | Type.Primitive receiver ->
+                        Access.create_from_identifiers [receiver; method_name]
+                        |> Interprocedural.Callable.create_real
+                        |> Option.some
+                    | _ ->
+                        None
+                  in
+                  List.filter_map annotations ~f:filter_receivers
+              | _ ->
+                  (* TODO(T32332602): handle additional call expressions here *)
+                  []
+            in
+            apply_call_targets location arguments state call_targets
+          in
+          ForwardState.join_trees inferred_taint hardcoded_taint
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
           let callee_taint = analyze_normalized_expression state callee in

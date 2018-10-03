@@ -122,6 +122,20 @@ let test_simple_source _ =
     ]
 
 
+let test_hardcoded_source _ =
+  assert_taint
+    {|
+      def get_field(request: django.http.Request):
+        return request.GET['field']
+    |}
+    [
+      {
+        define_name = "qualifier.get_field";
+        returns = [Sources.UserControlled];
+      };
+    ]
+
+
 let test_local_copy _ =
   assert_taint
     {|
@@ -370,6 +384,7 @@ let () =
   "taint">:::[
     "no_model">::test_no_model;
     "simple">::test_simple_source;
+    "hardcoded">::test_hardcoded_source;
     "copy">::test_local_copy;
     "class_model">::test_class_model;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
