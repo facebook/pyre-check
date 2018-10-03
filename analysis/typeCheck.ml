@@ -471,9 +471,8 @@ module State = struct
                    not (Define.is_static_method define) ->
                 let annotation =
                   let annotation =
-                    Resolution.parse_annotation
-                      resolution
-                      (Node.create_with_default_location (Access parent))
+                    Access.expression parent
+                    |> Resolution.parse_annotation resolution
                   in
                   if Define.is_class_method define then
                     (* First parameter of a method is a class object. *)
@@ -1406,10 +1405,8 @@ module State = struct
                       not (Type.equal resolved Type.Top || Type.equal resolved Type.ellipses)
                     in
                     let is_type_alias access =
-                      let potential_annotation =
-                        Node.create_with_default_location (Expression.Access access)
-                      in
-                      Resolution.parse_annotation resolution potential_annotation
+                      Expression.Access.expression access
+                      |> Resolution.parse_annotation resolution
                       |> Resolution.is_instantiated resolution
                     in
                     match element with
@@ -1902,7 +1899,7 @@ module State = struct
             let { resolved; _ } =
               forward_expression
                 ~state
-                ~expression:(Node.create_with_default_location (Access access))
+                ~expression:(Access.expression access)
             in
             Annotation.create_immutable resolved ~global:true
           in

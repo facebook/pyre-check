@@ -840,12 +840,7 @@ module Class = struct
             let open Expression in
             let annotation =
               let meta_annotation =
-                let argument =
-                  {
-                    Argument.name = None;
-                    value = Node.create_with_default_location (Access name);
-                  }
-                in
+                let argument = { Argument.name = None; value = Access.expression name } in
                 Node.create
                   ~location
                   (Access [

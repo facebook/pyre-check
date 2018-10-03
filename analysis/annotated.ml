@@ -284,8 +284,8 @@ let rec resolve_literal ~resolution expression =
         match Expression.Access.name_and_arguments ~call:access with
         | Some { Expression.Access.callee; _ } ->
             let class_name =
-              Expression.Access (Expression.Access.create callee)
-              |> Ast.Node.create_with_default_location
+              Expression.Access.create callee
+              |> Expression.Access.expression
               |> Resolution.parse_annotation resolution
             in
             let is_defined =

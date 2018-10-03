@@ -149,7 +149,7 @@ module ExpressionVisitor = struct
                    to see if this is a method in an access chain. *)
                 resolve
                   ~resolution
-                  ~expression:(Node.create_with_default_location (Expression.Access prefix))
+                  ~expression:(Access.expression prefix)
                 >>| Type.class_name
                 >>| (fun resolved_prefix -> resolved_prefix @ [element])
                 >>= find_definition

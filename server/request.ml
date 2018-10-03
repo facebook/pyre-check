@@ -369,8 +369,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
     let resolution = Environment.resolution environment () in
     let parse_and_validate access =
       let annotation =
-        Expression.Access access
-        |> Node.create_with_default_location
+        Expression.Access.expression access
         |> Resolution.parse_annotation resolution
       in
       if TypeOrder.is_instantiated order annotation then

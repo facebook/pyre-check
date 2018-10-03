@@ -118,9 +118,8 @@ let fold ~resolution ~initial ~f access =
       when Identifier.show name = "super" ->
         (Resolution.parent resolution
          >>| (fun parent ->
-             Resolution.parse_annotation
-               resolution
-               (Node.create_with_default_location (Access parent)))
+             Access.expression parent
+             |> Resolution.parse_annotation resolution)
          >>= Resolution.class_representation resolution
          >>| (fun { Resolution.successors; _ } -> successors)
          >>|  List.filter

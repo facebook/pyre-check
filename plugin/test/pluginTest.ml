@@ -32,8 +32,7 @@ let assert_environment_contains source expected =
           None
     in
     let get_type name =
-      Access name
-      |> Node.create_with_default_location
+      Access.expression name
       |> Type.create ~aliases:Handler.aliases
     in
     Source.statements source

@@ -180,8 +180,7 @@ let test_attributes _ =
       ~value
       () =
     {
-      Attribute.target =
-        Node.create_with_default_location (Expression.Access (Access.create target));
+      Attribute.target = Expression.Access.expression (Access.create target);
       annotation;
       defines;
       value;
@@ -359,8 +358,7 @@ let test_attributes _ =
     let value =
       value
       >>| Access.create
-      >>| (fun access -> Expression.Access access)
-      >>| Node.create_with_default_location
+      >>| Access.expression
     in
     target, annotation, value, setter, number_of_defines
   in

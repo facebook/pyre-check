@@ -439,7 +439,8 @@ let register_class_definitions (module Handler: Handler) source =
       let statement { Source.handle; _ } new_annotations = function
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
             let primitive, _ =
-              Type.create ~aliases:Handler.aliases (Node.create_with_default_location (Access name))
+              Access.expression name
+              |> Type.create ~aliases:Handler.aliases
               |> Type.split
             in
             Handler.DependencyHandler.add_class_key ~handle primitive;
@@ -506,8 +507,8 @@ let register_aliases (module Handler: Handler) sources =
             |> Option.value ~default:[]
           in
           let add_alias aliases export =
-            let value = Node.create_with_default_location (Access (from @ export)) in
-            let alias = Node.create_with_default_location (Access (qualifier @ export)) in
+            let value = Access.expression (from @ export) in
+            let alias = Access.expression (qualifier @ export) in
             (handle, alias, value) :: aliases
           in
           List.fold exports ~init:aliases ~f:add_alias
@@ -520,16 +521,10 @@ let register_aliases (module Handler: Handler) sources =
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
-              | None ->
-                  Node.create_with_default_location (Access (qualifier @ name))
-              | Some alias ->
-                  Node.create_with_default_location (Access (qualifier @ alias))
+              | None -> Access.expression (qualifier @ name)
+              | Some alias -> Access.expression (qualifier @ alias)
             in
-            [
-              handle,
-              qualified_name,
-              Node.create_with_default_location (Access (from @ name));
-            ]
+            [handle, qualified_name, Access.expression (from @ name)]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->

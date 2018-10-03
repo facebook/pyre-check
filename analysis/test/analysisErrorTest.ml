@@ -8,7 +8,6 @@ open OUnit2
 
 open Ast
 open Analysis
-open Expression
 open Statement
 open Test
 
@@ -63,7 +62,7 @@ let error ?(define = mock_define) kind =
 
 let revealed_type access annotation =
   Error.RevealedType {
-    Error.expression = Node.create_with_default_location (Access (Access.create access));
+    Error.expression = Access.expression (Access.create access);
     annotation;
   }
 

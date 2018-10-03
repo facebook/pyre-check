@@ -1019,23 +1019,17 @@ let rec expression annotation =
                             [
                               {
                                 Argument.name = None;
-                                value =
-                                  Node.create_with_default_location
-                                    (Access (Access.create "default"));
+                                value = Access.expression (Access.create "default");
                               };
                             ]
                           else
                             []
                         in
-                        [
-                          {
-                            Argument.name = None;
-                            value = Node.create_with_default_location (Access argument);
-                          };
-                        ] @ annotation @ default
+                        [{ Argument.name = None; value = Access.expression argument }]
+                        @ annotation @ default
                       in
-                      Access (Access.call ~arguments ~location:Location.Reference.any ~name ())
-                      |> Node.create_with_default_location
+                      Access.expression
+                        (Access.call ~arguments ~location:Location.Reference.any ~name ())
                     in
                     match parameter with
                     | Parameter.Anonymous { Parameter.annotation; _ } ->
