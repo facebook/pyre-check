@@ -64,6 +64,7 @@ module Label: sig
   val show: t -> string
 
   type path = t list
+  [@@deriving compare, sexp]
 
   val show_path: path -> string
 end

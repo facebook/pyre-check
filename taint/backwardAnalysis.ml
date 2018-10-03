@@ -99,11 +99,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let number_of_arguments = List.length arguments in
             let analyze_argument_position reverse_position state argument =
               let position = number_of_arguments - reverse_position - 1 in
+              let port = AccessPath.Root.Parameter { position } in
               let argument_taint =
                 BackwardState.read
-                  (AccessPath.Root.Parameter { position })
+                  port
                   backward.sink_taint
-                |> BackwardState.apply_call location ~callees:[ call_target ]
+                |> BackwardState.apply_call location ~callees:[ call_target ] ~port
               in
               let taint_in_taint_out =
                 BackwardState.read

@@ -116,6 +116,7 @@ module Label = struct
     | Any -> "[*]"
 
   type path = t list
+  [@@deriving compare, sexp]
 
   let show_path path =
     List.map ~f:show path

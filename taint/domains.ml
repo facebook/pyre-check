@@ -115,6 +115,8 @@ module TraceInfo = struct
     | Declaration
     | Origin of Location.t
     | CallSite of {
+        port: AccessPath.Root.t;
+        path: AccessPathTree.Label.path;
         location: Location.t;
         callees: Interprocedural.Callable.t list;
       }
@@ -126,8 +128,10 @@ module TraceInfo = struct
         let instantiated =
           Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
         in
-        Format.sprintf "@%s" (Location.Instantiated.show instantiated)
-    | CallSite { location; callees; } ->
+        Format.sprintf
+          "@%s"
+          (Location.Instantiated.show instantiated)
+    | CallSite { location; callees; _ } ->
         let instantiated =
           Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
         in
@@ -163,7 +167,7 @@ module TraceInfo = struct
           |> location_to_json
         in
         "root", location_json
-    | CallSite { location; callees; } ->
+    | CallSite { location; callees; port; path; } ->
         let location_json =
           Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
           |> location_to_json
@@ -173,10 +177,12 @@ module TraceInfo = struct
             ~f:(fun callable -> `String (Interprocedural.Callable.external_target_name callable))
             callees
         in
+        let port_json = AccessPath.create port path |> AccessPath.to_json in
         let call_json =
           `Assoc [
             "position", location_json;
             "resolves_to", `List callee_json;
+            "port", port_json;
           ]
         in
         "call", call_json
@@ -192,7 +198,14 @@ module type TAINT_DOMAIN = sig
   include TAINT_SET
 
   (* Add trace info at call-site *)
-  val apply_call: Location.t -> callees: Interprocedural.Callable.t list -> t -> t
+  val apply_call:
+    Location.t
+    -> callees: Interprocedural.Callable.t list
+    -> port: AccessPath.Root.t
+    -> path: AccessPathTree.Label.path
+    -> path_element: t
+    -> element: t
+    -> t
 
   val to_json: t -> Yojson.Safe.json
 end
@@ -218,9 +231,9 @@ module MakeTaint(TaintSet : TAINT_SET) :
     TaintSet.of_list leaves
     |> (fun elements -> Map.set Map.bottom ~key:TraceInfo.Declaration ~data:elements)
 
-  let apply_call location ~callees taint =
+  let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in
-    let call_trace = CallSite { location; callees; } in
+    let call_trace = CallSite { location; callees; port; path; } in
     let translate ~key:trace_key ~data taint =
       let new_trace =
         match trace_key with
@@ -269,8 +282,8 @@ module MakeTaintTree(Taint : TAINT_DOMAIN) = struct
       (AccessPath.Root)
       (Taint)
 
-  let apply_call location ~callees taint_tree =
-    filter_map_tree ~f:(Taint.apply_call location ~callees) taint_tree
+  let apply_call location ~callees ~port taint_tree =
+    filter_map_tree_paths ~f:(Taint.apply_call location ~callees ~port) taint_tree
 
   let to_json taint =
     let element_to_json ~root ~path ~path_element:_ ~element json_list =
