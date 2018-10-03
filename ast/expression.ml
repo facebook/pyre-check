@@ -365,6 +365,12 @@ module Access = struct
     Format.asprintf "%a" pp access
 
 
+  let expression ?location access =
+    let location = Option.value location ~default:Location.Reference.any in
+    Access access
+    |> Node.create ~location
+
+
   let sanitized access =
     let sanitized element =
       match element with

@@ -180,11 +180,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             | (Access.Identifier get) :: lead, "__getitem__"
               when Identifier.show get = "GET" ->
                 let receiver_type =
-                  let expression =
-                    Expression.Access lead
-                    |> Node.create_with_default_location
-                  in
-                  Resolution.resolve resolution expression
+                  Access.expression lead
+                  |> Resolution.resolve resolution
                   |> Type.show
                 in
                 if receiver_type = "django.http.Request" then
@@ -198,11 +195,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let inferred_taint =
             let call_targets =
               let receiver_type =
-                let expression =
-                  Expression.Access access
-                  |> Node.create_with_default_location
+                let annotation =
+                  Access.expression access
+                  |> Resolution.resolve resolution
                 in
-                let annotation = Resolution.resolve resolution expression in
                 if Type.equal annotation Type.Top then
                   None
                 else
