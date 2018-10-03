@@ -55,10 +55,28 @@ let initialize sources =
 
     (* Clear and re-populate ASTs in shared memory. *)
     let handles = List.map files ~f:(File.handle ~configuration) in
-    Ast.SharedMemory.Sources.remove ~handles;
+    SharedMemory.Sources.remove ~handles;
+    SharedMemory.Modules.remove
+      ~qualifiers:(List.map handles ~f:(fun handle -> Source.qualifier ~handle));
     Service.Parser.parse_sources ~configuration ~scheduler ~files
     |> ignore;
-
+    let add_module handle =
+      match SharedMemory.Sources.get handle with
+      | Some ({ Ast.Source.path; handle; statements; _ } as source) ->
+          SharedMemory.Modules.add
+            ~qualifier:(Source.qualifier ~handle)
+            ~ast_module:
+              (Module.create
+                 ~qualifier:(Source.qualifier ~handle)
+                 ~local_mode:(Source.mode ~configuration source)
+                 ?path
+                 ~handle
+                 ~stub:false
+                 statements)
+      | None ->
+          ()
+    in
+    List.iter handles ~f:add_module;
     (* Initialize dependency map. *)
     let source (path, content) =
       let handle = File.Handle.create path in
@@ -315,6 +333,13 @@ let test_process_type_check_request context =
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
     ~expected_deferred_requests:["client.py"]
+    ();
+  (* When multiple files match a qualifier, the existing file has priority. *)
+  assert_response
+    ~sources:["first.pyi", "def function() -> str: ..."]
+    ~check:["first.py", "def function() -> int: ..."]
+    ~expected_errors:[]
+    ~expected_deferred_requests:[]
     ()
 
 

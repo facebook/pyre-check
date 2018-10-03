@@ -637,6 +637,23 @@ let process_type_check_request
     ~configuration:({ debug; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.AttributesCache.clear ();
+  let update_environment_with, check =
+    let keep file =
+      let handle = File.handle ~configuration file in
+      match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
+      | Some existing ->
+          let new_path = File.path file in
+          let existing_path =
+            Module.path existing
+            |> Option.value ~default:new_path
+          in
+          Path.equal existing_path new_path
+      | _  ->
+          true
+    in
+    List.filter update_environment_with ~f:keep,
+    List.filter check ~f:keep
+  in
   let (module Handler: Environment.Handler) = environment in
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
 
