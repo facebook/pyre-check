@@ -103,7 +103,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 BackwardState.read
                   (AccessPath.Root.Parameter { position })
                   backward.sink_taint
-                |> BackwardState.apply_call location [ call_target ]
+                |> BackwardState.apply_call location ~callees:[ call_target ]
               in
               let taint_in_taint_out =
                 BackwardState.read

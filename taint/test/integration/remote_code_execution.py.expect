@@ -3,4 +3,4 @@ Callable `RealTarget (rce_problem)
 { TaintResult.forward = { TaintResult.Forward.source_taint =  };
   backward = { TaintResult.Backward.taint_in_taint_out = ; sink_taint =  } }
 Errors
-{"line":6,"column":11,"path":"test.py","code":5001,"name":"User controlled data may lead to remote code execution.","description":"User controlled data may lead to remote code execution. [5001]: Flow from via call@test.py:5:24-5:26[`RealTarget (__userControlled)] -> {UserControlled} to origin -> {RemoteCodeExecution} detected.","inference":null,"define":"rce_problem"}
+{"line":6,"column":11,"path":"test.py","code":5001,"name":"User controlled data may lead to remote code execution.","description":"User controlled data may lead to remote code execution. [5001]: Flow from @test.py:5:24-5:26 -> {UserControlled} to @test.py:6:11-6:12 -> {RemoteCodeExecution} detected.","inference":null,"define":"rce_problem"}

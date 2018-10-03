@@ -101,7 +101,8 @@ end
 
 module TraceInfo = struct
   type t =
-    | Origin
+    | Declaration
+    | Origin of Location.t
     | CallSite of {
         location: Location.t;
         callees: Interprocedural.Callable.t list;
@@ -109,12 +110,18 @@ module TraceInfo = struct
   [@@deriving compare, sexp]
 
   let show = function
-    | Origin -> "origin"
+    | Declaration -> "declaration"
+    | Origin location ->
+        let instantiated =
+          Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
+        in
+        Format.sprintf "@%s" (Location.Instantiated.show instantiated)
     | CallSite { location; callees; } ->
         let instantiated =
           Ast.Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
         in
-        Format.sprintf "via call@%s[%s]"
+        Format.sprintf
+          "via call@%s[%s]"
           (Location.Instantiated.show instantiated)
           (String.concat ~sep:" " (List.map ~f:Interprocedural.Callable.show callees))
 end
@@ -128,44 +135,50 @@ module type TAINT_DOMAIN = sig
   include TAINT_SET
 
   (* Add trace info at call-site *)
-  val apply_call: TraceInfo.t -> t -> t
+  val apply_call: Location.t -> callees: Interprocedural.Callable.t list -> t -> t
 end
 
 
 module MakeTaint(TaintSet : TAINT_SET) :
   TAINT_DOMAIN with type Leaf.t = TaintSet.Leaf.t = struct
-  include Map(TraceInfo)(TaintSet)
+  module Map = Map(TraceInfo)(TaintSet)
+  include Map
 
   let add taint leaf =
-    let key = TraceInfo.Origin in
-    match find taint key with
+    let key = TraceInfo.Declaration in
+    match Map.find taint key with
     | None ->
-        set taint ~key ~data:(TaintSet.singleton leaf)
+        Map.set taint ~key ~data:(TaintSet.singleton leaf)
     | Some elements ->
-        set taint ~key ~data:(TaintSet.add elements leaf)
+        Map.set taint ~key ~data:(TaintSet.add elements leaf)
 
   let singleton leaf =
-    set bottom ~key:TraceInfo.Origin ~data:(TaintSet.singleton leaf)
+    Map.set Map.bottom ~key:TraceInfo.Declaration ~data:(TaintSet.singleton leaf)
 
   let of_list leaves =
     TaintSet.of_list leaves
-    |> (fun elements -> set bottom ~key:TraceInfo.Origin ~data:elements)
+    |> (fun elements -> Map.set Map.bottom ~key:TraceInfo.Declaration ~data:elements)
 
-  let apply_call trace taint =
-    let summary =
-      fold
-        taint
-        ~init:TaintSet.bottom
-        ~f:(fun ~key:_ ~data taint -> TaintSet.join data taint)
+  let apply_call location ~callees taint =
+    let open TraceInfo in
+    let call_trace = CallSite { location; callees; } in
+    let translate ~key:trace_key ~data taint =
+      let new_trace =
+        match trace_key with
+        | CallSite _ | Origin _ -> call_trace
+        | Declaration -> Origin location
+      in
+      let singleton_map = Map.set Map.bottom ~key:new_trace ~data in
+      Map.join singleton_map taint
     in
-    set bottom ~key:trace ~data:summary
+    Map.fold taint ~init:Map.bottom ~f:translate
 
   let show t =
     let show_pair (trace, elements) =
       Format.sprintf "%s -> %s" (TraceInfo.show trace) (TaintSet.show elements)
     in
     let pairs =
-      to_alist t
+      Map.to_alist t
       |> List.map ~f:show_pair
     in
     String.concat ~sep:"\n" pairs
@@ -183,9 +196,8 @@ module MakeTaintTree(Taint : TAINT_DOMAIN) = struct
       (AccessPath.Root)
       (Taint)
 
-  let apply_call location callees taint_tree =
-    let trace = TraceInfo.CallSite { location; callees; } in
-    filter_map_tree ~f:(Taint.apply_call trace) taint_tree
+  let apply_call location ~callees taint_tree =
+    filter_map_tree ~f:(Taint.apply_call location ~callees) taint_tree
 end
 
 

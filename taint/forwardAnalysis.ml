@@ -115,6 +115,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   BackwardState.read
                     (AccessPath.Root.Parameter { position })
                     backward.sink_taint
+                  |> BackwardState.apply_call location ~callees:[ call_target ]
                 in
                 Flow.generate_source_sink_matches
                   ~location
@@ -129,7 +130,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let result_taint =
               ForwardState.read AccessPath.Root.LocalResult forward.source_taint
-              |> ForwardState.apply_call location [ call_target ]
+              |> ForwardState.apply_call location ~callees:[ call_target ]
             in
             ForwardState.join_root_element result_taint tito
         | None ->
