@@ -1372,6 +1372,7 @@ let suppress ~mode error =
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
     | MissingGlobalAnnotation _
+    | MissingTypeParameters _
     | Unpack { unpack_problem = UnacceptableType Type.Object; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ }
     | UndefinedType _ ->

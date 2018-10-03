@@ -532,6 +532,19 @@ let test_suppress _ =
   assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
   assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"));
 
+  assert_suppressed
+    Source.Default
+    (Error.MissingTypeParameters {
+        Error.annotation = Type.primitive "dict";
+        number_of_parameters = 2;
+      });
+  assert_not_suppressed
+    Source.Strict
+    (Error.MissingTypeParameters {
+        Error.annotation = Type.primitive "dict";
+        number_of_parameters = 2;
+      });
+
   let suppress_missing_return =
     Source.DefaultButDontCheck [Error.code (error (missing_return Type.Object))]
   in
