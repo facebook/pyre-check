@@ -16,6 +16,7 @@ die() {
 COMPILER_VERSION="4.06.0"
 DEVELOPMENT_COMPILER="${COMPILER_VERSION}"
 RELEASE_COMPILER="${COMPILER_VERSION}+flambda"
+MAKE_ARGUMENTS=""
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
@@ -57,6 +58,7 @@ do
       ;;
     "--release")
       COMPILER="${RELEASE_COMPILER}"
+      MAKE_ARGUMENTS="release"
       ;;
     "--build-type")
       REQUESTED_BUILD_TYPE="${arguments[$index+1]}"
@@ -180,7 +182,7 @@ fi
 # Build and run tests.
 jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 
-make --jobs "$jobs" || die 'Could not build pyre'
+make ${MAKE_ARGUMENTS} --jobs "$jobs" || die 'Could not build pyre'
 make --jobs "$jobs" test || die 'Pyre tests failed'
 make python_tests || die 'Python tests for Pyre failed'
 make server_integration_test || die 'Server integration test failed'
