@@ -2999,7 +2999,20 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.instancemethod(Foo(), '1234')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  (* Special classmethods are treated properly without a decorator. *)
+  assert_type_errors
+    {|
+      class Foo:
+        def __init_subclass__(cls) -> typing.Type[Foo]:
+          return cls
+        def __new__(cls) -> typing.Type[Foo]:
+          return cls
+        def __class_getitem__(cls, key) -> typing.Type[Foo]:
+          return cls
+    |}
+    []
 
 
 let test_check_init _ =

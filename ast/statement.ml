@@ -340,8 +340,13 @@ module Define = struct
         false
 
 
-  let is_class_method define =
-    Set.exists ~f:(has_decorator define) Recognized.classmethod_decorators
+  let is_class_method ({ parent; _ } as define) =
+    Option.is_some parent &&
+    (Set.exists Recognized.classmethod_decorators ~f:(has_decorator define) ||
+     List.mem
+       ["__init_subclass__"; "__new__"; "__class_getitem__"]
+       (Access.show (unqualified_name define))
+       ~equal:String.equal)
 
 
   let is_constructor ?(in_test = false) { name; parent; _ } =

@@ -34,6 +34,28 @@ let test_is_method _ =
   assert_false (Define.is_method (define ~name:"foo" ~parent:None))
 
 
+let test_is_classmethod _ =
+  let define name decorators =
+    {
+      Define.name = Access.create name;
+      parameters = [];
+      body = [+Pass];
+      decorators;
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = Some (Access.create "bar");
+    } in
+
+  assert_false (Define.is_class_method (define "foo" []));
+  assert_false (Define.is_class_method (define "__init__" []));
+  assert_true (Define.is_class_method (define "foo" [!"classmethod"]));
+  assert_true (Define.is_class_method (define "__init_subclass__" []));
+  assert_true (Define.is_class_method (define "__new__" []));
+  assert_true (Define.is_class_method (define "__class_getitem__" []))
+
+
 let test_decorator _ =
   let define decorators =
     {
@@ -52,7 +74,6 @@ let test_decorator _ =
   assert_false (Define.is_static_method (define [!"foo"]));
   assert_true (Define.is_static_method (define [!"staticmethod"]));
   assert_true (Define.is_static_method (define [!"foo"; !"staticmethod"]));
-  assert_true (Define.is_class_method (define [!"classmethod"]));
 
   assert_false (Define.is_abstract_method (define []));
   assert_false (Define.is_abstract_method (define [!"foo"]));
@@ -988,6 +1009,7 @@ let test_pp _ =
 let () =
   "define">:::[
     "is_method">::test_is_method;
+    "classmethod">::test_is_classmethod;
     "decorator">::test_decorator;
     "is_constructor">::test_is_constructor;
     "dump">::test_dump;
