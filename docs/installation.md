@@ -17,7 +17,7 @@ should take care of installing Pyre on your system. See our [Guided Tour](guided
 to use Pyre.
 
 Note that
-- on *MacOS* you might have to invoke `pip36` explicitly to use a current version,
+- on *MacOS* you might have to invoke `pip3` explicitly to use a current version,
 - we currently only provide *linux/AMD64* and *OSX/AMD64* binaries. If you need support for a
 different architecture, feel free to reach out to us.
 
