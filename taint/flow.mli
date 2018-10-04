@@ -55,4 +55,9 @@ val generate_issues:
   -> candidate
   -> issue list
 
+val to_json:
+  Interprocedural.Callable.t
+  -> issue
+  -> Yojson.Safe.json
+
 val generate_error: issue -> Interprocedural.Error.t

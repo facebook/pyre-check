@@ -143,17 +143,18 @@ module ResultArgument = struct
   let get_errors result =
     List.map ~f:Flow.generate_error result
 
-  let issues_to_json _callable result =
+  let issues_to_json callable result =
     match result with
     | None -> []
     | Some issues ->
-        let errors = List.map ~f:Flow.generate_error issues in
-        let emitter json =
-          `Assoc ["kind", `String "issue"; "data", json]
+        let issue_to_json issue =
+          let json = Flow.to_json callable issue in
+          `Assoc [
+            "kind", `String "issue";
+            "data", json;
+          ]
         in
-        List.map
-          ~f:(fun error -> Interprocedural.Error.to_json ~detailed:true error |> emitter)
-          errors
+        List.map ~f:issue_to_json issues
 
   let model_to_json callable model =
     let callable_name = Interprocedural.Callable.external_target_name callable in

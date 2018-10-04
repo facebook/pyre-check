@@ -181,17 +181,56 @@ let generate_issues ~define { location; flows; } =
   issues
 
 
-let generate_error { code; flow; issue_location; define } =
+let get_name_and_detailed_message { code; flow; _ } =
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
   | None -> failwith "issue with code that has no rule"
   | Some { name; _; } ->
-      (* TODO(T32467565) emit trace roots. *)
-      let messages = [
+      let details =
         Format.sprintf
           "Flow from %s to %s detected."
           (ForwardTaint.show flow.source_taint)
           (BackwardTaint.show flow.sink_taint)
-      ]
       in
-      let kind = { Interprocedural.Error.name; messages; code; } in
+      name, details
+
+
+let generate_error ({ code; issue_location; define; _  } as issue) =
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
+  | None -> failwith "issue with code that has no rule"
+  | Some _ ->
+      let name, detail = get_name_and_detailed_message issue in
+      let kind =
+        {
+          Interprocedural.Error.name;
+          messages = [ detail ];
+          code;
+        }
+      in
       Interprocedural.Error.create ~location:issue_location ~define ~kind
+
+
+let to_json callable issue =
+  let callable_name = Interprocedural.Callable.external_target_name callable in
+  let name, detail = get_name_and_detailed_message issue in
+  let message = Format.sprintf "%s %s" name detail in
+  let source_traces = Domains.ForwardTaint.to_json issue.flow.source_taint in
+  let sink_traces = Domains.BackwardTaint.to_json issue.flow.sink_taint in
+  let traces =
+    `List [
+      `Assoc [
+        "name", `String "forward";
+        "roots", source_traces;
+      ];
+      `Assoc [
+        "name", `String "backward";
+        "roots", sink_traces;
+      ];
+    ]
+  in
+  let callable_line = Ast.(Location.line issue.define.location) in
+  `Assoc [
+    "callable", `String callable_name;
+    "callable_line", `Int callable_line;
+    "message", `String message;
+    "traces", traces;
+  ]
