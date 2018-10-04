@@ -13,6 +13,7 @@ let enabled = ref true
 
 let cache = String.Table.create ()
 let size = 500
+let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
 
 
 let username = Option.value (Sys.getenv "USER") ~default:(Unix.getlogin ())
@@ -99,6 +100,9 @@ let sample
       ])
 
 
+let last_flush_timestamp = ref (Unix.time ())
+
+
 let flush () =
   let flush_category ~key ~data =
     Configuration.Analysis.get_global ()
@@ -114,7 +118,8 @@ let flush () =
   in
   if !enabled then
     Hashtbl.iteri ~f:flush_category cache;
-  Hashtbl.clear cache
+  Hashtbl.clear cache;
+  last_flush_timestamp := Unix.time ()
 
 
 let flush_cache = flush
@@ -130,7 +135,11 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
   let samples_count () =
     Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data)
   in
-  if flush || (samples_count () >= size) then
+  let exceeds_timeout () =
+    let current_time = Unix.time () in
+    current_time -. (!last_flush_timestamp) >= flush_timeout
+  in
+  if flush || (samples_count () >= size) || (exceeds_timeout ()) then
     flush_cache ()
 
 
