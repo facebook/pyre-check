@@ -49,9 +49,9 @@ val print: ('a, Stdio.Out_channel.t, Base.unit) Base.format -> 'a
 val log_unix_error: ?section: section -> (Unix.error * string * string) -> unit
 
 module Color : sig
-  val yellow: string -> string
-
   val cyan: string -> string
+  val red: string -> string
+  val yellow: string -> string
 end
 
 val rotate: ?number_to_keep: int -> string -> string

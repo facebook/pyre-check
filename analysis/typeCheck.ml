@@ -2251,6 +2251,10 @@ let check
             "type", Type.show annotation;
           ]
           ();
+        if dump then
+          Log.dump
+            "Analysis crashed because of untracked type `%s`."
+            (Log.Color.red (Type.show annotation));
         {
           SingleSourceResult.errors =
             [

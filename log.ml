@@ -157,12 +157,16 @@ let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
 
 
 module Color = struct
-  let yellow string =
-    Format.asprintf "\027[33m%s\027[0m" string
-
-
   let cyan string =
     Format.asprintf "\027[36m%s\027[0m" string
+
+
+  let red string =
+    Format.asprintf "\027[31m%s\027[0m" string
+
+
+  let yellow string =
+    Format.asprintf "\027[33m%s\027[0m" string
 end
 
 
