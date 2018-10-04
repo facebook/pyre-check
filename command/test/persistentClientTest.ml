@@ -3,26 +3,33 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+
 open Core
-open OUnit2
+
+open Pyre
 
 open Server
 open Network
+open OUnit2
 
 
 let test_persistent_client_connect context =
+  let local_root =
+    bracket_tmpdir context
+    |> Pyre.Path.create_absolute
+  in
   let set_up _ =
     Format.pp_set_formatter_out_channel
       Format.err_formatter (Out_channel.create "/dev/null");
-    CommandTest.start_server () |> ignore;
+    CommandTest.start_server ~local_root () |> ignore;
     Server.Operations.connect
       ~retries:5
-      ~configuration:(CommandTest.mock_server_configuration ()).configuration
+      ~configuration:(CommandTest.mock_server_configuration ~local_root ()).configuration
   in
 
   let tear_down client_socket _ =
     Unix.close client_socket;
-    Commands.Stop.stop ~local_root:"."
+    Commands.Stop.stop ~local_root:(Path.absolute local_root)
     |> ignore;
   in
 

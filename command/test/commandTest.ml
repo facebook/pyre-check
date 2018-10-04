@@ -32,7 +32,7 @@ let mock_analysis_configuration
 
 
 let mock_server_configuration
-    ?(local_root = Path.current_working_directory ())
+    ~local_root
     ?expected_version
     () =
   let temporary = Filename.temp_file "" "" in
@@ -41,7 +41,7 @@ let mock_server_configuration
     (mock_analysis_configuration ~local_root ?expected_version ())
 
 
-let start_server ?(local_root = Path.current_working_directory ()) ?expected_version () =
+let start_server ~local_root ?expected_version () =
   Commands.Start.run (mock_server_configuration ~local_root ?expected_version ())
 
 

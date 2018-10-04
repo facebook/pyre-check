@@ -18,9 +18,8 @@ open Test
 exception Timeout
 
 
-let file ?content relative =
-  let root = Path.current_working_directory () in
-  File.create ?content (Path.create_relative ~root ~relative)
+let file ~local_root ?content path =
+  File.create ?content (Path.create_relative ~root:local_root ~relative:path)
 
 
 let test_language_server_protocol_json_format context =
@@ -98,12 +97,16 @@ let test_language_server_protocol_json_format context =
   assert_true (Or_error.is_error malformed_response)
 
 
-let test_server_stops _ =
-  let pid = Pid.of_int (CommandTest.start_server ()) in
-  Commands.Stop.stop ~local_root:"."
+let test_server_stops context =
+  let local_root =
+    bracket_tmpdir context
+    |> Pyre.Path.create_absolute
+  in
+  let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
+  Commands.Stop.stop ~local_root:(Path.absolute local_root)
   |> ignore;
   let { Configuration.Server.socket_path; _ } =
-    Operations.create_configuration (Configuration.Analysis.create ())
+    Operations.create_configuration (Configuration.Analysis.create ~local_root ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
   CommandTest.with_timeout
@@ -139,13 +142,13 @@ let test_stop_handles_unix_errors context =
   |> ignore
 
 
-let configuration = Configuration.Analysis.create ~infer:true ()
+let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer:true ()
 
 
-let environment () =
+let environment ~local_root =
   let environment = Environment.Builder.create () in
   Service.Environment.populate
-    (Environment.handler ~configuration environment)
+    (Environment.handler ~configuration:(configuration ~local_root) environment)
     [
       parse {|
         class int(float): pass
@@ -158,18 +161,21 @@ let environment () =
   environment
 
 
-let make_errors ?(handle = "test.py") ?(qualifier = []) source =
+let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
-  let environment_handler = Environment.handler ~configuration (environment ()) in
+  let environment_handler = Environment.handler ~configuration (environment ~local_root) in
   add_defaults_to_environment environment_handler;
   Service.Environment.populate (environment_handler) [source];
   (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
 
 let mock_server_state
-    ?(initial_environment = environment ())
+    ~local_root
+    ?(initial_environment = environment ~local_root)
     errors =
-  let environment = Environment.handler ~configuration initial_environment in
+  let environment =
+    Environment.handler ~configuration:(configuration ~local_root) initial_environment
+  in
   add_defaults_to_environment environment;
   {
     State.deferred_requests = [];
@@ -191,7 +197,7 @@ let mock_server_state
 let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
 
 let assert_response
-    ?(local_root = Path.current_working_directory ())
+    ~local_root
     ?state
     ?(handle = "test.py")
     ~source
@@ -204,20 +210,22 @@ let assert_response
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter
-      (make_errors ~handle source)
+      (make_errors ~local_root ~handle source)
       ~f:(fun error ->
           Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
     errors
   in
   let initial_environment =
-    let environment = environment () in
-    Service.Environment.populate (Environment.handler ~configuration environment) [parsed];
+    let environment = environment ~local_root in
+    Service.Environment.populate
+      (Environment.handler ~configuration:(configuration ~local_root) environment)
+      [parsed];
     environment
   in
   let mock_server_state =
     match state with
     | Some state -> state
-    | None -> mock_server_state ~initial_environment errors
+    | None -> mock_server_state ~initial_environment ~local_root errors
   in
   let { Request.response; _ } =
     Request.process
@@ -238,9 +246,14 @@ let assert_response
   assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer expected_response response
 
 
-let test_shutdown _ =
+let test_shutdown context =
+ let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let source = "x = 1" in
   assert_response
+    ~local_root
     ~source
     ~request:(Protocol.Request.ClientShutdownRequest 1)
     (Some
@@ -250,9 +263,14 @@ let test_shutdown _ =
            |> Yojson.Safe.to_string)))
 
 
-let test_language_scheduler_shutdown _ =
+let test_language_scheduler_shutdown context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let source = "x = 1" in
   assert_response
+    ~local_root
     ~source
     ~request:(Protocol.Request.LanguageServerProtocolRequest
                 {|
@@ -269,29 +287,39 @@ let test_language_scheduler_shutdown _ =
               |> Yojson.Safe.to_string)))
 
 
-let test_protocol_type_check _ =
+let test_protocol_type_check context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let source =
     {|
         def foo() -> None:
           return 1
     |}
   in
-  let errors = make_errors source in
+  let errors = make_errors ~local_root source in
   assert_response
+    ~local_root
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)));
 
   assert_response
+    ~local_root
     ~source
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
 let test_query context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let assert_type_query_response ~source ~query response =
-    let query = Commands.Query.parse_query ~root:(Path.current_working_directory ()) query in
-    assert_response ~source ~request:query (Some (Protocol.TypeQueryResponse response))
+    let query = Commands.Query.parse_query ~root:local_root query in
+    assert_response ~local_root ~source ~request:query (Some (Protocol.TypeQueryResponse response))
   in
   let parse_annotation serialized =
     serialized
@@ -550,10 +578,14 @@ let test_query context =
 
 
 
-let test_connect _ =
-  CommandTest.start_server ~expected_version:"A" () |> ignore;
+let test_connect context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  CommandTest.start_server ~local_root ~expected_version:"A" () |> ignore;
   let { Configuration.Server.configuration; socket_path; _ } =
-    CommandTest.mock_server_configuration ~expected_version:"B" ()
+    CommandTest.mock_server_configuration ~local_root ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
    * iniitializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
@@ -561,7 +593,7 @@ let test_connect _ =
   Unix.nanosleep 0.5
   |> ignore;
   let cleanup () =
-    Commands.Stop.stop ~local_root:"."
+    Commands.Stop.stop ~local_root:(Path.absolute local_root)
     |> ignore;
     CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
   in
@@ -576,10 +608,14 @@ let test_connect _ =
     ~finally:cleanup
 
 
-let test_incremental_typecheck _ =
+let test_incremental_typecheck context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let path_to_python_file prefix =
     Filename.open_temp_file
-      ~in_dir:(Path.current_working_directory () |> Path.absolute)
+      ~in_dir:(Path.absolute local_root)
       prefix ".py"
     |> fst
   in
@@ -588,7 +624,7 @@ let test_incremental_typecheck _ =
   Out_channel.write_all (stub_path ^ "i") ~data:"";
 
   let relativize path =
-    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+    Path.create_relative ~root:local_root ~relative:path
     |> Path.relative
     |> Option.value ~default:path
   in
@@ -602,13 +638,13 @@ let test_incremental_typecheck _ =
     |> trim_extra_indentation
   in
   let assert_response ?state ~request response =
-    assert_response ~handle:path ~source ?state ~request (Some response)
+    assert_response ~local_root ~handle:path ~source ?state ~request (Some response)
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest
                 (Protocol.TypeCheckRequest.create
-                   ~update_environment_with:[file path]
-                   ~check:[file path]
+                   ~update_environment_with:[file ~local_root path]
+                   ~check:[file ~local_root path]
                    ()))
     (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
   (* The handles get updated in shared memory. *)
@@ -617,14 +653,18 @@ let test_incremental_typecheck _ =
     (Ast.SharedMemory.HandleKeys.get ())
     [File.Handle.create handle];
 
-  let files = [file ~content:source path] in
+  let files = [file ~local_root ~content:source path] in
   let request_with_content =
     (Protocol.Request.TypeCheckRequest
        (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
   in
   let errors =
     CommandTest.associate_errors_and_filenames
-      (make_errors ~handle ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) source)
+      (make_errors
+         ~local_root
+         ~handle
+         ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle))
+         source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -637,10 +677,10 @@ let test_incremental_typecheck _ =
          ())
   in
   assert_response
-    ~request:(check_request ~check:[file ~content:"def foo() -> int: return 1" path] ())
+    ~request:(check_request ~check:[file ~local_root ~content:"def foo() -> int: return 1" path] ())
     (Protocol.TypeCheckResponse errors);
   let () =
-    let stub_file = file ~content:"" (stub_path ^ "i") in
+    let stub_file = file ~local_root ~content:"" (stub_path ^ "i") in
     assert_response
       ~request:(check_request ~update_environment_with:[stub_file] ())
       (Protocol.TypeCheckResponse []);
@@ -653,18 +693,18 @@ let test_incremental_typecheck _ =
   assert_response
     ~request:(
       check_request
-        ~check:[file ~content:"def foo() -> int: return \"\"" stub_path]
+        ~check:[file ~local_root ~content:"def foo() -> int: return \"\"" stub_path]
         ())
     (Protocol.TypeCheckResponse [File.Handle.create stub_handle, []]);
 
   let () =
-    let file = file ~content:"def foo() -> int: return 1" path in
+    let file = file ~local_root ~content:"def foo() -> int: return 1" path in
     assert_response
       ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
       (Protocol.TypeCheckResponse [File.Handle.create handle, []])
   in
 
-  let state = mock_server_state (File.Handle.Table.create ()) in
+  let state = mock_server_state ~local_root (File.Handle.Table.create ()) in
   assert_response
     ~state
     ~request:Protocol.Request.FlushTypeErrorsRequest
@@ -675,13 +715,17 @@ let test_incremental_typecheck _ =
     (Protocol.TypeCheckResponse errors)
 
 
-let test_protocol_language_server_protocol _ =
-  let server_state = mock_server_state (File.Handle.Table.create ()) in
+let test_protocol_language_server_protocol context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let server_state = mock_server_state ~local_root (File.Handle.Table.create ()) in
   let { Request.response; _ } =
     Request.process
       ~socket:mock_client_socket
       ~state:server_state
-      ~configuration:(CommandTest.mock_server_configuration ())
+      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request:(Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   assert_is_none response
@@ -710,7 +754,7 @@ let test_did_save_with_content context =
     String.chop_suffix_exn ~suffix:".py" filename
     |> Access.create
   in
-  let errors = make_errors ~handle:filename ~qualifier source in
+  let errors = make_errors ~local_root:root ~handle:filename ~qualifier source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
     |> Or_error.ok_exn
@@ -724,19 +768,27 @@ let test_did_save_with_content context =
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
-let test_protocol_persistent _ =
-  let server_state = mock_server_state (File.Handle.Table.create ()) in
+let test_protocol_persistent context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let server_state = mock_server_state ~local_root (File.Handle.Table.create ()) in
   assert_raises
     Request.InvalidRequest
     (fun () ->
        Request.process
          ~socket:mock_client_socket
          ~state:server_state
-         ~configuration:(CommandTest.mock_server_configuration ())
+         ~configuration:(CommandTest.mock_server_configuration ~local_root ())
          ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent))
 
 
-let test_incremental_dependencies _ =
+let test_incremental_dependencies context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let a_source =
     {|
       import b
@@ -752,8 +804,8 @@ let test_incremental_dependencies _ =
     |}
     |> trim_extra_indentation
   in
-  Out_channel.write_all "a.py" ~data:a_source;
-  Out_channel.write_all "b.py" ~data:b_source;
+  Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
+  Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
   let assert_dependencies_analyzed () =
     let handles =
       [
@@ -763,15 +815,24 @@ let test_incremental_dependencies _ =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~path:(mock_path "a.py") ~qualifier:(Access.create "a") a_source;
-        parse ~handle:"b.py" ~path:(mock_path "b.py") ~qualifier:(Access.create "b") b_source;
+        parse
+          ~handle:"a.py"
+          ~path:(Path.create_relative ~root:local_root ~relative:"a.py")
+          ~qualifier:(Access.create "a")
+          a_source;
+        parse
+          ~handle:"b.py"
+          ~path:(Path.create_relative ~root:local_root ~relative:"b.py")
+          ~qualifier:(Access.create "b") b_source;
       ]
     in
     List.zip_exn handles sources
     |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
 
     let environment = Environment.Builder.create () in
-    let environment_handler = Environment.handler ~configuration environment in
+    let environment_handler =
+      Environment.handler ~configuration:(configuration ~local_root) environment
+    in
     add_defaults_to_environment environment_handler;
     Service.Environment.populate environment_handler sources;
     let expected_errors = [
@@ -779,7 +840,11 @@ let test_incremental_dependencies _ =
     ]
     in
     let initial_state =
-      mock_server_state ~initial_environment:environment (File.Handle.Table.create ()) in
+      mock_server_state
+        ~local_root
+        ~initial_environment:environment
+        (File.Handle.Table.create ())
+    in
     let check_request ?update ?check () =
       Protocol.Request.TypeCheckRequest
         (Protocol.TypeCheckRequest.create
@@ -791,16 +856,23 @@ let test_incremental_dependencies _ =
       Request.process
         ~socket:mock_client_socket
         ~state:initial_state
-        ~configuration:(CommandTest.mock_server_configuration ())
+        ~configuration:(CommandTest.mock_server_configuration ~local_root ())
         ~request
     in
     let { Request.state; response } =
-      process (check_request ~update:[file "b.py"] ~check:[file "b.py"] ())
+      process (check_request ~update:[file ~local_root "b.py"] ~check:[file ~local_root "b.py"] ())
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
-    assert_equal state.State.deferred_requests [check_request ~check:[file "a.py"] ()];
+    assert_equal
+      ~printer:(List.to_string ~f:Server.Protocol.Request.show)
+      [check_request ~check:[file ~local_root "a.py"] ()]
+      state.State.deferred_requests;
     let { Request.state; response } =
-      process (check_request ~update:[file "b.py"] ~check:[file "a.py"; file "b.py"] ())
+      process
+        (check_request
+           ~update:[file ~local_root "b.py"]
+           ~check:[file ~local_root "a.py"; file ~local_root "b.py"]
+           ())
     in
     let printer = function
       | None -> "None"
@@ -819,8 +891,6 @@ let test_incremental_dependencies _ =
       []
   in
   let finally () =
-    Sys.remove "a.py";
-    Sys.remove "b.py";
     Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
   in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
@@ -855,21 +925,28 @@ let test_incremental_lookups _ =
     |}
     |> trim_extra_indentation
   in
+  let configuration = configuration ~local_root:(Path.current_working_directory ()) in
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
   add_defaults_to_environment environment_handler;
   Service.Environment.populate environment_handler [parse source];
+
   let request =
     Protocol.Request.TypeCheckRequest
       (Protocol.TypeCheckRequest.create
-         ~update_environment_with:[file ~content:source path]
-         ~check:[file ~content:source path]
+         ~update_environment_with:[
+           file
+             ~local_root:(Path.current_working_directory ())
+             ~content:source path;
+         ]
+         ~check:[file ~local_root:(Path.current_working_directory ()) ~content:source path]
          ())
   in
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
+      ~local_root:(Path.current_working_directory ())
       ~initial_environment:environment
       errors
   in
@@ -877,7 +954,10 @@ let test_incremental_lookups _ =
     Request.process
       ~socket:mock_client_socket
       ~state:initial_state
-      ~configuration:(CommandTest.mock_server_configuration ())
+      ~configuration:(
+        CommandTest.mock_server_configuration
+          ~local_root:(Path.current_working_directory ())
+          ())
       ~request
   in
   let annotations =
@@ -904,7 +984,11 @@ let test_incremental_lookups _ =
 
 
 
-let test_incremental_repopulate _ =
+let test_incremental_repopulate context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let parse content =
     let handle = File.Handle.create "test.py" in
     Source.create
@@ -921,14 +1005,16 @@ let test_incremental_repopulate _ =
     |> trim_extra_indentation
   in
   let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-  let environment_handler = Environment.handler ~configuration environment in
-  Out_channel.write_all ~data:source "test.py";
+  let ((module Handler: Environment.Handler) as environment_handler) =
+    Environment.handler ~configuration:(configuration ~local_root) environment
+  in
+  Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
   add_defaults_to_environment environment_handler;
   Service.Environment.populate environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
+      ~local_root
       ~initial_environment:environment
       errors
   in
@@ -950,19 +1036,18 @@ let test_incremental_repopulate _ =
     |}
     |> trim_extra_indentation
   in
-  Out_channel.write_all ~data:source "test.py";
+  Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
   let _ =
     Request.process
       ~socket:mock_client_socket
       ~state:initial_state
-      ~configuration:(CommandTest.mock_server_configuration ())
+      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request:(Protocol.Request.TypeCheckRequest
                   (Protocol.TypeCheckRequest.create
-                     ~update_environment_with:[file "test.py"]
-                     ~check:[file "test.py"]
+                     ~update_environment_with:[file ~local_root "test.py"]
+                     ~check:[file ~local_root "test.py"]
                      ()))
   in
-  Sys.remove "test.py";
   begin match (get_annotation "test.foo") with
     | Some expression -> assert_equal (Expression.show expression) "str"
     | None -> assert_unreached ()
@@ -970,7 +1055,14 @@ let test_incremental_repopulate _ =
 
 
 let test_language_scheduler_definition context =
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let filename =
+    Path.create_relative ~root:local_root ~relative:"test.py"
+    |> Path.absolute
+  in
   let request =
     Format.sprintf {|
       {
@@ -998,15 +1090,19 @@ let test_language_scheduler_definition context =
     |> Yojson.Safe.to_string
   in
   assert_response
+    ~local_root
     ~source:"a = 1"
     ~request:(Protocol.Request.LanguageServerProtocolRequest request)
     (Some (Protocol.LanguageServerProtocolResponse expected_response))
 
 
 let test_incremental_attribute_caching context =
-  let directory = bracket_tmpdir context |> Path.create_absolute in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let configuration =
-    Configuration.Analysis.create ~local_root:directory ~project_root:directory ()
+    Configuration.Analysis.create ~local_root ~project_root:local_root ()
   in
   let server_configuration = Operations.create_configuration configuration in
   let environment =
@@ -1015,9 +1111,9 @@ let test_incremental_attribute_caching context =
   in
   add_defaults_to_environment environment;
   let ({ State.connections; lock = server_lock; _ } as old_state) =
-    mock_server_state (File.Handle.Table.create ())
+    mock_server_state ~local_root (File.Handle.Table.create ())
   in
-  let source_path = Path.create_relative ~root:directory ~relative:"a.py" in
+  let source_path = Path.create_relative ~root:local_root ~relative:"a.py" in
   let write_to_file ~content =
     Out_channel.write_all (Path.absolute source_path) ~data:(trim_extra_indentation content)
   in
