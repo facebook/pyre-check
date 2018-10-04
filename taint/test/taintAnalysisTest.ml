@@ -269,7 +269,7 @@ let test_fixpoint _ =
           errors = [
             {
               code = 5001;
-              pattern = ".*User controlled data may lead to remote code execution.*";
+              pattern = ".*Possible shell injection.*Data from \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
             };
           ]
         };
@@ -281,7 +281,7 @@ let test_fixpoint _ =
           errors = [
             {
               code = 5002;
-              pattern = ".*Flow from test source to test sink.*";
+              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             }
           ];
         };
@@ -289,7 +289,7 @@ let test_fixpoint _ =
           define_name = "qux";
           returns = [];
           taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.TestSink] }
+            { position = 0; sinks = [Taint.Sinks.Test] }
           ];
           tito_parameters = [];
           errors = [];
@@ -298,21 +298,21 @@ let test_fixpoint _ =
           define_name = "bad";
           returns = [];
           taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.TestSink] }
+            { position = 0; sinks = [Taint.Sinks.Test] }
           ];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "bar";
-          returns = [Sources.TestSource];
+          returns = [Sources.Test];
           taint_sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "some_source";
-          returns = [Sources.TestSource];
+          returns = [Sources.Test];
           taint_sink_parameters = [];
           tito_parameters = [];
           errors = [];

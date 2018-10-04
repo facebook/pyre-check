@@ -117,7 +117,7 @@ let test_simple_source _ =
     [
       {
         define_name = "qualifier.simple_source";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ]
 
@@ -146,7 +146,7 @@ let test_local_copy _ =
     [
       {
         define_name = "qualifier.copy_source";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ]
 
@@ -161,7 +161,7 @@ let test_class_model _ =
     [
       {
         define_name = "qualifier.Foo.bar";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ]
 
@@ -184,7 +184,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ];
 
@@ -225,7 +225,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       }
     ];
 
@@ -270,7 +270,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_with_union_type";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ];
 
@@ -301,7 +301,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_with_union_type";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ];
 
@@ -321,7 +321,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_indirect_concatenated_call";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       }
     ];
   assert_taint
@@ -339,7 +339,7 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_indirect_concatenated_call";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       }
     ]
 
@@ -358,7 +358,7 @@ let test_taint_in_taint_out_application _ =
     [
       {
         define_name = "qualifier.simple_source";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
       };
     ];
 

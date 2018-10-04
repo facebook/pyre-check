@@ -99,11 +99,11 @@ let assert_model ~model_source ~expect =
 
 let test_source_models _ =
   assert_model
-    ~model_source:"def taint() -> TaintSource[TestSource]: ..."
+    ~model_source:"def taint() -> TaintSource[Test]: ..."
     ~expect:[
       {
         define_name = "taint";
-        returns = [Sources.TestSource];
+        returns = [Sources.Test];
         taint_sink_parameters = [];
         tito_parameters = [];
       };
@@ -114,7 +114,7 @@ let test_sink_models _ =
   assert_model
     ~model_source:
       {|
-        def sink(parameter: TaintSink[TestSink]):
+        def sink(parameter: TaintSink[Test]):
           ...
       |}
     ~expect:[
@@ -122,49 +122,49 @@ let test_sink_models _ =
         define_name = "sink";
         returns = [];
         taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.TestSink] }
+          { position = 0; sinks = [Taint.Sinks.Test] }
         ];
         tito_parameters = []
       }
     ];
 
   assert_model
-    ~model_source:"def sink(parameter0, parameter1: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter0, parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
         define_name = "sink";
         returns = [];
         taint_sink_parameters = [
           { position = 0; sinks = [] };
-          { position = 1; sinks = [Taint.Sinks.TestSink] }
+          { position = 1; sinks = [Taint.Sinks.Test] }
         ];
         tito_parameters = []
       };
     ];
 
   assert_model
-    ~model_source:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
         define_name = "sink";
         returns = [];
         taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.TestSink] };
-          { position = 1; sinks = [Taint.Sinks.TestSink] }
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] }
         ];
         tito_parameters = []
       };
     ];
 
   assert_model
-    ~model_source:"def sink(parameter0: TaintSink[TestSink], parameter1: TaintSink[TestSink]): ..."
+    ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
         define_name = "sink";
         returns = [];
         taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.TestSink] };
-          { position = 1; sinks = [Taint.Sinks.TestSink] }
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] }
         ];
         tito_parameters = []
       };
@@ -199,19 +199,19 @@ let test_invalid_models _ =
     ~expect:"Unsupported taint sink Unsupported";
 
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[TestSource]): ..."
-    ~expect:"Unsupported taint sink TestSource";
+    ~model_source:"def sink(parameter: TaintSink[UserControlled]): ..."
+    ~expect:"Unsupported taint sink UserControlled";
 
   assert_invalid_model
     ~model_source:"def source() -> TaintSource[Invalid]: ..."
     ~expect:"Unsupported taint source Invalid";
 
   assert_invalid_model
-    ~model_source:"def source() -> TaintInTaintOut[TestSink]: ..."
+    ~model_source:"def source() -> TaintInTaintOut[Test]: ..."
     ~expect:{|"Unrecognized taint direction in return annotation: TaintInTaintOut"|};
 
   assert_invalid_model
-    ~model_source:"def sink(parameter: InvalidTaintDirection[TestSink]): ..."
+    ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
     ~expect:{|"Unrecognized taint direction in parameter annotation InvalidTaintDirection"|}
 
 

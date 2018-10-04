@@ -215,7 +215,7 @@ let test_sink _ =
       {
         define_name = "qualifier.test_sink";
         taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.TestSink]; };
+          { position = 1; sinks = [Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
       };
@@ -260,9 +260,9 @@ let test_rce_and_test_sink _ =
       {
         define_name = "qualifier.test_rce_and_test_sink";
         taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.TestSink]; };
+          { position = 0; sinks = [Taint.Sinks.Test]; };
           { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; };
-          { position = 2; sinks = [Taint.Sinks.RemoteCodeExecution; Taint.Sinks.TestSink]; };
+          { position = 2; sinks = [Taint.Sinks.RemoteCodeExecution; Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
       }
@@ -289,7 +289,7 @@ let test_tito_sink _ =
         define_name = "qualifier.test_tito_sink";
         taint_sink_parameters = [
           { position = 0; sinks = []; };
-          { position = 1; sinks = [Taint.Sinks.TestSink]; };
+          { position = 1; sinks = [Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
       };
@@ -318,7 +318,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.TestSink] };
+          { position = 0; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
       };
@@ -370,7 +370,7 @@ let test_apply_method_model_at_call_site _ =
         define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [
           { position = 0; sinks = [] };
-          { position = 1; sinks = [Taint.Sinks.TestSink] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
       };
@@ -425,7 +425,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_union_receiver_types";
         taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.TestSink] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
       };
@@ -462,7 +462,7 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_union_receiver_types";
         taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.TestSink] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
       };

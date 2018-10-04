@@ -7,17 +7,17 @@ open Core
 
 
 type t =
-  | TestSource
+  | Test
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 
 
 let show = function
-  | TestSource -> "TestSource"
+  | Test -> "Test"
   | UserControlled -> "UserControlled"
 
 
 let create = function
-  | "TestSource" -> TestSource
+  | "Test" -> Test
   | "UserControlled" -> UserControlled
   | name -> failwith (Format.sprintf "Unsupported taint source %s" name)

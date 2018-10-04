@@ -7,7 +7,7 @@
 type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | RemoteCodeExecution
-  | TestSink
+  | Test
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t

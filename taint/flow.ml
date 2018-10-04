@@ -116,6 +116,7 @@ type rule = {
   sinks: Sinks.t list;
   code: int;
   name: string;
+  message_format: string;  (* format *)
 }
 
 
@@ -124,13 +125,15 @@ let rules = [
     sources = [ Sources.UserControlled ];
     sinks = [ Sinks.RemoteCodeExecution ];
     code = 5001;
-    name = "User controlled data may lead to remote code execution.";
+    name = "Possible shell injection.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
   {
-    sources = [ Sources.TestSource ];
-    sinks = [ Sinks.TestSink ];
+    sources = [ Sources.Test ];
+    sinks = [ Sinks.Test ];
     code = 5002;
-    name = "Flow from test source to test sink.";
+    name = "Test flow.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
 ]
 
@@ -181,17 +184,29 @@ let generate_issues ~define { location; flows; } =
   issues
 
 
+let sinks_regexp = Str.regexp_string "{$sinks}"
+let sources_regexp = Str.regexp_string "{$sources}"
+
+
 let get_name_and_detailed_message { code; flow; _ } =
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
   | None -> failwith "issue with code that has no rule"
-  | Some { name; _; } ->
-      let details =
-        Format.sprintf
-          "Flow from %s to %s detected."
-          (ForwardTaint.show flow.source_taint)
-          (BackwardTaint.show flow.sink_taint)
+  | Some { name; message_format; _ } ->
+      let sources =
+        Domains.ForwardTaint.leaves flow.source_taint
+        |> List.map ~f:Sources.show
+        |> String.concat ~sep:", "
       in
-      name, details
+      let sinks =
+        Domains.BackwardTaint.leaves flow.sink_taint
+        |> List.map ~f:Sinks.show
+        |> String.concat ~sep:", "
+      in
+      let message =
+        Str.global_replace sources_regexp sources message_format
+        |> Str.global_replace sinks_regexp sinks
+      in
+      name, message
 
 
 let generate_error ({ code; issue_location; define; _  } as issue) =

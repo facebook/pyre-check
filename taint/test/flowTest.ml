@@ -15,8 +15,8 @@ let is_user_controlled = (=) Sources.UserControlled
 let is_RCE = (=) Sinks.RemoteCodeExecution
 
 
-let source_taint = ForwardTaint.of_list [ Sources.TestSource; Sources.UserControlled; ]
-let sink_taint = BackwardTaint.of_list [ Sinks.TestSink; Sinks.RemoteCodeExecution; ]
+let source_taint = ForwardTaint.of_list [ Sources.Test; Sources.UserControlled; ]
+let sink_taint = BackwardTaint.of_list [ Sinks.Test; Sinks.RemoteCodeExecution; ]
 
 
 let test_partition_match_all _ =
@@ -54,7 +54,7 @@ let test_partition_match_some_sources _ =
     ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
     [
       {
-        source_taint = ForwardTaint.singleton Sources.TestSource;
+        source_taint = ForwardTaint.singleton Sources.Test;
         sink_taint;
       };
     ]
@@ -81,7 +81,7 @@ let test_partition_match_some_sinks _ =
     [
       {
         source_taint;
-        sink_taint = BackwardTaint.singleton Sinks.TestSink;
+        sink_taint = BackwardTaint.singleton Sinks.Test;
       };
     ]
     rest
@@ -106,12 +106,12 @@ let test_partition_match_some_sinks_and_sources _ =
     ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
     [
       {
-        source_taint = ForwardTaint.singleton Sources.TestSource;
+        source_taint = ForwardTaint.singleton Sources.Test;
         sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
       };
       {
         source_taint;
-        sink_taint = BackwardTaint.singleton Sinks.TestSink;
+        sink_taint = BackwardTaint.singleton Sinks.Test;
       };
     ]
     rest
@@ -125,12 +125,12 @@ let test_no_errors _ =
     |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let source_tree_b =
-    ForwardTaint.singleton Sources.TestSource
+    ForwardTaint.singleton Sources.Test
     |> ForwardState.create_leaf
     |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
   let sink_tree_a =
-    BackwardTaint.singleton Sinks.TestSink
+    BackwardTaint.singleton Sinks.Test
     |> BackwardState.create_leaf
     |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
@@ -171,7 +171,7 @@ let test_errors _ =
     |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let source_tree_b =
-    ForwardTaint.singleton Sources.TestSource
+    ForwardTaint.singleton Sources.Test
     |> ForwardState.create_leaf
     |> ForwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
@@ -181,7 +181,7 @@ let test_errors _ =
     |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
   in
   let sink_tree_b =
-    BackwardTaint.singleton Sinks.TestSink
+    BackwardTaint.singleton Sinks.Test
     |> BackwardState.create_leaf
     |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in

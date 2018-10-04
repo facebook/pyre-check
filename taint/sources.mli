@@ -5,7 +5,7 @@
 
 
 type t =
-  | TestSource
+  | Test
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 

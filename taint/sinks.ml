@@ -7,18 +7,18 @@
 type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | RemoteCodeExecution
-  | TestSink
+  | Test
 [@@deriving compare, eq, sexp, show, hash]
 
 
 let show = function
   | LocalReturn -> "LocalReturn"
   | RemoteCodeExecution -> "RemoteCodeExecution"
-  | TestSink -> "TestSink"
+  | Test -> "Test"
 
 
 let create = function
   | "LocalReturn" -> LocalReturn
   | "RemoteCodeExecution" -> RemoteCodeExecution
-  | "TestSink" -> TestSink
+  | "Test" -> Test
   | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)
