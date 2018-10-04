@@ -928,7 +928,8 @@ let test_show_error_traces _ =
     |}
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
-      "type `str`. Redeclare `constant` on line 5 to override previously declared type.";
+      "type `str`. Redeclare `constant` on line 5 if you wish to override the previously " ^
+      "declared type.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -1978,7 +1979,10 @@ let test_check_assign _ =
         x: int = 1
         x = 'string'
     |}
-    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type " ^
+      "`str`. Redeclare `x` on line 4 if you wish to override the previously declared type."
+    ];
 
   assert_type_errors
     {|
@@ -3940,7 +3944,8 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
-      "type `str`.";
+      "type `str`. Redeclare `constant` on line 5 if you wish to override the previously " ^
+      "declared type.";
     ];
 
   assert_type_errors
@@ -3955,7 +3960,8 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
-      "type `typing.Any`.";
+      "type `typing.Any`. Redeclare `x` on line 6 if you wish to override the previously " ^
+      "declared type.";
       "Incompatible parameter type [6]: Expected `str` but got `int`."
     ];
 
@@ -4070,7 +4076,10 @@ let test_check_immutables _ =
     def foo(x: int) -> None:
       x = "hi"
     |}
-    ["Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."];
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
+      "type `str`. Redeclare `x` on line 3 if you wish to override the previously declared type."
+    ];
 
   assert_type_errors
     {|
@@ -4095,7 +4104,10 @@ let test_check_immutables _ =
       y = x
       x = y
     |}
-    ["Incompatible variable type [9]: y is declared to have type `str` but is used as type `int`."];
+    [
+      "Incompatible variable type [9]: y is declared to have type `str` but is used as " ^
+      "type `int`. Redeclare `y` on line 5 if you wish to override the previously declared type."
+    ];
 
   assert_type_errors
     {|
@@ -4996,7 +5008,8 @@ let test_check_refinement _ =
     |}
     [
       "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` " ^
-      "but is used as type `unknown`.";
+      "but is used as type `unknown`. Redeclare `input` on line 4 if you wish to override " ^
+      "the previously declared type.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
