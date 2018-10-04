@@ -232,14 +232,17 @@ let refine ~position ~source ?(take_default_on_miss = true) (location, entry) =
       in
       let find_word_range text ~column =
         let length = String.length text in
-        let column = Int.max 0 (Int.min column (length - 1)) in
+        let clamp_to_valid_length ~column =
+          Int.max 0 (Int.min (length - 1) column)
+        in
+        let column = clamp_to_valid_length ~column in
         let start_column =
           String.rfindi ~pos:(column - 1) text ~f:word_delimiter
           >>| (fun index -> index + 1)
           |> Option.value ~default:0
         in
         let stop_column =
-          let search_column = Int.min (length - 1) (column + 1) in
+          let search_column = clamp_to_valid_length ~column:(column + 1) in
           String.lfindi ~pos:search_column text ~f:word_delimiter
           >>| (fun index -> index - 1)
           |> Option.value ~default:((String.length text) - 1)

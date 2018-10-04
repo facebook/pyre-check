@@ -368,6 +368,10 @@ let test_lookup_multiline_accesses _ =
           return (a.
                   x)
 
+      def with_blanks() -> int:
+          return (A().
+
+                  x)
     |}
   in
   let (lookup, source) = generate_lookup source in
@@ -381,6 +385,11 @@ let test_lookup_multiline_accesses _ =
       "test.py:13:12-14:13/int";
       "test.py:13:12-14:13/test.A";
       "test.py:13:4-14:13/int";
+      "test.py:16:21-16:24/typing.Type[int]";
+      "test.py:17:12-19:13/int";
+      "test.py:17:12-19:13/test.A";
+      "test.py:17:12-19:13/typing.Type[test.A]";
+      "test.py:17:4-19:13/int";
       "test.py:2:13-2:17/None";
       "test.py:3:8-5:14/bool";
       "test.py:9:13-9:15/int";
@@ -437,7 +446,12 @@ let test_lookup_multiline_accesses _ =
     ~lookup
     ~source
     ~position:{ Location.line = 14; column = 13 }
-    ~annotation:None
+    ~annotation:None;
+  assert_annotation
+    ~lookup
+    ~source
+    ~position:{ Location.line = 18; column = 0 }
+    ~annotation:(Some "test.py:17:12-19:13/int")
 
 
 let test_lookup_out_of_bounds_accesses _ =
