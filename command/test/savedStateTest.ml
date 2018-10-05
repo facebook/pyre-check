@@ -155,18 +155,12 @@ let test_invalid_configuration context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  (* Create an incompatible directory. *)
-  let other_root =
-    bracket_tmpdir context
-    |> Path.create_absolute
-  in
-
   let saved_state_path =
     Path.create_relative ~root:local_root ~relative:"saved_state"
     |> Path.absolute
   in
   let configuration = Configuration.Analysis.create ~local_root () in
-  let incompatible_configuration = Configuration.Analysis.create ~local_root:other_root () in
+  let incompatible_configuration = Configuration.Analysis.create ~local_root ~infer:true () in
   let connect () =
     let socket = Operations.connect ~retries:3 ~configuration in
     Network.Socket.write socket Server.Protocol.Request.FlushTypeErrorsRequest;

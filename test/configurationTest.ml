@@ -32,7 +32,7 @@ let test_equal _ =
        (Configuration.Analysis.create ~parallel:false ()));
 
   let root = Path.current_working_directory () in
-  assert_false
+  assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~filter_directories:[] ())
        (Configuration.Analysis.create ~filter_directories:[root] ()));
@@ -42,12 +42,12 @@ let test_equal _ =
        (Configuration.Analysis.create ~number_of_workers:42 ())
        (Configuration.Analysis.create ~number_of_workers:84 ()));
 
-  assert_false
+  assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~search_path:[] ())
        (Configuration.Analysis.create ~search_path:[root] ()));
 
-  assert_false
+  assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~typeshed:(Path.create_relative ~root ~relative:"a") ())
        (Configuration.Analysis.create ~typeshed:(Path.create_relative ~root ~relative:"b") ()));

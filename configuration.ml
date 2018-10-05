@@ -35,15 +35,7 @@ module Analysis = struct
   let equal first second =
     first.infer = second.infer &&
     first.recursive_infer = second.recursive_infer &&
-    Option.equal
-      (List.equal ~equal:Path.equal)
-      first.filter_directories
-      second.filter_directories &&
-    Path.equal first.local_root second.local_root &&
     first.debug = second.debug &&
-    Path.equal first.project_root second.project_root &&
-    List.equal ~equal:Path.equal first.search_path second.search_path &&
-    Option.equal Path.equal first.typeshed second.typeshed &&
     first.expected_version = second.expected_version &&
     first.strict = second.strict &&
     first.declare = second.declare
