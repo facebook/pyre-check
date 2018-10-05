@@ -28,7 +28,12 @@ let subscription watchman_directory =
       `String "allof";
       `List [ `String "type"; `String "f" ];
       `List [ `String "not"; `String "empty" ];
-      `List [ `String "suffix"; `List [ `String "py"; `String "pyi" ]];
+      `List [
+        (* Do not use 'suffix-set', it is watchman-5.0+ only. *)
+        `String "anyof";
+        `List [ `String "suffix"; `String "py" ];
+        `List [ `String "suffix"; `String "pyi" ];
+      ];
     ]
   in
   `List [
