@@ -764,6 +764,7 @@ let test_class_attributes _ =
 
 let test_fallback_attribute _ =
   let assert_fallback_attribute source annotation =
+    Class.AttributesCache.clear ();
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()
@@ -798,20 +799,20 @@ let test_fallback_attribute _ =
   assert_fallback_attribute
     {|
       class Foo:
-        def __getattr__(self, attribute: str) -> int:
+        def Foo.__getattr__(self, attribute: str) -> int:
           return 1
     |}
     (Some Type.integer);
   assert_fallback_attribute
     {|
       class Foo:
-        def __getattr__(self, attribute: str) -> int: ...
+        def Foo.__getattr__(self, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
     {|
       class Foo:
-        def __getattr__(self, attribute: str) -> int: ...
+        def Foo.__getattr__(self, attribute: str) -> int: ...
       class Bar(Foo):
         pass
     |}

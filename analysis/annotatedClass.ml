@@ -766,16 +766,27 @@ let attribute
 
 
 let fallback_attribute ~resolution ~access definition =
-  let fallback_attribute definition =
-    let fallback_attribute { Node.location; value } =
-      let is_fallback access =
-        match List.last access with
-        | Some (Access.Identifier name) when Identifier.show name = "__getattr__" -> true
-        | _ -> false
-      in
-      match value with
-      | Define { Define.name; return_annotation; _ } when is_fallback name ->
-          Some
+  let fallback =
+    attribute
+      definition
+      ~class_attributes:true
+      ~transitive:true
+      ~resolution
+      ~name:(Access.create "__getattr__")
+      ~instantiated:(annotation definition ~resolution)
+  in
+  if Attribute.defined fallback then
+    let annotation =
+      fallback
+      |> Attribute.annotation
+      |> Annotation.annotation
+    in
+    begin
+      match annotation with
+      | Type.Callable { Type.Callable.overloads = overload :: _; _ } ->
+          let return_annotation = Type.Callable.Overload.return_annotation overload in
+          let location = Attribute.location fallback in
+           Some
             (Attribute.create
                ~resolution
                ~parent:definition
@@ -783,7 +794,7 @@ let fallback_attribute ~resolution ~access definition =
                  Node.location;
                  value = {
                    Statement.Attribute.target = Node.create ~location (Access access);
-                   annotation = return_annotation;
+                   annotation = Some (Type.expression return_annotation);
                    defines = None;
                    value = None;
                    async = false;
@@ -794,14 +805,9 @@ let fallback_attribute ~resolution ~access definition =
                })
       | _ ->
           None
-    in
-    List.find_map
-      ~f:fallback_attribute
-      (body definition)
-  in
-  List.find_map
-    ~f:fallback_attribute
-    (definition :: (superclasses ~resolution definition))
+    end
+  else
+    None
 
 
 let constructor definition ~resolution =
