@@ -135,8 +135,10 @@ let start
     | Some (Load _) ->
         begin
           try
+            let timer = Timer.start () in
             let state = SavedState.load ~server_configuration ~lock ~connections in
             Statistics.event ~name:"saved state success" ();
+            Statistics.performance ~timer ~name:"initialized server from saved state" ();
             state
           (* Fall back to starting from scratch if we can't load a saved state. *)
           with SavedState.IncompatibleState reason ->
