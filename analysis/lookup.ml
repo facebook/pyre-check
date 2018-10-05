@@ -167,7 +167,7 @@ module ExpressionVisitor = struct
 
       | _ ->
           let store_annotation annotation =
-            Location.Reference.Table.set
+            Hashtbl.set
               annotations_lookup
               ~key:expression_location
               ~data:(Precise annotation)
@@ -200,9 +200,9 @@ let create_of_source environment source =
       let statements = Cfg.Node.statements cfg_node in
       let walk_statements statement_index statement =
         let annotations =
-          Int.Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          |> Option.value ~default:Access.Map.Tree.empty
-          |> Access.Map.of_tree
+          Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
+          >>| Access.Map.of_tree
+          |> Option.value ~default:Access.Map.empty
         in
         let resolution = Environment.resolution environment ~annotations () in
         Visit.visit
@@ -212,7 +212,7 @@ let create_of_source environment source =
       in
       List.iteri statements ~f:walk_statements
     in
-    Int.Table.iteri cfg ~f:walk_cfg
+    Hashtbl.iteri cfg ~f:walk_cfg
   in
   (* TODO(T31738631): remove extract_into_toplevel *)
   Preprocessing.defines ~extract_into_toplevel:true source
@@ -363,10 +363,10 @@ let expand_approximate (location, entry) =
 
 
 let get_all_annotations { annotations_lookup; _ } =
-  Location.Reference.Table.to_alist annotations_lookup
+  Hashtbl.to_alist annotations_lookup
   |> List.concat_map ~f:expand_approximate
 
 
 let get_all_definitions { definitions_lookup; _ } =
-  Location.Reference.Table.to_alist definitions_lookup
+  Hashtbl.to_alist definitions_lookup
   |> List.concat_map ~f:expand_approximate
