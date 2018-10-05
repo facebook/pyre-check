@@ -23,7 +23,12 @@ type source_expectation = {
 }
 
 
-let assert_taint ?(qualifier = Access.create "qualifier") source expect =
+let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect =
+  models
+  >>| Test.trim_extra_indentation
+  >>| (fun model_source -> Service.StaticAnalysis.add_models ~model_source)
+  |> ignore;
+
   let source =
     parse ~qualifier source
     |> Preprocessing.preprocess
@@ -113,6 +118,20 @@ let test_simple_source _ =
     {|
       def simple_source():
         return __testSource()
+    |}
+    [
+      {
+        define_name = "qualifier.simple_source";
+        returns = [Sources.Test];
+      };
+    ];
+  assert_taint
+    ~models:{|
+      def custom_source() -> TaintSource[Test]: ...
+    |}
+    {|
+      def simple_source():
+        return custom_source()
     |}
     [
       {
