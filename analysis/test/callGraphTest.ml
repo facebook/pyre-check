@@ -171,7 +171,7 @@ let test_type_collection _ =
     let lookup =
       TypeResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)
-      |> Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+      |> Int.Map.of_tree
     in
     let test_expect (node_id, statement_index, test_access, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in

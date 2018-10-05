@@ -2208,11 +2208,7 @@ let check
       let () =
         (* Write fixpoint type resolutions to shared memory *)
         let dump_resolutions { State.resolution_fixpoint; _ } =
-          Int.Map.Tree.fold
-            resolution_fixpoint
-            ~init:Int.Map.Tree.empty
-            ~f:(fun ~key ~data -> Int.Map.Tree.set ~key ~data)
-          |> TypeResolutionSharedMemory.add name
+          TypeResolutionSharedMemory.add name resolution_fixpoint
         in
         exit
         >>| dump_resolutions

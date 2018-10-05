@@ -166,9 +166,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let annotations =
               (key
                >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-               >>| Int.Map.Tree.fold
-                 ~init:Int.Map.empty
-                 ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+               >>| Int.Map.of_tree
                >>= Fn.flip Int.Map.find key
                >>| Access.Map.of_tree)
               |> Option.value ~default:Access.Map.empty

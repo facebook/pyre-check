@@ -25,7 +25,7 @@ let create ~environment ~source =
     let annotation_lookup =
       TypeResolutionSharedMemory.get caller
       |> Option.value ~default:Int.Map.Tree.empty
-      |> Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+      |> Int.Map.of_tree
     in
     let fold_cfg ~key:node_id ~data:node call_graph =
       let statements = Cfg.Node.statements node in

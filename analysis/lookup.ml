@@ -193,7 +193,7 @@ let create_of_source environment source =
     let cfg = Cfg.create define in
     let annotation_lookup =
       TypeResolutionSharedMemory.get caller
-      >>| Int.Map.Tree.fold ~init:Int.Map.empty ~f:(fun ~key ~data -> Int.Map.set ~key ~data)
+      >>| Int.Map.of_tree
       |> Option.value ~default:Int.Map.empty
     in
     let walk_cfg ~key:node_id ~data:cfg_node =
