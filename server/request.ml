@@ -641,12 +641,11 @@ let process_type_check_request
       let handle = File.handle ~configuration file in
       match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
       | Some existing ->
-          let new_path = File.path file in
-          let existing_path =
-            Module.path existing
-            |> Option.value ~default:new_path
+          let existing_handle =
+            Module.handle existing
+            |> Option.value ~default:handle
           in
-          Path.equal existing_path new_path
+          File.Handle.equal existing_handle handle
       | _  ->
           true
     in
