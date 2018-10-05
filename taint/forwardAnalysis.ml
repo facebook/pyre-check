@@ -104,21 +104,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 |> ForwardState.collapse
                 |> ForwardTaint.join tito
               in
+              let argument_port = AccessPath.Root.Parameter { position } in
               let tito =
-                BackwardState.read
-                  (AccessPath.Root.Parameter { position })
-                  backward.taint_in_taint_out
+                BackwardState.read argument_port backward.taint_in_taint_out
                 |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
               in
               let flow_candidate =
                 let sink_tree =
-                  BackwardState.read
-                    (AccessPath.Root.Parameter { position })
-                    backward.sink_taint
+                  BackwardState.read argument_port backward.sink_taint
                   |> BackwardState.apply_call
                     location
                     ~callees:[ call_target ]
-                    ~port:Root.LocalResult
+                    ~port:argument_port
                 in
                 Flow.generate_source_sink_matches
                   ~location

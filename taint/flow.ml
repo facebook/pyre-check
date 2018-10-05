@@ -5,6 +5,7 @@
 
 open Core
 
+open Ast
 open Domains
 
 
@@ -21,7 +22,7 @@ type flows = flow list
 
 type candidate = {
   flows: flows;
-  location: Ast.Location.t;
+  location: Location.t;
 }
 [@@deriving sexp]
 
@@ -29,8 +30,8 @@ type candidate = {
 type issue = {
   code: int;
   flow: flow;
-  issue_location: Ast.Location.t;
-  define: Ast.Statement.Define.t Ast.Node.t;
+  issue_location: Location.t;
+  define: Statement.Define.t Node.t;
 }
 [@@deriving sexp]
 
@@ -242,10 +243,19 @@ let to_json callable issue =
       ];
     ]
   in
+  let issue_location =
+    issue.issue_location
+    |> Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash)
+  in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc [
     "callable", `String callable_name;
     "callable_line", `Int callable_line;
+    "code", `Int issue.code;
+    "line", `Int (Location.line issue_location);
+    "start", `Int (Location.column issue_location);
+    "end", `Int (Location.stop_column issue_location);
+    "filename", `String (Location.path issue_location);
     "message", `String message;
     "traces", traces;
   ]

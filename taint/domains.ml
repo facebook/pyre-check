@@ -70,9 +70,7 @@ module Set(Element: SET_ARG) : TAINT_SET with type Leaf.t = Element.t = struct
   let to_json set =
     let element_to_json element =
       let kind = `String (Element.show element) in
-      `Assoc [
-        "leaf", `Assoc ["kind", kind];
-      ]
+      `Assoc ["kind", kind]
     in
     leaves set
     |> List.map ~f:element_to_json
