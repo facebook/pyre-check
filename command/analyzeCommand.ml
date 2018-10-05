@@ -90,7 +90,6 @@ let run_analysis
          "gc_major_collections", major_collections;
          "gc_compactions", compactions;
        ]
-       ~normals:["request kind", "FullCheck"]
        ();
      (* Print results. *)
      List.map
