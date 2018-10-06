@@ -159,10 +159,14 @@ let analyze
 
   let all_callables =
     let make_callables path =
-      Ast.SharedMemory.Sources.get path
-      >>| fun source ->
-      record_path_of_definitions ~path ~source
-      |> List.map ~f:Interprocedural.Callable.create
+      (* Ignore stubs. *)
+      if File.Handle.is_stub path then
+        None
+      else
+        Ast.SharedMemory.Sources.get path
+        >>| fun source ->
+        record_path_of_definitions ~path ~source
+        |> List.map ~f:Interprocedural.Callable.create
     in
     List.filter_map paths ~f:make_callables
     |> List.concat

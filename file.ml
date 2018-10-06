@@ -80,6 +80,10 @@ module Handle = struct
     path
 
 
+  let is_stub path =
+    String.is_suffix ~suffix:".pyi" path
+
+
   include Hashable.Make(struct
       type nonrec t = t
       let compare = compare

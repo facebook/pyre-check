@@ -34,6 +34,13 @@ let test_lines context =
     ["foo"; "bar"]
 
 
+let test_is_stub _ =
+  assert_true (File.Handle.is_stub (File.Handle.create "a.pyi"));
+  assert_true (File.Handle.is_stub (File.Handle.create "pyi.pyi"));
+  assert_false (File.Handle.is_stub (File.Handle.create "pyi.py"));
+  assert_false (File.Handle.is_stub (File.Handle.create "a.py"))
+
+
 let test_handle _ =
   let assert_handle ~absolute ~handle =
     let path = Path.create_absolute ~follow_symbolic_links:false in
@@ -80,5 +87,6 @@ let () =
     "content">::test_content;
     "lines">::test_lines;
     "handle">::test_handle;
+    "is_stub">::test_is_stub;
   ]
   |> Test.run

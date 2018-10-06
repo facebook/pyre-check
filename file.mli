@@ -25,6 +25,7 @@ module Handle : sig
   [@@deriving compare, eq, show, sexp, hash]
 
   val create: string -> t
+  val is_stub: t -> bool
 
   include Hashable with type t := t
   module Map: Map.S with type Key.t = t
