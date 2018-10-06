@@ -449,6 +449,7 @@ let compute_fixpoint
           scheduler
           ~configuration
           ~map:(fun _ callables -> one_analysis_pass ~analyses step ~environment ~callables)
+          ~bucket_size:1000
           ~initial:()
           ~reduce:(fun _ _ -> ())
           ~inputs:callables_to_analyze
