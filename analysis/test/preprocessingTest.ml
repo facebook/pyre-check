@@ -827,6 +827,144 @@ let test_replace_version_specific_code _ =
     |}
 
 
+let test_replace_platform_specific_code _ =
+  let assert_preprocessed ?(handle="stub.pyi") source expected =
+    assert_source_equal
+      (parse ~handle expected)
+      (Preprocessing.replace_platform_specific_code (parse ~handle source))
+  in
+  assert_preprocessed
+    {|
+      if sys.platform != 'win32':
+        a = 1
+    |}
+    {|
+      a = 1
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform != 'win32':
+        a = 2
+        b = 3
+      else:
+        c = 4
+    |}
+    {|
+      a = 2
+      b = 3
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform != 'win32':
+        a = 5
+      else:
+        b = 6
+        c = 7
+    |}
+    {|
+      a = 5
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform != 'linux':
+        a = 8
+    |}
+    {|
+      if sys.platform != 'linux':
+        a = 8
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform != 'linux':
+        a = 9
+      else:
+        b = 10
+        c = 11
+    |}
+    {|
+      if sys.platform != 'linux':
+        a = 9
+      else:
+        b = 10
+        c = 11
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform == 'win32' or sys.platform == 'darwin':
+        a = 12
+    |}
+    {|
+      if sys.platform == 'win32' or sys.platform == 'darwin':
+        a = 12
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform == 'win32' or sys.platform == 'darwin':
+        a = 13
+      else:
+        b = 14
+    |}
+    {|
+      if sys.platform == 'win32' or sys.platform == 'darwin':
+        a = 13
+      else:
+        b = 14
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform == 'win32' or flag:
+        a = 15
+      else:
+        b = 16
+    |}
+    {|
+      if sys.platform == 'win32' or flag:
+        a = 15
+      else:
+        b = 16
+    |};
+  assert_preprocessed
+    {|
+      if sys.platform == 'linux' or flag:
+        a = 17
+      else:
+        b = 18
+    |}
+    {|
+      if sys.platform == 'linux' or flag:
+        a = 17
+      else:
+        b = 18
+    |};
+  assert_preprocessed
+    {|
+      if 'win32' == sys.platform:
+        a = 19
+      else:
+        b = 20
+        c = 21
+    |}
+    {|
+      b = 20
+      c = 21
+    |};
+  assert_preprocessed
+    {|
+      if 'linux' == sys.platform:
+        a = 22
+        b = 23
+      else:
+        c = 24
+    |}
+    {|
+      if 'linux' == sys.platform:
+        a = 22
+        b = 23
+      else:
+        c = 24
+    |}
+
+
 let test_expand_type_checking_imports _ =
   let assert_expanded source expected =
     assert_source_equal
@@ -1298,6 +1436,7 @@ let () =
     "expand_format_string">::test_expand_format_string;
     "qualify">::test_qualify;
     "replace_version_specific_code">::test_replace_version_specific_code;
+    "replace_platform_specific_code">::test_replace_platform_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_wildcard_imports">::test_expand_wildcard_imports;
     "expand_returns">::test_expand_returns;

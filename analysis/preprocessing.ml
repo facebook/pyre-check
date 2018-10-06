@@ -970,6 +970,64 @@ let replace_version_specific_code source =
   |> snd
 
 
+let replace_platform_specific_code source =
+  let module Transform = Transform.MakeStatementTransformer(struct
+      include Transform.Identity
+      type t = unit
+
+      let statement _ ({ Node.location; value } as statement) =
+        match value with
+        | If { If.test = { Node.value = test; _ }; body; orelse } ->
+            begin
+              let statements =
+                let statements =
+                  let open Expression in
+                  let matches_removed_platform left right =
+                    let is_platform expression = Expression.show expression = "sys.platform" in
+                    let is_win32 { Node.value; _ } =
+                      match value with
+                      | String { StringLiteral.value; _ } ->
+                          value = "win32"
+                      | _ ->
+                          false
+                    in
+                    (is_platform left && is_win32 right) or (is_platform right && is_win32 left)
+                  in
+                  match test with
+                  | ComparisonOperator {
+                      ComparisonOperator.left;
+                      operator;
+                      right;
+                    } when matches_removed_platform left right ->
+                      begin
+                        match operator with
+                        | ComparisonOperator.Equals
+                        | Is ->
+                            orelse
+                        | NotEquals
+                        | IsNot ->
+                            body
+                        | _ ->
+                            [statement]
+                      end
+                  | _ ->
+                      [statement]
+                in
+                if not (List.is_empty statements) then
+                  statements
+                else
+                  [Node.create ~location Statement.Pass]
+              in
+              (), statements
+            end
+        | _ ->
+            (), [statement]
+    end)
+  in
+  Transform.transform () source
+  |> snd
+
+
 let expand_type_checking_imports source =
   let module Transform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
@@ -1244,6 +1302,7 @@ let preprocess source =
   |> expand_relative_imports
   |> expand_string_annotations
   |> expand_format_string
+  |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> expand_wildcard_imports

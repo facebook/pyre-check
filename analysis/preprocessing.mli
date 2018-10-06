@@ -18,6 +18,9 @@ val qualify: Source.t -> Source.t
 (* Resolves sys.version_info related checks at parse time. *)
 val replace_version_specific_code: Source.t -> Source.t
 
+(* Uses heuristics to pick platform-specific code at parse time. *)
+val replace_platform_specific_code: Source.t -> Source.t
+
 val expand_type_checking_imports: Source.t -> Source.t
 val expand_wildcard_imports: Source.t -> Source.t
 
