@@ -177,9 +177,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 let receiver_type =
                   Access.expression lead
                   |> Resolution.resolve resolution
-                  |> Type.show
                 in
-                if receiver_type = "django.http.Request" then
+                let is_http_request =
+                  Resolution.less_or_equal
+                    resolution
+                    ~left:receiver_type
+                    ~right:(Type.Primitive (Identifier.create "django.http.Request"))
+                in
+                if is_http_request then
                   ForwardTaint.singleton Sources.UserControlled
                   |> ForwardState.create_leaf
                 else

@@ -34,7 +34,20 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     |> Preprocessing.preprocess
   in
   let configuration = Test.mock_configuration in
-  let environment = Test.environment ~configuration () in
+  let environment =
+    Test.environment
+      ~configuration
+      ~sources:([
+          Test.parse
+            ~qualifier:(Access.create "django.http")
+            ~handle:"django/http.pyi"
+            {|
+            class Request: pass
+          |}
+          |> Preprocessing.qualify;
+        ] @ Test.typeshed_stubs)
+      ()
+  in
   Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;
   let defines =
@@ -145,6 +158,19 @@ let test_hardcoded_source _ =
   assert_taint
     {|
       def get_field(request: django.http.Request):
+        return request.GET['field']
+    |}
+    [
+      {
+        define_name = "qualifier.get_field";
+        returns = [Sources.UserControlled];
+      };
+    ];
+  assert_taint
+    {|
+      class Request(django.http.Request): ...
+
+      def get_field(request: Request):
         return request.GET['field']
     |}
     [
