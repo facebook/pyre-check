@@ -8,12 +8,14 @@ type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | RemoteCodeExecution
   | Test
+  | Thrift
 [@@deriving compare, eq, sexp, show, hash]
 
 
 let show = function
   | LocalReturn -> "LocalReturn"
   | RemoteCodeExecution -> "RemoteCodeExecution"
+  | Thrift -> "Thrift"
   | Test -> "Test"
 
 
@@ -21,4 +23,5 @@ let create = function
   | "LocalReturn" -> LocalReturn
   | "RemoteCodeExecution" -> RemoteCodeExecution
   | "Test" -> Test
+  | "Thrift" -> Thrift
   | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)

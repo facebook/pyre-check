@@ -6,6 +6,7 @@
 
 type t =
   | Test
+  | Thrift
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 

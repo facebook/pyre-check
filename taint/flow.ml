@@ -136,6 +136,20 @@ let rules = [
     name = "Test flow.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.Thrift ];
+    code = 5003;
+    name = "User controlled data to thrift.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
+  {
+    sources = [ Sources.Thrift ];
+    sinks = [ Sinks.RemoteCodeExecution ];
+    code = 5004;
+    name = "Thrift return data to remote code execution.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

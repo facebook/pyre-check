@@ -168,6 +168,19 @@ let test_sink_models _ =
         ];
         tito_parameters = []
       };
+    ];
+
+  assert_model
+    ~model_source:"def thrift(parameter0: TaintSink[Thrift]) -> TaintSource[Thrift]: ..."
+    ~expect:[
+      {
+        define_name = "thrift";
+        returns = [Taint.Sources.Thrift];
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Thrift] };
+        ];
+        tito_parameters = []
+      };
     ]
 
 

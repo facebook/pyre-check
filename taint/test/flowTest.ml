@@ -185,6 +185,11 @@ let test_errors _ =
     |> BackwardState.create_leaf
     |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "b")]
   in
+  let sink_tree_c =
+    BackwardTaint.singleton Sinks.Thrift
+    |> BackwardState.create_leaf
+    |> BackwardState.create_tree [AccessPathTree.Label.Field (Identifier.create "a")]
+  in
   let assert_error ~source_tree ~sink_tree code =
     let location = Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos in
     let define =
@@ -204,6 +209,7 @@ let test_errors _ =
   in
   assert_error ~source_tree:source_tree_a ~sink_tree:sink_tree_a 5001;
   assert_error ~source_tree:source_tree_b ~sink_tree:sink_tree_b 5002;
+  assert_error ~source_tree:source_tree_a ~sink_tree:sink_tree_c 5003;
   ()
 
 
