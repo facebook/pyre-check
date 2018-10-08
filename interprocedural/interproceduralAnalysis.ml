@@ -344,7 +344,8 @@ let one_analysis_pass ~analyses step ~environment ~callables =
     let result = analyze_callable analyses step callable environment in
     Fixpoint.add_state step callable result
   in
-  List.iter callables ~f:analyze_and_cache
+  List.iter callables ~f:analyze_and_cache;
+  List.length callables
 
 
 let get_callable_dependents ~caller_map = function
@@ -420,6 +421,7 @@ let compute_fixpoint
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
      components. *)
   let max_iterations = 100 in
+  let total_callables = List.length all_callables in
   let rec iterate ~iteration callables_to_analyze =
     let num_callables = List.length callables_to_analyze in
     let () =
@@ -429,14 +431,13 @@ let compute_fixpoint
         else
           "..."
       in
-      Log.log ~section:`Interprocedural "Iteration #%d. Callables [%s]" iteration witnesses
+      Log.log ~section:`Info "Iteration #%d. %d Callables [%s]" iteration num_callables witnesses
     in
     if num_callables = 0 then
       (* Fixpoint. *)
       iteration
     else if iteration >= max_iterations then
       begin
-        Log.log ~section:`Interprocedural "Failed to reach interprocedural fixed point";
         let max_to_show = 15 in
         let bucket =
           callables_to_analyze
@@ -451,24 +452,37 @@ let compute_fixpoint
             (String.concat ~sep:", " (List.take bucket max_to_show))
             (if bucket_len > max_to_show then "..." else "")
         in
-        Log.log ~section:`Interprocedural "%s" message;
+        Log.log ~section:`Info "%s" message;
         failwith message
       end
     else
       let time_0 = Unix.gettimeofday () in
       let step = Fixpoint.{ epoch; iteration; } in
       let old_batch = Fixpoint.KeySet.of_list callables_to_analyze in
+      let reduce n m =
+        let callables_processed = n + m in
+        let () =
+          Log.log
+            ~section:`Progress
+            "Processed %d of %d callables"
+            callables_processed
+            total_callables
+        in
+        callables_processed
+      in
       let () =
         Fixpoint.oldify old_batch;
-        Scheduler.map_reduce
-          scheduler
-          ~configuration
-          ~map:(fun _ callables -> one_analysis_pass ~analyses step ~environment ~callables)
-          ~bucket_size:1000
-          ~initial:()
-          ~reduce:(fun _ _ -> ())
-          ~inputs:callables_to_analyze
-          ();
+        let _ =
+          Scheduler.map_reduce
+            scheduler
+            ~configuration
+            ~map:(fun _ callables -> one_analysis_pass ~analyses step ~environment ~callables)
+            ~bucket_size:1000
+            ~initial:0
+            ~reduce
+            ~inputs:callables_to_analyze
+            ()
+        in
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =
@@ -478,8 +492,8 @@ let compute_fixpoint
       let time_f = Unix.gettimeofday () in
       let elapsed = time_f -. time_0 |> Unix.gmtime in
       let () =
-        Log.log ~section:`Interprocedural "Iteration #%n, heap size %n took %nm %02ds"
-          iteration hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
+        Log.log ~section:`Info "Iteration #%n, %d callables, heap size %n took %nm %02ds"
+          iteration num_callables hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in

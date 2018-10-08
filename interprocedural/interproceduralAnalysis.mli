@@ -11,7 +11,7 @@ val one_analysis_pass:
   -> Fixpoint.step
   -> environment: (module Analysis.Environment.Handler)
   -> callables:Callable.t list
-  -> unit
+  -> int  (* Returns num processed for progress *)
 
 (* Returns number of iterations. *)
 val compute_fixpoint

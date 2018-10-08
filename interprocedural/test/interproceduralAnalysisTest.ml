@@ -138,7 +138,7 @@ let test_unknown_function_analysis _ =
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0; } in
   let environment = environment () in
-  let () = Analysis.one_analysis_pass step ~analyses ~environment ~callables:targets in
+  let _ = Analysis.one_analysis_pass step ~analyses ~environment ~callables:targets in
   let check_obscure_model target =
     match Fixpoint.get_model target with
     | None ->
@@ -185,7 +185,7 @@ let test_meta_data _ =
     |> List.map ~f:Callable.create_real in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0; } in
   let environment = environment () in
-  let () = Analysis.one_analysis_pass step1 ~analyses ~environment ~callables:targets in
+  let _ = Analysis.one_analysis_pass step1 ~analyses ~environment ~callables:targets in
   (* All obscure functions should reach fixpoint in 1st step *)
   let () = List.iter ~f:(check_meta_data ~step:step1 ~is_partial:false) targets in
   ()
