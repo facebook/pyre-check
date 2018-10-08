@@ -1253,25 +1253,6 @@ let test_expand_returns _ =
     |}
 
 
-let test_expand_ternary _ =
-  let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_ternary_assign (parse source))
-  in
-
-  assert_expand
-    {|
-      a = 5 if 1 else 3
-    |}
-    {|
-      if 1:
-        a = 5
-      else:
-        a = 3
-    |}
-
-
 let test_defines _ =
   let assert_defines statements defines =
     assert_equal
@@ -1440,7 +1421,6 @@ let () =
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_wildcard_imports">::test_expand_wildcard_imports;
     "expand_returns">::test_expand_returns;
-    "expand_ternary_assigns">::test_expand_ternary;
     "defines">::test_defines;
     "classes">::test_classes;
   ]

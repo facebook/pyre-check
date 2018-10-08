@@ -28,9 +28,6 @@ val expand_wildcard_imports: Source.t -> Source.t
 val return_access: Access.t
 val expand_returns: Source.t -> Source.t
 
-(* Transforms assignments to ternaries to handle tests *)
-val expand_ternary_assign: Source.t -> Source.t
-
 (* List of function definitions in a source. extract_into_toplevel copies all definitions into a
    toplevel definition. *)
 val defines

@@ -20,12 +20,17 @@ let assert_expression_equal =
 
 
 let test_negate _ =
-  assert_expression_equal
-    (negate (+True))
-    (+UnaryOperator {
-       UnaryOperator.operator = UnaryOperator.Not;
-       operand = +True;
-     })
+  let assert_negate ~expected ~negated =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (parse_single_expression expected)
+      (Expression.negate (parse_single_expression negated))
+  in
+  assert_negate ~expected:"True" ~negated:"not True";
+  assert_negate ~expected:"not True" ~negated:"True";
+  assert_negate ~expected:"True is False" ~negated:"True is not False";
+  assert_negate ~expected:"True is not False" ~negated:"True is False"
 
 
 let test_normalize _ =

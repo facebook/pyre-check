@@ -1170,45 +1170,6 @@ let expand_returns source =
   |> snd
 
 
-let expand_ternary_assign source =
-  let module ExpandingTransform = Transform.MakeStatementTransformer(struct
-      type t = unit
-
-      let statement state statement =
-        match statement with
-        | {
-          Node.location;
-          value = Assign ({
-              Assign.value = { Node.value = Ternary { Ternary.target; test; alternative }; _ };
-              _;
-            } as assign)
-        } ->
-            state,
-            [
-              {
-                Node.location;
-                value = If {
-                    If.test;
-                    body = [
-                      { Node.location; value = Assign { assign with Assign.value = target } };
-                    ];
-                    orelse = [
-                      {
-                        Node.location;
-                        value = Assign { assign with Assign.value = alternative };
-                      }
-                    ];
-                  };
-              };
-            ]
-        | _ ->
-            state, [statement]
-    end)
-  in
-  ExpandingTransform.transform () source
-  |> snd
-
-
 let defines
     ?(include_stubs = false)
     ?(extract_into_toplevel = false)
@@ -1308,4 +1269,3 @@ let preprocess source =
   |> expand_wildcard_imports
   |> qualify
   |> expand_returns
-  |> expand_ternary_assign

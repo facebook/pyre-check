@@ -634,14 +634,47 @@ module UnaryOperator = struct
 end
 
 
-let negate ({ Node.location; _ } as node) =
-  {
-    Node.location;
-    value = UnaryOperator {
-        UnaryOperator.operator = UnaryOperator.Not;
-        operand = node;
-      };
-  }
+let negate ({ Node.location; value } as node) =
+  match value with
+  | UnaryOperator {
+      UnaryOperator.operator = UnaryOperator.Not;
+      operand;
+    } ->
+      operand
+  | ComparisonOperator {
+      ComparisonOperator.operator = ComparisonOperator.IsNot;
+      left;
+      right;
+    } ->
+      {
+        Node.location;
+        value = ComparisonOperator {
+            ComparisonOperator.operator = ComparisonOperator.Is;
+            left;
+            right;
+          };
+      }
+  | ComparisonOperator {
+      ComparisonOperator.operator = ComparisonOperator.Is;
+      left;
+      right;
+    } ->
+      {
+        Node.location;
+        value = ComparisonOperator {
+            ComparisonOperator.operator = ComparisonOperator.IsNot;
+            left;
+            right;
+          };
+      }
+  | _ ->
+      {
+        Node.location;
+        value = UnaryOperator {
+            UnaryOperator.operator = UnaryOperator.Not;
+            operand = node;
+          };
+      }
 
 
 (* Changes boolean expressions to negation normal form *)

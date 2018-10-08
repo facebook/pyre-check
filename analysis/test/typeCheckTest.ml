@@ -4631,12 +4631,6 @@ let test_check_ternary _ =
       def f(s: str) -> None:
         pass
 
-      def pick_alternative(s: typing.Optional[str]) -> None:
-        f("foo" if s is None else s)
-
-      def pick_alternative2(s: typing.Optional[str]) -> None:
-        f("foo" if not s else s)
-
       def pick_alternative3(s: typing.Optional[str]) -> None:
         x = "foo" if s is None else s
         f(x)
