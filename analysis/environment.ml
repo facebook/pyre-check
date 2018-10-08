@@ -417,7 +417,7 @@ let register_module
     ~qualifier
     ~local_mode
     ~handle:(Some handle)
-    ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
+    ~stub:(File.Handle.is_stub handle)
     ~statements;
   if List.length qualifier > 1 then
     register_submodules (List.rev qualifier |> List.tl_exn)
