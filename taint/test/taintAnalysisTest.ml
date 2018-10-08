@@ -257,9 +257,36 @@ let test_fixpoint _ =
       def rce_problem():
         x = __userControlled()
         __eval(x)
+
+      class TestMethods:
+        def method_source(self):
+          return some_source()
+
+        def method_sink(self, tainted):
+          bad(tainted)
+
+        def receiver_sink(self, not_tainted):
+          bad(self.taint)
+
+      def match_via_methods():
+        x = TestMethods()
+        taint = x.method_source()
+        x.method_sink(taint)
+
+      def no_match_via_methods():
+        x = TestMethods()
+        taint = x.method_source()
+        x.taint = taint
+        x.method_sink(5)
+
+      def match_via_receiver():
+        x = TestMethods()
+        taint = x.method_source()
+        x.taint = taint
+        x.receiver_sink(5)
       |}
     ~expect:{
-      iterations = 3;
+      iterations = 4;
       expect = [
         {
           define_name = "rce_problem";
@@ -284,6 +311,37 @@ let test_fixpoint _ =
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             }
           ];
+        };
+        {
+          define_name = "match_via_methods";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [
+            {
+              code = 5002;
+              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
+            };
+          ]
+        };
+        {
+          define_name = "no_match_via_methods";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [];
+        };
+        {
+          define_name = "match_via_receiver";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [
+            {
+              code = 5002;
+              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
+            };
+          ]
         };
         {
           define_name = "qux";

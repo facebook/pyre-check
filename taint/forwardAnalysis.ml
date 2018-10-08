@@ -173,6 +173,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             Environment.resolution FunctionContext.environment ~annotations ()
           in
+          let arguments =
+            let receiver = {
+              Argument.name = None;
+              value = Access.expression ~location access;
+            } in
+            receiver :: arguments
+          in
           let hardcoded_taint =
             let attributes = String.Set.of_list ["GET"; "POST"; "FILES"; "META"] in
             match List.rev access, Identifier.show method_name with
