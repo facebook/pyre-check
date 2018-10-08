@@ -5,6 +5,7 @@ yarn-error.log
 
 _build
 .merlin
+.ignore
 /pyrelib.install
 /Makefile
 /dune
