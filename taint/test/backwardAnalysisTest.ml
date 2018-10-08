@@ -302,12 +302,12 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         def taint_across_methods(tainted_parameter):
@@ -329,12 +329,12 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         def taint_across_methods(not_tainted_parameter):
@@ -354,12 +354,12 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         def taint_across_methods(f: Foo, tainted_parameter):
@@ -381,12 +381,12 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         def taint_across_methods(f: Bar, not_tainted_parameter):
@@ -405,12 +405,12 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         def taint_across_union_receiver_types(condition, tainted_parameter):
@@ -436,15 +436,15 @@ let test_apply_method_model_at_call_site _ =
     ~source:
       {|
         class Foo:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         class Bar:
-          def qux(not_tainted_parameter):
+          def qux(self, not_tainted_parameter):
             pass
 
         class Baz:
-          def qux(tainted_parameter):
+          def qux(self, tainted_parameter):
             command_unsafe = tainted_parameter
             __testSink(command_unsafe)
 
@@ -460,11 +460,51 @@ let test_apply_method_model_at_call_site _ =
       |}
     ~expected:[
       {
+        define_name = "qualifier.Foo.qux";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.Baz.qux";
+        taint_sink_parameters = [
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
         define_name = "qualifier.taint_across_union_receiver_types";
         taint_sink_parameters = [
           { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+      };
+    ]
+    ()
+
+
+let test_tito_via_receiver _ =
+  assert_taint
+    ~source:
+      {|
+        class Foo:
+          def tito(self, argument1):
+              return self.f
+
+        def tito_via_receiver(parameter):
+          x = Foo()
+          x.f = parameter
+          return f.tito
+      |}
+    ~expected:[
+      {
+        define_name = "qualifier.tito_via_receiver";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.Foo.tito";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
       };
     ]
     ()

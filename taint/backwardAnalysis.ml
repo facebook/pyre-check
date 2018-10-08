@@ -150,6 +150,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             >>| Access.Map.of_tree
             >>= Fn.flip Access.Map.find access
           in
+          let receiver_argument_record = {
+            Argument.name = None;
+            value = Node.create ~location (Expression.Access access);
+          } in
+          let arguments = receiver_argument_record :: arguments in
           let state =
             match receiver_type with
             | Some { annotation = Primitive primitive ; _ } ->
