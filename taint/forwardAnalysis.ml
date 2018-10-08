@@ -161,12 +161,15 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let access = as_access expression in
           let resolution =
             let annotations =
-              (key
-               >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-               >>| Int.Map.of_tree
-               >>= Fn.flip Int.Map.find key
-               >>| Access.Map.of_tree)
-              |> Option.value ~default:Access.Map.empty
+              match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
+              | Some key, Some define_mapping ->
+                  define_mapping
+                  |> Int.Map.of_tree
+                  |> (fun mapping -> Int.Map.find mapping key)
+                  >>| Access.Map.of_tree
+                  |> Option.value ~default:Access.Map.empty
+              | _ ->
+                  Access.Map.empty
             in
             Environment.resolution FunctionContext.environment ~annotations ()
           in
