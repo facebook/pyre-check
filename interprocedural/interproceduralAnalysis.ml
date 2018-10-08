@@ -490,7 +490,7 @@ let extract_errors scheduler ~configuration all_callables =
   |> List.concat_no_order
 
 
-let save_results result_json_path all_callables =
+let save_results ~configuration all_callables =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
     fun json ->
@@ -505,14 +505,29 @@ let save_results result_json_path all_callables =
           Json.to_outbuf out_buffer json;
         end
   in
-  match result_json_path with
+  match configuration.Configuration.StaticAnalysis.result_json_path with
   | None -> ()
   | Some filepath ->
       let out_channel = open_out (Path.absolute filepath) in
       let out_buffer = Bi_outbuf.create_channel_writer out_channel in
       let array_emitter = emit_json_array_elements out_buffer in
-      Bi_outbuf.add_string out_buffer "[\n";
+      let root =
+        configuration.Configuration.StaticAnalysis.configuration.local_root
+        |> Path.absolute
+      in
+      let config =
+        `Assoc [
+          "repo", `String root;
+        ]
+      in
+      (* I wish Yojson had a stream emitter. *)
+      Bi_outbuf.add_string out_buffer "{\n";
+      Bi_outbuf.add_string out_buffer "\"config\": ";
+      Json.to_outbuf out_buffer config;
+      Bi_outbuf.add_string out_buffer ",\n";
+      Bi_outbuf.add_string out_buffer "\"results\": [\n";
       List.iter ~f:(emit_externalization array_emitter) all_callables;
-      Bi_outbuf.add_string out_buffer "]\n";
+      Bi_outbuf.add_string out_buffer "\n]\n";
+      Bi_outbuf.add_string out_buffer "}\n";
       Bi_outbuf.flush_output_writer out_buffer;
       close_out out_channel;

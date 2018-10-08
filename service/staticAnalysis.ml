@@ -89,7 +89,7 @@ let add_models ~model_source =
 let analyze
     ?taint_models_directory
     ~scheduler
-    ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path }
+    ~configuration:({ Configuration.StaticAnalysis.configuration; _ } as analysis_configuration)
     ~environment
     ~handles:paths
     () =
@@ -186,7 +186,9 @@ let analyze
       ~all_callables
       Interprocedural.Fixpoint.Epoch.initial
   in
-  let () = Interprocedural.Analysis.save_results result_json_path all_callables in
+  let () =
+    Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables
+  in
   let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
   Log.info "Fixpoint iterations: %d" iterations;

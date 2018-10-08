@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Pyre
-
 module Kind = AnalysisKind
 
 
@@ -34,4 +32,4 @@ val extract_errors:
   -> Callable.t list
   -> InterproceduralError.t list
 
-val save_results: Path.t option -> Callable.t list -> unit
+val save_results: configuration: Configuration.StaticAnalysis.t -> Callable.t list -> unit
