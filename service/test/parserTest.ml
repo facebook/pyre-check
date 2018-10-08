@@ -255,16 +255,6 @@ let test_parse_sources context =
     stub_handles
     [File.Handle.create "stub.pyi"; File.Handle.create "stub.pyi"];
   assert_equal source_handles [File.Handle.create "a.py"];
-
-  let assert_handle_path ~handle ~path =
-    let handle = File.Handle.create handle in
-    let { Source.path = actual; _ } = Option.value_exn (Ast.SharedMemory.Sources.get handle) in
-    assert_equal ~cmp:(Option.equal Path.equal) (Some path) actual
-  in
-  assert_handle_path
-    ~handle:"stub.pyi"
-    ~path:(Path.create_relative ~root:stub_root ~relative:"stub.pyi");
-  assert_handle_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
   begin
     match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
     | Some { Source.hash; _ } ->

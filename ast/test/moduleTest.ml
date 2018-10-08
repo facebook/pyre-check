@@ -24,22 +24,6 @@ let test_empty_stub _ =
      |> Module.empty_stub)
 
 
-let test_path _ =
-  assert_equal
-    (Module.create ~qualifier:[] ~local_mode:Source.Default ~stub:true []
-     |> Module.path)
-    None;
-  assert_equal
-    (Module.create
-       ~qualifier:[]
-       ~local_mode:Source.Default
-       ~path:(Pyre.Path.create_absolute ~follow_symbolic_links:false "/tmp/voodoo.py")
-       ~stub:false
-       []
-     |> Module.path)
-    (Some (Pyre.Path.create_absolute ~follow_symbolic_links:false "/tmp/voodoo.py"))
-
-
 let test_handle _ =
   assert_equal
     (Module.create ~qualifier:[] ~local_mode:Source.Default ~stub:true []
@@ -249,7 +233,6 @@ let test_wildcard_exports _ =
 let () =
   "module">:::[
     "empty_stub">::test_empty_stub;
-    "path">::test_path;
     "handle">::test_handle;
     "aliased_export">::test_aliased_export;
     "wildcard_exports">::test_wildcard_exports;

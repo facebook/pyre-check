@@ -24,11 +24,20 @@ let file ~local_root ?content path =
 
 let test_language_server_protocol_json_format context =
   let open TypeCheck.Error in
-  let filename, _ = bracket_tmpfile ~suffix:".py" context in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let configuration = Configuration.Analysis.create ~local_root () in
+  let filename =
+    let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
+    File.write (File.create ~content:"" path);
+    "filename.py"
+  in
   let handle = File.Handle.create filename in
   Ast.SharedMemory.Sources.add
     handle
-    (Source.create ~handle ~path:(Path.create_absolute filename) []);
+    (Source.create ~handle []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       {|
@@ -51,6 +60,7 @@ let test_language_server_protocol_json_format context =
   in
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
+      ~configuration
       (File.Handle.create filename)
       [type_error]
     |> Or_error.ok_exn
@@ -83,7 +93,8 @@ let test_language_server_protocol_json_format context =
           }
         }
      |}
-      filename
+      (Path.create_relative ~root:local_root ~relative:filename
+       |> Path.absolute)
     |> Test.trim_extra_indentation
     |> normalize
   in
@@ -91,6 +102,7 @@ let test_language_server_protocol_json_format context =
 
   let malformed_response =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
+      ~configuration
       (File.Handle.create "nonexistent_file")
       [type_error]
   in
@@ -815,15 +827,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse
-          ~handle:"a.py"
-          ~path:(Path.create_relative ~root:local_root ~relative:"a.py")
-          ~qualifier:(Access.create "a")
-          a_source;
-        parse
-          ~handle:"b.py"
-          ~path:(Path.create_relative ~root:local_root ~relative:"b.py")
-          ~qualifier:(Access.create "b") b_source;
+        parse ~handle:"a.py" ~qualifier:(Access.create "a") a_source;
+        parse ~handle:"b.py" ~qualifier:(Access.create "b") b_source;
       ]
     in
     List.zip_exn handles sources
@@ -1059,9 +1064,11 @@ let test_language_scheduler_definition context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
+  let configuration = Configuration.Analysis.create ~local_root () in
   let filename =
-    Path.create_relative ~root:local_root ~relative:"test.py"
-    |> Path.absolute
+    let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
+    File.write (File.create ~content:"" path);
+    "filename.py"
   in
   let request =
     Format.sprintf {|
@@ -1084,6 +1091,7 @@ let test_language_scheduler_definition context =
   in
   let expected_response =
     LanguageServer.Protocol.TextDocumentDefinitionResponse.create
+      ~configuration
       ~id:3
       ~location:None
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson

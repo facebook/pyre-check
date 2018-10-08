@@ -62,14 +62,13 @@ let initialize sources =
     |> ignore;
     let add_module handle =
       match SharedMemory.Sources.get handle with
-      | Some ({ Ast.Source.path; handle; statements; _ } as source) ->
+      | Some ({ Ast.Source.handle; statements; _ } as source) ->
           SharedMemory.Modules.add
             ~qualifier:(Source.qualifier ~handle)
             ~ast_module:
               (Module.create
                  ~qualifier:(Source.qualifier ~handle)
                  ~local_mode:(Source.mode ~configuration source)
-                 ?path
                  ~handle
                  ~stub:false
                  statements)

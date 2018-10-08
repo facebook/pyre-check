@@ -5,7 +5,6 @@
 
 open Core
 
-open Pyre
 open Expression
 
 
@@ -187,7 +186,6 @@ type t = {
   hash: int;
   metadata: Metadata.t;
   handle: File.Handle.t;
-  path: Path.t option;
   qualifier: Access.t;
   statements: Statement.t list;
 }
@@ -218,7 +216,6 @@ let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
     ?(handle = File.Handle.create "")
-    ?path
     ?(qualifier = [])
     ?(hash = -1)
     statements =
@@ -227,7 +224,6 @@ let create
     hash;
     metadata;
     handle;
-    path;
     qualifier;
     statements;
   }

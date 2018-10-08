@@ -440,9 +440,15 @@ let test_did_save_notification context =
 
 let test_language_server_definition_response context =
   let open Ast.Location in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let assert_response ~id ~location ~expected =
     let message =
+      let configuration = Configuration.Analysis.create ~local_root () in
       TextDocumentDefinitionResponse.create
+        ~configuration
         ~id
         ~location
       |> TextDocumentDefinitionResponse.to_yojson
@@ -461,27 +467,25 @@ let test_language_server_definition_response context =
         "result", `List [];
       ]);
 
-  let add_paths handles_to_paths =
-    List.map handles_to_paths ~f:fst
-    |> fun handles -> Ast.SharedMemory.Sources.remove ~handles;
+  let add_paths handles =
+    Ast.SharedMemory.Sources.remove ~handles;
 
-    let add_source (handle, path) =
-      let source = Ast.Source.create ~handle ~path [] in
+    let add_source handle =
+      let source = Ast.Source.create ~handle [] in
       Ast.SharedMemory.Sources.add handle source
     in
-    List.iter handles_to_paths ~f:add_source
+    List.iter handles ~f:add_source
   in
-  let symlink_filename, _ = bracket_tmpfile ~suffix:".py" context in
-  let filename = Path.create_absolute symlink_filename in
-  let symlink_stub, _ = bracket_tmpfile ~suffix:".pyi" context in
-  let stub = Path.create_absolute symlink_stub in
-  let handles_to_paths =
-    [
-      File.Handle.create "a.py", filename;
-      File.Handle.create "b.pyi", stub;
-    ]
+  let touch path =
+    File.create ~content:"" path
+    |> File.write
   in
-  add_paths handles_to_paths;
+  let file = Path.create_relative ~root:local_root ~relative:"a.py" in
+  touch file;
+  let stub = Path.create_relative ~root:local_root ~relative:"b.pyi" in
+  touch stub;
+  let handles = [File.Handle.create "a.py"; File.Handle.create "b.pyi"] in
+  add_paths handles;
 
   assert_response
     ~id:1
@@ -498,7 +502,7 @@ let test_language_server_definition_response context =
         "id", `Int 1;
         "result", `List [
           `Assoc [
-            "uri", `String (Format.sprintf "file://%s" (Path.absolute filename));
+            "uri", `String (Format.sprintf "file://%s" (Path.absolute file));
             "range", `Assoc [
               "start", `Assoc ["line", `Int 0; "character", `Int 0];
               "end", `Assoc ["line", `Int 1; "character", `Int 0];

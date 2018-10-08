@@ -103,8 +103,9 @@ let analyze_sources
             ~f:(fun directory -> Path.directory_contains ~follow_symlinks:true ~directory handle)
     in
     let filter_by_root handle =
-      match Ast.SharedMemory.Sources.get handle with
-      | Some { Source.path = Some path; _ } ->
+      let path = File.Handle.to_path ~configuration handle in
+      match path with
+      | Some path ->
           Path.directory_contains path ~follow_symlinks:true ~directory:project_root &&
           filter_by_directories path
       | _ ->

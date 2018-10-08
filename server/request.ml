@@ -836,7 +836,7 @@ let process_get_definition_request
   let response =
     let open LanguageServer.Protocol in
     let definition = LookupCache.find_definition ~state ~configuration file position in
-    TextDocumentDefinitionResponse.create ~id ~location:definition
+    TextDocumentDefinitionResponse.create ~configuration ~id ~location:definition
     |> TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
     |> (fun response -> LanguageServerProtocolResponse response)

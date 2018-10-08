@@ -90,7 +90,6 @@ let run_with_taint_models tests =
 
 let parse_untrimmed
     ?(handle = "test.py")
-    ?path
     ?(qualifier = [])
     ?(debug = true)
     ?(strict = false)
@@ -125,7 +124,6 @@ let parse_untrimmed
         ~docstring
         ~metadata
         ~handle
-        ?path
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
     in
@@ -159,7 +157,6 @@ let parse_untrimmed
 
 let parse
     ?(handle = "test.py")
-    ?path
     ?(qualifier = [])
     ?(debug = true)
     ?(version = 3)
@@ -169,7 +166,7 @@ let parse
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~handle ?path ~qualifier ~debug ~version ~docstring
+    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring
   in
   match local_mode with
   | Some local_mode ->

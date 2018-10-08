@@ -48,7 +48,6 @@ module type Handler = sig
   val register_module
     :  qualifier: Access.t
     -> local_mode: Source.mode
-    -> path: Path.t option
     -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
@@ -304,7 +303,7 @@ let handler
     let protocols () =
       Hash_set.to_list protocols
 
-    let register_module ~qualifier ~local_mode ~path ~handle ~stub ~statements =
+    let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
       let is_registered_empty_stub =
         Hashtbl.find modules qualifier
         >>| Module.empty_stub
@@ -325,7 +324,6 @@ let handler
             Module.create
               ~qualifier
               ~local_mode
-              ?path
               ?handle
               ~stub
               statements)
@@ -396,7 +394,6 @@ let register_module
     (module Handler: Handler)
     {
       Source.qualifier;
-      path;
       handle;
       statements;
       metadata = { Source.Metadata.local_mode; _ };
@@ -409,7 +406,6 @@ let register_module
         let qualifier = List.rev reversed in
         if not (Handler.is_module qualifier) then
           Handler.register_module
-            ~path:None
             ~handle:None
             ~qualifier
             ~local_mode
@@ -420,7 +416,6 @@ let register_module
   Handler.register_module
     ~qualifier
     ~local_mode
-    ~path
     ~handle:(Some handle)
     ~stub:(String.is_suffix (File.Handle.show handle) ~suffix:".pyi")
     ~statements;

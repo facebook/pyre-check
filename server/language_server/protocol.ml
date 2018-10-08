@@ -29,7 +29,7 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
-  let of_errors handle errors =
+  let of_errors ~configuration handle errors =
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } =
         TypeCheck.Error.location error in
@@ -47,8 +47,7 @@ module PublishDiagnostics = struct
     in
     try
       let path =
-        Ast.SharedMemory.Sources.get handle
-        >>= (fun { Ast.Source.path; _ } -> path)
+        File.Handle.to_path ~configuration handle
       in
       match path with
       | Some path ->
@@ -175,11 +174,10 @@ end
 module TextDocumentDefinitionResponse = struct
   include Types.TextDocumentDefinitionResponse
 
-  let create ~id ~location =
+  let create ~configuration ~id ~location =
     let uri ~path =
       File.Handle.create path
-      |> Ast.SharedMemory.Sources.get
-      >>= fun { Ast.Source.path; _ } -> path
+      |> File.Handle.to_path ~configuration
       >>| Path.real_path
       >>| Path.uri
     in

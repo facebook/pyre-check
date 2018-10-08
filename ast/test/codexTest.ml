@@ -7,19 +7,22 @@ open Core
 open OUnit2
 
 open Test
-
-open Pyre
 open Ast
 
+
+let modules_equal left right =
+  let left = { left with Codex.PythonModule.filename = ""  } in
+  let right = { right with Codex.PythonModule.filename = "" } in
+  Codex.PythonModule.equal left right
+
+
 let assert_python_module_equal expected source =
+  let configuration = Configuration.Analysis.create () in
   let actual =
-    Codex.source_to_codex_representation
-      (parse
-         ~path:(Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"test.py")
-         source)
+    Codex.source_to_codex_representation ~configuration (parse source)
   in
   assert_equal
-    ~cmp:Codex.PythonModule.equal
+    ~cmp:modules_equal
     ~printer:(
       fun python_module ->
         python_module
@@ -200,10 +203,13 @@ let test_source context =
    * to contain the source. *)
   let codex_representation =
     source
-    |> parse_untrimmed ~path:(Path.create_absolute file)
-    |> Codex.source_to_codex_representation in
+    |> parse_untrimmed
+    |> Codex.source_to_codex_representation
+      ~configuration:(
+        Configuration.Analysis.create ~local_root:(Pyre.Path.create_absolute directory) ())
+  in
   assert_equal
-    ~cmp:Codex.PythonModule.equal
+    ~cmp:modules_equal
     ~printer:Codex.PythonModule.show
     expected_codex_representation
     codex_representation

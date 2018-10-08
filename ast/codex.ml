@@ -277,13 +277,14 @@ let rec source_statement_codex_representation
   | _ -> []
 
 
-let source_to_codex_representation { Source.path; statements; docstring; _ } =
+let source_to_codex_representation ~configuration { Source.handle; statements; docstring; _ } =
   let path =
-    Option.value_exn path
-    |> Path.absolute
+    File.Handle.to_path ~configuration handle
+    >>| Path.absolute
+    |> Option.value ~default:""
   in
   {
-    PythonModule.name = Filename.chop_suffix (Filename.basename path) ".py";
+    PythonModule.name = Access.show (Source.qualifier ~handle);
     docstring;
     rank = 0;
     filename = path;
@@ -294,6 +295,6 @@ let source_to_codex_representation { Source.path; statements; docstring; _ } =
   }
 
 
-let source_to_json source =
-  let representation = source_to_codex_representation source in
+let source_to_json ~configuration source =
+  let representation = source_to_codex_representation ~configuration source in
   (get_access_basename representation.PythonModule.name, PythonModule.to_yojson representation)

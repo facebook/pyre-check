@@ -4,8 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Pyre
-
 open Statement
 
 
@@ -15,7 +13,6 @@ type t
 val create
   :  qualifier: Access.t
   -> local_mode: Source.mode
-  -> ?path: Path.t
   -> ?handle: File.Handle.t
   -> stub: bool
   -> Statement.t list
@@ -23,8 +20,6 @@ val create
 
 val empty_stub: t -> bool
 val from_empty_stub: access: Access.t -> module_definition: (Access.t -> t option) -> bool
-
-val path: t -> Path.t option
 
 val handle: t -> File.Handle.t option
 
