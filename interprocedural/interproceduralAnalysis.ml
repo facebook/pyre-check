@@ -4,7 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+
+open Ast
 open Pyre
+open Statement
 
 module Json = Yojson.Safe
 module Kind = AnalysisKind
@@ -178,19 +181,24 @@ let widen_if_necessary step callable new_model result =
         }
 
 
-let analyze_define step analyses callable environment define =
-  let analyze (Result.Analysis { Result.kind; analysis; }) =
-    let open Result in
-    let akind = Kind.abstract kind in
-    let module Analysis = (val analysis) in
-    let method_result, method_model = Analysis.analyze ~callable ~environment ~define in
-    (
-      akind,
-      Pkg { kind = ModelPart kind; value = method_model; },
-      Pkg { kind = ResultPart kind; value = method_result; }
-    )
-  in
+let analyze_define
+    step
+    analyses
+    callable
+    environment
+    ({ Node.value = { Define.name; _ }; _ } as define) =
   let new_model, results =
+    let analyze (Result.Analysis { Result.kind; analysis; }) =
+      let open Result in
+      let akind = Kind.abstract kind in
+      let module Analysis = (val analysis) in
+      let method_result, method_model = Analysis.analyze ~callable ~environment ~define in
+      (
+        akind,
+        Pkg { kind = ModelPart kind; value = method_model; },
+        Pkg { kind = ResultPart kind; value = method_result; }
+      )
+    in
     let accumulate (models, results) analysis =
       let akind, model, result = analyze analysis
       in
@@ -203,6 +211,13 @@ let analyze_define step analyses callable environment define =
       let models, results = List.fold ~f:accumulate analyses ~init in
       models, results
     with
+    | Analysis.TypeOrder.Untracked annotation ->
+        Log.log
+          ~section:`Interprocedural
+          "Could not generate model for `%a` due to invalid annotation `%a`"
+          Access.pp name
+          Analysis.Type.pp annotation;
+        Result.Kind.Map.empty, Result.Kind.Map.empty
     | Sys.Break as exn ->
         analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
     | _ as exn ->
