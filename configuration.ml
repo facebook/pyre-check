@@ -108,6 +108,23 @@ module Analysis = struct
 
   let pyre_root { local_root; _ } =
     Path.append local_root ~element:".pyre"
+
+
+  let search_path { local_root; search_path; typeshed; _ } =
+    (* Have an ordering of search_path > typeshed > local_root with the parser. search_path precedes
+     * local_root due to the possibility of having a subdirectory of the root in the search path. *)
+    let roots =
+      match typeshed with
+      | None ->
+          [local_root]
+      | Some typeshed ->
+          [
+            Path.create_relative ~root:typeshed ~relative:"stdlib";
+            Path.create_relative ~root:typeshed ~relative:"third_party";
+            local_root;
+          ]
+    in
+    search_path @ roots
 end
 
 

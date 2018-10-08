@@ -58,6 +58,8 @@ module Analysis: sig
   val localize: t -> local_debug: bool -> local_strict: bool -> declare: bool -> t
 
   val pyre_root: t -> Path.t
+
+  val search_path: t -> Path.t list
 end
 
 module Server: sig

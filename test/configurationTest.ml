@@ -4,6 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+open Core
+
 open OUnit2
 open Test
 
@@ -78,8 +80,45 @@ let test_equal _ =
        (Configuration.Analysis.create ~debug:false ()))
 
 
+
+let test_search_path _ =
+  let assert_search_path ?typeshed ?(search_path = []) ~local_root expected =
+    let typeshed =
+      typeshed
+      >>| Path.create_absolute ~follow_symbolic_links:false
+    in
+    let search_path =
+      List.map search_path ~f:(Path.create_absolute ~follow_symbolic_links:false)
+    in
+    let local_root = Path.create_absolute ~follow_symbolic_links:false local_root in
+    let search_path =
+      Configuration.Analysis.search_path
+        (Configuration.Analysis.create ?typeshed ~search_path ~local_root ())
+
+      |> List.map ~f:Path.show
+    in
+    assert_equal ~printer:(List.to_string ~f:ident) expected search_path
+  in
+  assert_search_path ~local_root:"/a" ["/a"];
+  assert_search_path
+    ~typeshed:"/typeshed"
+    ~local_root:"/a"
+    ["/typeshed/stdlib"; "/typeshed/third_party"; "/a"];
+  assert_search_path
+    ~search_path:["/other"; "/another"]
+    ~local_root:"/a"
+    ["/other"; "/another"; "/a"];
+  assert_search_path
+    ~typeshed:"/typeshed"
+    ~search_path:["/other"; "/another"]
+    ~local_root:"/a"
+    ["/other"; "/another"; "/typeshed/stdlib"; "/typeshed/third_party"; "/a"];
+  ()
+
+
 let () =
   "configuration">:::[
     "equal">::test_equal;
+    "search_path">::test_search_path;
   ]
   |> Test.run

@@ -67,23 +67,6 @@ let write { path; content } =
       Log.error "No contents to write to `%s`" path
 
 
-let search_path { Configuration.Analysis.local_root; search_path; typeshed; _ } =
-  (* Have an ordering of search_path > typeshed > local_root with the parser. search_path precedes
-   * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-  let roots =
-    match typeshed with
-    | None ->
-        [local_root]
-    | Some typeshed ->
-        [
-          Path.create_relative ~root:typeshed ~relative:"stdlib";
-          Path.create_relative ~root:typeshed ~relative:"third_party";
-          local_root;
-        ]
-  in
-  search_path @ roots
-
-
 module Handle = struct
   type t = string
   [@@deriving compare, eq, show, sexp, hash]
@@ -109,7 +92,7 @@ module Handle = struct
       else
         None
     in
-    List.find_map (search_path configuration) ~f:construct_relative_to_root
+    List.find_map (Configuration.Analysis.search_path configuration) ~f:construct_relative_to_root
 
 
   include Hashable.Make(struct
@@ -151,7 +134,7 @@ exception NonexistentHandle of string
 
 
 let handle ~configuration { path; _ } =
-  let possible_roots = search_path configuration in
+  let possible_roots = Configuration.Analysis.search_path configuration in
   match List.find_map possible_roots ~f:(fun root -> Path.get_relative_to_root ~root ~path) with
   | Some handle ->
       Handle.create handle
