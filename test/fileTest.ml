@@ -82,11 +82,56 @@ let test_handle _ =
   assert_handle ~absolute:"/untracked/a.py" ~handle:None
 
 
+let test_handle_to_path context =
+  (* Set up a directory structure that looks like this:
+     /local/a.py
+     /local/matching.py
+     /other/b.py
+     /other/matching.py
+  *)
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let other_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let configuration = Configuration.Analysis.create ~local_root ~search_path:[other_root] () in
+  let touch root relative =
+    Path.create_relative ~root ~relative
+    |> File.create ~content:""
+    |> File.write
+  in
+  touch local_root "a.py";
+  touch local_root "matching.py";
+  touch other_root "b.py";
+  touch other_root "matching.py";
+  (* Check that we can recover paths from handles. *)
+  let assert_path ~handle ~path =
+    match File.Handle.to_path ~configuration (File.Handle.create handle) with
+    | None ->
+        assert_unreached ()
+    | Some actual ->
+        assert_equal ~printer:Path.show ~cmp:Path.equal path actual
+  in
+  let assert_not_path ~handle =
+    assert_is_none (File.Handle.to_path ~configuration (File.Handle.create handle))
+  in
+  assert_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
+  assert_path ~handle:"b.py" ~path:(Path.create_relative ~root:other_root ~relative:"b.py");
+  assert_path
+    ~handle:"matching.py"
+    ~path:(Path.create_relative ~root:other_root ~relative:"matching.py");
+  assert_not_path ~handle:"nonexistent.py"
+
+
 let () =
   "file">:::[
     "content">::test_content;
     "lines">::test_lines;
     "handle">::test_handle;
     "is_stub">::test_is_stub;
+    "handle_to_path">::test_handle_to_path;
   ]
   |> Test.run

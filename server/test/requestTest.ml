@@ -113,8 +113,13 @@ let test_process_client_shutdown_request _ =
 let test_process_type_query_request _ =
   let assert_response request expected_response =
     let state = mock_server_state () in
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root:(Path.current_working_directory ())
+        ()
+    in
     let actual_response =
-      Request.process_type_query_request ~state ~request
+      Request.process_type_query_request ~state ~configuration ~request
       |> function
       | { Request.response = Some (Protocol.TypeQueryResponse response); _ } ->
           Protocol.TypeQuery.response_to_yojson response

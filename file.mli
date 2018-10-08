@@ -20,12 +20,17 @@ val lines: t -> (string list) option
 
 val write: t -> unit
 
+exception NonexistentHandle of string
+
 module Handle : sig
   type t
   [@@deriving compare, eq, show, sexp, hash]
 
   val create: string -> t
+
   val is_stub: t -> bool
+
+  val to_path: configuration: Configuration.Analysis.t -> t -> Path.t option
 
   include Hashable with type t := t
   module Map: Map.S with type Key.t = t
@@ -34,5 +39,4 @@ end
 
 module Set: Set.S with type Elt.t = t
 
-exception NonexistentHandle of string
 val handle: configuration: Configuration.Analysis.t -> t -> Handle.t

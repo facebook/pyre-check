@@ -362,7 +362,7 @@ let process_client_shutdown_request ~state ~id =
   { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let process_type_query_request ~state:({ State.environment; _ } as state) ~request =
+let process_type_query_request ~state:({ State.environment; _ } as state) ~configuration ~request =
   let (module Handler: Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -569,7 +569,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~reque
       } ->
         let source =
           Ast.SharedMemory.Sources.get (File.Handle.create path)
-          >>= (fun { Ast.Source.path; _ } -> path)
+          >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
           >>| File.create
           >>= File.content
           |> Option.value ~default:""
@@ -727,7 +727,7 @@ let process_type_check_request
           Sexp.pp [%message (dependents: File.Handle.t list)];
         let to_file handle =
           Ast.SharedMemory.Sources.get handle
-          >>= fun { Ast.Source.path; _ } -> path
+          >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
           >>| File.create
         in
         List.filter_map dependents ~f:to_file
@@ -874,7 +874,7 @@ let rec process
           process_type_check_request ~state ~configuration ~request
 
       | TypeQueryRequest request ->
-          process_type_query_request ~state ~request
+          process_type_query_request ~state ~configuration ~request
 
       | DisplayTypeErrors files ->
           process_display_type_errors_request ~state ~configuration ~files
