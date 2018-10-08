@@ -159,10 +159,28 @@ let test_hardcoded_source _ =
     {|
       def get_field(request: django.http.Request):
         return request.GET['field']
+      def post_field(request: django.http.Request):
+        return request.POST['field']
+      def meta_field(request: django.http.Request):
+        return request.META['field']
+      def files_field(request: django.http.Request):
+        return request.FILES['field']
     |}
     [
       {
         define_name = "qualifier.get_field";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.post_field";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.meta_field";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.files_field";
         returns = [Sources.UserControlled];
       };
     ];

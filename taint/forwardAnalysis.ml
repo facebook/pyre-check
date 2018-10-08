@@ -174,9 +174,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             Environment.resolution FunctionContext.environment ~annotations ()
           in
           let hardcoded_taint =
+            let attributes = String.Set.of_list ["GET"; "POST"; "FILES"; "META"] in
             match List.rev access, Identifier.show method_name with
-            | (Access.Identifier get) :: lead, "__getitem__"
-              when Identifier.show get = "GET" ->
+            | (Access.Identifier attribute) :: lead, "__getitem__"
+              when String.Set.mem attributes (Identifier.show attribute) ->
                 let receiver_type =
                   Access.expression lead
                   |> Resolution.resolve resolution
@@ -185,7 +186,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   Resolution.less_or_equal
                     resolution
                     ~left:receiver_type
-                    ~right:(Type.Primitive (Identifier.create "django.http.Request"))
+                    ~right:(Type.primitive "django.http.Request")
                 in
                 if is_http_request then
                   ForwardTaint.singleton Sources.UserControlled
