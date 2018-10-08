@@ -127,10 +127,10 @@ module Attribute : sig
   val class_attribute: t -> bool
 
   val instantiate: t -> constraints: Type.t Type.Map.t -> t
-end
 
-module AttributesCache : sig
-  val clear: unit -> unit
+  module Cache: sig
+    val clear: unit -> unit
+  end
 end
 
 val attributes

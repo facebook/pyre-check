@@ -636,7 +636,7 @@ let assert_type_errors
     ?(update_environment_with = [])
     source
     errors =
-  Annotated.Class.AttributesCache.clear ();
+  Annotated.Class.Attribute.Cache.clear ();
   let descriptions =
     let mode_override =
       if infer then

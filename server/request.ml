@@ -635,7 +635,7 @@ let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; _ } as state)
     ~configuration:({ debug; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
-  Annotated.Class.AttributesCache.clear ();
+  Annotated.Class.Attribute.Cache.clear ();
   let update_environment_with, check =
     let keep file =
       let handle = File.handle ~configuration file in

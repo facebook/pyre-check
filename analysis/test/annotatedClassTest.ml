@@ -227,7 +227,7 @@ let test_get_decorator _ =
 
 let test_constructors _ =
   let assert_constructor source constructors =
-    Class.AttributesCache.clear ();
+    Class.Attribute.Cache.clear ();
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()
@@ -543,7 +543,7 @@ let test_class_attributes _ =
 
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
-    Annotated.Class.AttributesCache.clear ();
+    Annotated.Class.Attribute.Cache.clear ();
     let attribute_list_equal =
       let equal left right =
         Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
@@ -606,7 +606,7 @@ let test_class_attributes _ =
 
   (* Test `attribute_fold`. *)
   let assert_fold ?(class_attributes = false) source fold =
-    Annotated.Class.AttributesCache.clear ();
+    Annotated.Class.Attribute.Cache.clear ();
     let callback
         string_names
         attribute =
@@ -764,7 +764,7 @@ let test_class_attributes _ =
 
 let test_fallback_attribute _ =
   let assert_fallback_attribute source annotation =
-    Class.AttributesCache.clear ();
+    Class.Attribute.Cache.clear ();
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()

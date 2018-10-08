@@ -90,7 +90,7 @@ let analyze_sources
       end
   in
 
-  Annotated.Class.AttributesCache.clear ();
+  Annotated.Class.Attribute.Cache.clear ();
   let timer = Timer.start () in
   let handles =
     let filter_by_directories handle =
@@ -132,7 +132,7 @@ let analyze_sources
   in
   let { errors; coverage; _ } =
     let map _ handles =
-      Annotated.Class.AttributesCache.clear ();
+      Annotated.Class.Attribute.Cache.clear ();
       let analyze_source { errors; number_files; coverage = total_coverage } handle =
         match Ast.SharedMemory.Sources.get handle with
         | Some source ->

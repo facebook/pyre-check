@@ -14,7 +14,7 @@ open Test
 
 
 let assert_environment_contains source expected =
-  Annotated.Class.AttributesCache.clear ();
+  Annotated.Class.Attribute.Cache.clear ();
   let (module Handler: Environment.Handler) =
     Environment.handler
       ~configuration:(Configuration.Analysis.create ~infer:true ())

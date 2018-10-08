@@ -568,35 +568,37 @@ module Attribute = struct
       attribute_node with
       Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
     }
-end
+
+  module Cache = struct
+    type t = {
+      transitive: bool;
+      class_attributes: bool;
+      include_generated_attributes: bool;
+      name: Access.t;
+    }
+    [@@deriving compare, sexp, hash]
 
 
-module AttributesCache = struct
-  type t = {
-    transitive: bool;
-    class_attributes: bool;
-    include_generated_attributes: bool;
-    name: Access.t;
-  }
-  [@@deriving compare, sexp, hash]
+    include Hashable.Make(struct
+        type nonrec t = t
+        let compare = compare
+        let hash = Hashtbl.hash
+        let hash_fold_t = hash_fold_t
+        let sexp_of_t = sexp_of_t
+        let t_of_sexp = t_of_sexp
+      end)
 
 
-  include Hashable.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let hash = Hashtbl.hash
-      let hash_fold_t = hash_fold_t
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-
-
-  let cache =
+  let cache: attribute Node.t list Table.t =
     Table.create ~size:1023 ()
 
 
   let clear () =
     Table.clear cache
+end
+
+
+
 end
 
 
@@ -608,13 +610,13 @@ let attributes
     ~resolution =
   let key =
     {
-      AttributesCache.transitive;
+      Attribute.Cache.transitive;
       class_attributes;
       include_generated_attributes;
       name;
     }
   in
-  match Hashtbl.find AttributesCache.cache key with
+  match Hashtbl.find Attribute.Cache.cache key with
   | Some result ->
       result
   | None ->
@@ -702,7 +704,7 @@ let attributes
           meta_definitions
         |> List.rev
       in
-      Hashtbl.set ~key ~data:result AttributesCache.cache;
+      Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
 
