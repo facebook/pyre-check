@@ -291,10 +291,9 @@ let statements { statements; _ } =
 
 
 let qualifier ~handle =
-  let handle = File.Handle.show handle in
   let qualifier =
     let reversed_elements =
-      Filename.parts handle
+      Filename.parts (File.Handle.show handle)
       |> List.tl_exn (* Strip current directory. *)
       |> List.rev in
     let last_without_suffix =
@@ -317,7 +316,7 @@ let qualifier ~handle =
       ~f:Access.create
     |> List.concat
   in
-  if String.is_suffix ~suffix:".pyi" handle then
+  if File.Handle.is_stub handle then
     (* Drop version from qualifier. *)
     let is_digit qualifier =
       try
