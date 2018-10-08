@@ -141,7 +141,7 @@ def resolve_analysis_directories(arguments, configuration, prompt: bool = True):
     if len(analysis_directories) == 0:
         raise EnvironmentException(
             "No targets or link trees to analyze.\n"
-            "You can run `pyre init --local` to set up a local configuration, "
+            "You can run `{}` to set up a local configuration, "
             "or `pyre --help` to check valid flags.".format(initialization_command)
         )
 
