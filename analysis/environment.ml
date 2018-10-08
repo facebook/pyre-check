@@ -694,7 +694,6 @@ let register_globals
                   | _ ->
                       None
                 with _ ->
-                (* TODO(T19628746): joins are not sound when building the environment. *)
                 match target.Node.value with
                 | Access access ->
                     (* If we have a global of the form x = os.path.join('a', 'b'), still add x. *)
