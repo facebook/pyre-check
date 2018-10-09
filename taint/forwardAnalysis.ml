@@ -247,16 +247,50 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_normalized_expression ?key state expression =
       match expression with
-      | Access { expression; member; } ->
-          let taint = analyze_normalized_expression state expression in
-          let field = AccessPathTree.Label.Field member in
-          let taint =
+      | Access { expression; member } ->
+          let hardcoded_taint =
+            let resolution =
+              let annotations =
+                match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
+                | Some key, Some define_mapping ->
+                    define_mapping
+                    |> Int.Map.of_tree
+                    |> (fun mapping -> Int.Map.find mapping key)
+                    >>| Access.Map.of_tree
+                    |> Option.value ~default:Access.Map.empty
+                | _ ->
+                    Access.Map.empty
+              in
+              Environment.resolution FunctionContext.environment ~annotations ()
+            in
+            let receiver_is_http_request =
+              let receiver_type =
+                as_access expression
+                |> Access.expression
+                |> Resolution.resolve resolution
+              in
+              Resolution.less_or_equal
+                resolution
+                ~left:receiver_type
+                ~right:(Type.primitive "django.http.Request")
+            in
+            let attributes = String.Set.of_list ["GET"; "POST"; "FILES"; "META"] in
+            if String.Set.mem attributes (Identifier.show member) &&
+               receiver_is_http_request then
+              ForwardTaint.singleton Sources.UserControlled
+              |> ForwardState.create_leaf
+            else
+              ForwardState.empty_tree
+          in
+          let inferred_taint =
+            let taint = analyze_normalized_expression state expression in
+            let field = AccessPathTree.Label.Field member in
             ForwardState.assign_tree_path
               [field]
               ~tree:ForwardState.empty_tree
               ~subtree:taint
           in
-          taint
+          ForwardState.join_trees inferred_taint hardcoded_taint
       | Call { callee; arguments; } ->
           analyze_call ?key arguments.location ~callee arguments.value state
       | Expression expression ->

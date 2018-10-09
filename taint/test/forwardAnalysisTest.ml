@@ -157,6 +157,35 @@ let test_simple_source _ =
 let test_hardcoded_source _ =
   assert_taint
     {|
+      def get(request: django.http.Request):
+        return request.GET
+      def post(request: django.http.Request):
+        return request.POST
+      def meta(request: django.http.Request):
+        return request.META
+      def files(request: django.http.Request):
+        return request.FILES
+    |}
+    [
+      {
+        define_name = "qualifier.get";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.post";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.meta";
+        returns = [Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.files";
+        returns = [Sources.UserControlled];
+      };
+    ];
+  assert_taint
+    {|
       def get_field(request: django.http.Request):
         return request.GET['field']
       def post_field(request: django.http.Request):
