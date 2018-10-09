@@ -218,28 +218,28 @@ let computation_thread request_queue configuration state =
             let integrity_check_every = 60.0 (* 1 minute *) in
             if current_time -. state.last_integrity_check > integrity_check_every then
               begin
-                let pid_file =
-                  Path.absolute pid_path
-                  |> In_channel.create
-                in
-                let pid =
-                  protect
-                    ~f:(fun () -> In_channel.input_all pid_file)
-                    ~finally:(fun () -> In_channel.close pid_file)
-                in
-                if not (Pid.to_string (Unix.getpid ()) = pid) then
+                try
+                  let pid =
+                    let pid_file =
+                      Path.absolute pid_path
+                      |> In_channel.create
+                    in
+                    protect
+                      ~f:(fun () -> In_channel.input_all pid_file)
+                      ~finally:(fun () -> In_channel.close pid_file)
+                  in
+                  if not (Pid.to_string (Unix.getpid ()) = pid) then
+                    raise (Failure "pid mismatch");
+                  current_time
+                with _ ->
                   Mutex.critical_section
                     state.lock
                     ~f:(fun () ->
-                        Log.error
-                          "Stopping server in integrity check. Got %s in the pid file, expected %s."
-                          pid
-                          (Pid.to_string (Unix.getpid ()));
                         Operations.stop
                           ~reason:"failed integrity check"
                           ~configuration
-                          ~socket:!(state.connections).socket);
-                current_time
+                          ~socket:!(state.connections).socket;
+                      current_time)
               end
             else
               state.last_integrity_check
