@@ -47,4 +47,3 @@ val log_exception
   :  exn
   -> origin: string
   -> unit
-  -> unit

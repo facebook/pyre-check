@@ -424,7 +424,7 @@ let request_handler_thread
   try
     loop ()
   with uncaught_exception ->
-    Statistics.log_exception uncaught_exception ~origin:"server" ();
+    Statistics.log_exception uncaught_exception ~origin:"server";
     Operations.stop
       ~reason:"exception"
       ~configuration:server_configuration
@@ -468,17 +468,7 @@ let serve
      try
        computation_thread request_queue server_configuration state
      with uncaught_exception ->
-       Statistics.event
-         ~section:`Error
-         ~flush:true
-         ~name:"uncaught exception"
-         ~integers:[]
-         ~normals:[
-           "exception", Exn.to_string uncaught_exception;
-           "exception backtrace", Printexc.get_backtrace ();
-           "exception origin", "server";
-         ]
-         ();
+       Statistics.log_exception uncaught_exception ~origin:"server";
        Operations.stop ~reason:"exception" ~configuration:server_configuration ~socket)
   |> Scheduler.run_process ~configuration
 

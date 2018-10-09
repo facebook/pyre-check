@@ -247,17 +247,7 @@ let listen_for_changed_files
        |> ignore)
     |> Scheduler.run_process ~configuration
   with uncaught_exception ->
-    Statistics.event
-      ~section:`Error
-      ~flush:true
-      ~name:"uncaught exception"
-      ~integers:[]
-      ~normals:[
-        "exception", Exn.to_string uncaught_exception;
-        "exception backtrace", Printexc.get_backtrace ();
-        "exception origin", "watchman";
-      ]
-      ();
+    Statistics.log_exception uncaught_exception ~origin:"watchman";
     raise uncaught_exception
 
 

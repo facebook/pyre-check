@@ -169,16 +169,7 @@ let run_command expected_version log_identifier local_root () =
            ();
          exit exit_code
      | uncaught_exception ->
-         Statistics.event
-           ~section:`Error
-           ~flush:true
-           ~name:"uncaught exception"
-           ~normals:[
-             "exception", Exn.to_string uncaught_exception;
-             "exception backtrace", Printexc.get_backtrace ();
-             "exception origin", "persistent";
-           ]
-           ();
+         Statistics.log_exception uncaught_exception ~origin:"persistent";
          raise uncaught_exception)
   |> Scheduler.run_process ~configuration
 

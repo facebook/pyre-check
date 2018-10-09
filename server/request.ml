@@ -1013,7 +1013,7 @@ let rec process
           | _ ->
               true
         in
-        Statistics.log_exception uncaught_exception ~origin:"server" ();
+        Statistics.log_exception uncaught_exception ~origin:"server";
         if should_stop then
           Mutex.critical_section
             lock
