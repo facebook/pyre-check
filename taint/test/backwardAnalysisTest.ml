@@ -537,8 +537,8 @@ let test_nested_call_path _ =
       {
         define_name = "qualifier.nested";
         taint_sink_parameters = [
-          (*
           { position = 0; sinks = [Taint.Sinks.Test] };
+          (*
           { position = 2; sinks = [Taint.Sinks.Test] };
           *)
         ];
