@@ -305,7 +305,8 @@ let request_handler_thread
       let request = Socket.read socket in
       queue_request ~origin:(Protocol.Request.PersistentSocket socket) request
     with
-    | End_of_file ->
+    | End_of_file
+    | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "Persistent client disconnected";
         Mutex.critical_section lock
           ~f:(fun () ->
@@ -318,7 +319,8 @@ let request_handler_thread
       let request = Socket.read socket in
       queue_request ~origin:Protocol.Request.FileNotifier request
     with
-    | End_of_file ->
+    | End_of_file
+    | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "File notifier disconnected";
         Mutex.critical_section lock
           ~f:(fun () ->
@@ -402,6 +404,8 @@ let request_handler_thread
           with
           | Unix.Unix_error (Unix.EPIPE, _, _) ->
               Log.warning "EPIPE while writing to socket."
+          | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
+              Log.warning "ECONNRESET while reading from socket."
           | End_of_file ->
               Log.warning "New client socket unreadable"
         end
