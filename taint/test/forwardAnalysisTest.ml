@@ -172,6 +172,9 @@ let test_hardcoded_source _ =
       };
     ];
   assert_taint
+    ~models:{|
+      def dict.__getitem__(self: TaintInTaintOut[LocalReturn], key): ...
+    |}
     {|
       def get_field(request: django.http.Request):
         return request.GET['field']

@@ -169,63 +169,37 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             } in
             receiver :: arguments
           in
-          let hardcoded_taint =
-            let attributes = String.Set.of_list ["GET"; "POST"; "FILES"; "META"] in
-            match List.rev access, Identifier.show method_name with
-            | (Access.Identifier attribute) :: lead, "__getitem__"
-              when String.Set.mem attributes (Identifier.show attribute) ->
-                let receiver_type =
-                  Access.expression lead
-                  |> Resolution.resolve resolution
-                in
-                let is_http_request =
-                  Resolution.less_or_equal
-                    resolution
-                    ~left:receiver_type
-                    ~right:(Type.primitive "django.http.Request")
-                in
-                if is_http_request then
-                  ForwardTaint.singleton Sources.UserControlled
-                  |> ForwardState.create_leaf
-                else
-                  ForwardState.empty_tree
-            | _ ->
-                ForwardState.empty_tree
-          in
-          let inferred_taint =
-            let call_targets =
-              let receiver_type =
-                let annotation =
-                  Access.expression access
-                  |> Resolution.resolve resolution
-                in
-                if Type.equal annotation Type.Top then
-                  None
-                else
-                  Some annotation
+          let call_targets =
+            let receiver_type =
+              let annotation =
+                Access.expression access
+                |> Resolution.resolve resolution
               in
-              match receiver_type with
-              | Some (Type.Primitive receiver) ->
-                  let access = Access.create_from_identifiers [receiver; method_name] in
-                  let call_target = Interprocedural.Callable.create_real access in
-                  [call_target]
-              | Some (Type.Union annotations) ->
-                  let filter_receivers = function
-                    | Type.Primitive receiver ->
-                        Access.create_from_identifiers [receiver; method_name]
-                        |> Interprocedural.Callable.create_real
-                        |> Option.some
-                    | _ ->
-                        None
-                  in
-                  List.filter_map annotations ~f:filter_receivers
-              | _ ->
-                  (* TODO(T32332602): handle additional call expressions here *)
-                  []
+              if Type.equal annotation Type.Top then
+                None
+              else
+                Some annotation
             in
-            apply_call_targets ~resolution location arguments state call_targets
+            match receiver_type with
+            | Some (Type.Primitive receiver) ->
+                let access = Access.create_from_identifiers [receiver; method_name] in
+                let call_target = Interprocedural.Callable.create_real access in
+                [call_target]
+            | Some (Type.Union annotations) ->
+                let filter_receivers = function
+                  | Type.Primitive receiver ->
+                      Access.create_from_identifiers [receiver; method_name]
+                      |> Interprocedural.Callable.create_real
+                      |> Option.some
+                  | _ ->
+                      None
+                in
+                List.filter_map annotations ~f:filter_receivers
+            | _ ->
+                (* TODO(T32332602): handle additional call expressions here *)
+                []
           in
-          ForwardState.join_trees inferred_taint hardcoded_taint
+          apply_call_targets ~resolution location arguments state call_targets
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
           let callee_taint = analyze_normalized_expression ~resolution state callee in
