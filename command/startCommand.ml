@@ -37,7 +37,11 @@ let spawn_watchman_client
 let computation_thread request_queue configuration state =
   let failure_threshold = 5 in
   let rec loop
-      ({ Configuration.Server.pid_path; configuration = analysis_configuration; _}
+      ({
+        Configuration.Server.pid_path;
+        configuration = analysis_configuration;
+        _;
+      }
        as configuration)
       state =
     let errors_to_lsp_responses error_map =
@@ -420,17 +424,7 @@ let request_handler_thread
   try
     loop ()
   with uncaught_exception ->
-    Statistics.event
-      ~section:`Error
-      ~flush:true
-      ~name:"uncaught exception"
-      ~integers:[]
-      ~normals:[
-        "exception", Exn.to_string uncaught_exception;
-        "exception backtrace", Printexc.get_backtrace ();
-        "exception origin", "server";
-      ]
-      ();
+    Statistics.log_exception uncaught_exception ~origin:"server" ();
     Operations.stop
       ~reason:"exception"
       ~configuration:server_configuration

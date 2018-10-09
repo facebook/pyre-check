@@ -184,3 +184,17 @@ let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals 
      |> String.concat ~sep:", ");
   sample ~integers:integers ~normals:(("name", name) :: normals) ()
   |> log ~flush "perfpipe_pyre_events"
+
+
+let log_exception caught_exception ~origin () =
+  event
+    ~section:`Error
+    ~flush:true
+    ~name:"uncaught exception"
+    ~integers:[]
+    ~normals:[
+      "exception", Exn.to_string caught_exception;
+      "exception backtrace", Printexc.get_backtrace ();
+      "exception origin", origin;
+    ]
+    ()

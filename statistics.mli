@@ -42,3 +42,9 @@ val event
   -> ?normals: (string * string) list
   -> unit
   -> unit
+
+val log_exception
+  :  exn
+  -> origin: string
+  -> unit
+  -> unit

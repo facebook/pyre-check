@@ -1004,6 +1004,26 @@ let rec process
     | Analysis.TypeOrder.Untracked annotation ->
         log_request_error ~error:(Format.sprintf "Untracked %s" (Type.show annotation));
         { state; response = None }
+    | uncaught_exception ->
+        let should_stop =
+          match request with
+          | HoverRequest _
+          | GetDefinitionRequest _ ->
+              false
+          | _ ->
+              true
+        in
+        Statistics.log_exception uncaught_exception ~origin:"server" ();
+        if should_stop then
+          Mutex.critical_section
+            lock
+            ~f:(fun () ->
+                Operations.stop
+                  ~reason:"uncaught exception"
+                  ~configuration:server_configuration
+                  ~socket:!connections.socket);
+        { state; response = None }
+
   in
   Statistics.performance
     ~name:"server request"
