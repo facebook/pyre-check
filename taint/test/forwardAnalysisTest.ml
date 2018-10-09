@@ -34,20 +34,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     |> Preprocessing.preprocess
   in
   let configuration = Test.mock_configuration in
-  let environment =
-    Test.environment
-      ~configuration
-      ~sources:([
-          Test.parse
-            ~qualifier:(Access.create "django.http")
-            ~handle:"django/http.pyi"
-            {|
-            class Request: pass
-          |}
-          |> Preprocessing.qualify;
-        ] @ Test.typeshed_stubs)
-      ()
-  in
+  let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
   TypeCheck.check configuration environment source |> ignore;
   let defines =

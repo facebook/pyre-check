@@ -163,13 +163,22 @@ let check_model_expectation
       expect_sink_taint model.model.backward.sink_taint;
       check_positions "tito" model.model.backward.taint_in_taint_out tito_parameters
 
+
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let call_graph, all_callables = create_call_graph source in
   let caller_map = CallGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
   let configuration = Configuration.Analysis.create () in
-  let environment = Test.environment () in
+  let environment =
+    let source =
+      Test.parse source
+      |> Preprocessing.preprocess
+    in
+    let environment = Test.environment () in
+    Service.Environment.populate environment [source];
+    environment
+  in
   let iterations =
     Analysis.compute_fixpoint
       ~configuration

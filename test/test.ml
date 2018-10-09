@@ -588,6 +588,13 @@ let typeshed_stubs = (* Yo dawg... *)
           str_attribute: str
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "django.http")
+      ~handle:"django/http.pyi"
+      {|
+        class Request: pass
+      |}
+    |> Preprocessing.qualify;
   ]
 
 
