@@ -4,7 +4,11 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Analysis
 open Statement
 
 
-val run: Define.t Node.t -> TaintResult.Backward.model
+val run
+  :  environment: (module Environment.Handler)
+  -> define: Define.t Node.t
+  -> TaintResult.Backward.model

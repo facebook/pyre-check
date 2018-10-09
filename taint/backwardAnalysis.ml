@@ -35,6 +35,7 @@ let initial_taint =
 
 module type FUNCTION_CONTEXT = sig
   val definition: Define.t Node.t
+  val environment: (module Environment.Handler)
 end
 
 
@@ -82,11 +83,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Some (root, path) -> store_weak_taint ~root ~path taint state
 
 
-    let rec analyze_argument ~key taint { Argument.value = argument; _ } state =
-      analyze_expression ~key taint argument state
+    let rec analyze_argument ~resolution taint { Argument.value = argument; _ } state =
+      analyze_expression ~resolution taint argument state
 
 
-    and apply_call_targets ~key location arguments state call_taint call_targets =
+    and apply_call_targets ~resolution location arguments state call_taint call_targets =
       let analyze_call_target call_target =
         let existing_model =
           Interprocedural.Fixpoint.get_model call_target
@@ -113,7 +114,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
               in
               let argument_taint = BackwardState.join_trees argument_taint taint_in_taint_out in
-              analyze_argument ~key argument_taint argument state
+              analyze_argument ~resolution argument_taint argument state
             in
             List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
         | None ->
@@ -123,32 +124,34 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               Interprocedural.Callable.pp call_target;
             (* If we don't have a model: assume function propagates argument
                taint to result. *)
-            List.fold_right ~f:(analyze_argument ~key call_taint) arguments ~init:state
+            List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
       in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
-          List.fold_right ~f:(analyze_argument ~key call_taint) arguments ~init:state
+          List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
       | call_targets ->
           List.map call_targets ~f:analyze_call_target
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
-    and analyze_call ~key location ~callee arguments state taint =
+    and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
       | Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.create_real access in
-          apply_call_targets ~key location arguments state taint [call_target]
+          apply_call_targets ~resolution location arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
           let access = as_access receiver in
           let receiver_type =
-            key
-            >>= fun key -> TypeResolutionSharedMemory.get FunctionContext.definition.value.name
-            >>| Int.Map.of_tree
-            >>= Fn.flip Int.Map.find key
-            >>| Access.Map.of_tree
-            >>= Fn.flip Access.Map.find access
+            let annotation =
+              Access.expression access
+              |> Resolution.resolve resolution
+            in
+            if Type.equal annotation Type.Top then
+              None
+            else
+              Some annotation
           in
           let receiver_argument_record = {
             Argument.name = None;
@@ -157,11 +160,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let arguments = receiver_argument_record :: arguments in
           let state =
             match receiver_type with
-            | Some { annotation = Primitive primitive ; _ } ->
+            | Some (Type.Primitive primitive) ->
                 let access = Access.create_from_identifiers [primitive; method_name] in
                 let call_target = Interprocedural.Callable.create_real access in
-                apply_call_targets ~key location arguments state taint [call_target]
-            | Some { annotation = Union annotations; _ } ->
+                apply_call_targets ~resolution location arguments state taint [call_target]
+            | Some (Type.Union annotations) ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
                       Access.create_from_identifiers [receiver; method_name]
@@ -171,12 +174,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                       None
                 in
                 List.filter_map annotations ~f:filter_receivers
-                |> apply_call_targets ~key location arguments state taint
+                |> apply_call_targets ~resolution location arguments state taint
             | _ ->
                 let state =
-                  List.fold_right ~f:(analyze_argument ~key taint) arguments ~init:state
+                  List.fold_right ~f:(analyze_argument ~resolution taint) arguments ~init:state
                 in
-                analyze_normalized_expression ~key state taint receiver
+                analyze_normalized_expression ~resolution state taint receiver
           in
           state
 
@@ -184,32 +187,37 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
              whatever is called here.
              For now, we propagate taint to all args implicitly, and to the function. *)
-          let state = List.fold_right ~f:(analyze_argument ~key taint) arguments ~init:state in
-          analyze_normalized_expression ~key state taint callee
+          let state =
+            List.fold_right
+              arguments
+              ~f:(analyze_argument ~resolution taint)
+              ~init:state
+          in
+          analyze_normalized_expression ~resolution state taint callee
 
 
-    and analyze_normalized_expression ~key state taint expression =
+    and analyze_normalized_expression ~resolution state taint expression =
       match expression with
       | Access { expression; member } ->
           let field = AccessPathTree.Label.Field member in
           let taint =
             BackwardState.assign_tree_path [field] ~tree:BackwardState.empty_tree ~subtree:taint
           in
-          analyze_normalized_expression ~key state taint expression
+          analyze_normalized_expression ~resolution state taint expression
       | Call { callee; arguments; } ->
-          analyze_call ~key arguments.location ~callee arguments.value state taint
+          analyze_call ~resolution arguments.location ~callee arguments.value state taint
       | Expression expression ->
-          analyze_expression ~key taint expression state
+          analyze_expression ~resolution taint expression state
       | Global _ ->
           state
       | Local name ->
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
-    and analyze_expression ~key taint { Node.value = expression; _ } state =
+    and analyze_expression ~resolution taint { Node.value = expression; _ } state =
       match expression with
       | Access access ->
           normalize_access access
-          |> analyze_normalized_expression ~key state taint
+          |> analyze_normalized_expression ~resolution state taint
       | Await _
       | BooleanOperator _
       | ComparisonOperator _
@@ -240,11 +248,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       state
 
 
-    let analyze_statement ~key state statement =
+    let analyze_statement ~resolution state statement =
       match statement with
       | Assign { target; value; _ } ->
           let access_path = of_expression target in
-          analyze_expression ~key (get_taint access_path state) value state
+          analyze_expression ~resolution (get_taint access_path state) value state
       | Assert _
       | Break
       | Class _
@@ -255,7 +263,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Delete _ ->
           state
       | Expression expression ->
-          analyze_expression ~key BackwardState.empty_tree expression state
+          analyze_expression ~resolution BackwardState.empty_tree expression state
       | For _
       | Global _
       | If _
@@ -267,7 +275,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Return { expression = Some expression; _ } ->
           let access_path = { root = Root.LocalResult; path = [] } in
           let return_taint = get_taint (Some access_path) state in
-          analyze_expression ~key return_taint expression state
+          analyze_expression ~resolution return_taint expression state
       | Return { expression = None; _ }
       | Try _
       | With _
@@ -278,7 +286,21 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let backward ?key state ~statement:({ Node.value = statement; _ }) =
-      analyze_statement ~key state statement
+      let resolution =
+        let annotations =
+          match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
+          | Some key, Some define_mapping ->
+              define_mapping
+              |> Int.Map.of_tree
+              |> (fun mapping -> Int.Map.find mapping key)
+              >>| Access.Map.of_tree
+              |> Option.value ~default:Access.Map.empty
+          | _ ->
+              Access.Map.empty
+        in
+        Environment.resolution FunctionContext.environment ~annotations ()
+      in
+      analyze_statement ~resolution state statement
 
 
     let forward ?key:_ _ ~statement:_ =
@@ -333,8 +355,13 @@ let extract_tito_and_sink_models parameters entry_taint =
   TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
 
 
-let run ({ Node.value = { Define.parameters; _ }; _ } as define) =
-  let module AnalysisInstance = AnalysisInstance(struct let definition = define end) in
+let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as define) =
+  let module AnalysisInstance =
+    AnalysisInstance(struct
+      let definition = define
+      let environment = environment
+    end)
+  in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in

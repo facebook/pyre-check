@@ -55,7 +55,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expected () =
         "Analyzing %s"
         (Interprocedural.Callable.show call_target)
     in
-    let backward = BackwardAnalysis.run define in
+    let backward = BackwardAnalysis.run ~environment ~define in
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
