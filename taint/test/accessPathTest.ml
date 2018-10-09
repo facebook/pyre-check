@@ -15,6 +15,8 @@ let test_normalize_access _ =
   let assert_normalized expression expected =
     let access = Access.create expression in
     let normalized = AccessPath.normalize_access access in
+    let re_accessed = AccessPath.as_access normalized in
+    assert_equal ~printer:(Statement.Access.show) access re_accessed;
     assert_equal ~printer:(AccessPath.show_normalized_expression) normalized expected
   in
 

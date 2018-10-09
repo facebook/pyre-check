@@ -113,14 +113,14 @@ let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expected () =
           assert_equal
             ~cmp:(List.equal ~equal:Taint.Sinks.equal)
             ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sinks.t list)])
-            ~msg:(Format.sprintf "Position %d" position)
+            ~msg:(Format.sprintf "Define %s Position %d" define_name position)
             expected
             actual
       | `Left expected ->
           assert_equal
             ~cmp:(List.equal ~equal:Taint.Sinks.equal)
             ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sinks.t list)])
-            ~msg:(Format.sprintf "Position %d" position)
+            ~msg:(Format.sprintf "Define %s Position %d" define_name position)
             expected
             []
       | `Right _ ->
@@ -136,7 +136,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ~source ~expected () =
     assert_equal
       ~cmp:Int.Set.equal
       ~printer:(fun set -> Sexp.to_string [%message (set: Int.Set.t)])
-      ~msg:"Tito positions"
+      ~msg:(Format.sprintf "Define %s Tito positions" define_name)
       expected_tito
       taint_in_taint_out_positions
   in
@@ -510,6 +510,44 @@ let test_tito_via_receiver _ =
     ()
 
 
+let test_nested_call_path _ =
+  assert_taint
+    ~source:
+      {|
+        class Foo:
+          def tito(self, argument1) -> Foo:
+              return self
+
+          def sink(self, argument1) -> Foo:
+              __testSink(argument1)
+              return self
+
+        def nested(parameter0, parameter1, parameter2):
+          x = Foo()
+          x.sink(parameter0).tito(parameter1).sink(parameter2)
+      |}
+    ~expected:[
+      {
+        define_name = "qualifier.Foo.sink";
+        taint_sink_parameters = [
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.nested";
+        taint_sink_parameters = [
+          (*
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 2; sinks = [Taint.Sinks.Test] };
+          *)
+        ];
+        tito_parameters = [];
+        };
+    ]
+    ()
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -520,5 +558,6 @@ let () =
     "test_call_tito">::test_call_taint_in_taint_out;
     "test_tito_sink">::test_tito_sink;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
+    "test_nested_call_path">::test_nested_call_path;
   ]
   |> Test.run_with_taint_models
