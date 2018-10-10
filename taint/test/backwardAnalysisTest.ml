@@ -486,20 +486,13 @@ let test_tito_via_receiver _ =
 
 
 let test_sequential_call_path _ =
+  (* Testing the setup to get this out of the way. *)
   assert_taint
     {|
       class Foo:
-        def tito(self, argument1) -> Foo:
+        def sink(self, argument) -> Foo:
+            __testSink(argument)
             return self
-
-        def sink(self, argument1) -> Foo:
-            __testSink(argument1)
-            return self
-
-      def sequential(parameter0, parameter1, parameter2):
-        x = Foo()
-        a = x.sink(parameter0)
-        a.sink(parameter2)
     |}
     [
       {
@@ -509,13 +502,114 @@ let test_sequential_call_path _ =
         ];
         tito_parameters = [0];
       };
+    ];
+
+  assert_taint
+    {|
+      class Foo:
+        def sink(self, argument) -> Foo:
+            __testSink(argument)
+            return self
+
+      def sequential_with_single_sink(first, second, third):
+        x = Foo()
+        x.sink(first)
+    |}
+    [
       {
-        define_name = "qualifier.sequential";
+        define_name = "qualifier.sequential_with_single_sink";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.Test] };
-          (*
-          { position = 2; sinks = [Taint.Sinks.Test] };
-          *)
+        ];
+        tito_parameters = [];
+      };
+    ];
+  assert_taint
+    {|
+      class Foo:
+        def sink(self, argument) -> Foo:
+            __testSink(argument)
+            return self
+
+      def sequential_with_two_sinks(first, second, third):
+        x = Foo()
+        x.sink(first)
+        x.sink(second)
+    |}
+    [
+      {
+        define_name = "qualifier.sequential_with_two_sinks";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+    ];
+  assert_taint
+    {|
+      class Foo:
+        def sink(self, argument) -> Foo:
+            __testSink(argument)
+            return self
+
+      def sequential_with_redefine(first, second, third):
+        x = Foo()
+        x.sink(first)
+        x = Foo()
+        x.sink(second)
+    |}
+    [
+      {
+        define_name = "qualifier.sequential_with_redefine";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+    ];
+  assert_taint
+    {|
+      class Foo:
+        def sink(self, argument) -> Foo:
+            __testSink(argument)
+            return self
+
+      def sequential_with_distinct_sinks(first, second, third):
+        x = Foo()
+        x.sink(first)
+        a = Foo()
+        a.sink(second)
+    |}
+    [
+      {
+        define_name = "qualifier.sequential_with_distinct_sinks";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+    ];
+  assert_taint
+    {|
+      class Herp:
+        def sink(self, argument) -> Herp:
+            __testSink(argument)
+            return self
+
+      def sequential_with_self_propagation(first, second, third):
+        x = Herp()
+        x = x.sink(first)
+        x.sink(second)
+    |}
+    [
+      {
+        define_name = "qualifier.sequential_with_self_propagation";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
       };
