@@ -176,10 +176,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 List.filter_map annotations ~f:filter_receivers
                 |> apply_call_targets ~resolution location arguments state taint
             | _ ->
-                let state =
-                  List.fold_right ~f:(analyze_argument ~resolution taint) arguments ~init:state
-                in
-                analyze_normalized_expression ~resolution state taint receiver
+                List.fold_right ~f:(analyze_argument ~resolution taint) arguments ~init:state
           in
           state
 
@@ -197,6 +194,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and analyze_normalized_expression ~resolution state taint expression =
+      Log.log
+        ~section:`Taint
+        "analyze_normalized_expression: %a"
+        pp_normalized_expression expression;
       match expression with
       | Access { expression; member } ->
           let field = AccessPathTree.Label.Field member in
@@ -214,6 +215,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
     and analyze_expression ~resolution taint { Node.value = expression; _ } state =
+      Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Access access ->
           normalize_access access
@@ -249,6 +251,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let analyze_statement ~resolution state statement =
+      Log.log
+        ~section:`Taint
+        "State: %a\nStmt: %a"
+        pp state
+        Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
           let access_path = of_expression target in
