@@ -16,8 +16,13 @@ module AccessKey = struct
   let compare = Access.compare
 end
 
+type annotation_map = {
+  precondition: Annotation.t Access.Map.Tree.t;
+  postcondition: Annotation.t Access.Map.Tree.t;
+}
+
 type annotations =
-  (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
+  annotation_map Int.Map.Tree.t
 
 module TypeAnnotationsValue = struct
   type t = annotations

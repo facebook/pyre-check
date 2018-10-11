@@ -307,6 +307,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               define_mapping
               |> Int.Map.of_tree
               |> (fun mapping -> Int.Map.find mapping key)
+              >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
               >>| Access.Map.of_tree
               |> Option.value ~default:Access.Map.empty
           | _ ->

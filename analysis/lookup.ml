@@ -201,7 +201,8 @@ let create_of_source environment source =
       let walk_statements statement_index statement =
         let annotations =
           Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          >>| Access.Map.of_tree
+          >>| (fun { TypeResolutionSharedMemory.precondition; _ } ->
+              Access.Map.of_tree precondition)
           |> Option.value ~default:Access.Map.empty
         in
         let resolution = Environment.resolution environment ~annotations () in

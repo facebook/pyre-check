@@ -24,7 +24,7 @@ module State = struct
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: (Annotation.t Access.Map.Tree.t) Int.Map.Tree.t
+    resolution_fixpoint: TypeResolutionSharedMemory.annotation_map Int.Map.Tree.t
   }
 
 
@@ -2095,14 +2095,18 @@ module State = struct
 
     let state =
       let resolution_fixpoint =
-        match key with
-        | Some key ->
-            let data =
+        match key, state with
+        | Some key, { resolution = post_resolution; _ } ->
+            let precondition =
               Resolution.annotations resolution
               |> Access.Map.to_tree
             in
-            Int.Map.Tree.set resolution_fixpoint ~key ~data
-        | None ->
+            let postcondition =
+              Resolution.annotations post_resolution
+              |> Access.Map.to_tree
+            in
+            Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
+        | None, _ ->
             resolution_fixpoint
       in
       { state with resolution_fixpoint }

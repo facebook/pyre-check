@@ -34,6 +34,7 @@ let create ~environment ~source =
           Map.find
             annotation_lookup
             ([%hash: int * int] (node_id, statement_index))
+          >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
           |> Option.value ~default:Access.Map.Tree.empty
           |> Access.Map.of_tree
         in
