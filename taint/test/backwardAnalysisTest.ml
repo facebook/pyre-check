@@ -617,7 +617,28 @@ let test_sequential_call_path _ =
     ]
 
 
-let test_nested_call_path _ =
+let test_chained_call_path _ =
+  assert_taint
+    {|
+      class Foo:
+        def sink(self, argument1) -> Foo:
+            __testSink(argument1)
+            return self
+
+      def chained(parameter0, parameter1, parameter2):
+        x = Foo()
+        x.sink(parameter0).sink(parameter2)
+    |}
+    [
+      {
+        define_name = "qualifier.chained";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 2; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+    ];
   assert_taint
     {|
       class Foo:
@@ -628,25 +649,16 @@ let test_nested_call_path _ =
             __testSink(argument1)
             return self
 
-      def nested(parameter0, parameter1, parameter2):
+      def chained_with_tito(parameter0, parameter1, parameter2):
         x = Foo()
         x.sink(parameter0).tito(parameter1).sink(parameter2)
     |}
     [
       {
-        define_name = "qualifier.Foo.sink";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
-        ];
-        tito_parameters = [0];
-      };
-      {
-        define_name = "qualifier.nested";
+        define_name = "qualifier.chained_with_tito";
         taint_sink_parameters = [
           { position = 0; sinks = [Taint.Sinks.Test] };
-          (*
           { position = 2; sinks = [Taint.Sinks.Test] };
-          *)
         ];
         tito_parameters = [];
       };
@@ -664,6 +676,6 @@ let () =
     "test_tito_sink">::test_tito_sink;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_seqential_call_path">::test_sequential_call_path;
-    "test_nested_call_path">::test_nested_call_path;
+    "test_chained_call_path">::test_chained_call_path;
   ]
   |> Test.run_with_taint_models
