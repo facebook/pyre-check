@@ -29,6 +29,7 @@ type taint_in_taint_out_expectation = {
 
 
 let assert_taint source expected =
+  Annotated.Class.Attribute.Cache.clear ();
   let source =
     parse ~qualifier:(Access.create "qualifier") source
     |> Preprocessing.preprocess
@@ -594,13 +595,13 @@ let test_sequential_call_path _ =
     ];
   assert_taint
     {|
-      class Herp:
-        def sink(self, argument) -> Herp:
+      class Foo:
+        def sink(self, argument) -> Foo:
             __testSink(argument)
             return self
 
       def sequential_with_self_propagation(first, second, third):
-        x = Herp()
+        x = Foo()
         x = x.sink(first)
         x.sink(second)
     |}
