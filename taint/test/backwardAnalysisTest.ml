@@ -132,7 +132,14 @@ let assert_taint source expected =
       List.map ~f:(fun { position; sinks; } -> position, sinks) taint_sink_parameters
       |> Int.Map.of_alist_exn
     in
-    let () = Int.Map.iter2 ~f:check_each_sink_position expected_sinks taint_map in
+
+    (* Check sinks. *)
+    assert_equal
+      (Map.length expected_sinks)
+      (Map.length taint_map)
+      ~msg:"Not all tainted parameters specified.";
+    Int.Map.iter2 ~f:check_each_sink_position expected_sinks taint_map;
+
     let expected_tito = Int.Set.of_list tito_parameters in
     assert_equal
       ~cmp:Int.Set.equal
@@ -279,7 +286,6 @@ let test_tito_sink _ =
       {
         define_name = "qualifier.test_tito_sink";
         taint_sink_parameters = [
-          { position = 0; sinks = []; };
           { position = 1; sinks = [Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
@@ -354,7 +360,6 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         taint_sink_parameters = [
-          { position = 0; sinks = [] };
           { position = 1; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
