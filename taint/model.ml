@@ -110,8 +110,23 @@ let taint_return model expression =
 let create ~model_source =
   let defines =
     let filter_define = function
-      | { Node.value = Define define; _ } -> Some define
-      | _ -> None
+      | { Node.value = Define define; _ } ->
+          Some define
+      | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
+        when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
+          Some {
+            Define.name = Expression.access target;
+            parameters = [];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = Some annotation;
+            async = false;
+            generated = false;
+            parent = None;
+          }
+      | _ ->
+          None
     in
     String.split ~on:'\n' model_source
     |> Parser.parse

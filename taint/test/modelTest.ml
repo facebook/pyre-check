@@ -107,6 +107,26 @@ let test_source_models _ =
         taint_sink_parameters = [];
         tito_parameters = [];
       };
+    ];
+  assert_model
+    ~model_source:"os.environ: TaintSource[Test] = ..."
+    ~expect:[
+      {
+        define_name = "os.environ";
+        returns = [Sources.Test];
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+    ];
+  assert_model
+    ~model_source:"django.http.Request.GET: TaintSource[Test] = ..."
+    ~expect:[
+      {
+        define_name = "django.http.Request.GET";
+        returns = [Sources.Test];
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
     ]
 
 
