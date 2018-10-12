@@ -6327,8 +6327,8 @@ let test_check_data_class _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument," ^
-      " 2 were provided.";
+      "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, 2 were" ^
+      " provided.";
     ];
   assert_type_errors
     {|

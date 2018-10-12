@@ -340,7 +340,7 @@ let test_transform_environment _ =
         x: int = 15
       @dataclass
       class Base:
-        x: Any = 15.0
+        x: typing.Any = 15.0
         y: int = 0
         z: str = "a"
     |}
@@ -360,10 +360,10 @@ let test_transform_environment _ =
       {|
         @dataclass
         class Base:
-          x: Any = 15.0
+          x: typing.Any = 15.0
           y: int = 0
           z: str = "a"
-          def __init__(self, x: Any = 15.0, y: int = 0, z: str = "a") -> None:
+          def __init__(self, x: object = 15.0, y: int = 0, z: str = "a") -> None:
             pass
           def __repr__(self) -> str:
             pass
@@ -379,7 +379,7 @@ let test_transform_environment _ =
         z: int = 10
         x: int = 15
       class Base:
-        x: Any = 15.0
+        x: typing.Any = 15.0
         y: int = 0
         z: str = "a"
     |}
@@ -398,7 +398,7 @@ let test_transform_environment _ =
       |};
       {|
         class Base:
-          x: Any = 15.0
+          x: typing.Any = 15.0
           y: int = 0
           z: str = "a"
       |};
@@ -412,7 +412,7 @@ let test_transform_environment _ =
         x = 15
       @dataclass
       class Base:
-        x: Any = 15.0
+        x: typing.Any = 15.0
         y: int = 0
     |}
     [
@@ -421,7 +421,7 @@ let test_transform_environment _ =
         class C(Base):
           z: int = 10
           x = 15
-          def __init__(self, x: Any = 15.0, y: int = 0, z: int = 10) -> None:
+          def __init__(self, x: object = 15.0, y: int = 0, z: int = 10) -> None:
             pass
           def __repr__(self) -> str:
             pass
@@ -431,9 +431,9 @@ let test_transform_environment _ =
       {|
         @dataclass
         class Base:
-          x: Any = 15.0
+          x: typing.Any = 15.0
           y: int = 0
-          def __init__(self, x: Any = 15.0, y: int = 0) -> None:
+          def __init__(self, x: object = 15.0, y: int = 0) -> None:
             pass
           def __repr__(self) -> str:
             pass

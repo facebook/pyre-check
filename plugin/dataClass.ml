@@ -84,52 +84,55 @@ let transform_environment ((module Handler: Handler) as environment) { Source.st
                   ~resolution
                   ~name:(Access.create "__init__")) then
               let parameters =
-                let collect_parameters parameters { Node.value; _ } =
-                  match value with
-                  | Assign {
-                      Assign.target = { Node.value = Access access; _ };
-                      annotation = Some annotation;
-                      value;
-                      _;
-                    } ->
-                      begin
-                        match List.last access with
-                        | Some (Access.Identifier name) ->
-                            let value =
-                              match value with
-                              | { Node.value = Ellipses; _ } -> None
-                              | _ -> Some value
-                            in
-                            let rec override_existing_parameters unchecked_parameters =
-                              match unchecked_parameters with
-                              | [] ->
-                                  [Parameter.create ~name ~annotation ?value ()]
-                              | {
-                                Node.value = { Parameter.name = old_name; value = old_value; _ };
-                                _;
-                              } :: tail
-                                when Identifier.equal old_name name ->
-                                  let value = if Option.is_some value then value else old_value in
-                                  Parameter.create ~name ~annotation ?value () :: tail
-                              | head :: tail ->
-                                  head :: override_existing_parameters tail
-                            in
-                            override_existing_parameters parameters
-                        | _ ->
-                            parameters
-                      end
-                  | _ ->
-                      parameters
+                let collect_parameters parameters attribute =
+                  let annotation =
+                    Annotated.Attribute.annotation attribute
+                    |> Annotation.original
+                  in
+                  begin
+                    match List.last (Annotated.Attribute.access attribute) with
+                    | Some (Access.Identifier name) when not (Type.is_unknown annotation) ->
+                        let value =
+                          if Annotated.Attribute.initialized attribute then
+                            Some (Annotated.Attribute.value attribute)
+                          else
+                            None
+                        in
+                        let annotation = Type.expression annotation in
+                        let rec override_existing_parameters unchecked_parameters =
+                          match unchecked_parameters with
+                          | [] ->
+                              [Parameter.create ~name ~annotation ?value ()]
+                          | {
+                            Node.value = { Parameter.name = old_name; value = old_value; _ };
+                            _;
+                          } :: tail
+                            when Identifier.equal old_name name ->
+                              let value = if Option.is_some value then value else old_value in
+                              Parameter.create ~name ~annotation ?value () :: tail
+                          | head :: tail ->
+                              head :: override_existing_parameters tail
+                        in
+                        override_existing_parameters parameters
+                    | _ ->
+                        parameters
+                  end
                 in
                 let parent_dataclasses =
                   Annotated.Class.superclasses ~resolution annotated_class
                   |> (fun superclasses -> annotated_class :: superclasses)
                   |> List.rev
                 in
+                let parent_attributes parent =
+                  let compare_by_location left right =
+                    Ast.Location.compare (Node.location left) (Node.location right)
+                  in
+                  Annotated.Class.attributes ~include_generated_attributes:false parent ~resolution
+                  |> List.sort ~compare:compare_by_location
+                in
                 parent_dataclasses
-                |> List.map ~f:Annotated.Class.body
-                |> List.fold
-                  ~init:[]
+                |> List.map ~f:parent_attributes
+                |> List.fold ~init:[]
                   ~f:(fun parameters -> List.fold ~init:parameters ~f:collect_parameters)
               in
               [create_method ~name:"__init__" ~parameters ~return_annotation:"None"]
