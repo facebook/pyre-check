@@ -16,22 +16,21 @@ type dataclass_options = {
   init: bool;
   repr: bool;
   eq: bool;
-  order: bool;
-  unsafe_hash: bool;
-  frozen: bool;
 }
 
 
-let transform_environment ((module Handler: Handler) as order) { Source.statements; _ } =
-  let get_dataclass_decorator { Node.location; value = ast_class } =
-    let open Annotated in
-    let annotated = Class.create { Node.location; value = ast_class } in
-    Class.get_decorator annotated ~decorator:"dataclasses.dataclass"
-    @ Class.get_decorator annotated ~decorator:"dataclass"
-  in
-  let update_dataclasses = function
+let transform_environment ((module Handler: Handler) as environment) { Source.statements; _ } =
+  let update_dataclasses ast_class =
+    let get_dataclass_decorator annotated =
+      Annotated.Class.get_decorator annotated ~decorator:"dataclasses.dataclass"
+      @ Annotated.Class.get_decorator annotated ~decorator:"dataclass"
+    in
+    match ast_class with
     | { Node.value = Class ({ Class.name = parent;  _ } as ast_class); location }
-      when not (List.is_empty (get_dataclass_decorator { Node.location; value = ast_class })) ->
+      when not (
+          List.is_empty
+            (get_dataclass_decorator
+               (Annotated.Class.create { Node.location; value = ast_class }))) ->
         let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
         let { init; repr; eq; _ } =
           let default =
@@ -39,38 +38,27 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
               init = true;
               repr = true;
               eq = true;
-              order = false;
-              unsafe_hash = false;
-              frozen = false;
             }
           in
-          match get_dataclass_decorator { Node.location; value = ast_class } with
+          match get_dataclass_decorator annotated_class with
           | { Annotated.Class.arguments = Some arguments; _ } :: _ ->
-              let rec read_arguments options arguments =
-                match arguments with
-                | [] ->
-                    options
-                | { Argument.name = Some { Node.value = name; _ }; value = { Node.value; _ } }
-                  :: arguments ->
-                    let updated_options =
+              let apply_arguments options = function
+                | { Argument.name = Some { Node.value = name; _ }; value = { Node.value; _ } } ->
+                    begin
                       match Identifier.show_sanitized name, value with
                       | "init", False -> { options with init = false }
                       | "repr", False -> { options with repr = false }
                       | "eq", False -> { options with eq = false }
-                      | "order", True -> { options with order = true }
-                      | "unsafe_hash", True -> { options with unsafe_hash = true }
-                      | "frozen", True -> { options with frozen = true }
                       | _ -> options
-                    in
-                    read_arguments updated_options arguments
-                | _ :: tail ->
-                    read_arguments options tail
+                    end
+                | _ ->
+                    options
               in
-              read_arguments default arguments
+              List.fold arguments ~f:apply_arguments ~init:default
           | _ ->
               default
         in
-        let resolution = Environment.resolution order () in
+        let resolution = Environment.resolution environment () in
         let class_type = Annotated.Class.annotation ~resolution annotated_class in
         let generated_methods =
           let create_method ~name ~parameters ~return_annotation =
@@ -173,11 +161,10 @@ let transform_environment ((module Handler: Handler) as order) { Source.statemen
               methods
           in
           methods
-          |> List.map ~f:(fun define -> Node.create ~location (Define define))
-          |> List.rev
+          |> List.rev_map ~f:(fun define -> Node.create ~location (Define define))
           |> Source.create
           |> Analysis.Preprocessing.preprocess
-          |> fun { Source.statements; _ } -> statements
+          |> Source.statements
         in
         Handler.set_class_definition
           ~primitive:class_type
