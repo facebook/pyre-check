@@ -214,7 +214,7 @@ let test_pp _ =
        ];
        Lambda.body = +Tuple [!"x"; +String (StringLiteral.create "y")]
      })
-    {|lambda (x=1, y=2) ((x, "y"()))|};
+    {|lambda (x=1, y=2) ((x, "y"))|};
 
   assert_pp_equal
     (+Access [

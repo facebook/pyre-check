@@ -969,13 +969,13 @@ module PrettyPrinter = struct
           | StringLiteral.Bytes -> "b"
           | _ -> ""
         in
-        let expressions =
+        begin
           match kind with
-          | StringLiteral.Format expressions -> expressions
-          | _ -> []
-        in
-        Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
-
+          | StringLiteral.Format expressions ->
+              Format.fprintf formatter "%s\"%s\"(%a)" bytes value pp_expression_list expressions
+          | _ ->
+              Format.fprintf formatter "%s\"%s\"" bytes value
+        end
     | ComparisonOperator { ComparisonOperator.left; operator; right } ->
         Format.fprintf
           formatter

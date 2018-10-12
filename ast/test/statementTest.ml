@@ -833,7 +833,7 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       def #foo(bar):
-        x = "hello world"()
+        x = "hello world"
     |}
   in
 
@@ -853,7 +853,7 @@ let test_pp _ =
     {|
       @(decorator1, decorator2)
       def #foo(bar):
-        x = "hello world"()
+        x = "hello world"
     |}
   in
 
@@ -878,11 +878,11 @@ let test_pp _ =
     {|
       @(decorator1, decorator2)
       def #foo(bar):
-        x = "hello world"()
+        x = "hello world"
 
       @(decorator3)
       def #foo(baz):
-        x = "hello squirrel"()
+        x = "hello squirrel"
         y = 5
     |}
   in
@@ -937,7 +937,7 @@ let test_pp _ =
   let pretty_print_expect =
     {|
       try:
-        raise Exception("whoops"())
+        raise Exception("whoops")
       except SomeError as e:
         pass
       except (AnotherError, YetAnotherError):
@@ -995,7 +995,7 @@ let test_pp _ =
 
   let pretty_print_expect =
     {|
-      @(some.decorator("with_a_string"()))
+      @(some.decorator("with_a_string"))
       def #decorator_test():
         return 5
     |}
