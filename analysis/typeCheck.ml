@@ -1632,7 +1632,8 @@ module State = struct
             ] when Identifier.show name = "isinstance" ->
               let compatible ~existing =
                 let annotation = Resolution.parse_annotation resolution annotation in
-                Resolution.less_or_equal resolution ~left:annotation ~right:existing
+                Type.equal existing Type.Bottom
+                || Resolution.less_or_equal resolution ~left:annotation ~right:existing
               in
               Resolution.get_local resolution ~access
               >>| Annotation.annotation
@@ -1686,12 +1687,15 @@ module State = struct
                     Resolution.parse_annotation resolution annotation
               in
               let updated_annotation =
+                let refinement_unnecessary existing_annotation =
+                  Refinement.less_or_equal
+                    ~resolution
+                    existing_annotation
+                    (Annotation.create annotation)
+                  && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
+                in
                 match Resolution.get_local resolution ~access with
-                | Some existing_annotation when
-                    Refinement.less_or_equal
-                      ~resolution
-                      existing_annotation
-                      (Annotation.create annotation) ->
+                | Some existing_annotation when refinement_unnecessary existing_annotation ->
                     existing_annotation
                 | _ ->
                     Annotation.create annotation
