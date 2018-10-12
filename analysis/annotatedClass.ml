@@ -38,10 +38,6 @@ let create definition =
   definition
 
 
-let create_parent =
-  create
-
-
 let name { Node.value = { Class.name; _ }; _ } =
   name
 
