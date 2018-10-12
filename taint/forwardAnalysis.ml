@@ -216,25 +216,37 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_normalized_expression ~resolution state expression =
       match expression with
       | Access { expression; member } ->
-          let hardcoded_taint =
-            let receiver_is_http_request =
-              let receiver_type =
+          let attribute_taint =
+            let annotations =
+              let annotation =
                 as_access expression
                 |> Access.expression
                 |> Resolution.resolve resolution
               in
-              Resolution.less_or_equal
-                resolution
-                ~left:receiver_type
-                ~right:(Type.primitive "django.http.Request")
+              let successors =
+                Resolution.class_representation resolution annotation
+                >>| (fun { Resolution.successors; _ } -> successors)
+                |> Option.value ~default:[]
+              in
+              annotation :: successors
             in
-            let attributes = String.Set.of_list ["GET"; "POST"; "FILES"; "META"] in
-            if String.Set.mem attributes (Identifier.show member) &&
-               receiver_is_http_request then
-              ForwardTaint.singleton Sources.UserControlled
-              |> ForwardState.create_leaf
-            else
-              ForwardState.empty_tree
+            let attribute_taint sofar annotation =
+              let attribute_taint =
+                let access =
+                  (Type.class_name annotation) @ [Access.Identifier member]
+                in
+                let call_target = Interprocedural.Callable.create_real access in
+                Interprocedural.Fixpoint.get_model call_target
+                >>= Interprocedural.Result.get_model TaintResult.kind
+                |> function
+                | Some { forward = { source_taint }; _ } ->
+                    ForwardState.read Root.LocalResult source_taint
+                | _ ->
+                    ForwardState.empty_tree
+              in
+              ForwardState.join_trees sofar attribute_taint
+            in
+            List.fold annotations ~init:ForwardState.empty_tree ~f:attribute_taint
           in
           let inferred_taint =
             let taint = analyze_normalized_expression ~resolution state expression in
@@ -244,7 +256,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               ~tree:ForwardState.empty_tree
               ~subtree:taint
           in
-          ForwardState.join_trees inferred_taint hardcoded_taint
+          ForwardState.join_trees inferred_taint attribute_taint
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression ->

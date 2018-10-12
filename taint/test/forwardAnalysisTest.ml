@@ -143,6 +143,10 @@ let test_simple_source _ =
 
 let test_hardcoded_source _ =
   assert_taint
+    ~models:{|
+      django.http.Request.GET: TaintSource[UserControlled] = ...
+      django.http.Request.POST: TaintSource[UserControlled] = ...
+    |}
     {|
       def get(request: django.http.Request):
         return request.GET
@@ -162,44 +166,19 @@ let test_hardcoded_source _ =
         define_name = "qualifier.post";
         returns = [Sources.UserControlled];
       };
-      {
-        define_name = "qualifier.meta";
-        returns = [Sources.UserControlled];
-      };
-      {
-        define_name = "qualifier.files";
-        returns = [Sources.UserControlled];
-      };
     ];
   assert_taint
     ~models:{|
+      django.http.Request.GET: TaintSource[UserControlled] = ...
       def dict.__getitem__(self: TaintInTaintOut[LocalReturn], key): ...
     |}
     {|
       def get_field(request: django.http.Request):
         return request.GET['field']
-      def post_field(request: django.http.Request):
-        return request.POST['field']
-      def meta_field(request: django.http.Request):
-        return request.META['field']
-      def files_field(request: django.http.Request):
-        return request.FILES['field']
     |}
     [
       {
         define_name = "qualifier.get_field";
-        returns = [Sources.UserControlled];
-      };
-      {
-        define_name = "qualifier.post_field";
-        returns = [Sources.UserControlled];
-      };
-      {
-        define_name = "qualifier.meta_field";
-        returns = [Sources.UserControlled];
-      };
-      {
-        define_name = "qualifier.files_field";
         returns = [Sources.UserControlled];
       };
     ];
