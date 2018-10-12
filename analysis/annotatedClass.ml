@@ -50,10 +50,6 @@ let bases { Node.value = { Class.bases; _ }; _ } =
   bases
 
 
-let body { Node.value = { Class.body; _ }; _ } =
-  body
-
-
 let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
   let matches target decorator =
     match decorator with
