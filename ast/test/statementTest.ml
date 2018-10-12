@@ -794,73 +794,56 @@ let test_docstring _ =
 
 
 let test_pp _ =
-  let to_lines = String.split_on_chars ~on:['\n'] in
-
-  let test_equal pretty_print_expected source =
+  let assert_pretty_print ~expected source =
     let pretty_print_expected =
-      pretty_print_expected
+      expected
       |> String.lstrip ~drop:((=) '\n')
       |> Test.trim_extra_indentation
     in
-
     let source =
       Test.trim_extra_indentation source
       |> String.rstrip ~drop:((=) '\n')
     in
-
     let pretty_print_of_source =
-      to_lines source
+      source
+      |> String.split_on_chars ~on:['\n']
       |> Parser.parse
       |> List.map ~f:Statement.show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:((=) '\n')
     in
-
     assert_equal
       ~printer:Fn.id
       pretty_print_expected
       pretty_print_of_source
   in
-
   (* Test 1 : simple def *)
-  let source =
+  assert_pretty_print
     {|
       def foo(bar):
         x = "hello world"
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       def #foo(bar):
         x = "hello world"
-    |}
-  in
-
-  test_equal pretty_print_expect source;
+    |};
 
   (* Test 2 : def with multiple decorators *)
-  let source =
+  assert_pretty_print
     {|
       @decorator1
       @decorator2
       def foo(bar):
         x = "hello world"
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       @(decorator1, decorator2)
       def #foo(bar):
         x = "hello world"
-    |}
-  in
-
-  test_equal pretty_print_expect source;
+    |};
 
   (* Test 3 : multiple defs and statements *)
-  let source =
+  assert_pretty_print
     {|
       @decorator1
       @decorator2
@@ -872,10 +855,7 @@ let test_pp _ =
         x = "hello squirrel"
         y = 5
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       @(decorator1, decorator2)
       def #foo(bar):
         x = "hello world"
@@ -884,13 +864,10 @@ let test_pp _ =
       def #foo(baz):
         x = "hello squirrel"
         y = 5
-    |}
-  in
-
-  test_equal pretty_print_expect source;
+    |};
 
   (* Test 4 : cover classes, for loops, compound statements *)
-  let source =
+  assert_pretty_print
     {|
       @class_decorator
       class Foo(Bar):
@@ -899,24 +876,17 @@ let test_pp _ =
             i = 1
           i = 2
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       @(class_decorator)
       class Foo(Bar):
         def Foo#baz(quux):
           for i in xrange(quux):
             i = 1
           i = 2
-
-    |}
-  in
-
-  test_equal pretty_print_expect source;
+    |};
 
   (* Test 5 : try/except/finally blocks *)
-  let source =
+  assert_pretty_print
     {|
       try:
         raise Exception("whoops")
@@ -932,10 +902,7 @@ let test_pp _ =
       finally:
         pass
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       try:
         raise Exception("whoops")
       except SomeError as e:
@@ -949,13 +916,10 @@ let test_pp _ =
         pass
       finally:
         pass
-    |}
-  in
-
-  test_equal pretty_print_expect source;
+    |};
 
   (* Test 6 : while and if/then/else and list access *)
-  let source =
+  assert_pretty_print
     {|
       while x:
         i = 1
@@ -967,10 +931,7 @@ let test_pp _ =
       i[j] = 3
       i[j::1] = i[:j]
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       while x:
         i = 1
         if i > 0:
@@ -980,28 +941,19 @@ let test_pp _ =
         j = 2
       i[j] = 3
       i[slice(j,None,1)] = i[slice(None,j,None)]
-    |}
-  in
+    |};
 
-  test_equal pretty_print_expect source;
-
-  let source =
+  assert_pretty_print
     {|
       @some.decorator('with_a_string')
       def decorator_test():
         return 5
     |}
-  in
-
-  let pretty_print_expect =
-    {|
+    ~expected:{|
       @(some.decorator("with_a_string"))
       def #decorator_test():
         return 5
     |}
-  in
-
-  test_equal pretty_print_expect source
 
 
 let () =
