@@ -546,6 +546,13 @@ module ClientCapabilities = struct
     }
     [@@deriving of_yojson]
 
+    type publish_diagnostics = {
+      related_information: bool option
+          [@key "relatedInformation"]
+          [@default None];
+    }
+    [@@deriving of_yojson]
+
     type t = {
       synchronization: synchronization option
           [@key "synchronization"]
@@ -600,6 +607,12 @@ module ClientCapabilities = struct
           [@default None];
       color_provider: DynamicRegistration.t option
           [@key "colorProvider"]
+          [@default None];
+      folding_range: DynamicRegistration.t option
+          [@key "foldingRange"]
+          [@default None];
+      publish_diagnostics: publish_diagnostics option
+          [@key "publishDiagnostics"]
           [@default None];
     }
     [@@deriving of_yojson]
