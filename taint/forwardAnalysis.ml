@@ -324,9 +324,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.fold ~f:(analyze_set_element ~resolution state) set ~init:ForwardState.empty_tree
       | SetComprehension comprehension ->
           analyze_comprehension ~resolution comprehension state
-      | Starred _
-      | String _
-      | Ternary _
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          analyze_expression ~resolution expression state
+          |> ForwardState.read_tree [AccessPathTree.Label.Any]
+      | String _ ->
+          ForwardState.empty_tree
+      | Ternary { target; test; alternative } ->
+          let taint_then = analyze_expression ~resolution target state in
+          let taint_else = analyze_expression ~resolution alternative state in
+          let _ = analyze_expression ~resolution test state in
+          ForwardState.join_trees taint_then taint_else
       | True
       | Tuple _
       | UnaryOperator _

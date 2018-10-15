@@ -614,6 +614,69 @@ let test_set _ =
     ]
 
 
+let test_starred _ =
+  assert_taint
+    {|
+      def source_in_starred():
+          list = [ 1, __testSource(), "foo" ]
+          return __tito(*list)
+
+      def source_in_starred_starred():
+          dict = {
+              "a": 1,
+              "b": __testSource(),
+              "c": "foo",
+          }
+          return __tito(**dict)
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_starred";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_starred_starred";
+        returns = [Sources.Test];
+      };
+    ]
+
+
+let test_ternary _ =
+  assert_taint
+    {|
+      def source_in_then(cond):
+          return __testSource() if cond else None
+
+      def source_in_else(cond):
+          return "foo" if cond else __testSource()
+
+      def source_in_both(cond, request: django.http.Request):
+        return __testSource() if cond else request.GET['field']
+
+      def source_in_cond(cond):
+          return "foo" if __testSource() else "bar"
+
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_then";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_else";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_both";
+        returns = [Sources.Test; Sources.UserControlled];
+      };
+      {
+        define_name = "qualifier.source_in_cond";
+        returns = [];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -629,5 +692,7 @@ let () =
     "test_list">::test_list;
     "test_lambda">::test_lambda;
     "test_set">::test_set;
+    "test_starred">::test_starred;
+    "test_ternary">::test_ternary;
   ]
   |> Test.run_with_taint_models

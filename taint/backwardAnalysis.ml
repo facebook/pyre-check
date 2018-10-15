@@ -282,9 +282,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             set
       | SetComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
-      | Starred _
-      | String _
-      | Ternary _
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          let taint = BackwardState.create_tree [AccessPathTree.Label.Any] taint in
+          analyze_expression ~resolution taint expression state
+      | String _ ->
+          state
+      | Ternary { target; test; alternative } ->
+          let state_then = analyze_expression ~resolution taint target state in
+          let state_else = analyze_expression ~resolution taint alternative state in
+          join state_then state_else
+          |> analyze_expression ~resolution BackwardState.empty_tree test
       | True
       | Tuple _
       | UnaryOperator _

@@ -911,6 +911,129 @@ let test_set _ =
     ]
 
 
+let test_starred _ =
+  assert_taint
+    {|
+      def sink_in_starred(arg):
+          __tito(*[ 1, __testSink(arg), "foo" ])
+
+      def sink_in_starred_starred(arg):
+          __tito(**{
+              "a": 1,
+              "b": __testSink(arg),
+              "c": "foo",
+          })
+
+      def tito_in_starred(arg):
+          return __tito(*[ 1, arg, "foo" ])
+
+      def tito_in_starred_starred(arg):
+          return __tito(**{
+              "a": 1,
+              "b": arg,
+              "c": "foo",
+          })
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_starred";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_starred_starred";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_in_starred";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tito_in_starred_starred";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
+let test_ternary _ =
+  assert_taint
+    {|
+      def sink_in_then(arg, cond):
+          x = __testSink(arg) if cond else None
+
+      def sink_in_else(arg, cond):
+          x = "foo" if cond else __testSink(arg)
+
+      def sink_in_both(arg1, arg2, cond):
+          x = __testSink(arg1) if cond else __testSink(arg2)
+
+      def sink_in_cond(arg1, arg2, cond):
+          x = arg1 if __testSink(cond) else arg2
+
+      def tito_in_then(arg, cond):
+          return arg if cond else None
+
+      def tito_in_else(arg, cond):
+          return "foo" if cond else arg
+
+      def tito_in_both(arg1, arg2, cond):
+          return arg1 if cond else arg2
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_then";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_else";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_both";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+          { position = 1; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_cond";
+        taint_sink_parameters = [
+          { position = 2; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_in_then";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tito_in_else";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tito_in_both";
+        taint_sink_parameters = [];
+        tito_parameters = [0; 1];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -928,5 +1051,7 @@ let () =
     "test_list">::test_list;
     "test_lambda">::test_lambda;
     "test_set">::test_set;
+    "test_starred">::test_starred;
+    "test_ternary">::test_ternary;
   ]
   |> Test.run_with_taint_models
