@@ -266,9 +266,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _
       | Generator _
-      | Integer _
-      | Lambda _ ->
+      | Integer _ ->
           state
+      | Lambda { parameters = _; body } ->
+          (* Ignore parameter bindings and pretend body is inlined *)
+          analyze_expression ~resolution taint body state
       | List list ->
           let total = List.length list in
           List.foldi

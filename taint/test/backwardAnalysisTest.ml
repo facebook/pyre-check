@@ -137,7 +137,7 @@ let assert_taint source expected =
     assert_equal
       (Map.length expected_sinks)
       (Map.length taint_map)
-      ~msg:(Format.sprintf "Define %s: Not all tainted parameters specified." define_name);
+      ~msg:(Format.sprintf "Define %s: List of tainted parameters differ in length." define_name);
     Int.Map.iter2 ~f:check_each_sink_position expected_sinks taint_map;
 
     let expected_tito = Int.Set.of_list tito_parameters in
@@ -822,6 +822,32 @@ let test_list _ =
     ]
 
 
+let test_lambda _ =
+  assert_taint
+    {|
+      def sink_in_lambda(arg):
+          f = lambda x : x + __testSink(arg)
+
+      def lambda_tito(arg):
+          f = lambda x : x + arg
+          return f
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_lambda";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.lambda_tito";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -837,5 +863,6 @@ let () =
     "test_dictionary">::test_dictionary;
     "test_comprehensions">::test_comprehensions;
     "test_list">::test_list;
+    "test_lambda">::test_lambda;
   ]
   |> Test.run_with_taint_models

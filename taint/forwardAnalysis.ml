@@ -304,9 +304,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _
       | Generator _
-      | Integer _
-      | Lambda _ ->
+      | Integer _ ->
           ForwardState.empty_tree
+      | Lambda { parameters = _; body } ->
+          (* Ignore parameter bindings and pretend body is inlined *)
+          analyze_expression ~resolution body state
       | List list ->
           List.foldi ~f:(analyze_list_element ~resolution state) list ~init:ForwardState.empty_tree
       | ListComprehension list_comprehension ->

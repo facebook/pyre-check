@@ -556,6 +556,20 @@ let test_list _ =
     ]
 
 
+let test_lambda _ =
+  assert_taint
+    {|
+      def source_in_lambda():
+          return lambda x : x + __testSource()
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_lambda";
+        returns = [Sources.Test];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -569,5 +583,6 @@ let () =
     "test_dictionary">::test_dictionary;
     "test_comprehensions">::test_comprehensions;
     "test_list">::test_list;
+    "test_lambda">::test_lambda;
   ]
   |> Test.run_with_taint_models
