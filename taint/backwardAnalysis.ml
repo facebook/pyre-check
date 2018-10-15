@@ -211,17 +211,31 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Local name ->
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
+    and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value; } =
+      let field_name =
+        match key.Node.value with
+        | String literal -> AccessPathTree.Label.Field (Identifier.create literal.value)
+        | _ -> AccessPathTree.Label.Any
+      in
+      let value_taint = BackwardState.read_tree [field_name] taint in
+      analyze_expression ~resolution value_taint value state
+
     and analyze_expression ~resolution taint { Node.value = expression; _ } state =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Access access ->
           normalize_access access
           |> analyze_normalized_expression ~resolution state taint
-      | Await _
-      | BooleanOperator _
-      | ComparisonOperator _
-      | Complex _
-      | Dictionary _
+      | Await expression ->
+          analyze_expression ~resolution taint expression state
+      | BooleanOperator { left; operator = _; right }
+      | ComparisonOperator { left; operator=_; right } ->
+          analyze_expression ~resolution taint right state
+          |> analyze_expression ~resolution taint left
+      | Complex _ ->
+          state
+      | Dictionary dictionary ->
+          List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
       | DictionaryComprehension _
       | Ellipses
       | False

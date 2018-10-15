@@ -1,0 +1,3 @@
+{"kind":"model","data":{"callable":"dictionary_entry_sink","sources":[],"sinks":[{"port":"formal(0)","taint":[{"root":{"filename":"test.py","line":13,"start":23,"end":28},"leaves":[{"kind":"Test"}]}]}],"tito":[]}}
+{"kind":"model","data":{"callable":"dictionary_source","sources":[{"port":"result[a]","taint":[{"root":{"filename":"test.py","line":6,"start":25,"end":27},"leaves":[{"kind":"Test"}]}]}],"sinks":[],"tito":[]}}
+{"kind":"model","data":{"callable":"dictionary_tito","sources":[],"sinks":[],"tito":[{"port":"formal(0)","taint":[{"decl":null,"leaves":[{"kind":"LocalReturn"}]}]}]}}

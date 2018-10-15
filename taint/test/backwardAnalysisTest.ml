@@ -670,6 +670,35 @@ let test_chained_call_path _ =
     ]
 
 
+let test_dictionary _ =
+  assert_taint
+    {|
+      def dictionary_sink(arg):
+        {
+          "a": __testSink(arg),
+        }
+
+      def dictionary_tito(arg):
+        return {
+          "a": arg,
+        }
+    |}
+    [
+      {
+        define_name = "qualifier.dictionary_sink";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.dictionary_tito";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -682,5 +711,8 @@ let () =
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_seqential_call_path">::test_sequential_call_path;
     "test_chained_call_path">::test_chained_call_path;
+    "test_nested_call_path">::test_nested_call_path;
+    "test_dictionary">::test_dictionary;
+    "test_nested_call_path">::test_nested_call_path;
   ]
   |> Test.run_with_taint_models

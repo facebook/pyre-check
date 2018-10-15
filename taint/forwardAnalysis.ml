@@ -131,8 +131,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             ForwardState.join_root_element result_taint tito
         | _ ->
-          (* Obscure/no model. *)
-          List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument ~resolution state)
+            (* Obscure/no model. *)
+            List.fold
+              arguments
+              ~init:ForwardState.empty_tree
+              ~f:(analyze_argument ~resolution state)
       in
       match call_targets with
       | [] ->
@@ -259,17 +262,34 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             Identifier.pp identifier;
           ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
 
+    and analyze_dictionary_entry ~resolution state taint { Dictionary.key; value; } =
+      let field_name =
+        match key.Node.value with
+        | String literal -> AccessPathTree.Label.Field (Identifier.create literal.value)
+        | _ -> AccessPathTree.Label.Any
+      in
+      let value_taint = analyze_expression ~resolution value state in
+      ForwardState.join_trees taint (ForwardState.create_tree [field_name] value_taint)
 
     and analyze_expression ~resolution expression state =
       match expression.Node.value with
       | Access access ->
           normalize_access access
           |> analyze_normalized_expression ~resolution state
-      | Await _
-      | BooleanOperator _
-      | ComparisonOperator _
-      | Complex _
-      | Dictionary _
+      | Await expression ->
+          analyze_expression ~resolution expression state
+      | BooleanOperator { left; operator = _; right }
+      | ComparisonOperator { left; operator = _; right } ->
+          let left_taint = analyze_expression ~resolution left state in
+          let right_taint = analyze_expression ~resolution right state in
+          ForwardState.join_trees left_taint right_taint
+      | Complex _ ->
+          ForwardState.empty_tree
+      | Dictionary dictionary ->
+          List.fold
+            dictionary.entries
+            ~f:(analyze_dictionary_entry ~resolution state)
+            ~init:ForwardState.empty_tree
       | DictionaryComprehension _
       | Ellipses
       | False

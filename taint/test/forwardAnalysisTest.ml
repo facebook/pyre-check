@@ -441,6 +441,22 @@ let test_taint_in_taint_out_application _ =
     ]
 
 
+let test_dictionary _ =
+  assert_taint
+    {|
+      def dictionary_source():
+        return {
+          "a": __testSource(),
+        }
+    |}
+    [
+      {
+        define_name = "qualifier.dictionary_source";
+        returns = [Sources.Test];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -451,5 +467,6 @@ let () =
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
     "test_union">::test_taint_in_taint_out_application;
+    "test_dictionary">::test_dictionary;
   ]
   |> Test.run_with_taint_models
