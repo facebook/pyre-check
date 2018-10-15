@@ -267,6 +267,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let value_taint = analyze_expression ~resolution expression state in
       ForwardState.join_trees taint (ForwardState.create_tree [index_name] value_taint)
 
+    and analyze_set_element ~resolution state taint expression =
+      let value_taint =
+        analyze_expression ~resolution expression state
+        |> ForwardState.create_tree [AccessPathTree.Label.Any]
+      in
+      ForwardState.join_trees taint value_taint
+
     and analyze_list_comprehension ~resolution { Comprehension.element; generators; _ } state =
       let add_binding state { Comprehension.target; iterator; _ } =
         let taint =
@@ -313,7 +320,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.foldi ~f:(analyze_list_element ~resolution state) list ~init:ForwardState.empty_tree
       | ListComprehension list_comprehension ->
           analyze_list_comprehension ~resolution list_comprehension state
-      | Set _
+      | Set set ->
+          List.fold ~f:(analyze_set_element ~resolution state) set ~init:ForwardState.empty_tree
       | SetComprehension _
       | Starred _
       | String _

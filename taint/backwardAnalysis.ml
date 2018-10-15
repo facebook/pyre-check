@@ -279,7 +279,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~init:state
       | ListComprehension list_comprehension ->
           analyze_list_comprehension ~resolution taint list_comprehension state
-      | Set _
+      | Set set ->
+          let element_taint = BackwardState.read_tree [AccessPathTree.Label.Any] taint in
+          List.fold
+            ~f:(Fn.flip (analyze_expression ~resolution element_taint))
+            ~init:state
+            set
       | SetComprehension _
       | Starred _
       | String _

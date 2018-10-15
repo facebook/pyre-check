@@ -570,6 +570,36 @@ let test_lambda _ =
     ]
 
 
+let test_set _ =
+  assert_taint
+    {|
+      def source_in_set():
+          return { 1, __testSource(), "foo" }
+
+      def set_index():
+          set = { 1, __testSource(), "foo" }
+          return set[2]
+
+      def set_unknown_index(index):
+          set = { 1, __testSource(), "foo" }
+          return set[index]
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_set";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.set_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.set_unknown_index";
+        returns = [Sources.Test];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -584,5 +614,6 @@ let () =
     "test_comprehensions">::test_comprehensions;
     "test_list">::test_list;
     "test_lambda">::test_lambda;
+    "test_set">::test_set;
   ]
   |> Test.run_with_taint_models

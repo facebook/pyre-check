@@ -848,6 +848,41 @@ let test_lambda _ =
     ]
 
 
+let test_set _ =
+  assert_taint
+    {|
+      def sink_in_set(arg):
+          return { 1, __testSink(arg), "foo" }
+
+      def set_index(arg):
+          set = { 1, arg, "foo" }
+          return set[2]
+
+      def set_unknown_index(arg, index):
+          set = { 1, arg, "foo" }
+          return set[index]
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_set";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.set_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.set_unknown_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -864,5 +899,6 @@ let () =
     "test_comprehensions">::test_comprehensions;
     "test_list">::test_list;
     "test_lambda">::test_lambda;
+    "test_set">::test_set;
   ]
   |> Test.run_with_taint_models
