@@ -202,6 +202,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             BackwardState.assign_tree_path [field] ~tree:BackwardState.empty_tree ~subtree:taint
           in
           analyze_normalized_expression ~resolution state taint expression
+      | Index { expression; index; _ } ->
+          let taint = BackwardState.create_tree [index] taint in
+          analyze_normalized_expression ~resolution state taint expression
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state taint
       | Expression expression ->
@@ -212,11 +215,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
 
     and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value; } =
-      let field_name =
-        match key.Node.value with
-        | String literal -> AccessPathTree.Label.Field (Identifier.create literal.value)
-        | _ -> AccessPathTree.Label.Any
-      in
+      let field_name = AccessPath.get_index key in
       let value_taint = BackwardState.read_tree [field_name] taint in
       analyze_expression ~resolution value_taint value state
 

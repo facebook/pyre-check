@@ -53,17 +53,48 @@ type normalized_expression =
       callee: normalized_expression;
       arguments: Argument.t list Node.t;
     }
+  | Index of {
+      expression: normalized_expression;
+      index: AccessPathTree.Label.t;
+      original: Identifier.t;
+      arguments: ((Expression.t Argument.record) list) Node.t;
+    }
   | Global of Identifier.t list
   | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
 
 
+let is_get_item member =
+  Identifier.show member = "__getitem__"
+
+
+let get_index { Node.value = expression; _ } =
+  match expression with
+  | String literal ->
+      AccessPathTree.Label.Field (Identifier.create literal.value)
+  | Integer i ->
+      AccessPathTree.Label.Field (Identifier.create (string_of_int i))
+  | _ ->
+      AccessPathTree.Label.Any
+
 let normalize_access_list left = function
   | Access.Identifier member ->
       Access { expression = left; member }
+  | Access.Call ({ value = [argument]; _ } as arguments) -> begin
+      match left with
+      | Access { expression; member } when is_get_item member ->
+          Index {
+            expression;
+            index = get_index argument.value;
+            original = member;
+            arguments;
+          }
+      | _ ->
+          Call { callee = left; arguments }
+    end
   | Access.Call arguments ->
-      Call { callee = left; arguments = arguments }
+      Call { callee = left; arguments }
   | Access.Expression _ ->
       failwith "invalid expr in access (not in root position)"
 
@@ -117,6 +148,9 @@ let rec as_access = function
   | Access { expression; member; } ->
       let left = as_access expression in
       left @ [Access.Identifier member]
+  | Index { expression; original; arguments; _ } ->
+      let left = as_access expression in
+      left @ [ Access.Identifier original; Access.Call arguments ]
 
 
 let to_json { root; path; } =

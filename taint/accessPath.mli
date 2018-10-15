@@ -28,12 +28,19 @@ val of_accesses: Access.t -> t option
 
 val of_expression: Expression.t -> t option
 
+val get_index: Expression.t -> AccessPathTree.Label.t
 
 type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
   | Call of {
       callee: normalized_expression;
       arguments: Argument.t list Node.t;
+    }
+  | Index of {
+      expression: normalized_expression;
+      index: AccessPathTree.Label.t;
+      original: Identifier.t;
+      arguments: ((Expression.t Argument.record) list) Node.t;
     }
   | Global of Identifier.t list
   | Local of Identifier.t

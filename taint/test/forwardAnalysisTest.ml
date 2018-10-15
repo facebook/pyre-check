@@ -448,10 +448,50 @@ let test_dictionary _ =
         return {
           "a": __testSource(),
         }
+
+      def dictionary_same_index():
+        dict = {
+          "a": __testSource(),
+        }
+        return dict["a"]
+
+      def dictionary_different_index():
+        dict = {
+          "a": __testSource(),
+        }
+        return dict["b"]
+
+      def dictionary_unknown_read_index(index):
+        dict = {
+          "a": __testSource(),
+        }
+        return dict[index]
+
+      def dictionary_unknown_write_index(index):
+        dict = {
+          index: __testSource(),
+        }
+        return dict["a"]
     |}
     [
       {
         define_name = "qualifier.dictionary_source";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.dictionary_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.dictionary_different_index";
+        returns = [];
+      };
+      {
+        define_name = "qualifier.dictionary_unknown_read_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.dictionary_unknown_write_index";
         returns = [Sources.Test];
       };
     ]

@@ -109,7 +109,7 @@ module Label = struct
   type t =
     | Field of Identifier.t
     | Any
-  [@@deriving compare, sexp, hash]
+  [@@deriving show, compare, sexp, hash]
 
   let show = function
     | Field f -> Format.sprintf "[%s]" (Identifier.show f)

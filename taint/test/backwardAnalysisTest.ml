@@ -682,6 +682,30 @@ let test_dictionary _ =
         return {
           "a": arg,
         }
+
+      def dictionary_same_index(arg):
+        dict = {
+          "a": arg,
+        }
+        return dict["a"]
+
+      def dictionary_different_index(arg):
+        dict = {
+          "a": arg,
+        }
+        return dict["b"]
+
+      def dictionary_unknown_read_index(arg, index):
+        dict = {
+          "a": arg,
+        }
+        return dict[index]
+
+      def dictionary_unknown_write_index(arg, index):
+        dict = {
+          index: arg,
+        }
+        return dict["a"]
     |}
     [
       {
@@ -693,6 +717,26 @@ let test_dictionary _ =
       };
       {
         define_name = "qualifier.dictionary_tito";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.dictionary_same_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.dictionary_different_index";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.dictionary_unknown_read_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.dictionary_unknown_write_index";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };

@@ -60,7 +60,7 @@ module Label: sig
   type t =
     | Field of Identifier.t
     | Any
-  [@@deriving compare, sexp, hash]
+  [@@deriving show, compare, sexp, hash]
   val show: t -> string
 
   type path = t list
