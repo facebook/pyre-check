@@ -164,6 +164,13 @@ let rules = [
     name = "Cookies being logged.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.XMLParser ];
+    code = 5007;
+    name = "User data to XML Parser.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

@@ -11,6 +11,7 @@ type t =
   | SQL
   | Test
   | Thrift
+  | XMLParser
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t

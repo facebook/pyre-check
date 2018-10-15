@@ -11,6 +11,7 @@ type t =
   | SQL
   | Test
   | Thrift
+  | XMLParser
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -21,6 +22,7 @@ let show = function
   | SQL -> "SQL"
   | Thrift -> "Thrift"
   | Test -> "Test"
+  | XMLParser -> "XMLParser"
 
 
 let create = function
@@ -30,4 +32,5 @@ let create = function
   | "SQL" -> SQL
   | "Test" -> Test
   | "Thrift" -> Thrift
+  | "XMLParser" -> XMLParser
   | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)
