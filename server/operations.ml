@@ -125,14 +125,17 @@ let start
     ~lock
     ~connections
     ~configuration:({
-        Configuration.Server.configuration;
+        Configuration.Server.configuration =
+          ({ Configuration.Analysis.expected_version; _ } as configuration);
         saved_state;
         _;
       } as server_configuration)
     () =
   let ({ State.errors; _ } as state) =
-    match saved_state with
-    | Some (Load _) ->
+    let matches_configuration_version =  Some (Version.version ()) = expected_version in
+    match saved_state, matches_configuration_version with
+    | Some (Load (LoadFromProject _)), true
+    | Some (Load (LoadFromFiles _)), _ ->
         begin
           try
             let timer = Timer.start () in
