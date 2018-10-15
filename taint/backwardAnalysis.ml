@@ -225,12 +225,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let value_taint = BackwardState.read_tree [index_name] taint in
       analyze_expression ~resolution value_taint expression state
 
-    and analyze_list_comprehension
-        ~resolution
-        taint
-        { Comprehension.element; generators; _ }
-        state
-      =
+    and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
       let element_taint = BackwardState.read_tree [AccessPathTree.Label.Any] taint in
       let state = analyze_expression ~resolution element_taint element state in
       let handle_generator state { Comprehension.target; iterator; _ } =
@@ -277,15 +272,16 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~f:(analyze_reverse_list_element ~total ~resolution taint)
             list
             ~init:state
-      | ListComprehension list_comprehension ->
-          analyze_list_comprehension ~resolution taint list_comprehension state
+      | ListComprehension comprehension ->
+          analyze_comprehension ~resolution taint comprehension state
       | Set set ->
           let element_taint = BackwardState.read_tree [AccessPathTree.Label.Any] taint in
           List.fold
             ~f:(Fn.flip (analyze_expression ~resolution element_taint))
             ~init:state
             set
-      | SetComprehension _
+      | SetComprehension comprehension ->
+          analyze_comprehension ~resolution taint comprehension state
       | Starred _
       | String _
       | Ternary _
