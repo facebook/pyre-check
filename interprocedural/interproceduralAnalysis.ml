@@ -165,10 +165,11 @@ let widen_if_necessary step callable new_model result =
           (Callable.show callable)
           (show_models new_model)
       in
-      let model = Result.{
-        models = new_model;
-        is_obscure = false;
-      }
+      let model =
+        Result.{
+          models = new_model;
+          is_obscure = false;
+        }
       in
       Fixpoint.{ is_partial = true; model; result; }
   | Some old_model ->
@@ -441,19 +442,23 @@ let compute_fixpoint
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
      components. *)
   let max_iterations = 100 in
-  let total_callables = List.length all_callables in
   let rec iterate ~iteration callables_to_analyze =
-    let num_callables = List.length callables_to_analyze in
+    let number_of_callables = List.length callables_to_analyze in
     let () =
       let witnesses =
-        if num_callables <= 6 then
+        if number_of_callables <= 6 then
           String.concat ~sep:", " (List.map ~f:Callable.show callables_to_analyze)
         else
           "..."
       in
-      Log.log ~section:`Info "Iteration #%d. %d Callables [%s]" iteration num_callables witnesses
+      Log.log
+        ~section:`Info
+        "Iteration #%d. %d Callables [%s]"
+        iteration
+        number_of_callables
+        witnesses
     in
-    if num_callables = 0 then
+    if number_of_callables = 0 then
       (* Fixpoint. *)
       iteration
     else if iteration >= max_iterations then
@@ -486,7 +491,7 @@ let compute_fixpoint
             ~section:`Progress
             "Processed %d of %d callables"
             callables_processed
-            total_callables
+            number_of_callables
         in
         callables_processed
       in
@@ -513,7 +518,7 @@ let compute_fixpoint
       let elapsed = time_f -. time_0 |> Unix.gmtime in
       let () =
         Log.log ~section:`Info "Iteration #%n, %d callables, heap size %n took %nm %02ds"
-          iteration num_callables hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
+          iteration number_of_callables hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
