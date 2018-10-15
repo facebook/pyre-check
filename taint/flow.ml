@@ -150,6 +150,20 @@ let rules = [
     name = "Thrift return data to remote code execution.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.SQL ];
+    code = 5005;
+    name = "User controlled data to SQL execution.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
+  {
+    sources = [ Sources.Cookies ];
+    sinks = [ Sinks.Logging ];
+    code = 5006;
+    name = "Cookies being logged.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

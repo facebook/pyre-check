@@ -7,6 +7,7 @@ open Core
 
 
 type t =
+  | Cookies
   | Test
   | Thrift
   | UserControlled
@@ -14,12 +15,14 @@ type t =
 
 
 let show = function
+  | Cookies -> "Cookies"
   | Test -> "Test"
   | Thrift -> "Thrift"
   | UserControlled -> "UserControlled"
 
 
 let create = function
+  | "Cookies" -> Cookies
   | "Test" -> Test
   | "Thrift" -> Thrift
   | "UserControlled" -> UserControlled

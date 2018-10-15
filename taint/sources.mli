@@ -5,6 +5,7 @@
 
 
 type t =
+  | Cookies
   | Test
   | Thrift
   | UserControlled
