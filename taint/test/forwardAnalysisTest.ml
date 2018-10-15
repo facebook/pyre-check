@@ -497,6 +497,65 @@ let test_dictionary _ =
     ]
 
 
+let test_comprehensions _ =
+  assert_taint
+    {|
+      def source_in_iterator():
+          return [ x for x in __testSource() ]
+
+      def source_in_expression(data):
+          return [ __testSource() for x in data ]
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_iterator";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_expression";
+        returns = [Sources.Test];
+      };
+    ]
+
+
+let test_list _ =
+  assert_taint
+    {|
+      def source_in_list():
+          return [ 1, __testSource(), "foo" ]
+
+      def list_same_index():
+          list = [ 1, __testSource(), "foo" ]
+          return list[1]
+
+      def list_different_index():
+          list = [ 1, __testSource(), "foo" ]
+          return list[2]
+
+      def list_unknown_index(index):
+          list = [ 1, __testSource(), "foo" ]
+          return list[index]
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_list";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_different_index";
+        returns = [];
+      };
+      {
+        define_name = "qualifier.list_unknown_index";
+        returns = [Sources.Test];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -508,5 +567,7 @@ let () =
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
     "test_union">::test_taint_in_taint_out_application;
     "test_dictionary">::test_dictionary;
+    "test_comprehensions">::test_comprehensions;
+    "test_list">::test_list;
   ]
   |> Test.run_with_taint_models

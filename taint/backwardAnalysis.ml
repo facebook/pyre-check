@@ -219,6 +219,32 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let value_taint = BackwardState.read_tree [field_name] taint in
       analyze_expression ~resolution value_taint value state
 
+    and analyze_reverse_list_element ~total ~resolution taint reverse_position state expression =
+      let position = total - reverse_position - 1 in
+      let index_name = AccessPathTree.Label.Field (Identifier.create (string_of_int position)) in
+      let value_taint = BackwardState.read_tree [index_name] taint in
+      analyze_expression ~resolution value_taint expression state
+
+    and analyze_list_comprehension
+        ~resolution
+        taint
+        { Comprehension.element; generators; _ }
+        state
+      =
+      let element_taint = BackwardState.read_tree [AccessPathTree.Label.Any] taint in
+      let state = analyze_expression ~resolution element_taint element state in
+      let handle_generator state { Comprehension.target; iterator; _ } =
+        let access_path = of_expression target in
+        let bound_variable_taint = get_taint access_path state in
+        let iterator_taint =
+          BackwardState.create_tree
+            [AccessPathTree.Label.Any]
+            bound_variable_taint
+        in
+        analyze_expression ~resolution iterator_taint iterator state
+      in
+      List.fold ~f:handle_generator generators ~init:state
+
     and analyze_expression ~resolution taint { Node.value = expression; _ } state =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
@@ -241,9 +267,16 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Float _
       | Generator _
       | Integer _
-      | Lambda _
-      | List _
-      | ListComprehension _
+      | Lambda _ ->
+          state
+      | List list ->
+          let total = List.length list in
+          List.foldi
+            ~f:(analyze_reverse_list_element ~total ~resolution taint)
+            list
+            ~init:state
+      | ListComprehension list_comprehension ->
+          analyze_list_comprehension ~resolution taint list_comprehension state
       | Set _
       | SetComprehension _
       | Starred _

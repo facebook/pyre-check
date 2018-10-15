@@ -293,6 +293,17 @@ let test_fixpoint _ =
         taint = x.method_source()
         x.taint = taint
         x.receiver_sink(5)
+
+      def list_sink(list):
+        __testSink(list[1])
+
+      def list_match():
+        x = [5, __testSource()]
+        list_sink(x)
+
+      def no_list_match():
+        x = [__testSource(), 5]
+        list_sink(x)
       |}
     ~expect:{
       iterations = 4;
@@ -383,7 +394,35 @@ let test_fixpoint _ =
           taint_sink_parameters = [];
           tito_parameters = [];
           errors = [];
-        }
+        };
+        {
+          define_name = "list_sink";
+          returns = [];
+          taint_sink_parameters = [
+            { position = 0; sinks = [Taint.Sinks.Test] }
+          ];
+          tito_parameters = [];
+          errors = [];
+        };
+        {
+          define_name = "no_list_match";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [];
+        };
+        {
+          define_name = "list_match";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [
+            {
+              code = 5002;
+              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
+            };
+          ]
+        };
       ]
     }
 

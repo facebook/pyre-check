@@ -137,7 +137,7 @@ let assert_taint source expected =
     assert_equal
       (Map.length expected_sinks)
       (Map.length taint_map)
-      ~msg:"Not all tainted parameters specified.";
+      ~msg:(Format.sprintf "Define %s: Not all tainted parameters specified." define_name);
     Int.Map.iter2 ~f:check_each_sink_position expected_sinks taint_map;
 
     let expected_tito = Int.Set.of_list tito_parameters in
@@ -743,6 +743,85 @@ let test_dictionary _ =
     ]
 
 
+let test_comprehensions _ =
+  assert_taint
+    {|
+      def sink_in_iterator(arg):
+          [ x for x in __testSink(arg) ]
+
+      def sink_in_expression(data):
+          [ __testSink(x) for x in data ]
+
+      def tito(data):
+          return [x for x in data ]
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_iterator";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_expression";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
+let test_list _ =
+  assert_taint
+    {|
+      def sink_in_list(arg):
+          return [ 1, __testSink(arg), "foo" ]
+
+      def list_same_index(arg):
+          list = [ 1, arg, "foo" ]
+          return list[1]
+
+      def list_different_index(arg):
+          list = [ 1, arg, "foo" ]
+          return list[2]
+
+      def list_unknown_index(arg, index):
+          list = [ 1, arg, "foo" ]
+          return list[index]
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_list";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.list_same_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.list_different_index";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.list_unknown_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -755,8 +834,8 @@ let () =
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_seqential_call_path">::test_sequential_call_path;
     "test_chained_call_path">::test_chained_call_path;
-    "test_nested_call_path">::test_nested_call_path;
     "test_dictionary">::test_dictionary;
-    "test_nested_call_path">::test_nested_call_path;
+    "test_comprehensions">::test_comprehensions;
+    "test_list">::test_list;
   ]
   |> Test.run_with_taint_models
