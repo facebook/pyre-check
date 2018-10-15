@@ -78,7 +78,11 @@ type result_pkg = result pkg
 type model_pkg = model pkg
 
 
-type model_t = model_pkg Kind.Map.t
+type model_t = {
+  models: model_pkg Kind.Map.t;
+  is_obscure: bool;
+}
+
 type result_t = result_pkg Kind.Map.t
 
 
@@ -252,9 +256,9 @@ let get (type part a)
   apply_to_partial_kind partial_kind { f = get }
 
 
-let get_model kind models =
+let get_model kind model =
   let kind = Kind.cast kind in
-  get (ModelPart kind) models
+  get (ModelPart kind) model.models
 
 
 let get_result kind results =
@@ -262,12 +266,26 @@ let get_result kind results =
   get (ResultPart kind) results
 
 
-let empty_model = Kind.Map.empty
+let empty_model = {
+  models = Kind.Map.empty;
+  is_obscure = false;
+}
+
+
+let obscure_model = {
+  models = Kind.Map.empty;
+  is_obscure = true;
+}
+
+
 let empty_result = Kind.Map.empty
 
 
-let with_model kind model models =
+let with_model kind analysis_model overall_model =
   let kind = Kind.cast kind in
-  let model = Pkg { kind = ModelPart kind; value = model }
+  let package = Pkg { kind = ModelPart kind; value = analysis_model }
   in
-  Kind.Map.add (Kind.abstract kind) model models
+  {
+    overall_model with
+    models = Kind.Map.add (Kind.abstract kind) package overall_model.models;
+  }

@@ -89,12 +89,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution location arguments state call_taint call_targets =
       let analyze_call_target call_target =
-        let existing_model =
-          Interprocedural.Fixpoint.get_model call_target
-          >>= Interprocedural.Result.get_model TaintResult.kind
+        let is_obscure, taint_model =
+          match Interprocedural.Fixpoint.get_model call_target with
+          | None -> true, None
+          | Some model ->
+              model.is_obscure, Interprocedural.Result.get_model TaintResult.kind model
         in
-        match existing_model with
-        | Some { backward; _ } ->
+        match taint_model with
+        | Some { backward; _ } when not is_obscure ->
             let collapsed_call_taint = BackwardState.collapse call_taint in
             let reversed_arguments = List.rev arguments in
             let number_of_arguments = List.length arguments in
@@ -117,13 +119,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               analyze_argument ~resolution argument_taint argument state
             in
             List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
-        | None ->
-            Log.log
-              ~section:`Taint
-              "No model found for %a"
-              Interprocedural.Callable.pp call_target;
-            (* If we don't have a model: assume function propagates argument
-               taint to result. *)
+        | _ ->
+            (* obscure or no model *)
             List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
       in
       match call_targets with

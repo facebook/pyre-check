@@ -85,17 +85,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution location arguments state call_targets =
       let apply_call_target call_target =
-        let existing_model =
-          Interprocedural.Fixpoint.get_model call_target
-          >>= Interprocedural.Result.get_model TaintResult.kind
+        let is_obscure, taint_model =
+          match Interprocedural.Fixpoint.get_model call_target with
+          | None -> true, None
+          | Some model ->
+              model.is_obscure, Interprocedural.Result.get_model TaintResult.kind model
         in
-        match existing_model with
-        | Some ({ forward; backward; _ } as model) ->
-            Log.log
-              ~section:`Taint
-              "Model for %a:\n%a\n"
-              Interprocedural.Callable.pp call_target
-              TaintResult.pp_call_model model;
+        match taint_model with
+        | Some { TaintResult.forward; backward; _ } when not is_obscure ->
             let analyze_argument_position position tito { Argument.value = argument; _ } =
               let { Node.location; _ } = argument in
               let argument_taint = analyze_expression ~resolution argument state in
@@ -133,17 +130,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               |> ForwardState.apply_call location ~callees:[ call_target ] ~port:Root.LocalResult
             in
             ForwardState.join_root_element result_taint tito
-        | None ->
-            Log.log
-              ~section:`Taint
-              "No model for %a"
-              Interprocedural.Callable.pp call_target;
-            (* If we don't have a model: assume function propagates argument
-               taint (join all argument taint) *)
-            List.fold
-              arguments
-              ~init:ForwardState.empty_tree
-              ~f:(analyze_argument ~resolution state)
+        | _ ->
+          (* Obscure/no model. *)
+          List.fold arguments ~init:ForwardState.empty_tree ~f:(analyze_argument ~resolution state)
       in
       match call_targets with
       | [] ->

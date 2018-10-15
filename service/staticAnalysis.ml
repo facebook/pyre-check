@@ -64,7 +64,7 @@ let record_overrides ~environment ~source =
 
 
 let record_path_of_definitions ~path ~source =
-  let defines = Preprocessing.defines source in
+  let defines = Preprocessing.defines ~include_stubs:true source in
   let record_definition definition =
     let open Interprocedural.Callable in
     add_definition (create definition) path
@@ -158,15 +158,22 @@ let analyze
   let caller_map = CallGraph.reverse call_graph in
 
   let all_callables =
-    let make_callables path =
-      (* Ignore stubs. *)
-      if File.Handle.is_stub path then
+    let record_initial_model define =
+      let callable = Interprocedural.Callable.create define in
+      let open Interprocedural in
+      if Define.is_stub define.Node.value then
+        let () = Fixpoint.add_predefined callable Result.obscure_model in
         None
       else
-        Ast.SharedMemory.Sources.get path
-        >>| fun source ->
-        record_path_of_definitions ~path ~source
-        |> List.map ~f:Interprocedural.Callable.create
+        let () = Fixpoint.add_predefined callable Result.empty_model in
+        Some callable
+    in
+    let make_callables path =
+      (* Include stubs to make them obscure summaries. *)
+      Ast.SharedMemory.Sources.get path
+      >>| fun source ->
+      record_path_of_definitions ~path ~source
+      |> List.filter_map ~f:record_initial_model
     in
     List.filter_map paths ~f:make_callables
     |> List.concat

@@ -69,7 +69,11 @@ type 'part pkg = Pkg: {
 type result_pkg = result pkg
 type model_pkg = model pkg
 
-type model_t = model_pkg Kind.Map.t
+type model_t = {
+  models: model_pkg Kind.Map.t;
+  is_obscure: bool;
+}
+
 type result_t = result_pkg Kind.Map.t
 
 module type ANALYZER = sig
@@ -146,6 +150,7 @@ module Make(Analysis : ANALYSIS_PROVIDED): ANALYSIS_RESULT_WITH_REGISTRATION
    and type call_model := Analysis.call_model
 
 val empty_model: model_t
+val obscure_model: model_t
 val empty_result: result_t
 
 val get: ('part, 'value) partial_kind -> 'part pkg Kind.Map.t -> 'value option
@@ -153,7 +158,7 @@ val get_model: ('result, 'model) analysis_data Kind.kind -> model_t -> 'model op
 val with_model:
   ('result, 'model) analysis_data Kind.kind
   -> 'model
-  -> model pkg Kind.Map.t
-  -> model pkg Kind.Map.t
+  -> model_t
+  -> model_t
 
 val get_result: ('result, 'model) analysis_data Kind.kind -> result_t -> 'result option

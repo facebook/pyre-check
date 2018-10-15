@@ -49,7 +49,12 @@ let get_obscure_models analyses =
     Kind.Map.add (Kind.abstract kind) (Result.Pkg { kind = ModelPart kind; value = obscure_model; })
       map
   in
-  List.fold ~f:get_analysis_specific_obscure_model ~init:Kind.Map.empty analyses
+  let models = List.fold ~f:get_analysis_specific_obscure_model ~init:Kind.Map.empty analyses in
+  Result.{
+    models;
+    is_obscure = true;
+  }
+
 
 
 let non_fixpoint_witness
@@ -160,10 +165,15 @@ let widen_if_necessary step callable new_model result =
           (Callable.show callable)
           (show_models new_model)
       in
-      Fixpoint.{ is_partial = true; model = new_model; result; }
+      let model = Result.{
+        models = new_model;
+        is_obscure = false;
+      }
+      in
+      Fixpoint.{ is_partial = true; model; result; }
   | Some old_model ->
       if reached_fixpoint ~iteration:step.Fixpoint.iteration
-          ~previous:old_model ~next:new_model then
+          ~previous:old_model.models ~next:new_model then
         Fixpoint.{ is_partial = false; model = old_model; result }
       else
         let () =
@@ -173,10 +183,18 @@ let widen_if_necessary step callable new_model result =
             (Callable.show callable)
             (show_models new_model)
         in
+        let model = Result.{
+            models =
+              widen
+                ~iteration:step.Fixpoint.iteration
+                ~previous:old_model.models
+                ~next:new_model;
+            is_obscure = false;
+          }
+        in
         Fixpoint.{
           is_partial = true;
-          model =
-            widen ~iteration:step.Fixpoint.iteration ~previous:old_model ~next:new_model;
+          model;
           result;
         }
 
@@ -273,6 +291,8 @@ let analyze_callable analyses step callable environment =
                 Log.log ~section:`Interprocedural "%s" message;
                 failwith message
             in
+            Log.dump "Making %s obscure"
+              (Callable.show callable);
             Fixpoint.{
               is_partial = false;
               model = get_obscure_models analyses;
@@ -325,9 +345,9 @@ let externalize_all_analyses callable models results =
 
 let externalize callable =
   match Fixpoint.get_model callable with
-  | Some models ->
+  | Some model ->
       let results = Fixpoint.get_result callable in
-      externalize_all_analyses callable models results
+      externalize_all_analyses callable model.models results
   | None ->
       []
 

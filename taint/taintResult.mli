@@ -31,6 +31,8 @@ type call_model = {
 }
 [@@deriving show, sexp]
 
+val empty_model: call_model
+
 type result = Flow.issue list
 
 include Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION

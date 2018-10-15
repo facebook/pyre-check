@@ -40,7 +40,7 @@ let assert_taint source expected =
   TypeCheck.check configuration environment source |> ignore;
   let defines =
     source
-    |> Preprocessing.defines
+    |> Preprocessing.defines ~include_stubs:true
     |> List.rev
   in
   let () =
