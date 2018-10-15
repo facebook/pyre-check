@@ -24,7 +24,7 @@ val create_configuration :
   ?daemonize: bool ->
   ?log_path: PyrePath.t ->
   ?use_watchman: bool ->
-  ?saved_state: Configuration.Server.saved_state ->
+  ?saved_state_action: Configuration.Server.saved_state_action ->
   Configuration.Analysis.t ->
   Configuration.Server.t
 

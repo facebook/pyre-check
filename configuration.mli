@@ -72,7 +72,7 @@ module Server: sig
     | LoadFromFiles of load_parameters
     | LoadFromProject of string
 
-  type saved_state =
+  type saved_state_action =
     | Save of string
     | Load of load
 
@@ -86,7 +86,7 @@ module Server: sig
     daemonize: bool;
     use_watchman: bool;
     watchman_creation_timeout: float;
-    saved_state: saved_state option;
+    saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;
   }

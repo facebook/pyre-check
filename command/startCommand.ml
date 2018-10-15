@@ -620,7 +620,7 @@ let run_start_command
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
-  let saved_state =
+  let saved_state_action =
     match save_state_to, saved_state_project with
     | Some path, _ ->
         Some (Configuration.Server.Save path)
@@ -647,7 +647,7 @@ let run_start_command
        ~daemonize:(not terminal)
        ~use_watchman
        ?log_path
-       ?saved_state
+       ?saved_state_action
        configuration)
   |> ignore
 

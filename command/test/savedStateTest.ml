@@ -46,7 +46,7 @@ let test_saved_state context =
   (* Spawn a server that saves its state on initialization. *)
   let server_configuration =
     Operations.create_configuration
-      ~saved_state:(Configuration.Server.Save saved_state_path)
+      ~saved_state_action:(Configuration.Server.Save saved_state_path)
       configuration
   in
   let _ = Commands.Start.run server_configuration in
@@ -67,7 +67,7 @@ let test_saved_state context =
 
   (* A server loads from the saved state successfully. *)
   let server_configuration =
-    let saved_state =
+    let saved_state_action =
       let changed_files_path =
         Test.write_file ("changed_files", "")
         |> File.path
@@ -78,7 +78,7 @@ let test_saved_state context =
             changed_files_path;
           })
     in
-    Operations.create_configuration ~saved_state configuration
+    Operations.create_configuration ~saved_state_action configuration
   in
   let _ = Commands.Start.run server_configuration in
 
@@ -97,7 +97,7 @@ let test_saved_state context =
   assert_equal expected_response query_response;
   (* Errors are preserved when loading from a saved state. *)
   let _ =
-    let saved_state =
+    let saved_state_action =
       let changed_files_path =
         Test.write_file ("changed_files", "")
         |> File.path
@@ -109,7 +109,7 @@ let test_saved_state context =
           })
     in
     Commands.Start.run
-      (Operations.create_configuration ~saved_state configuration)
+      (Operations.create_configuration ~saved_state_action configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
   Network.Socket.write socket (Request.FlushTypeErrorsRequest);
@@ -126,7 +126,7 @@ let test_saved_state context =
   (* The server reanalyzed changed files when they are passed in and banishes errors. *)
   write_content ~root:local_root ~filename:"a.py" "x = 1";
   let _ =
-    let saved_state =
+    let saved_state_action =
       let changed_files_path =
         Test.write_file
           ("changed_files",
@@ -140,7 +140,7 @@ let test_saved_state context =
           })
     in
     Commands.Start.run
-      (Operations.create_configuration ~saved_state configuration)
+      (Operations.create_configuration ~saved_state_action configuration)
   in
   let socket = Operations.connect ~retries:3 ~configuration in
   Network.Socket.write socket (Request.FlushTypeErrorsRequest);
@@ -170,7 +170,7 @@ let test_invalid_configuration context =
   (* Generate a saved state. *)
   let server_configuration =
     Operations.create_configuration
-      ~saved_state:(Configuration.Server.Save saved_state_path)
+      ~saved_state_action:(Configuration.Server.Save saved_state_path)
       configuration
   in
   let _ = Commands.Start.run server_configuration in
@@ -194,7 +194,7 @@ let test_invalid_configuration context =
     }
   in
   (* Trying to load from an incompatible configuration raises an exception. *)
-  let saved_state =
+  let saved_state_action =
     let changed_files_path =
       Test.write_file ("changed_files", "")
       |> File.path
@@ -211,7 +211,7 @@ let test_invalid_configuration context =
        Server.SavedState.load
          ~server_configuration:(
            Operations.create_configuration
-             ~saved_state
+             ~saved_state_action
              incompatible_configuration)
          ~lock:(Mutex.create ())
          ~connections)

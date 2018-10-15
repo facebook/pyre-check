@@ -21,13 +21,13 @@ let load
         project_root;
         _;
       } as configuration);
-    saved_state;
+    saved_state_action;
     _;
   }
     ~lock
     ~connections =
   let shared_memory_path, changed_files =
-    match saved_state with
+    match saved_state_action with
     | Some (Load (LoadFromFiles parameters)) ->
         let { Configuration.Server.shared_memory_path; changed_files_path } = parameters in
         let files =

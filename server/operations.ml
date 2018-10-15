@@ -50,7 +50,7 @@ let create_configuration
     ?(daemonize = true)
     ?log_path
     ?(use_watchman = false)
-    ?saved_state
+    ?saved_state_action
     configuration =
   let server_root = Service.Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
@@ -66,7 +66,7 @@ let create_configuration
     daemonize;
     use_watchman;
     watchman_creation_timeout = 5.0 (* Seconds. *);
-    saved_state;
+    saved_state_action;
     configuration;
   }
 
@@ -127,13 +127,13 @@ let start
     ~configuration:({
         Configuration.Server.configuration =
           ({ Configuration.Analysis.expected_version; _ } as configuration);
-        saved_state;
+        saved_state_action;
         _;
       } as server_configuration)
     () =
   let ({ State.errors; _ } as state) =
     let matches_configuration_version =  Some (Version.version ()) = expected_version in
-    match saved_state, matches_configuration_version with
+    match saved_state_action, matches_configuration_version with
     | Some (Load (LoadFromProject _)), true
     | Some (Load (LoadFromFiles _)), _ ->
         begin
@@ -156,7 +156,7 @@ let start
         start_from_scratch ?old_state ~lock ~connections ~configuration ()
   in
   begin
-    match saved_state with
+    match saved_state_action with
     | Some (Save saved_state_path) ->
         SavedState.save ~configuration ~errors ~saved_state_path
     | _ ->
