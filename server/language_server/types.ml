@@ -518,7 +518,7 @@ module ClientCapabilities = struct
           [@key "didSave"]
           [@default None];
     }
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
 
     type completion_item = {
       snippet_support: bool option
@@ -544,7 +544,7 @@ module ClientCapabilities = struct
           [@key "contextSupport"]
           [@default None];
     }
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
 
     type publish_diagnostics = {
       related_information: bool option
@@ -615,7 +615,7 @@ module ClientCapabilities = struct
           [@key "publishDiagnostics"]
           [@default None];
     }
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
   end
 
 
@@ -631,7 +631,7 @@ module ClientCapabilities = struct
           [@key "status"]
           [@default None];
     }
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
   end
 
 
@@ -663,7 +663,7 @@ module ClientCapabilities = struct
           [@default None]
     }
     and experimental = AnyExperimental.t
-    [@@deriving of_yojson]
+    [@@deriving of_yojson { strict = false }]
   end
 end
 

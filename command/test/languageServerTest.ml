@@ -394,6 +394,33 @@ let test_initialize_request_parses _ =
      ]
    }
   }
+  |};
+  (* Handle non-existent fields. *)
+  assert_parses {|
+  {
+    "jsonrpc": "2.0",
+    "id": 0,
+    "method": "initialize",
+    "params": {
+      "processId": 2160986,
+      "rootPath": "/repo/path",
+      "rootUri": "file:///repo/path",
+      "capabilities": {
+        "workspace": {
+          "zorpThree": true
+        },
+        "textDocument": {
+          "zorp": true
+        },
+        "window": {
+          "zorpTwo": true
+        },
+        "unknownCapability": {}
+      },
+      "initializationOptions": {},
+      "trace": "verbose"
+    }
+  }
   |}
 
 
