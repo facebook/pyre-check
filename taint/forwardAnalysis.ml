@@ -11,7 +11,6 @@ open Expression
 open Pyre
 open Statement
 open Domains
-open AccessPath
 
 
 module type FixpointState = sig
@@ -74,7 +73,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let store_taint_option access_path taint state =
       match access_path with
-      | Some { root; path } -> store_taint ~root ~path taint state
+      | Some { AccessPath.root; path } -> store_taint ~root ~path taint state
       | None -> state
 
 
@@ -127,7 +126,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let result_taint =
               ForwardState.read AccessPath.Root.LocalResult forward.source_taint
-              |> ForwardState.apply_call location ~callees:[ call_target ] ~port:Root.LocalResult
+              |> ForwardState.apply_call
+                location
+                ~callees:[call_target]
+                ~port:AccessPath.Root.LocalResult
             in
             ForwardState.join_root_element result_taint tito
         | _ ->
@@ -148,12 +150,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
-      | Global access ->
+      | AccessPath.Global access ->
           let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets ~resolution location arguments state [call_target]
-      | Access { expression; member = method_name } ->
-          let access = as_access expression in
+      | AccessPath.Access { expression; member = method_name } ->
+          let access = AccessPath.as_access expression in
           let arguments =
             let receiver = {
               Argument.name = None;
@@ -212,7 +214,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         >>= Interprocedural.Result.get_model TaintResult.kind
         |> function
         | Some { forward = { source_taint }; _ } ->
-            ForwardState.read Root.LocalResult source_taint
+            ForwardState.read AccessPath.Root.LocalResult source_taint
         | _ ->
             ForwardState.empty_tree
       in
@@ -221,7 +223,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let attribute_taint =
             let annotations =
               let annotation =
-                as_access expression
+                AccessPath.as_access expression
                 |> Access.expression
                 |> Resolution.resolve resolution
               in
@@ -263,7 +265,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~section:`Taint
             "Analyzing identifier: %a"
             Identifier.pp identifier;
-          ForwardState.read_access_path ~root:(Root.Variable identifier) ~path:[] state.taint
+          ForwardState.read_access_path
+            ~root:(AccessPath.Root.Variable identifier)
+            ~path:[]
+            state.taint
 
     and analyze_dictionary_entry ~resolution state taint { Dictionary.key; value; } =
       let field_name =
@@ -292,7 +297,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution iterator state
           |> ForwardState.read_tree [AccessPathTree.Label.Any]
         in
-        let access_path = of_expression target in
+        let access_path = AccessPath.of_expression target in
         store_taint_option access_path taint state
       in
       let bound_state = List.fold ~f:add_binding generators ~init:state in
@@ -302,7 +307,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_expression ~resolution expression state =
       match expression.Node.value with
       | Access access ->
-          normalize_access access
+          AccessPath.normalize_access access
           |> analyze_normalized_expression ~resolution state
       | Await expression ->
           analyze_expression ~resolution expression state
@@ -382,7 +387,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution value state in
-          let access_path = of_expression target in
+          let access_path = AccessPath.of_expression target in
           store_taint_option access_path taint state
       | Assert _
       | Break
@@ -405,7 +410,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Raise _ -> state
       | Return { expression = Some expression; _ } ->
           let taint = analyze_expression ~resolution expression state in
-          store_taint ~root:Root.LocalResult ~path:[] taint state
+          store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
       | Return { expression = None; _ }
       | Try _
       | With _
@@ -425,8 +430,8 @@ end
 
 
 let extract_source_model _parameters exit_taint =
-  let return_taint = ForwardState.read Root.LocalResult exit_taint in
-  ForwardState.assign ~root:Root.LocalResult ~path:[] return_taint ForwardState.empty
+  let return_taint = ForwardState.read AccessPath.Root.LocalResult exit_taint in
+  ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
 let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as define) =
