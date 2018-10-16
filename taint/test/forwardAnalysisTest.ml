@@ -183,6 +183,20 @@ let test_hardcoded_source _ =
       };
     ];
   assert_taint
+    ~models:{|
+      os.environ: TaintSource[UserControlled] = ...
+    |}
+    {|
+      def get_environment_variable():
+        return os.environ
+    |}
+    [
+      {
+        define_name = "qualifier.get_environment_variable";
+        returns = [Sources.UserControlled];
+      };
+    ];
+  assert_taint
     {|
       class Request(django.http.Request): ...
 

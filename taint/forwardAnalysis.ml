@@ -206,6 +206,16 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and analyze_normalized_expression ~resolution state expression =
+      let global_model access =
+        let call_target = Interprocedural.Callable.create_real access in
+        Interprocedural.Fixpoint.get_model call_target
+        >>= Interprocedural.Result.get_model TaintResult.kind
+        |> function
+        | Some { forward = { source_taint }; _ } ->
+            ForwardState.read Root.LocalResult source_taint
+        | _ ->
+            ForwardState.empty_tree
+      in
       match expression with
       | Access { expression; member } ->
           let attribute_taint =
@@ -223,20 +233,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               annotation :: successors
             in
             let attribute_taint sofar annotation =
-              let attribute_taint =
-                let access =
-                  (Type.class_name annotation) @ [Access.Identifier member]
-                in
-                let call_target = Interprocedural.Callable.create_real access in
-                Interprocedural.Fixpoint.get_model call_target
-                >>= Interprocedural.Result.get_model TaintResult.kind
-                |> function
-                | Some { forward = { source_taint }; _ } ->
-                    ForwardState.read Root.LocalResult source_taint
-                | _ ->
-                    ForwardState.empty_tree
-              in
-              ForwardState.join_trees sofar attribute_taint
+              (Type.class_name annotation) @ [Access.Identifier member]
+              |> global_model
+              |> ForwardState.join_trees sofar
             in
             List.fold annotations ~init:ForwardState.empty_tree ~f:attribute_taint
           in
@@ -256,8 +255,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression ->
           analyze_expression ~resolution expression state
-      | Global _ ->
-          ForwardState.empty_tree
+      | Global identifiers ->
+          List.map identifiers ~f:(fun identifier -> Access.Identifier identifier)
+          |> global_model
       | Local identifier ->
           Log.log
             ~section:`Taint
