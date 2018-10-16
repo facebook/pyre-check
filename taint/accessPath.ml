@@ -59,7 +59,7 @@ type normalized_expression =
       original: Identifier.t;
       arguments: ((Expression.t Argument.record) list) Node.t;
     }
-  | Global of Identifier.t list
+  | Global of Access.t
   | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
@@ -123,7 +123,8 @@ let rec split_root = function
       Expression expression, rest
   | Access.Identifier identifier :: rest ->
       let (prefix, rest) = split_maximal_prefix rest in
-      Global (identifier :: prefix), rest
+      Global (List.map (identifier :: prefix) ~f:(fun identifier -> Access.Identifier identifier)),
+      rest
   | Access.Call _ :: _ ->
       failwith "invalid root (call) in access"
   | _ ->
@@ -137,7 +138,7 @@ let normalize_access path =
 
 let rec as_access = function
   | Global access ->
-      Access.create_from_identifiers access
+      access
   | Local identifier ->
       Access.create_from_identifiers [identifier]
   | Expression expression ->

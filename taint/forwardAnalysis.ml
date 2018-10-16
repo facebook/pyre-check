@@ -151,7 +151,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
       | AccessPath.Global access ->
-          let access = Access.create_from_identifiers access in
           let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets ~resolution location arguments state [call_target]
       | AccessPath.Access { expression; member = method_name } ->
@@ -257,9 +256,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression ->
           analyze_expression ~resolution expression state
-      | Global identifiers ->
-          List.map identifiers ~f:(fun identifier -> Access.Identifier identifier)
-          |> global_model
+      | Global access ->
+          global_model access
       | Local identifier ->
           Log.log
             ~section:`Taint

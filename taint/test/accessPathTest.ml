@@ -22,12 +22,7 @@ let test_normalize_access _ =
 
   assert_normalized
     "a.b.c"
-    (AccessPath.Global [
-        Identifier.create "a";
-        Identifier.create "b";
-        Identifier.create "c";
-      ]);
-
+    (AccessPath.Global (Access.create "a.b.c"));
   assert_normalized
     "$a"
     (AccessPath.Local (

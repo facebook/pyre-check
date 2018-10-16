@@ -42,7 +42,7 @@ type normalized_expression =
       original: Identifier.t;
       arguments: ((Expression.t Argument.record) list) Node.t;
     }
-  | Global of Identifier.t list
+  | Global of Access.t
   | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving show]
