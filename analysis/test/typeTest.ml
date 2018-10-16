@@ -961,6 +961,31 @@ let test_overload_parameters _ =
   assert_parameters "typing.Callable('foo')[[], str]" []
 
 
+let test_variables _ =
+  let assert_variables source expected =
+    let aliases =
+      let aliases =
+        Type.Map.of_alist_exn [
+          Type.primitive "T", Type.variable "T";
+          Type.primitive "S", Type.variable "S";
+        ]
+      in
+      Map.find aliases
+    in
+    let variables =
+      Type.create ~aliases (parse_single_expression source)
+      |> Type.variables
+    in
+    assert_equal (List.map expected ~f:Type.variable) variables
+  in
+  assert_variables "T" ["T"];
+  assert_variables "Parametric[int, T]" ["T"];
+  assert_variables "Parametric[T, S]" ["T"; "S"];
+  assert_variables "typing.Callable[..., int]" [];
+  assert_variables "typing.Callable[..., T]" ["T"];
+  assert_variables "typing.Callable[[T, int], str]" ["T"]
+
+
 let () =
   "type">:::[
     "create">::test_create;
@@ -983,6 +1008,7 @@ let () =
     "optional_value">::test_optional_value;
     "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
+    "variables">::test_variables;
   ]
   |> Test.run;
   "callable">:::[
