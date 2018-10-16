@@ -18,4 +18,4 @@ class KillTest(unittest.TestCase):
         arguments = mock_arguments()
         configuration = mock_configuration()
         commands.Kill(arguments, configuration, analysis_directory=None).run()
-        run.assert_called_with(["pkill", "-f", "pyre.bin"])
+        run.assert_called_with(["pkill", "pyre.bin"])

@@ -21,5 +21,5 @@ class Kill(Command):
 
     def _run(self) -> None:
         # Kills all processes that have the same binary as the one specified
-        # in the # configuration.
-        subprocess.run(["pkill", "-f", "{}".format(BINARY_NAME)])
+        # in the configuration.
+        subprocess.run(["pkill", "{}".format(BINARY_NAME)])
