@@ -251,6 +251,10 @@ let test_select _ =
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[int], int]");
+  assert_select
+    "[[typing.Callable[[], _T]], _T]"
+    "(lambda: 1)"
+    (`Found "[[typing.Callable[[], int]], int]");
   assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
   assert_select
     "[[_T, _T], int]"

@@ -361,7 +361,7 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
                 let parameters_to_infer = Type.variables parameter_annotation |> List.length in
                 if parameters_to_infer > 0 then
                   let updated_constraints =
-                    let rec update parameter_annotation constraints =
+                    let rec update argument_annotation parameter_annotation constraints =
                       let update_constraints ~constraints ~variable ~resolved =
                         let resolved =
                           Map.find constraints variable
@@ -416,12 +416,56 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
                       | _, Type.Union annotations ->
                           List.fold
                             ~init:(Some constraints)
-                            ~f:(fun constraints annotation -> constraints >>= update annotation)
+                            ~f:(fun constraints annotation ->
+                                constraints >>= update argument_annotation annotation)
                             annotations
+                      | Type.Callable {
+                          Type.Callable.overloads = [{
+                              Type.Callable.annotation = argument_annotation;
+                              parameters = argument_parameters;
+                            }];
+                          _;
+                        },
+                        Type.Callable {
+                          Type.Callable.overloads = [{
+                              Type.Callable.annotation = parameter_annotation;
+                              parameters = parameters;
+                            }];
+                          _;
+                        } ->
+                          let constraints =
+                            update
+                              argument_annotation
+                              parameter_annotation
+                              constraints
+                          in
+                          let argument_parameters =
+                            match argument_parameters with
+                            | Type.Callable.Defined parameters ->
+                                List.map parameters ~f:Type.Callable.Parameter.annotation
+                            | _ ->
+                                []
+                          in
+                          let parameters =
+                            match parameters with
+                            | Type.Callable.Defined parameters ->
+                                List.map parameters ~f:Type.Callable.Parameter.annotation
+                            | _ ->
+                                []
+                          in
+                          List.fold2
+                            argument_parameters
+                            parameters
+                            ~init:constraints
+                            ~f:(fun constraints argument parameter ->
+                                constraints >>= update argument parameter)
+                          |> (function
+                          | List.Or_unequal_lengths.Ok constraints -> constraints
+                          | _ -> None)
                       | _ ->
                           Some constraints
                     in
-                    update parameter_annotation constraints
+                    update argument_annotation parameter_annotation constraints
                   in
                   updated_constraints
                   >>| (fun updated_constraints ->

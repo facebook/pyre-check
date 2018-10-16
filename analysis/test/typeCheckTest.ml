@@ -6089,7 +6089,24 @@ let test_check_callables _ =
       def foo(callable: typing.Callable[[str], None]) -> None:
         callable(1)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
+
+  (* Type variables & callables. *)
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(x: str) -> int:
+        return 0
+      def takes_parameter(f: typing.Callable[[T], int]) -> T:
+        ...
+      def takes_return(f: typing.Callable[[str], T]) -> T:
+        ...
+      def f() -> str:
+        return takes_parameter(foo)
+      def g() -> int:
+        return takes_return(foo)
+    |}
+    []
 
 
 let test_check_assert_functions _ =
