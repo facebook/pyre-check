@@ -26,6 +26,7 @@ let load
   }
     ~lock
     ~connections =
+  Log.info "Initializing server from saved state...";
   let shared_memory_path, changed_files =
     match saved_state_action with
     | Some (Load (LoadFromFiles parameters)) ->
@@ -71,7 +72,6 @@ let load
     | _ ->
         raise (IncompatibleState "unexpected saved state parameters")
   in
-  Log.info "Initializing server from saved state at %s" (Path.absolute shared_memory_path);
 
   let scheduler = Scheduler.create ~configuration () in
 
