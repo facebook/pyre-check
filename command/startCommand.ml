@@ -517,7 +517,8 @@ let run ({
   (fun () ->
      try
        Log.info "Starting up server...";
-       Version.log_version_banner ();
+       if daemonize then
+         Version.log_version_banner ();
 
        if not (Lock.check (Path.absolute lock_path)) then
          raise AlreadyRunning;
