@@ -95,7 +95,9 @@ end = struct
       ~init:[]
       ~f:(fun ~key:_ ~data leaves ->
           Element.leaves data
-          |> List.merge ~compare:Leaf.compare leaves)
+          |> List.merge ~compare:Leaf.compare leaves
+          |> List.remove_consecutive_duplicates ~equal:(=)
+        )
 
   let partition_tf map ~f =
     fold

@@ -263,6 +263,13 @@ let test_fixpoint _ =
         x = some_source()
         bad(x)
 
+      def match_flows_multiple(arg):
+        if arg:
+          x = some_source()
+        else:
+          x = some_source()
+        bad(x)
+
       def rce_problem():
         x = __userControlled()
         __eval(x)
@@ -322,6 +329,18 @@ let test_fixpoint _ =
         };
         {
           define_name = "match_flows";
+          returns = [];
+          taint_sink_parameters = [];
+          tito_parameters = [];
+          errors = [
+            {
+              code = 5002;
+              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
+            }
+          ];
+        };
+        {
+          define_name = "match_flows_multiple";
           returns = [];
           taint_sink_parameters = [];
           tito_parameters = [];
