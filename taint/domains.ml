@@ -100,12 +100,19 @@ end = struct
         )
 
   let partition_tf map ~f =
+    let set_if_non_empty map ~key ~data =
+      if Element.is_bottom data then
+        map
+      else
+        set map ~key ~data
+    in
     fold
       map
       ~init:(empty, empty)
       ~f:(fun ~key ~data (true_result, false_result) ->
           let true_elements, false_elements = Element.partition_tf data ~f in
-          set true_result ~key ~data:true_elements, set false_result ~key ~data:false_elements)
+          set_if_non_empty true_result ~key ~data:true_elements,
+          set_if_non_empty false_result ~key ~data:false_elements)
 
 end
 
@@ -228,8 +235,11 @@ module MakeTaint(TaintSet : TAINT_SET) :
     Map.set Map.bottom ~key:TraceInfo.Declaration ~data:(TaintSet.singleton leaf)
 
   let of_list leaves =
-    TaintSet.of_list leaves
-    |> (fun elements -> Map.set Map.bottom ~key:TraceInfo.Declaration ~data:elements)
+    if List.length leaves = 0 then
+      Map.bottom
+    else
+      TaintSet.of_list leaves
+      |> (fun elements -> Map.set Map.bottom ~key:TraceInfo.Declaration ~data:elements)
 
   let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in

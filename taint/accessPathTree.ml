@@ -1202,7 +1202,10 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       else
         assign_tree_path ~tree:access_path_tree path ~subtree:(create_leaf element)
     in
-    fold_tree_paths ~init:empty_tree ~f:build tree
+    let result = fold_tree_paths ~init:empty_tree ~f:build tree in
+    let message () = "filter_map_tree_paths" in
+    Checks.check (fun () -> check_minimal ~message result);
+    result
 
 
   let iterate_tree_paths ~f tree =

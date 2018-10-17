@@ -1,6 +1,7 @@
 (tests
  (names
   accessPathTest
+  domainTest
   taintAnalysisTest
   flowTest
   forwardAnalysisTest
