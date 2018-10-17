@@ -292,8 +292,6 @@ let analyze_callable analyses step callable environment =
                 Log.log ~section:`Interprocedural "%s" message;
                 failwith message
             in
-            Log.dump "Making %s obscure"
-              (Callable.show callable);
             Fixpoint.{
               is_partial = false;
               model = get_obscure_models analyses;
