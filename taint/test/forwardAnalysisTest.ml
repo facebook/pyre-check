@@ -525,6 +525,12 @@ let test_comprehensions _ =
 
       def source_in_set_expression(data):
           return { __testSource() for x in data }
+
+      def source_in_generator_iterator():
+          return (x for x in __testSource())
+
+      def source_in_generator_expression(data):
+          return ( __testSource() for x in data )
     |}
     [
       {
@@ -541,6 +547,14 @@ let test_comprehensions _ =
       };
       {
         define_name = "qualifier.source_in_set_expression";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_generator_iterator";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_generator_expression";
         returns = [Sources.Test];
       };
     ]

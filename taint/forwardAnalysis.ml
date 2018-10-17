@@ -324,8 +324,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | DictionaryComprehension _
       | Ellipses
       | False
-      | Float _
-      | Generator _
+      | Float _ ->
+          ForwardState.empty_tree
+      | Generator comprehension ->
+          analyze_comprehension ~resolution comprehension state
       | Integer _ ->
           ForwardState.empty_tree
       | Lambda { parameters = _; body } ->

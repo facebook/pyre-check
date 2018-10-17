@@ -763,6 +763,15 @@ let test_comprehensions _ =
 
       def tito_set(data):
           return { x for x in data }
+
+      def sink_in_generator_iterator(arg):
+          gen = (x for x in __testSink(arg))
+
+      def sink_in_generator_expression(data):
+          gen = (__testSink(x) for x in data)
+
+      def tito_generator(data):
+          return (x for x in data)
     |}
     [
       {
@@ -800,6 +809,25 @@ let test_comprehensions _ =
       };
       {
         define_name = "qualifier.tito_set";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.sink_in_generator_iterator";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.sink_in_generator_expression";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_generator";
         taint_sink_parameters = [];
         tito_parameters = [0];
       };
