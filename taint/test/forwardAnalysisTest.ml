@@ -755,6 +755,41 @@ let test_ternary _ =
     ]
 
 
+let test_unary _ =
+  assert_taint
+    {|
+      def source_in_unary():
+          return not __testSource()
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_unary";
+        returns = [Taint.Sources.Test];
+      };
+    ]
+
+
+let test_yield _ =
+  assert_taint
+    {|
+      def source_in_yield():
+          yield __testSource()
+
+      def source_in_yield_from():
+          yield from __testSource()
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_yield";
+        returns = [Taint.Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_yield_from";
+        returns = [Taint.Sources.Test];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -772,5 +807,7 @@ let () =
     "test_set">::test_set;
     "test_starred">::test_starred;
     "test_ternary">::test_ternary;
+    "test_unary">::test_unary;
+    "test_yield">::test_yield;
   ]
   |> Test.run_with_taint_models

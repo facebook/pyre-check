@@ -998,20 +998,20 @@ let test_starred _ =
   assert_taint
     {|
       def sink_in_starred(arg):
-          __tito(*[ 1, __testSink(arg), "foo" ])
+          __tito( *[ 1, __testSink(arg), "foo" ] )
 
       def sink_in_starred_starred(arg):
-          __tito(**{
+          __tito( **{
               "a": 1,
               "b": __testSink(arg),
               "c": "foo",
           })
 
       def tito_in_starred(arg):
-          return __tito(*[ 1, arg, "foo" ])
+          return __tito( *[ 1, arg, "foo" ] )
 
       def tito_in_starred_starred(arg):
-          return __tito(**{
+          return __tito( **{
               "a": 1,
               "b": arg,
               "c": "foo",
@@ -1117,6 +1117,74 @@ let test_ternary _ =
     ]
 
 
+let test_unary _ =
+  assert_taint
+    {|
+      def sink_in_unary(arg):
+          x = not __testSink(arg)
+
+      def tito_via_unary(arg):
+          return not arg
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_unary";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_via_unary";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
+let test_yield _ =
+  assert_taint
+    {|
+      def sink_in_yield(arg):
+          yield __testSink(arg)
+
+      def tito_via_yield(arg):
+          yield arg
+
+      def sink_in_yield_from(arg):
+          yield from __testSink(arg)
+
+      def tito_via_yield_from(arg):
+          yield from arg
+    |}
+    [
+      {
+        define_name = "qualifier.sink_in_yield";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_via_yield";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.sink_in_yield_from";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tito_via_yield_from";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -1136,5 +1204,7 @@ let () =
     "test_set">::test_set;
     "test_starred">::test_starred;
     "test_ternary">::test_ternary;
+    "test_unary">::test_unary;
+    "test_yield">::test_yield;
   ]
   |> Test.run_with_taint_models

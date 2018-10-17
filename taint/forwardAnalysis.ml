@@ -359,8 +359,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~f:(analyze_list_element ~resolution state)
             expressions
             ~init:ForwardState.empty_tree
-      | UnaryOperator _
-      | Yield _ ->
+      | UnaryOperator { operator = _; operand } ->
+          analyze_expression ~resolution operand state
+      | Yield (Some expression) ->
+          analyze_expression ~resolution expression state
+      | Yield None ->
           ForwardState.empty_tree
 
 
@@ -432,10 +435,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Return { expression = None; _ }
       | Try _
       | With _
-      | While _
-      | Yield _
-      | YieldFrom _ ->
+      | While _ ->
           state
+      | Yield expression
+      | YieldFrom expression ->
+          let taint = analyze_expression ~resolution expression state in
+          store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
 
 
     let backward ?key:_ _ ~statement:_ =

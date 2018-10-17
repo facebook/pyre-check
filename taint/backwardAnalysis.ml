@@ -302,8 +302,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             list
             ~f:(analyze_reverse_list_element ~total ~resolution taint)
             ~init:state
-      | UnaryOperator _
-      | Yield _ ->
+      | UnaryOperator { operator = _; operand } ->
+          analyze_expression ~resolution taint operand state
+      | Yield (Some expression) ->
+          analyze_expression ~resolution taint expression state
+      | Yield None ->
           state
 
 
@@ -367,10 +370,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Return { expression = None; _ }
       | Try _
       | With _
-      | While _
-      | Yield _
-      | YieldFrom _ ->
+      | While _ ->
           state
+      | Yield expression
+      | YieldFrom expression ->
+          let access_path = { root = Root.LocalResult; path = [] } in
+          let return_taint = get_taint (Some access_path) state in
+          analyze_expression ~resolution return_taint expression state
 
 
     let backward ?key state ~statement:({ Node.value = statement; _ }) =
