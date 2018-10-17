@@ -92,7 +92,11 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
       ~configuration
   in
   Ast.SharedMemory.HandleKeys.add ~handles;
-  Statistics.performance ~name:"initialization" ~timer ~normals:[] ();
+  Statistics.performance
+    ~name:"initialization"
+    ~timer
+    ~normals:["initialization method", "cold start"]
+    ();
   Log.log ~section:`Server "Server initialized";
   Memory.init_done ();
 
@@ -141,7 +145,11 @@ let start
             let timer = Timer.start () in
             let state = SavedState.load ~server_configuration ~lock ~connections in
             Statistics.event ~name:"saved state success" ();
-            Statistics.performance ~timer ~name:"initialized server from saved state" ();
+            Statistics.performance
+              ~name:"initialization"
+              ~timer
+              ~normals:["initialization method", "saved state"]
+              ();
             state
           (* Fall back to starting from scratch if we can't load a saved state. *)
           with SavedState.IncompatibleState reason ->
