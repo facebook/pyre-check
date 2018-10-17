@@ -385,27 +385,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           store_taint_option access_path taint state
 
 
-    let forward ?key state ~statement:({ Node.value = statement; _ }) =
-      Log.log
-        ~section:`Taint
-        "State: %a\nAnalyzing statement: %a"
-        pp state
-        Statement.pp_statement statement;
-      let resolution =
-        let annotations =
-          match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
-          | Some key, Some define_mapping ->
-              define_mapping
-              |> Int.Map.of_tree
-              |> (fun mapping -> Int.Map.find mapping key)
-              >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
-              >>| Access.Map.of_tree
-              |> Option.value ~default:Access.Map.empty
-          | _ ->
-              Access.Map.empty
-        in
-        Environment.resolution FunctionContext.environment ~annotations ()
-      in
+    let rec analyze_statement ~resolution statement state =
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution value state in
@@ -441,6 +421,30 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | YieldFrom expression ->
           let taint = analyze_expression ~resolution expression state in
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
+
+
+    let forward ?key state ~statement:({ Node.value = statement; _ }) =
+      Log.log
+        ~section:`Taint
+        "State: %a\nAnalyzing statement: %a"
+        pp state
+        Statement.pp_statement statement;
+      let resolution =
+        let annotations =
+          match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
+          | Some key, Some define_mapping ->
+              define_mapping
+              |> Int.Map.of_tree
+              |> (fun mapping -> Int.Map.find mapping key)
+              >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
+              >>| Access.Map.of_tree
+              |> Option.value ~default:Access.Map.empty
+          | _ ->
+              Access.Map.empty
+        in
+        Environment.resolution FunctionContext.environment ~annotations ()
+      in
+      analyze_statement ~resolution statement state
 
 
     let backward ?key:_ _ ~statement:_ =
