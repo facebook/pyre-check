@@ -85,7 +85,10 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
         in
         assert_equal
           ~cmp:String.Set.equal
-          ~printer:(fun set -> Sexp.to_string [%message (set: String.Set.t)])
+          ~printer:(fun set ->
+              Format.sprintf "%s: %s"
+                define_name
+                (Sexp.to_string [%message (set: String.Set.t)]))
           expected_sources
           returned_sources
   in
@@ -577,6 +580,29 @@ let test_list _ =
       def list_unknown_index(index):
           list = [ 1, __testSource(), "foo" ]
           return list[index]
+
+      def source_in_tuple():
+          return ( 1, __testSource(), "foo" )
+
+      def tuple_same_index():
+          tuple = ( 1, __testSource(), "foo" )
+          return tuple[1]
+
+      def tuple_different_index():
+          tuple = ( 1, __testSource(), "foo" )
+          return tuple[2]
+
+      def tuple_unknown_index(index):
+          tuple = ( 1, __testSource(), "foo" )
+          return tuple[index]
+
+      def tuple_pattern_same_index():
+          (_, match, _) = ( 1, __testSource(), "foo" )
+          return match
+
+      def tuple_pattern_different_index():
+          (_, _, no_match) = ( 1, __testSource(), "foo" )
+          return no_match
     |}
     [
       {
@@ -594,6 +620,30 @@ let test_list _ =
       {
         define_name = "qualifier.list_unknown_index";
         returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.source_in_tuple";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.tuple_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.tuple_different_index";
+        returns = [];
+      };
+      {
+        define_name = "qualifier.tuple_unknown_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.tuple_pattern_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.tuple_pattern_different_index";
+        returns = [];
       };
     ]
 

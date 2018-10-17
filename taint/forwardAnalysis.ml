@@ -352,8 +352,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let taint_else = analyze_expression ~resolution alternative state in
           let _ = analyze_expression ~resolution test state in
           ForwardState.join_trees taint_then taint_else
-      | True
-      | Tuple _
+      | True ->
+          ForwardState.empty_tree
+      | Tuple expressions ->
+          List.foldi
+            ~f:(analyze_list_element ~resolution state)
+            expressions
+            ~init:ForwardState.empty_tree
       | UnaryOperator _
       | Yield _ ->
           ForwardState.empty_tree
@@ -361,6 +366,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let analyze_definition ~define:_ state =
       state
+
+
+    let rec analyze_assignment target taint state =
+      match target.Node.value with
+      | Tuple targets ->
+          let analyze_target_element i state target =
+            let index = AccessPathTree.Label.Field (Identifier.create (string_of_int i)) in
+            let taint = ForwardState.read_tree [index] taint in
+            analyze_assignment target taint state
+          in
+          List.foldi targets ~f:analyze_target_element ~init:state
+      | _ ->
+          let access_path = AccessPath.of_expression target in
+          store_taint_option access_path taint state
 
 
     let forward ?key state ~statement:({ Node.value = statement; _ }) =
@@ -387,8 +406,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution value state in
-          let access_path = AccessPath.of_expression target in
-          store_taint_option access_path taint state
+          analyze_assignment target taint state
       | Assert _
       | Break
       | Class _

@@ -851,6 +851,29 @@ let test_list _ =
       def list_unknown_index(arg, index):
           list = [ 1, arg, "foo" ]
           return list[index]
+
+      def sink_in_tuple(arg):
+          return ( 1, __testSink(arg), "foo" )
+
+      def tuple_same_index(arg):
+          tuple = ( 1, arg, "foo" )
+          return tuple[1]
+
+      def tuple_different_index(arg):
+          tuple = ( 1, arg, "foo" )
+          return tuple[2]
+
+      def tuple_unknown_index(arg, index):
+          tuple = ( 1, arg, "foo" )
+          return tuple[index]
+
+      def tuple_pattern_same_index(arg):
+          (_, result, _) = ( 1, arg, "foo" )
+          return result
+
+      def tuple_pattern_different_index(arg):
+          (_, _, result) = ( 1, arg, "foo" )
+          return result
     |}
     [
       {
@@ -874,6 +897,38 @@ let test_list _ =
         define_name = "qualifier.list_unknown_index";
         taint_sink_parameters = [];
         tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.sink_in_tuple";
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tuple_same_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tuple_different_index";
+        taint_sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tuple_unknown_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tuple_pattern_same_index";
+        taint_sink_parameters = [];
+        tito_parameters = [0];
+      };
+      {
+        define_name = "qualifier.tuple_pattern_different_index";
+        taint_sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 

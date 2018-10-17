@@ -270,17 +270,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | List list ->
           let total = List.length list in
           List.foldi
-            ~f:(analyze_reverse_list_element ~total ~resolution taint)
             list
+            ~f:(analyze_reverse_list_element ~total ~resolution taint)
             ~init:state
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Set set ->
           let element_taint = BackwardState.read_tree [AccessPathTree.Label.Any] taint in
           List.fold
+            set
             ~f:(Fn.flip (analyze_expression ~resolution element_taint))
             ~init:state
-            set
       | SetComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Starred (Starred.Once expression)
@@ -294,8 +294,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let state_else = analyze_expression ~resolution taint alternative state in
           join state_then state_else
           |> analyze_expression ~resolution BackwardState.empty_tree test
-      | True
-      | Tuple _
+      | True ->
+          state
+      | Tuple list ->
+          let total = List.length list in
+          List.foldi
+            list
+            ~f:(analyze_reverse_list_element ~total ~resolution taint)
+            ~init:state
       | UnaryOperator _
       | Yield _ ->
           state
@@ -303,6 +309,26 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let analyze_definition ~define:_ state =
       state
+
+
+    let rec compute_assignment_taint target state =
+      match target.Node.value with
+      | Tuple targets ->
+          let compute_tuple_target_taint position taint_accumulator target =
+            let taint = compute_assignment_taint target state in
+            let index_name =
+              AccessPathTree.Label.Field (Identifier.create (string_of_int position))
+            in
+            let index_taint = BackwardState.create_tree [index_name] taint in
+            BackwardState.join_trees index_taint taint_accumulator
+          in
+          List.foldi
+            targets
+            ~f:compute_tuple_target_taint
+            ~init:BackwardState.empty_tree
+      | _ ->
+          let access_path = of_expression target in
+          get_taint access_path state
 
 
     let analyze_statement ~resolution state statement =
@@ -313,8 +339,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
-          let access_path = of_expression target in
-          analyze_expression ~resolution (get_taint access_path state) value state
+          let taint = compute_assignment_taint target state in
+          analyze_expression ~resolution taint value state
       | Assert _
       | Break
       | Class _
