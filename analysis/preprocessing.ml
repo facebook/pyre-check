@@ -373,16 +373,23 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           if not (Set.mem skip location) then
             let rec qualify_target ~scope:({ aliases; immutables; locals; _ } as scope) target =
               let scope, value =
+                let qualify_targets scope elements =
+                  let qualify_element (scope, reversed_elements) element =
+                    let scope, element = qualify_target ~scope element in
+                    scope, element :: reversed_elements
+                  in
+                  let scope, reversed_elements =
+                    List.fold elements ~init:(scope, []) ~f:qualify_element
+                  in
+                  scope, List.rev reversed_elements
+                in
                 match Node.value target with
                 | Tuple elements ->
-                    let scope, reversed_elements =
-                      let qualify_tuple_target (scope, reversed_elements) element =
-                        let scope, element = qualify_target ~scope element in
-                        scope, element :: reversed_elements
-                      in
-                      List.fold elements ~init:(scope, []) ~f:qualify_tuple_target
-                    in
-                    scope, Tuple (List.rev reversed_elements)
+                    let scope, elements = qualify_targets scope elements in
+                    scope, Tuple elements
+                | List elements ->
+                    let scope, elements = qualify_targets scope elements in
+                    scope, List elements
                 | Access ([_] as access) when qualify_assign ->
                     (* Qualify field assignments in class body. *)
                     let alias =
