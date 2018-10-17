@@ -20,6 +20,10 @@ let property_decorators =
   ]
 
 
+let classproperty_decorators =
+  String.Set.of_list []
+
+
 let enumeration_classes =
   String.Set.of_list [
     "enum.Enum";
