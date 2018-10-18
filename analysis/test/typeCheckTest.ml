@@ -783,6 +783,12 @@ let test_forward_statement _ =
     ["x", Type.string];
 
   assert_forward
+    ~bottom:false
+    ["x", Type.float]
+    "assert isinstance(x, int)"
+    ["x", Type.integer];
+
+  assert_forward
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, int)"

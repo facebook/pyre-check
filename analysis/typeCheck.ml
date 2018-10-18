@@ -1632,7 +1632,7 @@ module State = struct
             ] when Identifier.show name = "isinstance" ->
               let compatible ~existing =
                 let annotation = Resolution.parse_annotation resolution annotation in
-                Type.equal existing Type.Bottom
+                Resolution.less_or_equal resolution ~left:existing ~right:annotation
                 || Resolution.less_or_equal resolution ~left:annotation ~right:existing
               in
               Resolution.get_local resolution ~access
