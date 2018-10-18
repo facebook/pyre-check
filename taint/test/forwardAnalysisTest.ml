@@ -581,6 +581,54 @@ let test_list _ =
           list = [ 1, __testSource(), "foo" ]
           return list[index]
 
+      def list_pattern_same_index():
+          [_, match, _] = [ 1, __testSource(), "foo" ]
+          return match
+
+      def list_pattern_different_index():
+          [_, _, no_match] = [ 1, __testSource(), "foo" ]
+          return no_match
+
+      def list_pattern_star_index():
+          # False positive because we don't know size of RHS in general.
+          [*match, _, _] = [ 1, __testSource(), "foo" ]
+          return match
+    |}
+    [
+      {
+        define_name = "qualifier.source_in_list";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_different_index";
+        returns = [];
+      };
+      {
+        define_name = "qualifier.list_unknown_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_pattern_same_index";
+        returns = [Sources.Test];
+      };
+      {
+        define_name = "qualifier.list_pattern_different_index";
+        returns = [];
+      };
+      {
+        define_name = "qualifier.list_pattern_star_index";
+        returns = [Sources.Test];
+      };
+    ]
+
+
+let test_tuple _ =
+  assert_taint
+    {|
       def source_in_tuple():
           return ( 1, __testSource(), "foo" )
 
@@ -603,24 +651,13 @@ let test_list _ =
       def tuple_pattern_different_index():
           (_, _, no_match) = ( 1, __testSource(), "foo" )
           return no_match
+
+      def tuple_pattern_star_index():
+          # False positive because we don't know size of RHS in general.
+          ( *match, _, _ ) = ( 1, __testSource(), "foo" )
+          return match
     |}
     [
-      {
-        define_name = "qualifier.source_in_list";
-        returns = [Sources.Test];
-      };
-      {
-        define_name = "qualifier.list_same_index";
-        returns = [Sources.Test];
-      };
-      {
-        define_name = "qualifier.list_different_index";
-        returns = [];
-      };
-      {
-        define_name = "qualifier.list_unknown_index";
-        returns = [Sources.Test];
-      };
       {
         define_name = "qualifier.source_in_tuple";
         returns = [Sources.Test];
@@ -644,6 +681,10 @@ let test_list _ =
       {
         define_name = "qualifier.tuple_pattern_different_index";
         returns = [];
+      };
+      {
+        define_name = "qualifier.tuple_pattern_star_index";
+        returns = [Sources.Test];
       };
     ]
 
@@ -697,7 +738,7 @@ let test_starred _ =
     {|
       def source_in_starred():
           list = [ 1, __testSource(), "foo" ]
-          return __tito(*list)
+          return __tito( *list )
 
       def source_in_starred_starred():
           dict = {
@@ -705,7 +746,7 @@ let test_starred _ =
               "b": __testSource(),
               "c": "foo",
           }
-          return __tito(**dict)
+          return __tito( **dict )
     |}
     [
       {
@@ -807,6 +848,7 @@ let () =
     "test_set">::test_set;
     "test_starred">::test_starred;
     "test_ternary">::test_ternary;
+    "test_tuple">::test_tuple;
     "test_unary">::test_unary;
     "test_yield">::test_yield;
   ]

@@ -375,13 +375,19 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       state
 
 
-    let rec analyze_assignment target taint state =
+    let rec analyze_assignment target taint surrounding_taint state =
       match target.Node.value with
+      | Starred (Once target | Twice target) ->
+          (* This is approximate. Unless we can get the tuple type on the right
+             to tell how many total elements there will be, we just pick up the
+             entire collection. *)
+          analyze_assignment target surrounding_taint surrounding_taint state
+      | List targets
       | Tuple targets ->
           let analyze_target_element i state target =
             let index = AccessPathTree.Label.Field (Identifier.create (string_of_int i)) in
-            let taint = ForwardState.read_tree [index] taint in
-            analyze_assignment target taint state
+            let indexed_taint = ForwardState.read_tree [index] taint in
+            analyze_assignment target indexed_taint taint state
           in
           List.foldi targets ~f:analyze_target_element ~init:state
       | _ ->
@@ -393,7 +399,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution value state in
-          analyze_assignment target taint state
+          analyze_assignment target taint taint state
       | Assert _
       | Break
       | Class _

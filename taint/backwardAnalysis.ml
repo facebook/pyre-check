@@ -313,25 +313,39 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let analyze_definition ~define:_ state =
       state
 
-
+    (* Returns the taint, and whether to collapse one level (due to star expression) *)
     let rec compute_assignment_taint target state =
       match target.Node.value with
+      | Starred (Once target | Twice target) ->
+          (* This is approximate. Unless we can get the tuple type on the right
+             to tell how many total elements there will be, we just pick up the
+             entire collection. *)
+          let taint, _ = compute_assignment_taint target state in
+          taint, true
+      | List targets
       | Tuple targets ->
           let compute_tuple_target_taint position taint_accumulator target =
-            let taint = compute_assignment_taint target state in
-            let index_name =
-              AccessPathTree.Label.Field (Identifier.create (string_of_int position))
+            let taint, collapse = compute_assignment_taint target state in
+            let index_taint =
+              if collapse then taint
+              else
+                let index_name =
+                  AccessPathTree.Label.Field (Identifier.create (string_of_int position))
+                in
+                BackwardState.create_tree [index_name] taint
             in
-            let index_taint = BackwardState.create_tree [index_name] taint in
             BackwardState.join_trees index_taint taint_accumulator
           in
-          List.foldi
-            targets
-            ~f:compute_tuple_target_taint
-            ~init:BackwardState.empty_tree
+          let taint =
+            List.foldi
+              targets
+              ~f:compute_tuple_target_taint
+              ~init:BackwardState.empty_tree
+          in
+          taint, false
       | _ ->
           let access_path = of_expression target in
-          get_taint access_path state
+          get_taint access_path state, false
 
 
     let analyze_statement ~resolution state statement =
@@ -342,7 +356,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
-          let taint = compute_assignment_taint target state in
+          let taint, _ = compute_assignment_taint target state in
           analyze_expression ~resolution taint value state
       | Assert _
       | Break
