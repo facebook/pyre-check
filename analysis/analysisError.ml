@@ -171,7 +171,16 @@ type missing_type_parameters = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type impossible_isinstance = {
+  expression: Expression.t;
+  mismatch: mismatch;
+  negation: bool;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
+  | ImpossibleIsinstance of impossible_isinstance
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleConstructorAnnotation of Type.t
@@ -229,9 +238,11 @@ let code = function
   | RedundantCast _ -> 22
   | Unpack _ -> 23
   | MissingTypeParameters _ -> 24
+  | ImpossibleIsinstance _ -> 25
 
 
 let name = function
+  | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
@@ -276,6 +287,17 @@ let messages ~detailed:_ ~define location kind =
     (string_of_int number) ^ suffix
   in
   match kind with
+  | ImpossibleIsinstance { expression; negation; mismatch = { actual; expected } } ->
+      let expression_string = Expression.show expression in
+      [
+        Format.asprintf
+          "`%s` has type `%a`, checking if `%s`%s isinstance `%a` will always fail."
+          expression_string
+          Type.pp actual
+          expression_string
+          (if negation then " not" else "")
+          Type.pp expected
+      ]
   | IncompatibleAwaitableType actual ->
       [
         (Format.asprintf
@@ -797,6 +819,7 @@ include BaseError.Make(struct
 
 let due_to_analysis_limitations { kind; _ } =
   match kind with
+  | ImpossibleIsinstance { mismatch = { actual; _ }; _ }
   | IncompatibleAwaitableType actual
   | IncompatibleParameterType { mismatch = { actual; _ }; _ }
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
@@ -852,9 +875,10 @@ let due_to_builtin_import { kind; _ } =
 
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
-  | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
-  | IncompatibleAwaitableType actual ->
+  | IncompatibleAwaitableType actual
+  | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
       Type.equal actual Type.Object
+  | ImpossibleIsinstance { mismatch = { actual; expected }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; expected }; _ }
   | IncompatibleParameterType { mismatch = { actual; expected }; _ }
@@ -892,6 +916,9 @@ let less_or_equal ~resolution left right =
   Location.Instantiated.equal left.location right.location &&
   begin
     match left.kind, right.kind with
+    | ImpossibleIsinstance left, ImpossibleIsinstance right
+      when Expression.equal left.expression right.expression ->
+        less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         Resolution.less_or_equal resolution ~left ~right
     | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
@@ -1334,6 +1361,7 @@ let suppress ~mode error =
       | RevealedType _
       | MissingArgument _ ->
           false
+      | ImpossibleIsinstance _
       | IncompatibleAwaitableType _
       | IncompatibleAttributeType _
       | IncompatibleVariableType _
@@ -1424,6 +1452,11 @@ let dequalify
   let dequalify = Type.dequalify dequalify_map in
   let kind =
     match kind with
+    | ImpossibleIsinstance ({ mismatch = { actual; expected }; _ } as isinstance) ->
+        ImpossibleIsinstance {
+          isinstance with
+          mismatch = { actual = dequalify actual; expected = dequalify expected };
+        }
     | IncompatibleAwaitableType actual  ->
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->

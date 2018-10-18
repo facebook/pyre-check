@@ -1618,27 +1618,38 @@ module State = struct
           forward_expression ~state ~expression:test
           |> fun { state; _ } -> state
         in
-        let contradiction =
+        let contradiction_error =
           match Node.value test with
           | Access [
               Access.Identifier name;
               Access.Call {
                 Node.value = [
-                  { Argument.name = None; value = { Node.value = Access access; _ } };
+                  { Argument.name = None; value = ({ Node.value = Access access; _ } as value) };
                   { Argument.name = None; value = { Node.value = Access _; _ } as annotation };
                 ];
                 _;
               }
             ] when Identifier.show name = "isinstance" ->
-              let compatible ~existing =
-                let annotation = Resolution.parse_annotation resolution annotation in
-                Resolution.less_or_equal resolution ~left:existing ~right:annotation
-                || Resolution.less_or_equal resolution ~left:annotation ~right:existing
+              let error_if_incompatible ~existing =
+                let expected = Resolution.parse_annotation resolution annotation in
+                if (Resolution.less_or_equal resolution ~left:existing ~right:expected
+                    || Resolution.less_or_equal resolution ~left:expected ~right:existing)
+                then
+                  None
+                else
+                  Some
+                    (Error.create
+                       ~location:(Node.location test)
+                       ~kind:(Error.ImpossibleIsinstance {
+                           Error.mismatch = { Error.expected; actual = existing };
+                           expression = value;
+                           negation = false;
+                         })
+                       ~define)
               in
               Resolution.get_local resolution ~access
               >>| Annotation.annotation
-              >>| (fun existing -> not (compatible ~existing))
-              |> Option.value ~default:false
+              >>= (fun existing -> error_if_incompatible ~existing)
 
           | UnaryOperator {
               UnaryOperator.operator = UnaryOperator.Not;
@@ -1657,15 +1668,26 @@ module State = struct
                 _;
               };
             } when Identifier.show name = "isinstance" ->
-              let checked_instance = Resolution.parse_annotation resolution annotation in
+              let expected = Resolution.parse_annotation resolution annotation in
               let { resolved; _ } = forward_expression ~state ~expression:value in
-              if Type.equal resolved Type.Bottom || Type.is_unknown resolved then
-                false
+              if (Type.equal resolved Type.Bottom
+                  || Type.is_unknown resolved
+                  || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
+              then
+                None
               else
-                Resolution.less_or_equal resolution ~left:resolved ~right:checked_instance
+                Some
+                  (Error.create
+                     ~location:(Node.location test)
+                     ~kind:(Error.ImpossibleIsinstance {
+                         Error.mismatch = { Error.expected; actual = resolved };
+                         expression = value;
+                         negation = true;
+                       })
+                     ~define)
 
           | _ ->
-              false
+              None
         in
         let resolution =
           match Node.value test with
@@ -1866,10 +1888,13 @@ module State = struct
           | _ ->
               resolution
         in
-        if contradiction then
-          { state with bottom = true }
-        else
-          { state with resolution }
+        begin
+          match contradiction_error with
+          | Some error ->
+              add_error ~state:{ state with bottom = true } error
+          | None ->
+              { state with resolution }
+        end
 
     | Expression { Node.value = Access access; _; } when Access.is_assert_function access ->
         let find_assert_test access =

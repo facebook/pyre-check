@@ -771,6 +771,10 @@ let test_forward_statement _ =
     ["x", Type.integer];
 
   assert_forward
+    ~errors:
+      (`Specific
+         ["Impossible isinstance check [25]: `x` has type `int`, checking if `x` " ^
+          "isinstance `str` will always fail."])
     ~bottom:true
     ["x", Type.integer]
     "assert isinstance(x, str)"
@@ -789,12 +793,20 @@ let test_forward_statement _ =
     ["x", Type.integer];
 
   assert_forward
+    ~errors:
+      (`Specific
+         ["Impossible isinstance check [25]: `x` has type `int`, checking if `x` not " ^
+          "isinstance `int` will always fail."])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, int)"
     ["x", Type.integer];
 
   assert_forward
+    ~errors:
+      (`Specific
+         ["Impossible isinstance check [25]: `x` has type `int`, checking if `x` not " ^
+          "isinstance `float` will always fail."])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x, float)"
@@ -808,6 +820,10 @@ let test_forward_statement _ =
 
   (* Works for general expressions. *)
   assert_forward
+    ~errors:
+      (`Specific
+         ["Impossible isinstance check [25]: `x.__add__(1)` has type `int`, checking if " ^
+          "`x.__add__(1)` not isinstance `int` will always fail."])
     ~bottom:true
     ["x", Type.integer]
     "assert not isinstance(x + 1, int)"

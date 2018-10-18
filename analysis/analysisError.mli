@@ -149,7 +149,16 @@ type missing_type_parameters = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type impossible_isinstance = {
+  expression: Expression.t;
+  mismatch: mismatch;
+  negation: bool;
+}
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
+  | ImpossibleIsinstance of impossible_isinstance
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of parameter_mismatch
   | IncompatibleConstructorAnnotation of Type.t
