@@ -195,7 +195,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution location arguments state call_targets
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
-          let callee_taint = analyze_normalized_expression ~resolution state callee in
+          let callee_taint = analyze_normalized_expression ~resolution location state callee in
           (* For now just join all argument and receiver taint and propagate to result. *)
           let taint =
             List.fold_left
@@ -206,7 +206,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint
 
 
-    and analyze_normalized_expression ~resolution state expression =
+    and analyze_normalized_expression ~resolution location state expression =
       let global_model access =
         let call_target = Interprocedural.Callable.create_real access in
         Interprocedural.Fixpoint.get_model call_target
@@ -214,6 +214,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         |> function
         | Some { forward = { source_taint }; _ } ->
             ForwardState.read AccessPath.Root.LocalResult source_taint
+            |> ForwardState.apply_call
+              location
+              ~callees:[]
+              ~port:AccessPath.Root.LocalResult
         | _ ->
             ForwardState.empty_tree
       in
@@ -241,7 +245,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             List.fold annotations ~init:ForwardState.empty_tree ~f:attribute_taint
           in
           let inferred_taint =
-            let taint = analyze_normalized_expression ~resolution state expression in
+            let taint = analyze_normalized_expression ~resolution location state expression in
             let field = AccessPathTree.Label.Field member in
             ForwardState.assign_tree_path
               [field]
@@ -250,7 +254,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           ForwardState.join_trees inferred_taint attribute_taint
       | Index { expression; index; _ } ->
-          let taint = analyze_normalized_expression ~resolution state expression in
+          let taint = analyze_normalized_expression ~resolution location state expression in
           ForwardState.read_tree [index] taint
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state
@@ -306,7 +310,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match expression.Node.value with
       | Access access ->
           AccessPath.normalize_access access
-          |> analyze_normalized_expression ~resolution state
+          |> analyze_normalized_expression ~resolution expression.Node.location state
       | Await expression ->
           analyze_expression ~resolution expression state
       | BooleanOperator { left; operator = _; right }
