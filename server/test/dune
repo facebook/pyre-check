@@ -1,6 +1,9 @@
 (tests
  (names
   requestTest)
+ (preprocess
+  (pps
+   ppx_deriving_yojson))
  (libraries
   oUnit
   pyrelib.test

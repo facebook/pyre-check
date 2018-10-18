@@ -757,8 +757,7 @@ module ResponseMessage = struct
       id: int
           [@key "id"];
       result: result option
-          [@key "result"]
-          [@default None];
+          [@key "result"];
       error: error option
           [@key "error"]
           [@default None];

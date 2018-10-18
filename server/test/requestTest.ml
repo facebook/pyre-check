@@ -87,6 +87,44 @@ let initialize sources =
   configuration, state
 
 
+let test_generate_lsp_response _ =
+  let open LanguageServer.Types in
+  let module MockResponse = struct
+    module MockResult = struct
+      type t = int
+      [@@deriving yojson]
+    end
+
+    module MockError = ResponseError.Make(Null)
+
+    include ResponseMessage.Make (MockResult) (MockError)
+
+    let create ~id payload =
+      {
+        jsonrpc = "2.0";
+        id;
+        result = payload;
+        error = None;
+      }
+  end in
+
+  let assert_response id payload expected_response =
+    let actual_response =
+      MockResponse.create ~id payload
+      |> MockResponse.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    let expected_response =
+      expected_response
+      |> Yojson.Safe.from_string
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
+  in
+  assert_response 1 (Some 1337) {|{"jsonrpc":"2.0","id":1,"result":1337}|};
+  assert_response 2 None {|{"jsonrpc":"2.0","id":2,"result":null}|}
+
+
 let test_process_client_shutdown_request _ =
   let assert_response id expected_response =
     let state = mock_server_state () in
@@ -473,6 +511,7 @@ let test_process_get_definition_request context =
 let () =
   "request">:::
   [
+    "generate_lsp_response">::test_generate_lsp_response;
     "process_client_shutdown_request">::test_process_client_shutdown_request;
     "process_type_query_request">::test_process_type_query_request;
     "process_display_type_errors_request">::test_process_display_type_errors_request;

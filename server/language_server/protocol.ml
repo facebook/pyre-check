@@ -161,11 +161,7 @@ module ShutdownResponse = struct
     {
       jsonrpc = "2.0";
       id;
-      result = begin
-        match Types.Null.of_yojson `Null with
-        | Ok result -> Some result
-        | Error _ -> None
-      end;
+      result = None;
       error = None;
     }
 end
