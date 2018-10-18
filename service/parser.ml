@@ -114,7 +114,9 @@ let log_parse_errors ~count ~description =
   if count > 0 then
     let hint =
       if not (Log.is_enabled `Parser) then
-        " Run with `--show-parse-errors` for more details."
+        Format.asprintf
+          " Run `pyre --show-parse-errors%s` for more details."
+          (try " " ^ (Array.nget Sys.argv 1) with _ -> "")
       else
         ""
     in
