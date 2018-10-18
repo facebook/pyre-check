@@ -48,6 +48,7 @@ provides typed stubs for library functions.
 
 `workers`: Number of workers to spawn for multiprocessing.
 
+`ignore_error_types`: A list of error types to ignore from type-checking. The list of types can be found [here](https://pyre-check.org/docs/error-types.html)
 
 # Local Configuration
 If you have sub-projects within your project root that you would like to run Pyre on, you

@@ -81,6 +81,7 @@ class Configuration:
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = None
+        self.ignore_error_types = []
 
         self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
@@ -140,22 +141,22 @@ class Configuration:
     def _validate(self) -> None:
         try:
 
-            def is_list_of_strings(list):
+            def is_list_of_types(list, _type):
                 if len(list) == 0:
                     return True
-                return not isinstance(list, str) and all(
-                    isinstance(element, str) for element in list
+                return not isinstance(list, _type) and all(
+                    isinstance(element, _type) for element in list
                 )
 
-            if not is_list_of_strings(
-                self.analysis_directories
-            ) or not is_list_of_strings(self.targets):
+            if not is_list_of_types(
+                self.analysis_directories, str
+            ) or not is_list_of_types(self.targets, str):
                 raise InvalidConfiguration(
                     "`target` and `source_directories` fields must be lists of "
                     "strings."
                 )
 
-            if not is_list_of_strings(self.do_not_check):
+            if not is_list_of_types(self.do_not_check, str):
                 raise InvalidConfiguration(
                     "`do_not_check` field must be a list of strings."
                 )
@@ -167,6 +168,11 @@ class Configuration:
 
             if self.number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
+
+            if not is_list_of_types(self.ignore_error_types, int):
+                raise InvalidConfiguration(
+                    "`ignore_error_types` field must be a list of integers."
+                )
 
             # Validate typeshed path and sub-elements.
             assert_readable_directory(self.typeshed)
@@ -297,6 +303,8 @@ class Configuration:
                         do_not_check,
                     )
                 )
+
+                self.ignore_error_types.extend(configuration.consume("ignore_error_types", default=[]))
 
                 self.number_of_workers = int(
                     configuration.consume(

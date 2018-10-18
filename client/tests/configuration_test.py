@@ -25,6 +25,7 @@ class ConfigurationTest(unittest.TestCase):
                 "source_directories": ["a"],
                 "logger": "/usr/logger",
                 "do_not_check": ["buck-out/dev/gen"],
+                "ignore_error_types": [9, 16]
             },
             {},
         ]
@@ -35,6 +36,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
         )
+        self.assertEqual(configuration.ignore_error_types, [9, 16])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
@@ -44,11 +46,13 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.do_not_check, [])
         self.assertTrue(configuration.disabled)
+        self.assertEqual(configuration.ignore_error_types, [])
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
+        self.assertEqual(configuration.ignore_error_types, [])
 
         json_load.side_effect = [
             {
@@ -64,6 +68,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.search_path, ["additional/"])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.ignore_error_types, [])
 
         json_load.side_effect = [
             {
@@ -78,6 +83,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
+        self.assertEqual(configuration.ignore_error_types, [])
 
         # Test loading of additional directories in the search path
         # via environment.
@@ -159,6 +165,17 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.do_not_check,
             ["%s/buck-out/dev/gen" % os.getcwd(), "%s/buck-out/dev/gen2" % os.getcwd()],
+        )
+
+        # Test multiple definitions of the ignore_error_types list.
+        json_load.side_effect = [
+            {"ignore_error_types": [9, 16]},
+            {"ignore_error_types": [18, 21]},
+        ]
+        configuration = Configuration()
+        self.assertEqual(
+            configuration.ignore_error_types,
+            [9, 16, 18, 21],
         )
 
         # Normalize number of workers if zero.
@@ -341,4 +358,5 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.logger, None)
             self.assertEqual(configuration.do_not_check, [])
             self.assertFalse(configuration.disabled)
+            self.assertEqual(configuration.ignore_error_types, [])
             self.assertEqual(configuration._typeshed, None)

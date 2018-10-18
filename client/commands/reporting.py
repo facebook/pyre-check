@@ -22,6 +22,7 @@ class Reporting(Command):
         self._verbose = arguments.verbose
         self._output = arguments.output
         self._do_not_check_paths = configuration.do_not_check
+        self._ignore_error_types = configuration.ignore_error_types
         self._discovered_analysis_directories = [self._local_root]
         self._local_configuration = arguments.local_configuration
 
@@ -86,6 +87,9 @@ class Reporting(Command):
             relative_path = self._relative_path(full_path)
             error["path"] = relative_path
             do_not_check = False
+            # Make sure this error is not one to be ignored
+            if error["code"] in self._ignore_error_types:
+                do_not_check = True
             external_to_global_root = True
             if full_path.startswith(self._current_directory):
                 external_to_global_root = False
