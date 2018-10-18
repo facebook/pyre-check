@@ -110,18 +110,19 @@ let parse_sources ~configuration ~scheduler ~files =
   handles
 
 
-let log_parse_errors_count ~not_parsed ~description =
-  if not_parsed > 0 then
+let log_parse_errors ~count ~description =
+  if count > 0 then
     let hint =
       if not (Log.is_enabled `Parser) then
         " Run with `--show-parse-errors` for more details."
       else
         ""
     in
-    Log.warning "Could not parse %d %s%s due to syntax errors!%s"
-      not_parsed
+    Log.warning
+      "Could not parse %d %s%s due to syntax errors!%s"
+      count
       description
-      (if not_parsed > 1 then "s" else "")
+      (if count > 1 then "s" else "")
       hint
 
 
@@ -226,7 +227,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create stub_paths)
     in
     let not_parsed = (List.length stub_paths) - (List.length handles) in
-    log_parse_errors_count ~not_parsed ~description:"external file";
+    log_parse_errors ~count:not_parsed ~description:"external file";
     Statistics.performance ~name:"stubs parsed" ~timer ();
     handles
   in
@@ -268,7 +269,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
     in
     let not_parsed = (List.length paths) - (List.length handles) in
-    log_parse_errors_count ~not_parsed ~description:"file";
+    log_parse_errors ~count:not_parsed ~description:"file";
     Statistics.performance ~name:"sources parsed" ~timer ();
     handles
   in
