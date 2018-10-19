@@ -139,28 +139,22 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
       | Access { expression = receiver; member = method_name} ->
           let access = as_access receiver in
-          let receiver_type =
-            let annotation =
-              Access.expression access
-              |> Resolution.resolve resolution
-            in
-            if Type.equal annotation Type.Top then
-              None
-            else
-              Some annotation
-          in
           let receiver_argument_record = {
             Argument.name = None;
             value = Node.create ~location (Expression.Access access);
           } in
           let arguments = receiver_argument_record :: arguments in
           let state =
+            let receiver_type =
+              Access.expression access
+              |> Resolution.resolve resolution
+            in
             match receiver_type with
-            | Some (Type.Primitive primitive) ->
+            | Type.Primitive primitive ->
                 let access = Access.create_from_identifiers [primitive; method_name] in
                 let call_target = Interprocedural.Callable.create_real access in
                 apply_call_targets ~resolution location arguments state taint [call_target]
-            | Some (Type.Union annotations) ->
+            | Type.Union annotations ->
                 let filter_receivers = function
                   | Type.Primitive receiver ->
                       Access.create_from_identifiers [receiver; method_name]
