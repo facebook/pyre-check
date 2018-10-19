@@ -149,7 +149,7 @@ let process_response
     List.map
       ~f:(fun relative -> Path.create_relative ~root:watchman_directory ~relative)
       files
-        |> List.map ~f:relativize_to_root
+    |> List.map ~f:relativize_to_root
   in
   let ({ symlinks; _ } as state) =
     List.fold
@@ -159,10 +159,10 @@ let process_response
   in
   let files =
     List.filter_map
-          ~f:(fun path ->
+      ~f:(fun path ->
           Map.find symlinks path
           >>| File.create)
-          paths
+      paths
   in
   let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
   (state,

@@ -259,7 +259,7 @@ let assert_response
 
 
 let test_shutdown context =
- let local_root =
+  let local_root =
     bracket_tmpdir context
     |> Path.create_absolute
   in

@@ -460,8 +460,8 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
                             ~f:(fun constraints argument parameter ->
                                 constraints >>= update argument parameter)
                           |> (function
-                          | List.Or_unequal_lengths.Ok constraints -> constraints
-                          | _ -> None)
+                              | List.Or_unequal_lengths.Ok constraints -> constraints
+                              | _ -> None)
                       | _ ->
                           Some constraints
                     in

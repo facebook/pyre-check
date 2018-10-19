@@ -239,7 +239,7 @@ let computation_thread request_queue configuration state =
                           ~reason:"failed integrity check"
                           ~configuration
                           ~socket:!(state.connections).socket;
-                      current_time)
+                        current_time)
               end
             else
               state.last_integrity_check

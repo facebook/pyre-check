@@ -581,13 +581,13 @@ module Attribute = struct
       end)
 
 
-  let cache: attribute Node.t list Table.t =
-    Table.create ~size:1023 ()
+    let cache: attribute Node.t list Table.t =
+      Table.create ~size:1023 ()
 
 
-  let clear () =
-    Table.clear cache
-end
+    let clear () =
+      Table.clear cache
+  end
 
 
 
@@ -780,7 +780,7 @@ let fallback_attribute ~resolution ~access definition =
       | Type.Callable { Type.Callable.overloads = overload :: _; _ } ->
           let return_annotation = Type.Callable.Overload.return_annotation overload in
           let location = Attribute.location fallback in
-           Some
+          Some
             (Attribute.create
                ~resolution
                ~parent:definition
