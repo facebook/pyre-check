@@ -138,13 +138,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution location arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
-          let access = as_access receiver in
-          let receiver_argument_record = {
-            Argument.name = None;
-            value = Node.create ~location (Expression.Access access);
-          } in
-          let arguments = receiver_argument_record :: arguments in
           let state =
+            let access = as_access receiver in
+            let arguments =
+              let receiver_argument_record =
+                {
+                  Argument.name = None;
+                  value = Node.create ~location (Expression.Access access);
+                }
+              in
+              receiver_argument_record :: arguments
+            in
             let receiver_type =
               Access.expression access
               |> Resolution.resolve resolution
