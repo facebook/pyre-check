@@ -309,7 +309,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_expression ~resolution expression state =
       match expression.Node.value with
       | Access access ->
-          AccessPath.normalize_access access
+          AccessPath.normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution expression.Node.location state
       | Await expression ->
           analyze_expression ~resolution expression state

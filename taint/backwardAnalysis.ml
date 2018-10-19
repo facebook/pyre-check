@@ -243,7 +243,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Access access ->
-          normalize_access access
+          normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution state taint
       | Await expression ->
           analyze_expression ~resolution taint expression state

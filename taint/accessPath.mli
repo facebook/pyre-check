@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Analysis
 open Expression
 
 
@@ -47,7 +48,7 @@ type normalized_expression =
   | Expression of Expression.t
 [@@deriving eq, show]
 
-val normalize_access: Access.t -> normalized_expression
+val normalize_access: resolution: Resolution.t -> Access.t -> normalized_expression
 
 val as_access: normalized_expression -> Access.t
 

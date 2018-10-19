@@ -595,6 +595,13 @@ let typeshed_stubs = (* Yo dawg... *)
         class Request: pass
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "os")
+      ~handle:"os.pyi"
+      {|
+        environ: Dict[str, str] = ...
+      |}
+    |> Preprocessing.qualify;
   ]
 
 

@@ -4,7 +4,9 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+
 open Ast
+open Analysis
 open Expression
 open Pyre
 
@@ -104,27 +106,30 @@ let is_local identifier =
   String.is_prefix ~prefix:"$" (Identifier.show identifier)
 
 
-let rec split_maximal_prefix path =
-  match path with
-  | [] ->
-      ([], [])
-  | Access.Identifier identifier :: rest ->
-      let (prefix, rest) = split_maximal_prefix rest in
-      (identifier :: prefix), rest
-  | Access.Call _ :: _ ->
-      [], path
-  | Access.Expression _ :: _ ->
-      failwith "invalid expr in access (not in root position)"
+let global_prefix ~resolution access =
+  let rec module_prefix ~lead ~tail =
+    match tail with
+    | (Access.Identifier identifier) :: new_tail ->
+        let new_lead = lead @ [identifier] in
+        let access = Access.create_from_identifiers lead in
+        if Resolution.module_definition resolution access |> Option.is_some then
+          module_prefix ~lead:new_lead ~tail:new_tail
+        else
+          lead, tail
+    | _ ->
+        lead, tail
+  in
+  module_prefix ~lead:[] ~tail:access
 
 
-let rec split_root = function
+let split_root ~resolution = function
   | Access.Identifier identifier :: rest when is_local identifier ->
       Local identifier, rest
   | Access.Expression expression :: rest ->
       Expression expression, rest
-  | Access.Identifier identifier :: rest ->
-      let (prefix, rest) = split_maximal_prefix rest in
-      Global (List.map (identifier :: prefix) ~f:(fun identifier -> Access.Identifier identifier)),
+  | (Access.Identifier _ :: _) as access ->
+      let prefix, rest = global_prefix access ~resolution in
+      Global (List.map prefix ~f:(fun identifier -> Access.Identifier identifier)),
       rest
   | Access.Call _ :: _ ->
       failwith "invalid root (call) in access"
@@ -132,8 +137,8 @@ let rec split_root = function
       failwith "empty access"
 
 
-let normalize_access path =
-  let (root, rest) = split_root path in
+let normalize_access ~resolution path =
+  let (root, rest) = split_root path ~resolution in
   List.fold rest ~init:root ~f:normalize_access_list
 
 
