@@ -171,6 +171,13 @@ let rules = [
     name = "User data to XML Parser.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.XSS ];
+    code = 5008;
+    name = "XSS";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 
