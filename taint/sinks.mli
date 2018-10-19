@@ -12,6 +12,7 @@ type t =
   | Test
   | Thrift
   | XMLParser
+  | XSS
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t

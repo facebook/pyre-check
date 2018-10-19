@@ -201,6 +201,19 @@ let test_sink_models _ =
         ];
         tito_parameters = []
       };
+    ];
+
+  assert_model
+    ~model_source:"def xss(parameter: TaintSink[XSS]): ..."
+    ~expect:[
+      {
+        define_name = "xss";
+        returns = [];
+        taint_sink_parameters = [
+          { position = 0; sinks = [Taint.Sinks.XSS] };
+        ];
+        tito_parameters = []
+      };
     ]
 
 
