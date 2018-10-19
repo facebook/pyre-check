@@ -200,6 +200,21 @@ let test_hardcoded_source _ =
       };
     ];
   assert_taint
+    ~models:{|
+      os.environ: TaintSource[UserControlled] = ...
+      def dict.__getitem__(self: TaintInTaintOut[LocalReturn], key): ...
+    |}
+    {|
+      def get_environment_variable_with_getitem():
+        return os.environ['BAD']
+    |}
+    [
+      {
+        define_name = "qualifier.get_environment_variable_with_getitem";
+        returns = [Sources.UserControlled];
+      };
+    ];
+  assert_taint
     {|
       class Request(django.http.Request): ...
 
