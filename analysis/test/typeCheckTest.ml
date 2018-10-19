@@ -6290,7 +6290,36 @@ let test_scheduling _ =
       "Incompatible return type [7]: Expected `int` but got `str`.";
       "Missing global annotation [5]: Globally accessible variable `variable` has type " ^
       "`typing.Union[int, str]` but no type is specified.";
-    ]
+    ];
+
+  (* Functions defined after try/except blocks are typechecked. *)
+  assert_type_errors
+    {|
+      class Exception: pass
+      try:
+        pass
+      except Exception:
+        pass
+
+      def expect_string(a: str) -> None:
+        pass
+      def foo() -> None:
+        expect_string(1)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
+  assert_type_errors
+    {|
+      try:
+        pass
+      finally:
+        pass
+
+      def expect_string(a: str) -> None:
+        pass
+      def foo() -> None:
+        expect_string(1)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
 
 
 let test_format_string _ =

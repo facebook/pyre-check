@@ -253,6 +253,10 @@ module State = struct
         left.errors &&
       Map.fold
         ~init:true
+        ~f:(entry_less_or_equal right.nested_defines (fun _ _ -> true))
+        left.nested_defines &&
+      Map.fold
+        ~init:true
         ~f:(entry_less_or_equal
               (Resolution.annotations right.resolution)
               (Refinement.less_or_equal ~resolution))
@@ -273,6 +277,11 @@ module State = struct
         | `Right state ->
             Some state
       in
+      let join_nested_defines ~key:_ = function
+        | `Left nested_define
+        | `Right nested_define
+        | `Both (_, nested_define) -> Some nested_define
+      in
       let join_resolutions left_resolution right_resolution =
         let merge_annotations ~key:_ = function
           | `Both (left, right) ->
@@ -292,6 +301,8 @@ module State = struct
       {
         left with
         errors = Map.merge ~f:merge_errors left.errors right.errors;
+        nested_defines =
+          Map.merge ~f:join_nested_defines left.nested_defines right.nested_defines;
         resolution = join_resolutions left.resolution right.resolution;
       }
 
@@ -344,6 +355,11 @@ module State = struct
         | `Right state ->
             Some state
       in
+      let join_nested_defines ~key:_ = function
+        | `Left nested_define
+        | `Right nested_define
+        | `Both (_, nested_define) -> Some nested_define
+      in
       let widen_annotations ~key annotation =
         match annotation with
         | `Both (previous, next) ->
@@ -385,6 +401,8 @@ module State = struct
       {
         previous with
         errors = Map.merge ~f:widen_errors previous.errors next.errors;
+        nested_defines =
+          Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
         resolution_fixpoint
       }
