@@ -15,7 +15,7 @@ module Root = struct
     | LocalResult (* Special root representing the return value location. *)
     | Parameter of { position: int }
     | Variable of Identifier.t
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -23,6 +23,7 @@ type t = {
   root: Root.t;
   path: AccessPathTree.Label.path;
 }
+[@@deriving eq]
 
 
 let create root path = { root; path; }
@@ -62,7 +63,7 @@ type normalized_expression =
   | Global of Access.t
   | Local of Identifier.t
   | Expression of Expression.t
-[@@deriving show]
+[@@deriving eq, show]
 
 
 let is_get_item member =

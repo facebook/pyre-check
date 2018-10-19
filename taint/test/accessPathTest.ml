@@ -5,38 +5,39 @@
 
 open OUnit2
 
-open Taint
-open Core
 open Ast
+open Core
 open Expression
+open Taint
+open Test
 
 
 let test_normalize_access _ =
-  let assert_normalized expression expected =
-    let access = Access.create expression in
+  let assert_normalized access expected =
+    let access = Test.parse_single_access access in
     let normalized = AccessPath.normalize_access access in
     let re_accessed = AccessPath.as_access normalized in
-    assert_equal ~printer:(Statement.Access.show) access re_accessed;
-    assert_equal ~printer:(AccessPath.show_normalized_expression) normalized expected
+    assert_equal ~cmp:Access.equal ~printer:Access.show re_accessed access;
+    assert_equal
+      ~cmp:AccessPath.equal_normalized_expression
+      ~printer:AccessPath.show_normalized_expression
+      expected
+      normalized
   in
 
-  assert_normalized
-    "a.b.c"
-    (AccessPath.Global (Access.create "a.b.c"));
-  assert_normalized
-    "$a"
-    (AccessPath.Local (
-        Identifier.create "$a"
-      ));
+  let local name = AccessPath.Local (Identifier.create name) in
+  let global access = AccessPath.Global (Access.create access) in
 
+  assert_normalized "a" (global "a");
+  assert_normalized "a()" (AccessPath.Call { callee = global "a"; arguments = +[] });
+  assert_normalized "a.b.c" (global "a.b.c");
+  assert_normalized "a.b.c()" (AccessPath.Call { callee = global "a.b.c"; arguments = +[] });
+
+  assert_normalized "$a" (local "$a");
+  assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = +[] });
   assert_normalized
     "$a.b"
-    (AccessPath.Access {
-        expression = (AccessPath.Local (
-            Identifier.create "$a"
-          ));
-        member = Identifier.create "b";
-      })
+    (AccessPath.Access { expression = local "$a"; member = Identifier.create "b" })
 
 
 let () =

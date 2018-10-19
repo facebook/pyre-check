@@ -109,14 +109,14 @@ module Label = struct
   type t =
     | Field of Identifier.t
     | Any
-  [@@deriving show, compare, sexp, hash]
+  [@@deriving eq, show, compare, sexp, hash]
 
   let show = function
     | Field f -> Format.sprintf "[%s]" (Identifier.show f)
     | Any -> "[*]"
 
   type path = t list
-  [@@deriving compare, sexp]
+  [@@deriving compare, eq, sexp]
 
   let show_path path =
     List.map ~f:show path

@@ -13,7 +13,7 @@ module Root : sig
     | LocalResult (* Special root representing the return value location. *)
     | Parameter of { position: int }
     | Variable of Identifier.t
-  [@@deriving compare, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash]
 end
 
 
@@ -45,7 +45,7 @@ type normalized_expression =
   | Global of Access.t
   | Local of Identifier.t
   | Expression of Expression.t
-[@@deriving show]
+[@@deriving eq, show]
 
 val normalize_access: Access.t -> normalized_expression
 
