@@ -51,7 +51,10 @@ module TypeQuery = struct
     | Signature of Access.t
     | Superclasses of Access.t
     | Type of Expression.t
-    | TypeAtLocation of Location.Instantiated.t
+    | TypeAtPosition of {
+        file: File.t;
+        position: Location.position;
+      }
   [@@deriving eq, show]
 
 

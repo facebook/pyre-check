@@ -562,30 +562,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions)
         end
 
-    | TypeQuery.TypeAtLocation {
-        Ast.Location.path;
-        start = ({ Ast.Location.line; column} as start);
-        _;
-      } ->
-        let source =
-          Ast.SharedMemory.Sources.get (File.Handle.create path)
-          >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
-          >>| File.create
-          >>= File.content
-          |> Option.value ~default:""
-        in
-        File.Handle.create path
-        |> Ast.SharedMemory.Sources.get
-        >>| Lookup.create_of_source environment
-        >>= Lookup.get_annotation ~position:start ~source
+    | TypeQuery.TypeAtPosition { file; position; } ->
+        LookupCache.find_annotation ~state ~configuration file position
         >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
         |> Option.value ~default:(
           TypeQuery.Error (
-            Format.sprintf
-              "Not able to get lookup at %s:%d:%d"
-              path
-              line
-              column))
+            Format.asprintf
+              "Not able to get lookup at %a:%a"
+              Path.pp (File.path file)
+              Location.pp_position position))
   in
   let response =
     try

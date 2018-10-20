@@ -18,6 +18,10 @@ let show_position { line; column } =
   Format.sprintf "%d:%d" line column
 
 
+let pp_position format { line; column } =
+  Format.fprintf format "%d:%d" line column
+
+
 type 'path location = {
   path: 'path;
   start: position;

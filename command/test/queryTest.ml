@@ -84,14 +84,13 @@ let test_parse_query _ =
   assert_fails_to_parse "typecheck(1+2)";
 
   assert_parses
-    "type_at_location('a.py', 1, 2)"
-    (TypeAtLocation {
-        Ast.Location.path = "a.py";
-        start = { Ast.Location.line = 1; column = 2 };
-        stop = { Ast.Location.line = 1; column = 2 };
+    "type_at_position('a.py', 1, 2)"
+    (TypeAtPosition {
+        file = File.create (Path.create_relative ~root:(mock_path "") ~relative:"a.py");
+        position = { Ast.Location.line = 1; column = 2 };
       });
-  assert_fails_to_parse "type_at_location(a.py:1:2)";
-  assert_fails_to_parse "type_at_location('a.py', 1, 2)";
+  assert_fails_to_parse "type_at_position(a.py:1:2)";
+  assert_fails_to_parse "type_at_position('a.py', 1, 2)";
 
   assert_parses "attributes(C)" (Attributes (Access.create "C"));
   assert_fails_to_parse "attributes(C, D)";

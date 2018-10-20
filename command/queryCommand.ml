@@ -73,18 +73,25 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Superclasses (access name))
         | "type", [argument] ->
             Request.TypeQueryRequest (Type (expression argument))
+        (* DEPRECATED ALIAS *)
         | "type_at_location",
           [
             path;
             { Argument.value = { Node.value = Integer line; _ }; _ };
             { Argument.value = { Node.value = Integer column; _ }; _ };
+          ]
+        | "type_at_position",
+          [
+            path;
+            { Argument.value = { Node.value = Integer line; _ }; _ };
+            { Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
-            let location =
-              let path = string path in
-              let position = { Location.line; column } in
-              { Location.path; start = position; stop = position }
+            let file =
+              Path.create_relative ~root ~relative:(string path)
+              |> File.create
             in
-            Request.TypeQueryRequest (TypeAtLocation location)
+            let position = { Location.line; column } in
+            Request.TypeQueryRequest (TypeAtPosition { file; position })
         | "type_check", arguments ->
             let files =
               arguments
