@@ -178,8 +178,27 @@ module ExpressionVisitor = struct
     in
     state
 
-  let statement state _ =
-    state
+  let statement
+      ({ resolution; annotations_lookup; _ } as state)
+      { Node.value = statement_value; _ } =
+    match statement_value with
+    | Define { parameters; _ } ->
+        let extract_parameters { Node.value = { Parameter.annotation; _ }; location } =
+          let store_parameter_annotation annotation =
+            Hashtbl.set
+              annotations_lookup
+              ~key:location
+              ~data:(Precise annotation)
+          in
+          annotation
+          >>= (fun expression -> resolve ~resolution ~expression)
+          >>| store_parameter_annotation
+          |> ignore
+        in
+        List.iter ~f:extract_parameters parameters;
+        state
+    | _ ->
+        state
 end
 
 
