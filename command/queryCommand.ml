@@ -105,6 +105,8 @@ let parse_query ~root query =
       end
   | _ ->
       raise (InvalidQuery "unexpected query")
+  | exception Parser.Error message ->
+      raise (InvalidQuery ("failed to parse query: " ^ message))
 
 
 let run_query serialized local_root () =

@@ -28,7 +28,7 @@ let test_parse_query _ =
       Commands.Query.parse_query ~root:(mock_path "") serialized
       |> ignore;
       assert_unreached ()
-    with _ ->
+    with Commands.Query.InvalidQuery _ ->
       ()
   in
 
@@ -90,7 +90,7 @@ let test_parse_query _ =
         position = { Ast.Location.line = 1; column = 2 };
       });
   assert_fails_to_parse "type_at_position(a.py:1:2)";
-  assert_fails_to_parse "type_at_position('a.py', 1, 2)";
+  assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
 
   assert_parses "attributes(C)" (Attributes (Access.create "C"));
   assert_fails_to_parse "attributes(C, D)";
