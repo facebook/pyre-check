@@ -6,6 +6,9 @@
 
 type t =
   | Cookies
+  | Demo
+  | PII
+  | Secrets  (* Such as passwords, tokens *)
   | Test
   | Thrift
   | UserControlled

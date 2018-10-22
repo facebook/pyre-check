@@ -5,6 +5,7 @@
 
 
 type t =
+  | Demo
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
   | RemoteCodeExecution

@@ -8,6 +8,9 @@ open Core
 
 type t =
   | Cookies
+  | Demo
+  | PII
+  | Secrets  (* Such as passwords, tokens *)
   | Test
   | Thrift
   | UserControlled
@@ -16,6 +19,9 @@ type t =
 
 let show = function
   | Cookies -> "Cookies"
+  | Demo -> "Demo"
+  | PII -> "PII"
+  | Secrets -> "Secrets"
   | Test -> "Test"
   | Thrift -> "Thrift"
   | UserControlled -> "UserControlled"
@@ -23,6 +29,9 @@ let show = function
 
 let create = function
   | "Cookies" -> Cookies
+  | "PII" -> PII
+  | "Secrets" -> Secrets
+  | "Demo" -> Demo
   | "Test" -> Test
   | "Thrift" -> Thrift
   | "UserControlled" -> UserControlled

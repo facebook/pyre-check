@@ -158,10 +158,10 @@ let rules = [
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
   {
-    sources = [ Sources.Cookies ];
+    sources = [ Sources.Cookies; Sources.PII; Sources.Secrets ];
     sinks = [ Sinks.Logging ];
     code = 5006;
-    name = "Cookies being logged.";
+    name = "Restricted data being logged.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
   {
@@ -176,6 +176,13 @@ let rules = [
     sinks = [ Sinks.XSS ];
     code = 5008;
     name = "XSS";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
+  {
+    sources = [ Sources.Demo ];
+    sinks = [ Sinks.Demo ];
+    code = 5009;
+    name = "Demo flow.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
 ]
