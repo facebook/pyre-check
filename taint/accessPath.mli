@@ -12,9 +12,16 @@ open Expression
 module Root : sig
   type t =
     | LocalResult (* Special root representing the return value location. *)
-    | Parameter of { position: int }
+    | PositionalParameter of { position: int; name: Identifier.t; }
+    | NamedParameter of { name: Identifier.t; }
+    | StarParameter of { position: int }
+    | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
+
+  val normalize_parameters: 'a Parameter.t list -> (t * Identifier.t * 'a option) list
+
+  val parameter_name: t -> string option
 end
 
 
@@ -53,3 +60,14 @@ val normalize_access: resolution: Resolution.t -> Access.t -> normalized_express
 val as_access: normalized_expression -> Access.t
 
 val to_json: t -> Yojson.Safe.json
+
+type argument_match = {
+  root: Root.t;
+  actual_path: AccessPathTree.Label.path;
+  formal_path: AccessPathTree.Label.path;
+}
+
+val match_actuals_to_formals :
+  Expression.t Argument.record list
+  -> Root.t list
+  -> (Expression.t * argument_match list) list

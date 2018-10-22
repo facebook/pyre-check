@@ -11,16 +11,10 @@ open Ast
 open Pyre
 open Statement
 open Taint
-open Domains
 
 open Test
 open Interprocedural
-
-
-type source_expectation = {
-  define_name: string;
-  returns: Sources.t list;
-}
+open TestHelper
 
 
 let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect =
@@ -62,37 +56,11 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     |> Fixpoint.add_predefined call_target;
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  let check_expectation { define_name; returns } =
-    let open Taint.Result in
-    let expected_call_target = Callable.create_real (Access.create define_name) in
-    let model =
-      Fixpoint.get_model expected_call_target
-      >>= Result.get_model Taint.Result.kind
-    in
-    match model with
-    | None -> assert_failure ("no model for " ^ define_name)
-    | Some { forward = { source_taint; } ; _ } ->
-        let returned_sources =
-          ForwardState.read AccessPath.Root.LocalResult source_taint
-          |> ForwardState.collapse
-          |> ForwardTaint.leaves
-          |> List.map ~f:Sources.show
-          |> String.Set.of_list
-        in
-        let expected_sources =
-          List.map ~f:Sources.show returns
-          |> String.Set.of_list
-        in
-        assert_equal
-          ~cmp:String.Set.equal
-          ~printer:(fun set ->
-              Format.sprintf "%s: %s"
-                define_name
-                (Sexp.to_string [%message (set: String.Set.t)]))
-          expected_sources
-          returned_sources
+  let get_model callable =
+    Fixpoint.get_model callable
+    >>= Result.get_model Taint.Result.kind
   in
-  List.iter ~f:check_expectation expect
+  List.iter ~f:(check_expectation ~get_model) expect
 
 
 
@@ -108,11 +76,14 @@ let test_no_model _ =
         {
           define_name = "does_not_exist";
           returns = [];
+          errors = [];
+          sink_parameters = [];
+          tito_parameters = [];
         };
       ]
   in
   assert_raises
-    (OUnitTest.OUnit_failure "no model for does_not_exist")
+    (OUnitTest.OUnit_failure "model not found for does_not_exist")
     assert_no_model
 
 
@@ -126,6 +97,9 @@ let test_simple_source _ =
       {
         define_name = "qualifier.simple_source";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
   assert_taint
@@ -140,6 +114,9 @@ let test_simple_source _ =
       {
         define_name = "qualifier.simple_source";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -164,10 +141,16 @@ let test_hardcoded_source _ =
       {
         define_name = "qualifier.get";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.post";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
   assert_taint
@@ -183,6 +166,9 @@ let test_hardcoded_source _ =
       {
         define_name = "qualifier.get_field";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
   assert_taint
@@ -197,6 +183,9 @@ let test_hardcoded_source _ =
       {
         define_name = "qualifier.get_environment_variable";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
   assert_taint
@@ -212,6 +201,9 @@ let test_hardcoded_source _ =
       {
         define_name = "qualifier.get_environment_variable_with_getitem";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
   assert_taint
@@ -225,6 +217,9 @@ let test_hardcoded_source _ =
       {
         define_name = "qualifier.get_field";
         returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -240,6 +235,9 @@ let test_local_copy _ =
       {
         define_name = "qualifier.copy_source";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -255,6 +253,9 @@ let test_class_model _ =
       {
         define_name = "qualifier.Foo.bar";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -278,6 +279,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -299,6 +303,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -319,6 +326,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       }
     ];
 
@@ -339,6 +349,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_across_methods";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -364,6 +377,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_with_union_type";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -395,6 +411,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_with_union_type";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -415,6 +434,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_indirect_concatenated_call";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       }
     ];
   assert_taint
@@ -433,6 +455,9 @@ let test_apply_method_model_at_call_site _ =
       {
         define_name = "qualifier.taint_indirect_concatenated_call";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       }
     ]
 
@@ -452,6 +477,9 @@ let test_taint_in_taint_out_application _ =
       {
         define_name = "qualifier.simple_source";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ];
 
@@ -469,6 +497,9 @@ let test_taint_in_taint_out_application _ =
       {
         define_name = "qualifier.no_tito_taint";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -509,22 +540,37 @@ let test_dictionary _ =
       {
         define_name = "qualifier.dictionary_source";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.dictionary_same_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.dictionary_different_index";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.dictionary_unknown_read_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.dictionary_unknown_write_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -554,26 +600,44 @@ let test_comprehensions _ =
       {
         define_name = "qualifier.source_in_iterator";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_expression";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_set_iterator";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_set_expression";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_generator_iterator";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_generator_expression";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -613,30 +677,51 @@ let test_list _ =
       {
         define_name = "qualifier.source_in_list";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_same_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_different_index";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_unknown_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_pattern_same_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_pattern_different_index";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.list_pattern_star_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -676,30 +761,51 @@ let test_tuple _ =
       {
         define_name = "qualifier.source_in_tuple";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_same_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_different_index";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_unknown_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_pattern_same_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_pattern_different_index";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.tuple_pattern_star_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -714,6 +820,9 @@ let test_lambda _ =
       {
         define_name = "qualifier.source_in_lambda";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -736,14 +845,23 @@ let test_set _ =
       {
         define_name = "qualifier.source_in_set";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.set_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.set_unknown_index";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -767,10 +885,16 @@ let test_starred _ =
       {
         define_name = "qualifier.source_in_starred";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_starred_starred";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -795,18 +919,30 @@ let test_ternary _ =
       {
         define_name = "qualifier.source_in_then";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_else";
         returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_both";
         returns = [Sources.Test; Sources.UserControlled];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_cond";
         returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -821,6 +957,9 @@ let test_unary _ =
       {
         define_name = "qualifier.source_in_unary";
         returns = [Taint.Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -838,10 +977,16 @@ let test_yield _ =
       {
         define_name = "qualifier.source_in_yield";
         returns = [Taint.Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
       {
         define_name = "qualifier.source_in_yield_from";
         returns = [Taint.Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 

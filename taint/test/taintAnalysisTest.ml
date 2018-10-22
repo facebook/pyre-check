@@ -11,37 +11,13 @@ open Ast
 open Expression
 open Pyre
 open Taint
-open AccessPath
-open Domains
-open Model
-open Result
 
 open Interprocedural
-
-
-type parameter_taint = {
-  position: int;
-  sinks: Taint.Sinks.t list;
-}
-
-
-type error_expectation = {
-  code: int;
-  pattern: string;
-}
-
-
-type define_expectation = {
-  define_name: string;
-  returns: Sources.t list;
-  taint_sink_parameters: parameter_taint list;
-  tito_parameters: int list;
-  errors: error_expectation list;
-}
+open TestHelper
 
 
 type expect_fixpoint = {
-  expect: define_expectation list;
+  expect: expectation list;
   iterations: int;
 }
 
@@ -80,90 +56,6 @@ let create_call_graph ?(test_file = "test_file") source =
   call_graph, callables
 
 
-let check_model_expectation
-    models
-    { define_name; returns; taint_sink_parameters; tito_parameters; _ }
-  =
-  let expect_source_taint source_taint =
-    let actual =
-      ForwardState.read_access_path
-        ~root:Root.LocalResult
-        ~path:[]
-        source_taint
-      |> ForwardState.collapse
-      |> ForwardTaint.leaves
-      |> List.map ~f:Sources.show
-    in
-    let expected =
-      List.map ~f:Sources.show returns
-    in
-    if not (SSet.equal (SSet.of_list actual) (SSet.of_list expected)) then
-      Format.sprintf
-        "Model for %s has wrong return taint: [%s] expected [%s]"
-        define_name
-        (String.concat ~sep:", " actual)
-        (String.concat ~sep:", " expected)
-      |> assert_failure
-  in
-  let check_positions what taint expected =
-    let add_position root positions =
-      match root with
-      | Root.Parameter { position; } -> position :: positions
-      | _ -> positions
-    in
-    let actual =
-      BackwardState.fold
-        ~f:(fun root _ positions -> add_position root positions)
-        ~init:[]
-        taint
-    in
-    if not (ISet.equal (ISet.of_list actual) (ISet.of_list expected)) then
-      Format.sprintf
-        "Model for %s has wrong %s parameter positions: [%s] expected [%s]"
-        define_name
-        what
-        (String.concat ~sep:", " (List.map ~f:string_of_int actual))
-        (String.concat ~sep:", " (List.map ~f:string_of_int expected))
-      |> assert_failure
-  in
-  let expect_sink_taint sink_taint =
-    let expect_sink_parameter { position; sinks } =
-      let actual =
-        BackwardState.read_access_path
-          ~root:(Root.Parameter { position })
-          ~path:[]
-          sink_taint
-        |> BackwardState.collapse
-        |> BackwardTaint.leaves
-        |> List.map ~f:Sinks.show
-      in
-      let expected =
-        List.map ~f:Sinks.show sinks
-      in
-      if not (SSet.equal (SSet.of_list actual) (SSet.of_list expected)) then
-        Format.sprintf
-          "Model for %s has wrong sinks for parameter %d: [%s] expected [%s]"
-          define_name
-          position
-          (String.concat ~sep:", " actual)
-          (String.concat ~sep:", " expected)
-        |> assert_failure
-    in
-    let expected_positions = List.map ~f:(fun { position; _ } -> position) taint_sink_parameters in
-    check_positions "sink" sink_taint expected_positions;
-    List.iter ~f:expect_sink_parameter taint_sink_parameters
-  in
-  let call_target = Callable.create_real (Access.create define_name) in
-  match List.find models ~f:(fun model -> model.call_target = call_target) with
-  | None ->
-      Format.sprintf "Model for %s not found" define_name
-      |> assert_failure
-  | Some model ->
-      expect_source_taint model.model.forward.source_taint;
-      expect_sink_taint model.model.backward.sink_taint;
-      check_positions "tito" model.model.backward.taint_in_taint_out tito_parameters
-
-
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let call_graph, all_callables = create_call_graph source in
@@ -189,11 +81,9 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  let read_analysis_model { define_name; _ } =
-    let call_target = Callable.create_real (Access.create define_name) in
+  let get_model call_target =
     Fixpoint.get_model call_target
     >>= Result.get_model Taint.Result.kind
-    >>| (fun model -> { call_target; model })
   in
   let read_analysis_result { define_name; _ } =
     let call_target = Callable.create_real (Access.create define_name) in
@@ -231,7 +121,6 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       ~printer:Int.to_string;
     List.iter2_exn ~f:(assert_error define1) error_patterns errors
   in
-  let models = List.filter_map expect ~f:read_analysis_model in
   let results = List.filter_map expect ~f:read_analysis_result in
   let expect_results =
     let create_result_patterns { define_name; errors; _ } = define_name, errors in
@@ -239,7 +128,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   in
   assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
-  List.iter ~f:(check_model_expectation models) expect;
+  List.iter ~f:(check_expectation ~get_model) expect;
   List.iter2_exn expect_results results ~f:assert_errors
 
 
@@ -318,7 +207,7 @@ let test_fixpoint _ =
         {
           define_name = "rce_problem";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -330,7 +219,7 @@ let test_fixpoint _ =
         {
           define_name = "match_flows";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -342,7 +231,7 @@ let test_fixpoint _ =
         {
           define_name = "match_flows_multiple";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -354,7 +243,7 @@ let test_fixpoint _ =
         {
           define_name = "match_via_methods";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -366,14 +255,14 @@ let test_fixpoint _ =
         {
           define_name = "no_match_via_methods";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "match_via_receiver";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -385,8 +274,8 @@ let test_fixpoint _ =
         {
           define_name = "qux";
           returns = [];
-          taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.Test] }
+          sink_parameters = [
+            { name = "arg"; sinks = [Taint.Sinks.Test] }
           ];
           tito_parameters = [];
           errors = [];
@@ -394,8 +283,8 @@ let test_fixpoint _ =
         {
           define_name = "bad";
           returns = [];
-          taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.Test] }
+          sink_parameters = [
+            { name = "arg"; sinks = [Taint.Sinks.Test] }
           ];
           tito_parameters = [];
           errors = [];
@@ -403,22 +292,22 @@ let test_fixpoint _ =
         {
           define_name = "bar";
           returns = [Sources.Test];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "some_source";
           returns = [Sources.Test];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "list_sink";
           returns = [];
-          taint_sink_parameters = [
-            { position = 0; sinks = [Taint.Sinks.Test] }
+          sink_parameters = [
+            { name = "list"; sinks = [Taint.Sinks.Test] }
           ];
           tito_parameters = [];
           errors = [];
@@ -426,14 +315,14 @@ let test_fixpoint _ =
         {
           define_name = "no_list_match";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
           define_name = "list_match";
           returns = [];
-          taint_sink_parameters = [];
+          sink_parameters = [];
           tito_parameters = [];
           errors = [
             {
@@ -479,7 +368,7 @@ let test_integration _ =
       let serialized_model callable: string =
         let externalization =
           Interprocedural.Analysis.externalize callable
-          |> List.map ~f:(fun json -> Yojson.Safe.to_string ~std:true json ^ "\n")
+          |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
           |> String.concat ~sep:""
         in
         externalization

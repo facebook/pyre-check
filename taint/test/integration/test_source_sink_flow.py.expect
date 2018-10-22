@@ -1,5 +1,156 @@
-{"kind":"issue","data":{"callable":"match_flows","callable_line":20,"code":5002,"line":22,"start":8,"end":9,"filename":"test.py","message":"Test flow. Data from [Test] source(s) may reach [Test] sink(s)","traces":[{"name":"forward","roots":[{"call":{"position":{"filename":"test.py","line":21,"start":19,"end":21},"resolves_to":["some_source"],"port":"result"},"leaves":[{"kind":"Test"}]}]},{"name":"backward","roots":[{"call":{"position":{"filename":"test.py","line":22,"start":8,"end":9},"resolves_to":["bad"],"port":"formal(0)"},"leaves":[{"kind":"Test"}]}]}]}}
-{"kind":"model","data":{"callable":"bad","sources":[],"sinks":[{"port":"formal(0)","taint":[{"call":{"position":{"filename":"test.py","line":13,"start":7,"end":12},"resolves_to":["qux"],"port":"formal(0)"},"leaves":[{"kind":"Test"}]}]}],"tito":[]}}
-{"kind":"model","data":{"callable":"bar","sources":[{"port":"result","taint":[{"root":{"filename":"test.py","line":5,"start":23,"end":25},"leaves":[{"kind":"Test"}]}]}],"sinks":[],"tito":[]}}
-{"kind":"model","data":{"callable":"qux","sources":[],"sinks":[{"port":"formal(0)","taint":[{"root":{"filename":"test.py","line":9,"start":14,"end":19},"leaves":[{"kind":"Test"}]}]}],"tito":[]}}
-{"kind":"model","data":{"callable":"some_source","sources":[{"port":"result","taint":[{"call":{"position":{"filename":"test.py","line":17,"start":14,"end":16},"resolves_to":["bar"],"port":"result"},"leaves":[{"kind":"Test"}]}]}],"sinks":[],"tito":[]}}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match_flows",
+    "callable_line": 20,
+    "code": 5002,
+    "line": 22,
+    "start": 11,
+    "end": 12,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 21,
+                "start": 19,
+                "end": 21
+              },
+              "resolves_to": [ "some_source" ],
+              "port": "result"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 22,
+                "start": 7,
+                "end": 13
+              },
+              "resolves_to": [ "bad" ],
+              "port": "formal($parameter$arg)"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "bad",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($parameter$arg)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 13,
+                "start": 7,
+                "end": 12
+              },
+              "resolves_to": [ "qux" ],
+              "port": "formal($parameter$arg)"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "bar",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 5,
+              "start": 23,
+              "end": 25
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qux",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($parameter$arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 9,
+              "start": 14,
+              "end": 19
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "some_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 17,
+                "start": 14,
+                "end": 16
+              },
+              "resolves_to": [ "bar" ],
+              "port": "result"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

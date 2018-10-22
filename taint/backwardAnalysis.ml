@@ -98,27 +98,40 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         match taint_model with
         | Some { backward; _ } when not is_obscure ->
             let collapsed_call_taint = BackwardState.collapse call_taint in
-            let reversed_arguments = List.rev arguments in
-            let number_of_arguments = List.length arguments in
-            let analyze_argument_position reverse_position state argument =
-              let position = number_of_arguments - reverse_position - 1 in
-              let port = AccessPath.Root.Parameter { position } in
-              let argument_taint =
-                BackwardState.read
-                  port
-                  backward.sink_taint
-                |> BackwardState.apply_call location ~callees:[ call_target ] ~port
+            let sink_roots = BackwardState.keys backward.sink_taint in
+            let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
+            let tito_roots = BackwardState.keys backward.taint_in_taint_out in
+            let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
+            let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
+            let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+              BackwardState.read_access_path
+                ~root
+                ~path:formal_path
+                backward.sink_taint
+              |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
+              |> BackwardState.create_tree actual_path
+              |> BackwardState.join_trees taint_tree
+            in
+            let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
+              BackwardState.read_access_path
+                ~root
+                ~path:formal_path
+                backward.taint_in_taint_out
+              |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
+              |> BackwardState.create_tree actual_path
+              |> BackwardState.join_trees taint_tree
+            in
+            let analyze_argument state ((argument, sink_matches), (_dup, tito_matches)) =
+              let sink_taint =
+                List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.empty_tree
               in
               let taint_in_taint_out =
-                BackwardState.read
-                  (AccessPath.Root.Parameter { position })
-                  backward.taint_in_taint_out
-                |> BackwardState.filter_map_tree ~f:(fun _ -> collapsed_call_taint)
+                List.fold tito_matches ~f:combine_tito ~init:BackwardState.empty_tree
               in
-              let argument_taint = BackwardState.join_trees argument_taint taint_in_taint_out in
-              analyze_argument ~resolution argument_taint argument state
+              let argument_taint = BackwardState.join_trees sink_taint taint_in_taint_out in
+              analyze_expression ~resolution argument_taint argument state
             in
-            List.foldi ~f:analyze_argument_position reversed_arguments ~init:state
+            List.fold ~f:analyze_argument combined_matches ~init:state
         | _ ->
             (* obscure or no model *)
             List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
@@ -427,13 +440,13 @@ let extract_tito_and_sink_models parameters entry_taint =
     BackwardTaint.partition_tf ~f:((=) Sinks.LocalReturn) taint
     |> fst
   in
-  let extract_taint_in_taint_out position model { Node.value = { Parameter.name; _ }; _ } =
+  let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+  let extract_taint_in_taint_out model (parameter, name, _annotation) =
     let taint_in_taint_out_taint =
       BackwardState.read (Root.Variable name) entry_taint
       |> BackwardState.filter_map_tree ~f:filter_to_local_return
     in
     if not (BackwardState.is_empty_tree taint_in_taint_out_taint) then
-      let parameter = Root.(Parameter { position }) in
       BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out_taint model
     else
       model
@@ -442,27 +455,26 @@ let extract_tito_and_sink_models parameters entry_taint =
     BackwardTaint.partition_tf ~f:((<>) Sinks.LocalReturn) taint
     |> fst
   in
-  let extract_sink_taint position model { Node.value = { Parameter.name; _ }; _ } =
+  let extract_sink_taint model (parameter, name, _annotation) =
     let sink_taint =
       BackwardState.read (Root.Variable name) entry_taint
       |> BackwardState.filter_map_tree ~f:filter_to_real_sinks
     in
     if not (BackwardState.is_empty_tree sink_taint) then
-      let parameter = Root.(Parameter { position }) in
       BackwardState.assign ~root:parameter ~path:[] sink_taint model
     else
       model
   in
   let taint_in_taint_out =
-    List.foldi parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
+    List.fold normalized_parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
   in
   let sink_taint =
-    List.foldi parameters ~f:extract_sink_taint ~init:BackwardState.empty
+    List.fold normalized_parameters ~f:extract_sink_taint ~init:BackwardState.empty
   in
   TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
 
 
-let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as define) =
+let run ~environment ~define:({ Node.value = { Define.parameters; name; _ }; _ } as define) =
   let module AnalysisInstance =
     AnalysisInstance(struct
       let definition = define
@@ -472,7 +484,6 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
-  let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
   let entry_state =
     Analyzer.backward ~cfg ~initial
     |> Analyzer.entry
@@ -492,7 +503,8 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
     let () =
       Log.log
         ~section:`Taint
-        "Models: %a"
+        "Callable: %a Models: %a"
+        Access.pp name
         TaintResult.Backward.pp_model model
     in
     model

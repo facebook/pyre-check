@@ -14,18 +14,7 @@ open Taint
 
 open Test
 open Interprocedural
-
-type parameter_taint = {
-  position: int;
-  sinks: Taint.Sinks.t list;
-}
-
-
-type taint_in_taint_out_expectation = {
-  define_name: string;
-  taint_sink_parameters: parameter_taint list;
-  tito_parameters: int list;
-}
+open TestHelper
 
 
 let assert_taint source expected =
@@ -63,92 +52,11 @@ let assert_taint source expected =
     |> Fixpoint.add_predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  let check_expectation { define_name; taint_sink_parameters; tito_parameters; } =
-    let open Taint.Result in
-    let extract_sinks_by_parameter_position root sink_tree sink_map =
-      match root with
-      | AccessPath.Root.Parameter { position; _ } ->
-          let sinks =
-            Domains.BackwardState.collapse sink_tree
-            |> Domains.BackwardTaint.leaves
-          in
-          let sinks =
-            Int.Map.find sink_map position
-            |> Option.value ~default:[]
-            |> List.rev_append sinks
-            |> List.dedup_and_sort ~compare:Taint.Sinks.compare
-          in
-          Int.Map.set sink_map ~key:position ~data:sinks
-      | _ ->
-          sink_map
-    in
-    let backward =
-      let model =
-        Fixpoint.get_model (Callable.create_real (Access.create define_name))
-        >>= Result.get_model Taint.Result.kind
-      in
-      match model with
-      | None -> Format.sprintf "model not found for %s" define_name |> assert_failure
-      | Some { backward; _ } -> backward
-    in
-    let taint_map =
-      Domains.BackwardState.fold
-        backward.sink_taint
-        ~f:extract_sinks_by_parameter_position
-        ~init:Int.Map.empty
-    in
-    let extract_tito_parameter_position root _ positions =
-      match root with
-      | AccessPath.Root.Parameter { position; _ } -> Int.Set.add positions position
-      | _ -> positions
-    in
-    let taint_in_taint_out_positions =
-      Domains.BackwardState.fold
-        backward.taint_in_taint_out
-        ~f:extract_tito_parameter_position
-        ~init:Int.Set.empty
-    in
-    let check_each_sink_position ~key:position ~data =
-      match data with
-      | `Both (expected, actual) ->
-          assert_equal
-            ~cmp:(List.equal ~equal:Taint.Sinks.equal)
-            ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sinks.t list)])
-            ~msg:(Format.sprintf "Define %s Position %d" define_name position)
-            expected
-            actual
-      | `Left expected ->
-          assert_equal
-            ~cmp:(List.equal ~equal:Taint.Sinks.equal)
-            ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sinks.t list)])
-            ~msg:(Format.sprintf "Define %s Position %d" define_name position)
-            expected
-            []
-      | `Right _ ->
-          (* Okay, we may have outcomes we don't care about *)
-          ()
-    in
-    let expected_sinks =
-      List.map ~f:(fun { position; sinks; } -> position, sinks) taint_sink_parameters
-      |> Int.Map.of_alist_exn
-    in
-
-    (* Check sinks. *)
-    assert_equal
-      (Map.length expected_sinks)
-      (Map.length taint_map)
-      ~msg:(Format.sprintf "Define %s: List of tainted parameters differ in length." define_name);
-    Int.Map.iter2 ~f:check_each_sink_position expected_sinks taint_map;
-
-    let expected_tito = Int.Set.of_list tito_parameters in
-    assert_equal
-      ~cmp:Int.Set.equal
-      ~printer:(fun set -> Sexp.to_string [%message (set: Int.Set.t)])
-      ~msg:(Format.sprintf "Define %s Tito positions" define_name)
-      expected_tito
-      taint_in_taint_out_positions
+  let get_model callable =
+    Fixpoint.get_model callable
+    >>= Result.get_model Taint.Result.kind
   in
-  List.iter ~f:check_expectation expected
+  List.iter ~f:(check_expectation ~get_model) expected
 
 
 let test_plus_taint_in_taint_out _ =
@@ -161,8 +69,10 @@ let test_plus_taint_in_taint_out _ =
     [
       {
         define_name = "qualifier.test_plus_taint_in_taint_out";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["tainted_parameter1"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -178,8 +88,10 @@ let test_concatenate_taint_in_taint_out _ =
     [
       {
         define_name = "qualifier.test_concatenate_taint_in_taint_out";
-        taint_sink_parameters = [];
-        tito_parameters = [1];
+        sink_parameters = [];
+        tito_parameters = ["tainted_parameter1"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -196,13 +108,17 @@ let test_call_taint_in_taint_out _ =
     [
       {
         define_name = "qualifier.test_base_tito";
-        taint_sink_parameters = [];
-        tito_parameters = [1];
+        sink_parameters = [];
+        tito_parameters = ["tainted_parameter1"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.test_called_tito";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["tainted_parameter0"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -218,10 +134,15 @@ let test_sink _ =
     [
       {
         define_name = "qualifier.test_sink";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test]; };
+        sink_parameters = [
+          {
+            name = "tainted_parameter1";
+            sinks = [Taint.Sinks.Test];
+          };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -237,10 +158,15 @@ let test_rce_sink _ =
     [
       {
         define_name = "qualifier.test_rce_sink";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; }
+        sink_parameters = [
+          {
+            name = "tainted_parameter1";
+            sinks = [Taint.Sinks.RemoteCodeExecution];
+          }
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -259,12 +185,14 @@ let test_rce_and_test_sink _ =
     [
       {
         define_name = "qualifier.test_rce_and_test_sink";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test]; };
-          { position = 1; sinks = [Taint.Sinks.RemoteCodeExecution]; };
-          { position = 2; sinks = [Taint.Sinks.RemoteCodeExecution; Taint.Sinks.Test]; };
+        sink_parameters = [
+          { name = "test_only"; sinks = [Taint.Sinks.Test]; };
+          { name = "rce_only"; sinks = [Taint.Sinks.RemoteCodeExecution]; };
+          { name = "both"; sinks = [Taint.Sinks.RemoteCodeExecution; Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       }
     ]
 
@@ -285,10 +213,12 @@ let test_tito_sink _ =
     [
       {
         define_name = "qualifier.test_tito_sink";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test]; };
+        sink_parameters = [
+          { name = "tainted_parameter1"; sinks = [Taint.Sinks.Test]; };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -312,10 +242,12 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -337,8 +269,10 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -359,10 +293,12 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -383,8 +319,10 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_methods";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -410,10 +348,12 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.taint_across_union_receiver_types";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -445,22 +385,28 @@ let test_apply_method_model_at_call_site _ =
     [
       {
         define_name = "qualifier.Foo.qux";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.Baz.qux";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.taint_across_union_receiver_types";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -480,13 +426,17 @@ let test_tito_via_receiver _ =
     [
       {
         define_name = "qualifier.tito_via_receiver";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["parameter"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.Foo.tito";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["self"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -503,10 +453,12 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.Foo.sink";
-        taint_sink_parameters = [
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "argument"; sinks = [Taint.Sinks.Test] };
         ];
-        tito_parameters = [0];
+        tito_parameters = ["self"];
+        returns = [];
+        errors = [];
       };
     ];
 
@@ -524,10 +476,12 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.sequential_with_single_sink";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "first"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
   assert_taint
@@ -545,11 +499,13 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.sequential_with_two_sinks";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "first"; sinks = [Taint.Sinks.Test] };
+          { name = "second"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
   assert_taint
@@ -568,11 +524,13 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.sequential_with_redefine";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "first"; sinks = [Taint.Sinks.Test] };
+          { name = "second"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
   assert_taint
@@ -591,11 +549,13 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.sequential_with_distinct_sinks";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "first"; sinks = [Taint.Sinks.Test] };
+          { name = "second"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
   assert_taint
@@ -613,11 +573,13 @@ let test_sequential_call_path _ =
     [
       {
         define_name = "qualifier.sequential_with_self_propagation";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "first"; sinks = [Taint.Sinks.Test] };
+          { name = "second"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -637,11 +599,13 @@ let test_chained_call_path _ =
     [
       {
         define_name = "qualifier.chained";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 2; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "parameter0"; sinks = [Taint.Sinks.Test] };
+          { name = "parameter2"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ];
   assert_taint
@@ -661,11 +625,13 @@ let test_chained_call_path _ =
     [
       {
         define_name = "qualifier.chained_with_tito";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 2; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "parameter0"; sinks = [Taint.Sinks.Test] };
+          { name = "parameter2"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -710,35 +676,47 @@ let test_dictionary _ =
     [
       {
         define_name = "qualifier.dictionary_sink";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.dictionary_tito";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.dictionary_same_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.dictionary_different_index";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.dictionary_unknown_read_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.dictionary_unknown_write_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -776,60 +754,78 @@ let test_comprehensions _ =
     [
       {
         define_name = "qualifier.sink_in_iterator";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_expression";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["data"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_set_iterator";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_set_expression";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_set";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["data"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_generator_iterator";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_generator_expression";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_generator";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["data"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -867,40 +863,54 @@ let test_list _ =
     [
       {
         define_name = "qualifier.sink_in_list";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_same_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_different_index";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_unknown_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_pattern_same_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_pattern_different_index";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.list_pattern_star_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -934,35 +944,47 @@ let test_tuple _ =
     [
       {
         define_name = "qualifier.sink_in_tuple";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tuple_same_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tuple_different_index";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tuple_unknown_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tuple_pattern_same_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tuple_pattern_different_index";
-        taint_sink_parameters = [];
+        sink_parameters = [];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -980,15 +1002,19 @@ let test_lambda _ =
     [
       {
         define_name = "qualifier.sink_in_lambda";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.lambda_tito";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1010,20 +1036,26 @@ let test_set _ =
     [
       {
         define_name = "qualifier.sink_in_set";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.set_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.set_unknown_index";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1054,27 +1086,35 @@ let test_starred _ =
     [
       {
         define_name = "qualifier.sink_in_starred";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_starred_starred";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_in_starred";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_in_starred_starred";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1106,47 +1146,61 @@ let test_ternary _ =
     [
       {
         define_name = "qualifier.sink_in_then";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_else";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_both";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
-          { position = 1; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg1"; sinks = [Taint.Sinks.Test] };
+          { name = "arg2"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_cond";
-        taint_sink_parameters = [
-          { position = 2; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "cond"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_in_then";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_in_else";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_in_both";
-        taint_sink_parameters = [];
-        tito_parameters = [0; 1];
+        sink_parameters = [];
+        tito_parameters = ["arg1"; "arg2"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1163,15 +1217,19 @@ let test_unary _ =
     [
       {
         define_name = "qualifier.sink_in_unary";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_via_unary";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1194,27 +1252,365 @@ let test_yield _ =
     [
       {
         define_name = "qualifier.sink_in_yield";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_via_yield";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.sink_in_yield_from";
-        taint_sink_parameters = [
-          { position = 0; sinks = [Taint.Sinks.Test] };
+        sink_parameters = [
+          { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
         tito_parameters = [];
+        returns = [];
+        errors = [];
       };
       {
         define_name = "qualifier.tito_via_yield_from";
-        taint_sink_parameters = [];
-        tito_parameters = [0];
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
+      };
+    ]
+
+
+let test_named_arguments _ =
+  assert_taint
+    {|
+      def with_kw(a, b, **kw):
+          return kw
+
+      def no_kw_tito(arg0, arg1, arg2, arg3):
+          return with_kw(arg0, arg1, arg2, arg3)
+
+      def no_kw_tito_with_named_args(arg0, arg1):
+          return with_kw(b = arg0, a = arg1, c = 5)
+
+      def kw_tito_with_named_args(arg0, arg1):
+          return with_kw(b = arg0, c = arg1)
+
+      def kw_tito_with_dict(arg0, dict):
+          return with_kw(b = arg0, c = 5, **dict)
+    |}
+    [
+      {
+        define_name = "qualifier.with_kw";
+        sink_parameters = [];
+        tito_parameters = ["**"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.no_kw_tito";
+        sink_parameters = [];
+        tito_parameters = [];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.no_kw_tito_with_named_args";
+        sink_parameters = [];
+        tito_parameters = [];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.kw_tito_with_named_args";
+        sink_parameters = [];
+        tito_parameters = ["arg1"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.kw_tito_with_dict";
+        sink_parameters = [];
+        tito_parameters = ["dict"];
+        returns = [];
+        errors = [];
+      };
+    ]
+
+
+let test_actual_parameter_matching _ =
+  assert_taint
+    {|
+      def before_star(a, b, *rest, c, d, **kw):
+          return b
+
+      def at_star(a, b, *rest, c, d, **kw):
+          return rest[0]
+
+      def at_star_plus_one(a, b, *rest, c, d, **kw):
+          return rest[1]
+
+      def at_all_star(a, b, *rest, c, d, **kw):
+          return rest[x]
+
+      def after_star(a, b, *rest, c, d, **kw):
+          return c
+
+      def star_star_q(a, b, *rest, c, d, **kw):
+          return kw['q']
+
+      def star_star_all(a, b, *rest, c, d, **kw):
+          return kw[x]
+
+      def pass_positional_before_star(arg, no_tito):
+          return before_star(
+            no_tito,
+            arg,
+            no_tito,
+            *no_tito,
+            no_tito,
+            c = no_tito,
+            q = no_tito,
+            r = no_tito,
+            **no_tito,
+          )
+
+      def pass_positional_at_star(arg, approximate, no_tito):
+          return at_star(
+            no_tito,
+            no_tito,
+            arg,
+            no_tito,
+            *approximate,
+            c = no_tito,
+            q = no_tito,
+            r = no_tito,
+            **no_tito,
+          )
+
+      def pass_positional_at_star_plus_one(arg, approximate, no_tito):
+          return at_star_plus_one(
+            no_tito,
+            no_tito,
+            no_tito,
+            arg,
+            no_tito,
+            *approximate,
+            c = no_tito,
+            q = no_tito,
+            r = no_tito,
+            **no_tito,
+          )
+
+      def pass_positional_at_all_star(arg, approximate, no_tito):
+          return at_all_star(
+            no_tito,
+            no_tito,
+            2,
+            arg,
+            3,
+            *approximate,
+            c = no_tito,
+            q = no_tito,
+            r = no_tito,
+            **no_tito,
+          )
+
+      def pass_named_after_star(arg, approximate, no_tito):
+          return after_star(
+            no_tito,
+            no_tito,
+            no_tito,
+            *no_tito,
+            no_tito,
+            *no_tito,
+            c = arg,
+            d = no_tito,
+            q = no_tito,
+            r = no_tito,
+            **approximate,
+          )
+
+      def pass_named_as_positional(arg, no_tito):
+          return before_star(
+            no_tito,
+            0,
+            *no_tito,
+            a = no_tito,
+            b = arg,
+            c = no_tito,
+            q = no_tito,
+            **no_tito,
+          )
+
+      def pass_named_as_star_star_q(arg, approximate_one, approximate_two, no_tito):
+          return star_star_q(
+            no_tito,
+            no_tito,
+            no_tito,
+            *no_tito,
+            no_tito,
+            *no_tito,
+            no_tito,
+            c = no_tito,
+            d = no_tito,
+            q = arg,
+            r = no_tito,
+            **approximate_one,
+            **approximate_two,
+          )
+
+      def pass_named_as_star_star_all(arg, approximate_one, approximate_two, no_tito):
+          return star_star_all(
+            no_tito,
+            no_tito,
+            no_tito,
+            *no_tito,
+            no_tito,
+            *no_tito,
+            no_tito,
+            c = no_tito,
+            d = no_tito,
+            r = arg,
+            **approximate_one,
+            **approximate_two,
+          )
+
+      def pass_list_before_star(listarg, arg, no_tito):
+          return before_star(
+            no_tito,
+            *listarg,
+            arg,
+            no_tito,
+            *no_tito,
+            no_tito,
+            c = no_tito,
+            d = no_tito,
+            q = no_tito,
+            r = no_tito,
+          )
+
+      def pass_list_at_star(listarg_one, listarg_two, approximate, no_tito):
+          return at_star(
+            no_tito,
+            *listarg_one,
+            approximate,
+            *listarg_two,
+            c = no_tito,
+            d = no_tito,
+            q = no_tito,
+            r = no_tito,
+          )
+    |}
+    [
+      {
+        define_name = "qualifier.before_star";
+        sink_parameters = [];
+        tito_parameters = ["b"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.at_star";
+        sink_parameters = [];
+        tito_parameters = ["*"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.after_star";
+        sink_parameters = [];
+        tito_parameters = ["c"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.star_star_q";
+        sink_parameters = [];
+        tito_parameters = ["**"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.star_star_all";
+        sink_parameters = [];
+        tito_parameters = ["**"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_positional_before_star";
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_positional_at_star";
+        sink_parameters = [];
+        tito_parameters = ["approximate"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_positional_at_star_plus_one";
+        sink_parameters = [];
+        tito_parameters = ["approximate"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_positional_at_all_star";
+        sink_parameters = [];
+        tito_parameters = ["approximate"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_named_after_star";
+        sink_parameters = [];
+        tito_parameters = ["approximate"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_named_as_positional";
+        sink_parameters = [];
+        tito_parameters = ["arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_named_as_star_star_q";
+        sink_parameters = [];
+        tito_parameters = ["approximate_one"; "approximate_two"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_named_as_star_star_all";
+        sink_parameters = [];
+        tito_parameters = ["approximate_one"; "approximate_two"; "arg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_list_before_star";
+        sink_parameters = [];
+        tito_parameters = ["arg"; "listarg"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.pass_list_at_star";
+        sink_parameters = [];
+        tito_parameters = ["approximate"; "listarg_one"; "listarg_two"];
+        returns = [];
+        errors = [];
       };
     ]
 
@@ -1241,5 +1637,7 @@ let () =
     "test_tuple">::test_tuple;
     "test_unary">::test_unary;
     "test_yield">::test_yield;
+    "test_named_arguments">::test_named_arguments;
+    "test_actual_parameter_matching">::test_actual_parameter_matching;
   ]
   |> Test.run_with_taint_models

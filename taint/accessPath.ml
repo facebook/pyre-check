@@ -15,10 +15,193 @@ open Pyre
 module Root = struct
   type t =
     | LocalResult (* Special root representing the return value location. *)
-    | Parameter of { position: int }
+    | PositionalParameter of { position: int; name: Identifier.t; }
+    | NamedParameter of { name: Identifier.t; }
+    | StarParameter of { position: int }
+    | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
+
+  let normalize_parameters parameters =
+    let normalize_parameters
+        position
+        (seen_star, excluded, normalized)
+        { Node.value = { Parameter.name; annotation; _ }; _ }
+      =
+      let name_string = Identifier.show name in
+      if String.is_prefix ~prefix:"**" name_string then
+        let name = String.chop_prefix_exn name_string ~prefix:"**" |> Identifier.create in
+        (true, excluded, (StarStarParameter { excluded }, name, annotation) :: normalized)
+      else if String.is_prefix ~prefix:"*" name_string then
+        let name = String.chop_prefix_exn name_string ~prefix:"*" |> Identifier.create in
+        (true, excluded, (StarParameter { position }, name, annotation) :: normalized)
+      else if seen_star then
+        (true, name :: excluded, (NamedParameter { name }, name, annotation) :: normalized)
+      else
+        (
+          false,
+          name :: excluded,
+          (PositionalParameter { position; name }, name, annotation) :: normalized
+        )
+    in
+    List.foldi parameters ~f:normalize_parameters ~init:(false, [],  [])
+    |> fun (_, _, parameters) -> parameters
+
+  let parameter_name = function
+    | PositionalParameter { name; _ }
+    | NamedParameter { name } ->
+        Some (Identifier.show name)
+    | StarParameter _ ->
+        Some "*"
+    | StarStarParameter _ ->
+        Some "**"
+    | _ ->
+        None
+
+  let chop_parameter_prefix name =
+    match String.chop_prefix ~prefix:"$parameter$" name with
+    | Some chopped -> chopped
+    | None -> name
 end
+
+
+type argument_match = {
+  root: Root.t;
+  actual_path: AccessPathTree.Label.path;
+  formal_path: AccessPathTree.Label.path;
+}
+[@@deriving show]
+
+
+type argument_position = [
+  | `Precise of int
+  | `Approximate of int
+]
+[@@deriving show]
+
+
+let match_actuals_to_formals arguments roots =
+  let open Root in
+  let increment = function
+    | `Precise n -> `Precise (n + 1)
+    | `Approximate n -> `Approximate (n + 1)
+  in
+  let approximate = function
+    | `Precise n -> `Approximate n
+    | `Approximate n -> `Approximate n
+  in
+  let filter_to_named name_or_star_star formal =
+    match name_or_star_star, formal with
+    | `Name actual_name, (NamedParameter { name; } | PositionalParameter { name; _ })
+      when Identifier.equal actual_name name ->
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [];
+        }
+    | `Name actual_name, StarStarParameter { excluded; }
+      when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
+        let field_name = Root.chop_parameter_prefix (Identifier.show actual_name) in
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [ AccessPathTree.Label.create_name_field field_name ];
+        }
+    | `StarStar, NamedParameter { name } ->
+        Some {
+          root = formal;
+          actual_path = [ AccessPathTree.Label.Field name ];
+          formal_path = [];
+        }
+    | `StarStar, StarStarParameter _ ->
+        (* assume entire structure is passed. We can't just pick all but X fields. *)
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [];
+        }
+    | (`Name _ | `StarStar), _ ->
+        None
+  in
+  let filter_to_positional position formal =
+    let position = (
+      position :> [
+        | `Star of argument_position
+        | argument_position
+      ]
+    )
+    in
+    match position, formal with
+    | `Precise actual_position, PositionalParameter { position; _ }
+      when actual_position = position ->
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [];
+        }
+    | `Approximate minimal_position, PositionalParameter { position; _ }
+      when minimal_position <= position ->
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [];
+        }
+    | `Star (`Precise actual_position), PositionalParameter { position; _ }
+      when actual_position <= position ->
+        Some {
+          root = formal;
+          actual_path = [AccessPathTree.Label.create_int_field (position - actual_position)];
+          formal_path = [];
+        }
+    | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
+      when minimal_position <= position ->
+        Some {
+          root = formal;
+          actual_path = [AccessPathTree.Label.Any];
+          formal_path = [];
+        }
+    | `Precise actual_position, StarParameter { position }
+      when actual_position >= position ->
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [AccessPathTree.Label.create_int_field (actual_position - position)];
+        }
+    | `Approximate minimal_position, StarParameter { position; _ }
+      when minimal_position <= position ->
+        (* Approximate: can't match up range *)
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [AccessPathTree.Label.Any];
+        }
+    | `Star _, StarParameter _ ->
+        (* Approximate: can't match up ranges, so pass entire structure *)
+        Some {
+          root = formal;
+          actual_path = [];
+          formal_path = [];
+        }
+    | (`Star _ | `Precise _ | `Approximate _), _ ->
+        None
+  in
+  let match_actual (position, matches) { Argument.name; value } =
+    match name, value.Node.value with
+    | None, Starred (Once _) ->
+        let formals = List.filter_map roots ~f:(filter_to_positional (`Star position)) in
+        (approximate position, (value, formals) :: matches)
+    | None, Starred (Twice _) ->
+        let formals = List.filter_map roots ~f:(filter_to_named `StarStar) in
+        (position, (value, formals) :: matches)
+    | None, _ ->
+        let formals = List.filter_map roots ~f:(filter_to_positional position) in
+        (increment position, (value, formals) :: matches)
+    | Some { value = name; _ }, _ ->
+        let formals = List.filter_map roots ~f:(filter_to_named (`Name name)) in
+        (position, (value, formals) :: matches)
+  in
+  let _, result = List.fold arguments ~f:match_actual ~init:(`Precise 0, []) in
+  result
 
 
 type t = {
@@ -163,8 +346,17 @@ let rec as_access = function
 let to_json { root; path; } =
   let open Root in
   let root_name = function
-    | LocalResult -> "result"
-    | Parameter { position } -> Format.sprintf "formal(%d)" position
-    | Variable name -> Format.sprintf "local(%s)" (Identifier.show name)
+    | LocalResult ->
+        "result"
+    | PositionalParameter { position=_; name } ->
+        Format.sprintf "formal(%s)" (Identifier.show name)
+    | NamedParameter { name } ->
+        Format.sprintf "formal(%s)" (Identifier.show name)
+    | StarParameter { position } ->
+        Format.sprintf "formal(*rest%d)" position
+    | StarStarParameter _ ->
+        "formal(**kw)"
+    | Variable name ->
+        Format.sprintf "local(%s)" (Identifier.show name)
   in
   `String (root_name root ^ AccessPathTree.Label.show_path path)

@@ -1,3 +1,100 @@
-{"kind":"issue","data":{"callable":"match_flows","callable_line":12,"code":5002,"line":14,"start":15,"end":16,"filename":"test.py","message":"Test flow. Data from [Test] source(s) may reach [Test] sink(s)","traces":[{"name":"forward","roots":[{"call":{"position":{"filename":"test.py","line":13,"start":20,"end":22},"resolves_to":["source_field"],"port":"result[a]"},"leaves":[{"kind":"Test"}]}]},{"name":"backward","roots":[{"call":{"position":{"filename":"test.py","line":14,"start":15,"end":16},"resolves_to":["sink_field"],"port":"formal(0)[a]"},"leaves":[{"kind":"Test"}]}]}]}}
-{"kind":"model","data":{"callable":"sink_field","sources":[],"sinks":[{"port":"formal(0)[a]","taint":[{"root":{"filename":"test.py","line":10,"start":14,"end":21},"leaves":[{"kind":"Test"}]}]}],"tito":[]}}
-{"kind":"model","data":{"callable":"source_field","sources":[{"port":"result[a]","taint":[{"root":{"filename":"test.py","line":6,"start":27,"end":29},"leaves":[{"kind":"Test"}]}]}],"sinks":[],"tito":[]}}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match_flows",
+    "callable_line": 12,
+    "code": 5002,
+    "line": 14,
+    "start": 15,
+    "end": 16,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 13,
+                "start": 20,
+                "end": 22
+              },
+              "resolves_to": [ "source_field" ],
+              "port": "result[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 14,
+                "start": 14,
+                "end": 17
+              },
+              "resolves_to": [ "sink_field" ],
+              "port": "formal($parameter$arg)[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sink_field",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal($parameter$arg)[a]",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 10,
+              "start": 14,
+              "end": 21
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "source_field",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 6,
+              "start": 27,
+              "end": 29
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

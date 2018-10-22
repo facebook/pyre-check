@@ -92,26 +92,47 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         in
         match taint_model with
         | Some { TaintResult.forward; backward; _ } when not is_obscure ->
-            let analyze_argument_position position tito { Argument.value = argument; _ } =
+            let sink_roots = BackwardState.keys backward.sink_taint in
+            let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
+            let tito_roots = BackwardState.keys backward.taint_in_taint_out in
+            let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
+            let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
+            let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+              BackwardState.read_access_path
+                ~root
+                ~path:formal_path
+                backward.sink_taint
+              |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
+              |> BackwardState.create_tree actual_path
+              |> BackwardState.join_trees taint_tree
+            in
+            let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
+              let new_tito =
+                BackwardState.read_access_path
+                  ~root
+                  ~path:formal_path
+                  backward.taint_in_taint_out
+                |> BackwardState.create_tree actual_path
+              in
+              BackwardState.join_trees taint_tree new_tito
+            in
+            let analyze_argument tito ((argument, sink_matches), (_dup, tito_matches)) =
               let { Node.location; _ } = argument in
               let argument_taint = analyze_expression ~resolution argument state in
-              let read_argument_taint ~path ~path_element:_ ~element:_ tito =
-                ForwardState.read_tree path argument_taint
-                |> ForwardState.collapse
-                |> ForwardTaint.join tito
-              in
-              let argument_port = AccessPath.Root.Parameter { position } in
               let tito =
-                BackwardState.read argument_port backward.taint_in_taint_out
-                |> BackwardState.fold_tree_paths ~init:tito ~f:read_argument_taint
+                let convert_tito ~path ~path_element:_ ~element:_ tito =
+                  ForwardState.read_tree path argument_taint
+                  |> ForwardState.collapse
+                  |> ForwardTaint.join tito
+                in
+                let taint_in_taint_out =
+                  List.fold tito_matches ~f:combine_tito ~init:BackwardState.empty_tree
+                in
+                BackwardState.fold_tree_paths taint_in_taint_out ~init:tito ~f:convert_tito
               in
               let flow_candidate =
                 let sink_tree =
-                  BackwardState.read argument_port backward.sink_taint
-                  |> BackwardState.apply_call
-                    location
-                    ~callees:[ call_target ]
-                    ~port:argument_port
+                  List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.empty_tree
                 in
                 Flow.generate_source_sink_matches
                   ~location
@@ -122,7 +143,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               tito
             in
             let tito =
-              List.foldi ~f:analyze_argument_position arguments ~init:ForwardTaint.bottom
+              List.fold ~f:analyze_argument combined_matches ~init:ForwardTaint.bottom
             in
             let result_taint =
               ForwardState.read AccessPath.Root.LocalResult forward.source_taint

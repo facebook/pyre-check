@@ -9,7 +9,7 @@ def qux(arg):
     __testSink(arg)
 
 
-def bad(arg):
+def bad(ok, arg):
     qux(arg)
 
 
@@ -19,4 +19,4 @@ def some_source():
 
 def match_flows():
     x = some_source()
-    bad(x)
+    bad(5, x)

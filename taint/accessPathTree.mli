@@ -63,9 +63,10 @@ module Label: sig
   [@@deriving eq, show, compare, sexp, hash]
 
   type path = t list
-  [@@deriving compare, eq, sexp]
+  [@@deriving compare, eq, show, sexp]
 
-  val show_path: path -> string
+  val create_name_field: string -> t
+  val create_int_field: int -> t
 end
 
 
@@ -108,6 +109,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
   val filter_map: f: (Root.t -> access_path_tree -> access_path_tree) -> t -> t
   val filter_map_key: f: (Root.t -> Root.t option) -> t -> t
   val filter_map_value: f: (Element.t -> Element.t) -> t -> t
+  val keys: t -> Root.t list
 
   val fold
     : f: (Root.t -> access_path_tree -> 'accumulator -> 'accumulator)

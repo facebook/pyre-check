@@ -1,3 +1,16 @@
+(library
+ (name testHelper)
+ (public_name pyrelib.taintTestHelper)
+ (modules testHelper)
+ (preprocess
+  (pps ppx_sexp_message))
+ (libraries
+  oUnit
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.interprocedural
+  pyrelib.taint))
+
 (tests
  (names
   accessPathTest
@@ -7,6 +20,7 @@
   forwardAnalysisTest
   backwardAnalysisTest
   modelTest)
+ (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message))
  (libraries
@@ -15,4 +29,5 @@
   pyrelib.ast
   pyrelib.interprocedural
   pyrelib.taint
+  pyrelib.taintTestHelper
   pyrelib.taintIntegrationTest))

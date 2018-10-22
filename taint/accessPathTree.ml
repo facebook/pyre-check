@@ -116,11 +116,17 @@ module Label = struct
     | Any -> "[*]"
 
   type path = t list
-  [@@deriving compare, eq, sexp]
+  [@@deriving compare, eq, show, sexp]
 
   let show_path path =
     List.map ~f:show path
     |> String.concat
+
+  let create_name_field name =
+    Field (Identifier.create name)
+
+  let create_int_field i =
+    Field (Identifier.create (string_of_int i))
 end
 
 
@@ -1276,4 +1282,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     let message = fun () -> Format.sprintf "create_tree %s" (Label.show_path path) in
     create_tree_option path element
     |> option_node_tree ~message
+
+
+  let keys = RootMap.keys
 end

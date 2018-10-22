@@ -81,13 +81,12 @@ let taint_annotation = function
       None
 
 
-let taint_parameter position model expression =
+let taint_parameter model (root, _name, annotation) =
   model >>= fun model ->
-  match taint_annotation expression with
+  match taint_annotation annotation with
   | Some (taint_direction, taint_kind)
     when taint_direction = "TaintSink" || taint_direction = "TaintInTaintOut" ->
       let taint_sink_kind = Sinks.create taint_kind in
-      let root = AccessPath.Root.Parameter { position } in
       introduce_sink_taint ~root ~taint_sink_kind model
       |> Or_error.return
   | Some (taint_direction, _) ->
@@ -134,8 +133,8 @@ let create ~model_source =
   in
   let create_model { Define.name; parameters; return_annotation; _ } =
     let call_target = Callable.create_real name in
-    List.map parameters ~f:(fun { Node.value; _ } -> value.annotation)
-    |> List.foldi ~init:(Ok TaintResult.empty_model) ~f:taint_parameter
+    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+    List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters
     >>= Fn.flip taint_return return_annotation
     >>= (fun model -> Ok { model; call_target })
   in
