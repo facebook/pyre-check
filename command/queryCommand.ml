@@ -73,13 +73,6 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Superclasses (access name))
         | "type", [argument] ->
             Request.TypeQueryRequest (Type (expression argument))
-        (* DEPRECATED ALIAS *)
-        | "type_at_location",
-          [
-            path;
-            { Argument.value = { Node.value = Integer line; _ }; _ };
-            { Argument.value = { Node.value = Integer column; _ }; _ };
-          ]
         | "type_at_position",
           [
             path;
