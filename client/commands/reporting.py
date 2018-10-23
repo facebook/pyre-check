@@ -50,23 +50,12 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        local_configurations = get_filesystem().list(".", ".pyre_configuration.local")
-
         current_project_directory = self._original_directory
         if self._local_configuration:
             current_project_directory = self._local_configuration
         directories_to_analyze = {
             os.path.relpath(current_project_directory, os.getcwd())
         }
-
-        for configuration_file in local_configurations:
-            try:
-                with open(configuration_file) as file:
-                    configuration = json.loads(file.read())
-                    if bool(configuration.get("push_blocking", False)):
-                        directories_to_analyze.add(os.path.dirname(configuration_file))
-            except (IOError, json.JSONDecodeError):
-                pass
         return directories_to_analyze
 
     def _get_errors(self, result) -> Set[Error]:

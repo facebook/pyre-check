@@ -119,10 +119,7 @@ class ReportingTest(unittest.TestCase):
             self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         with patch("builtins.open", mock_open(read_data='{"push_blocking": true}')):
-            self.assertEqual(
-                handler._get_directories_to_analyze(),
-                {"base", "external/a", "external/b/c"},
-            )
+            self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         with patch("builtins.open", mock_open(read_data='{"continuous": true}')):
             self.assertEqual(handler._get_directories_to_analyze(), {"base"})
