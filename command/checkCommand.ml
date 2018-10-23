@@ -63,6 +63,7 @@ let run_check
   (fun () ->
      let timer = Timer.start () in
      let { TypeCheck.errors; _ } = TypeCheck.check ~scheduler:None ~configuration in
+
      let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
      Statistics.performance
        ~name:"check"
