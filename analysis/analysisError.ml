@@ -556,7 +556,7 @@ let messages ~detailed:_ ~define location kind =
       in
       [
         Format.asprintf
-          "`%a` overloads method defined in `%a` inconsistently. %s"
+          "`%a` overrides method defined in `%a` inconsistently. %s"
           Access.pp define_name
           Access.pp parent
           detail

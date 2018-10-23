@@ -1099,7 +1099,7 @@ let test_metaclasses _ =
     "Meta"
 
 
-let test_overloads _ =
+let test_overrides _ =
   let resolution =
     populate {|
       class Foo:
@@ -1121,17 +1121,17 @@ let test_overloads _ =
   in
 
   assert_is_none (Class.overrides definition ~resolution ~name:(Access.create "baz"));
-  let overloads = Class.overrides definition ~resolution ~name:(Access.create "foo") in
-  assert_is_some overloads;
+  let overrides = Class.overrides definition ~resolution ~name:(Access.create "foo") in
+  assert_is_some overrides;
   assert_equal
     ~cmp:Access.equal
     ~printer:Access.show
-    (Attribute.access (Option.value_exn overloads))
+    (Attribute.access (Option.value_exn overrides))
     (Access.create "foo");
   assert_equal
     ~cmp:Access.equal
     ~printer:Access.show
-    (Option.value_exn overloads
+    (Option.value_exn overrides
      |> Attribute.parent
      |> Class.name)
     (Access.create "Foo")
@@ -1250,7 +1250,7 @@ let () =
     "is_protocol">::test_is_protocol;
     "metaclasses">::test_metaclasses;
     "methods">::test_methods;
-    "overloads">::test_overloads;
+    "overrides">::test_overrides;
     "superclasses">::test_superclasses;
   ]
   |> Test.run;

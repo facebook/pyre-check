@@ -5455,7 +5455,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> float: return 1.0
     |}
     [
-      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Returned type `float` is not a subtype of the overridden return `int`."
     ];
 
@@ -5475,7 +5475,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> None: pass
     |}
     [
-      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Returned type `None` is not a subtype of the overridden return `int`."
     ];
 
@@ -5490,7 +5490,7 @@ let test_check_behavioral_subtyping _ =
         def foo(): pass
     |}
     [
-      "Inconsistent override [15]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "The overriding method is not annotated but should return a subtype of `int`.";
     ];
 
@@ -5536,7 +5536,7 @@ let test_check_behavioral_subtyping _ =
           return x
     |}
     [
-      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Parameter of type `str` is not a supertype of the overridden parameter " ^
       "`Variable[T (bound to int)]`.";
     ];
@@ -5565,7 +5565,7 @@ let test_check_behavioral_subtyping _ =
           return 1
     |}
     [
-      "Inconsistent override [15]: `Bar.bar` overloads method defined in `Foo` " ^
+      "Inconsistent override [15]: `Bar.bar` overrides method defined in `Foo` " ^
       "inconsistently. Returned type `typing.Union[int, str]` is not a subtype " ^
       "of the overridden return `int`."
     ];
@@ -5579,7 +5579,7 @@ let test_check_behavioral_subtyping _ =
         def foo(a: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Parameter of type `int` is not a supertype of the overridden parameter `float`."
     ];
   assert_type_errors
@@ -5590,7 +5590,7 @@ let test_check_behavioral_subtyping _ =
         def foo() -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
@@ -5625,7 +5625,7 @@ let test_check_behavioral_subtyping _ =
       def foo(b: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.foo` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature."
     ];
   assert_type_errors
@@ -5646,7 +5646,7 @@ let test_check_behavioral_subtyping _ =
           pass
     |}
     [
-      "Inconsistent override [14]: `Bar.bar` overloads method defined in `Foo` " ^
+      "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` " ^
       "inconsistently. Parameter of type `int` is not a " ^
       "supertype of the overridden parameter `typing.Union[int, str]`."
     ];
@@ -5690,7 +5690,7 @@ let test_check_behavioral_subtyping _ =
         def __f(self, a: int) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.__f` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.__f` overrides method defined in `Foo` inconsistently. " ^
       "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
     ];
 
@@ -5734,7 +5734,7 @@ let test_check_behavioral_subtyping _ =
         def f(self, *args) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.f` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature.";
     ];
   assert_type_errors
@@ -5745,7 +5745,7 @@ let test_check_behavioral_subtyping _ =
         def f(self, **kwargs) -> None: pass
     |}
     [
-      "Inconsistent override [14]: `Bar.f` overloads method defined in `Foo` inconsistently. " ^
+      "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `b` in overriding signature.";
     ];
   assert_type_errors
