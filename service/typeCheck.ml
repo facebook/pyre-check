@@ -134,7 +134,7 @@ let analyze_sources
     let map _ handles =
       Annotated.Class.Attribute.Cache.clear ();
       let analyze_source { errors; number_files; coverage = total_coverage } handle =
-        match Ast.SharedMemory.Sources.get handle with
+        match SharedMemory.Sources.get handle with
         | Some source ->
             let { TypeCheck.Result.errors = new_errors; coverage; _; } =
               analyze_source
