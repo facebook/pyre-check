@@ -628,7 +628,7 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
 
 let determine signature ~resolution ~annotation =
   match annotation, signature with
-  | Type.Parametric { Type.name; parameters } as annotation,
+  | Type.Parametric { name; parameters } as annotation,
     Found { constraints; _ } ->
       Resolution.class_definition resolution annotation
       >>| Class.create
@@ -643,7 +643,7 @@ let determine signature ~resolution ~annotation =
                   | _ -> parameter
                 in
                 let parameters = List.map2_exn ~f:uninstantiated generics parameters in
-                Type.Parametric { Type.name; parameters }
+                Type.Parametric { name; parameters }
               in
               Type.instantiate ~constraints:(Map.find constraints) uninstantiated
               |> Type.instantiate

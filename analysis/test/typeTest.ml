@@ -321,7 +321,7 @@ let test_expression _ =
 
   assert_expression
     (Type.Parametric {
-        Type.name = ~~"foo.bar";
+        name = ~~"foo.bar";
         parameters = [Type.primitive "baz"];
       })
     "foo.bar.__getitem__(baz)";
@@ -333,7 +333,7 @@ let test_expression _ =
     (Type.Tuple (Type.Unbounded Type.integer))
     "typing.Tuple.__getitem__((int, ...))";
   assert_expression
-    (Type.Parametric { Type.name = ~~"list"; parameters = [Type.integer] })
+    (Type.Parametric { name = ~~"list"; parameters = [Type.integer] })
     "typing.List.__getitem__(int)";
 
   (* Callables. *)
@@ -561,11 +561,11 @@ let test_is_not_instantiated _ =
 let test_is_meta _ =
   assert_true
     (Type.is_meta
-       (Type.Parametric { Type.name = ~~"type"; parameters = [Type.integer] }));
+       (Type.Parametric { name = ~~"type"; parameters = [Type.integer] }));
   assert_false (Type.is_meta Type.integer);
   assert_false
     (Type.is_meta
-       (Type.Parametric { Type.name = ~~"typing.Type"; parameters = [Type.integer] }))
+       (Type.Parametric { name = ~~"typing.Type"; parameters = [Type.integer] }))
 
 
 
@@ -592,20 +592,20 @@ let test_is_unknown _ =
     (Type.is_unknown (
         Type.Optional
           (Type.Parametric {
-              Type.name = ~~"foo";
+              name = ~~"foo";
               parameters = [Type.integer; Type.Top];
             })));
 
   assert_true
     (Type.is_unknown (
         (Type.Parametric {
-            Type.name = ~~"foo";
+            name = ~~"foo";
             parameters = [Type.integer; Type.Top];
           })));
   assert_false
     (Type.is_unknown (
         (Type.Parametric {
-            Type.name = ~~"foo";
+            name = ~~"foo";
             parameters = [Type.integer];
           })));
 
@@ -803,21 +803,21 @@ let test_optional_value _ =
     (Type.optional_value (
         Type.Optional
           (Type.Parametric {
-              Type.name = ~~"foo";
+              name = ~~"foo";
               parameters = [Type.integer; Type.Top];
             })))
     (Type.Parametric {
-        Type.name = ~~"foo";
+        name = ~~"foo";
         parameters = [Type.integer; Type.Top];
       });
   assert_equal
     (Type.optional_value
        (Type.Parametric {
-           Type.name = ~~"foo";
+           name = ~~"foo";
            parameters = [Type.integer; Type.Top];
          }))
     (Type.Parametric {
-        Type.name = ~~"foo";
+        name = ~~"foo";
         parameters = [Type.integer; Type.Top];
       })
 
@@ -827,11 +827,11 @@ let test_async_generator_value _ =
     ~printer:(Format.asprintf "%a" Type.pp)
     (Type.async_generator_value (
         Type.Parametric {
-          Type.name = Identifier.create "typing.AsyncGenerator";
+          name = Identifier.create "typing.AsyncGenerator";
           parameters = [Type.integer; Type.Optional Type.Bottom];
         }))
     (Type.Parametric {
-        Type.name = Identifier.create "typing.Generator";
+        name = Identifier.create "typing.Generator";
         parameters = [Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom];
       })
 

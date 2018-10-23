@@ -777,7 +777,7 @@ module State = struct
             let { state; resolved = new_resolved } = forward_expression ~state ~expression in
             let parameter =
               match Resolution.join resolution new_resolved (Type.iterable Type.Bottom) with
-              | Type.Parametric { Type.parameters = [parameter]; _ } ->
+              | Type.Parametric { parameters = [parameter]; _ } ->
                   parameter
               | _ ->
                   Type.Object
@@ -1332,7 +1332,7 @@ module State = struct
             | _ ->
                 Resolution.join resolution annotation (Type.iterable Type.Bottom)
                 |> function
-                | Type.Parametric { Type.parameters = [parameter]; _ } -> parameter
+                | Type.Parametric { parameters = [parameter]; _ } -> parameter
                 | _ -> Type.Top
           in
           let is_nonuniform_sequence ~minimum_length annotation =
@@ -2067,7 +2067,7 @@ module State = struct
         let { state; resolved } = forward_expression ~state ~expression:return in
         let actual =
           match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
-          | Type.Parametric { Type.name; parameters = [parameter] }
+          | Type.Parametric { name; parameters = [parameter] }
             when Identifier.show name = "typing.Iterator" ->
               Type.generator parameter
           | annotation ->

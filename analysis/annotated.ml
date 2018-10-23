@@ -35,7 +35,7 @@ let rec resolve ~resolution expression =
             (Type.iterable Type.Bottom)
         in
         match annotation with
-        | Type.Parametric { Type.parameters = [parameter]; _ } ->
+        | Type.Parametric { parameters = [parameter]; _ } ->
             parameter
         | _ ->
             Type.Object

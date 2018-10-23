@@ -1186,19 +1186,14 @@ let test_supertypes _ =
     ~printer:(List.to_string ~f:Type.show)
     [
       Type.Parametric {
-        Type.name = ~~"typing.Generic";
+        name = ~~"typing.Generic";
         parameters = [Type.integer];
       };
       Type.Object;
       Type.Deleted;
       Type.Top;
     ]
-    (TypeOrder.successors
-       order
-       (Type.Parametric {
-           Type.name = ~~"typing.Iterable";
-           parameters = [Type.integer];
-         }))
+    (TypeOrder.successors order (Type.parametric "typing.Iterable" [Type.integer]))
 
 
 let test_class_definition _ =
@@ -1214,26 +1209,12 @@ let test_class_definition _ =
         pass
     |} in
   assert_true (is_defined environment (Type.primitive "baz.baz"));
-  assert_true
-    (is_defined
-       environment
-       (Type.Parametric {
-           Type.name = ~~"baz.baz";
-           parameters = [Type.integer];
-         }));
-  assert_is_some
-    (class_definition environment (Type.primitive "baz.baz"));
+  assert_true (is_defined environment (Type.parametric "baz.baz" [Type.integer]));
+  assert_is_some (class_definition environment (Type.primitive "baz.baz"));
 
   assert_false (is_defined environment (Type.primitive "bar.bar"));
-  assert_false
-    (is_defined
-       environment
-       (Type.Parametric {
-           Type.name = ~~"bar.bar";
-           parameters = [Type.integer];
-         }));
-  assert_is_none
-    (class_definition environment (Type.primitive "bar.bar"));
+  assert_false (is_defined environment (Type.parametric "bar.bar" [Type.integer]));
+  assert_is_none (class_definition environment (Type.primitive "bar.bar"));
 
   let any =
     class_definition environment Type.Object

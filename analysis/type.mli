@@ -58,12 +58,7 @@ module Record : sig
   end
 end
 
-type parametric = {
-  name: Identifier.t;
-  parameters: t list;
-}
-
-and tuple =
+type tuple =
   | Bounded of t list
   | Unbounded of t
 
@@ -83,7 +78,7 @@ and t =
   | Deleted
   | Object
   | Optional of t
-  | Parametric of parametric
+  | Parametric of { name: Identifier.t; parameters: t list }
   | Primitive of Identifier.t
   | Top
   | Tuple of tuple

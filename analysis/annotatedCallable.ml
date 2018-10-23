@@ -24,7 +24,7 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
   if Define.is_coroutine define then
     begin
       match annotation with
-      | Type.Parametric { Type.name; parameters = [_; _; return_annotation] }
+      | Type.Parametric { name; parameters = [_; _; return_annotation] }
         when Identifier.show name = "typing.Generator" ->
           Type.awaitable return_annotation
       | _ ->
@@ -50,12 +50,9 @@ let apply_decorators ~define ~resolution =
       {
         define with
         Define.return_annotation =
-          Some
-            (Type.Parametric {
-                Type.name = Identifier.create "contextlib.GeneratorContextManager";
-                parameters = [Type.single_parameter joined];
-              }
-             |> Type.expression);
+          Type.parametric "contextlib.GeneratorContextManager" [Type.single_parameter joined]
+          |> Type.expression
+          |> Option.some
       }
     else
       define

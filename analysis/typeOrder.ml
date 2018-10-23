@@ -340,7 +340,7 @@ let method_resolution_order_linearize
         | _, [] ->
             annotation
         | Type.Primitive name, _ ->
-            Type.Parametric { Type.name; parameters }
+            Type.Parametric { name; parameters }
         | _ ->
             failwith (Format.asprintf "Unexpected type %a" Type.pp annotation)
       in
@@ -384,7 +384,7 @@ let breadth_first_fold
               | _, [] ->
                   annotation
               | Type.Primitive name, _ ->
-                  Type.Parametric { Type.name; parameters }
+                  Type.Parametric { name; parameters }
               | _ ->
                   failwith (Format.asprintf "Unexpected type %a" Type.pp annotation)
             in
@@ -527,26 +527,14 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
           | Type.Primitive name -> name
           | _ -> Identifier.create "?"
         in
-        Type.Parametric {
-          Type.name;
-          parameters = [parameter];
-        }
+        Type.Parametric { name; parameters = [parameter] }
       in
       less_or_equal order ~left:parametric ~right
   | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
-      less_or_equal
-        order
-        ~left:(Type.Parametric { Type.name = Identifier.create "tuple"; parameters = [parameter] })
-        ~right
+      less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
   | Type.Tuple (Type.Bounded (left :: tail)), Type.Primitive _ ->
-      let tuple_parameter = List.fold ~f:(join order) ~init:left tail in
-      less_or_equal
-        order
-        ~left:(Type.Parametric {
-            Type.name = Identifier.create "tuple";
-            parameters = [tuple_parameter];
-          })
-        ~right
+      let parameter = List.fold ~f:(join order) ~init:left tail in
+      less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
   | Type.Primitive name, Type.Tuple _ ->
       Identifier.show name = "tuple"
   | Type.Tuple _, _
@@ -605,7 +593,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       less_or_equal order ~left:parametric_primitive ~right
 
   | Type.Primitive name, Type.Parametric _ ->
-      let left = Type.Parametric { Type.name; parameters = [] } in
+      let left = Type.Parametric { name; parameters = [] } in
       less_or_equal order ~left ~right
 
   | _ ->
@@ -870,7 +858,7 @@ and join ((module Handler: Handler) as order) left right =
           begin
             match target, parameters with
             | Type.Primitive name, Some parameters ->
-                Type.Parametric { Type.name; parameters }
+                Type.Parametric { name; parameters }
             | _ ->
                 Type.Object
           end
@@ -879,12 +867,12 @@ and join ((module Handler: Handler) as order) left right =
           Type.Object
 
     (* Special case joins of optional collections with their uninstantated counterparts. *)
-    | Type.Parametric ({ Type.parameters = [Type.Bottom]; _ } as other),
-      Type.Optional (Type.Parametric ({ Type.parameters = [parameter]; _ } as collection))
-    | Type.Optional (Type.Parametric ({ Type.parameters = [parameter]; _ } as collection)),
-      Type.Parametric ({ Type.parameters = [Type.Bottom]; _ } as other)
-      when Identifier.equal other.Type.name collection.Type.name ->
-        Type.Parametric { other with Type.parameters = [parameter] }
+    | Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
+      Type.Optional (Type.Parametric ({ parameters = [parameter]; _ } as collection))
+    | Type.Optional (Type.Parametric ({ parameters = [parameter]; _ } as collection)),
+      Type.Parametric ({ parameters = [Type.Bottom]; _ } as other)
+      when Identifier.equal other.name collection.name ->
+        Type.Parametric { other with parameters = [parameter] }
 
     (* A <= B -> lub(A, Optional[B]) = Optional[B]. *)
     | other, Type.Optional parameter
@@ -920,7 +908,7 @@ and join ((module Handler: Handler) as order) left right =
             ~source:primitive
             ~target:(Type.split (Type.Parametric parametric) |> fst)
           >>| (fun instantiated ->
-              Type.Parametric { parametric with Type.parameters = instantiated })
+              Type.Parametric { parametric with parameters = instantiated })
           |> Option.value ~default:(Type.Parametric parametric)
           |> Type.instantiate_variables
         in
@@ -1028,7 +1016,7 @@ and meet order left right =
         begin
           match primitive, parameters with
           | Type.Primitive name, Some parameters ->
-              Type.Parametric { Type.name; parameters }
+              Type.Parametric { name; parameters }
           | _ ->
               Type.Bottom
         end

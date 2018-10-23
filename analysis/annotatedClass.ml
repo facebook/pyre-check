@@ -148,7 +148,7 @@ module Method = struct
     if Define.is_coroutine define then
       begin
         match annotation with
-        | Type.Parametric { Type.name; parameters = [_; _; return_annotation] }
+        | Type.Parametric { name; parameters = [_; _; return_annotation] }
           when Identifier.show name = "typing.Generator" ->
             Type.awaitable return_annotation
         | _ ->
@@ -177,10 +177,10 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   let generic { Argument.value; _ } =
     let annotation = Resolution.parse_annotation resolution value in
     match annotation with
-    | Type.Parametric { Type.parameters; _ }
+    | Type.Parametric { parameters; _ }
       when Type.is_generic annotation ->
         Some parameters
-    | Type.Parametric { Type.parameters; _ }
+    | Type.Parametric { parameters; _ }
       when Type.is_protocol annotation ->
         Some parameters
     | _ ->
@@ -188,7 +188,7 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   in
   let find_single_type_variable { Argument.value; _ } =
     match Resolution.parse_annotation resolution value with
-    | Type.Parametric { Type.parameters = [Type.Variable variable]; _ } ->
+    | Type.Parametric { parameters = [Type.Variable variable]; _ } ->
         Some [Type.Variable variable]
     | _ ->
         None
@@ -256,8 +256,8 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
   if List.length parameters = List.length resolved_parameters then
     let rec compute_constraints map expected instantiated =
       match expected, instantiated with
-      | Type.Parametric { Type.name = left_name; parameters = left_parameters },
-        Type.Parametric { Type.name = right_name; parameters = right_parameters }
+      | Type.Parametric { name = left_name; parameters = left_parameters },
+        Type.Parametric { name = right_name; parameters = right_parameters }
         when Identifier.equal left_name right_name ->
           List.fold2 ~init:map ~f:compute_constraints left_parameters right_parameters
           |>
@@ -809,7 +809,7 @@ let constructor definition ~resolution =
   let return_annotation =
     match class_annotation with
     | Type.Primitive name
-    | Type.Parametric { Type.name; _ } ->
+    | Type.Parametric { name; _ } ->
         let generics = generics definition ~resolution in
         (* Tuples are special. *)
         if Identifier.show name = "tuple" then
@@ -821,7 +821,7 @@ let constructor definition ~resolution =
         else if List.is_empty generics then
           class_annotation
         else
-          Type.Parametric { Type.name; parameters = generics }
+          Type.Parametric { name; parameters = generics }
     | _ ->
         class_annotation
   in

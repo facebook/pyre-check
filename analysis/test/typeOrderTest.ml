@@ -328,34 +328,19 @@ let test_successors _ =
   assert_equal
     (successors
        order
-       (Type.Parametric {
-           Type.name = ~~"typing.Iterable";
-           parameters = [Type.integer];
-         }))
+       (Type.parametric "typing.Iterable" [Type.integer]))
     [
-      Type.Parametric {
-        Type.name = ~~"typing.Generic";
-        parameters = [Type.integer];
-      };
+      Type.parametric "typing.Generic" [Type.integer];
       Type.Object;
     ];
 
   assert_equal
     (successors
        order
-       (Type.Parametric {
-           Type.name = ~~"typing.Iterator";
-           parameters = [Type.integer];
-         }))
+       (Type.parametric "typing.Iterator" [Type.integer]))
     [
-      Type.Parametric {
-        Type.name = ~~"typing.Iterable";
-        parameters = [Type.integer];
-      };
-      Type.Parametric {
-        Type.name = ~~"typing.Generic";
-        parameters = [Type.integer];
-      };
+      Type.parametric "typing.Iterable" [Type.integer];
+      Type.parametric "typing.Generic" [Type.integer];
       Type.Object;
     ]
 
@@ -467,7 +452,7 @@ let test_less_or_equal _ =
     (less_or_equal
        default
        ~left:(Type.Tuple (Type.Bounded [Type.integer; Type.integer]))
-       ~right:(Type.Parametric { Type.name = ~~"tuple"; parameters = [Type.integer] }));
+       ~right:(Type.parametric "tuple" [Type.integer]));
 
   (* Union types *)
   assert_true
@@ -526,47 +511,32 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:(Type.Parametric {
-           Type.name = Identifier.create "A";
-           parameters = [Type.integer; Type.string]
-         })
-       ~right:(Type.Parametric {
-           Type.name = Identifier.create "B";
-           parameters = [Type.tuple [Type.integer; Type.string]]
-         }));
+       ~left:(Type.parametric "A" [Type.integer; Type.string])
+       ~right:(Type.parametric "B" [Type.tuple [Type.integer; Type.string]]));
 
   assert_false
     (less_or_equal
        order
-       ~left:(Type.Parametric {
-           Type.name = Identifier.create "A";
-           parameters = [Type.integer; Type.string]
-         })
+       ~left:(Type.parametric "A" [Type.integer; Type.string])
        ~right:(Type.tuple [Type.integer; Type.string]));
 
   assert_true
     (less_or_equal
        order
-       ~left:(Type.Parametric {
-           Type.name = Identifier.create "A";
-           parameters = [Type.integer; Type.string]
-         })
-       ~right:(Type.Parametric {
-           Type.name = Identifier.create "C";
-           parameters = [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]
-         }));
+       ~left:(Type.parametric "A" [Type.integer; Type.string])
+       ~right:(
+         Type.parametric
+           "C"
+           [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
 
   assert_false
     (less_or_equal
        order
-       ~left:(Type.Parametric {
-           Type.name = Identifier.create "A";
-           parameters = [Type.string; Type.integer]
-         })
-       ~right:(Type.Parametric {
-           Type.name = Identifier.create "C";
-           parameters = [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]
-         }));
+       ~left:(Type.parametric "A" [Type.string; Type.integer])
+       ~right:(
+         Type.parametric
+           "C"
+           [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
 
   (* Variables. *)
   assert_true
