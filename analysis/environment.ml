@@ -588,7 +588,7 @@ let register_aliases (module Handler: Handler) sources =
             |> Access.show
             |> Identifier.create
           in
-          Type.Variable { variable with Type.variable = name }
+          Type.Variable { variable with variable = name }
       | annotation ->
           annotation
     in

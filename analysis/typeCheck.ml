@@ -536,7 +536,7 @@ module State = struct
                   | _, Some annotation ->
                       let annotation =
                         match annotation with
-                        | Type.Variable { Type.constraints = Type.Explicit constraints; _ } ->
+                        | Type.Variable { constraints = Type.Explicit constraints; _ } ->
                             Type.union constraints
                         | _ ->
                             annotation

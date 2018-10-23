@@ -99,12 +99,6 @@ and constraints =
   | Unconstrained
 
 
-and variable = {
-  variable: Identifier.t;
-  constraints: constraints;
-}
-
-
 and t =
   | Bottom
   | Callable of t Record.Callable.record
@@ -116,7 +110,7 @@ and t =
   | Top
   | Tuple of tuple
   | Union of t list
-  | Variable of variable
+  | Variable of { variable: Identifier.t; constraints: constraints }
 [@@deriving compare, eq, sexp, show, hash]
 
 

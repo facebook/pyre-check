@@ -266,11 +266,11 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
                 map
             | _ ->
                 None)
-      | Type.Variable { Type.constraints = Type.Unconstrained; _ }, _
+      | Type.Variable { constraints = Type.Unconstrained; _ }, _
         when not (Type.equal instantiated Type.Bottom) ->
           map
           >>| Map.set ~key:expected ~data:instantiated
-      | Type.Variable { Type.constraints = Type.Explicit constraints; _ }, _ ->
+      | Type.Variable { constraints = Type.Explicit constraints; _ }, _ ->
           let matches_constraint variable_constraint =
             Resolution.less_or_equal
               resolution

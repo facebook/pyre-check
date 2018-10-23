@@ -275,7 +275,7 @@ let contains (module Handler: Handler) annotation =
 
 let is_instantiated (module Handler: Handler) annotation =
   let is_invalid = function
-    | Type.Variable { Type.constraints = Type.Unconstrained; _ } -> true
+    | Type.Variable { constraints = Type.Unconstrained; _ } -> true
     | Type.Primitive name ->
         not (Handler.contains (Handler.indices ()) (Type.Primitive name))
     | _ ->
@@ -481,13 +481,13 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             right_parameters)
       |> Option.value ~default:false
 
-  | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+  | Type.Variable { constraints = Type.Bound left; _ }, right ->
       less_or_equal order ~left ~right
-  | _, Type.Variable { Type.constraints = Type.Bound _; _ } ->
+  | _, Type.Variable { constraints = Type.Bound _; _ } ->
       false
-  | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+  | Type.Variable { constraints = Type.Explicit left; _ }, right ->
       less_or_equal order ~left:(Type.union left) ~right
-  | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+  | left, Type.Variable { constraints = Type.Explicit right; _ } ->
       less_or_equal order ~left ~right:(Type.union right)
 
   (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
@@ -805,13 +805,13 @@ and join ((module Handler: Handler) as order) left right =
     | other, Type.Bottom ->
         other
 
-    | Type.Variable { Type.constraints = Type.Bound left; _ }, right ->
+    | Type.Variable { constraints = Type.Bound left; _ }, right ->
         join order left right
-    | left, Type.Variable { Type.constraints = Type.Bound right; _ } ->
+    | left, Type.Variable { constraints = Type.Bound right; _ } ->
         join order left right
-    | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+    | Type.Variable { constraints = Type.Explicit left; _ }, right ->
         join order (Type.union left) right
-    | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+    | left, Type.Variable { constraints = Type.Explicit right; _ } ->
         join order left (Type.union right)
 
     (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
@@ -973,19 +973,13 @@ and meet order left right =
     | _, Type.Bottom ->
         Type.Bottom
 
-    | Type.Variable ({ Type.constraints = Type.Bound left; _ } as variable), right ->
-        Type.Variable {
-          variable with
-          Type.constraints = Type.Bound (meet order left right);
-        }
-    | left, Type.Variable ({ Type.constraints = Type.Bound right; _ } as variable) ->
-        Type.Variable {
-          variable with
-          Type.constraints = Type.Bound (meet order left right);
-        }
-    | Type.Variable { Type.constraints = Type.Explicit left; _ }, right ->
+    | Type.Variable ({ constraints = Type.Bound left; _ } as variable), right ->
+        Type.Variable { variable with constraints = Type.Bound (meet order left right) }
+    | left, Type.Variable ({ constraints = Type.Bound right; _ } as variable) ->
+        Type.Variable { variable with constraints = Type.Bound (meet order left right) }
+    | Type.Variable { constraints = Type.Explicit left; _ }, right ->
         meet order (Type.union left) right
-    | left, Type.Variable { Type.constraints = Type.Explicit right; _ } ->
+    | left, Type.Variable { constraints = Type.Explicit right; _ } ->
         meet order left (Type.union right)
 
     | (Type.Union left), (Type.Union right) ->
