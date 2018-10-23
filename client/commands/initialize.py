@@ -68,7 +68,7 @@ class Initialize(Command):
             "Which directory should pyre be initialized in?", "."
         )
 
-        configuration["analysis_directories"] = [analysis_directory]
+        configuration["source_directories"] = [analysis_directory]
         return configuration
 
     def _get_local_configuration(self) -> Dict[str, Any]:

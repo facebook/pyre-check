@@ -22,22 +22,6 @@ class ConfigurationTest(unittest.TestCase):
     ) -> None:
         json_load.side_effect = [
             {
-                "analysis_directories": ["a"],
-                "logger": "/usr/logger",
-                "do_not_check": ["buck-out/dev/gen"],
-            },
-            {},
-        ]
-        configuration = Configuration()
-        self.assertEqual(configuration.analysis_directories, ["a"])
-        self.assertEqual(configuration.targets, [])
-        self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(
-            configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
-        )
-
-        json_load.side_effect = [
-            {
                 "source_directories": ["a"],
                 "logger": "/usr/logger",
                 "do_not_check": ["buck-out/dev/gen"],

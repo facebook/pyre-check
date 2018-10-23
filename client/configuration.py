@@ -151,7 +151,7 @@ class Configuration:
                 self.analysis_directories
             ) or not is_list_of_strings(self.targets):
                 raise InvalidConfiguration(
-                    "`target` and `analysis_directories` fields must be lists of "
+                    "`target` and `source_directories` fields must be lists of "
                     "strings."
                 )
 
@@ -267,13 +267,6 @@ class Configuration:
                 LOG.debug("Reading configuration `%s`...", path)
 
                 configuration = _ConfigurationFile(file)
-
-                self.analysis_directories = configuration.consume(
-                    "analysis_directories",
-                    default=[],
-                    current=self.analysis_directories,
-                    print_on_success=True,
-                )
 
                 self.analysis_directories = configuration.consume(
                     "source_directories",
