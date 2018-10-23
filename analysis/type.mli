@@ -90,7 +90,6 @@ include Hashable with type t := t
 
 module Cache: sig
   val enable: unit -> unit
-
   val disable: unit -> unit
 end
 
