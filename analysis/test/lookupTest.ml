@@ -16,8 +16,7 @@ let configuration = Configuration.Analysis.create ()
 
 
 let show_location { Location.path; start; stop } =
-  let show_position { Location.line; column } = Format.sprintf "%d:%d" line column in
-  Format.sprintf "%s:%s-%s" (path) (show_position start) (show_position stop)
+  Format.asprintf "%s:%a-%a" path Location.pp_position start Location.pp_position stop
 
 
 let instantiate =
@@ -64,7 +63,7 @@ let assert_annotation_list ~lookup expected =
     expected
     (Lookup.get_all_annotations lookup
      |> List.map ~f:(fun (key, data) ->
-         Format.asprintf "%s/%a" (show_location (instantiate key)) Type.pp data)
+         Format.asprintf "%s/%a" (show_location key) Type.pp data)
      |> List.sort ~compare:String.compare)
 
 

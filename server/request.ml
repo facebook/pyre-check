@@ -276,27 +276,26 @@ module LookupCache = struct
     |> ignore
 
 
-  let log_lookup ~handle ~position ~timer ~name ~normals =
+  let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) () =
     let normals =
       let base_normals = [
         "handle", File.Handle.show handle;
         "position", Location.show_position position;
       ]
       in
-      normals
-      >>| (fun normals -> base_normals @ normals)
-      |> Option.value ~default:base_normals
+      base_normals @ normals
     in
     Statistics.performance
       ~section:`Event
       ~category:"perfpipe_pyre_ide_integration"
       ~name
       ~timer
+      ~integers
       ~normals
       ()
 
 
-  let find_annotation ~state ~configuration file position =
+  let find_annotation ~state ~configuration ~file ~position =
     let find_annotation_by_handle handle =
       let timer = Timer.start () in
       let annotation =
@@ -317,11 +316,34 @@ module LookupCache = struct
         ~position
         ~timer
         ~name:"find annotation"
-        ~normals;
+        ?normals
+        ();
       annotation
     in
     handle ~configuration file
     >>= find_annotation_by_handle
+
+
+  let find_all_annotations ~state ~configuration ~file =
+    let find_annotation_by_handle handle =
+      let timer = Timer.start () in
+      let annotations =
+        get_by_handle ~state ~file ~handle
+        >>| (fun { table; _ } -> Lookup.get_all_annotations table)
+        |> Option.value ~default:[]
+      in
+      let integers = ["annotation list size", List.length annotations] in
+      log_lookup
+        ~handle
+        ~position:Location.any_position
+        ~timer
+        ~name:"find all annotations"
+        ~integers
+        ();
+      annotations
+    in
+    handle ~configuration file
+    >>| find_annotation_by_handle
 
 
   let find_definition ~state ~configuration file position =
@@ -341,7 +363,8 @@ module LookupCache = struct
         ~position
         ~timer
         ~name:"find definition"
-        ~normals;
+        ?normals
+        ();
       definition
     in
     handle ~configuration file
@@ -560,14 +583,28 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         end
 
     | TypeQuery.TypeAtPosition { file; position; } ->
-        LookupCache.find_annotation ~state ~configuration file position
-        >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
-        |> Option.value ~default:(
+        let default =
           TypeQuery.Error (
             Format.asprintf
               "Not able to get lookup at %a:%a"
               Path.pp (File.path file)
-              Location.pp_position position))
+              Location.pp_position position)
+        in
+        LookupCache.find_annotation ~state ~configuration ~file ~position
+        >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
+        |> Option.value ~default
+
+    | TypeQuery.TypesInFile file ->
+        let default =
+          TypeQuery.Error (
+            Format.asprintf
+              "Not able to get lookups in %a"
+              Path.pp (File.path file))
+        in
+        LookupCache.find_all_annotations ~state ~configuration ~file
+        >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
+        >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
+        |> Option.value ~default
   in
   let response =
     try
@@ -926,7 +963,7 @@ let rec process
           let response =
             let open LanguageServer.Protocol in
             let result =
-              LookupCache.find_annotation ~state ~configuration file position
+              LookupCache.find_annotation ~state ~configuration ~file ~position
               >>| fun (location, annotation) ->
               {
                 HoverResponse.location;

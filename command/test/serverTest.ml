@@ -255,7 +255,12 @@ let assert_response
     | None -> Format.pp_print_string formatter "None"
     | Some response -> Protocol.pp_response formatter response
   in
-  assert_equal ~pp_diff:(diff ~print:pp_opt) ~printer expected_response response
+  assert_equal
+    ~cmp:(Option.equal Protocol.equal_response)
+    ~pp_diff:(diff ~print:pp_opt)
+    ~printer
+    expected_response
+    response
 
 
 let test_shutdown context =
@@ -338,6 +343,11 @@ let test_query context =
     |> (fun literal -> String (StringLiteral.create literal))
     |> Node.create_with_default_location
     |> Type.create ~aliases:(fun _ -> None)
+  in
+  let create_location ~path start_line start_column stop_line stop_column =
+    let start = { Location.line = start_line; column = start_column } in
+    let stop = { Location.line = stop_line; column = stop_column } in
+    { Location.path; start; stop }
   in
   assert_type_query_response
     ~source:""
@@ -424,6 +434,50 @@ let test_query context =
     ~query:"type_at_position('test.py', 1, 3)"
     (Protocol.TypeQuery.Error
        ("Not able to get lookup at " ^ (Path.absolute local_root) ^/ "test.py:1:3"));
+
+  assert_type_query_response
+    ~source:{|
+      def foo(x: int = 10, y: str = "bar") -> None:
+        a = 42
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 8;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 24 2 27;
+              annotation = parse_annotation "typing.Type[str]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 21 2 22;
+              annotation = parse_annotation "typing.Type[str]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 40 2 44;
+              annotation = Type.none
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 17 2 19;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 30 2 35;
+              annotation = Type.string
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 11 2 14;
+              annotation = parse_annotation "typing.Type[int]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 8 2 9;
+              annotation = parse_annotation "typing.Type[int]"
+            };
+          ]
+       ));
 
   assert_type_query_response
     ~source:{|
@@ -969,8 +1023,8 @@ let test_incremental_lookups _ =
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
-        Format.asprintf "%s/%a" (Location.Reference.show key) Type.pp data
-        |> String.chop_prefix_exn ~prefix:(Int.to_string (String.hash (File.Handle.show handle))))
+        Format.asprintf "%a/%a" Location.Instantiated.pp key Type.pp data
+        |> String.chop_prefix_exn ~prefix:(File.Handle.show handle))
     |> List.sort ~compare:String.compare
   in
   assert_equal

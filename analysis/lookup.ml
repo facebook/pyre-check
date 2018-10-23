@@ -383,8 +383,13 @@ let expand_approximate (location, entry) =
 
 
 let get_all_annotations { annotations_lookup; _ } =
+  let instantiate_location (location, annotation) =
+    Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location,
+    annotation
+  in
   Hashtbl.to_alist annotations_lookup
   |> List.concat_map ~f:expand_approximate
+  |> List.map ~f:instantiate_location
 
 
 let get_all_definitions { definitions_lookup; _ } =

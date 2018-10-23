@@ -9,7 +9,9 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+val any_position: position
 
 (* Yes, I hate abbreviations that much *)
 type 'path location = {
@@ -17,7 +19,7 @@ type 'path location = {
   start: position;
   stop: position;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 module Reference : sig
   type t = int location
@@ -32,8 +34,8 @@ module Reference : sig
 end
 
 module Instantiated : sig
-  type  t = string location
-  [@@deriving compare, eq, sexp, show, hash]
+  type t = string location
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   val create: start: Lexing.position -> stop: Lexing.position -> t
   val any: t

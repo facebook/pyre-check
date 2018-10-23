@@ -85,6 +85,12 @@ let parse_query ~root query =
             in
             let position = { Location.line; column } in
             Request.TypeQueryRequest (TypeAtPosition { file; position })
+        | "types_in_file", [path] ->
+            let file =
+              Path.create_relative ~root ~relative:(string path)
+              |> File.create
+            in
+            Request.TypeQueryRequest (TypesInFile file)
         | "type_check", arguments ->
             let files =
               arguments

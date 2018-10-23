@@ -11,7 +11,11 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash, to_yojson]
+
+
+let any_position =
+  { line = -1; column = -1; }
 
 
 let show_position { line; column } =
@@ -27,7 +31,7 @@ type 'path location = {
   start: position;
   stop: position;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 
 let show pp_path { path; start; stop } =
@@ -89,14 +93,13 @@ module Reference = struct
 
 
   let any =
-    let any = { line = -1; column = -1; } in
-    { path = -1; start = any; stop = any }
+    { path = -1; start = any_position; stop = any_position }
 end
 
 
 module Instantiated = struct
   type t = string location
-  [@@deriving compare, eq, sexp, hash]
+  [@@deriving compare, eq, sexp, hash, to_yojson]
 
 
   let pp format { path; start; stop } =
@@ -126,8 +129,7 @@ module Instantiated = struct
 
 
   let any =
-    let any = { line = -1; column = -1; } in
-    { path = "*"; start = any; stop = any }
+    { path = "*"; start = any_position; stop = any_position }
 end
 
 

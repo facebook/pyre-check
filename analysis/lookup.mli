@@ -16,7 +16,7 @@ val get_annotation
   -> source: string
   -> (Location.Instantiated.t * Type.t) option
 
-val get_all_annotations: t -> (Location.t * Type.t) list
+val get_all_annotations: t -> (Location.Instantiated.t * Type.t) list
 
 val get_definition
   :  t

@@ -42,6 +42,7 @@ module TypeQuery: sig
         file: File.t;
         position: Location.position;
       }
+    | TypesInFile of File.t
   [@@deriving eq, show]
 
   type attribute = {
@@ -69,6 +70,12 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type type_at_location = {
+    location: Location.Instantiated.t;
+    annotation: Type.t;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type base_response =
     | Boolean of bool
     | FoundAttributes of attribute list
@@ -77,6 +84,7 @@ module TypeQuery: sig
     | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
+    | TypesAtLocations of type_at_location list
   [@@deriving eq, show, to_yojson]
 
   type response =
