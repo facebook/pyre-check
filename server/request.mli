@@ -8,8 +8,6 @@ open Core
 open Pyre
 
 
-exception InvalidRequest
-
 val parse_lsp
   :  root: Path.t
   -> request: Yojson.Safe.json

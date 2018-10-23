@@ -13,7 +13,7 @@ all: hack_parallel
 
 .PHONY: test
 test: hack_parallel
-	@OUNIT_RUNNER="sequential" dune runtest -j auto --profile dev
+	@OUNIT_SHARDS="1" dune runtest -j auto --profile dev
 
 .PHONY: python_tests
 python_tests:

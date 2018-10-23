@@ -18,9 +18,6 @@ open Request
 open Pyre
 
 
-exception InvalidRequest
-
-
 let parse_lsp ~root ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -979,7 +976,8 @@ let rec process
 
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
-          raise InvalidRequest
+          Log.warning  "Explicitly ignoring ClientConnectionRequest request";
+          { state; response = None }
     with
     | Unix.Unix_error (kind, name, parameters) ->
         Log.log_unix_error (kind, name, parameters);

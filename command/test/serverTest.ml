@@ -422,7 +422,8 @@ let test_query context =
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 3)"
-    (Protocol.TypeQuery.Error "Not able to get lookup at test.py:1:3");
+    (Protocol.TypeQuery.Error
+       ("Not able to get lookup at " ^ (Path.absolute local_root) ^/ "test.py:1:3"));
 
   assert_type_query_response
     ~source:{|
@@ -600,7 +601,7 @@ let test_connect context =
     CommandTest.mock_server_configuration ~local_root ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is
-   * iniitializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
+   * initializing the daemon in the hack_parallel/utils/handle.ml. In that codepath, an external
    * routine is called, and due to the nature of the Lazy library this is non-reentrant. *)
   Unix.nanosleep 0.5
   |> ignore;
@@ -785,15 +786,11 @@ let test_protocol_persistent context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  let server_state = mock_server_state ~local_root (File.Handle.Table.create ()) in
-  assert_raises
-    Request.InvalidRequest
-    (fun () ->
-       Request.process
-         ~socket:mock_client_socket
-         ~state:server_state
-         ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-         ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent))
+  assert_response
+    ~local_root
+    ~source:"a = 1"
+    ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent)
+    None
 
 
 let test_incremental_dependencies context =

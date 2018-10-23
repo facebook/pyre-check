@@ -88,20 +88,8 @@ let computation_thread request_queue configuration state =
     in
     let rec handle_request ?(retries = 2) state ~request:(origin, request) =
       let process socket state configuration request =
-        try
-          Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
-          Request.process ~socket ~state ~configuration ~request
-        with
-        | Request.InvalidRequest ->
-            Log.error "Exiting due to invalid request";
-            Mutex.critical_section
-              state.lock
-              ~f:(fun () ->
-                  Operations.stop
-                    ~reason:"malformed request"
-                    ~configuration
-                    ~socket:!(state.connections).socket);
-            { Request.state; response = None }
+        Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
+        Request.process ~socket ~state ~configuration ~request
       in
       try
         match origin with
