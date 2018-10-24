@@ -1615,6 +1615,35 @@ let test_actual_parameter_matching _ =
     ]
 
 
+let test_constructor_argument_tito _ =
+  assert_taint
+    {|
+      class Data:
+        def __init__(self, tito, no_tito):
+          self.field = tito
+
+      def tito_via_construction(tito, no_tito):
+          x = Data(tito, no_tito)
+          return x
+    |}
+    [
+      {
+        define_name = "qualifier.Data.__init__";
+        sink_parameters = [];
+        tito_parameters = ["self"; "tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.tito_via_construction";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -1639,5 +1668,6 @@ let () =
     "test_yield">::test_yield;
     "test_named_arguments">::test_named_arguments;
     "test_actual_parameter_matching">::test_actual_parameter_matching;
+    "test_constructor_argument_tito">::test_constructor_argument_tito;
   ]
   |> Test.run_with_taint_models

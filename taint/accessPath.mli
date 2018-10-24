@@ -71,3 +71,9 @@ val match_actuals_to_formals :
   Expression.t Argument.record list
   -> Root.t list
   -> (Expression.t * argument_match list) list
+
+val normalize_global:
+  resolution: Resolution.t
+  -> Access.t
+  -> Expression.t Argument.record list
+  -> Access.t * Expression.t Argument.record list

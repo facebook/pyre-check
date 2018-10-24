@@ -172,6 +172,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
       | AccessPath.Global access ->
+          let access, arguments = AccessPath.normalize_global ~resolution access arguments in
           let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets ~resolution location arguments state [call_target]
       | AccessPath.Access { expression; member = method_name } ->

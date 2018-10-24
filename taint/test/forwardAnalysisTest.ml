@@ -991,6 +991,50 @@ let test_yield _ =
     ]
 
 
+let test_construction _ =
+  assert_taint
+    ~models:{|
+      def qualifier.Data.__init__(self, capture: TaintInTaintOut[LocalReturn]): ...
+    |}
+    {|
+      class Data:
+        pass
+
+      def test_capture():
+        x = __testSource();
+        d = Data(x, 5)
+        return d
+
+      def test_no_capture():
+        x = __testSource();
+        d = Data(5, x)
+        return d
+    |}
+    [
+      {
+        define_name = "qualifier.Data.__init__";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = ["capture"];
+      };
+      {
+        define_name = "qualifier.test_capture";
+        returns = [Taint.Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.test_no_capture";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -1011,5 +1055,6 @@ let () =
     "test_tuple">::test_tuple;
     "test_unary">::test_unary;
     "test_yield">::test_yield;
+    "test_construction">::test_construction;
   ]
   |> Test.run_with_taint_models

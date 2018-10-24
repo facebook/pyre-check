@@ -24,13 +24,29 @@ module type FixpointState = sig
 end
 
 
-let initial_taint =
-  let result_taint = BackwardTaint.singleton Sinks.LocalReturn in
-  BackwardState.assign
-    ~root:Root.LocalResult
-    ~path:[]
-    (BackwardState.create_leaf result_taint)
-    BackwardState.empty
+let initial_taint define =
+  match List.rev define.Define.name with
+  | Access.Identifier name :: _ when Identifier.show name = "__init__" ->
+      begin
+        (* Constructor. Make self the return value *)
+        match define.Define.parameters with
+        | { Node.value = { Parameter.name; _ }; _ } :: _ ->
+            let result_taint = BackwardTaint.singleton Sinks.LocalReturn in
+            BackwardState.assign
+              ~root:(Root.Variable name)
+              ~path:[]
+              (BackwardState.create_leaf result_taint)
+              BackwardState.empty
+        | _ ->
+            BackwardState.empty
+      end
+  | _ ->
+      let result_taint = BackwardTaint.singleton Sinks.LocalReturn in
+      BackwardState.assign
+        ~root:Root.LocalResult
+        ~path:[]
+        (BackwardState.create_leaf result_taint)
+        BackwardState.empty
 
 
 module type FUNCTION_CONTEXT = sig
@@ -147,6 +163,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
       | Global access ->
+          let access, arguments = AccessPath.normalize_global ~resolution access arguments in
           let call_target = Interprocedural.Callable.create_real access in
           apply_call_targets ~resolution location arguments state taint [call_target]
 
@@ -482,7 +499,7 @@ let run ~environment ~define:({ Node.value = { Define.parameters; name; _ }; _ }
     end)
   in
   let open AnalysisInstance in
-  let initial = FixpointState.{ taint = initial_taint } in
+  let initial = FixpointState.{ taint = initial_taint define.Node.value } in
   let cfg = Cfg.create define.value in
   let entry_state =
     Analyzer.backward ~cfg ~initial

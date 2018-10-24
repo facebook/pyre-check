@@ -383,3 +383,23 @@ let to_json { root; path; } =
         Format.sprintf "local(%s)" (Identifier.show name)
   in
   `String (root_name root ^ AccessPathTree.Label.show_path path)
+
+
+let normalize_global ~resolution access arguments =
+  (* Determine if this is a constructor call, as we need to add the
+     uninitialized object argument for self.
+  *)
+  let global_type = Resolution.resolve resolution (Access.expression access) in
+  if Type.is_meta global_type then
+    let dummy_self = {
+      Expression.Argument.name = None;
+      value = Node.create ~location:Location.Reference.any Expression.False;
+    }
+    in
+    let full_access =
+      (Access.Identifier (Identifier.create "__init__")) :: List.rev access
+      |> List.rev
+    in
+    full_access, dummy_self:: arguments
+  else
+    access, arguments
