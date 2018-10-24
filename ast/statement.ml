@@ -1266,7 +1266,7 @@ module PrettyPrinter = struct
     | false -> ()
 
 
-  let rec pp_statement_t formatter { Node.value = statement ; _ } =
+  let rec pp_statement_t formatter { Node.value = statement; _ } =
     Format.fprintf formatter "%a" pp_statement statement
 
 

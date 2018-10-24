@@ -2968,6 +2968,7 @@ let test_check_static _ =
         Foo.foo('asdf')
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
   assert_type_errors
     {|
       class Foo:
@@ -3011,6 +3012,7 @@ let test_check_static _ =
           cls.classmethod('1234')
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
   assert_type_errors
     {|
       class Foo:
@@ -3022,6 +3024,7 @@ let test_check_static _ =
           cls.staticmethod('1234')
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
   assert_type_errors
     {|
       class Foo:
