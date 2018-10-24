@@ -37,7 +37,6 @@ type expectation = {
 
 let check_expectation
     ~get_model
-    ?(parameter_prefix = "$parameter$")
     { define_name; sink_parameters; tito_parameters; returns; errors }
   =
   let open Taint.Result in
@@ -101,13 +100,8 @@ let check_expectation
         (* Okay, we may have outcomes we don't care about *)
         ()
   in
-  let qualify = function
-    | "*" -> "*"
-    | "**" -> "**"
-    | name -> parameter_prefix ^ name
-  in
   let expected_sinks =
-    List.map ~f:(fun { name; sinks; } -> qualify name, sinks) sink_parameters
+    List.map ~f:(fun { name; sinks; } -> name, sinks) sink_parameters
     |> String.Map.of_alist_exn
   in
   (* Check sources. *)
@@ -162,7 +156,7 @@ let check_expectation
     ~msg:(Format.sprintf "Define %s: List of tainted parameters differ in length." define_name);
   String.Map.iter2 ~f:check_each_sink expected_sinks taint_map;
 
-  let expected_tito = List.map ~f:qualify tito_parameters |> String.Set.of_list in
+  let expected_tito = tito_parameters |> String.Set.of_list in
   assert_equal
     ~cmp:String.Set.equal
     ~printer:(fun set -> Sexp.to_string [%message (set: String.Set.t)])

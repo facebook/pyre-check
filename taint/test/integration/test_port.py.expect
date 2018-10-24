@@ -41,7 +41,7 @@
                 "end": 17
               },
               "resolves_to": [ "sink_field" ],
-              "port": "formal($parameter$arg)[a]"
+              "port": "formal(arg)[a]"
             },
             "leaves": [ { "kind": "Test" } ]
           }
@@ -57,7 +57,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal($parameter$arg)[a]",
+        "port": "formal(arg)[a]",
         "taint": [
           {
             "root": {

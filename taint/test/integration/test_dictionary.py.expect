@@ -5,7 +5,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal($parameter$arg)",
+        "port": "formal(arg)",
         "taint": [
           {
             "root": {
@@ -54,7 +54,7 @@
     "sinks": [],
     "tito": [
       {
-        "port": "formal($parameter$arg)",
+        "port": "formal(arg)",
         "taint": [
           { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
         ]

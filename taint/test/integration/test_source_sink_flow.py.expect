@@ -41,7 +41,7 @@
                 "end": 13
               },
               "resolves_to": [ "bad" ],
-              "port": "formal($parameter$arg)"
+              "port": "formal(arg)"
             },
             "leaves": [ { "kind": "Test" } ]
           }
@@ -57,7 +57,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal($parameter$arg)",
+        "port": "formal(arg)",
         "taint": [
           {
             "call": {
@@ -68,7 +68,7 @@
                 "end": 12
               },
               "resolves_to": [ "qux" ],
-              "port": "formal($parameter$arg)"
+              "port": "formal(arg)"
             },
             "leaves": [ { "kind": "Test" } ]
           }
@@ -109,7 +109,7 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal($parameter$arg)",
+        "port": "formal(arg)",
         "taint": [
           {
             "root": {

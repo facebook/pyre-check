@@ -26,7 +26,7 @@ let assert_model ~model_source ~expect =
     List.find ~f:(is_model callable) models
     >>| (fun { model; _ } -> model)
   in
-  List.iter ~f:(check_expectation ~parameter_prefix:"" ~get_model) expect
+  List.iter ~f:(check_expectation ~get_model) expect
 
 
 let test_source_models _ =

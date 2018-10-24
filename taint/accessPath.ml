@@ -22,26 +22,52 @@ module Root = struct
     | Variable of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
 
+  let chop_parameter_prefix name =
+    match String.chop_prefix ~prefix:"$parameter$" name with
+    | Some chopped -> chopped
+    | None -> name
+
   let normalize_parameters parameters =
     let normalize_parameters
         position
         (seen_star, excluded, normalized)
-        { Node.value = { Parameter.name; annotation; _ }; _ }
+        { Node.value = { Parameter.name = prefixed_name; annotation; _ }; _ }
       =
-      let name_string = Identifier.show name in
-      if String.is_prefix ~prefix:"**" name_string then
-        let name = String.chop_prefix_exn name_string ~prefix:"**" |> Identifier.create in
-        (true, excluded, (StarStarParameter { excluded }, name, annotation) :: normalized)
-      else if String.is_prefix ~prefix:"*" name_string then
-        let name = String.chop_prefix_exn name_string ~prefix:"*" |> Identifier.create in
-        (true, excluded, (StarParameter { position }, name, annotation) :: normalized)
+      let prefixed_name_string = Identifier.show prefixed_name in
+      if String.is_prefix ~prefix:"**" prefixed_name_string then
+        let prefixed_variable_name =
+          String.chop_prefix_exn prefixed_name_string ~prefix:"**"
+          |> Identifier.create
+        in
+        (
+          true,
+          excluded,
+          (StarStarParameter { excluded }, prefixed_variable_name, annotation) :: normalized
+        )
+      else if String.is_prefix ~prefix:"*" prefixed_name_string then
+        let prefixed_variable_name =
+          String.chop_prefix_exn prefixed_name_string ~prefix:"*"
+          |> Identifier.create
+        in
+        (
+          true,
+          excluded,
+          (StarParameter { position }, prefixed_variable_name, annotation) :: normalized
+        )
       else if seen_star then
-        (true, name :: excluded, (NamedParameter { name }, name, annotation) :: normalized)
+        let normal_name = prefixed_name_string |> chop_parameter_prefix |> Identifier.create in
+        (
+          true,
+          normal_name :: excluded,
+          (NamedParameter { name = normal_name }, prefixed_name, annotation) :: normalized
+        )
       else
+        let normal_name = prefixed_name_string |> chop_parameter_prefix |> Identifier.create in
         (
           false,
-          name :: excluded,
-          (PositionalParameter { position; name }, name, annotation) :: normalized
+          normal_name :: excluded,
+          (PositionalParameter { position; name = normal_name }, prefixed_name, annotation)
+          :: normalized
         )
     in
     List.foldi parameters ~f:normalize_parameters ~init:(false, [],  [])
@@ -58,10 +84,6 @@ module Root = struct
     | _ ->
         None
 
-  let chop_parameter_prefix name =
-    match String.chop_prefix ~prefix:"$parameter$" name with
-    | Some chopped -> chopped
-    | None -> name
 end
 
 
@@ -197,7 +219,8 @@ let match_actuals_to_formals arguments roots =
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
         (increment position, (value, formals) :: matches)
     | Some { value = name; _ }, _ ->
-        let formals = List.filter_map roots ~f:(filter_to_named (`Name name)) in
+        let normal_name = Identifier.show name |> chop_parameter_prefix |> Identifier.create in
+        let formals = List.filter_map roots ~f:(filter_to_named (`Name normal_name)) in
         (position, (value, formals) :: matches)
   in
   let _, result = List.fold arguments ~f:match_actual ~init:(`Precise 0, []) in
