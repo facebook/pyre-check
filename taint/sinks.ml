@@ -6,6 +6,7 @@
 
 type t =
   | Demo
+  | GetAttr
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
   | RemoteCodeExecution
@@ -19,6 +20,7 @@ type t =
 
 let show = function
   | Demo -> "Demo"
+  | GetAttr -> "GetAttr"
   | LocalReturn -> "LocalReturn"
   | Logging -> "Logging"
   | RemoteCodeExecution -> "RemoteCodeExecution"
@@ -31,6 +33,7 @@ let show = function
 
 let create = function
   | "Demo" -> Demo
+  | "GetAttr" -> GetAttr
   | "LocalReturn" -> LocalReturn
   | "Logging" -> Logging
   | "RemoteCodeExecution" -> RemoteCodeExecution

@@ -185,6 +185,13 @@ let rules = [
     name = "Demo flow.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.GetAttr ];
+    code = 5010;
+    name = "User data to getattr.";
+    message_format = "Attacker may control at least one argument to getattr(,)."
+  };
 ]
 
 
