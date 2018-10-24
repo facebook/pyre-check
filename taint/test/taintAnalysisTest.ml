@@ -428,4 +428,4 @@ let () =
     "fixpoint">::test_fixpoint;
     "integration">::test_integration;
   ]
-  |> Test.run_with_taint_models
+  |> TestHelper.run_with_taint_models

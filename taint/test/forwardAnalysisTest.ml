@@ -1057,4 +1057,4 @@ let () =
     "test_yield">::test_yield;
     "test_construction">::test_construction;
   ]
-  |> Test.run_with_taint_models
+  |> TestHelper.run_with_taint_models

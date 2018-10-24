@@ -72,22 +72,6 @@ let run tests =
   |> run_test_tt_main
 
 
-let run_with_taint_models tests =
-  let model_source =
-    {|
-      def __testSink(arg: TaintSink[Test]): ...
-      def __testSource() -> TaintSource[Test]: ...
-      def __tito(*x: TaintInTaintOut[LocalReturn], **kw: TaintInTaintOut[LocalReturn]): ...
-      def __no_tito(x): ...
-      def __eval(arg: TaintSink[RemoteCodeExecution]): ...
-      def __userControlled() -> TaintSource[UserControlled]: ...
-    |}
-    |> trim_extra_indentation
-  in
-  Service.StaticAnalysis.add_models ~model_source;
-  run tests
-
-
 let parse_untrimmed
     ?(handle = "test.py")
     ?(qualifier = [])

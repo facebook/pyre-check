@@ -173,3 +173,19 @@ let check_expectation
     |> Option.value ~default:[]
   in
   assert_errors errors actual_errors
+
+
+let run_with_taint_models tests =
+  let model_source =
+    {|
+      def __testSink(arg: TaintSink[Test]): ...
+      def __testSource() -> TaintSource[Test]: ...
+      def __tito( *x: TaintInTaintOut[LocalReturn], **kw: TaintInTaintOut[LocalReturn]): ...
+      def __no_tito(x): ...
+      def __eval(arg: TaintSink[RemoteCodeExecution]): ...
+      def __userControlled() -> TaintSource[UserControlled]: ...
+    |}
+    |> Test.trim_extra_indentation
+  in
+  Service.StaticAnalysis.add_models ~model_source;
+  Test.run tests

@@ -1670,4 +1670,4 @@ let () =
     "test_actual_parameter_matching">::test_actual_parameter_matching;
     "test_constructor_argument_tito">::test_constructor_argument_tito;
   ]
-  |> Test.run_with_taint_models
+  |> TestHelper.run_with_taint_models
