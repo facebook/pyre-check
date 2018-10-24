@@ -823,7 +823,7 @@ let process_type_check_request
   |> TypeResolutionSharedMemory.remove;
 
   let new_errors, _ =
-    Service.TypeCheck.analyze_sources
+    Service.Check.analyze_sources
       ~scheduler
       ~configuration
       ~environment

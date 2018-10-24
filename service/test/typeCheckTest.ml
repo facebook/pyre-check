@@ -33,7 +33,7 @@ let assert_errors ?filter_directories ~root ~files errors =
   in
   Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
   let actual_errors =
-    Service.TypeCheck.analyze_sources ~scheduler ~configuration ~environment ~handles
+    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
     |> fst
     |> List.map ~f:(Analysis.Error.description ~detailed:false)
   in
