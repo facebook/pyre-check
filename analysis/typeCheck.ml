@@ -2197,7 +2197,6 @@ end
 let check
     configuration
     environment
-    ?mode_override
     ({ Source.handle; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
 
@@ -2356,15 +2355,11 @@ let check
       else
         let keep_error error =
           let mode =
-            match mode_override with
-            | Some mode ->
-                mode
-            | None ->
-                let (module Handler: Environment.Handler) = environment in
-                Handler.mode
-                  (Error.path error
-                   |> File.Handle.create)
-                |> Option.value ~default:Source.Default
+            let (module Handler: Environment.Handler) = environment in
+            Handler.mode
+              (Error.path error
+               |> File.Handle.create)
+            |> Option.value ~default:Source.Default
           in
           not (Error.suppress ~mode error)
         in

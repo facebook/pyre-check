@@ -653,7 +653,7 @@ let assert_type_errors
           if infer then
             Inference.infer configuration environment ?mode_override source
           else
-            TypeCheck.check configuration environment ?mode_override source
+            TypeCheck.check configuration environment source
         in
         errors
       in
