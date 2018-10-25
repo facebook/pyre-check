@@ -11,7 +11,6 @@ open Ast
 open Pyre
 open PyreParser
 open Statement
-open TypeCheck
 
 
 let initialize () =
@@ -650,11 +649,11 @@ let assert_type_errors
     in
     let check ?mode_override source =
       let check_errors configuration environment ?mode_override source =
-        let { Result.errors; _ } =
+        let { TypeCheck.Result.errors; _ } =
           if infer then
             Inference.infer configuration environment ?mode_override source
           else
-            check configuration environment ?mode_override source
+            TypeCheck.check configuration environment ?mode_override source
         in
         errors
       in
