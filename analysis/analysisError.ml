@@ -205,6 +205,9 @@ type kind =
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
   | UnusedIgnore of int list
+
+  (* Additionals errors. *)
+  | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -240,6 +243,9 @@ let code = function
   | MissingTypeParameters _ -> 24
   | ImpossibleIsinstance _ -> 25
 
+  (* Additional errors. *)
+  | UnawaitedAwaitable _ -> 101
+
 
 let name = function
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
@@ -260,6 +266,7 @@ let name = function
   | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
+  | UnawaitedAwaitable _ -> "Unawaited awaitable"
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined type"
@@ -624,6 +631,8 @@ let messages ~detailed:_ ~define location kind =
           (show_sanitized expression)
           (Type.show annotation);
       ]
+  | UnawaitedAwaitable name ->
+      [Format.asprintf "`%a` is never awaited." Access.pp name]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
@@ -846,6 +855,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TooManyArguments _
   | Unpack _
   | RevealedType _
+  | UnawaitedAwaitable _
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
@@ -901,6 +911,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | Top
   | UndefinedType _
   | MissingArgument _
+  | UnawaitedAwaitable _
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
@@ -972,6 +983,8 @@ let less_or_equal ~resolution left right =
         equal_too_many_arguments left right
     | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
+    | UnawaitedAwaitable left, UnawaitedAwaitable right ->
+        Access.equal left right
     | UndefinedAttribute left, UndefinedAttribute right
       when Access.equal left.attribute right.attribute ->
         begin
@@ -1118,6 +1131,8 @@ let join ~resolution left right =
     | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal left right ->
+        UnawaitedAwaitable left
     | UndefinedAttribute left, UndefinedAttribute right
       when Access.equal left.attribute right.attribute ->
         let origin: origin option =
@@ -1354,6 +1369,7 @@ let suppress ~mode error =
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
       | MissingTypeParameters _
+      | UnawaitedAwaitable _
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
@@ -1548,6 +1564,8 @@ let dequalify
           inconsistent_usage with
           mismatch = { actual = dequalify actual; expected = dequalify expected };
         }
+    | UnawaitedAwaitable left ->
+        UnawaitedAwaitable left
     | UndefinedAttribute { attribute; origin } ->
         let origin: origin =
           match origin with

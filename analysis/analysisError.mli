@@ -183,6 +183,9 @@ type kind =
   | UndefinedType of Type.t
   | UninitializedAttribute of initialization_mismatch
   | UnusedIgnore of int list
+
+  (* Additionals errors. *)
+  | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, hash]
 
 include BaseError.ERROR with type kind := kind

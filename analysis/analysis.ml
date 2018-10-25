@@ -8,6 +8,7 @@ module AbstractDomain = AbstractDomain
 module AbstractSetDomain = AbstractSetDomain
 module AbstractMapDomain = AbstractMapDomain
 module AbstractPairDomain = AbstractPairDomain
+module AwaitableCheck = AwaitableCheck
 module Annotated = Annotated
 module Annotation = Annotation
 module BaseError = BaseError

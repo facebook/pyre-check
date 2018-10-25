@@ -18,5 +18,7 @@ module type Signature = sig
 end
 
 
-let additional_checks =
-  []
+let additional_checks: (module Signature) list =
+  [
+    (module AwaitableCheck);
+  ]
