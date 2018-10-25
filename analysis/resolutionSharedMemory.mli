@@ -20,7 +20,11 @@ type annotation_map = {
 type annotations = annotation_map Int.Map.Tree.t
 
 val add: Access.t -> annotations -> unit
+val remove: Access.t list -> unit
 
 val get: Access.t -> annotations option
-
-val remove: Access.t list -> unit
+val resolution
+  :  environment: (module Environment.Handler)
+  -> access: Access.t
+  -> key: int option
+  -> Resolution.t

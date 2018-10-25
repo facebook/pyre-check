@@ -7,8 +7,10 @@ open Core
 
 open Ast
 open Expression
+open Pyre
 
 module SharedMemory = Memory
+
 
 module AccessKey = struct
   type t = Access.t
@@ -39,3 +41,19 @@ let remove accesses =
   accesses
   |> List.filter ~f:mem
   |> Fn.compose remove_batch KeySet.of_list
+
+
+let resolution ~environment ~access ~key =
+  let annotations =
+    match key, get access with
+    | Some key, Some map ->
+        map
+        |> Int.Map.of_tree
+        |> (fun map -> Int.Map.find map key)
+        >>| (fun { precondition; _ } -> precondition)
+        >>| Access.Map.of_tree
+        |> Option.value ~default:Access.Map.empty
+    | _ ->
+        Access.Map.empty
+  in
+  Environment.resolution environment ~annotations ()

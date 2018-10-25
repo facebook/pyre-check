@@ -462,19 +462,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         pp state
         Statement.pp_statement statement;
       let resolution =
-        let annotations =
-          match key, ResolutionSharedMemory.get FunctionContext.definition.value.name with
-          | Some key, Some define_mapping ->
-              define_mapping
-              |> Int.Map.of_tree
-              |> (fun mapping -> Int.Map.find mapping key)
-              >>| (fun { ResolutionSharedMemory.precondition; _ } -> precondition)
-              >>| Access.Map.of_tree
-              |> Option.value ~default:Access.Map.empty
-          | _ ->
-              Access.Map.empty
-        in
-        Environment.resolution FunctionContext.environment ~annotations ()
+        ResolutionSharedMemory.resolution
+          ~environment:FunctionContext.environment
+          ~access:FunctionContext.definition.value.name
+          ~key
       in
       analyze_statement ~resolution statement state
 
