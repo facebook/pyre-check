@@ -11,53 +11,15 @@ open Pyre
 open Statement
 
 
-type class_origin = {
-  annotation: Type.t;
-  class_attribute: bool;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
 type origin =
-  | Class of class_origin
+  | Class of { annotation: Type.t; class_attribute: bool }
   | Module of Access.t
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type undefined_attribute = {
-  attribute: Access.t;
-  origin: origin;
-}
 [@@deriving compare, eq, show, sexp, hash]
 
 
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type return_mismatch = {
-  mismatch: mismatch;
-  is_implicit: bool;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type missing_parameter = {
-  name: Access.t;
-  annotation: Type.t;
-  due_to_any: bool;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type parameter_mismatch = {
-  name: Access.t option;
-  position: int;
-  callee: Access.t option;
-  mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -71,32 +33,10 @@ type missing_annotation = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type missing_attribute_annotation = {
-  parent: Annotated.Class.t;
-  missing_annotation: missing_annotation;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
 type incompatible_type = {
   name: Access.t;
   mismatch: mismatch;
   declare_location: Location.Instantiated.t;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type incompatible_attribute_type = {
-  parent: Annotated.Class.t;
-  incompatible_type: incompatible_type;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type initialization_mismatch = {
-  name: Access.t;
-  parent: Annotated.Class.t;
-  mismatch: mismatch;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -113,97 +53,53 @@ type override =
 [@@deriving compare, eq, show, sexp, hash]
 
 
-type inconsistent_override = {
-  overridden_method: Access.t;
-  parent: Access.t;
-  override: override;
-}
-[@@deriving compare, eq, show, sexp, hash]
-
-
-type missing_return = {
-  annotation: Type.t;
-  evidence_locations: int list;
-  due_to_any: bool;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
-type too_many_arguments = {
-  callee: Access.t option;
-  expected: int;
-  provided: int;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
-type missing_argument = {
-  callee: Access.t option;
-  name: Access.t;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
-type revealed_type = {
-  expression: Expression.t;
-  annotation: Type.t;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
 type unpack_problem =
   | UnacceptableType of Type.t
   | CountMismatch of int
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type unpack = {
-  expected_count: int;
-  unpack_problem: unpack_problem;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
-type missing_type_parameters = {
-  annotation: Type.t;
-  number_of_parameters: int;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
-type impossible_isinstance = {
-  expression: Expression.t;
-  mismatch: mismatch;
-  negation: bool;
-}
-[@@deriving compare, eq, sexp, show, hash]
-
-
 type kind =
-  | ImpossibleIsinstance of impossible_isinstance
+  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch; negation: bool }
   | IncompatibleAwaitableType of Type.t
-  | IncompatibleParameterType of parameter_mismatch
+  | IncompatibleParameterType of {
+      name: Access.t option;
+      position: int;
+      callee: Access.t option;
+      mismatch: mismatch;
+    }
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleReturnType of return_mismatch
-  | IncompatibleAttributeType of incompatible_attribute_type
+  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
+  | IncompatibleAttributeType of { parent: Annotated.Class.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
-  | InconsistentOverride of inconsistent_override
-  | MissingArgument of missing_argument
-  | MissingAttributeAnnotation of missing_attribute_annotation
+  | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
+  | MissingArgument of { callee: Access.t option; name: Access.t }
+  | MissingAttributeAnnotation of {
+      parent: Annotated.Class.t;
+      missing_annotation: missing_annotation;
+    }
   | MissingGlobalAnnotation of missing_annotation
-  | MissingParameterAnnotation of missing_parameter
-  | MissingReturnAnnotation of missing_return
-  | MissingTypeParameters of missing_type_parameters
+  | MissingParameterAnnotation of { name: Access.t; annotation: Type.t; due_to_any: bool }
+  | MissingReturnAnnotation of {
+      annotation: Type.t;
+      evidence_locations: int list;
+      due_to_any: bool;
+    }
+  | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | RedundantCast of Type.t
-  | RevealedType of revealed_type
-  | TooManyArguments of too_many_arguments
-  | Unpack of unpack
+  | RevealedType of { expression: Expression.t; annotation: Type.t }
+  | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
+  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | Top
-  | UndefinedAttribute of undefined_attribute
+  | UndefinedAttribute of { attribute: Access.t; origin: origin }
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
-  | UninitializedAttribute of initialization_mismatch
+  | UninitializedAttribute of {
+      name: Access.t;
+      parent: Annotated.Class.t;
+      mismatch: mismatch;
+    }
   | UnusedIgnore of int list
 
   (* Additionals errors. *)
@@ -937,7 +833,8 @@ let less_or_equal ~resolution left right =
       when left_parameters = right_parameters ->
         Resolution.less_or_equal resolution ~left ~right
     | MissingArgument left, MissingArgument right ->
-        equal_missing_argument left right
+        Option.equal Access.equal left.callee right.callee &&
+        Access.equal left.name right.name
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when left.name = right.name ->
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
@@ -980,7 +877,9 @@ let less_or_equal ~resolution left right =
               false
         end
     | TooManyArguments left, TooManyArguments right ->
-        equal_too_many_arguments left right
+        Option.equal Access.equal left.callee right.callee &&
+        left.expected = right.expected &&
+        left.provided = right.provided
     | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | UnawaitedAwaitable left, UnawaitedAwaitable right ->
@@ -1035,7 +934,8 @@ let join ~resolution left right =
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
-      when equal_missing_argument left right ->
+      when Option.equal Access.equal left.callee right.callee &&
+           Access.equal left.name right.name ->
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when left.name = right.name ->
@@ -1126,8 +1026,13 @@ let join ~resolution left right =
         InconsistentOverride {
           left with override = WeakenedPostcondition (join_mismatch left_mismatch right_mismatch);
         }
-    | TooManyArguments left, TooManyArguments right when equal_too_many_arguments left right ->
-        TooManyArguments left
+    | TooManyArguments left, TooManyArguments right ->
+        if Option.equal Access.equal left.callee right.callee &&
+           left.expected = right.expected &&
+           left.provided = right.provided then
+          TooManyArguments left
+        else
+          Top
     | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }

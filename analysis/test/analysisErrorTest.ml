@@ -62,14 +62,14 @@ let error ?(define = mock_define) kind =
 
 let revealed_type access annotation =
   Error.RevealedType {
-    Error.expression = Access.expression (Access.create access);
+    expression = Access.expression (Access.create access);
     annotation;
   }
 
 
 let missing_return annotation =
   Error.MissingReturnAnnotation {
-    Error.annotation;
+    annotation;
     evidence_locations = [];
     due_to_any = false;
   }
@@ -77,16 +77,16 @@ let missing_return annotation =
 
 let incompatible_return_type actual expected =
   Error.IncompatibleReturnType {
-    Error.mismatch = { Error.actual; expected };
+    mismatch = { Error.actual; expected };
     is_implicit = false;
   }
 
 
 let undefined_attribute actual =
   Error.UndefinedAttribute {
-    Error.attribute = Access.create "foo";
+    attribute = Access.create "foo";
     origin = Error.Class {
-        Error.annotation = actual;
+        annotation = actual;
         class_attribute = false;
       };
   }
@@ -101,7 +101,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleAttributeType {
-              Error.parent = mock_parent;
+              parent = mock_parent;
               incompatible_type = {
                 Error.name = [Access.Identifier (~~"")];
                 mismatch = {
@@ -115,7 +115,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleAttributeType {
-              Error.parent = mock_parent;
+              parent = mock_parent;
               incompatible_type = {
                 Error.name = [Access.Identifier (~~"")];
                 mismatch = {
@@ -129,7 +129,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleAttributeType {
-              Error.parent = mock_parent;
+              parent = mock_parent;
               incompatible_type = {
                 Error.name = [Access.Identifier (~~"")];
                 mismatch = {
@@ -145,7 +145,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute{
-              Error.name = [Access.Identifier (~~"")];
+              name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -157,7 +157,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute {
-              Error.name = [Access.Identifier (~~"")];
+              name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -170,7 +170,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingParameterAnnotation {
-              Error.name = (Access.create "");
+              name = (Access.create "");
               annotation = Type.Top;
               due_to_any = false;
             })));
@@ -178,7 +178,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingParameterAnnotation {
-              Error.name = (Access.create "");
+              name = (Access.create "");
               annotation = Type.string;
               due_to_any = false;
             })));
@@ -188,7 +188,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              Error.annotation = Type.Top;
+              annotation = Type.Top;
               evidence_locations = [];
               due_to_any = false;
             })));
@@ -196,7 +196,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              Error.annotation = Type.string;
+              annotation = Type.string;
               evidence_locations = [];
               due_to_any = false;
             })));
@@ -206,8 +206,8 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingAttributeAnnotation {
-              Error.parent = mock_parent;
-              Error.missing_annotation = {
+              parent = mock_parent;
+              missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
                 annotation = Type.Top;
                 due_to_any = false;
@@ -218,8 +218,8 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingAttributeAnnotation {
-              Error.parent = mock_parent;
-              Error.missing_annotation = {
+              parent = mock_parent;
+              missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
                 annotation = Type.string;
                 due_to_any = false;
@@ -232,7 +232,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some ((Access.create ""));
+              name = Some ((Access.create ""));
               position = 1;
               callee = Some (Access.create "callee");
               mismatch = {
@@ -244,7 +244,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some ((Access.create ""));
+              name = Some ((Access.create ""));
               position = 1;
               callee = Some (Access.create "callee");
               mismatch = {
@@ -256,7 +256,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some ((Access.create ""));
+              name = Some ((Access.create ""));
               position = 1;
               callee = Some (Access.create "callee");
               mismatch = {
@@ -269,7 +269,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleParameterType {
-              Error.name = Some ((Access.create ""));
+              name = Some ((Access.create ""));
               position = 1;
               callee = Some (Access.create "callee");
               mismatch = {
@@ -283,7 +283,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.mismatch = {
+              mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
               };
@@ -293,7 +293,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.mismatch = {
+              mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
               };
@@ -303,7 +303,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.IncompatibleReturnType {
-              Error.mismatch = {
+              mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
               };
@@ -329,7 +329,7 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleAttributeType {
-           Error.parent = mock_parent;
+           parent = mock_parent;
            incompatible_type = {
              Error.name = [Access.Identifier (~~"")];
              mismatch = {
@@ -351,7 +351,7 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (Access.create "");
+           name = Some (Access.create "");
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {
@@ -361,7 +361,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (Access.create "");
+           name = Some (Access.create "");
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {
@@ -371,7 +371,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           Error.name = Some (Access.create "");
+           name = Some (Access.create "");
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {
@@ -534,13 +534,13 @@ let test_suppress _ =
   assert_suppressed
     Source.Default
     (Error.MissingTypeParameters {
-        Error.annotation = Type.primitive "dict";
+        annotation = Type.primitive "dict";
         number_of_parameters = 2;
       });
   assert_not_suppressed
     Source.Strict
     (Error.MissingTypeParameters {
-        Error.annotation = Type.primitive "dict";
+        annotation = Type.primitive "dict";
         number_of_parameters = 2;
       });
 

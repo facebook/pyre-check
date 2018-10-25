@@ -93,7 +93,7 @@ module State = struct
             let error =
               Error.create
                 ~location
-                ~kind:(Error.MissingParameterAnnotation { Error.name; annotation; due_to_any })
+                ~kind:(Error.MissingParameterAnnotation { name; annotation; due_to_any })
                 ~define:define_node
             in
             Map.set ~key:(Error.location error |> Location.reference) ~data:error errors)
@@ -456,7 +456,7 @@ let infer
         in
         match error with
         | {
-          Error.kind = Error.MissingReturnAnnotation { Error.annotation; _ };
+          Error.kind = Error.MissingReturnAnnotation { annotation; _ };
           define = ({ Node.value = define; location } as define_node);
           _;
         } ->
@@ -482,7 +482,7 @@ let infer
                   true, globals_added_sofar
             end
         | {
-          Error.kind = Error.MissingParameterAnnotation { Error.name; annotation; _ };
+          Error.kind = Error.MissingParameterAnnotation { name; annotation; _ };
           define = ({ Node.value = define; location } as define_node);
           _;
         } ->
@@ -533,7 +533,7 @@ let infer
             end
         | ({
             Error.kind = Error.MissingAttributeAnnotation {
-                Error.parent;
+                parent;
                 missing_annotation = { Error.name; annotation; _ };
               };
             _;

@@ -185,7 +185,7 @@ module State = struct
                       ~location:(Attribute.location attribute)
                       ~kind:(
                         Error.UninitializedAttribute {
-                          Error.name;
+                          name;
                           parent = class_definition;
                           mismatch = {
                             Error.expected;
@@ -447,7 +447,7 @@ module State = struct
                 Error.create
                   ~location
                   ~kind:(Error.MissingTypeParameters {
-                      Error.annotation;
+                      annotation;
                       number_of_parameters = List.length generics;
                     })
                   ~define:define_node
@@ -509,7 +509,7 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.MissingParameterAnnotation {
-                          Error.name = access;
+                          name = access;
                           annotation;
                           due_to_any;
                         })
@@ -603,7 +603,7 @@ module State = struct
                      Error.create
                        ~location
                        ~kind:(Error.InconsistentOverride {
-                           Error.overridden_method = Statement.Define.unqualified_name define;
+                           overridden_method = Statement.Define.unqualified_name define;
                            parent = Class.name (Attribute.parent overridden_attribute);
                            override = Error.WeakenedPostcondition { Error.actual; expected };
                          })
@@ -637,8 +637,7 @@ module State = struct
                              Error.create
                                ~location
                                ~kind:(Error.InconsistentOverride {
-                                   Error.overridden_method =
-                                     Statement.Define.unqualified_name define;
+                                   overridden_method = Statement.Define.unqualified_name define;
                                    parent = Class.name (Attribute.parent overridden_attribute);
                                    override =
                                      Error.StrengthenedPrecondition
@@ -684,7 +683,7 @@ module State = struct
                          Error.create
                            ~location
                            ~kind:(Error.InconsistentOverride {
-                               Error.overridden_method = Statement.Define.unqualified_name define;
+                               overridden_method = Statement.Define.unqualified_name define;
                                parent = Class.name (Attribute.parent overridden_attribute);
                                override =
                                  Error.StrengthenedPrecondition (Error.NotFound parameter_name);
@@ -807,7 +806,7 @@ module State = struct
         let state =
           Error.create
             ~location
-            ~kind:(Error.RevealedType { Error.expression = value; annotation })
+            ~kind:(Error.RevealedType { expression = value; annotation })
             ~define
           |> add_error ~state
         in
@@ -878,7 +877,7 @@ module State = struct
               Error.create
                 ~location
                 ~kind:(Error.IncompatibleParameterType {
-                    Error.name = None;
+                    name = None;
                     position = 2;
                     callee = Some [Access.Identifier isinstance];
                     mismatch = {
@@ -933,7 +932,7 @@ module State = struct
                             ~location
                             ~kind:
                               (Error.IncompatibleParameterType {
-                                  Error.name =
+                                  name =
                                     (name
                                      >>| fun name ->
                                      Expression.Access.create_from_identifiers [name]);
@@ -945,12 +944,12 @@ module State = struct
                       | MissingArgument name ->
                           Error.create
                             ~location
-                            ~kind:(Error.MissingArgument { Error.callee; name })
+                            ~kind:(Error.MissingArgument { callee; name })
                             ~define
                       | TooManyArguments { expected; provided } ->
                           Error.create
                             ~location
-                            ~kind:(Error.TooManyArguments { Error.callee; expected; provided })
+                            ~kind:(Error.TooManyArguments { callee; expected; provided })
                             ~define
                     in
                     Some error
@@ -970,10 +969,10 @@ module State = struct
                         match origin with
                         | Instance class_attribute ->
                             Error.UndefinedAttribute {
-                              Error.attribute;
+                              attribute;
                               origin =
                                 Error.Class {
-                                  Error.annotation =
+                                  annotation =
                                     Class.annotation
                                       ~resolution
                                       (Attribute.parent class_attribute);
@@ -982,7 +981,7 @@ module State = struct
                             }
                         | Module access when not (List.is_empty access) ->
                             Error.UndefinedAttribute {
-                              Error.attribute;
+                              attribute;
                               origin = Error.Module access;
                             }
                         | Module _ ->
@@ -1391,7 +1390,7 @@ module State = struct
                       match element with
                       | Attribute { attribute = access; origin = Instance attribute; _ } ->
                           Error.IncompatibleAttributeType {
-                            Error.parent = Attribute.parent attribute;
+                            parent = Attribute.parent attribute;
                             incompatible_type = {
                               Error.name = access;
                               mismatch = { Error.expected; actual = resolved };
@@ -1450,7 +1449,7 @@ module State = struct
                           Error.create
                             ~location:attribute_location
                             ~kind:(Error.MissingAttributeAnnotation {
-                                Error.parent = Attribute.parent attribute;
+                                parent = Attribute.parent attribute;
                                 missing_annotation = {
                                   Error.name = access;
                                   annotation = resolved;
@@ -1605,12 +1604,12 @@ module State = struct
                 match guide with
                 | Type.Tuple (Type.Bounded parameters) ->
                     (Error.Unpack {
-                        Error.expected_count = List.length elements;
+                        expected_count = List.length elements;
                         unpack_problem = CountMismatch (List.length parameters);
                       })
                 | _ ->
                     (Error.Unpack {
-                        Error.expected_count = List.length elements;
+                        expected_count = List.length elements;
                         unpack_problem = UnacceptableType guide;
                       })
               in
@@ -1659,7 +1658,7 @@ module State = struct
                     (Error.create
                        ~location:(Node.location test)
                        ~kind:(Error.ImpossibleIsinstance {
-                           Error.mismatch = { Error.expected; actual = existing };
+                           mismatch = { Error.expected; actual = existing };
                            expression = value;
                            negation = false;
                          })
@@ -1698,7 +1697,7 @@ module State = struct
                   (Error.create
                      ~location:(Node.location test)
                      ~kind:(Error.ImpossibleIsinstance {
-                         Error.mismatch = { Error.expected; actual = resolved };
+                         mismatch = { Error.expected; actual = resolved };
                          expression = value;
                          negation = true;
                        })
@@ -2009,7 +2008,7 @@ module State = struct
             Error.create
               ~location
               ~kind:(Error.IncompatibleReturnType {
-                  Error.mismatch = { Error.expected; actual };
+                  mismatch = { Error.expected; actual };
                   is_implicit;
                 })
               ~define
@@ -2020,7 +2019,7 @@ module State = struct
             Error.create
               ~location
               ~kind:(Error.MissingReturnAnnotation {
-                  Error.annotation = actual;
+                  annotation = actual;
                   evidence_locations = [location.Location.start.Location.line];
                   due_to_any = Type.equal expected Type.Object;
                 })
@@ -2043,7 +2042,7 @@ module State = struct
           Error.create
             ~location
             ~kind:(Error.IncompatibleReturnType {
-                Error.mismatch = { Error.expected; actual };
+                mismatch = { Error.expected; actual };
                 is_implicit = false;
               })
             ~define
@@ -2052,7 +2051,7 @@ module State = struct
           Error.create
             ~location
             ~kind:(Error.MissingReturnAnnotation {
-                Error.annotation = actual;
+                annotation = actual;
                 evidence_locations = [location.Location.start.Location.line];
                 due_to_any = Type.equal expected Type.Object;
               })
@@ -2077,7 +2076,7 @@ module State = struct
           Error.create
             ~location
             ~kind:(Error.IncompatibleReturnType {
-                Error.mismatch = { Error.expected; actual };
+                mismatch = { Error.expected; actual };
                 is_implicit = false;
               })
             ~define
@@ -2086,7 +2085,7 @@ module State = struct
           Error.create
             ~location
             ~kind:(Error.MissingReturnAnnotation {
-                Error.annotation = actual;
+                annotation = actual;
                 evidence_locations = [location.Location.start.Location.line];
                 due_to_any = Type.equal expected Type.Object;
               })
