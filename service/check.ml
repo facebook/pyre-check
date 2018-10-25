@@ -183,11 +183,48 @@ let analyze_sources
   Statistics.performance ~name:"postprocessed" ~timer ();
 
   let timer = Timer.start () in
-  if run_additional_checks then
-    Log.info "Running additional checks (not yet implemented)...";
+  let additional_errors =
+    if run_additional_checks then
+      begin
+        Log.info "Running additional checks...";
+        let run_additional_check (module Check: Analysis.Check.Signature) =
+          Log.info "Running check `%s`..." Check.name;
+          let timer = Timer.start () in
+          let map _ handles =
+            let analyze_source errors handle =
+              match SharedMemory.Sources.get handle with
+              | Some source ->
+                  Check.run ~configuration ~environment ~source
+                  |> List.rev_append errors
+              | _ ->
+                  Log.warning "Unable to load source for `%a`" File.Handle.pp handle;
+                  errors
+            in
+            List.fold handles ~init:[] ~f:analyze_source
+          in
+          let errors =
+            Scheduler.map_reduce
+              scheduler
+              ~configuration
+              ~bucket_size:75
+              ~initial:[]
+              ~map
+              ~reduce:List.append
+              ~inputs:handles
+              ()
+          in
+          Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
+          errors
+        in
+        List.map Analysis.Check.additional_checks ~f:run_additional_check
+        |> List.concat
+      end
+    else
+      []
+  in
   Statistics.performance ~name:"additional_checks" ~timer ();
 
-  errors, coverage
+  errors @ additional_errors, coverage
 
 
 let check

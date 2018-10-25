@@ -14,6 +14,7 @@ module BaseError = BaseError
 module CallGraph = CallGraph
 module CallGraphSharedMemory = CallGraphSharedMemory
 module Cfg = Cfg
+module Check = Check
 module Coverage = Coverage
 module Dependencies = Dependencies
 module Environment = Environment
