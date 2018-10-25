@@ -791,7 +791,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | Dictionary { Dictionary.entries; keywords } ->
           Dictionary {
             Dictionary.entries = List.map entries ~f:(qualify_entry ~scope);
-            keywords = keywords >>| qualify_expression ~scope
+            keywords = List.map keywords ~f:(qualify_expression ~scope);
           }
       | DictionaryComprehension { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~scope generators in

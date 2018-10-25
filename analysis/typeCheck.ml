@@ -1106,15 +1106,17 @@ module State = struct
           in
           List.fold entries ~f:forward_entry ~init:(Type.Bottom, Type.Bottom, state)
         in
-        let keyword, state =
-          match keywords with
-          | None ->
-              Type.Bottom, state
-          | Some keyword ->
-              let { state; resolved } = forward_expression ~state ~expression:keyword in
-              resolved, state
+        let resolved, state =
+          let forward_keyword (resolved, state) keyword =
+            let { state; resolved = keyword_resolved } =
+              forward_expression ~state ~expression:keyword
+            in
+            Resolution.join resolution resolved keyword_resolved,
+            state
+          in
+          List.fold keywords ~f:forward_keyword ~init:(Type.dictionary ~key ~value, state)
         in
-        { state; resolved = Resolution.join resolution (Type.dictionary ~key ~value) keyword }
+        { state; resolved }
 
     | DictionaryComprehension { Comprehension.element; generators } ->
         let key, value, state =

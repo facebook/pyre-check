@@ -6,8 +6,6 @@
 
 open Core
 
-open Pyre
-
 open Expression
 open Statement
 
@@ -73,7 +71,7 @@ module Make (Visitor: Visitor) = struct
             visit_expression right;
         | Dictionary { Dictionary.entries; keywords } ->
             List.iter entries ~f:(visit_entry ~visit_expression);
-            keywords >>| visit_expression |> ignore
+            List.iter keywords ~f:(visit_expression) |> ignore
         | DictionaryComprehension { Comprehension.element; generators } ->
             visit_entry element ~visit_expression;
             List.iter generators ~f:(visit_generator ~visit_expression)

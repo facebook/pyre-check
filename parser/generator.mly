@@ -35,7 +35,7 @@
           entries, keyword :: keywords, items
     in
     let entries, keywords, items = List.fold ~init:([], [], []) ~f:extract_entries entries in
-    (List.rev entries), List.hd keywords, (List.rev items)
+    List.rev entries, List.rev keywords, List.rev items
 
   (* Helper function to combine a start position of type Lexing.position and
    * stop position of type Location.position. *)
@@ -1066,7 +1066,7 @@ atom:
       let value =
         match extract_entries entries with
         | entries, keywords, [] -> Dictionary { Dictionary.entries; keywords }
-        | [], None, items -> Set items
+        | [], [], items -> Set items
         | _ -> failwith "Invalid set or dictionary"
       in
       { Node.location = Location.create ~start ~stop; value }

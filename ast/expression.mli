@@ -104,7 +104,7 @@ module Dictionary : sig
 
   type 'expression t = {
     entries: ('expression entry) list;
-    keywords: 'expression option;
+    keywords: 'expression list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end

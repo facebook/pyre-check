@@ -177,7 +177,7 @@ module Dictionary = struct
 
   type 'expression t = {
     entries: ('expression entry) list;
-    keywords: 'expression option;
+    keywords: 'expression list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -874,6 +874,17 @@ module PrettyPrinter = struct
           pp_generator generator
           pp_generators xs
 
+  and pp_keywords formatter keywords =
+    match keywords with
+    | [] -> ()
+    | keyword :: [] -> Format.fprintf formatter ", %a" pp_expression_t keyword
+    | keyword :: keywords ->
+        Format.fprintf
+          formatter
+          ", %a%a"
+          pp_expression_t keyword
+          pp_keywords keywords
+
   and pp_parameter formatter { Node.value = { Parameter.name; value; annotation }; _ } =
     let identifier = Identifier.show name in
     match value,annotation with
@@ -992,11 +1003,6 @@ module PrettyPrinter = struct
     | Complex float_value -> Format.fprintf formatter "%f" float_value
 
     | Dictionary { Dictionary.entries; keywords } ->
-        let pp_keywords format = function
-          | Some keywords ->
-              Format.fprintf format ", %a" pp_expression_t keywords
-          | None ->
-              () in
         Format.fprintf
           formatter
           "Dictionary { %a%a }"

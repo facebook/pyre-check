@@ -395,6 +395,11 @@ let test_forward_expression _ =
     (Type.dictionary ~key:Type.integer ~value:(Type.union [Type.integer; Type.string]));
   assert_forward "{**{1: 1}}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
   assert_forward
+    "{**{1: 1}, **{'a': 'b'}}"
+    (Type.dictionary
+       ~key:(Type.union [Type.integer; Type.string])
+       ~value:(Type.union [Type.integer; Type.string]));
+  assert_forward
     ~errors:(`Undefined 1)
     "{1: 'string', **{undefined: 1}}"
     (Type.dictionary ~key:Type.Top ~value:(Type.union [Type.string; Type.integer]));

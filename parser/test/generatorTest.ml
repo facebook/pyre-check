@@ -1511,7 +1511,7 @@ let test_ternary _ =
 let test_dictionary _ =
   assert_parsed_equal
     "{}"
-    [+Expression (+Dictionary { Dictionary.entries = []; keywords = None })];
+    [+Expression (+Dictionary { Dictionary.entries = []; keywords = [] })];
   assert_parsed_equal
     "{1: 2}"
     [
@@ -1520,7 +1520,7 @@ let test_dictionary _ =
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = None;
+           keywords = [];
          });
     ];
   assert_parsed_equal
@@ -1531,7 +1531,7 @@ let test_dictionary _ =
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = None;
+           keywords = [];
          });
     ];
 
@@ -1543,7 +1543,18 @@ let test_dictionary _ =
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = Some !"durp";
+           keywords = [!"durp"];
+         });
+    ];
+  assert_parsed_equal
+    "{1: 2, **durp, **hurp}"
+    [
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +Integer 1; value = +Integer 2 };
+           ];
+           keywords = [!"durp"; !"hurp"];
          });
     ];
   assert_parsed_equal
@@ -1552,7 +1563,7 @@ let test_dictionary _ =
       +Expression
         (+Dictionary {
            Dictionary.entries = [];
-           keywords = Some (+List [+Integer 1]);
+           keywords = [+List [+Integer 1]];
          });
     ];
   assert_parsed_equal
@@ -1563,7 +1574,7 @@ let test_dictionary _ =
            Dictionary.entries = [
              { Dictionary.key = +Integer 1; value = +Integer 2 };
            ];
-           keywords = Some !"durp";
+           keywords = [!"durp"];
          });
     ];
 
@@ -1580,7 +1591,7 @@ let test_dictionary _ =
                  right = +Integer 2;
                };
              }];
-           keywords = None;
+           keywords = [];
          });
     ];
   assert_parsed_equal
@@ -1592,7 +1603,7 @@ let test_dictionary _ =
              { Dictionary.key = +Integer 1; value = +Integer 2 };
              { Dictionary.key = +Integer 2; value = +Integer 3 };
            ];
-           keywords = None;
+           keywords = [];
          });
     ];
   assert_parsed_equal
@@ -1604,7 +1615,7 @@ let test_dictionary _ =
              { Dictionary.key = +Integer 1; value = +Integer 2 };
              { Dictionary.key = +Integer 2; value = +Integer 3 };
            ];
-           keywords = None;
+           keywords = [];
          });
     ];
 
