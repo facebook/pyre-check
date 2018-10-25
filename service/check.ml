@@ -29,6 +29,7 @@ let analyze_sources
     ~configuration:({
         Configuration.Analysis.project_root;
         filter_directories;
+        run_additional_checks;
         _;
       } as configuration)
     ~environment
@@ -122,6 +123,7 @@ let analyze_sources
     |> List.sort ~compare:File.Handle.compare
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
+
   Log.info "Checking %d sources..." (List.length handles);
   let timer = Timer.start () in
   let empty_result = {
@@ -175,9 +177,16 @@ let analyze_sources
       ()
   in
   Statistics.performance ~name:"analyzed sources" ~timer ();
+
   let timer = Timer.start () in
   let errors = Postprocess.ignore ~configuration scheduler handles errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
+
+  let timer = Timer.start () in
+  if run_additional_checks then
+    Log.info "Running additional checks (not yet implemented)...";
+  Statistics.performance ~name:"additional_checks" ~timer ();
+
   errors, coverage
 
 

@@ -10,6 +10,7 @@ module Analysis: sig
     start_time: float;
     infer: bool;
     recursive_infer: bool;
+    run_additional_checks: bool;
     parallel: bool;
     filter_directories: (Path.t list) option;
     number_of_workers: int;
@@ -33,6 +34,7 @@ module Analysis: sig
     :  ?start_time: float
     -> ?infer: bool
     -> ?recursive_infer: bool
+    -> ?run_additional_checks: bool
     -> ?parallel: bool
     -> ?filter_directories: Path.t list
     -> ?number_of_workers: int

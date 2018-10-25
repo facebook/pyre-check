@@ -22,6 +22,7 @@ let run_check
     show_error_traces
     infer
     recursive_infer
+    run_additional_checks
     sequential
     filter_directories
     number_of_workers
@@ -51,6 +52,7 @@ let run_check
       ?logger
       ~infer
       ~recursive_infer
+      ~run_additional_checks
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)
       ?filter_directories

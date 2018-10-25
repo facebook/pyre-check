@@ -13,6 +13,7 @@ module Analysis = struct
     start_time: float;
     infer: bool;
     recursive_infer: bool;
+    run_additional_checks: bool;
     parallel: bool;
     filter_directories: (Path.t list) option;
     number_of_workers: int;
@@ -32,9 +33,11 @@ module Analysis = struct
   }
   [@@deriving show]
 
+
   let equal first second =
     first.infer = second.infer &&
     first.recursive_infer = second.recursive_infer &&
+    first.run_additional_checks = second.run_additional_checks &&
     first.debug = second.debug &&
     first.expected_version = second.expected_version &&
     first.strict = second.strict &&
@@ -45,6 +48,7 @@ module Analysis = struct
       ?(start_time = Unix.time())
       ?(infer = false)
       ?(recursive_infer = false)
+      ?(run_additional_checks = false)
       ?(parallel = true)
       ?filter_directories
       ?(number_of_workers = 4)
@@ -66,6 +70,7 @@ module Analysis = struct
       start_time;
       infer;
       recursive_infer;
+      run_additional_checks;
       parallel;
       filter_directories;
       number_of_workers;
