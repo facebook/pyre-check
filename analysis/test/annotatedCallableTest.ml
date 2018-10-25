@@ -103,7 +103,7 @@ let test_apply_decorators _ =
 
 
 let test_create _ =
-  let assert_callable ?parent source expected =
+  let assert_callable ?parent ?expected ?expected_stubs source =
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()
@@ -120,34 +120,36 @@ let test_create _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (parse_callable expected)
+      (parse_callable_with_stubs expected expected_stubs)
       callable
   in
 
-  assert_callable "def foo() -> int: ..." "typing.Callable('foo')[[], int]";
-  assert_callable "async def foo() -> int: ..." "typing.Callable('foo')[[], typing.Awaitable[int]]";
+  assert_callable "def foo() -> int: ..." ~expected:"typing.Callable('foo')[[], int]";
+  assert_callable
+    "async def foo() -> int: ..."
+    ~expected:"typing.Callable('foo')[[], typing.Awaitable[int]]";
 
   assert_callable
     "def foo(a, b) -> str: ..."
-    "typing.Callable('foo')[[Named(a, $unknown), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Named(b, $unknown)], str]";
   assert_callable
     "def foo(a: int, b) -> str: ..."
-    "typing.Callable('foo')[[Named(a, int), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('foo')[[Named(a, int), Named(b, $unknown)], str]";
   assert_callable
     "def foo(a: int = 1) -> str: ..."
-    "typing.Callable('foo')[[Named(a, int, default)], str]";
+    ~expected:"typing.Callable('foo')[[Named(a, int, default)], str]";
 
   assert_callable
     "def foo(a, *args, **kwargs) -> str: ..."
-    "typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
+    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
   assert_callable
     "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
-    "typing.Callable('foo')[[Keywords(kwargs, typing.Dict[str, typing.Any])], str]";
+    ~expected:"typing.Callable('foo')[[Keywords(kwargs, typing.Dict[str, typing.Any])], str]";
 
   assert_callable
     ~parent:"module.Foo"
     "def module.Foo.foo(a: int, b) -> str: ..."
-    "typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]";
 
   assert_callable
     ~parent:"module.Foo"
@@ -157,8 +159,7 @@ let test_create _ =
       @overload
       def module.Foo.foo(a: str) -> str: ...
     |}
-    (* Note that the overload order is reversed from the declaration - shouldn't matter. *)
-    "typing.Callable('module.Foo.foo')[[Named(a, str)], str][[Named(a, int)], int]";
+    ~expected_stubs:"typing.Callable('module.Foo.foo')[[Named(a, int)], int][[Named(a, str)], str]";
 
   let assert_implicit_argument ?parent source expected =
     let resolution =

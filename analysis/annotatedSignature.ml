@@ -102,8 +102,22 @@ type signature_match = {
 }
 
 
-let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as callable) =
+let select
+    ~resolution
+    ~arguments
+    ~callable:({ Type.Callable.overloads; overload_stubs; _ } as callable) =
   let open Type.Callable in
+  let removed_stubbed_implementations ~implementations ~stubs =
+    let unstubbed_implementations =
+      let not_stubbed implementation =
+        let ignore_annotation _ _ = true in
+        let arity_equal = Type.Callable.equal_overload ignore_annotation in
+        not (List.exists ~f:(arity_equal implementation) stubs)
+      in
+      List.filter ~f:not_stubbed implementations
+    in
+    unstubbed_implementations @ stubs
+  in
   let match_arity ({ parameters = all_parameters; _ } as overload) =
     let base_signature_match =
       {
@@ -542,6 +556,7 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
               Type.Callable {
                 Type.Callable.kind = Anonymous;
                 overloads;
+                overload_stubs = [];
                 implicit = Function;
               }
               |> Type.variables
@@ -620,7 +635,8 @@ let select ~resolution ~arguments ~callable:({ Type.Callable.overloads; _ } as c
     >>| determine_reason
     |> Option.value ~default:(NotFound { callable; reason = None })
   in
-  List.filter_map ~f:match_arity overloads
+  removed_stubbed_implementations ~implementations:overloads ~stubs:overload_stubs
+  |> List.filter_map ~f:match_arity
   |> List.map ~f:check_annotations
   |> List.map ~f:calculate_rank
   |> find_closest

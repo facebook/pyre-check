@@ -219,6 +219,34 @@ let parse_callable callable =
   |> Type.create ~aliases:(fun _ -> None)
 
 
+let parse_callable_with_stubs implementations_callable stubs_callable =
+  (* There is no way to string annotate stubbed overloads, so parse them as
+     regular overloads and do some processing. In the wild, only overload_stubs
+     can be empty, but allow constructing empty overloads for testing. *)
+  match implementations_callable, stubs_callable with
+  | None, None ->
+      failwith "No callable provided"
+  | Some implementations, None ->
+      parse_callable implementations
+  | None, Some stubs ->
+      begin
+        match parse_callable stubs with
+        | Type.Callable ({ Type.Callable.overloads; _ } as callable) ->
+            Type.Callable
+              { callable with Type.Callable.overloads = []; overload_stubs = overloads }
+        | annotation ->
+            annotation
+      end
+  | Some implementations, Some stubs ->
+      begin
+        match parse_callable implementations, parse_callable stubs with
+        | Type.Callable callable, Type.Callable { Type.Callable.overloads; _ } ->
+            Type.Callable { callable with Type.Callable.overload_stubs = overloads }
+        | implementation_annotation, _ ->
+            implementation_annotation
+      end
+
+
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""

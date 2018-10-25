@@ -273,8 +273,8 @@ let test_constructors _ =
         def Foo.__init__(self, b: str) -> None: pass
     |}
     (Some
-       ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(b, str)], Foo]" ^
-        "[[Named(self, $unknown), Named(a, int)], Foo]"));
+       ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], Foo]" ^
+        "[[Named(self, $unknown), Named(b, str)], Foo]"));
 
   (* Generic classes. *)
   assert_constructor
@@ -758,8 +758,8 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        ("typing.Callable('Attributes.baz')[[Named(self, $unknown), Named(x, str)], str]" ^
-         "[[Named(self, $unknown), Named(x, int)], int]"))
+        ("typing.Callable('Attributes.baz')[[Named(self, $unknown), Named(x, int)], int]" ^
+         "[[Named(self, $unknown), Named(x, str)], str]"))
 
 
 let test_fallback_attribute _ =

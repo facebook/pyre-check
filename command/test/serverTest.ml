@@ -505,6 +505,7 @@ let test_query context =
                      parameters = Type.Callable.Defined [];
                    };
                  ];
+                 overload_stubs = [];
                  implicit = Type.Callable.Instance;
                }
            };

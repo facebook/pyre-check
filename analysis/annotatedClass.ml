@@ -637,10 +637,13 @@ let attributes
                 match
                   Annotation.annotation existing_annotation,
                   Annotation.annotation new_annotation with
-                | Type.Callable ({ overloads; _ } as existing_callable),
-                  Type.Callable { overloads = new_overloads; _ } ->
+                | Type.Callable ({ overloads; overload_stubs; _ } as existing_callable),
+                  Type.Callable
+                    { overloads = new_overloads; overload_stubs = new_overload_stubs; _ } ->
                     Annotation.create (Type.Callable {
-                        existing_callable with overloads = new_overloads @ overloads })
+                        existing_callable with
+                        overloads = new_overloads @ overloads;
+                        overload_stubs = new_overload_stubs @ overload_stubs })
                 | _ ->
                     existing_annotation
               in
@@ -777,6 +780,7 @@ let fallback_attribute ~resolution ~access definition =
     in
     begin
       match annotation with
+      | Type.Callable { Type.Callable.overload_stubs = overload :: _; _ }
       | Type.Callable { Type.Callable.overloads = overload :: _; _ } ->
           let return_annotation = Type.Callable.Overload.return_annotation overload in
           let location = Attribute.location fallback in
@@ -867,7 +871,7 @@ let constructor definition ~resolution =
       |> Attribute.annotation
       |> Annotation.annotation
       |> function
-      | Type.Callable ({ Type.Callable.overloads; _ } as callable) ->
+      | Type.Callable ({ Type.Callable.overloads; overload_stubs; _ } as callable) ->
           let open Type.Callable in
           (* __new__ requires a metaclass to be passed in as the first argument; unannotate to
              prevent extraneous errors. *)
@@ -880,7 +884,8 @@ let constructor definition ~resolution =
                 overload
           in
           let overloads = List.map overloads ~f:unannotate_first_parameter in
-          Type.Callable { callable with Type.Callable.overloads }
+          let overload_stubs = List.map overload_stubs ~f:unannotate_first_parameter in
+          Type.Callable { callable with Type.Callable.overloads; overload_stubs }
       | annotation ->
           annotation
     in

@@ -1432,6 +1432,45 @@ let test_check _ =
         @overload
         def derp(self, x: str) -> str:
           pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; all @overload stubs must be followed by implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; @overload stubs must comprehensively cover implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
 
       def herp(x: Foo) -> int:
         return x.derp(5)

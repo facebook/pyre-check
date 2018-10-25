@@ -457,6 +457,7 @@ let fold ~resolution ~initial ~f access =
                         |> Option.value ~default:false
                       in
                       match getattr with
+                      | Some (Callable { overload_stubs = [overload]; _ })
                       | Some (Callable { overloads = [overload]; _ })
                         when correct_getattr_arity overload ->
                           Some (

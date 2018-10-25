@@ -65,10 +65,10 @@ let test_create _ =
   assert_create "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
     (Type.optional
        (Type.union [
-            Type.integer;
-            Type.string;
-            Type.tuple [Type.integer; Type.string];
-          ]
+           Type.integer;
+           Type.string;
+           Type.tuple [Type.integer; Type.string];
+         ]
        ));
 
   (* Nested renaming. *)
@@ -188,6 +188,7 @@ let test_create _ =
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
         overloads = [ { annotation = Type.integer; parameters = Undefined }];
+        overload_stubs = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -207,6 +208,7 @@ let test_create _ =
               ];
           };
         ];
+        overload_stubs = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -236,6 +238,7 @@ let test_create _ =
               ];
           };
         ];
+        overload_stubs = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -260,6 +263,7 @@ let test_create _ =
               ];
           };
         ];
+        overload_stubs = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -278,6 +282,7 @@ let test_create _ =
               ];
           };
         ];
+        overload_stubs = [];
         implicit = Type.Callable.Function;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ())

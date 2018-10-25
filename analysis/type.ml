@@ -69,6 +69,7 @@ module Record = struct
     and 'annotation record = {
       kind: kind;
       overloads: ('annotation overload) list;
+      overload_stubs: ('annotation overload) list;
       implicit: implicit;
     }
     [@@deriving compare, eq, sexp, show, hash]
@@ -203,7 +204,7 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "typing.Unbound"
-  | Callable { kind; overloads; _ } ->
+  | Callable { kind; overloads; overload_stubs; _ } ->
       let kind =
         match kind with
         | Anonymous -> ""
@@ -245,7 +246,7 @@ let rec pp format annotation =
           in
           Format.asprintf "%s, %a" parameters pp annotation
         in
-        List.map overloads ~f:overload
+        List.map (overloads @ overload_stubs) ~f:overload
         |> String.concat ~sep:"]["
       in
       Format.fprintf format "typing.Callable%s[%s]" kind overloads
@@ -343,9 +344,20 @@ let bytes =
   Primitive (Identifier.create "bytes")
 
 
-let callable ?name ?(overloads = []) ?(parameters = Undefined) ~annotation () =
+let callable
+    ?name
+    ?(overloads = [])
+    ?(overload_stubs = [])
+    ?(parameters = Undefined)
+    ~annotation
+    () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-  Callable { kind; overloads = { annotation; parameters } :: overloads; implicit = Function }
+  Callable {
+    kind;
+    overloads = { annotation; parameters } :: overloads;
+    overload_stubs;
+    implicit = Function;
+  }
 
 
 let complex =
@@ -417,6 +429,7 @@ let lambda ~parameters ~return_annotation =
                parameters);
       };
     ];
+    overload_stubs = [];
     implicit = Function;
   }
 
@@ -853,7 +866,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               in
               parse_overloads overloads
           in
-          Callable { kind; overloads; implicit = Function }
+          Callable { kind; overloads; overload_stubs = []; implicit = Function }
         in
         match expression with
         | Access [
@@ -984,7 +997,7 @@ let rec expression annotation =
   let rec access annotation =
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable { overloads; _ } ->
+    | Callable { overloads; overload_stubs; _ } ->
         let get_item_calls =
           let get_item_call { annotation; parameters } =
             let call_parameters =
@@ -1036,7 +1049,7 @@ let rec expression annotation =
             in
             get_item_call ~call_parameters [annotation]
           in
-          List.concat_map overloads ~f:get_item_call;
+          List.concat_map (overloads @ overload_stubs) ~f:get_item_call;
         in
         Access.create "typing.Callable" @ get_item_calls
     | Deleted -> Access.create "$deleted"
@@ -1084,7 +1097,7 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
-    | Callable { overloads; _ } ->
+    | Callable { overloads; overload_stubs; _ } ->
         let exists { annotation; parameters } =
           let exists_in_parameters =
             match parameters with
@@ -1103,7 +1116,7 @@ let rec exists annotation ~predicate =
           in
           exists annotation ~predicate || exists_in_parameters
         in
-        List.exists ~f:exists overloads
+        List.exists ~f:exists (overloads @ overload_stubs)
 
     | Optional annotation
     | Tuple (Unbounded annotation) ->
@@ -1233,7 +1246,7 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
-  | Callable { overloads; _ } ->
+  | Callable { overloads; overload_stubs; _ } ->
       let variables { annotation; parameters } =
         let variables_in_parameters  =
           match parameters with
@@ -1252,7 +1265,7 @@ let rec variables = function
         in
         variables annotation @ variables_in_parameters
       in
-      List.concat_map ~f:variables overloads
+      List.concat_map ~f:variables (overloads @ overload_stubs)
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -1277,7 +1290,7 @@ let rec primitives annotation =
   match annotation with
   | Primitive _ ->
       [annotation]
-  | Callable { overloads; _ } ->
+  | Callable { overloads; overload_stubs; _ } ->
       let overload_primitives { annotation; parameters } =
         match parameters with
         | Defined parameters ->
@@ -1293,7 +1306,7 @@ let rec primitives annotation =
         | Undefined ->
             primitives annotation
       in
-      List.concat_map overloads ~f:overload_primitives
+      List.concat_map (overloads @ overload_stubs) ~f:overload_primitives
 
   | Optional annotation
   | Tuple (Unbounded annotation) ->
@@ -1512,7 +1525,7 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
-          | Callable { kind; overloads; implicit } ->
+          | Callable { kind; overloads; overload_stubs; implicit } ->
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
@@ -1546,7 +1559,12 @@ let instantiate ?(widen = false) annotation ~constraints =
                 in
                 { annotation = instantiate annotation; parameters }
               in
-              Callable { kind; overloads = List.map overloads ~f:instantiate; implicit }
+              Callable {
+                kind;
+                overloads = List.map overloads ~f:instantiate;
+                overload_stubs = List.map overload_stubs ~f:instantiate;
+                implicit;
+              }
           | Parametric ({ parameters; _ } as parametric) ->
               Parametric {
                 parametric with
@@ -1668,9 +1686,9 @@ module Callable = struct
     | ({ kind = Named _; _ } as initial) :: overloads ->
         let fold sofar overload =
           match sofar, overload with
-          | Some sofar, { kind; overloads; implicit } ->
+          | Some sofar, { kind; overloads; overload_stubs; implicit } ->
               if equal_kind kind sofar.kind && implicit = sofar.implicit then
-                Some { kind; overloads = sofar.overloads @ overloads; implicit }
+                Some { kind; overloads = sofar.overloads @ overloads; overload_stubs; implicit }
               else
                 None
           | _ ->
@@ -1686,13 +1704,13 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ overloads; _ } as initial) =
-    let overloads =
+  let with_return_annotation ~return_annotation ({ overloads; overload_stubs; _ } as initial) =
+    let re_annotate overloads =
       List.map
         overloads
         ~f:(fun overload  -> { overload with annotation = return_annotation })
     in
-    { initial with overloads }
+    { initial with overloads = re_annotate overloads; overload_stubs = re_annotate overload_stubs }
 
 
   module Overload = struct

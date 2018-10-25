@@ -89,14 +89,24 @@ let create defines ~resolution =
     else
       Type.Callable.Function
   in
-  let to_overload ({ Define.parameters; _ } as define) =
-    {
-      annotation = return_annotation ~define ~resolution;
-      parameters = Defined (List.map parameters ~f:parameter);
-    }
+  let overloads, overload_stubs =
+    let to_overload (implementations, stubs) ({ Define.parameters; _ } as define) =
+      let overload =
+        {
+          annotation = return_annotation ~define ~resolution;
+          parameters = Defined (List.map parameters ~f:parameter);
+        }
+      in
+      if Define.is_overloaded_method define then
+        implementations, overload :: stubs
+      else
+        overload :: implementations, stubs
+    in
+    List.fold ~init:([],[]) ~f:to_overload defines
   in
   {
     kind = Named name;
-    overloads = List.map defines ~f:to_overload;
+    overloads;
+    overload_stubs;
     implicit;
   }

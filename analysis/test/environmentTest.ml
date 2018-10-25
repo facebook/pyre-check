@@ -567,7 +567,7 @@ let test_register_functions _ =
   assert_is_none (Handler.function_definitions (access ["nested_in_function"]));
   assert_is_none (Handler.function_definitions (access ["Class.property_method"]));
 
-  let assert_global access expected =
+  let assert_global ?expected ?expected_stubs access =
     let actual =
       Access.create access
       |> Handler.globals
@@ -575,9 +575,9 @@ let test_register_functions _ =
       >>| Annotation.annotation
     in
     let expected =
-      expected
-      >>| parse_single_expression
-      >>| Type.create ~aliases:(fun _ -> None)
+      match expected, expected_stubs with
+      | None, None -> None
+      | _ -> Some (parse_callable_with_stubs expected expected_stubs)
     in
     assert_equal
       ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
@@ -585,32 +585,31 @@ let test_register_functions _ =
       expected
       actual
   in
-  assert_global "function" (Some "typing.Callable('function')[[], int]");
+  assert_global "function" ~expected:"typing.Callable('function')[[], int]";
   assert_global
     "function_with_arguments"
-    (Some "typing.Callable('function_with_arguments')[[Named(i, int)], None]");
+    ~expected:"typing.Callable('function_with_arguments')[[Named(i, int)], None]";
 
   assert_global
     "Class.__init__"
-    (Some "typing.Callable('Class.__init__')[[Named(self, $unknown)], None]");
+    ~expected:"typing.Callable('Class.__init__')[[Named(self, $unknown)], None]";
   assert_global
     "Class.method"
-    (Some "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]");
+    ~expected:"typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]";
   assert_global
     "Class.Nested.nested_class_method"
-    (Some "typing.Callable('Class.Nested.nested_class_method')[[Named(self, $unknown)], str]");
+    ~expected:"typing.Callable('Class.Nested.nested_class_method')[[Named(self, $unknown)], str]";
 
   assert_global
     "overloaded"
-    (Some
-       ("typing.Callable('overloaded')" ^
-        "[[Named(i, str)], None][[Named(i, float)], None][[Named(i, int)], None]"));
+    ~expected:"typing.Callable('overloaded')[[Named(i, str)], None][[Named(i, float)], None]"
+    ~expected_stubs:"typing.Callable('overloaded')[[Named(i, int)], None]";
   assert_global
     "ClassWithOverloadedConstructor.__init__"
-    (Some
-       ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
-        "[[Named(self, $unknown), Named(i, int)], None]" ^
-        "[[Named(self, $unknown), Named(s, str)], None]"))
+    ~expected:("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
+               "[[Named(self, $unknown), Named(i, int)], None]")
+    ~expected_stubs:("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
+                     "[[Named(self, $unknown), Named(s, str)], None]")
 
 
 let test_populate _ =
