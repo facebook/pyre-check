@@ -37,7 +37,7 @@ let generate_lookup source =
   let configuration = Configuration.Analysis.create ~debug:true ~infer:false () in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [parsed];
-  TypeCheck.check configuration environment parsed |> ignore;
+  TypeCheck.check ~configuration ~environment ~source:parsed |> ignore;
   (Lookup.create_of_source environment parsed, trim_extra_indentation source)
 
 

@@ -61,10 +61,16 @@ let environment () =
 let make_errors ?handle ?qualifier source =
   let configuration = Configuration.Analysis.create () in
   let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
-  let environment_handler = Environment.handler ~configuration (environment ()) in
-  Service.Environment.populate environment_handler [source];
+  let environment = Environment.handler ~configuration (environment ()) in
+  Service.Environment.populate environment [source];
   let configuration = mock_analysis_configuration () in
-  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
+  let { TypeCheck.Result.errors; _ } =
+    TypeCheck.check
+      ~configuration
+      ~environment
+      ~source
+  in
+  errors
 
 
 let associate_errors_and_filenames error_list =

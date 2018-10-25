@@ -651,9 +651,9 @@ let assert_type_errors
       let check_errors configuration environment ?mode_override source =
         let { TypeCheck.Result.errors; _ } =
           if infer then
-            Inference.infer configuration environment ?mode_override source
+            Inference.infer ~configuration ~environment ~mode_override ~source
           else
-            TypeCheck.check configuration environment source
+            TypeCheck.check ~configuration ~environment ~source
         in
         errors
       in

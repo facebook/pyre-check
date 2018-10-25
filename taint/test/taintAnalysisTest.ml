@@ -39,7 +39,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
   let configuration = Configuration.Analysis.create () in
-  TypeCheck.check configuration environment source |> ignore;
+  TypeCheck.check ~configuration ~environment ~source |> ignore;
   let call_graph =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment

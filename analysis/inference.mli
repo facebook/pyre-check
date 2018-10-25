@@ -30,8 +30,8 @@ val backward_fixpoint
   -> Fixpoint.t
 
 val infer
-  :  Configuration.Analysis.t
-  -> (module Environment.Handler)
-  -> ?mode_override: Source.mode
-  -> Source.t
+  :  configuration: Configuration.Analysis.t
+  -> environment: (module Environment.Handler)
+  -> mode_override: Source.mode option
+  -> source: Source.t
   -> TypeCheck.Result.t

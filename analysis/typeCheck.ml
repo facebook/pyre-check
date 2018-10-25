@@ -2195,9 +2195,9 @@ end
 
 
 let check
-    configuration
-    environment
-    ({ Source.handle; qualifier; statements; _ } as source) =
+    ~configuration
+    ~environment
+    ~source:({ Source.handle; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
 
   let resolution = Environment.resolution environment () in

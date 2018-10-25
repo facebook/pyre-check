@@ -87,7 +87,7 @@ module Result : sig
 end
 
 val check
-  :  Configuration.Analysis.t
-  -> (module Environment.Handler)
-  -> Source.t
+  :  configuration: Configuration.Analysis.t
+  -> environment: (module Environment.Handler)
+  -> source: Source.t
   -> Result.t

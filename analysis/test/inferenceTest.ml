@@ -344,10 +344,10 @@ let assert_infer
   let check_errors configuration environment ?mode_override source =
     let { TypeCheck.Result.errors; _ } =
       Inference.infer
-        configuration
-        environment
-        ?mode_override
-        source
+        ~configuration
+        ~environment
+        ~mode_override
+        ~source
     in
     errors
   in

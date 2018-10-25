@@ -337,7 +337,11 @@ module SingleSourceResult = struct
 end
 
 
-let infer configuration environment ?mode_override ({ Source.handle; _ } as source) =
+let infer
+    ~configuration
+    ~environment
+    ~mode_override
+    ~source:({ Source.handle; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = Environment.resolution environment () in
 

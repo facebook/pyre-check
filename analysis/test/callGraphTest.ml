@@ -9,7 +9,6 @@ open OUnit2
 open Analysis
 open Ast
 open Statement
-open TypeCheck
 
 open Test
 
@@ -24,7 +23,7 @@ let create_call_graph source =
   let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
-  check configuration environment source |> ignore;
+  TypeCheck.check ~configuration ~environment ~source |> ignore;
   CallGraph.create ~environment ~source
 
 
@@ -162,7 +161,7 @@ let test_type_collection _ =
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
-    check configuration environment source |> ignore;
+    TypeCheck.check ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines source ~extract_into_toplevel:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
@@ -307,7 +306,7 @@ let test_strongly_connected_components _ =
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
-    check configuration environment source |> ignore;
+    TypeCheck.check ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges = CallGraph.create ~environment ~source in
       CallGraph.partition ~edges

@@ -176,10 +176,16 @@ let environment ~local_root =
 let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
-  let environment_handler = Environment.handler ~configuration (environment ~local_root) in
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate (environment_handler) [source];
-  (TypeCheck.check configuration environment_handler source).TypeCheck.Result.errors
+  let environment = Environment.handler ~configuration (environment ~local_root) in
+  add_defaults_to_environment environment;
+  Service.Environment.populate environment [source];
+  let { TypeCheck.Result.errors; _ } =
+    TypeCheck.check
+      ~configuration
+      ~environment
+      ~source
+  in
+  errors
 
 let mock_server_state
     ~local_root

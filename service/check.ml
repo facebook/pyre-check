@@ -75,8 +75,8 @@ let analyze_sources
         let timer = Timer.start () in
         Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
         let result =
-          let check = if infer then Inference.infer ?mode_override:None else TypeCheck.check in
-          check configuration environment source
+          let check = if infer then Inference.infer ~mode_override:None else TypeCheck.check in
+          check ~configuration ~environment ~source
         in
         Statistics.performance
           ~flush:false

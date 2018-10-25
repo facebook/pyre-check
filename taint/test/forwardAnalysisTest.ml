@@ -30,7 +30,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
   let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
-  TypeCheck.check configuration environment source |> ignore;
+  TypeCheck.check ~configuration ~environment ~source |> ignore;
   let defines =
     source
     |> Preprocessing.defines

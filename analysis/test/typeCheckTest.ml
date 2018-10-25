@@ -1297,9 +1297,9 @@ let test_coverage _ =
     let { Result.coverage; _ } =
       let environment = Test.environment () in
       Analysis.TypeCheck.check
-        Test.mock_configuration
-        environment
-        (parse source)
+        ~configuration:Test.mock_configuration
+        ~environment
+        ~source:(parse source)
     in
     assert_equal ~printer:Coverage.show expected coverage
   in
