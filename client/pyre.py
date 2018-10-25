@@ -75,6 +75,9 @@ def main() -> int:
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--run-additional-checks", action="store_true", help=argparse.SUPPRESS
+    )
 
     parser.add_argument(
         "--show-error-traces",
