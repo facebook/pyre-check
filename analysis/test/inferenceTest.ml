@@ -298,39 +298,40 @@ let test_fixpoint_backward _ =
 
 
 let test_check_missing_parameter _ =
-  let assert_type_errors = Test.assert_type_errors in
-  assert_type_errors
-    ~infer:true
+  let assert_inference_errors =
+    let check ~configuration ~environment ?mode_override ~source =
+      let { TypeCheck.Result.errors; _ } =
+        Inference.infer
+          ~configuration
+          ~environment
+          ~mode_override
+          ~source
+      in
+      errors
+    in
+    assert_errors ~infer:true ~check
+  in
+
+  assert_inference_errors
     {|
       def foo(x = 5) -> int:
         return x
     |}
     ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
 
-  assert_type_errors
-    ~infer:true
+  assert_inference_errors
     {|
       def foo(x: typing.Any) -> None:
         x = 5
     |}
     ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."];
 
-  assert_type_errors
-    ~infer:true
+  assert_inference_errors
     {|
       def foo(x: typing.Any = 5) -> None:
         pass
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."];
-
-  assert_type_errors
-    ~debug:false
-    ~strict:true
-    {|
-      def ohgod(derp: typing.Optional[typing.Any] = None) -> None:
-        pass
-    |}
-    []
+    ["Missing parameter annotation [2]: Parameter `x` has type `int` but type `Any` is specified."]
 
 
 let assert_infer

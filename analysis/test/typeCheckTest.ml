@@ -17,7 +17,17 @@ open TypeCheck
 open Test
 
 
-let assert_type_errors = Test.assert_type_errors
+let assert_type_errors =
+  let check ~configuration ~environment ?mode_override:_ ~source =
+    let { TypeCheck.Result.errors; _ } =
+      TypeCheck.check
+        ~configuration
+        ~environment
+        ~source
+    in
+    errors
+  in
+  assert_errors ~check
 
 
 let resolution = Test.resolution ()
@@ -4207,20 +4217,6 @@ let test_check_immutables _ =
         constant = 1
     |}
     [];
-
-  assert_type_errors
-    ~debug:false
-    ~infer:true
-    {|
-      constant
-      def foo() -> None:
-        global constant
-        constant = 1
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
-      "no type is specified."
-    ];
 
   (* TODO(T25072735): error on typing.Any (incompatible usage) rather than suggest it *)
   assert_type_errors
