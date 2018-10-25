@@ -51,6 +51,310 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "match_star_arg_directly",
+    "callable_line": 26,
+    "code": 5002,
+    "line": 27,
+    "start": 31,
+    "end": 43,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 27,
+                "start": 43,
+                "end": 45
+              },
+              "resolves_to": [ "source_field" ],
+              "port": "result[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 27,
+                "start": 20,
+                "end": 51
+              },
+              "resolves_to": [ "star_arg_wrapper" ],
+              "port": "formal(*rest1)[1][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match_star_arg_with_star",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 24,
+    "start": 26,
+    "end": 31,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 23,
+                "start": 27,
+                "end": 29
+              },
+              "resolves_to": [ "source_field" ],
+              "port": "result[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 24,
+                "start": 20,
+                "end": 32
+              },
+              "resolves_to": [ "star_arg_wrapper" ],
+              "port": "formal(*rest1)[1][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match_star_star_arg_directly",
+    "callable_line": 42,
+    "code": 5002,
+    "line": 43,
+    "start": 40,
+    "end": 52,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 43,
+                "start": 52,
+                "end": 54
+              },
+              "resolves_to": [ "source_field" ],
+              "port": "result[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 43,
+                "start": 25,
+                "end": 55
+              },
+              "resolves_to": [ "star_star_arg_wrapper" ],
+              "port": "formal(**kw)[arg][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match_star_star_arg_with_star",
+    "callable_line": 35,
+    "code": 5002,
+    "line": 40,
+    "start": 31,
+    "end": 37,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 38,
+                "start": 27,
+                "end": 29
+              },
+              "resolves_to": [ "source_field" ],
+              "port": "result[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 40,
+                "start": 25,
+                "end": 38
+              },
+              "resolves_to": [ "star_star_arg_wrapper" ],
+              "port": "formal(**kw)[arg][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Foo.some_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 49,
+              "start": 27,
+              "end": 29
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "refer_to_method_as_field",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(foo)[some_source]",
+        "taint": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 55,
+              "start": 14,
+              "end": 21
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "refer_to_method_as_field",
+    "callable_line": 52,
+    "code": 5002,
+    "line": 55,
+    "start": 15,
+    "end": 20,
+    "filename": "test.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 54,
+                "start": 12,
+                "end": 27
+              },
+              "resolves_to": [ "Foo.some_source" ],
+              "port": "result"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 55,
+              "start": 14,
+              "end": 21
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "sink_field",
@@ -95,6 +399,118 @@
       }
     ],
     "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "star_arg",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(*rest1)[1][a]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 17,
+                "start": 14,
+                "end": 23
+              },
+              "resolves_to": [ "sink_field" ],
+              "port": "formal(arg)[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "star_arg_wrapper",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(*rest1)[1][a]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 20,
+                "start": 12,
+                "end": 32
+              },
+              "resolves_to": [ "star_arg" ],
+              "port": "formal(*rest1)[1][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "star_star_arg",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(**kw)[arg][a]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 30,
+                "start": 14,
+                "end": 29
+              },
+              "resolves_to": [ "sink_field" ],
+              "port": "formal(arg)[a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "star_star_arg_wrapper",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(**kw)[arg][a]",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 33,
+                "start": 17,
+                "end": 30
+              },
+              "resolves_to": [ "star_star_arg" ],
+              "port": "formal(**kw)[arg][a]"
+            },
+            "leaves": [ { "kind": "Test" } ]
+          }
+        ]
+      }
+    ],
     "tito": []
   }
 }

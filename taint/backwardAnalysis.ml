@@ -122,9 +122,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
               BackwardState.read_access_path
                 ~root
-                ~path:formal_path
+                ~path:[]
                 backward.sink_taint
               |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
+              |> BackwardState.read_tree formal_path
               |> BackwardState.create_tree actual_path
               |> BackwardState.join_trees taint_tree
             in
@@ -145,7 +146,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 List.fold tito_matches ~f:combine_tito ~init:BackwardState.empty_tree
               in
               let argument_taint = BackwardState.join_trees sink_taint taint_in_taint_out in
-              analyze_expression ~resolution argument_taint argument state
+              analyze_unstarred_expression ~resolution argument_taint argument state
             in
             List.fold ~f:analyze_argument combined_matches ~init:state
         | _ ->
@@ -266,6 +267,15 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         analyze_expression ~resolution iterator_taint iterator state
       in
       List.fold ~f:handle_generator generators ~init:state
+
+    (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
+    and analyze_unstarred_expression ~resolution taint expression state =
+      match expression.Node.value with
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          analyze_expression ~resolution taint expression state
+      | _ ->
+          analyze_expression ~resolution taint expression state
 
     and analyze_expression ~resolution taint { Node.value = expression; _ } state =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;

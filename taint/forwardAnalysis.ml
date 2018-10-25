@@ -100,9 +100,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
               BackwardState.read_access_path
                 ~root
-                ~path:formal_path
+                ~path:[]
                 backward.sink_taint
               |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
+              |> BackwardState.read_tree formal_path
               |> BackwardState.create_tree actual_path
               |> BackwardState.join_trees taint_tree
             in
@@ -118,7 +119,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let analyze_argument tito ((argument, sink_matches), (_dup, tito_matches)) =
               let { Node.location; _ } = argument in
-              let argument_taint = analyze_expression ~resolution argument state in
+              let argument_taint = analyze_unstarred_expression ~resolution argument state in
               let tito =
                 let convert_tito ~path ~path_element:_ ~element:_ tito =
                   ForwardState.read_tree path argument_taint
@@ -238,7 +239,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ForwardState.read AccessPath.Root.LocalResult source_taint
             |> ForwardState.apply_call
               location
-              ~callees:[]
+              ~callees:[call_target]
               ~port:AccessPath.Root.LocalResult
         | _ ->
             ForwardState.empty_tree
@@ -327,6 +328,15 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let bound_state = List.fold ~f:add_binding generators ~init:state in
       let collection_taint = analyze_expression ~resolution element bound_state in
       ForwardState.create_tree [AccessPathTree.Label.Any] collection_taint
+
+    (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
+    and analyze_unstarred_expression ~resolution expression state =
+      match expression.Node.value with
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          analyze_expression ~resolution expression state
+      | _ ->
+          analyze_expression ~resolution expression state
 
     and analyze_expression ~resolution expression state =
       match expression.Node.value with
