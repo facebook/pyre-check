@@ -60,6 +60,13 @@ module ExpressionVisitor = struct
     with TypeOrder.Untracked _ ->
       None
 
+  let store_lookup ~table ~location ~data =
+    if not (Location.equal location Location.Reference.any) then
+      Hashtbl.set
+        table
+        ~key:location
+        ~data
+
   let expression
       ({ resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
@@ -81,9 +88,9 @@ module ExpressionVisitor = struct
                         value_location
                   in
                   let store_annotation annotation =
-                    Location.Reference.Table.set
-                      annotations_lookup
-                      ~key:location
+                    store_lookup
+                      ~table:annotations_lookup
+                      ~location
                       ~data:(Precise annotation)
                   in
                   resolve ~resolution ~expression:value
@@ -123,9 +130,9 @@ module ExpressionVisitor = struct
               List.fold access ~init:([], []) ~f:fold_callback
             in
             if not (List.is_empty entries) then
-              Location.Reference.Table.set
-                lookup_table
-                ~key:expression_location
+              store_lookup
+                ~table:lookup_table
+                ~location:expression_location
                 ~data:(Approximate entries);
           in
 
@@ -167,9 +174,9 @@ module ExpressionVisitor = struct
 
       | _ ->
           let store_annotation annotation =
-            Hashtbl.set
-              annotations_lookup
-              ~key:expression_location
+            store_lookup
+              ~table:annotations_lookup
+              ~location:expression_location
               ~data:(Precise annotation)
           in
           resolve ~resolution ~expression
@@ -185,9 +192,9 @@ module ExpressionVisitor = struct
     | Define { parameters; _ } ->
         let extract_parameters { Node.value = { Parameter.annotation; _ }; location } =
           let store_parameter_annotation annotation =
-            Hashtbl.set
-              annotations_lookup
-              ~key:location
+            store_lookup
+              ~table:annotations_lookup
+              ~location
               ~data:(Precise annotation)
           in
           annotation

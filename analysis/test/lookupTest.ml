@@ -227,7 +227,6 @@ let test_lookup_class_attributes _ =
   assert_annotation_list
     ~lookup
     [
-      "*:-1:-1--1:-1/ellipses";
       "test.py:3:4-3:5/bool";
       "test.py:3:4-3:5/typing.Type[test.Foo]";
       "test.py:3:7-3:11/typing.Type[bool]";
