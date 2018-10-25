@@ -78,7 +78,8 @@ module Record = struct
     let equal_record equal_annotation left right =
       (* Ignores implicit argument to simplify unit tests. *)
       equal_kind left.kind right.kind &&
-      List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads
+      List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads &&
+      List.equal ~equal:(equal_overload equal_annotation) left.overload_stubs right.overload_stubs
   end
 end
 
@@ -1688,7 +1689,12 @@ module Callable = struct
           match sofar, overload with
           | Some sofar, { kind; overloads; overload_stubs; implicit } ->
               if equal_kind kind sofar.kind && implicit = sofar.implicit then
-                Some { kind; overloads = sofar.overloads @ overloads; overload_stubs; implicit }
+                Some {
+                  kind;
+                  overloads = sofar.overloads @ overloads;
+                  overload_stubs = sofar.overload_stubs @ overload_stubs;
+                  implicit
+                }
               else
                 None
           | _ ->

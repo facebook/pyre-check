@@ -5912,6 +5912,7 @@ let test_check_constructors _ =
       class Class:
         @overload
         def __init__(self, i: int) -> None: ...
+        @overload
         def __init__(self, s: str) -> None: ...
       def construct() -> None:
         Class(1)

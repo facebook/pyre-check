@@ -161,6 +161,18 @@ let test_create _ =
     |}
     ~expected_stubs:"typing.Callable('module.Foo.foo')[[Named(a, int)], int][[Named(a, str)], str]";
 
+  assert_callable
+    ~parent:"module.Foo"
+    {|
+        @overload
+        def module.Foo.foo(a: int) -> int: ...
+        @overload
+        def module.Foo.foo(a: str, b: int) -> str: ...
+      |}
+    ~expected_stubs:(
+      "typing.Callable('module.Foo.foo')" ^
+      "[[Named(a, int)], int][[Named(a, str), Named(b, int)], str]");
+
   let assert_implicit_argument ?parent source expected =
     let resolution =
       populate source
