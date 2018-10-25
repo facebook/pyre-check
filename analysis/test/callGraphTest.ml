@@ -168,7 +168,7 @@ let test_type_collection _ =
     in
     let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
-      TypeResolutionSharedMemory.get name
+      ResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)
       |> Int.Map.of_tree
     in
@@ -177,7 +177,7 @@ let test_type_collection _ =
       let test_access = Access.create test_access in
       let annotations =
         Map.find_exn lookup key
-        |> (fun { TypeResolutionSharedMemory.precondition; _ } ->
+        |> (fun { ResolutionSharedMemory.precondition; _ } ->
             Access.Map.of_tree precondition)
       in
       let resolution = Environment.resolution environment ~annotations () in

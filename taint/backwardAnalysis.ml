@@ -424,12 +424,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let backward ?key state ~statement:({ Node.value = statement; _ }) =
       let resolution =
         let annotations =
-          match key, TypeResolutionSharedMemory.get FunctionContext.definition.value.name with
+          match key, ResolutionSharedMemory.get FunctionContext.definition.value.name with
           | Some key, Some define_mapping ->
               define_mapping
               |> Int.Map.of_tree
               |> (fun mapping -> Int.Map.find mapping key)
-              >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
+              >>| (fun { ResolutionSharedMemory.precondition; _ } -> precondition)
               >>| Access.Map.of_tree
               |> Option.value ~default:Access.Map.empty
           | _ ->

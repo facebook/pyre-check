@@ -24,7 +24,7 @@ module State = struct
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: TypeResolutionSharedMemory.annotation_map Int.Map.Tree.t
+    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
   }
 
 
@@ -2258,7 +2258,7 @@ let check
       let () =
         (* Write fixpoint type resolutions to shared memory *)
         let dump_resolutions { State.resolution_fixpoint; _ } =
-          TypeResolutionSharedMemory.add name resolution_fixpoint
+          ResolutionSharedMemory.add name resolution_fixpoint
         in
         exit
         >>| dump_resolutions

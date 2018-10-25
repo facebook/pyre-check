@@ -820,7 +820,7 @@ let process_type_check_request
   List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
   |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
   |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
-  |> TypeResolutionSharedMemory.remove;
+  |> ResolutionSharedMemory.remove;
 
   let new_errors, _ =
     Service.Check.analyze_sources

@@ -23,7 +23,7 @@ let create ~environment ~source =
       { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =
-      TypeResolutionSharedMemory.get caller
+      ResolutionSharedMemory.get caller
       |> Option.value ~default:Int.Map.Tree.empty
       |> Int.Map.of_tree
     in
@@ -34,7 +34,7 @@ let create ~environment ~source =
           Map.find
             annotation_lookup
             ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { TypeResolutionSharedMemory.precondition; _ } -> precondition)
+          >>| (fun { ResolutionSharedMemory.precondition; _ } -> precondition)
           |> Option.value ~default:Access.Map.Tree.empty
           |> Access.Map.of_tree
         in

@@ -211,7 +211,7 @@ let create_of_source environment source =
   let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
     let annotation_lookup =
-      TypeResolutionSharedMemory.get caller
+      ResolutionSharedMemory.get caller
       >>| Int.Map.of_tree
       |> Option.value ~default:Int.Map.empty
     in
@@ -220,7 +220,7 @@ let create_of_source environment source =
       let walk_statements statement_index statement =
         let annotations =
           Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { TypeResolutionSharedMemory.precondition; _ } ->
+          >>| (fun { ResolutionSharedMemory.precondition; _ } ->
               Access.Map.of_tree precondition)
           |> Option.value ~default:Access.Map.empty
         in

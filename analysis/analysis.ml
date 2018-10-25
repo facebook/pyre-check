@@ -28,4 +28,4 @@ module Type = Type
 module TypeCheck = TypeCheck
 module TypeOrder = TypeOrder
 module Inference = Inference
-module TypeResolutionSharedMemory = TypeResolutionSharedMemory
+module ResolutionSharedMemory = ResolutionSharedMemory
