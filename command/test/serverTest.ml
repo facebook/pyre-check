@@ -1039,7 +1039,6 @@ let test_incremental_lookups _ =
     [
       ":3:11-3:12/int";
       ":3:4-3:12/int";
-      ":5:8-5:9/typing.Unbound";
       ":6:11-6:12/int";
       ":6:4-6:12/int";
     ]

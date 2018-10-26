@@ -1230,6 +1230,11 @@ let is_tuple (annotation: t) =
   | _ -> false
 
 
+let is_unbound = function
+  | Bottom -> true
+  | _ -> false
+
+
 let is_unknown annotation =
   exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
 
