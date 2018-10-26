@@ -60,7 +60,7 @@ type unpack_problem =
 
 
 type kind =
-  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch; negation: bool }
+  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {
       name: Access.t option;
@@ -190,15 +190,14 @@ let messages ~detailed:_ ~define location kind =
     (string_of_int number) ^ suffix
   in
   match kind with
-  | ImpossibleIsinstance { expression; negation; mismatch = { actual; expected } } ->
+  | ImpossibleIsinstance { expression; mismatch = { actual; expected } } ->
       let expression_string = Expression.show expression in
       [
         Format.asprintf
-          "`%s` has type `%a`, checking if `%s`%s isinstance `%a` will always fail."
+          "`%s` has type `%a`, checking if `%s` not isinstance `%a` will always fail."
           expression_string
           Type.pp actual
           expression_string
-          (if negation then " not" else "")
           Type.pp expected
       ]
   | IncompatibleAwaitableType actual ->

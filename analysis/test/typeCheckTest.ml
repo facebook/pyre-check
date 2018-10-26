@@ -786,14 +786,10 @@ let test_forward_statement _ =
     ["x", Type.integer];
 
   assert_forward
-    ~errors:
-      (`Specific
-         ["Impossible isinstance check [25]: `x` has type `int`, checking if `x` " ^
-          "isinstance `str` will always fail."])
-    ~bottom:true
+    ~bottom:false
     ["x", Type.integer]
     "assert isinstance(x, str)"
-    ["x", Type.integer];
+    ["x", Type.string];
 
   assert_forward
     ~bottom:false

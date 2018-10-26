@@ -1639,37 +1639,6 @@ module State = struct
         in
         let contradiction_error =
           match Node.value test with
-          | Access [
-              Access.Identifier name;
-              Access.Call {
-                Node.value = [
-                  { Argument.name = None; value = ({ Node.value = Access access; _ } as value) };
-                  { Argument.name = None; value = { Node.value = Access _; _ } as annotation };
-                ];
-                _;
-              }
-            ] when Identifier.show name = "isinstance" ->
-              let error_if_incompatible ~existing =
-                let expected = Resolution.parse_annotation resolution annotation in
-                if (Resolution.less_or_equal resolution ~left:existing ~right:expected
-                    || Resolution.less_or_equal resolution ~left:expected ~right:existing)
-                then
-                  None
-                else
-                  Some
-                    (Error.create
-                       ~location:(Node.location test)
-                       ~kind:(Error.ImpossibleIsinstance {
-                           mismatch = { Error.expected; actual = existing };
-                           expression = value;
-                           negation = false;
-                         })
-                       ~define)
-              in
-              Resolution.get_local resolution ~access
-              >>| Annotation.annotation
-              >>= (fun existing -> error_if_incompatible ~existing)
-
           | UnaryOperator {
               UnaryOperator.operator = UnaryOperator.Not;
               operand = {
@@ -1701,7 +1670,6 @@ module State = struct
                      ~kind:(Error.ImpossibleIsinstance {
                          mismatch = { Error.expected; actual = resolved };
                          expression = value;
-                         negation = true;
                        })
                      ~define)
 

@@ -49,7 +49,7 @@ type unpack_problem =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch; negation: bool }
+  | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {
       name: Access.t option;
