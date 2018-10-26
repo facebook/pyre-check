@@ -84,6 +84,7 @@ module TypeQuery: sig
     | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
+    | TypeAtLocation of type_at_location
     | TypesAtLocations of type_at_location list
   [@@deriving eq, show, to_yojson]
 

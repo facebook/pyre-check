@@ -434,7 +434,12 @@ let test_query context =
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 4)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypeAtLocation
+          {
+            Protocol.TypeQuery.location = create_location ~path:"test.py" 1 4 1 5;
+            annotation = Type.integer;
+          }));
   assert_type_query_response
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 3)"

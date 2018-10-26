@@ -591,7 +591,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               Location.pp_position position)
         in
         LookupCache.find_annotation ~state ~configuration ~file ~position
-        >>| (fun (_, annotation) -> TypeQuery.Response (TypeQuery.Type annotation))
+        >>| (fun (location, annotation) ->
+            TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
         |> Option.value ~default
 
     | TypeQuery.TypesInFile file ->

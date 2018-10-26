@@ -98,6 +98,7 @@ module TypeQuery = struct
     | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
+    | TypeAtLocation of type_at_location
     | TypesAtLocations of type_at_location list
   [@@deriving eq, show]
 
@@ -116,6 +117,8 @@ module TypeQuery = struct
         `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
     | Type annotation ->
         `Assoc ["type", Type.to_yojson annotation]
+    | TypeAtLocation annotation ->
+        type_at_location_to_yojson annotation
     | TypesAtLocations annotations ->
         `Assoc ["types", `List (List.map annotations ~f:type_at_location_to_yojson)]
 
