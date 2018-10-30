@@ -250,12 +250,13 @@ let parse_callable_with_stubs implementations_callable stubs_callable =
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
-    |> String.substr_replace_all ~pattern:"`" ~with_:"'"
+    |> String.substr_replace_all ~pattern:"'" ~with_:"\\\""
+    |> String.substr_replace_all ~pattern:"`" ~with_:"?"
     |> String.substr_replace_all ~pattern:"$" ~with_:"?"
   in
   let input =
     Format.sprintf
-      "bash -c \"diff -u <(echo \\\"%s\\\") <(echo \\\"%s\\\")\""
+      "bash -c \"diff -u <(echo '%s') <(echo '%s')\""
       (escape (Format.asprintf "%a" print left))
       (escape (Format.asprintf "%a" print right))
     |> Unix.open_process_in in
