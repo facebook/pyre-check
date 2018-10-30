@@ -68,6 +68,23 @@ let create
   }
 
 
+let pp format { annotations; _ } =
+  let annotation_map_entry (access, annotation) =
+    Format.asprintf
+      "%a -> %a"
+      Access.pp access
+      Annotation.pp annotation;
+  in
+  Map.to_alist annotations
+  |> List.map ~f:annotation_map_entry
+  |> String.concat ~sep:", "
+  |> Format.fprintf format "[%s]"
+
+
+let show resolution =
+  Format.asprintf "%a" pp resolution
+
+
 let set_local ({ annotations; _ } as resolution) ~access ~annotation =
   { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
 

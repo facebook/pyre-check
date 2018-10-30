@@ -20,6 +20,7 @@ type class_representation = {
 }
 
 type t
+[@@deriving show]
 
 val create
   :  annotations: Annotation.t Access.Map.t
