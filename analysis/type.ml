@@ -260,7 +260,8 @@ let rec pp format annotation =
   | Optional parameter ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
   | Parametric { name; parameters }
-    when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
+    when (Identifier.show name = "typing.Optional" or Identifier.show name = "Optional") &&
+         parameters = [Bottom] ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       Format.fprintf format

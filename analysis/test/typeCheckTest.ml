@@ -1263,7 +1263,13 @@ let test_check_imports _ =
       import durp
       a = durp.x
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+  assert_type_errors
+    {|
+      from typing import Optional
+      def foo() -> None: return 1
+    |}
+    ["Incompatible return type [7]: Expected `None` but got `int`."]
 
 
 let test_reveal_type _ =
