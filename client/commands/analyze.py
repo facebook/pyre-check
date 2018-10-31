@@ -29,4 +29,5 @@ class Analyze(Check):
 
     def _run(self, retries: int = 1) -> None:
         result = self._call_client(command=self.NAME)
+        result.check()
         log.stdout.write(result.output)
