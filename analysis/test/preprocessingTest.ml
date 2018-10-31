@@ -265,12 +265,12 @@ let test_qualify _ =
     |};
 
   assert_qualify
-  {|
-    [*a, b] = [1]
-  |}
-  {|
-    [*$local_qualifier$a, $local_qualifier$b] = [1]
-  |};
+    {|
+      [*a, b] = [1]
+    |}
+    {|
+      [*$local_qualifier$a, $local_qualifier$b] = [1]
+    |};
 
   (* Qualify classes. *)
   assert_qualify
@@ -1263,15 +1263,17 @@ let test_expand_returns _ =
 
 let test_defines _ =
   let assert_defines statements defines =
+    let printer defines = List.map defines ~f:Define.show |> String.concat ~sep:"\n" in
     assert_equal
       ~cmp:(List.equal ~equal:Define.equal)
+      ~printer
+      defines
       (Preprocessing.defines ~extract_into_toplevel:true (Source.create statements)
        |> List.map ~f:Node.value)
-      defines in
-
-  let define =
+  in
+  let create_define name =
     {
-      Define.name = Access.create "foo";
+      Define.name = Access.create name;
       parameters = [
         +{
           Parameter.name = ~~"a";
@@ -1288,11 +1290,11 @@ let test_defines _ =
       parent = None;
     }
   in
-  let toplevel =
+  let create_toplevel body =
     {
       Define.name = Access.create "$toplevel";
       parameters = [];
-      body = [+Define define];
+      body;
       decorators = [];
       docstring = None;
       return_annotation = None;
@@ -1301,9 +1303,11 @@ let test_defines _ =
       parent = None;
     }
   in
+
+  let define = create_define "foo" in
   assert_defines
     [+Define define]
-    [toplevel; define];
+    [create_toplevel [+Define define]; define];
 
   let inner =
     {
@@ -1343,22 +1347,25 @@ let test_defines _ =
       parent = None;
     }
   in
-  let toplevel =
+  assert_defines
+    [+Define define]
+    [create_toplevel [+Define define]; define];
+
+  (* Note: Defines are returned in reverse order. *)
+  let define_foo = create_define "foo" in
+  let define_bar = create_define "bar" in
+  let parent =
     {
-      Define.name = Access.create "$toplevel";
-      parameters = [];
-      body = [+Define define];
+      Statement.Class.name = Access.create "Foo";
+      bases = [];
+      body = [+Define define_foo; +Define define_bar];
       decorators = [];
       docstring = None;
-      return_annotation = None;
-      async = false;
-      generated = false;
-      parent = None;
     }
   in
   assert_defines
-    [+Define define]
-    [toplevel; define]
+    [+Class parent]
+    [create_toplevel [+Class parent]; define_bar; define_foo]
 
 
 let test_classes _ =
