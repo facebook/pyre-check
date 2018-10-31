@@ -114,6 +114,7 @@ let analyze
         let directory = Path.absolute directory in
         Sys.readdir directory
         |> Array.to_list
+        |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
         |> List.map ~f:((^/) directory)
         |> List.iter ~f:add_models
     | None -> ()
