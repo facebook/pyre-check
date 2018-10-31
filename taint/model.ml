@@ -7,6 +7,7 @@ open Core
 open Or_error
 
 open Ast
+open Analysis
 open Expression
 open PyreParser
 open Interprocedural
@@ -106,7 +107,7 @@ let taint_return model expression =
       Or_error.return model
 
 
-let create ~model_source =
+let create ~environment ~model_source =
   let defines =
     let filter_define = function
       | { Node.value = Define define; _ } ->
@@ -132,6 +133,13 @@ let create ~model_source =
     |> List.filter_map ~f:filter_define
   in
   let create_model { Define.name; parameters; return_annotation; _ } =
+    (* Make sure we know about what we model. *)
+    let resolution = Environment.resolution environment () in
+    let annotation = Resolution.resolve resolution (Access.expression name) in
+    if Type.equal annotation Type.Top then
+      Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
+      |> failwith;
+
     let call_target = Callable.create_real name in
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters

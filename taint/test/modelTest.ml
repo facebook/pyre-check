@@ -14,9 +14,14 @@ open TestHelper
 
 
 let assert_model ~model_source ~expect =
+  let environment =
+    Test.environment
+      ~sources:(Test.typeshed_stubs @ [Test.parse model_source])
+      ()
+  in
   let models =
     Test.trim_extra_indentation model_source
-    |> (fun model_source -> Model.create ~model_source)
+    |> (fun model_source -> Model.create ~environment ~model_source)
     |> Or_error.ok_exn
   in
   let is_model callable { call_target; _ } =
@@ -172,9 +177,20 @@ let test_taint_in_taint_out_models _ =
 
 
 let test_invalid_models _ =
+  let environment =
+    Test.environment
+      ~sources:[
+        Test.parse
+          {|
+            def sink() -> None: pass
+            def source() -> None: pass
+          |};
+      ]
+      ()
+  in
   let assert_invalid_model ~model_source ~expect =
     let error_message =
-      match Model.create ~model_source with
+      match Model.create ~environment ~model_source with
       | Error error -> Base.Error.to_string_hum error
       | _ -> failwith "Invalid model should result in error"
     in
@@ -199,7 +215,11 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|"Unrecognized taint direction in parameter annotation InvalidTaintDirection"|}
+    ~expect:{|"Unrecognized taint direction in parameter annotation InvalidTaintDirection"|};
+
+  assert_invalid_model
+    ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
+    ~expect:{|Modeled entity `not_in_the_environment` is not part of the environment!|}
 
 
 let () =

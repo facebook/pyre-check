@@ -73,7 +73,7 @@ let record_path_of_definitions ~path ~source =
   defines
 
 
-let add_models ~model_source =
+let add_models ~environment ~model_source =
   let open Taint in
   let open Interprocedural in
   let add_model_to_memory Model.{ call_target; model } =
@@ -82,7 +82,7 @@ let add_models ~model_source =
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined call_target
   in
-  let models = Model.create ~model_source |> Or_error.ok_exn in
+  let models = Model.create ~environment ~model_source |> Or_error.ok_exn in
   List.iter models ~f:add_model_to_memory
 
 
@@ -108,7 +108,7 @@ let analyze
           Path.create_absolute path
           |> File.create
           |> File.content
-          >>| (fun model_source -> add_models ~model_source)
+          >>| (fun model_source -> add_models ~environment ~model_source)
           |> ignore
         in
         let directory = Path.absolute directory in

@@ -188,5 +188,6 @@ let run_with_taint_models tests =
     |}
     |> Test.trim_extra_indentation
   in
-  Service.StaticAnalysis.add_models ~model_source;
+  let environment = Test.environment ~sources:[Test.parse model_source] () in
+  Service.StaticAnalysis.add_models ~environment ~model_source;
   Test.run tests

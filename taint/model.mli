@@ -5,6 +5,7 @@
 
 open Core
 
+open Analysis
 open Interprocedural
 
 
@@ -14,4 +15,4 @@ type t = {
 }
 [@@deriving show, sexp]
 
-val create: model_source: string -> t list Or_error.t
+val create: environment: (module Environment.Handler) -> model_source: string -> t list Or_error.t

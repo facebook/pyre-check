@@ -18,18 +18,29 @@ open TestHelper
 
 
 let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect =
-  models
-  >>| Test.trim_extra_indentation
-  >>| (fun model_source -> Service.StaticAnalysis.add_models ~model_source)
-  |> ignore;
+  let configuration = Test.mock_configuration in
 
   let source =
     parse ~qualifier source
     |> Preprocessing.preprocess
   in
-  let configuration = Test.mock_configuration in
-  let environment = Test.environment ~configuration () in
-  Service.Environment.populate environment [source];
+
+  let environment =
+    let models =
+      models
+      >>| (fun model -> [Test.parse model])
+      |> Option.value ~default:[]
+    in
+    let environment = Test.environment ~sources:(Test.typeshed_stubs @ models) ~configuration () in
+    Service.Environment.populate environment [source];
+    environment
+  in
+
+  models
+  >>| Test.trim_extra_indentation
+  >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment ~model_source)
+  |> ignore;
+
   TypeCheck.check ~configuration ~environment ~source |> ignore;
   let defines =
     source

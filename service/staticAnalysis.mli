@@ -25,7 +25,7 @@ val record_overrides: environment: (module Environment.Handler) -> source: Sourc
 val record_path_of_definitions: path: File.Handle.t -> source: Source.t -> Define.t Node.t list
 
 (** Populates shared memory with preexisting models. *)
-val add_models: model_source: string -> unit
+val add_models: environment: (module Environment.Handler) -> model_source: string -> unit
 
 val analyze
   :  ?taint_models_directory: string
