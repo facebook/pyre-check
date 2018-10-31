@@ -247,7 +247,7 @@ let listen_for_changed_files
        |> ignore)
     |> Scheduler.run_process ~configuration
   with uncaught_exception ->
-    Statistics.log_exception uncaught_exception ~origin:"watchman";
+    Statistics.log_exception uncaught_exception ~fatal:true ~origin:"watchman";
     raise uncaught_exception
 
 

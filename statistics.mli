@@ -45,5 +45,6 @@ val event
 
 val log_exception
   :  exn
+  -> fatal: bool
   -> origin: string
   -> unit

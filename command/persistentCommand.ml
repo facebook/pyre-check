@@ -169,7 +169,7 @@ let run_command expected_version log_identifier local_root () =
            ();
          exit exit_code
      | uncaught_exception ->
-         Statistics.log_exception uncaught_exception ~origin:"persistent";
+         Statistics.log_exception uncaught_exception ~fatal:true ~origin:"persistent";
          raise uncaught_exception)
   |> Scheduler.run_process ~configuration
 

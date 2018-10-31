@@ -658,16 +658,22 @@ let process_type_check_request
   Annotated.Class.Attribute.Cache.clear ();
   let update_environment_with, check =
     let keep file =
-      let handle = File.handle ~configuration file in
-      match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
-      | Some existing ->
-          let existing_handle =
-            Module.handle existing
-            |> Option.value ~default:handle
-          in
-          File.Handle.equal existing_handle handle
-      | _  ->
-          true
+      match File.handle ~configuration file with
+      | exception ((File.NonexistentHandle _) as uncaught_exception) ->
+          Statistics.log_exception uncaught_exception ~fatal:false ~origin:"server";
+          false
+      | handle ->
+          begin
+            match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
+            | Some existing ->
+                let existing_handle =
+                  Module.handle existing
+                  |> Option.value ~default:handle
+                in
+                File.Handle.equal existing_handle handle
+            | _  ->
+                true
+          end
     in
     List.filter update_environment_with ~f:keep,
     List.filter check ~f:keep
@@ -1034,7 +1040,7 @@ let rec process
           | _ ->
               true
         in
-        Statistics.log_exception uncaught_exception ~origin:"server";
+        Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
           Mutex.critical_section
             lock

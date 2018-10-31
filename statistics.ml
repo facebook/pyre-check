@@ -186,7 +186,7 @@ let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals 
   |> log ~flush "perfpipe_pyre_events"
 
 
-let log_exception caught_exception ~origin =
+let log_exception caught_exception ~fatal ~origin =
   event
     ~section:`Error
     ~flush:true
@@ -196,5 +196,6 @@ let log_exception caught_exception ~origin =
       "exception", Exn.to_string caught_exception;
       "exception backtrace", Printexc.get_backtrace ();
       "exception origin", origin;
+      "fatal", if fatal then "true" else "false";
     ]
     ()
