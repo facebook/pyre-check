@@ -293,6 +293,8 @@ let create define =
           let test =
             Expression.negate test
             |> Expression.normalize
+            (* This is a "synthetic" test, its location should be `any`. *)
+            |> fun test -> { test with location = Location.Reference.any }
           in
           (assume test) :: orelse
         in
@@ -302,7 +304,10 @@ let create define =
         let post_statements =
           let test =
             Expression.negate test
-            |> Expression.normalize in
+            |> Expression.normalize
+            (* This is a "synthetic" test, its location should be `any`. *)
+            |> fun test -> { test with location = Location.Reference.any }
+          in
           if Statement.terminates body then
             (assume test) :: statements
           else

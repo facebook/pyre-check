@@ -355,7 +355,7 @@ let test_lookup_multiline_accesses _ =
   let source =
     {|
       def foo() -> None:
-          if (unknown.
+          if not (unknown.
               multiline.
               access):
               pass
@@ -391,7 +391,7 @@ let test_lookup_multiline_accesses _ =
       "test.py:17:12-19:13/typing.Type[test.A]";
       "test.py:17:4-19:13/int";
       "test.py:2:13-2:17/None";
-      "test.py:3:8-5:14/bool";
+      "test.py:3:7-5:14/bool";
       "test.py:9:13-9:15/int";
       "test.py:9:4-9:5/int";
       "test.py:9:4-9:5/typing.Type[test.A]";
@@ -400,28 +400,28 @@ let test_lookup_multiline_accesses _ =
   assert_annotation
     ~lookup
     ~source
-    ~position:{ Location.line = 3; column = 8 }
-    ~annotation:(Some "test.py:3:8-5:14/bool");
+    ~position:{ Location.line = 3; column = 7 }
+    ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 14 }
-    ~annotation:(Some "test.py:3:8-5:14/bool");
+    ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 15 }
-    ~annotation:(Some "test.py:3:8-5:14/bool");
+    ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 4; column = 8 }
-    ~annotation:(Some "test.py:3:8-5:14/bool");
+    ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 5; column = 8 }
-    ~annotation:(Some "test.py:3:8-5:14/bool");
+    ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
     ~lookup
     ~source
@@ -558,6 +558,7 @@ let test_lookup_string_annotations _ =
     ~position:{ Location.line = 4; column = 11 }
     ~annotation:None
 
+
 let test_lookup_union_type_resolution _ =
   let source =
     {|
@@ -635,6 +636,37 @@ let test_lookup_unbound _ =
     ~source
     ~position:{ Location.line = 4; column = 22 }
     ~annotation:(Some "test.py:4:22-4:23/typing.List[typing.Unbound]")
+
+
+let test_lookup_if_statements _ =
+  let source =
+    {|
+      def foo(flag: bool, list: List[int]) -> None:
+          if flag:
+              pass
+          if not flag:
+              pass
+          if list:
+              pass
+          if not list:
+              pass
+    |}
+  in
+  let lookup, _source = generate_lookup source in
+  assert_annotation_list
+    ~lookup
+    [
+      "test.py:2:14-2:18/typing.Type[bool]";
+      "test.py:2:31-2:34/typing.Type[int]";
+      "test.py:2:40-2:44/None";
+      "test.py:2:8-2:12/typing.Type[bool]";
+      "test.py:3:7-3:11/bool";
+      "test.py:5:11-5:15/bool";
+      "test.py:5:7-5:15/bool";
+      "test.py:7:7-7:11/List[int]";
+      "test.py:9:11-9:15/List[int]";
+      "test.py:9:7-9:15/bool";
+    ]
 
 
 let assert_definition_list ~lookup expected =
@@ -816,6 +848,7 @@ let () =
     "lookup_string_annotations">::test_lookup_string_annotations;
     "lookup_union_type_resolution">::test_lookup_union_type_resolution;
     "lookup_unbound">::test_lookup_unbound;
+    "lookup_if_statements">::test_lookup_if_statements;
     "lookup_definitions">::test_lookup_definitions;
     "lookup_definitions_instances">::test_lookup_definitions_instances;
   ]
