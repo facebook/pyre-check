@@ -204,7 +204,7 @@ let reverse_substitute name =
 let rec pp format annotation =
   match annotation with
   | Bottom ->
-      Format.fprintf format "typing.Unbound"
+      Format.fprintf format "undefined"
   | Callable { kind; overloads; overload_stubs; _ } ->
       let kind =
         match kind with

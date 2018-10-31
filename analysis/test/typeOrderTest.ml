@@ -1076,7 +1076,7 @@ let test_to_dot _ =
          1[label="1"]
          2[label="2"]
          3[label="3"]
-         4[label="typing.Unbound"]
+         4[label="undefined"]
          5[label="unknown"]
          0 -> 1[label="(str)"]
          0 -> 2

@@ -1288,7 +1288,7 @@ let test_reveal_type _ =
         reveal_type(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.Unbound`.";
+      "Revealed type [-1]: Revealed type for `x` is `undefined`.";
     ];
   assert_type_errors
     {|
