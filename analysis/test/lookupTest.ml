@@ -606,12 +606,12 @@ let test_lookup_unbound _ =
     ~lookup
     [
       "test.py:2:27-2:31/None";
-      "test.py:3:18-3:20/typing.List[typing.Unbound]";
-      "test.py:3:6-3:21/typing.List[typing.Unbound]";
-      "test.py:4:15-4:16/typing.List[typing.Unbound]";
-      "test.py:4:22-4:23/typing.List[typing.Unbound]";
+      "test.py:3:18-3:20/typing.List[]";
+      "test.py:3:6-3:21/typing.List[]";
+      "test.py:4:15-4:16/typing.List[]";
+      "test.py:4:22-4:23/typing.List[]";
       "test.py:4:24-4:25/int";
-      "test.py:4:7-4:8/typing.List[typing.Unbound]";
+      "test.py:4:7-4:8/typing.List[]";
       "test.py:4:9-4:10/int";
       "test.py:5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "test.py:6:6-6:10/List[Variable[_T]]";
@@ -620,22 +620,22 @@ let test_lookup_unbound _ =
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 6 }
-    ~annotation:(Some "test.py:3:6-3:21/typing.List[typing.Unbound]");
+    ~annotation:(Some "test.py:3:6-3:21/typing.List[]");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 18 }
-    ~annotation:(Some "test.py:3:18-3:20/typing.List[typing.Unbound]");
+    ~annotation:(Some "test.py:3:18-3:20/typing.List[]");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 4; column = 7 }
-    ~annotation:(Some "test.py:4:7-4:8/typing.List[typing.Unbound]");
+    ~annotation:(Some "test.py:4:7-4:8/typing.List[]");
   assert_annotation
     ~lookup
     ~source
     ~position:{ Location.line = 4; column = 22 }
-    ~annotation:(Some "test.py:4:22-4:23/typing.List[typing.Unbound]")
+    ~annotation:(Some "test.py:4:22-4:23/typing.List[]")
 
 
 let test_lookup_if_statements _ =

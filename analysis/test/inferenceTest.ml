@@ -423,7 +423,7 @@ let test_infer _ =
           return {}
     |}
     [
-      "\"Missing return annotation [3]: Returning `typing.Dict[typing.Unbound, typing.Unbound]` " ^
+      "\"Missing return annotation [3]: Returning `typing.Dict[]` " ^
       "but no return type is specified.\""
     ];
 

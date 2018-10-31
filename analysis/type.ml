@@ -264,11 +264,17 @@ let rec pp format annotation =
          parameters = [Bottom] ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
+      let parameters =
+        if List.for_all parameters ~f:(equal Bottom) then
+          ""
+        else
+          List.map parameters ~f:show
+          |> String.concat ~sep:", "
+      in
       Format.fprintf format
         "%s[%s]"
         (Identifier.show (reverse_substitute name))
-        (List.map parameters ~f:show
-         |> String.concat ~sep:", ")
+        parameters
   | Primitive name ->
       Format.fprintf format "%a" Identifier.pp name
   | Top ->
