@@ -494,19 +494,6 @@ let register_aliases (module Handler: Handler) sources =
           end
       | Class { Class.name; body; _ } ->
           List.fold body ~init:aliases ~f:(visit_statement ~qualifier:name ~in_class_body:true)
-      | Import { Import.from = Some from; imports = [{ Import.name; _ }]  }
-        when Access.show name = "*" ->
-          let exports =
-            Handler.module_definition from
-            >>| Module.wildcard_exports
-            |> Option.value ~default:[]
-          in
-          let add_alias aliases export =
-            let value = Access.expression (from @ export) in
-            let alias = Access.expression (qualifier @ export) in
-            (handle, alias, value) :: aliases
-          in
-          List.fold exports ~init:aliases ~f:add_alias
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with

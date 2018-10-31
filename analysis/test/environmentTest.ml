@@ -284,13 +284,6 @@ let test_register_aliases _ =
       "qualifier.A", "qualifier.D";
     ];
 
-  assert_resolved
-    [
-      parse ~qualifier:(Access.create "collections") "class Collection: ...";
-      parse "from collections import *";
-    ]
-    ["Collection", "collections.Collection"];
-
   assert_resolved [parse "X = None"] ["X", "None"];
 
   assert_resolved
