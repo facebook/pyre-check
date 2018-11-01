@@ -52,7 +52,7 @@ module Record : sig
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
-      overload_stubs: ('annotation overload) list;
+      overloads: ('annotation overload) list;
       implicit: implicit;
     }
     [@@deriving compare, eq, sexp, show, hash]
@@ -105,7 +105,7 @@ val bool: t
 val bytes: t
 val callable
   :  ?name: Access.t
-  -> ?overload_stubs: (t Record.Callable.overload) list
+  -> ?overloads: (t Record.Callable.overload) list
   -> ?parameters: t Record.Callable.parameters
   -> annotation: t
   -> unit

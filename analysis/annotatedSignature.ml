@@ -105,12 +105,12 @@ type signature_match = {
 let select
     ~resolution
     ~arguments
-    ~callable:({ Type.Callable.implementation; overload_stubs; _ } as callable) =
+    ~callable:({ Type.Callable.implementation; overloads; _ } as callable) =
   let open Type.Callable in
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let base_signature_match =
       {
-        callable = { callable with Type.Callable.implementation; overload_stubs = [] };
+        callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
         constraints = Type.Map.empty;
         ranks = {
@@ -549,7 +549,7 @@ let select
               Type.Callable {
                 Type.Callable.kind = Anonymous;
                 implementation;
-                overload_stubs = [];
+                overloads = [];
                 implicit = Function;
               }
               |> Type.variables
@@ -628,7 +628,7 @@ let select
     >>| determine_reason
     |> Option.value ~default:(NotFound { callable; reason = None })
   in
-  (if List.is_empty overload_stubs then [implementation] else overload_stubs)
+  (if List.is_empty overloads then [implementation] else overloads)
   |> List.filter_map ~f:match_arity
   |> List.map ~f:check_annotations
   |> List.map ~f:calculate_rank

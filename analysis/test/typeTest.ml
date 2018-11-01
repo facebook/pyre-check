@@ -174,7 +174,7 @@ let test_create _ =
   assert_create
     "typing.Callable[..., int][[..., str]]"
     (Type.callable
-       ~overload_stubs:[
+       ~overloads:[
          {
            annotation = Type.string;
            parameters = Undefined;
@@ -188,7 +188,7 @@ let test_create _ =
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
         implementation = { annotation = Type.integer; parameters = Undefined };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
 
@@ -197,7 +197,7 @@ let test_create _ =
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "foo");
         implementation = { annotation = Type.Top; parameters = Undefined };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
 
@@ -216,7 +216,7 @@ let test_create _ =
               Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
             ];
         };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -244,7 +244,7 @@ let test_create _ =
               };
             ];
         };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -267,7 +267,7 @@ let test_create _ =
               };
             ];
         };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
   assert_create
@@ -284,7 +284,7 @@ let test_create _ =
               };
             ];
         };
-        overload_stubs = [];
+        overloads = [];
         implicit = Type.Callable.Function;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ())
@@ -354,7 +354,7 @@ let test_expression _ =
 
   assert_expression
     (Type.callable
-       ~overload_stubs:[
+       ~overloads:[
          {
            Type.Callable.annotation = Type.string;
            parameters = Type.Callable.Undefined;
@@ -954,14 +954,14 @@ let test_with_return_annotation _ =
 
 let test_overload_parameters _ =
   let assert_parameters callable expected =
-    let { Type.Callable.overload_stubs; _ } =
+    let { Type.Callable.overloads; _ } =
       Type.create ~aliases:(fun _ -> None) (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
     in
     let parameters =
-      List.hd_exn overload_stubs
+      List.hd_exn overloads
       |> Type.Callable.Overload.parameters
       |> Option.value ~default:[]
       |> List.map ~f:Type.Callable.Parameter.annotation

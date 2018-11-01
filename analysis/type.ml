@@ -69,7 +69,7 @@ module Record = struct
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
-      overload_stubs: ('annotation overload) list;
+      overloads: ('annotation overload) list;
       implicit: implicit;
     }
     [@@deriving compare, eq, sexp, show, hash]
@@ -79,7 +79,7 @@ module Record = struct
       (* Ignores implicit argument to simplify unit tests. *)
       equal_kind left.kind right.kind &&
       equal_overload equal_annotation left.implementation right.implementation &&
-      List.equal ~equal:(equal_overload equal_annotation) left.overload_stubs right.overload_stubs
+      List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads
   end
 end
 
@@ -205,7 +205,7 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "undefined"
-  | Callable { kind; implementation; overload_stubs; _ } ->
+  | Callable { kind; implementation; overloads; _ } ->
       let kind =
         match kind with
         | Anonymous -> ""
@@ -248,7 +248,7 @@ let rec pp format annotation =
       in
       let implementation = signature_to_string implementation in
       let overloads =
-        let overloads = List.map overload_stubs ~f:signature_to_string in
+        let overloads = List.map overloads ~f:signature_to_string in
         if List.is_empty overloads then
           ""
         else
@@ -359,7 +359,7 @@ let bytes =
 
 let callable
     ?name
-    ?(overload_stubs = [])
+    ?(overloads = [])
     ?(parameters = Undefined)
     ~annotation
     () =
@@ -367,7 +367,7 @@ let callable
   Callable {
     kind;
     implementation = { annotation; parameters };
-    overload_stubs;
+    overloads;
     implicit = Function;
   }
 
@@ -439,7 +439,7 @@ let lambda ~parameters ~return_annotation =
                  Parameter.Anonymous { Parameter.index; annotation = parameter })
              parameters);
     };
-    overload_stubs = [];
+    overloads = [];
     implicit = Function;
   }
 
@@ -902,7 +902,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             | _ ->
                 undefined, []
           in
-          Callable { kind; implementation; overload_stubs = overloads; implicit = Function }
+          Callable { kind; implementation; overloads; implicit = Function }
         in
         match expression with
         | Access [
@@ -1033,7 +1033,7 @@ let rec expression annotation =
   let rec access annotation =
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable { implementation; overload_stubs; _ } ->
+    | Callable { implementation; overloads; _ } ->
         let convert { annotation; parameters } =
           let call_parameters =
             match parameters with
@@ -1085,7 +1085,7 @@ let rec expression annotation =
           get_item_call ~call_parameters [annotation]
         in
         let overloads =
-          let overloads = List.concat_map overload_stubs ~f:convert in
+          let overloads = List.concat_map overloads ~f:convert in
           if List.is_empty overloads then
             []
           else
@@ -1146,7 +1146,7 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
-    | Callable { implementation; overload_stubs; _ } ->
+    | Callable { implementation; overloads; _ } ->
         let exists { annotation; parameters } =
           let exists_in_parameters =
             match parameters with
@@ -1165,7 +1165,7 @@ let rec exists annotation ~predicate =
           in
           exists annotation ~predicate || exists_in_parameters
         in
-        List.exists ~f:exists (implementation :: overload_stubs)
+        List.exists ~f:exists (implementation :: overloads)
 
     | Optional annotation
     | Tuple (Unbounded annotation) ->
@@ -1300,7 +1300,7 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
-  | Callable { implementation; overload_stubs; _ } ->
+  | Callable { implementation; overloads; _ } ->
       let variables { annotation; parameters } =
         let variables_in_parameters  =
           match parameters with
@@ -1319,7 +1319,7 @@ let rec variables = function
         in
         variables annotation @ variables_in_parameters
       in
-      List.concat_map ~f:variables (implementation :: overload_stubs)
+      List.concat_map ~f:variables (implementation :: overloads)
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -1344,8 +1344,8 @@ let rec primitives annotation =
   match annotation with
   | Primitive _ ->
       [annotation]
-  | Callable { implementation; overload_stubs; _ } ->
-      let overload_primitives { annotation; parameters } =
+  | Callable { implementation; overloads; _ } ->
+      let signature_primitives { annotation; parameters } =
         match parameters with
         | Defined parameters ->
             let parameter = function
@@ -1360,7 +1360,7 @@ let rec primitives annotation =
         | Undefined ->
             primitives annotation
       in
-      List.concat_map (implementation :: overload_stubs) ~f:overload_primitives
+      List.concat_map (implementation :: overloads) ~f:signature_primitives
 
   | Optional annotation
   | Tuple (Unbounded annotation) ->
@@ -1579,7 +1579,7 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
-          | Callable { kind; implementation; overload_stubs; implicit } ->
+          | Callable { kind; implementation; overloads; implicit } ->
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
@@ -1616,7 +1616,7 @@ let instantiate ?(widen = false) annotation ~constraints =
               Callable {
                 kind;
                 implementation = instantiate implementation;
-                overload_stubs = List.map overload_stubs ~f:instantiate;
+                overloads = List.map overloads ~f:instantiate;
                 implicit;
               }
           | Parametric ({ parameters; _ } as parametric) ->
@@ -1748,16 +1748,16 @@ module Callable = struct
   let from_overloads overloads =
     match overloads with
     | ({ kind = Named _; _ } as initial) :: overloads ->
-        let fold sofar overload =
-          match sofar, overload with
-          | Some sofar, { kind; implementation; overload_stubs; implicit } ->
+        let fold sofar signature =
+          match sofar, signature with
+          | Some sofar, { kind; implementation; overloads; implicit } ->
               if
                 equal_kind kind sofar.kind && implicit = sofar.implicit
               then
                 Some {
                   kind;
                   implementation;
-                  overload_stubs = sofar.overload_stubs @ overload_stubs;
+                  overloads = sofar.overloads @ overloads;
                   implicit
                 }
               else
@@ -1775,12 +1775,12 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ implementation; overload_stubs; _ } as initial) =
+  let with_return_annotation ~return_annotation ({ implementation; overloads; _ } as initial) =
     let re_annotate implementation = { implementation with annotation = return_annotation } in
     {
       initial with
       implementation = re_annotate implementation;
-      overload_stubs = List.map ~f:re_annotate overload_stubs }
+      overloads = List.map ~f:re_annotate overloads }
 end
 
 

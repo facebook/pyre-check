@@ -922,8 +922,8 @@ and join ((module Handler: Handler) as order) left right =
     | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
       Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
       when left.Callable.implicit = right.Callable.implicit
-        && List.is_empty left.Callable.overload_stubs
-        && List.is_empty right.Callable.overload_stubs ->
+        && List.is_empty left.Callable.overloads
+        && List.is_empty right.Callable.overloads ->
         join_implementations
           ~parameter_join:meet
           ~return_join:join

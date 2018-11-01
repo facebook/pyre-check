@@ -508,7 +508,7 @@ let test_query context =
                    Type.Callable.annotation = Type.integer;
                    parameters = Type.Callable.Defined [];
                  };
-                 overload_stubs = [];
+                 overloads = [];
                  implicit = Type.Callable.Instance;
                }
            };

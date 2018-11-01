@@ -59,21 +59,21 @@ let test_select _ =
       Format.asprintf "typing.Callable%s" callable
       |> parse_annotation
       |> function
-      | Type.Callable ({ Type.Callable.implementation; overload_stubs; _ } as callable) ->
+      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
           let undefined { Type.Callable.parameters; _ } =
             match parameters with
             | Type.Callable.Undefined -> true
             | _ -> false
           in
-          if List.exists (implementation :: overload_stubs) ~f:undefined && not allow_undefined then
+          if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
             failwith "Undefined parameters"
           else
             callable
       | _ ->
-          failwith "Could not extract overloads"
+          failwith "Could not extract signatures"
     in
     let callable = parse_callable callable in
-    let overload =
+    let signature =
       let arguments =
         match parse_single_access (Format.asprintf "call%s" arguments) with
         | [Access.Identifier _; Access.Call { Node.value = arguments; _ }] -> arguments
@@ -125,7 +125,7 @@ let test_select _ =
       ~printer:Signature.show
       ~cmp:Signature.equal
       expected
-      overload
+      signature
   in
 
   (* Undefined callables always match. *)

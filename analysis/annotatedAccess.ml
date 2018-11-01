@@ -451,20 +451,20 @@ let fold ~resolution ~initial ~f access =
                           )
                         >>| Annotation.annotation
                       in
-                      let correct_getattr_arity overload =
-                        Type.Callable.Overload.parameters overload
+                      let correct_getattr_arity signature =
+                        Type.Callable.Overload.parameters signature
                         >>| (fun parameters -> List.length parameters == 1)
                         |> Option.value ~default:false
                       in
                       match getattr with
-                      | Some (Callable { overload_stubs = [overload]; _ })
-                      | Some (Callable { implementation = overload; _ })
-                        when correct_getattr_arity overload ->
+                      | Some (Callable { overloads = [signature]; _ })
+                      | Some (Callable { implementation = signature; _ })
+                        when correct_getattr_arity signature ->
                           Some (
                             Annotation.create_immutable
                               ~global:true
                               ~original:(Some Type.Top)
-                              (Type.Callable.Overload.return_annotation overload)
+                              (Type.Callable.Overload.return_annotation signature)
                           )
                       | _ ->
                           None
