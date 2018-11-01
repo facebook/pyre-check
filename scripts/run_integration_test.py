@@ -202,9 +202,10 @@ class Repository:
         return (incremental_errors, check_errors)
 
     def run_pyre(self, command: str) -> str:
+        pyre_client = os.getenv("PYRE_TEST_CLIENT_LOCATION", "pyre")
         try:
             output = subprocess.check_output(
-                ["pyre", "--noninteractive", "--output=json", command]
+                [pyre_client, "--noninteractive", "--output=json", command]
             )
         except subprocess.CalledProcessError as error:
             if error.returncode not in [0, 1]:
