@@ -80,7 +80,7 @@ let add_models ~environment ~model_source =
     Log.info "Adding taint model %S to shared memory" (Callable.external_target_name call_target);
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined call_target
+    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let models = Model.create ~environment ~model_source |> Or_error.ok_exn in
   List.iter models ~f:add_model_to_memory
@@ -158,28 +158,56 @@ let analyze
 
   let caller_map = CallGraph.reverse call_graph in
 
-  let all_callables =
-    let record_initial_model define =
+  let callables, stubs =
+    let classify_source (callables, stubs) define =
       let callable = Interprocedural.Callable.create define in
-      let open Interprocedural in
       if Define.is_stub define.Node.value then
-        let () = Fixpoint.add_predefined callable Result.obscure_model in
-        None
+        callables, callable :: stubs
       else
-        let () = Fixpoint.add_predefined callable Result.empty_model in
+        callable :: callables, stubs
+    in
+    let make_callables result path =
+      Ast.SharedMemory.Sources.get path
+      >>|
+      (fun source ->
+         record_path_of_definitions ~path ~source
+         |> List.fold ~f:classify_source ~init:result)
+      |> Option.value ~default:result
+    in
+    List.fold paths ~f:make_callables ~init:([], [])
+  in
+  let all_callables =
+    let skipped_definitions = ref 0 in
+    let record_initial_inferred_model callable =
+      let open Interprocedural in
+      if Fixpoint.get_meta_data callable <> None then
+        (Int.incr skipped_definitions; None)
+      else
+        let () = Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model in
         Some callable
     in
-    let make_callables path =
-      (* Include stubs to make them obscure summaries. *)
-      Ast.SharedMemory.Sources.get path
-      >>| fun source ->
-      record_path_of_definitions ~path ~source
-      |> List.filter_map ~f:record_initial_model
+    let result = List.filter_map callables ~f:record_initial_inferred_model in
+    let () =
+      Log.info
+        "Skipping %d source definitions due to initial models or duplicates."
+        !skipped_definitions
     in
-    List.filter_map paths ~f:make_callables
-    |> List.concat
+    result
   in
-
+  let () =
+    let obscure_stubs = ref 0 in
+    let record_obscure_stub_model callable =
+      let open Interprocedural in
+      if Fixpoint.get_meta_data callable = None then begin
+        Int.incr obscure_stubs;
+        Fixpoint.add_predefined Fixpoint.Epoch.predefined callable Result.obscure_model
+      end
+    in
+    List.iter stubs ~f:record_obscure_stub_model;
+    Log.info
+      "Added %d obscure models for stubs without source definition."
+      !obscure_stubs
+  in
   let analyses = [Taint.Analysis.abstract_kind] in
 
   Log.info "Analysis fixpoint started...";
@@ -194,10 +222,10 @@ let analyze
       ~all_callables
       Interprocedural.Fixpoint.Epoch.initial
   in
+  Log.info "Fixpoint iterations: %d" iterations;
   let () =
     Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables
   in
   let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
-  Log.info "Fixpoint iterations: %d" iterations;
   errors

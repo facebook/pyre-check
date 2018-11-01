@@ -21,6 +21,7 @@ module Epoch : sig
   type t = int
   [@@deriving show]
 
+  val predefined: t
   val initial: t
 end
 
@@ -54,7 +55,7 @@ val get_meta_data: [<Callable.t] -> meta_data option
 val meta_data_to_string: meta_data -> string
 
 val add_state: step -> Callable.t -> state -> unit
-val add_predefined: Callable.t -> Result.model_t -> unit
+val add_predefined: Epoch.t -> Callable.t -> Result.model_t -> unit
 
 val get_new_models: KeySet.t -> Result.model_t option KeyMap.t
 val get_new_results: KeySet.t -> Result.result_t option KeyMap.t

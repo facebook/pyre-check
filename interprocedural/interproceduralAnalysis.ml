@@ -16,8 +16,7 @@ module Result = InterproceduralResult
 
 let analysis_failed step ~exn callable ~message =
   let callable = (callable :> Callable.t) in
-  Log.log
-    ~section:`Interprocedural
+  Log.error
     "%s in step %s while analyzing %s.\nException %s\nBacktrace: %s"
     message
     (Fixpoint.show_step step)
@@ -232,7 +231,7 @@ let analyze_define
     with
     | Analysis.TypeOrder.Untracked annotation ->
         Log.log
-          ~section:`Interprocedural
+          ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%a`"
           Access.pp name
           Analysis.Type.pp annotation;
@@ -411,6 +410,7 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
       let check_missing callable =
         match Fixpoint.get_meta_data callable with
         | None -> () (* okay, caller is in a later epoch *)
+        | Some { step = { epoch; _ }; _ } when epoch = Epoch.predefined -> ()
         | Some meta ->
             let message =
               Format.sprintf
@@ -520,7 +520,14 @@ let compute_fixpoint
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
-  iterate ~iteration:0 all_callables
+  try
+    iterate ~iteration:0 all_callables
+  with exn ->
+    Log.error
+      "Fixpoint iteration failed.\nException %s\nBacktrace: %s"
+      (Exn.to_string exn)
+      (Printexc.get_backtrace ());
+    raise exn
 
 
 let extract_errors scheduler ~configuration all_callables =

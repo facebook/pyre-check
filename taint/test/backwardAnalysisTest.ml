@@ -49,7 +49,7 @@ let assert_taint source expected =
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined call_target
+    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   let get_model callable =

@@ -16,7 +16,7 @@ module Epoch = struct
   [@@deriving show]
 
   let predefined = 0
-  let initial = 0
+  let initial = 1
 end
 
 
@@ -136,10 +136,10 @@ let add_state step callable state =
   SharedFixpoint.add callable { is_partial = state.is_partial; step; }
 
 
-let add_predefined callable model =
+let add_predefined epoch callable model =
   let callable = (callable :> Callable.t) in
   let () = SharedModels.add callable model in
-  let step = { epoch = Epoch.predefined; iteration = 0; } in
+  let step = { epoch; iteration = 0; } in
   SharedFixpoint.add callable { is_partial = false; step; }
 
 
