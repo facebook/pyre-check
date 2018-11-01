@@ -17,7 +17,10 @@ let remove_ignores handles =
   List.filter_map ~f:IgnoreKeys.get keys
   |> List.concat
   |> IgnoreLines.KeySet.of_list
-  |> IgnoreLines.remove_batch
+  |> IgnoreLines.remove_batch;
+  keys
+  |> IgnoreKeys.KeySet.of_list
+  |> IgnoreKeys.remove_batch
 
 
 let register_ignores_for_handle handle =
@@ -72,14 +75,6 @@ let ignore ~configuration scheduler handles errors =
     List.filter ~f:not_ignored errors
   in
   let unused_ignores =
-    let paths_from_handles =
-      let get_path paths handle =
-        Ast.SharedMemory.Sources.get handle
-        >>| (fun { Source.handle; _ } -> handle :: paths)
-        |> Option.value ~default:paths
-      in
-      List.fold ~init:[] ~f:get_path
-    in
     let get_unused_ignores path =
       let ignores =
         let key_to_ignores sofar key =
@@ -114,10 +109,7 @@ let ignore ~configuration scheduler handles errors =
       in
       List.fold ~init:[] ~f:filter_active_ignores ignores
     in
-    let map _ handles =
-      paths_from_handles handles
-      |> List.concat_map ~f:get_unused_ignores
-    in
+    let map _ = List.concat_map ~f:get_unused_ignores in
     Scheduler.map_reduce
       scheduler
       ~configuration
