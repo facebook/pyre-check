@@ -504,12 +504,10 @@ let test_query context =
              Protocol.TypeQuery.name = "foo";
              annotation = Type.Callable {
                  Type.Callable.kind = Type.Callable.Named (Access.create "C.foo");
-                 overloads = [
-                   {
-                     Type.Callable.annotation = Type.integer;
-                     parameters = Type.Callable.Defined [];
-                   };
-                 ];
+                 implementation = {
+                   Type.Callable.annotation = Type.integer;
+                   parameters = Type.Callable.Defined [];
+                 };
                  overload_stubs = [];
                  implicit = Type.Callable.Instance;
                }

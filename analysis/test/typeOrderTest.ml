@@ -717,7 +717,7 @@ let test_join _ =
     "typing.Callable('derp')[..., int]";
 
   (* Do not join with overloads. *)
-  assert_join "typing.Callable[..., int][..., str]" "typing.Callable[..., int]" "typing.Any";
+  assert_join "typing.Callable[..., int][[..., str]]" "typing.Callable[..., int]" "typing.Any";
 
   assert_join
     "typing.Callable[[Named(a, int), Named(b, str)], int]"

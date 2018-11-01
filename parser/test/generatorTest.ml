@@ -3821,6 +3821,58 @@ let test_stubs _ =
     ];
 
   assert_parsed_equal
+    "a = ... # type: Callable[..., int][[..., int][..., int]]"
+    [
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some
+            (+Access [
+               Access.Identifier ~~"Callable";
+               Access.Identifier ~~"__getitem__";
+               Access.Call
+                 (+[
+                    {
+                      Argument.name = None;
+                      value =
+                        +Tuple [
+                          +Ellipses;
+                          +Access [Access.Identifier ~~"int"];
+                        ];
+                    };
+                  ]);
+               Access.Identifier ~~"__getitem__";
+               Access.Call
+                 (+[
+                    {
+                      Argument.name = None;
+                      value =
+                        +Access [
+                          Access.Expression (+List [
+                              +Ellipses;
+                              +Access [Access.Identifier ~~"int"];
+                            ]);
+                          Access.Identifier ~~"__getitem__";
+                          Access.Call
+                            (+[
+                               {
+                                 Argument.name = None;
+                                 value =
+                                   +Tuple [
+                                     +Ellipses;
+                                     +Access [Access.Identifier ~~"int"];
+                                   ];
+                               };
+                             ]);
+                        ];
+                    };
+                  ]);
+             ]);
+        value = +Ellipses;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
     "a: Optional[int] = ..."
     [
       +Assign {

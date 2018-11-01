@@ -105,12 +105,12 @@ type signature_match = {
 let select
     ~resolution
     ~arguments
-    ~callable:({ Type.Callable.overloads; overload_stubs; _ } as callable) =
+    ~callable:({ Type.Callable.implementation; overload_stubs; _ } as callable) =
   let open Type.Callable in
-  let match_arity ({ parameters = all_parameters; _ } as overload) =
+  let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let base_signature_match =
       {
-        callable = { callable with Type.Callable.overloads = [overload] };
+        callable = { callable with Type.Callable.implementation; overload_stubs = [] };
         argument_mapping = Parameter.Map.empty;
         constraints = Type.Map.empty;
         ranks = {
@@ -423,17 +423,17 @@ let select
                                 constraints >>= update argument_annotation annotation)
                             annotations
                       | Type.Callable {
-                          Type.Callable.overloads = [{
-                              Type.Callable.annotation = argument_annotation;
-                              parameters = argument_parameters;
-                            }];
+                          Type.Callable.implementation = {
+                            Type.Callable.annotation = argument_annotation;
+                            parameters = argument_parameters;
+                          };
                           _;
                         },
                         Type.Callable {
-                          Type.Callable.overloads = [{
-                              Type.Callable.annotation = parameter_annotation;
-                              parameters = parameters;
-                            }];
+                          Type.Callable.implementation = {
+                            Type.Callable.annotation = parameter_annotation;
+                            parameters = parameters;
+                          };
                           _;
                         } ->
                           let constraints =
@@ -535,7 +535,11 @@ let select
                 |> (fun signature_match -> check signature_match tail)
           in
           let instantiate_unbound_constraints
-              ({ callable = { Type.Callable.overloads; _ }; constraints; _ } as signature_match) =
+              ({
+                callable = { Type.Callable.implementation; _ };
+                constraints;
+                _;
+              } as signature_match) =
             (* Map unresolved and unbound constraints to `Bottom`. *)
             let unbound_variables =
               let is_unbound = function
@@ -544,7 +548,7 @@ let select
               in
               Type.Callable {
                 Type.Callable.kind = Anonymous;
-                overloads;
+                implementation;
                 overload_stubs = [];
                 implicit = Function;
               }
@@ -624,7 +628,7 @@ let select
     >>| determine_reason
     |> Option.value ~default:(NotFound { callable; reason = None })
   in
-  (if List.is_empty overload_stubs then overloads else overload_stubs)
+  (if List.is_empty overload_stubs then [implementation] else overload_stubs)
   |> List.filter_map ~f:match_arity
   |> List.map ~f:check_annotations
   |> List.map ~f:calculate_rank

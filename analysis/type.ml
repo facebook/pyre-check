@@ -68,7 +68,7 @@ module Record = struct
 
     and 'annotation record = {
       kind: kind;
-      overloads: ('annotation overload) list;
+      implementation: 'annotation overload;
       overload_stubs: ('annotation overload) list;
       implicit: implicit;
     }
@@ -78,7 +78,7 @@ module Record = struct
     let equal_record equal_annotation left right =
       (* Ignores implicit argument to simplify unit tests. *)
       equal_kind left.kind right.kind &&
-      List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads &&
+      equal_overload equal_annotation left.implementation right.implementation &&
       List.equal ~equal:(equal_overload equal_annotation) left.overload_stubs right.overload_stubs
   end
 end
@@ -205,52 +205,57 @@ let rec pp format annotation =
   match annotation with
   | Bottom ->
       Format.fprintf format "undefined"
-  | Callable { kind; overloads; overload_stubs; _ } ->
+  | Callable { kind; implementation; overload_stubs; _ } ->
       let kind =
         match kind with
         | Anonymous -> ""
         | Named name -> Format.asprintf "(%a)" Access.pp name
       in
-      let overloads =
-        let overload { annotation; parameters } =
-          let parameters =
-            match parameters with
-            | Undefined ->
-                "..."
-            | Defined parameters ->
-                let parameter = function
-                  | Parameter.Anonymous { Parameter.index; annotation } ->
-                      Format.asprintf
-                        "Anonymous(%d, %a)"
-                        index
-                        pp annotation
-                  | Parameter.Named { Parameter.name; annotation; default } ->
-                      Format.asprintf
-                        "Named(%a, %a%s)"
-                        Access.pp_sanitized name
-                        pp annotation
-                        (if default then ", default" else "")
-                  | Parameter.Variable { Parameter.name; annotation; _ } ->
-                      Format.asprintf
-                        "Variable(%a, %a)"
-                        Access.pp_sanitized name
-                        pp annotation
-                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                      Format.asprintf
-                        "Keywords(%a, %a)"
-                        Access.pp_sanitized name
-                        pp annotation
-                in
-                List.map parameters ~f:parameter
-                |> String.concat ~sep:", "
-                |> fun parameters -> Format.asprintf "[%s]" parameters
-          in
-          Format.asprintf "%s, %a" parameters pp annotation
+      let signature_to_string { annotation; parameters } =
+        let parameters =
+          match parameters with
+          | Undefined ->
+              "..."
+          | Defined parameters ->
+              let parameter = function
+                | Parameter.Anonymous { Parameter.index; annotation } ->
+                    Format.asprintf
+                      "Anonymous(%d, %a)"
+                      index
+                      pp annotation
+                | Parameter.Named { Parameter.name; annotation; default } ->
+                    Format.asprintf
+                      "Named(%a, %a%s)"
+                      Access.pp_sanitized name
+                      pp annotation
+                      (if default then ", default" else "")
+                | Parameter.Variable { Parameter.name; annotation; _ } ->
+                    Format.asprintf
+                      "Variable(%a, %a)"
+                      Access.pp_sanitized name
+                      pp annotation
+                | Parameter.Keywords { Parameter.name; annotation; _ } ->
+                    Format.asprintf
+                      "Keywords(%a, %a)"
+                      Access.pp_sanitized name
+                      pp annotation
+              in
+              List.map parameters ~f:parameter
+              |> String.concat ~sep:", "
+              |> fun parameters -> Format.asprintf "[%s]" parameters
         in
-        List.map (overloads @ overload_stubs) ~f:overload
-        |> String.concat ~sep:"]["
+        Format.asprintf "%s, %a" parameters pp annotation
       in
-      Format.fprintf format "typing.Callable%s[%s]" kind overloads
+      let implementation = signature_to_string implementation in
+      let overloads =
+        let overloads = List.map overload_stubs ~f:signature_to_string in
+        if List.is_empty overloads then
+          ""
+        else
+          String.concat ~sep:"][" overloads
+          |> Format.sprintf "[[%s]]"
+      in
+      Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Deleted ->
       Format.fprintf format "deleted"
   | Object ->
@@ -354,7 +359,6 @@ let bytes =
 
 let callable
     ?name
-    ?(overloads = [])
     ?(overload_stubs = [])
     ?(parameters = Undefined)
     ~annotation
@@ -362,7 +366,7 @@ let callable
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
   Callable {
     kind;
-    overloads = { annotation; parameters } :: overloads;
+    implementation = { annotation; parameters };
     overload_stubs;
     implicit = Function;
   }
@@ -426,17 +430,15 @@ let iterator parameter =
 let lambda ~parameters ~return_annotation =
   Callable {
     kind = Anonymous;
-    overloads = [
-      {
-        annotation = return_annotation;
-        parameters =
-          Defined
-            (List.mapi
-               ~f:(fun index parameter ->
-                   Parameter.Anonymous { Parameter.index; annotation = parameter })
-               parameters);
-      };
-    ];
+    implementation = {
+      annotation = return_annotation;
+      parameters =
+        Defined
+          (List.mapi
+             ~f:(fun index parameter ->
+                 Parameter.Anonymous { Parameter.index; annotation = parameter })
+             parameters);
+    };
     overload_stubs = [];
     implicit = Function;
   }
@@ -773,7 +775,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             resolved
       in
       let result =
-        let parse_callable ?modifiers ~(overloads: Access.t) () =
+        let parse_callable ?modifiers ~(signatures: Access.t) () =
           let kind =
             match modifiers with
             | Some ({
@@ -784,97 +786,123 @@ let rec create ~aliases { Node.value = expression; _ } =
             | _ ->
                 Anonymous
           in
-          let overloads =
+          let implementation, overloads =
             let undefined = { annotation = Top; parameters = Undefined } in
-            if List.is_empty overloads then
-              [undefined]
-            else
-              let rec parse_overloads tail =
-                match tail with
-                | (Access.Identifier get_item) ::
-                  (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
-                  tail
-                  when Identifier.show get_item = "__getitem__" ->
-                    let overload =
-                      match Node.value argument with
-                      | Expression.Tuple [parameters; annotation] ->
-                          let parameters =
-                            let extract_parameter index parameter =
-                              match Node.value parameter with
-                              | Access [
-                                  Access.Identifier name;
-                                  Access.Call { Node.value = arguments; _ };
-                                ] ->
-                                  begin
-                                    let arguments =
-                                      List.map
-                                        arguments
-                                        ~f:(fun { Argument.value; _ } -> value)
-                                    in
-                                    match Identifier.show name, arguments with
-                                    | "Named",
-                                      { Node.value = Access name; _ } :: annotation :: tail ->
-                                        let default =
-                                          match tail with
-                                          | [{ Node.value = Access [Access.Identifier default]; _ }]
-                                            when Identifier.show default = "default" -> true
-                                          | _ -> false
-                                        in
-                                        Parameter.Named {
-                                          Parameter.name;
-                                          annotation = create ~aliases annotation;
-                                          default;
-                                        }
-                                    | "Variable", { Node.value = Access name; _ } :: tail ->
-                                        let annotation =
-                                          match tail with
-                                          | annotation :: _ -> create ~aliases annotation
-                                          | _ -> Top
-                                        in
-                                        Parameter.Variable {
-                                          Parameter.name;
-                                          annotation;
-                                          default = false;
-                                        }
-                                    | "Keywords", { Node.value = Access name; _ } :: tail ->
-                                        let annotation =
-                                          match tail with
-                                          | annotation :: _ -> create ~aliases annotation
-                                          | _ -> Top
-                                        in
-                                        Parameter.Keywords {
-                                          Parameter.name;
-                                          annotation;
-                                          default = false;
-                                        }
-                                    | _ ->
-                                        Parameter.Anonymous { Parameter.index; annotation = Top }
-                                  end
-                              | _ ->
-                                  Parameter.Anonymous {
-                                    Parameter.index;
-                                    annotation = (create ~aliases parameter)
-                                  }
+            let get_signature argument =
+              match Node.value argument with
+              | Expression.Tuple [parameters; annotation] ->
+                  let parameters =
+                    let extract_parameter index parameter =
+                      match Node.value parameter with
+                      | Access [
+                          Access.Identifier name;
+                          Access.Call { Node.value = arguments; _ };
+                        ] ->
+                          begin
+                            let arguments =
+                              List.map
+                                arguments
+                                ~f:(fun { Argument.value; _ } -> value)
                             in
-                            match Node.value parameters with
-                            | List parameters ->
-                                Defined (List.mapi ~f:extract_parameter parameters)
+                            match Identifier.show name, arguments with
+                            | "Named",
+                              { Node.value = Access name; _ } :: annotation :: tail ->
+                                let default =
+                                  match tail with
+                                  | [{ Node.value = Access [Access.Identifier default]; _ }]
+                                    when Identifier.show default = "default" -> true
+                                  | _ -> false
+                                in
+                                Parameter.Named {
+                                  Parameter.name;
+                                  annotation = create ~aliases annotation;
+                                  default;
+                                }
+                            | "Variable", { Node.value = Access name; _ } :: tail ->
+                                let annotation =
+                                  match tail with
+                                  | annotation :: _ -> create ~aliases annotation
+                                  | _ -> Top
+                                in
+                                Parameter.Variable {
+                                  Parameter.name;
+                                  annotation;
+                                  default = false;
+                                }
+                            | "Keywords", { Node.value = Access name; _ } :: tail ->
+                                let annotation =
+                                  match tail with
+                                  | annotation :: _ -> create ~aliases annotation
+                                  | _ -> Top
+                                in
+                                Parameter.Keywords {
+                                  Parameter.name;
+                                  annotation;
+                                  default = false;
+                                }
                             | _ ->
-                                Undefined
-                          in
-                          { annotation = create ~aliases annotation; parameters }
+                                Parameter.Anonymous { Parameter.index; annotation = Top }
+                          end
                       | _ ->
-                          undefined
+                          Parameter.Anonymous {
+                            Parameter.index;
+                            annotation = (create ~aliases parameter)
+                          }
                     in
-                    overload :: (parse_overloads tail)
-                | [] ->
-                    []
-                | _ ->
-                    [undefined]
-              in
-              parse_overloads overloads
+                    match Node.value parameters with
+                    | List parameters ->
+                        Defined (List.mapi ~f:extract_parameter parameters)
+                    | _ ->
+                        Undefined
+                  in
+                  { annotation = create ~aliases annotation; parameters }
+              | _ ->
+                  undefined
+            in
+            match signatures with
+            | (Access.Identifier get_item) ::
+              (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
+              []
+              when Identifier.show get_item = "__getitem__" ->
+                get_signature argument, []
+            | (Access.Identifier get_item) ::
+              (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
+              (Access.Identifier get_item_overloads) ::
+              (Access.Call {
+                  Node.value = [
+                    { Argument.value = { Node.value = overloads_argument; location }; _ }
+                  ];
+                  _;
+                }) ::
+              []
+              when Identifier.show get_item = "__getitem__"
+                && Identifier.show get_item_overloads = "__getitem__" ->
+                let rec parse_overloads overloads =
+                  match overloads with
+                  | Expression.List arguments ->
+                      [get_signature (Node.create ~location (Expression.Tuple arguments))]
+                  | Expression.Access
+                      (Access.Expression { Node.value = (Expression.List arguments); _ }
+                       :: tail) ->
+                      get_signature (Node.create ~location (Expression.Tuple arguments))
+                      :: (parse_overloads (Access tail))
+                  | Expression.Access (
+                      Access.Identifier get_item
+                      :: Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }
+                      :: tail
+                    )
+                    when Identifier.show get_item = "__getitem__" ->
+                      get_signature argument :: (parse_overloads (Access tail))
+                  | Access [] ->
+                      []
+                  | _ ->
+                      [undefined]
+                in
+                get_signature argument, parse_overloads overloads_argument
+            | _ ->
+                undefined, []
           in
-          Callable { kind; overloads; overload_stubs = []; implicit = Function }
+          Callable { kind; implementation; overload_stubs = overloads; implicit = Function }
         in
         match expression with
         | Access [
@@ -927,12 +955,12 @@ let rec create ~aliases { Node.value = expression; _ } =
             ((Access.Identifier typing)
              :: (Access.Identifier callable)
              :: (Access.Call { Node.value = modifiers; _ })
-             :: overloads)
+             :: signatures)
           when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
-            parse_callable ~modifiers ~overloads ()
-        | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: overloads)
+            parse_callable ~modifiers ~signatures ()
+        | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: signatures)
           when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
-            parse_callable ~overloads ()
+            parse_callable ~signatures ()
 
         | Access access ->
             parse [] access
@@ -1005,61 +1033,74 @@ let rec expression annotation =
   let rec access annotation =
     match annotation with
     | Bottom -> Access.create "$bottom"
-    | Callable { overloads; overload_stubs; _ } ->
-        let get_item_calls =
-          let get_item_call { annotation; parameters } =
-            let call_parameters =
-              match parameters with
-              | Defined parameters ->
-                  let parameter parameter =
-                    let call ?(default = false) name argument annotation =
-                      let annotation =
-                        annotation
-                        >>| (fun annotation ->
-                            [{
-                              Argument.name = None;
-                              value = expression annotation;
-                            }])
-                        |> Option.value ~default:[]
-                      in
-                      let arguments =
-                        let default =
-                          if default then
-                            [
-                              {
-                                Argument.name = None;
-                                value = Access.expression (Access.create "default");
-                              };
-                            ]
-                          else
-                            []
-                        in
-                        [{ Argument.name = None; value = Access.expression argument }]
-                        @ annotation @ default
-                      in
-                      Access.expression
-                        (Access.call ~arguments ~location:Location.Reference.any ~name ())
+    | Callable { implementation; overload_stubs; _ } ->
+        let convert { annotation; parameters } =
+          let call_parameters =
+            match parameters with
+            | Defined parameters ->
+                let parameter parameter =
+                  let call ?(default = false) name argument annotation =
+                    let annotation =
+                      annotation
+                      >>| (fun annotation ->
+                          [{
+                            Argument.name = None;
+                            value = expression annotation;
+                          }])
+                      |> Option.value ~default:[]
                     in
-                    match parameter with
-                    | Parameter.Anonymous { Parameter.annotation; _ } ->
-                        expression annotation
-                    | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                        call "Keywords" name (Some annotation)
-                    | Parameter.Named { Parameter.name; annotation; default } ->
-                        call "Named" ~default name (Some annotation)
-                    | Parameter.Variable { Parameter.name; annotation; _ } ->
-                        call "Variable" name (Some annotation)
+                    let arguments =
+                      let default =
+                        if default then
+                          [
+                            {
+                              Argument.name = None;
+                              value = Access.expression (Access.create "default");
+                            };
+                          ]
+                        else
+                          []
+                      in
+                      [{ Argument.name = None; value = Access.expression argument }]
+                      @ annotation @ default
+                    in
+                    Access.expression
+                      (Access.call ~arguments ~location:Location.Reference.any ~name ())
                   in
-                  List (List.map parameters ~f:parameter)
-                  |> Node.create_with_default_location
-              | Undefined ->
-                  Node.create_with_default_location Ellipses
-            in
-            get_item_call ~call_parameters [annotation]
+                  match parameter with
+                  | Parameter.Anonymous { Parameter.annotation; _ } ->
+                      expression annotation
+                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
+                      call "Keywords" name (Some annotation)
+                  | Parameter.Named { Parameter.name; annotation; default } ->
+                      call "Named" ~default name (Some annotation)
+                  | Parameter.Variable { Parameter.name; annotation; _ } ->
+                      call "Variable" name (Some annotation)
+                in
+                List (List.map parameters ~f:parameter)
+                |> Node.create_with_default_location
+            | Undefined ->
+                Node.create_with_default_location Ellipses
           in
-          List.concat_map (overloads @ overload_stubs) ~f:get_item_call;
+          get_item_call ~call_parameters [annotation]
         in
-        Access.create "typing.Callable" @ get_item_calls
+        let overloads =
+          let overloads = List.concat_map overload_stubs ~f:convert in
+          if List.is_empty overloads then
+            []
+          else
+            [
+              Access.Identifier (Identifier.create "__getitem__");
+              Access.Call
+                (Node.create_with_default_location [
+                    {
+                      Argument.name = None;
+                      value = Node.create_with_default_location (Access overloads);
+                    }
+                  ]);
+            ]
+        in
+        (Access.create "typing.Callable") @ (convert implementation) @ overloads
     | Deleted -> Access.create "$deleted"
     | Object -> Access.create "object"
     | Optional Bottom ->
@@ -1105,7 +1146,7 @@ let rec exists annotation ~predicate =
     true
   else
     match annotation with
-    | Callable { overloads; overload_stubs; _ } ->
+    | Callable { implementation; overload_stubs; _ } ->
         let exists { annotation; parameters } =
           let exists_in_parameters =
             match parameters with
@@ -1124,7 +1165,7 @@ let rec exists annotation ~predicate =
           in
           exists annotation ~predicate || exists_in_parameters
         in
-        List.exists ~f:exists (overloads @ overload_stubs)
+        List.exists ~f:exists (implementation :: overload_stubs)
 
     | Optional annotation
     | Tuple (Unbounded annotation) ->
@@ -1259,7 +1300,7 @@ let is_not_instantiated annotation =
 
 
 let rec variables = function
-  | Callable { overloads; overload_stubs; _ } ->
+  | Callable { implementation; overload_stubs; _ } ->
       let variables { annotation; parameters } =
         let variables_in_parameters  =
           match parameters with
@@ -1278,7 +1319,7 @@ let rec variables = function
         in
         variables annotation @ variables_in_parameters
       in
-      List.concat_map ~f:variables (overloads @ overload_stubs)
+      List.concat_map ~f:variables (implementation :: overload_stubs)
   | Optional annotation ->
       variables annotation
   | Tuple (Bounded elements) ->
@@ -1303,7 +1344,7 @@ let rec primitives annotation =
   match annotation with
   | Primitive _ ->
       [annotation]
-  | Callable { overloads; overload_stubs; _ } ->
+  | Callable { implementation; overload_stubs; _ } ->
       let overload_primitives { annotation; parameters } =
         match parameters with
         | Defined parameters ->
@@ -1319,7 +1360,7 @@ let rec primitives annotation =
         | Undefined ->
             primitives annotation
       in
-      List.concat_map (overloads @ overload_stubs) ~f:overload_primitives
+      List.concat_map (implementation :: overload_stubs) ~f:overload_primitives
 
   | Optional annotation
   | Tuple (Unbounded annotation) ->
@@ -1538,7 +1579,7 @@ let instantiate ?(widen = false) annotation ~constraints =
           match annotation with
           | Optional parameter ->
               optional (instantiate parameter)
-          | Callable { kind; overloads; overload_stubs; implicit } ->
+          | Callable { kind; implementation; overload_stubs; implicit } ->
               let instantiate { annotation; parameters } =
                 let parameters  =
                   match parameters with
@@ -1574,7 +1615,7 @@ let instantiate ?(widen = false) annotation ~constraints =
               in
               Callable {
                 kind;
-                overloads = List.map overloads ~f:instantiate;
+                implementation = instantiate implementation;
                 overload_stubs = List.map overload_stubs ~f:instantiate;
                 implicit;
               }
@@ -1694,16 +1735,28 @@ module Callable = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
+  module Overload = struct
+    let parameters { parameters; _ } =
+      match parameters with
+      | Defined parameters -> Some parameters
+      | Undefined -> None
+
+    let return_annotation { annotation; _ } = annotation
+  end
+
+
   let from_overloads overloads =
     match overloads with
     | ({ kind = Named _; _ } as initial) :: overloads ->
         let fold sofar overload =
           match sofar, overload with
-          | Some sofar, { kind; overloads; overload_stubs; implicit } ->
-              if equal_kind kind sofar.kind && implicit = sofar.implicit then
+          | Some sofar, { kind; implementation; overload_stubs; implicit } ->
+              if
+                equal_kind kind sofar.kind && implicit = sofar.implicit
+              then
                 Some {
                   kind;
-                  overloads = sofar.overloads @ overloads;
+                  implementation;
                   overload_stubs = sofar.overload_stubs @ overload_stubs;
                   implicit
                 }
@@ -1722,23 +1775,12 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ overloads; overload_stubs; _ } as initial) =
-    let re_annotate overloads =
-      List.map
-        overloads
-        ~f:(fun overload  -> { overload with annotation = return_annotation })
-    in
-    { initial with overloads = re_annotate overloads; overload_stubs = re_annotate overload_stubs }
-
-
-  module Overload = struct
-    let parameters { parameters; _ } =
-      match parameters with
-      | Defined parameters -> Some parameters
-      | Undefined -> None
-
-    let return_annotation { annotation; _ } = annotation
-  end
+  let with_return_annotation ~return_annotation ({ implementation; overload_stubs; _ } as initial) =
+    let re_annotate implementation = { implementation with annotation = return_annotation } in
+    {
+      initial with
+      implementation = re_annotate implementation;
+      overload_stubs = List.map ~f:re_annotate overload_stubs }
 end
 
 

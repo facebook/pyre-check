@@ -132,7 +132,7 @@ module State = struct
 
     let annotate_call_accesses statement resolution =
       let propagate resolution access =
-        let infer_annotations resolution arguments { Type.Callable.overloads; implicit; _ } =
+        let infer_annotations resolution arguments { Type.Callable.implementation; implicit; _ } =
           let rec infer_annotations_list parameters arguments resolution =
             let rec infer_annotation resolution parameter_annotation argument =
               let state = { state with resolution } in
@@ -173,11 +173,11 @@ module State = struct
             | _ ->
                 resolution
           in
-          match implicit, overloads with
+          match implicit, implementation with
           | Type.Callable.Instance,
-            [ { Type.Callable.parameters = Type.Callable.Defined (_ :: parameters); _ } ] ->
+            { Type.Callable.parameters = Type.Callable.Defined (_ :: parameters); _ } ->
               infer_annotations_list parameters arguments resolution
-          | _, [ { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ] ->
+          | _, { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ->
               infer_annotations_list parameters arguments resolution
           | _ ->
               resolution

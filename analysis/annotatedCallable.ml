@@ -89,8 +89,8 @@ let create defines ~resolution =
     else
       Type.Callable.Function
   in
-  let overloads, overload_stubs =
-    let to_overload (implementations, stubs) ({ Define.parameters; _ } as define) =
+  let implementation, overload_stubs =
+    let to_overload (implementation, stubs) ({ Define.parameters; _ } as define) =
       let overload =
         {
           annotation = return_annotation ~define ~resolution;
@@ -98,15 +98,18 @@ let create defines ~resolution =
         }
       in
       if Define.is_overloaded_method define then
-        implementations, overload :: stubs
+        implementation, overload :: stubs
       else
-        overload :: implementations, stubs
+        overload, stubs
     in
-    List.fold ~init:([],[]) ~f:to_overload defines
+    List.fold
+      ~init:({ annotation = Type.Top; parameters = Type.Callable.Undefined }, [])
+      ~f:to_overload
+      defines
   in
   {
     kind = Named name;
-    overloads;
+    implementation;
     overload_stubs;
     implicit;
   }

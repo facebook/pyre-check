@@ -103,7 +103,7 @@ let test_apply_decorators _ =
 
 
 let test_create _ =
-  let assert_callable ?parent ?expected ?expected_stubs source =
+  let assert_callable ?parent ~expected source =
     let resolution =
       populate source
       |> fun environment -> Environment.resolution environment ()
@@ -112,6 +112,7 @@ let test_create _ =
       let parent = parent >>| Access.create in
       parse source
       |> Preprocessing.defines ~include_stubs:true
+      |> List.rev
       |> List.map ~f:Node.value
       |> List.map ~f:(fun define -> { define with Statement.Define.parent })
       |> Callable.create ~resolution
@@ -120,7 +121,7 @@ let test_create _ =
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (parse_callable_with_stubs expected expected_stubs)
+      (parse_callable expected)
       callable
   in
 
@@ -159,7 +160,9 @@ let test_create _ =
       @overload
       def module.Foo.foo(a: str) -> str: ...
     |}
-    ~expected_stubs:"typing.Callable('module.Foo.foo')[[Named(a, int)], int][[Named(a, str)], str]";
+    ~expected:(
+      "typing.Callable('module.Foo.foo')[..., $unknown]" ^
+      "[[[Named(a, str)], str][[Named(a, int)], int]]");
 
   assert_callable
     ~parent:"module.Foo"
@@ -169,9 +172,18 @@ let test_create _ =
         @overload
         def module.Foo.foo(a: str, b: int) -> str: ...
       |}
-    ~expected_stubs:(
-      "typing.Callable('module.Foo.foo')" ^
-      "[[Named(a, int)], int][[Named(a, str), Named(b, int)], str]");
+    ~expected:(
+      "typing.Callable('module.Foo.foo')[..., $unknown]" ^
+      "[[[Named(a, str), Named(b, int)], str][[Named(a, int)], int]]");
+
+  assert_callable
+    ~parent:"module.Foo"
+    {|
+        def module.Foo.foo(a: int) -> int: ...
+        def module.Foo.foo(a: str) -> str: ...
+      |}
+    ~expected:(
+      "typing.Callable('module.Foo.foo')[[Named(a, str)], str]");
 
   let assert_implicit_argument ?parent source expected =
     let resolution =

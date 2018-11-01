@@ -172,9 +172,9 @@ let test_create _ =
     "typing.Callable.__getitem__((..., int))"
     (Type.callable ~annotation:Type.integer ());
   assert_create
-    "typing.Callable[..., int][..., str]"
+    "typing.Callable[..., int][[..., str]]"
     (Type.callable
-       ~overloads:[
+       ~overload_stubs:[
          {
            annotation = Type.string;
            parameters = Undefined;
@@ -187,10 +187,20 @@ let test_create _ =
     "typing.Callable('name')[..., int]"
     (Type.Callable {
         kind = Type.Callable.Named (Access.create "name");
-        overloads = [ { annotation = Type.integer; parameters = Undefined }];
+        implementation = { annotation = Type.integer; parameters = Undefined };
         overload_stubs = [];
         implicit = Type.Callable.Function;
       });
+
+  assert_create
+    "typing.Callable('foo')[..., $unknown]"
+    (Type.Callable {
+        kind = Type.Callable.Named (Access.create "foo");
+        implementation = { annotation = Type.Top; parameters = Undefined };
+        overload_stubs = [];
+        implicit = Type.Callable.Function;
+      });
+
   assert_create
     "typing.Other('name')[..., int]"
     Type.Top;
@@ -199,15 +209,13 @@ let test_create _ =
     "typing.Callable[[int, str], int]"
     (Type.Callable {
         kind = Type.Callable.Anonymous;
-        overloads = [
-          {
-            annotation = Type.integer;
-            parameters = Defined [
-                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
-                Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
-              ];
-          };
-        ];
+        implementation = {
+          annotation = Type.integer;
+          parameters = Defined [
+              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+              Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
+            ];
+        };
         overload_stubs = [];
         implicit = Type.Callable.Function;
       });
@@ -215,29 +223,27 @@ let test_create _ =
     "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
     (Type.Callable {
         kind = Anonymous;
-        overloads = [
-          {
-            annotation = Type.integer;
-            parameters = Defined [
-                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
-                Parameter.Named {
-                  Parameter.name = Access.create "a";
-                  annotation = Type.integer;
-                  default = false;
-                };
-                Parameter.Variable {
-                  Parameter.name = Access.create "variable";
-                  annotation = Type.Top;
-                  default = false;
-                };
-                Parameter.Keywords {
-                  Parameter.name = Access.create "keywords";
-                  annotation = Type.Top;
-                  default = false;
-                };
-              ];
-          };
-        ];
+        implementation = {
+          annotation = Type.integer;
+          parameters = Defined [
+              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+              Parameter.Named {
+                Parameter.name = Access.create "a";
+                annotation = Type.integer;
+                default = false;
+              };
+              Parameter.Variable {
+                Parameter.name = Access.create "variable";
+                annotation = Type.Top;
+                default = false;
+              };
+              Parameter.Keywords {
+                Parameter.name = Access.create "keywords";
+                annotation = Type.Top;
+                default = false;
+              };
+            ];
+        };
         overload_stubs = [];
         implicit = Type.Callable.Function;
       });
@@ -245,24 +251,22 @@ let test_create _ =
     "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
     (Type.Callable {
         kind = Anonymous;
-        overloads = [
-          {
-            annotation = Type.integer;
-            parameters = Defined [
-                Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
-                Parameter.Variable {
-                  Parameter.name = Access.create "variable";
-                  annotation = Type.integer;
-                  default = false;
-                };
-                Parameter.Keywords {
-                  Parameter.name = Access.create "keywords";
-                  annotation = Type.string;
-                  default = false;
-                };
-              ];
-          };
-        ];
+        implementation = {
+          annotation = Type.integer;
+          parameters = Defined [
+              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+              Parameter.Variable {
+                Parameter.name = Access.create "variable";
+                annotation = Type.integer;
+                default = false;
+              };
+              Parameter.Keywords {
+                Parameter.name = Access.create "keywords";
+                annotation = Type.string;
+                default = false;
+              };
+            ];
+        };
         overload_stubs = [];
         implicit = Type.Callable.Function;
       });
@@ -270,18 +274,16 @@ let test_create _ =
     "typing.Callable[[Named(a, int, default)], int]"
     (Type.Callable {
         kind = Anonymous;
-        overloads = [
-          {
-            annotation = Type.integer;
-            parameters = Defined [
-                Parameter.Named {
-                  Parameter.name = Access.create "a";
-                  annotation = Type.integer;
-                  default = true;
-                };
-              ];
-          };
-        ];
+        implementation = {
+          annotation = Type.integer;
+          parameters = Defined [
+              Parameter.Named {
+                Parameter.name = Access.create "a";
+                annotation = Type.integer;
+                default = true;
+              };
+            ];
+        };
         overload_stubs = [];
         implicit = Type.Callable.Function;
       });
@@ -352,7 +354,7 @@ let test_expression _ =
 
   assert_expression
     (Type.callable
-       ~overloads:[
+       ~overload_stubs:[
          {
            Type.Callable.annotation = Type.string;
            parameters = Type.Callable.Undefined;
@@ -360,7 +362,7 @@ let test_expression _ =
        ]
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__((..., int)).__getitem__((..., str))";
+    "typing.Callable.__getitem__((..., int)).__getitem__(__getitem__((..., str)))";
 
   assert_expression
     (Type.callable
@@ -909,15 +911,21 @@ let test_from_overloads _ =
   assert_create ["typing.Callable('foo')[..., int]"; "typing.Callable('bar')[..., int]"] "$unknown";
   assert_create
     ["typing.Callable('foo')[..., int]"; "typing.Callable('foo')[..., str]"]
-    "typing.Callable('foo')[..., int][..., str]";
+    "typing.Callable('foo')[..., str]";
   assert_create
     [
       "typing.Callable('foo')[..., int]";
       "typing.Callable('foo')[[int, str], str]";
       "typing.Callable('foo')[[int, str, str], int]";
     ]
-    "typing.Callable('foo')[..., int][[int, str], str][[int, str, str], int]"
-
+    "typing.Callable('foo')[[int, str, str], int]";
+  assert_create
+    [
+      "typing.Callable('foo')[..., $unknown][[[int], int]]";
+      "typing.Callable('foo')[[str], str]";
+      "typing.Callable('foo')[[int], int][[[str], str]]";
+    ]
+    "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
 
 let test_with_return_annotation _ =
   let assert_with_return_annotation return_annotation callable expected =
@@ -940,20 +948,20 @@ let test_with_return_annotation _ =
 
   assert_with_return_annotation
     Type.string
-    "typing.Callable('foo')[..., int][[int], int]"
-    "typing.Callable('foo')[..., str][[int], str]"
+    "typing.Callable('foo')[..., int][[[int], int]]"
+    "typing.Callable('foo')[..., str][[[int], str]]"
 
 
 let test_overload_parameters _ =
   let assert_parameters callable expected =
-    let { Type.Callable.overloads; _ } =
+    let { Type.Callable.overload_stubs; _ } =
       Type.create ~aliases:(fun _ -> None) (parse_single_expression callable)
       |> function
       | Type.Callable callable -> callable
       | _ -> failwith ("Could not extract callable from " ^ callable)
     in
     let parameters =
-      List.hd_exn overloads
+      List.hd_exn overload_stubs
       |> Type.Callable.Overload.parameters
       |> Option.value ~default:[]
       |> List.map ~f:Type.Callable.Parameter.annotation
@@ -961,9 +969,9 @@ let test_overload_parameters _ =
     in
     assert_equal parameters expected
   in
-  assert_parameters "typing.Callable('foo')[[int], str]" ["int"];
-  assert_parameters "typing.Callable('foo')[[int, str], str]" ["int"; "str"];
-  assert_parameters "typing.Callable('foo')[[], str]" []
+  assert_parameters "typing.Callable('foo')[..., $unknown][[[int], str]]" ["int"];
+  assert_parameters "typing.Callable('foo')[..., $unknown][[[int, str], str]]" ["int"; "str"];
+  assert_parameters "typing.Callable('foo')[..., $unknown][[[], str]]" []
 
 
 let test_variables _ =

@@ -793,7 +793,7 @@ let register_functions (module Handler: Handler) ({ Source.handle; _ } as source
           in
           let change callable = function
             | None -> Some [callable]
-            | Some existing -> Some (callable :: existing)
+            | Some existing -> Some (existing @ [callable])
           in
           Map.change callables name ~f:(change callable)
         in

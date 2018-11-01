@@ -286,14 +286,14 @@ let fold ~resolution ~initial ~f access =
       match signature with
       | Signature.Found {
           Signature.callable = {
-            Type.Callable.overloads = [{ Type.Callable.annotation; _ }];
+            Type.Callable.implementation = { Type.Callable.annotation; _ };
             _;
           };
           _;
         }
       | Signature.NotFound {
           Signature.callable = {
-            Type.Callable.overloads = [{ Type.Callable.annotation; _ }];
+            Type.Callable.implementation = { Type.Callable.annotation; _ };
             _;
           };
           _;
@@ -458,7 +458,7 @@ let fold ~resolution ~initial ~f access =
                       in
                       match getattr with
                       | Some (Callable { overload_stubs = [overload]; _ })
-                      | Some (Callable { overloads = [overload]; _ })
+                      | Some (Callable { implementation = overload; _ })
                         when correct_getattr_arity overload ->
                           Some (
                             Annotation.create_immutable

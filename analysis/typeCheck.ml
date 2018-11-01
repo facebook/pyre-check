@@ -592,10 +592,10 @@ module State = struct
            >>| fun overridden_attribute ->
            (* Check strengthening of postcondition. *)
            match Annotation.annotation (Attribute.annotation overridden_attribute) with
-           | Type.Callable { Type.Callable.overloads = [single_overload]; _ } ->
+           | Type.Callable { Type.Callable.implementation; _ } ->
                let original_method = Method.create ~define ~parent:definition in
                let errors =
-                 let expected = Type.Callable.Overload.return_annotation single_overload in
+                 let expected = Type.Callable.Overload.return_annotation implementation in
                  let actual = Method.return_annotation original_method ~resolution in
                  if Type.is_resolved expected &&
                     not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
@@ -692,7 +692,7 @@ module State = struct
                        in
                        Map.set ~key:location ~data:error errors
                in
-               Type.Callable.Overload.parameters single_overload
+               Type.Callable.Overload.parameters implementation
                |> Option.value ~default:[]
                |> List.fold ~init:errors ~f:parameter
            | _ ->

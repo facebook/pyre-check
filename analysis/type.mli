@@ -51,7 +51,7 @@ module Record : sig
 
     and 'annotation record = {
       kind: kind;
-      overloads: ('annotation overload) list;
+      implementation: 'annotation overload;
       overload_stubs: ('annotation overload) list;
       implicit: implicit;
     }
@@ -105,7 +105,6 @@ val bool: t
 val bytes: t
 val callable
   :  ?name: Access.t
-  -> ?overloads: (t Record.Callable.overload) list
   -> ?overload_stubs: (t Record.Callable.overload) list
   -> ?parameters: t Record.Callable.parameters
   -> annotation: t
@@ -214,17 +213,17 @@ module Callable : sig
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val from_overloads: t list -> t option
-
-  val map: t -> f:(type_t -> type_t) -> t option
-
-  val with_return_annotation: return_annotation: type_t -> t -> t
-
   module Overload: sig
     val parameters: type_t overload -> Parameter.parameter list option
 
     val return_annotation: type_t overload -> type_t
   end
+
+  val from_overloads: t list -> t option
+
+  val map: t -> f:(type_t -> type_t) -> t option
+
+  val with_return_annotation: return_annotation: type_t -> t -> t
 end
 
 val to_yojson: t -> Yojson.Safe.json

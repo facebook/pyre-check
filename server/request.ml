@@ -499,7 +499,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Some { Node.value; _ } ->
               begin
                 match Annotation.annotation value with
-                | Type.Callable { Type.Callable.overloads; overload_stubs; _ } ->
+                | Type.Callable { Type.Callable.implementation; overload_stubs; _ } ->
                     let overload_signature { Type.Callable.annotation; parameters } =
                       match parameters with
                       | Type.Callable.Defined parameters ->
@@ -525,7 +525,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     in
                     TypeQuery.Response
                       (TypeQuery.FoundSignature
-                         (List.filter_map (overloads @ overload_stubs) ~f:overload_signature))
+                         (List.filter_map (implementation :: overload_stubs) ~f:overload_signature))
                 | _ ->
                     TypeQuery.Error
                       (Format.sprintf

@@ -1432,60 +1432,6 @@ let test_check _ =
 
   assert_type_errors
     {|
-      class Foo:
-        @overload
-        def derp(self, x: int) -> int:
-          pass
-        @overload
-        def derp(self, x: str) -> str:
-          pass
-        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
-          if isinstance(x, int):
-            return 0
-          else:
-            return ""
-
-      def herp(x: Foo) -> int:
-        return x.derp(5)
-    |}
-    [];
-
-  (* Technically invalid; all @overload stubs must be followed by implementation *)
-  assert_type_errors
-    {|
-      class Foo:
-        @overload
-        def derp(self, x: int) -> int:
-          pass
-        @overload
-        def derp(self, x: str) -> str:
-          pass
-
-      def herp(x: Foo) -> int:
-        return x.derp(5)
-    |}
-    [];
-
-  (* Technically invalid; @overload stubs must comprehensively cover implementation *)
-  assert_type_errors
-    {|
-      class Foo:
-        @overload
-        def derp(self, x: int) -> int:
-          pass
-        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
-          if isinstance(x, int):
-            return 0
-          else:
-            return ""
-
-      def herp(x: Foo) -> int:
-        return x.derp(5)
-    |}
-    [];
-
-  assert_type_errors
-    {|
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
@@ -2492,6 +2438,122 @@ let test_check_optional _ =
     [
       "Missing return annotation [3]: Returning `typing.Optional[bool]` but " ^
       "type `Any` is specified.";
+    ]
+
+
+let test_check_function_overloads _ =
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; all @overload stubs must be followed by implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; @overload stubs must comprehensively cover implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      @overload
+      def derp(x: str) -> str: ...
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[[Named(x, str)], str][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      @overload
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  (* The overloaded stub will override the implementation *)
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+      @overload
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+      def derp(): ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[[], unknown][[[Named(x, int)], int]]`."
     ]
 
 
@@ -6599,6 +6661,7 @@ let () =
     "check_coverage">::test_check_coverage;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
+    "check_function_overloads">::test_check_function_overloads;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_function_parameter_errors">::test_check_function_parameter_errors;

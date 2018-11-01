@@ -541,8 +541,8 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable { Callable.kind = Callable.Anonymous; overloads = [left]; _ },
-    Type.Callable { Callable.kind = Callable.Anonymous; overloads = [right]; _ } ->
+  | Type.Callable { Callable.kind = Callable.Anonymous; implementation = left; _ },
+    Type.Callable { Callable.kind = Callable.Anonymous; implementation = right; _ } ->
       let open Callable in
       let parameters_less_or_equal () =
         match left.parameters, right.parameters with
@@ -703,7 +703,7 @@ and greatest_lower_bound ((module Handler: Handler) as order) =
   least_common_successor order ~successors:predecessors
 
 
-and join_overloads ~parameter_join ~return_join order left right =
+and join_implementations ~parameter_join ~return_join order left right =
   let open Callable in
   let parameters =
     match left.parameters, right.parameters with
@@ -781,7 +781,7 @@ and join_overloads ~parameter_join ~return_join order left right =
   in
   parameters
   >>| fun parameters ->
-  [{ annotation = return_join order left.annotation right.annotation; parameters = parameters }]
+  { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
 
 and join ((module Handler: Handler) as order) left right =
@@ -921,16 +921,16 @@ and join ((module Handler: Handler) as order) left right =
 
     | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
       Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
-      when List.length left.Callable.overloads = 1 &&
-           List.length right.Callable.overloads = 1 &&
-           left.Callable.implicit = right.Callable.implicit ->
-        join_overloads
+      when left.Callable.implicit = right.Callable.implicit
+        && List.is_empty left.Callable.overload_stubs
+        && List.is_empty right.Callable.overload_stubs ->
+        join_implementations
           ~parameter_join:meet
           ~return_join:join
           order
-          (List.hd_exn left.Callable.overloads)
-          (List.hd_exn right.Callable.overloads)
-        >>| (fun overloads -> Type.Callable { left with Callable.overloads })
+          left.Callable.implementation
+          right.Callable.implementation
+        >>| (fun implementation -> Type.Callable { left with Callable.implementation })
         |> Option.value ~default:Type.Object
     | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
       Type.Callable { Callable.kind = Callable.Named right; _ }
@@ -1056,16 +1056,14 @@ and meet order left right =
 
     | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
       Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
-      when List.length left.Callable.overloads = 1 &&
-           List.length right.Callable.overloads = 1 &&
-           left.Callable.implicit = right.Callable.implicit ->
-        join_overloads
+      when left.Callable.implicit = right.Callable.implicit ->
+        join_implementations
           ~parameter_join:join
           ~return_join:meet
           order
-          (List.hd_exn left.Callable.overloads)
-          (List.hd_exn right.Callable.overloads)
-        >>| (fun overloads -> Type.Callable { left with Callable.overloads })
+          left.Callable.implementation
+          right.Callable.implementation
+        >>| (fun implementation -> Type.Callable { left with Callable.implementation })
         |> Option.value ~default:Type.Bottom
     | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
       Type.Callable { Callable.kind = Callable.Named right; _ }
