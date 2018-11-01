@@ -89,7 +89,7 @@ class Monitor:
                     pass
 
     def daemonize(self) -> None:
-        """We double-fork here to detach the daemon processs from the parent.
+        """We double-fork here to detach the daemon process from the parent.
            If we were to just fork the child as a daemon, we'd have to worry about the
            parent process exiting zombifying the daemon."""
         if os.fork() == 0:

@@ -42,7 +42,7 @@ class Incremental(Reporting):
             errors = self._get_errors(result)
             self._print(errors)
         except ClientException as exception:
-            LOG.error("Error while waiting for server.")
+            LOG.error("Error while waiting for server: %s", str(exception))
             LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
             self._exit_code = ExitCode.FAILURE
 
