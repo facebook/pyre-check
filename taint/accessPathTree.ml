@@ -748,11 +748,15 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
       ~path_element
       path
       { children; element }
-      ~use_precise_fields =
+      ~use_precise_fields
+      ~transform_non_leaves =
     match path with
     | [] -> path_element, create_node_option element children
     | label_element :: rest ->
-        let path_element = Element.join path_element element in
+        let path_element =
+          transform_non_leaves path element
+          |> Element.join path_element
+        in
         match label_element with
         | Label.Any when not use_precise_fields ->  (* lookup all index fields and join result *)
             let find_index_and_join
@@ -760,7 +764,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
                 ~data:subtree
                 (path_element_accumulator, tree_accumulator) =
               let path_element_result, subtree =
-                read_tree_raw ~path_element ~use_precise_fields rest subtree
+                read_tree_raw ~path_element ~use_precise_fields ~transform_non_leaves rest subtree
               in
               let subtree =
                 join_option_trees Element.bottom ~widen_depth:None tree_accumulator subtree
@@ -774,20 +778,29 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
               | None ->
                   begin
                     match LabelMap.find children Label.Any with
-                    | Some subtree -> read_tree_raw ~path_element ~use_precise_fields rest subtree
-                    | None -> path_element, None
+                    | Some subtree ->
+                        read_tree_raw
+                          ~path_element
+                          ~use_precise_fields
+                          ~transform_non_leaves
+                          rest
+                          subtree
+                    | None ->
+                        path_element, None
                   end
-              | Some st ->
-                  read_tree_raw ~path_element ~use_precise_fields rest st
+              | Some subtree ->
+                  read_tree_raw ~path_element ~use_precise_fields ~transform_non_leaves rest subtree
             end
         | _ ->
             match LabelMap.find children label_element with
-            | None -> path_element, None
-            | Some subtree -> read_tree_raw ~path_element ~use_precise_fields rest subtree
+            | None ->
+                path_element, None
+            | Some subtree ->
+                read_tree_raw ~path_element ~use_precise_fields ~transform_non_leaves rest subtree
 
 
   (** Read the subtree at path p within t. Returns the pair path_element, tree_at_tip. *)
-  let read_tree_raw path tree ~use_precise_fields =
+  let read_tree_raw path tree ~use_precise_fields ~transform_non_leaves =
     let message () =
       Format.sprintf
         "read tree_raw: %s :from: %s"
@@ -795,7 +808,7 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
         (tree_to_string tree)
     in
     let path_element, tree_option =
-      read_tree_raw ~path_element:Element.bottom ~use_precise_fields path tree
+      read_tree_raw ~path_element:Element.bottom ~use_precise_fields ~transform_non_leaves path tree
     in
     path_element, option_node_tree ~message tree_option
 
@@ -932,8 +945,10 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     less_or_equal left right
 
 
-  let read_tree path tree =
-    let path_element, tree = read_tree_raw path tree ~use_precise_fields:false in
+  let read_tree ?(transform_non_leaves=fun _p element -> element) path tree =
+    let path_element, tree =
+      read_tree_raw path tree ~use_precise_fields:false ~transform_non_leaves
+    in
     let message () =
       Format.sprintf "read [%s] from %s" (Label.show_path path) (tree_to_string tree)
     in
@@ -943,17 +958,23 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     |> option_node_tree ~message
 
 
-  let read_access_path ~root ~path map =
+  let read_access_path ?(transform_non_leaves=fun _p element -> element) ~root ~path map =
     match RootMap.find map root with
     | None -> empty_tree
-    | Some tree -> read_tree path tree
+    | Some tree -> read_tree ~transform_non_leaves path tree
 
 
   (** Return the path_element without combining it with the element at the path tip. *)
-  let read_access_path_raw ~root ~path map ~use_precise_fields =
+  let read_access_path_raw
+      ?(transform_non_leaves=fun _ element -> element)
+      ~root
+      ~path
+      ~use_precise_fields
+      map
+    =
     match RootMap.find map root with
     | None -> (Element.bottom, empty_tree)
-    | Some tree -> read_tree_raw path tree ~use_precise_fields
+    | Some tree -> read_tree_raw path tree ~use_precise_fields ~transform_non_leaves
 
 
   let read root map =
