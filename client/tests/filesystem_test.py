@@ -161,7 +161,9 @@ class FilesystemTest(unittest.TestCase):
         )
         shared_analysis_directory._merge()
         shared_root = shared_analysis_directory.get_root()
-        os_makedirs.assert_has_calls([call(shared_root), call(shared_root + "/b")])
+        os_makedirs.assert_has_calls(
+            [call(shared_root), call(shared_root + "/b")], any_order=True
+        )
         os_symlink.assert_has_calls(
             [
                 call(root + "/first/x.py", shared_root + "/x.py"),
