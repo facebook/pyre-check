@@ -15,4 +15,4 @@ type t = {
 }
 [@@deriving show, sexp]
 
-val create: environment: (module Environment.Handler) -> model_source: string -> t list Or_error.t
+val create: resolution: Resolution.t -> model_source: string -> t list Or_error.t

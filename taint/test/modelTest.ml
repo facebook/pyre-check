@@ -14,14 +14,14 @@ open TestHelper
 
 
 let assert_model ~model_source ~expect =
-  let environment =
-    Test.environment
+  let resolution =
+    Test.resolution
       ~sources:(Test.typeshed_stubs @ [Test.parse model_source])
       ()
   in
   let models =
     Test.trim_extra_indentation model_source
-    |> (fun model_source -> Model.create ~environment ~model_source)
+    |> (fun model_source -> Model.create ~resolution ~model_source)
     |> Or_error.ok_exn
   in
   let is_model callable { call_target; _ } =
@@ -177,20 +177,20 @@ let test_taint_in_taint_out_models _ =
 
 
 let test_invalid_models _ =
-  let environment =
-    Test.environment
-      ~sources:[
-        Test.parse
-          {|
-            def sink() -> None: pass
-            def source() -> None: pass
-          |};
-      ]
-      ()
-  in
   let assert_invalid_model ~model_source ~expect =
+    let resolution =
+      Test.resolution
+        ~sources:[
+          Test.parse
+            {|
+              def sink() -> None: pass
+              def source() -> None: pass
+            |};
+        ]
+        ()
+    in
     let error_message =
-      match Model.create ~environment ~model_source with
+      match Model.create ~resolution ~model_source with
       | Error error -> Base.Error.to_string_hum error
       | _ -> failwith "Invalid model should result in error"
     in

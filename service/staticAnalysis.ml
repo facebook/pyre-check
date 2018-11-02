@@ -82,7 +82,12 @@ let add_models ~environment ~model_source =
     |> Result.with_model Taint.Result.kind model
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
-  let models = Model.create ~environment ~model_source |> Or_error.ok_exn in
+  let models =
+    Model.create
+      ~resolution:(Environment.resolution environment ())
+      ~model_source
+    |> Or_error.ok_exn
+  in
   List.iter models ~f:add_model_to_memory
 
 

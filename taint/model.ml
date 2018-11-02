@@ -107,7 +107,7 @@ let taint_return model expression =
       Or_error.return model
 
 
-let create ~environment ~model_source =
+let create ~resolution ~model_source =
   let defines =
     let filter_define = function
       | { Node.value = Define define; _ } ->
@@ -134,7 +134,6 @@ let create ~environment ~model_source =
   in
   let create_model { Define.name; parameters; return_annotation; _ } =
     (* Make sure we know about what we model. *)
-    let resolution = Environment.resolution environment () in
     let annotation = Resolution.resolve resolution (Access.expression name) in
     if Type.equal annotation Type.Top then
       Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
