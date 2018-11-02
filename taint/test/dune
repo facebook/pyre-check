@@ -14,6 +14,7 @@
 (tests
  (names
   accessPathTest
+  accessPathTreeTest
   domainTest
   taintAnalysisTest
   flowTest

@@ -67,6 +67,8 @@ module Label: sig
 
   val create_name_field: string -> t
   val create_int_field: int -> t
+  val common_prefix: path -> path -> path
+  val is_prefix: path -> prefix: path -> bool
 end
 
 
