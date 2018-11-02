@@ -149,3 +149,69 @@ let create ~resolution ~model_source =
   | models -> Or_error.combine_errors models
   | exception Parser.Error message -> Or_error.errorf "Could not parse taint model: %s." message
   | exception Failure message -> Or_error.error_string message
+
+
+let subprocess_calls =
+  String.Set.of_list [
+    "subprocess.run";
+    "subprocess.call";
+    "subprocess.check_call";
+    "subprocess.check_output";
+  ]
+
+
+let get_callsite_model ~resolution ~call_target ~arguments =
+  let open Pyre in
+  let subprocess_model =
+    let shell_set_to_true ~arguments =
+      let shell_set_to_true argument =
+        match argument with
+        | {
+          Argument.name = Some { Node.value = shell; _ };
+          value = { Node.value = True; _ };
+        } when Identifier.show shell = "$parameter$shell" -> true
+        | _ -> false
+      in
+      List.exists arguments ~f:shell_set_to_true
+    in
+    let called_with_list =
+      let is_list_argument { Argument.name; value } =
+        let annotation = Resolution.resolve resolution value in
+        Option.is_none name &&
+        not (Type.equal annotation Type.Bottom) &&
+        not (Type.equal annotation Type.string) &&
+        Resolution.less_or_equal
+          resolution
+          ~left:annotation
+          ~right:(Type.list Type.string)
+
+      in
+      List.hd arguments
+      >>| is_list_argument
+      |> (Option.value ~default:true)
+    in
+    let target = Callable.external_target_name call_target in
+    if (not called_with_list) &&
+       String.Set.mem subprocess_calls target &&
+       shell_set_to_true ~arguments then
+      let { model; _ } =
+        let model_source =
+          Format.asprintf
+            "def %s(command: TaintSink[RemoteCodeExecution], shell): ..."
+            target
+        in
+        create ~resolution ~model_source
+        |> Or_error.ok_exn
+        |> List.hd_exn
+      in
+      Result.empty_model
+      |> Result.with_model TaintResult.kind model
+      |> Option.some
+    else
+      None
+  in
+
+  if Option.is_some subprocess_model then
+    subprocess_model
+  else
+    Interprocedural.Fixpoint.get_model call_target

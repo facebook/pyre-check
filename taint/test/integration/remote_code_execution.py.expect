@@ -42,3 +42,47 @@
     ]
   }
 }
+{
+  "kind": "issue",
+  "data": {
+    "callable": "subprocess_problem",
+    "callable_line": 9,
+    "code": 5001,
+    "line": 11,
+    "start": 26,
+    "end": 27,
+    "filename": "test.py",
+    "message":
+      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 10,
+              "start": 24,
+              "end": 26
+            },
+            "leaves": [ { "kind": "UserControlled" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "test.py",
+              "line": 11,
+              "start": 25,
+              "end": 40
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

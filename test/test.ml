@@ -590,6 +590,16 @@ let typeshed_stubs = (* Yo dawg... *)
         environ: Dict[str, str] = ...
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "subprocess")
+      ~handle:"subprocess.pyi"
+      {|
+        def run(command, shell): ...
+        def call(command, shell): ...
+        def check_call(command, shell): ...
+        def check_output(command, shell): ...
+      |}
+    |> Preprocessing.qualify;
   ]
 
 

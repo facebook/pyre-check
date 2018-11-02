@@ -5,7 +5,9 @@
 
 open Core
 
+open Ast
 open Analysis
+open Expression
 open Interprocedural
 
 
@@ -16,3 +18,9 @@ type t = {
 [@@deriving show, sexp]
 
 val create: resolution: Resolution.t -> model_source: string -> t list Or_error.t
+
+val get_callsite_model
+  :  resolution: Resolution.t
+  -> call_target: [<Callable.t]
+  -> arguments: Argument.t list
+  -> Interprocedural.Result.model_t option

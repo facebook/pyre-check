@@ -85,7 +85,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and apply_call_targets ~resolution location arguments state call_targets =
       let apply_call_target call_target =
         let is_obscure, taint_model =
-          match Interprocedural.Fixpoint.get_model call_target with
+          match Model.get_callsite_model ~resolution ~call_target ~arguments with
           | None -> true, None
           | Some model ->
               model.is_obscure, Interprocedural.Result.get_model TaintResult.kind model
