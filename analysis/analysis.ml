@@ -6,6 +6,7 @@
 
 module AbstractDomain = AbstractDomain
 module AbstractSetDomain = AbstractSetDomain
+module AbstractElementSetDomain = AbstractElementSetDomain
 module AbstractMapDomain = AbstractMapDomain
 module AbstractPairDomain = AbstractPairDomain
 module AwaitableCheck = AwaitableCheck
