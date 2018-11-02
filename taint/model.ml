@@ -139,6 +139,26 @@ let create ~resolution ~model_source =
       Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
       |> failwith;
 
+    (* Check model matches callables primary signature. *)
+    begin
+      match annotation with
+      | Type.Callable {
+          Type.Callable.implementation = {
+            Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
+            _;
+          };
+          _;
+        } as callable ->
+          if List.length parameters <> List.length implementation_parameters then
+            Format.asprintf
+              "Model signature parameters for `%a` do not match implementation `%a`"
+              Access.pp name
+              Type.pp callable
+            |> failwith
+      | _ ->
+          ()
+    end;
+
     let call_target = Callable.create_real name in
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters

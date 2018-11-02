@@ -183,7 +183,7 @@ let test_invalid_models _ =
         ~sources:[
           Test.parse
             {|
-              def sink() -> None: pass
+              def sink(parameter) -> None: pass
               def source() -> None: pass
             |};
         ]
@@ -219,7 +219,13 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|Modeled entity `not_in_the_environment` is not part of the environment!|}
+    ~expect:{|Modeled entity `not_in_the_environment` is not part of the environment!|};
+
+  assert_invalid_model
+    ~model_source:"def sink(): ..."
+    ~expect:(
+      "Model signature parameters for `sink` do not match implementation " ^
+      "`typing.Callable(sink)[[Named(parameter, unknown)], None]`")
 
 
 let () =
