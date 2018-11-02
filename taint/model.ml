@@ -180,6 +180,10 @@ let subprocess_calls =
   ]
 
 
+let model_cache =
+  String.Table.create ()
+
+
 let get_callsite_model ~resolution ~call_target ~arguments =
   let open Pyre in
   let subprocess_model =
@@ -214,19 +218,27 @@ let get_callsite_model ~resolution ~call_target ~arguments =
     if (not called_with_list) &&
        String.Set.mem subprocess_calls target &&
        shell_set_to_true ~arguments then
-      let { model; _ } =
-        let model_source =
-          Format.asprintf
-            "def %s(command: TaintSink[RemoteCodeExecution], shell): ..."
-            target
-        in
-        create ~resolution ~model_source
-        |> Or_error.ok_exn
-        |> List.hd_exn
-      in
-      Result.empty_model
-      |> Result.with_model TaintResult.kind model
-      |> Option.some
+      match Hashtbl.find model_cache target with
+      | Some model ->
+          model
+      | None ->
+          let { model; _ } =
+            let model_source =
+              Format.asprintf
+                "def %s(command: TaintSink[RemoteCodeExecution], shell): ..."
+                target
+            in
+            create ~resolution ~model_source
+            |> Or_error.ok_exn
+            |> List.hd_exn
+          in
+          let result =
+            Result.empty_model
+            |> Result.with_model TaintResult.kind model
+            |> Option.some
+          in
+          Hashtbl.set model_cache ~key:target ~data:result;
+          result
     else
       None
   in
