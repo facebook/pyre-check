@@ -86,6 +86,7 @@ let add_models ~environment ~model_source =
     Model.create
       ~resolution:(Environment.resolution environment ())
       ~model_source
+      ()
     |> Or_error.ok_exn
   in
   List.iter models ~f:add_model_to_memory

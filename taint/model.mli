@@ -17,7 +17,12 @@ type t = {
 }
 [@@deriving show, sexp]
 
-val create: resolution: Resolution.t -> model_source: string -> t list Or_error.t
+val create
+  : resolution: Resolution.t
+  -> ?verify: bool
+  -> model_source: string
+  -> unit
+  -> t list Or_error.t
 
 val get_callsite_model
   :  resolution: Resolution.t

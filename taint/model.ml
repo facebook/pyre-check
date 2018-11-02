@@ -107,7 +107,7 @@ let taint_return model expression =
       Or_error.return model
 
 
-let create ~resolution ~model_source =
+let create ~resolution ?(verify = true) ~model_source () =
   let defines =
     let filter_define = function
       | { Node.value = Define define; _ } ->
@@ -141,14 +141,15 @@ let create ~resolution ~model_source =
 
     (* Check model matches callables primary signature. *)
     begin
-      match annotation with
-      | Type.Callable {
+      match verify, annotation with
+      | true,
+        (Type.Callable {
           Type.Callable.implementation = {
             Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
             _;
           };
           _;
-        } as callable ->
+        } as callable) ->
           if List.length parameters <> List.length implementation_parameters then
             Format.asprintf
               "Model signature parameters for `%a` do not match implementation `%a`"
@@ -228,7 +229,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
                 "def %s(command: TaintSink[RemoteCodeExecution], shell): ..."
                 target
             in
-            create ~resolution ~model_source
+            create ~verify:false ~resolution ~model_source ()
             |> Or_error.ok_exn
             |> List.hd_exn
           in

@@ -21,7 +21,7 @@ let assert_model ~model_source ~expect =
   in
   let models =
     Test.trim_extra_indentation model_source
-    |> (fun model_source -> Model.create ~resolution ~model_source)
+    |> (fun model_source -> Model.create ~resolution ~model_source ())
     |> Or_error.ok_exn
   in
   let is_model callable { call_target; _ } =
@@ -190,7 +190,7 @@ let test_invalid_models _ =
         ()
     in
     let error_message =
-      match Model.create ~resolution ~model_source with
+      match Model.create ~resolution ~model_source () with
       | Error error -> Base.Error.to_string_hum error
       | _ -> failwith "Invalid model should result in error"
     in
