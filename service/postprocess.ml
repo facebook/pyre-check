@@ -12,44 +12,48 @@ open Pyre
 open PostprocessSharedMemory
 
 
-let remove_ignores handles =
-  let keys = List.map ~f:File.Handle.show handles in
-  List.filter_map ~f:IgnoreKeys.get keys
-  |> List.concat
-  |> IgnoreLines.KeySet.of_list
-  |> IgnoreLines.remove_batch;
-  keys
-  |> IgnoreKeys.KeySet.of_list
-  |> IgnoreKeys.remove_batch
-
-
-let register_ignores_for_handle handle =
-  let key = File.Handle.show handle in
-  (* Register new ignores. *)
-  match Ast.SharedMemory.Sources.get handle with
-  | Some source ->
-      let ignore_lines = Source.ignore_lines source in
-      List.iter
-        ~f:(fun ignore_line -> IgnoreLines.add (Ignore.key ignore_line) ignore_line)
-        ignore_lines;
-      IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
-  | _ ->
-      ()
-
-
-let register_mode ~configuration handle =
-  let mode =
-    match Ast.SharedMemory.Sources.get handle with
-    | Some source -> Source.mode source ~configuration
-    | _ -> Source.Default
-  in
-  ErrorModes.add handle mode
-
-
 let register_ignores ~configuration scheduler handles =
+  (* Invalidate keys before updating *)
+  let remove_ignores handles =
+    let keys = List.map ~f:File.Handle.show handles in
+    List.filter_map ~f:IgnoreKeys.get keys
+    |> List.concat
+    |> IgnoreLines.KeySet.of_list
+    |> IgnoreLines.remove_batch;
+    keys
+    |> IgnoreKeys.KeySet.of_list
+    |> IgnoreKeys.remove_batch
+  in
+  let remove_modes handles =
+    ErrorModes.KeySet.of_list handles
+    |> ErrorModes.remove_batch
+  in
   let timer = Timer.start () in
   remove_ignores handles;
+  remove_modes handles;
 
+  (* Register new values *)
+  let register_ignores_for_handle handle =
+    let key = File.Handle.show handle in
+    (* Register new ignores. *)
+    match Ast.SharedMemory.Sources.get handle with
+    | Some source ->
+        let ignore_lines = Source.ignore_lines source in
+        List.iter
+          ~f:(fun ignore_line -> IgnoreLines.add (Ignore.key ignore_line) ignore_line)
+          ignore_lines;
+        IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
+    | _ ->
+        ()
+  in
+  let register_mode ~configuration handle =
+    let mode =
+      match Ast.SharedMemory.Sources.get handle with
+      | Some source -> Source.mode source ~configuration
+      | _ -> Source.Default
+    in
+    ErrorModes.add handle mode
+  in
   let register handles =
     List.iter handles ~f:register_ignores_for_handle;
     List.iter handles ~f:(register_mode ~configuration);
