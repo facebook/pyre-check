@@ -179,7 +179,7 @@ def _find_python_paths(root: str) -> List[str]:
         return output.split("\n")
     except subprocess.CalledProcessError:
         raise EnvironmentException(
-            "pyre was unable to locate a analysis directory. "
+            "Pyre was unable to locate an analysis directory. "
             "Ensure that your project is built and re-run pyre."
         )
 
