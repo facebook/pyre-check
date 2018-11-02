@@ -94,7 +94,8 @@ def _normalize(targets: List[str]) -> List[str]:
                 "s" if len(targets_to_destinations) > 1 else "",
             )
         return targets_to_destinations
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as error:
+        LOG.error("Buck output so far: %s", error.stderr.decode().strip())
         raise BuckException(
             "Seems like `{}` is hanging.\n   "
             "Try running `buck clean` before trying again.".format(
