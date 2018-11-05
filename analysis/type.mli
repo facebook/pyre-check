@@ -217,6 +217,7 @@ module Callable : sig
     val parameters: type_t overload -> Parameter.parameter list option
 
     val return_annotation: type_t overload -> type_t
+    val is_undefined: type_t overload -> bool
   end
 
   val from_overloads: t list -> t option

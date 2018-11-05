@@ -1742,6 +1742,11 @@ module Callable = struct
       | Undefined -> None
 
     let return_annotation { annotation; _ } = annotation
+
+    let is_undefined { parameters; annotation } =
+      match parameters with
+      | Undefined -> is_unknown annotation
+      | _ -> false
   end
 
 

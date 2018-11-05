@@ -81,6 +81,7 @@ let test_select _ =
       in
       Signature.select ~arguments ~resolution ~callable
     in
+    let callable = { callable with Type.Callable.overloads = [] } in
     let expected =
       match expected with
       | `Found expected ->
@@ -323,39 +324,45 @@ let test_select _ =
 
   (* Ranking. *)
   assert_select
-    "[[Any], Any][[[int, int, str], int][[int, str, str], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0)"
     (* Ambiguous, pick the first one. *)
     (`NotFoundMissingArgumentWithClosest
        ("[[int, int, str], int]", "anonymous"));
 
   assert_select
-    "[[Any], Any][[[str], str][[int, str], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[str], str][[int, str], int]]"
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
     (`NotFoundMismatchWithClosest
        ("[[str], str]", Type.integer, Type.string, None, 1));
 
   assert_select
-    "[[Any], Any][[[int, Keywords(keywords)], int][[int, str], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[int, Keywords(keywords)], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest
        ("[[int, str], int]", Type.integer, Type.string, None, 2));
 
   assert_select
-    "[[Any], Any][[[str], str][[], str]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[str], str][[], str]]"
     "(1)"
     (`NotFoundMismatchWithClosest
        ("[[str], str]", Type.integer, Type.string, None, 1));
 
   assert_select
-    "[[Any], Any][[[str, Keywords(keywords)], int][[Keywords(keywords)], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[str, Keywords(keywords)], int][[Keywords(keywords)], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest
        ("[[str, Keywords(keywords)], int]", Type.integer, Type.string, None, 1));
 
   assert_select
-    "[[Any], Any][[[int, int, str], int][[int, str, str], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0, 'string')"
     (* Clear winner. *)
     (`NotFoundMissingArgumentWithClosest
@@ -363,10 +370,32 @@ let test_select _ =
         "anonymous"));
 
   assert_select
-    "[[Any], Any][[[int, str, str, str], int][[int, str, bool], int]]"
+    ~allow_undefined:true
+    "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
     (`NotFoundMissingArgumentWithClosest
        ("[[int, str, bool], int]", "anonymous"));
+
+  (* Match not found in overloads: error against implementation if it exists. *)
+  assert_select
+    "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
+    "(unknown)"
+    (`NotFoundMismatch (Type.Top, Type.union [Type.integer; Type.string], None, 1));
+
+  assert_select
+    "[[bool], bool][[[str], str][[int], int]]"
+    "(unknown)"
+    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
+
+  assert_select
+    "[[bool], bool][[[str, str], str][[int, int], int]]"
+    "(unknown)"
+    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
+
+  assert_select
+    "[[bool], bool][[[str, str], str][[int, int], int]]"
+    "(int, str)"
+    (`NotFoundTooManyArguments (1, 2));
 
   (* Void functions. *)
   assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");

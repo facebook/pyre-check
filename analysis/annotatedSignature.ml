@@ -628,11 +628,21 @@ let select
     >>| determine_reason
     |> Option.value ~default:(NotFound { callable; reason = None })
   in
-  (if List.is_empty overloads then [implementation] else overloads)
-  |> List.filter_map ~f:match_arity
-  |> List.map ~f:check_annotations
-  |> List.map ~f:calculate_rank
-  |> find_closest
+  let get_match signatures =
+    signatures
+    |> List.filter_map ~f:match_arity
+    |> List.map ~f:check_annotations
+    |> List.map ~f:calculate_rank
+    |> find_closest
+  in
+  if List.is_empty overloads then
+    get_match [implementation]
+  else if Type.Callable.Overload.is_undefined implementation then
+    get_match overloads
+  else
+    match get_match overloads with
+    | Found signature_match -> Found signature_match
+    | NotFound _ -> get_match [implementation]
 
 
 let determine signature ~resolution ~annotation =
