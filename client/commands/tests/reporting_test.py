@@ -123,3 +123,16 @@ class ReportingTest(unittest.TestCase):
 
         with patch("builtins.open", mock_open(read_data='{"continuous": true}')):
             self.assertEqual(handler._get_directories_to_analyze(), {"base"})
+
+        arguments.local_configuration_directory = "a/b"
+        handler = commands.Reporting(
+            arguments, configuration, AnalysisDirectory("base")
+        )
+        self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})
+
+        arguments.local_configuration_directory = "a/b"
+        arguments.local_configuration = "a"
+        handler = commands.Reporting(
+            arguments, configuration, AnalysisDirectory("base")
+        )
+        self.assertEqual(handler._get_directories_to_analyze(), {"a"})
