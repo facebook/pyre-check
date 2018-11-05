@@ -18,6 +18,7 @@ val flush: unit -> unit
 val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
+  -> ?always_log_time_threshold: float
   -> ?section: Log.section
   -> ?category: string
   -> name: string

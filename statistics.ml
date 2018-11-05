@@ -145,7 +145,8 @@ let log ?(flush = false) ?(randomly_log_every = 1) category sample =
 
 let performance
     ?(flush = false)
-    ?(randomly_log_every = 1)
+    ?randomly_log_every
+    ?always_log_time_threshold
     ?(section = `Performance)
     ?(category = "perfpipe_pyre_performance")
     ~name
@@ -154,12 +155,20 @@ let performance
     ?(normals = []) () =
   let seconds = Timer.stop timer in
   let milliseconds = Int.of_float (seconds *. 1000.0) in
+  let randomly_log_every =
+    match always_log_time_threshold with
+    | Some threshold ->
+        let threshold_milliseconds = Int.of_float (threshold *. 1000.0) in
+        if milliseconds > threshold_milliseconds then None else randomly_log_every
+    | None ->
+        randomly_log_every
+  in
   Log.log ~section "%s: %fs" (String.capitalize name) seconds;
   sample
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)
     ()
-  |> log ~flush ~randomly_log_every category
+  |> log ~flush ?randomly_log_every category
 
 
 let coverage ?(flush = false) ~path ~coverage  () =
