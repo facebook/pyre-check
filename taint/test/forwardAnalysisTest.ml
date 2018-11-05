@@ -253,6 +253,37 @@ let test_local_copy _ =
     ]
 
 
+let test_access_paths _ =
+  assert_taint
+    {|
+      def access_downward_closed():
+        o = { 'a': __testSource() }
+        x = o.a
+        return x.g
+
+      def access_non_taint():
+        o = { 'a': __testSource() }
+        x = o.b
+        return x.g
+    |}
+    [
+      {
+        define_name = "qualifier.access_downward_closed";
+        returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.access_non_taint";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+    ]
+
+
 let test_class_model _ =
   assert_taint
     {|
@@ -1052,6 +1083,7 @@ let () =
     "simple">::test_simple_source;
     "hardcoded">::test_hardcoded_source;
     "copy">::test_local_copy;
+    "test_access_paths">::test_access_paths;
     "class_model">::test_class_model;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;

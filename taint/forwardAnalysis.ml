@@ -270,10 +270,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let inferred_taint =
             let taint = analyze_normalized_expression ~resolution location state expression in
             let field = AccessPathTree.Label.Field member in
-            ForwardState.assign_tree_path
+            ForwardState.read_tree
               [field]
-              ~tree:ForwardState.empty_tree
-              ~subtree:taint
+              taint
           in
           ForwardState.join_trees inferred_taint attribute_taint
       | Index { expression; index; _ } ->
