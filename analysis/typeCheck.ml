@@ -1082,6 +1082,53 @@ module State = struct
         in
         { state; resolved }
 
+    | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
+    | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
+        let { state; resolved = iterator } = forward_expression ~state ~expression:right in
+        let has_method name =
+          Resolution.class_definition resolution iterator
+          >>| Annotated.Class.create
+          >>| Annotated.Class.has_method ~transitive:true ~resolution ~name:(Access.create name)
+          |> Option.value ~default:false
+        in
+        let converted_call =
+          let { Node.location; _ } = left in
+          if has_method "__contains__" then
+            let arguments = [{ Argument.name = None; value = left }] in
+            Access ((access right) @ Access.call ~arguments ~location ~name:"__contains__" ())
+          else if has_method "__iter__" then
+            Access (
+              (access right) @
+              Access.call ~location ~name:"__iter__" () @
+              Access.call ~location ~name:"__next__" () @
+              Access.call
+                ~arguments:[{ Argument.name = None; value = left }]
+                ~location
+                ~name:"__eq__"
+                ()
+            )
+          else
+            Access (
+              access right @
+              Access.call
+                ~arguments:[{
+                    Argument.name = None;
+                    value = { Node.value = Expression.Integer 0; location };
+                  }]
+                ~location
+                ~name:"__getitem__"
+                () @
+              Access.call
+                ~arguments:[{ Argument.name = None; value = left }]
+                ~location
+                ~name:"__eq__"
+                ()
+            )
+        in
+        converted_call
+        |> Node.create ~location
+        |> fun call -> forward_expression ~state ~expression:call
+
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) ->
         begin
           match ComparisonOperator.override operator with

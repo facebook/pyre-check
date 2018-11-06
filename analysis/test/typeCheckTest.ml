@@ -374,6 +374,26 @@ let test_forward_expression _ =
   assert_forward "1 < 2" Type.bool;
   assert_forward "1 < 2 < 3" Type.bool;
   assert_forward "1 is 2" Type.bool;
+  assert_forward
+    ~precondition:["container", Type.list Type.integer]
+    ~postcondition:["container", Type.list Type.integer]
+    "1 in container"
+    Type.bool;
+  assert_forward
+    ~precondition:["container", Type.list Type.integer]
+    ~postcondition:["container", Type.list Type.integer]
+    "1 not in container"
+    Type.bool;
+  assert_forward
+    ~precondition:["container", Type.iterator Type.integer]
+    ~postcondition:["container", Type.iterator Type.integer]
+    "1 in container"
+    Type.bool;
+  assert_forward
+    ~precondition:["container", Type.iterator Type.integer]
+    ~postcondition:["container", Type.iterator Type.integer]
+    "1 not in container"
+    Type.bool;
   assert_forward ~errors:(`Undefined 1) "undefined < 1" Type.Top;
   assert_forward ~errors:(`Undefined 2) "undefined == undefined" Type.Top;
 
@@ -1991,7 +2011,64 @@ let test_check _ =
         bar, baz = list(range(2))
         return bar
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class WeirdContains:
+        def __contains__(self, x: int) -> int:
+          ...
+      reveal_type(1 in WeirdContains())
+    |}
+    ["Revealed type [-1]: Revealed type for `1 in WeirdContains()` is `int`."];
+
+  assert_type_errors
+    {|
+      class WeirdIterator:
+        def __eq__(self, other) -> str:
+          ...
+        def __iter__(self) -> typing.Iterator[WeirdIterator]:
+          ...
+      reveal_type(1 in WeirdIterator())
+    |}
+    ["Revealed type [-1]: Revealed type for `1 in WeirdIterator()` is `str`."];
+  assert_type_errors
+    {|
+      class WeirdEqual:
+        def __eq__(self, other: object) -> typing.List[int]:
+          ...
+      class WeirdGetItem:
+        def __getitem__(self, x: int) -> WeirdEqual:
+          ...
+      reveal_type(1 in WeirdGetItem())
+    |}
+    ["Revealed type [-1]: Revealed type for `1 in WeirdGetItem()` is `typing.List[int]`."];
+  assert_type_errors
+    {|
+      class Equal:
+        def __eq__(self, other: object) -> str:
+          ...
+      class Multiple:
+        def __iter__(self, x: int) -> typing.Iterator[Equal]:
+          ...
+        def __contains__(self, a: object) -> bool:
+          ...
+      reveal_type(1 in Multiple())
+    |}
+    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `bool`."];
+  assert_type_errors
+    {|
+      class Equal:
+        def __eq__(self, other: object) -> str:
+          ...
+      class Multiple:
+        def __getitem__(self, x: int) -> Equal:
+          ...
+        def __contains__(self, a: object) -> int:
+          ...
+      reveal_type(1 in Multiple())
+    |}
+    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `int`."]
 
 
 let test_check_assign _ =

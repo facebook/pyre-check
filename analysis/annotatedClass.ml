@@ -935,8 +935,13 @@ let overrides definition ~resolution ~name =
   |> List.find_map ~f:find_override
 
 
-let has_method definition ~resolution ~name =
-  attribute definition ~resolution ~name ~instantiated:(annotation definition ~resolution)
+let has_method ?transitive definition ~resolution ~name =
+  attribute
+    ?transitive
+    definition
+    ~resolution
+    ~name
+    ~instantiated:(annotation definition ~resolution)
   |> Attribute.annotation
   |> Annotation.annotation
   |> Type.is_callable

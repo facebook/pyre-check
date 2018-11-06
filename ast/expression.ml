@@ -596,12 +596,12 @@ module ComparisonOperator = struct
       | Equals -> Some "__eq__"
       | GreaterThan -> Some "__gt__"
       | GreaterThanOrEquals -> Some "__ge__"
-      | In -> Some "__contains__"
       | Is
       | IsNot -> None
       | LessThan -> Some "__lt__"
       | LessThanOrEquals -> Some "__le__"
       | NotEquals -> Some "__ne__"
+      | In -> None
       | NotIn -> None
     in
     operator

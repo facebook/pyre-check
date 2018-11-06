@@ -357,7 +357,8 @@ let test_comparison_operator_override _ =
   assert_override "a < b" (Some "a.__lt__(b)");
   assert_override "a == b" (Some "a.__eq__(b)");
   assert_override "a >= b" (Some "a.__ge__(b)");
-  assert_override "a in b" (Some "b.__contains__(a)");
+  assert_override "a in b" None;
+  assert_override "a not in b" None;
   assert_override "a is not b" None
 
 
