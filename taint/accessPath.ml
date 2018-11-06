@@ -315,10 +315,9 @@ let is_local identifier =
 let global_prefix ~resolution access =
   let rec module_prefix ~lead ~tail =
     match tail with
-    | (Access.Identifier identifier) :: new_tail ->
+    | (Access.Identifier _ as identifier) :: new_tail ->
         let new_lead = lead @ [identifier] in
-        let access = Access.create_from_identifiers lead in
-        if Resolution.module_definition resolution access |> Option.is_some then
+        if Resolution.module_definition resolution lead |> Option.is_some then
           module_prefix ~lead:new_lead ~tail:new_tail
         else
           lead, tail
@@ -335,8 +334,7 @@ let split_root ~resolution = function
       Expression expression, rest
   | (Access.Identifier _ :: _) as access ->
       let prefix, rest = global_prefix access ~resolution in
-      Global (List.map prefix ~f:(fun identifier -> Access.Identifier identifier)),
-      rest
+      Global prefix, rest
   | Access.Call _ :: _ ->
       failwith "invalid root (call) in access"
   | _ ->
