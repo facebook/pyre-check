@@ -135,3 +135,44 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_has_calls(
                 [call(command=commands.Incremental.NAME)], any_order=True
             )
+        arguments = mock_arguments()
+
+        configuration = mock_configuration()
+        configuration.version_hash = "hash"
+        analysis_directory = AnalysisDirectory(".")
+
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads",
+            return_value=[
+                {
+                    "line": 4,
+                    "column": 11,
+                    "path": "c.py",
+                    "code": -1,
+                    "name": "Revealed type",
+                    "description": ".Fake error",
+                    "inference": {},
+                    "define": "c.$toplevel",
+                }
+            ],
+        ):
+            command = incremental.Incremental(
+                arguments, configuration, analysis_directory
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+
+            command.run()
+            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            self.assertEqual(command._exit_code, commands.ExitCode.FOUND_ERRORS)
