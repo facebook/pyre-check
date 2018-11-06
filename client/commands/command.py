@@ -218,6 +218,7 @@ class Command:
             return Result(code=process.returncode, output=output)
 
     def _relative_path(self, path) -> str:
+        # pyre-fixme: Expected str, got bytes
         return os.path.relpath(path, self._original_directory)
 
     def _state(self) -> State:

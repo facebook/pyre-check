@@ -352,7 +352,9 @@ def main() -> int:
                     and not arguments.use_global_shared_analysis_directory
                 )
                 shared_analysis_directory = SharedAnalysisDirectory(
-                    analysis_directories, local_root, isolate
+                    analysis_directories,
+                    local_root,  # pyre-fixme: Expected Optional[str], got bytes
+                    isolate,
                 )
                 analysis_directory = shared_analysis_directory
 
