@@ -5,6 +5,7 @@
 
 open Ast
 open Expression
+open Analysis
 
 
 type t = (Access.t list) Access.Map.t

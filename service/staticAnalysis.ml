@@ -7,6 +7,7 @@ open Core
 
 open Analysis
 open Ast
+open Interprocedural
 open Statement
 open Pyre
 
@@ -41,21 +42,21 @@ let overrides_of_source ~environment ~source =
 
 let record_and_merge_call_graph ~environment ~call_graph ~path ~source =
   let record_and_merge_call_graph path map call_graph =
-    CallGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
+    DependencyGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
     let add_call_graph ~key:caller ~data:callees =
-      CallGraphSharedMemory.add_call_edges ~caller ~callees
+      DependencyGraphSharedMemory.add_call_edges ~caller ~callees
     in
     Access.Map.iteri call_graph ~f:add_call_graph;
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  Analysis.CallGraph.create ~environment ~source
+  DependencyGraph.create ~environment ~source
   |> record_and_merge_call_graph path call_graph
 
 
 let record_overrides ~environment ~source =
   let record_overrides overrides_map =
     let record_override_edge ~key:ancestor ~data:children =
-      CallGraphSharedMemory.add_overrides ~ancestor ~children
+      DependencyGraphSharedMemory.add_overrides ~ancestor ~children
     in
     Access.Map.iteri overrides_map ~f:record_override_edge
   in
@@ -162,7 +163,7 @@ let analyze
   Statistics.performance ~name:"Call graph built" ~timer ();
   Log.info "Call graph edges: %d" (Access.Map.length call_graph);
 
-  let caller_map = CallGraph.reverse call_graph in
+  let caller_map = DependencyGraph.reverse call_graph in
 
   let callables, stubs =
     let classify_source (callables, stubs) define =

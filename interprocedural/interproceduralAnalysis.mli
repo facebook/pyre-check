@@ -19,7 +19,7 @@ val compute_fixpoint
   -> scheduler:Scheduler.t
   -> environment: (module Analysis.Environment.Handler)
   -> analyses:Kind.abstract list
-  -> caller_map:Analysis.CallGraph.t
+  -> caller_map:DependencyGraph.t
   -> all_callables:Callable.t list
   -> Fixpoint.Epoch.t
   -> int

@@ -8,6 +8,7 @@ open OUnit2
 
 open Analysis
 open Ast
+open Interprocedural
 open Statement
 
 open Test
@@ -24,7 +25,7 @@ let create_call_graph source =
   let environment = Test.environment ~configuration () in
   Service.Environment.populate environment [source];
   TypeCheck.check ~configuration ~environment ~source |> ignore;
-  CallGraph.create ~environment ~source
+  DependencyGraph.create ~environment ~source
 
 
 let compare_call_graph call_graph ~expected =
@@ -50,7 +51,7 @@ let assert_call_graph source ~expected =
 let assert_reverse_call_graph source ~expected =
   let call_graph =
     create_call_graph source
-    |> CallGraph.reverse
+    |> DependencyGraph.reverse
     |> Access.Map.to_alist
   in
   compare_call_graph call_graph ~expected
@@ -308,10 +309,10 @@ let test_strongly_connected_components _ =
     Service.Environment.populate environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let partitions =
-      let edges = CallGraph.create ~environment ~source in
-      CallGraph.partition ~edges
+      let edges = DependencyGraph.create ~environment ~source in
+      DependencyGraph.partition ~edges
     in
-    let printer partitions = Format.asprintf "%a" CallGraph.pp_partitions partitions in
+    let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in
     assert_equal ~printer expected partitions
   in
 

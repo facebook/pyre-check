@@ -5,11 +5,11 @@
 
 
 type section = [
-  | `CallGraph
   | `Check
   | `Coverage
   | `Debug
   | `Dependencies
+  | `DependencyGraph
   | `Dotty
   | `Dump
   | `Environment

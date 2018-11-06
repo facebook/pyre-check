@@ -43,7 +43,7 @@ let create_call_graph ?(test_file = "test_file") source =
   let call_graph =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
-      ~call_graph:CallGraph.empty
+      ~call_graph:DependencyGraph.empty
       ~path:handle
       ~source
   in
@@ -59,7 +59,7 @@ let create_call_graph ?(test_file = "test_file") source =
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let call_graph, all_callables = create_call_graph source in
-  let caller_map = CallGraph.reverse call_graph in
+  let caller_map = DependencyGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
   let configuration = Configuration.Analysis.create () in
   let environment =
@@ -395,7 +395,7 @@ let test_integration _ =
         ~scheduler:(Scheduler.mock ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
-        ~caller_map:(CallGraph.reverse call_graph)
+        ~caller_map:(DependencyGraph.reverse call_graph)
         ~all_callables
         Fixpoint.Epoch.initial
       |> ignore;

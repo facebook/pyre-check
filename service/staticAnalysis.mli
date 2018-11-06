@@ -6,6 +6,7 @@
 open Analysis
 open Ast
 open Statement
+open Interprocedural
 
 
 val overrides_of_source
@@ -15,10 +16,10 @@ val overrides_of_source
 
 val record_and_merge_call_graph
   :  environment: (module Environment.Handler)
-  -> call_graph: CallGraph.t
+  -> call_graph: DependencyGraph.t
   -> path: File.Handle.t
   -> source: Source.t
-  -> CallGraph.t
+  -> DependencyGraph.t
 
 val record_overrides: environment: (module Environment.Handler) -> source: Source.t -> unit
 

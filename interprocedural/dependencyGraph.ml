@@ -9,6 +9,7 @@ open Pyre
 
 open Ast
 open Statement
+open Analysis
 
 
 type t = (Access.t list) Access.Map.t
@@ -42,7 +43,7 @@ let create ~environment ~source =
         let process_access call_graph access =
           let add_call_edge call_graph caller callee =
             Log.log
-              ~section:`CallGraph
+              ~section:`DependencyGraph
               "Adding call edge %a -> %a"
               Access.pp caller
               Access.pp callee;
@@ -162,5 +163,5 @@ let partition ~edges =
   let reverse_edges = reverse_edges edges in
   let result = depth_first_search edges (Access.Table.keys edges) in
   let partitions = depth_first_search reverse_edges (List.concat result) in
-  Log.log ~section:`CallGraph "%a" pp_partitions partitions;
+  Log.log ~section:`DependencyGraph "%a" pp_partitions partitions;
   partitions
