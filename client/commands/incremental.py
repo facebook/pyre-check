@@ -43,7 +43,10 @@ class Incremental(Reporting):
             self._print(errors)
         except ClientException as exception:
             LOG.error("Error while waiting for server: %s", str(exception))
-            LOG.error("Run `%s restart` in order to restart the server.", sys.argv[0])
+            arguments = sys.argv[:-1] if sys.argv[-1] == "incremental" else sys.argv
+            LOG.error(
+                "Run `%s restart` in order to restart the server.", " ".join(arguments)
+            )
             self._exit_code = ExitCode.FAILURE
 
     def _flags(self) -> List[str]:
