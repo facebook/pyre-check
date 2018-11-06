@@ -42,6 +42,7 @@ let parse_modules_job ~configuration ~files =
   let parse file =
     file
     |> parse_source ~configuration ~show_parser_errors:false
+    >>| Analysis.Preprocessing.preprocess
     >>| (fun source ->
         let add_module_from_source
             {

@@ -279,10 +279,18 @@ let test_register_modules _ =
         ~content:(trim_extra_indentation raw_source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
     in
+    (* Use a "canary" to inspect the exports of a.py between its
+       module parsing stage and source parsing stage. *)
+    let import_non_toplevel =
+      File.create
+        ~content:"from .a import *"
+        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"canary.py")
+    in
+    let files = [file; import_non_toplevel] in
 
     (* Build environment. *)
-    Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier [file]);
-    Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) [file]);
+    Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
+    Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
     let configuration =
       Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
     in
@@ -290,7 +298,7 @@ let test_register_modules _ =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler:(Scheduler.mock ())
-        ~files:[file]
+        ~files
     in
     (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in
@@ -299,13 +307,18 @@ let test_register_modules _ =
     Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources;
     assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
 
-    assert_equal
-      ~cmp:(List.equal ~equal:Access.equal)
-      ~printer:(fun expression_list ->
-          List.map ~f:(Access.show) expression_list
-          |> String.concat ~sep:", ")
-      (List.map ~f:Access.create expected_exports)
-      (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
+    let assert_exports ~qualifier =
+      assert_equal
+        ~cmp:(List.equal ~equal:Access.equal)
+        ~printer:(fun expression_list ->
+            List.map ~f:(Access.show) expression_list
+            |> String.concat ~sep:", ")
+        (List.map ~f:Access.create expected_exports)
+        (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
+    in
+
+    assert_exports ~qualifier;
+    assert_exports ~qualifier:(Option.value_exn (get_qualifier import_non_toplevel))
   in
   assert_module_exports
     {|
@@ -339,7 +352,15 @@ let test_register_modules _ =
       from x import y as z
       def fuzz() -> int: pass
     |}
-    ["b"]
+    ["b"];
+  assert_module_exports
+    {|
+      if sys.version_info >= (3, 7):
+        def foo() -> int: pass
+      if sys.platform != "win32":
+        def fooz() -> int: pass
+    |}
+    ["foo"; "fooz"]
 
 
 let () =
