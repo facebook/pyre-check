@@ -543,6 +543,9 @@ let register_aliases (module Handler: Handler) sources =
         tracked annotation
         >>| fun annotation -> Type.Tuple (Type.Unbounded annotation)
 
+    | Type.TypedDictionary _ ->
+        Some annotation
+
     | Type.Union annotations ->
         let tracked = List.filter_map annotations ~f:tracked in
         if List.length tracked = List.length annotations then

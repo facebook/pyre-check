@@ -68,6 +68,11 @@ and constraints =
   | Explicit of t list
   | Unconstrained
 
+and typed_dictionary_field = {
+  name: string;
+  annotation: t;
+}
+
 and t =
   | Bottom
   | Callable of t Record.Callable.record
@@ -78,6 +83,7 @@ and t =
   | Primitive of Identifier.t
   | Top
   | Tuple of tuple
+  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
   | Variable of { variable: Identifier.t; constraints: constraints }
 [@@deriving compare, eq, sexp, show]

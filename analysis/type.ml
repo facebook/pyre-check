@@ -101,6 +101,12 @@ and constraints =
   | Unconstrained
 
 
+and typed_dictionary_field = {
+  name: string;
+  annotation: t;
+}
+
+
 and t =
   | Bottom
   | Callable of t Record.Callable.record
@@ -111,6 +117,7 @@ and t =
   | Primitive of Identifier.t
   | Top
   | Tuple of tuple
+  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
   | Variable of { variable: Identifier.t; constraints: constraints }
 [@@deriving compare, eq, sexp, show, hash]
@@ -294,6 +301,17 @@ let rec pp format annotation =
             Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
+  | TypedDictionary { name; fields } ->
+      let fields =
+        fields
+        |> List.map ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp annotation)
+        |> String.concat ~sep:", "
+      in
+      Format.fprintf format
+        "TypedDict `%a` with fields (%s)"
+        Identifier.pp
+        name
+        fields
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
@@ -719,6 +737,14 @@ let rec create ~aliases { Node.value = expression; _ } =
                               Unconstrained
                         in
                         Variable { variable with constraints }
+                    | TypedDictionary { fields; name } ->
+                        let fields =
+                          let resolve_field_annotation { name; annotation } =
+                            { name; annotation = resolve visited annotation }
+                          in
+                          List.map fields ~f:resolve_field_annotation;
+                        in
+                        TypedDictionary { name; fields }
                     | Union elements ->
                         Union (List.map elements ~f:(resolve visited))
                     | Bottom
@@ -962,6 +988,48 @@ let rec create ~aliases { Node.value = expression; _ } =
           when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
             parse_callable ~signatures ()
 
+        | Access ([
+            Access.Identifier mypy_extensions;
+            Access.Identifier typed_dictionary;
+            Access.Identifier get_item;
+            Access.Call({
+                Node.value = [{
+                    Argument.name = None;
+                    value = {
+                      Node.value = Expression.Tuple ({
+                          Node.value = Expression.String { value = typed_dictionary_name; _ };
+                          _;
+                        } :: fields);
+                      _;
+                    };
+                  }];
+                _;
+              });
+          ])
+          when Identifier.show mypy_extensions = "mypy_extensions" &&
+               Identifier.show typed_dictionary = "TypedDict" &&
+               Identifier.show get_item  = "__getitem__" ->
+            let fields =
+              let tuple_to_field =
+                function
+                | {
+                  Node.value = Expression.Tuple [
+                      { Node.value = Expression.String { value = field_name; _ }; _ };
+                      field_annotation;
+                    ];
+                  _;
+                } ->
+                    Some { name = field_name; annotation = create field_annotation ~aliases }
+                | _ ->
+                    None
+              in
+              fields
+              |> List.filter_map ~f:tuple_to_field
+            in
+            TypedDictionary {
+              name = Identifier.create typed_dictionary_name;
+              fields;
+            }
         | Access access ->
             parse [] access
 
@@ -1122,6 +1190,32 @@ let rec expression annotation =
           | Unbounded parameter -> [parameter; Primitive (Identifier.create "...")]
         in
         (Access.create "typing.Tuple") @ (get_item_call parameters)
+    | TypedDictionary { name; fields; } ->
+        let argument =
+          let tuple =
+            let tail =
+              let field_to_tuple { name; annotation } =
+                Node.create_with_default_location (Expression.Tuple [
+                    Node.create_with_default_location (Expression.String {
+                        value = name;
+                        kind = StringLiteral.String;
+                      });
+                    expression annotation;
+                  ])
+              in
+              List.map fields ~f:field_to_tuple
+            in
+            Expression.String { value = Identifier.show name; kind = StringLiteral.String }
+            |> Node.create_with_default_location
+            |> (fun name -> Expression.Tuple(name :: tail))
+            |> Node.create_with_default_location
+          in
+          { Argument.name = None; value = tuple; }
+        in
+        (Access.create "mypy_extensions.TypedDict") @ [
+          Access.Identifier (Identifier.create "__getitem__");
+          Access.Call (Node.create_with_default_location ([argument]));
+        ]
     | Union parameters ->
         (Access.create "typing.Union") @ (get_item_call parameters)
     | Variable { variable; _ } -> split variable
@@ -1183,6 +1277,11 @@ let rec exists annotation ~predicate =
     | Tuple (Bounded parameters)
     | Union parameters ->
         List.exists ~f:(exists ~predicate) parameters
+
+    | TypedDictionary { name; fields } ->
+        let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
+        exists (Primitive name) ~predicate ||
+        List.exists annotations ~f:(exists ~predicate)
 
     | Bottom
     | Deleted
@@ -1330,6 +1429,9 @@ let rec variables = function
       List.concat_map ~f:variables parameters
   | (Variable _) as annotation ->
       [annotation]
+  | TypedDictionary { fields; _ } ->
+      let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
+      List.concat_map annotations ~f:variables
   | Union elements ->
       List.concat_map ~f:variables elements
   | Bottom
@@ -1376,6 +1478,9 @@ let rec primitives annotation =
             []
       end
 
+  | TypedDictionary { name; fields } ->
+      let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
+      Primitive name :: (List.concat_map annotations ~f:primitives)
   | Parametric { parameters; _ }
   | Tuple (Bounded parameters)
   | Union parameters ->

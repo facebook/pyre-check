@@ -287,7 +287,17 @@ let test_create _ =
         overloads = [];
         implicit = Type.Callable.Function;
       });
-  assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ())
+  assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
+
+  assert_create
+    "mypy_extensions.TypedDict[('Movie', ('year', int), ('name', str))]"
+    (Type.TypedDictionary {
+        name = (Identifier.create "Movie");
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+      })
 
 
 let test_instantiate _ =
@@ -419,7 +429,18 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([int, Variable(variable, int), Keywords(keywords, str)], int))"
+    "typing.Callable.__getitem__(([int, Variable(variable, int), Keywords(keywords, str)], int))";
+
+  assert_expression
+    (Type.TypedDictionary {
+        name = Identifier.create "Movie";
+        fields = [
+          { name = "title"; annotation = Type.string };
+          { name = "year"; annotation = Type.integer };
+        ];
+      }
+    )
+    "mypy_extensions.TypedDict[(\"Movie\", (\"title\", str), (\"year\", int))]"
 
 
 let test_union _ =
