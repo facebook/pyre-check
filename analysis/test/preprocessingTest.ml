@@ -1426,6 +1426,33 @@ let test_classes _ =
     [class_define; inner]
 
 
+let test_try_preprocess _ =
+  let assert_try_preprocess source expected =
+    let parse source =
+      let handle = File.Handle.create "test.py" in
+      parse ~qualifier:(Source.qualifier ~handle) source
+    in
+    let parsed = source |> parse in
+    let expected = expected >>| parse in
+    let printer source =
+      source
+      >>| Format.asprintf "%a" Source.pp
+      |> Option.value ~default:"(none)"
+    in
+    assert_equal
+      ~cmp:(Option.equal Source.equal)
+      ~printer
+      expected
+      (Preprocessing.try_preprocess parsed)
+  in
+  assert_try_preprocess
+    "from foo import *"
+    None;
+  assert_try_preprocess
+    "a = 3"
+    (Some "$local_test$a = 3")
+
+
 let () =
   "preprocessing">:::[
     "expand_string_annotations">::test_expand_string_annotations;
@@ -1438,5 +1465,6 @@ let () =
     "expand_returns">::test_expand_returns;
     "defines">::test_defines;
     "classes">::test_classes;
+    "try_preprocess">::test_try_preprocess;
   ]
   |> Test.run

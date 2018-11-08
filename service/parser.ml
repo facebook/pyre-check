@@ -38,12 +38,26 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
       None
 
 
-let parse_modules_job ~configuration ~files =
-  let parse file =
-    file
-    |> parse_source ~configuration ~show_parser_errors:false
-    >>| Analysis.Preprocessing.preprocess
-    >>| (fun source ->
+module FixpointResult = struct
+  type t = {
+    parsed: File.Handle.t list;
+    not_parsed: File.t list;
+  }
+
+  let merge
+      { parsed = left_parsed; not_parsed = left_not_parsed }
+      { parsed = right_parsed; not_parsed = right_not_parsed } =
+    {
+      parsed = left_parsed @ right_parsed;
+      not_parsed = left_not_parsed @ right_not_parsed;
+    }
+end
+
+
+let parse_sources_job ~show_parser_errors ~force ~configuration ~files =
+  let parse ({ FixpointResult.parsed; not_parsed } as result) file =
+    let use_parsed_source source =
+      let store_result ~preprocessed ~file =
         let add_module_from_source
             {
               Source.qualifier;
@@ -60,46 +74,66 @@ let parse_modules_job ~configuration ~files =
             statements
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
-        add_module_from_source source)
-    |> ignore
-  in
-  List.iter files ~f:parse
 
+        add_module_from_source preprocessed;
+        let handle = File.handle ~configuration file in
+        Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
+        Plugin.apply_to_ast preprocessed
+        |> Ast.SharedMemory.Sources.add handle;
+        handle
+      in
 
-let parse_sources_job ~configuration ~files =
-  let parse handles file =
-    (file
-     |> parse_source ~configuration
-     >>| fun source ->
-     File.handle ~configuration file
-     |> fun handle ->
-     Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
-     source
-     |> Analysis.Preprocessing.preprocess
-     |> Plugin.apply_to_ast
-     |> Ast.SharedMemory.Sources.add handle;
-     handle :: handles)
-    |> Option.value ~default:handles
+      if force then
+        let handle =
+          Analysis.Preprocessing.preprocess source
+          |> fun preprocessed -> store_result ~preprocessed ~file
+        in
+        { result with parsed = handle :: parsed }
+      else
+        match Analysis.Preprocessing.try_preprocess source with
+        | Some preprocessed ->
+            let handle = store_result ~preprocessed ~file in
+            { result with parsed = handle :: parsed }
+        | None ->
+            { result with not_parsed = file :: not_parsed }
+    in
+
+    parse_source ~configuration ~show_parser_errors file
+    >>| use_parsed_source
+    |> Option.value ~default:result
   in
-  List.fold ~init:[] ~f:parse files
+  List.fold ~init:{ FixpointResult.parsed = []; not_parsed = [] } ~f:parse files
 
 
 let parse_sources ~configuration ~scheduler ~files =
-  let handles =
-    Scheduler.iter
-      scheduler
-      ~configuration
-      ~f:(fun files -> parse_modules_job ~configuration ~files)
-      ~inputs:files;
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~initial:[]
-      ~map:(fun _ files -> parse_sources_job ~configuration ~files)
-      ~reduce:(fun new_handles processed_handles -> processed_handles @ new_handles)
-      ~inputs:files
-      ()
+  let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
+    let { FixpointResult.parsed = new_parsed; not_parsed = new_not_parsed } =
+      Scheduler.map_reduce
+        scheduler
+        ~configuration
+        ~initial:{ FixpointResult.parsed = []; not_parsed = [] }
+        ~map:(fun _ files ->
+            parse_sources_job
+              ~show_parser_errors:((List.length parsed) = 0)
+              ~force
+              ~configuration
+              ~files)
+        ~reduce:FixpointResult.merge
+        ~inputs:not_parsed
+        ()
+    in
+
+    if List.is_empty new_not_parsed then
+      (* All done. *)
+      parsed @ new_parsed
+    else if List.is_empty new_parsed then
+      (* No progress was made, force the parse ignoring all temporary errors. *)
+      fixpoint ~force:true input_state
+    else
+      (* We made some progress, continue with the fixpoint. *)
+      fixpoint { parsed = parsed @ new_parsed; not_parsed = new_not_parsed }
   in
+  let handles = fixpoint { parsed = []; not_parsed = files } in
   let () =
     let get_qualifier file =
       File.handle ~configuration file

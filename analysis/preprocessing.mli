@@ -22,7 +22,6 @@ val replace_version_specific_code: Source.t -> Source.t
 val replace_platform_specific_code: Source.t -> Source.t
 
 val expand_type_checking_imports: Source.t -> Source.t
-val expand_wildcard_imports: Source.t -> Source.t
 
 (* Transform returns to make them more amenable for analysis. *)
 val return_access: Access.t
@@ -46,3 +45,6 @@ val dequalify_map: Source.t -> Access.t Access.Map.t
 
 (* Most of the above. *)
 val preprocess: Source.t -> Source.t
+
+(* Attempts to preprocess the source, returns None if preprocessing cannot happen at this time. *)
+val try_preprocess: Source.t -> Source.t option

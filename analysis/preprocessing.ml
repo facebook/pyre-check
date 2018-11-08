@@ -12,6 +12,9 @@ open PyreParser
 open Statement
 
 
+exception MissingWildcardImport
+
+
 let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = Access.t
@@ -1064,7 +1067,7 @@ let expand_type_checking_imports source =
   |> snd
 
 
-let expand_wildcard_imports source =
+let expand_wildcard_imports ~force source =
   let module Transform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = unit
@@ -1074,11 +1077,17 @@ let expand_wildcard_imports source =
         | Import { Import.from = Some from; imports }
           when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
             let expanded_import =
-              Ast.SharedMemory.Modules.get_exports ~qualifier:from
-              >>| List.map ~f:(fun name -> { Import.name; alias = None })
-              >>| (fun expanded -> Import { Import.from = Some from; imports = expanded })
-              >>| (fun value -> { statement with Node.value })
-              |> Option.value ~default:statement
+              match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
+              | Some exports ->
+                  exports
+                  |> List.map ~f:(fun name -> { Import.name; alias = None })
+                  |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
+                  |> (fun value -> { statement with Node.value })
+              | None ->
+                  if force then
+                    statement
+                  else
+                    raise MissingWildcardImport
             in
             state, [expanded_import]
         | _ ->
@@ -1265,7 +1274,7 @@ let dequalify_map source =
   |> fst
 
 
-let preprocess source =
+let preprocess_steps ~force source =
   source
   |> expand_relative_imports
   |> expand_string_annotations
@@ -1273,6 +1282,18 @@ let preprocess source =
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
-  |> expand_wildcard_imports
+  |> expand_wildcard_imports ~force
   |> qualify
   |> expand_returns
+
+
+let preprocess source =
+  preprocess_steps ~force:true source
+
+
+let try_preprocess source =
+  match preprocess_steps ~force:false source with
+  | source ->
+      Some source
+  | exception MissingWildcardImport ->
+      None
