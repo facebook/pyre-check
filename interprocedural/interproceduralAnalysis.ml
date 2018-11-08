@@ -368,12 +368,8 @@ let one_analysis_pass ~analyses step ~environment ~callables =
 
 let get_callable_dependents ~caller_map = function
   | #Callable.real_target as real ->
-      begin
-        match Ast.Expression.Access.Map.find caller_map (Callable.get_real_access real) with
-        | None -> []
-        | Some callers ->
-            List.map ~f:Callable.create_real callers
-      end
+      Callable.Map.find caller_map real
+      |> Option.value ~default:[]
   | #Callable.override_target as _override ->
       (* TODO(T32010422) *)
       []

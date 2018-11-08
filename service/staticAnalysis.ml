@@ -28,25 +28,27 @@ let overrides_of_source ~environment ~source =
     ( ancestor_parent @ Attribute.access ancestor, Method.name child_method)
   in
   let record_overrides map (ancestor_method, child_method) =
+    let ancestor_callable = Interprocedural.Callable.create_real ancestor_method in
+    let child_callable = Interprocedural.Callable.create_real child_method in
     let update_children = function
-      | Some children -> child_method :: children
-      | None -> [child_method]
+      | Some children -> child_callable :: children
+      | None -> [child_callable]
     in
-    Statement.Access.Map.update map ancestor_method ~f:update_children
+    Interprocedural.Callable.Map.update map ancestor_callable ~f:update_children
   in
   Preprocessing.classes source
   |> List.concat_map ~f:(Fn.compose Class.methods Class.create)
   |> List.filter_map ~f:filter_overrides
-  |> List.fold ~init:Statement.Access.Map.empty ~f:record_overrides
+  |> List.fold ~init:Interprocedural.Callable.Map.empty ~f:record_overrides
 
 
 let record_and_merge_call_graph ~environment ~call_graph ~path ~source =
   let record_and_merge_call_graph path map call_graph =
-    DependencyGraphSharedMemory.add_callers ~path (Access.Map.keys call_graph);
+    DependencyGraphSharedMemory.add_callers ~path (Callable.Map.keys call_graph);
     let add_call_graph ~key:caller ~data:callees =
       DependencyGraphSharedMemory.add_call_edges ~caller ~callees
     in
-    Access.Map.iteri call_graph ~f:add_call_graph;
+    Callable.Map.iteri call_graph ~f:add_call_graph;
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
   DependencyGraph.create ~environment ~source
@@ -58,7 +60,7 @@ let record_overrides ~environment ~source =
     let record_override_edge ~key:ancestor ~data:children =
       DependencyGraphSharedMemory.add_overrides ~ancestor ~children
     in
-    Access.Map.iteri overrides_map ~f:record_override_edge
+    Callable.Map.iteri overrides_map ~f:record_override_edge
   in
   overrides_of_source ~environment ~source
   |> record_overrides
@@ -154,14 +156,14 @@ let analyze
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~initial:Access.Map.empty
-      ~map:(fun _ paths -> List.fold paths ~init:Access.Map.empty ~f:build_call_graph)
+      ~initial:Callable.Map.empty
+      ~map:(fun _ paths -> List.fold paths ~init:Callable.Map.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
       ~inputs:paths
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
-  Log.info "Call graph edges: %d" (Access.Map.length call_graph);
+  Log.info "Call graph edges: %d" (Callable.Map.length call_graph);
 
   let caller_map = DependencyGraph.reverse call_graph in
 

@@ -98,12 +98,24 @@ let resolve_indirect_targets ~resolution ~reverse_prefix =
       []
 
 
+let is_global ~resolution ~reverse_prefix access =
+  match reverse_prefix with
+  | Access.Identifier _last::rest ->
+      Resolution.global resolution access
+      |> Option.is_some
+      ||
+      List.rev rest
+      |> Resolution.module_definition resolution
+      |> Option.is_some
+  | _ -> false
+
+
 let resolve_call_targets ~resolution access =
   let rec accumulate_targets targets reverse_prefix = function
     | Access.Call _ as head :: tail ->
         let targets =
           let access = List.rev reverse_prefix in
-          if Resolution.module_definition resolution access |> Option.is_some then
+          if is_global ~resolution ~reverse_prefix access then
             (* Global name *)
             let access, _ = normalize_global ~resolution access in
             Callable.create_real access :: targets

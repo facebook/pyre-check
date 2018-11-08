@@ -12,14 +12,14 @@ open Ast
 open Statement
 
 
-type real_target = [ `RealTarget of Access.t ]
-[@@deriving show, sexp, compare]
+type real_target = [ `RealTarget of string ]
+[@@deriving show, sexp, compare, eq]
 
-type override_target = [ `OverrideTarget of Access.t ]
-[@@deriving show, sexp, compare]
+type override_target = [ `OverrideTarget of string ]
+[@@deriving show, sexp, compare, eq]
 
 type t = [ real_target | override_target ]
-[@@deriving show, sexp, compare]
+[@@deriving show, sexp, compare, eq]
 
 val show: [< t ] -> string
 val external_target_name: [< t ] -> string
@@ -45,3 +45,7 @@ module Set : Caml.Set.S with type elt = t
 (* Shared heap access to top-level definitions. *)
 val add_definition: real_target -> File.Handle.t -> unit
 val get_definition: [< real_target ] -> Define.t Node.t option
+
+
+module Map : Core.Map.S with type Key.t = t
+module Hashable : Core.Hashable.S with type t := t

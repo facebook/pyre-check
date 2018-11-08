@@ -14,27 +14,27 @@ open Pyre
 module SharedMemory = Memory
 
 
-type real_target = [ `RealTarget of Access.t ]
-[@@deriving show, sexp, compare]
+type real_target = [ `RealTarget of string ]
+[@@deriving show, sexp, compare, hash, eq]
 
 
-type override_target = [ `OverrideTarget of Access.t ]
-[@@deriving show, sexp, compare]
+type override_target = [ `OverrideTarget of string ]
+[@@deriving show, sexp, compare, hash, eq]
 
 
 type t = [ real_target | override_target ]
-[@@deriving show, sexp, compare]
+[@@deriving show, sexp, compare, hash, eq]
 
 
 type target_with_stored_result = real_target
 
 
 let create_real access =
-  `RealTarget access
+  `RealTarget (Access.show access)
 
 
 let create_override access =
-  `OverrideTarget access
+  `OverrideTarget (Access.show access)
 
 
 let create { Node.value = Define.{ name; _ }; _ } =
@@ -42,15 +42,20 @@ let create { Node.value = Define.{ name; _ }; _ } =
 
 
 let get_real_access = function
-  | `RealTarget access -> access
+  | `RealTarget name -> Access.create name
 
 
 let get_override_access = function
-  | `OverrideTarget access -> access
+  | `OverrideTarget name -> Access.create name
 
 
 module Key = struct
   type nonrec t = t
+
+  let sexp_of_t = sexp_of_t
+  let t_of_sexp = t_of_sexp
+  let hash = hash
+  let hash_fold_t = hash_fold_t
   let to_string = show
   let compare = compare
 end
@@ -78,26 +83,36 @@ let add_definition callable handle =
   FileOfDefinition.add callable handle
 
 
-let define_matches access { Node.value = { Define.name; _ } ; _ } =
-  name = access
+let define_matches search { Node.value = { Define.name; _ } ; _ } =
+  search = Access.show name
 
 
-let get_definition (`RealTarget access as callable) =
+let get_definition (`RealTarget name as callable) =
   FileOfDefinition.get callable
   >>= Ast.SharedMemory.Sources.get
   >>| Preprocessing.defines
-  >>= List.find ~f:(define_matches access)
+  >>= List.find ~f:(define_matches name)
 
 
 let show = function
-  | `RealTarget target -> Format.sprintf "%s (real)" (Access.show target)
-  | `OverrideTarget target -> Format.sprintf "%s (override)" (Access.show target)
+  | `RealTarget target -> Format.sprintf "%s (real)" target
+  | `OverrideTarget target -> Format.sprintf "%s (override)" target
 
 
 let external_target_name = function
-  | `RealTarget target -> Format.sprintf "%s" (Access.show target)
-  | `OverrideTarget target -> Format.sprintf "O{%s}" (Access.show target)
+  | `RealTarget target -> target
+  | `OverrideTarget target -> Format.sprintf "O{%s}" target
 
+
+let raw_to_string callable =
+  sexp_of_t callable
+  |> Sexp.to_string
 
 let compare target1 target2 =
-  compare (target1 :> t) (target2 :> t)
+  let target1 = (target1 :> t) in
+  let target2 = (target2 :> t) in
+  compare target1 target2
+
+
+module Map = Map.Make(Key)
+module Hashable = Hashable.Make(Key)

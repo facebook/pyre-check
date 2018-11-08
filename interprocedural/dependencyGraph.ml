@@ -12,95 +12,57 @@ open Statement
 open Analysis
 
 
-type t = (Access.t list) Access.Map.t
+type t = (Callable.t list) Callable.Map.t
 
 
-let empty = Access.Map.empty
+let empty = Callable.Map.empty
 
 
 let create ~environment ~source =
   let fold_defines
-      call_graph
+      dependencies
       { Node.value = ({ Define.name = caller; _ } as define); _ } =
     let cfg = Cfg.create define in
-    let annotation_lookup =
-      ResolutionSharedMemory.get caller
-      |> Option.value ~default:Int.Map.Tree.empty
-      |> Int.Map.of_tree
-    in
-    let fold_cfg ~key:node_id ~data:node call_graph =
+    let caller_callable = Callable.create_real caller in
+    let fold_cfg ~key:node_id ~data:node callees =
       let statements = Cfg.Node.statements node in
-      let fold_statements statement_index call_graph statement =
-        let annotations =
-          Map.find
-            annotation_lookup
-            ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { ResolutionSharedMemory.precondition; _ } -> precondition)
-          |> Option.value ~default:Access.Map.Tree.empty
-          |> Access.Map.of_tree
+      let fold_statements index callees statement =
+        let resolution =
+          ResolutionSharedMemory.resolution
+            ~environment
+            ~access:caller
+            ~key:(Some ([%hash: int * int](node_id, index)))
         in
-        let resolution = Environment.resolution environment ~annotations () in
-        let process_access call_graph access =
-          let add_call_edge call_graph caller callee =
+        let process_access callees access =
+          let add_call_edge callees callee =
             Log.log
               ~section:`DependencyGraph
               "Adding call edge %a -> %a"
-              Access.pp caller
-              Access.pp callee;
-            let update_callees = function
-              | Some callees -> Access.Set.add callees callee
-              | None -> Access.Set.singleton callee
-            in
-            Access.Map.update call_graph caller ~f:update_callees
+              Callable.pp caller_callable
+              Callable.pp callee;
+            callee :: callees
           in
-          let resolve_access _ ~resolution:_ ~resolved:_ ~element =
-            let open Annotated.Access in
-            match element with
-            | Element.Signature {
-                Element.signature =
-                  Annotated.Signature.Found {
-                    Annotated.Signature.callable = {
-                      Type.Callable.kind = Type.Callable.Named callee;
-                      _;
-                    };
-                    _;
-                  };
-                _;
-              } ->
-                Some callee
-            | _ ->
-                None
-          in
-          Annotated.Access.create access
-          |> Annotated.Access.fold ~resolution ~initial:None ~f:resolve_access
-          |> function
-          | Some callee ->
-              add_call_edge call_graph caller callee
-          | None ->
-              (* TODO: we don't need this case if signatures are created for all calls. *)
-              match List.rev access with
-              | Access.Call _ :: _
-                ->
-                  let access = List.take access (List.length access - 1) in
-                  add_call_edge call_graph caller access
-              | _ ->
-                  call_graph
+          let new_callees = CallResolution.resolve_call_targets ~resolution access in
+          List.fold new_callees ~f:add_call_edge ~init:callees
         in
         Visit.collect_accesses statement
-        |> List.fold ~init:call_graph ~f:process_access
+        |> List.fold ~init:callees ~f:process_access
       in
-      List.foldi statements ~init:call_graph ~f:fold_statements
+      List.foldi statements ~init:callees ~f:fold_statements
     in
-    Hashtbl.fold cfg ~init:call_graph ~f:fold_cfg
+    let callees =
+      Hashtbl.fold cfg ~init:[] ~f:fold_cfg
+      |> List.dedup_and_sort ~compare:Callable.compare
+    in
+    Callable.Map.set dependencies ~key:caller_callable ~data:callees
   in
   Preprocessing.defines source
-  |> List.fold ~init:Access.Map.empty ~f:fold_defines
-  |> Access.Map.map ~f:Access.Set.to_list
+  |> List.fold ~init:Callable.Map.empty ~f:fold_defines
 
 
 (* Returns forest of nodes in reverse finish time order. *)
 let depth_first_search edges nodes =
-  let visited = Hashtbl.Poly.create ~size:(2 * List.length nodes) () in
+  let visited = Callable.Hashable.Table.create ~size:(2 * List.length nodes) () in
   let rec visit accumulator node =
     if Hashtbl.mem visited node then
       accumulator
@@ -108,7 +70,7 @@ let depth_first_search edges nodes =
       begin
         Hashtbl.add_exn visited ~key:node ~data:();
         let successor =
-          Hashtbl.find edges node
+          Callable.Map.find edges node
           |> Option.value ~default:[]
         in
         node :: (List.fold successor ~init:accumulator ~f:visit)
@@ -123,17 +85,22 @@ let depth_first_search edges nodes =
 
 
 let reverse_edges edges =
-  let reverse_edges = Access.Table.create () in
+  let reverse_edges = Callable.Hashable.Table.create () in
   let walk_reverse_edges ~key:caller ~data:callees =
     let walk_callees callee =
-      match Access.Table.find reverse_edges callee with
-      | None -> Access.Table.add_exn reverse_edges ~key:callee ~data:[caller]
-      | Some callers -> Access.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
+      match Callable.Hashable.Table.find reverse_edges callee with
+      | None ->
+          Callable.Hashable.Table.add_exn reverse_edges ~key:callee ~data:[caller]
+      | Some callers ->
+          Callable.Hashable.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
     in
     List.iter callees ~f:walk_callees
   in
-  Access.Table.iteri edges ~f:walk_reverse_edges;
-  reverse_edges
+  let () = Callable.Map.iteri edges ~f:walk_reverse_edges in
+  let accumulate ~key ~data map =
+    Callable.Map.set map ~key ~data:(List.dedup_and_sort ~compare:Callable.compare data)
+  in
+  Callable.Hashable.Table.fold reverse_edges ~init:Callable.Map.empty ~f:accumulate
 
 
 let reverse call_graph =
@@ -141,16 +108,19 @@ let reverse call_graph =
     List.fold
       data
       ~init:reverse_map
-      ~f:(fun reverse_map callee -> Access.Map.add_multi reverse_map ~key:callee ~data:key)
+      ~f:(fun reverse_map callee -> Callable.Map.add_multi reverse_map ~key:callee ~data:key)
   in
-  Map.fold call_graph ~init:Access.Map.empty ~f:reverse
+  Map.fold call_graph ~init:Callable.Map.empty ~f:reverse
 
 
 let pp_partitions formatter partitions =
   let print_partition partitions =
     let print_partition index accumulator nodes =
-      let nodes_to_string = Sexp.to_string [%message (nodes: Access.t list)] in
-      let partition = Format.sprintf "Partition %d: %s" index nodes_to_string in
+      let nodes_to_string =
+        List.map ~f:Callable.show nodes
+        |> String.concat ~sep:" "
+      in
+      let partition = Format.sprintf "Partition %d: [%s]" index nodes_to_string in
       accumulator ^ "\n" ^ partition
     in
     List.foldi partitions ~init:"" ~f:print_partition
@@ -159,9 +129,19 @@ let pp_partitions formatter partitions =
 
 
 let partition ~edges =
-  let edges = Access.Map.to_alist edges |> Access.Table.of_alist_exn in
+  let result = depth_first_search edges (Callable.Map.keys edges) in
   let reverse_edges = reverse_edges edges in
-  let result = depth_first_search edges (Access.Table.keys edges) in
   let partitions = depth_first_search reverse_edges (List.concat result) in
   Log.log ~section:`DependencyGraph "%a" pp_partitions partitions;
   partitions
+
+
+let pp formatter edges =
+  let pp_edge ~key:callable ~data =
+    let targets =
+      List.map data ~f:Callable.show
+      |> String.concat ~sep:" "
+    in
+    Format.fprintf formatter "%s -> [%s]\n" (Callable.show callable) targets
+  in
+  Callable.Map.iteri ~f:pp_edge edges

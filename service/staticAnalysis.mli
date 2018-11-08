@@ -12,7 +12,7 @@ open Interprocedural
 val overrides_of_source
   :  environment: (module Environment.Handler)
   -> source: Source.t
-  -> (Access.t list) Access.Map.t
+  -> (Callable.t list) Callable.Map.t
 
 val record_and_merge_call_graph
   :  environment: (module Environment.Handler)

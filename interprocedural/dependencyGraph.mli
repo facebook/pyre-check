@@ -4,11 +4,10 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Expression
 open Analysis
 
 
-type t = (Access.t list) Access.Map.t
+type t = (Callable.t list) Callable.Map.t
 
 val empty: t
 
@@ -18,9 +17,10 @@ val create:
   -> t
 
 (** Returns a partition of nodes for strongly connected components in the call graph *)
-val partition: edges: t -> (Access.t list) list
+val partition: edges: t -> (Callable.t list) list
 
 (** Reverse edges in the call graph *)
 val reverse: t -> t
 
-val pp_partitions: Format.formatter -> (Access.t list) list -> unit
+val pp: Format.formatter -> t -> unit
+val pp_partitions: Format.formatter -> (Callable.t list) list -> unit

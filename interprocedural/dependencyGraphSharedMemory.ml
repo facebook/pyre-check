@@ -3,23 +3,13 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Ast
-open Expression
-
 module SharedMemory = Memory
 
 
-module AccessKey = struct
-  type t = Access.t
-  let to_string = Access.show
-  let compare = Access.compare
-end
-
-
-module AccessValue = struct
-  type t = Access.t list
+module Targets = struct
+  type t = Callable.t list
   let prefix = Prefix.make ()
-  let description = "Access"
+  let description = "Targets"
 end
 
 
@@ -30,17 +20,11 @@ module HandleKey = struct
 end
 
 
-module AccessKeyValue = struct
-  type t = Access.t list
-  let prefix = Prefix.make ()
-  let description = "Caller keys"
-end
+module Overrides = SharedMemory.WithCache (Callable.Key) (Targets)
 
-module Overrides = SharedMemory.WithCache (AccessKey) (AccessValue)
+module CallerKeys = SharedMemory.WithCache (HandleKey) (Targets)
 
-module CallerKeys = SharedMemory.WithCache (HandleKey) (AccessKeyValue)
-
-module CallEdges = SharedMemory.WithCache (AccessKey) (AccessValue)
+module CallEdges = SharedMemory.WithCache (Callable.Key) (Targets)
 
 
 let add_callers ~path =

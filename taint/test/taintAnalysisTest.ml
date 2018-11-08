@@ -117,7 +117,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
     let create_result_patterns { define_name; errors; _ } = define_name, errors in
     List.map expect ~f:create_result_patterns
   in
-  assert_bool "Callgraph is empty!" (Access.Map.length call_graph > 0);
+  assert_bool "Callgraph is empty!" (Callable.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
   List.iter ~f:(check_expectation ~get_model) expect;
   List.iter2_exn expect_results results ~f:assert_errors

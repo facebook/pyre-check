@@ -14,36 +14,46 @@ open Statement
 open Test
 
 
-let parse_source ?(qualifier=[]) source =
-  parse ~qualifier source
+let parse_source ?(qualifier=[]) ?handle source =
+  parse ~qualifier source ?handle
   |> Preprocessing.preprocess
 
 
-let create_call_graph source =
+let create_call_graph ?(update_environment_with = []) source =
   let source = parse_source source in
   let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
-  Service.Environment.populate environment [source];
+  let sources =
+    source
+    :: List.map
+      update_environment_with
+      ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle source)
+  in
+  Service.Environment.populate environment sources;
   TypeCheck.check ~configuration ~environment ~source |> ignore;
   DependencyGraph.create ~environment ~source
+
+
+let create_callable name =
+  Callable.create_real (Access.create name)
 
 
 let compare_call_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
-      Access.create callee, List.map callers ~f:Access.create in
+      create_callable callee, List.map callers ~f:create_callable in
     List.map expected ~f:map_callee_callers
   in
   let printer call_graph =
-    Sexp.to_string [%message (call_graph : (Access.t * Access.t list) list)]
+    Sexp.to_string [%message (call_graph : (Callable.t * Callable.t list) list)]
   in
   assert_equal ~printer expected call_graph
 
 
-let assert_call_graph source ~expected =
+let assert_call_graph ?update_environment_with source ~expected =
   let call_graph =
-    create_call_graph source
-    |> Access.Map.to_alist
+    create_call_graph ?update_environment_with source
+    |> Callable.Map.to_alist
   in
   compare_call_graph call_graph ~expected
 
@@ -52,7 +62,7 @@ let assert_reverse_call_graph source ~expected =
   let call_graph =
     create_call_graph source
     |> DependencyGraph.reverse
-    |> Access.Map.to_alist
+    |> Callable.Map.to_alist
   in
   compare_call_graph call_graph ~expected
 
@@ -70,7 +80,11 @@ let test_construction _ =
       def qux(self):
         return self.bar()
     |}
-    ~expected:["Foo.qux", ["Foo.bar"]];
+    ~expected:[
+      "Foo.__init__", [];
+      "Foo.bar", [];
+      "Foo.qux", ["Foo.bar"];
+    ];
 
   assert_call_graph
     {|
@@ -86,6 +100,7 @@ let test_construction _ =
     |}
     ~expected:
       [
+        "Foo.__init__", [];
         "Foo.bar", ["Foo.qux"];
         "Foo.qux", ["Foo.bar"]
       ];
@@ -100,9 +115,22 @@ let test_construction _ =
        def __init__(self) -> A:
          return A()
     |}
-    ~expected:["B.__init__", ["A.__init__"]];
+    ~expected:[
+      "A.__init__", [];
+      "B.__init__", ["A.__init__"];
+    ];
 
   assert_call_graph
+    ~update_environment_with: [
+      {
+        qualifier = Access.create "foobar";
+        handle = "foobar.pyi";
+        source =
+          {|
+            def bar(x: string) -> str: ...
+          |};
+      }
+    ]
     {|
      def foo():
        foobar.bar("foo")
@@ -110,6 +138,16 @@ let test_construction _ =
     ~expected:["foo", ["foobar.bar"]];
 
   assert_call_graph
+    ~update_environment_with: [
+      {
+        qualifier = Access.create "bar.baz.qux";
+        handle = "bar.baz.pyi";
+        source =
+          {|
+            def derp() -> str: ...
+          |};
+      }
+    ]
     {|
      from bar.baz import qux
      def foo():
@@ -257,25 +295,25 @@ let test_type_collection _ =
 let test_method_overrides _ =
   let assert_method_overrides source ~expected =
     let expected =
-      let create_accesses (access, accesses) =
-        Access.create access, List.map accesses ~f:Access.create
+      let create_callables (access, accesses) =
+        create_callable access, List.map accesses ~f:create_callable
       in
-      List.map expected ~f:create_accesses
+      List.map expected ~f:create_callables
     in
     let source = parse_source source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate environment [source];
     let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
-    let expected_overrides = Access.Map.of_alist_exn expected in
-    let equal_elements = List.equal ~equal:Access.equal in
+    let expected_overrides = Callable.Map.of_alist_exn expected in
+    let equal_elements = List.equal ~equal:Callable.equal in
     let printer map =
       map
-      |> Access.Map.sexp_of_t (List.sexp_of_t Access.sexp_of_t)
+      |> Callable.Map.sexp_of_t (List.sexp_of_t Callable.sexp_of_t)
       |> Sexp.to_string
     in
     assert_equal
-      ~cmp:(Access.Map.equal equal_elements)
+      ~cmp:(Callable.Map.equal equal_elements)
       ~printer
       expected_overrides
       overrides_map
@@ -302,7 +340,7 @@ let test_method_overrides _ =
 let test_strongly_connected_components _ =
   let assert_strongly_connected_components source ~qualifier ~expected =
     let qualifier = Access.create qualifier in
-    let expected = List.map expected ~f:(List.map ~f:Access.create) in
+    let expected = List.map expected ~f:(List.map ~f:create_callable) in
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
@@ -331,6 +369,7 @@ let test_strongly_connected_components _ =
     ~qualifier:"s0"
     ~expected:
       [
+        ["s0.Foo.__init__"];
         ["s0.Foo.c1"];
         ["s0.Foo.c2"];
       ];
@@ -351,7 +390,7 @@ let test_strongly_connected_components _ =
         return self.c4()
 
       def c4(self):
-        return self.c3()
+        return self.c3() + self.c2()
 
       def c5(self):
         return self.c5()
@@ -359,8 +398,9 @@ let test_strongly_connected_components _ =
     ~qualifier:"s1"
     ~expected:
       [
+        ["s1.Foo.__init__"];
+        ["s1.Foo.c1"; "s1.Foo.c2"];
         ["s1.Foo.c3"; "s1.Foo.c4"];
-        ["s1.Foo.c2"; "s1.Foo.c1"];
         ["s1.Foo.c5"];
       ];
 
@@ -382,7 +422,7 @@ let test_strongly_connected_components _ =
 
     class Bar:
       def __init__(self):
-        pass
+        return Foo()
 
       def c1(self):
         f = Foo()
@@ -396,9 +436,9 @@ let test_strongly_connected_components _ =
     ~expected:
       [
         ["s2.Foo.__init__"];
+        ["s2.Bar.__init__"];
         ["s2.Foo.c1"; "s2.Foo.c2"];
         ["s2.Bar.c1"];
-        ["s2.Bar.__init__"];
         ["s2.Bar.c2"; "s2.Foo.c3"];
       ]
 
