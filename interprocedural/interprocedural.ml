@@ -6,6 +6,7 @@
 module AnalysisKind = AnalysisKind
 module Analysis = InterproceduralAnalysis
 module Callable = Callable
+module CallResolution = CallResolution
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
 module Error = InterproceduralError

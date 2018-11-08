@@ -173,49 +173,23 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
       | AccessPath.Global access ->
-          let access, arguments = AccessPath.normalize_global ~resolution access arguments in
+          let access, extra_arguments =
+            Interprocedural.CallResolution.normalize_global ~resolution access
+          in
           let call_target = Interprocedural.Callable.create_real access in
+          let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state [call_target]
       | AccessPath.Access { expression; member = method_name } ->
-          let access = AccessPath.as_access expression in
+          let receiver = AccessPath.as_access expression in
           let arguments =
             let receiver = {
               Argument.name = None;
-              value = Access.expression ~location access;
+              value = Access.expression ~location receiver;
             } in
             receiver :: arguments
           in
-          let call_targets =
-            let receiver_type =
-              let annotation =
-                Access.expression access
-                |> Resolution.resolve resolution
-              in
-              if Type.equal annotation Type.Top then
-                None
-              else
-                Some annotation
-            in
-            match receiver_type with
-            | Some (Type.Primitive receiver) ->
-                let access = Access.create_from_identifiers [receiver; method_name] in
-                let call_target = Interprocedural.Callable.create_real access in
-                [call_target]
-            | Some (Type.Union annotations) ->
-                let filter_receivers = function
-                  | Type.Primitive receiver ->
-                      Access.create_from_identifiers [receiver; method_name]
-                      |> Interprocedural.Callable.create_real
-                      |> Option.some
-                  | _ ->
-                      None
-                in
-                List.filter_map annotations ~f:filter_receivers
-            | _ ->
-                (* TODO(T32332602): handle additional call expressions here *)
-                []
-          in
-          apply_call_targets ~resolution location arguments state call_targets
+          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
+          |> apply_call_targets ~resolution location arguments state
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
           let callee_taint = analyze_normalized_expression ~resolution location state callee in

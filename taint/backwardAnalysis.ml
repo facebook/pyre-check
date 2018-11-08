@@ -164,44 +164,27 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
       | Global access ->
-          let access, arguments = AccessPath.normalize_global ~resolution access arguments in
+          let access, extra_arguments =
+            Interprocedural.CallResolution.normalize_global ~resolution access
+          in
           let call_target = Interprocedural.Callable.create_real access in
+          let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
           let state =
-            let access = as_access receiver in
+            let receiver = as_access receiver in
             let arguments =
               let receiver_argument_record =
                 {
                   Argument.name = None;
-                  value = Node.create ~location (Expression.Access access);
+                  value = Node.create ~location (Expression.Access receiver);
                 }
               in
               receiver_argument_record :: arguments
             in
-            let receiver_type =
-              Access.expression access
-              |> Resolution.resolve resolution
-            in
-            match receiver_type with
-            | Type.Primitive primitive ->
-                let access = Access.create_from_identifiers [primitive; method_name] in
-                let call_target = Interprocedural.Callable.create_real access in
-                apply_call_targets ~resolution location arguments state taint [call_target]
-            | Type.Union annotations ->
-                let filter_receivers = function
-                  | Type.Primitive receiver ->
-                      Access.create_from_identifiers [receiver; method_name]
-                      |> Interprocedural.Callable.create_real
-                      |> Option.some
-                  | _ ->
-                      None
-                in
-                List.filter_map annotations ~f:filter_receivers
-                |> apply_call_targets ~resolution location arguments state taint
-            | _ ->
-                List.fold_right ~f:(analyze_argument ~resolution taint) arguments ~init:state
+            Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
+            |> apply_call_targets ~resolution location arguments state taint
           in
           state
 
