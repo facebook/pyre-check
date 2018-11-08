@@ -1,7 +1,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_flows",
+    "callable": "qualifier.match_flows",
     "callable_line": 20,
     "code": 5002,
     "line": 22,
@@ -22,7 +22,7 @@
                 "start": 19,
                 "end": 21
               },
-              "resolves_to": [ "some_source" ],
+              "resolves_to": [ "qualifier.some_source" ],
               "port": "result"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -40,7 +40,7 @@
                 "start": 7,
                 "end": 13
               },
-              "resolves_to": [ "bad" ],
+              "resolves_to": [ "qualifier.bad" ],
               "port": "formal(arg)"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -53,7 +53,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "bad",
+    "callable": "qualifier.bad",
     "sources": [],
     "sinks": [
       {
@@ -67,7 +67,7 @@
                 "start": 7,
                 "end": 12
               },
-              "resolves_to": [ "qux" ],
+              "resolves_to": [ "qualifier.qux" ],
               "port": "formal(arg)"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -81,7 +81,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "bar",
+    "callable": "qualifier.bar",
     "sources": [
       {
         "port": "result",
@@ -105,7 +105,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qux",
+    "callable": "qualifier.qux",
     "sources": [],
     "sinks": [
       {
@@ -129,7 +129,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "some_source",
+    "callable": "qualifier.some_source",
     "sources": [
       {
         "port": "result",
@@ -142,7 +142,7 @@
                 "start": 14,
                 "end": 16
               },
-              "resolves_to": [ "bar" ],
+              "resolves_to": [ "qualifier.bar" ],
               "port": "result"
             },
             "leaves": [ { "kind": "Test" } ]

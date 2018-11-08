@@ -25,7 +25,7 @@ type expect_fixpoint = {
 let create_call_graph ?(test_file = "test_file") source =
   let handle = File.Handle.create test_file in
   let source =
-    Test.parse source
+    Test.parse ~qualifier:(Access.create "qualifier") source
     |> Preprocessing.preprocess
   in
   let () =
@@ -53,24 +53,15 @@ let create_call_graph ?(test_file = "test_file") source =
     Service.StaticAnalysis.record_path_of_definitions ~path:handle ~source
     |> List.map ~f:Callable.create
   in
-  call_graph, callables
+  call_graph, callables, environment
 
 
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
-  let call_graph, all_callables = create_call_graph source in
+  let call_graph, all_callables, environment = create_call_graph source in
   let caller_map = DependencyGraph.reverse call_graph in
   let analyses = [Taint.Analysis.abstract_kind] in
   let configuration = Configuration.Analysis.create () in
-  let environment =
-    let source =
-      Test.parse source
-      |> Preprocessing.preprocess
-    in
-    let environment = Test.environment () in
-    Service.Environment.populate environment [source];
-    environment
-  in
   let iterations =
     Analysis.compute_fixpoint
       ~configuration
@@ -213,7 +204,7 @@ let test_fixpoint _ =
       iterations = 4;
       expect = [
         {
-          define_name = "rce_problem";
+          define_name = "qualifier.rce_problem";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -225,7 +216,7 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "match_flows";
+          define_name = "qualifier.match_flows";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -237,7 +228,7 @@ let test_fixpoint _ =
           ];
         };
         {
-          define_name = "match_flows_multiple";
+          define_name = "qualifier.match_flows_multiple";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -249,7 +240,7 @@ let test_fixpoint _ =
           ];
         };
         {
-          define_name = "match_via_methods";
+          define_name = "qualifier.match_via_methods";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -261,14 +252,14 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "no_match_via_methods";
+          define_name = "qualifier.no_match_via_methods";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
-          define_name = "match_via_receiver";
+          define_name = "qualifier.match_via_receiver";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -280,7 +271,7 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "qux";
+          define_name = "qualifier.qux";
           returns = [];
           sink_parameters = [
             { name = "arg"; sinks = [Taint.Sinks.Test] }
@@ -289,7 +280,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
-          define_name = "bad";
+          define_name = "qualifier.bad";
           returns = [];
           sink_parameters = [
             { name = "arg"; sinks = [Taint.Sinks.Test] }
@@ -298,21 +289,21 @@ let test_fixpoint _ =
           errors = [];
         };
         {
-          define_name = "bar";
+          define_name = "qualifier.bar";
           returns = [Sources.Test];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
-          define_name = "some_source";
+          define_name = "qualifier.some_source";
           returns = [Sources.Test];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
-          define_name = "list_sink";
+          define_name = "qualifier.list_sink";
           returns = [];
           sink_parameters = [
             { name = "list"; sinks = [Taint.Sinks.Test] }
@@ -321,14 +312,14 @@ let test_fixpoint _ =
           errors = [];
         };
         {
-          define_name = "no_list_match";
+          define_name = "qualifier.no_list_match";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
         };
         {
-          define_name = "list_match";
+          define_name = "qualifier.list_match";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -340,7 +331,7 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "test_getattr_obj_match";
+          define_name = "qualifier.test_getattr_obj_match";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
@@ -352,7 +343,7 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "test_getattr_field_match";
+          define_name = "qualifier.test_getattr_field_match";
           returns = [];
           sink_parameters = [
             { name = "some_obj"; sinks = [Sinks.GetAttr]; };
@@ -388,8 +379,7 @@ let test_integration _ =
         |> File.content
         |> (fun content -> Option.value_exn content)
       in
-      let call_graph, all_callables = create_call_graph source in
-      let environment = Test.environment () in
+      let call_graph, all_callables, environment = create_call_graph source in
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())

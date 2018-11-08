@@ -1,7 +1,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_flows",
+    "callable": "qualifier.match_flows",
     "callable_line": 12,
     "code": 5002,
     "line": 14,
@@ -22,7 +22,7 @@
                 "start": 20,
                 "end": 22
               },
-              "resolves_to": [ "source_field" ],
+              "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -40,7 +40,7 @@
                 "start": 14,
                 "end": 17
               },
-              "resolves_to": [ "sink_field" ],
+              "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -53,7 +53,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_star_arg_directly",
+    "callable": "qualifier.match_star_arg_directly",
     "callable_line": 26,
     "code": 5002,
     "line": 27,
@@ -74,7 +74,7 @@
                 "start": 43,
                 "end": 45
               },
-              "resolves_to": [ "source_field" ],
+              "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -92,7 +92,7 @@
                 "start": 20,
                 "end": 51
               },
-              "resolves_to": [ "star_arg_wrapper" ],
+              "resolves_to": [ "qualifier.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -105,7 +105,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_star_arg_with_star",
+    "callable": "qualifier.match_star_arg_with_star",
     "callable_line": 22,
     "code": 5002,
     "line": 24,
@@ -126,7 +126,7 @@
                 "start": 27,
                 "end": 29
               },
-              "resolves_to": [ "source_field" ],
+              "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -144,7 +144,7 @@
                 "start": 20,
                 "end": 32
               },
-              "resolves_to": [ "star_arg_wrapper" ],
+              "resolves_to": [ "qualifier.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -157,7 +157,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_star_star_arg_directly",
+    "callable": "qualifier.match_star_star_arg_directly",
     "callable_line": 42,
     "code": 5002,
     "line": 43,
@@ -178,7 +178,7 @@
                 "start": 52,
                 "end": 54
               },
-              "resolves_to": [ "source_field" ],
+              "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -196,7 +196,7 @@
                 "start": 25,
                 "end": 55
               },
-              "resolves_to": [ "star_star_arg_wrapper" ],
+              "resolves_to": [ "qualifier.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -209,7 +209,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "match_star_star_arg_with_star",
+    "callable": "qualifier.match_star_star_arg_with_star",
     "callable_line": 35,
     "code": 5002,
     "line": 40,
@@ -230,7 +230,7 @@
                 "start": 27,
                 "end": 29
               },
-              "resolves_to": [ "source_field" ],
+              "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -248,7 +248,7 @@
                 "start": 25,
                 "end": 38
               },
-              "resolves_to": [ "star_star_arg_wrapper" ],
+              "resolves_to": [ "qualifier.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -261,7 +261,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Foo.some_source",
+    "callable": "qualifier.Foo.some_source",
     "sources": [
       {
         "port": "result",
@@ -285,7 +285,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "refer_to_method_as_field",
+    "callable": "qualifier.refer_to_method_as_field",
     "sources": [],
     "sinks": [
       {
@@ -309,7 +309,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "refer_to_method_as_field",
+    "callable": "qualifier.refer_to_method_as_field",
     "callable_line": 52,
     "code": 5002,
     "line": 55,
@@ -330,7 +330,7 @@
                 "start": 12,
                 "end": 27
               },
-              "resolves_to": [ "Foo.some_source" ],
+              "resolves_to": [ "qualifier.Foo.some_source" ],
               "port": "result"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -357,7 +357,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "sink_field",
+    "callable": "qualifier.sink_field",
     "sources": [],
     "sinks": [
       {
@@ -381,7 +381,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "source_field",
+    "callable": "qualifier.source_field",
     "sources": [
       {
         "port": "result[a]",
@@ -405,7 +405,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "star_arg",
+    "callable": "qualifier.star_arg",
     "sources": [],
     "sinks": [
       {
@@ -419,7 +419,7 @@
                 "start": 14,
                 "end": 23
               },
-              "resolves_to": [ "sink_field" ],
+              "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -433,7 +433,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "star_arg_wrapper",
+    "callable": "qualifier.star_arg_wrapper",
     "sources": [],
     "sinks": [
       {
@@ -447,7 +447,7 @@
                 "start": 12,
                 "end": 32
               },
-              "resolves_to": [ "star_arg" ],
+              "resolves_to": [ "qualifier.star_arg" ],
               "port": "formal(*rest1)[1][a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -461,7 +461,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "star_star_arg",
+    "callable": "qualifier.star_star_arg",
     "sources": [],
     "sinks": [
       {
@@ -475,7 +475,7 @@
                 "start": 14,
                 "end": 29
               },
-              "resolves_to": [ "sink_field" ],
+              "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]"
             },
             "leaves": [ { "kind": "Test" } ]
@@ -489,7 +489,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "star_star_arg_wrapper",
+    "callable": "qualifier.star_star_arg_wrapper",
     "sources": [],
     "sinks": [
       {
@@ -503,7 +503,7 @@
                 "start": 17,
                 "end": 30
               },
-              "resolves_to": [ "star_star_arg" ],
+              "resolves_to": [ "qualifier.star_star_arg" ],
               "port": "formal(**kw)[arg][a]"
             },
             "leaves": [ { "kind": "Test" } ]
