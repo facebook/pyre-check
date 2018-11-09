@@ -2879,7 +2879,17 @@ let test_check_function_parameter_errors _ =
     [
       "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      class attribute:
+        ...
+      class other:
+        attribute: int = ...
+      def foo(o: other) -> str:
+        return o.attribute
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_function_redirects _ =

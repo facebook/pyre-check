@@ -395,32 +395,24 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     scope, List elements
                 | Access ([_] as access) when qualify_assign ->
                     (* Qualify field assignments in class body. *)
-                    let alias =
-                      match qualify_access ~scope access with
+                    let sanitized =
+                      match access with
                       | [Access.Identifier name] ->
                           [Access.Identifier (Identifier.sanitized name)]
-                      | qualified ->
-                          qualified
+                      | access ->
+                          access
                     in
                     let scope =
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None -> local_alias ~qualifier ~access:(qualifier @ alias)
+                          | None -> local_alias ~qualifier ~access:(qualifier @ sanitized)
                         in
                         Map.update aliases access ~f:update
                       in
                       { scope with aliases }
                     in
-                    let qualified =
-                      let is_qualified =
-                        List.is_prefix
-                          alias
-                          ~prefix:qualifier
-                          ~equal:(Access.equal_access Expression.equal)
-                      in
-                      if is_qualified then alias else qualifier @ alias
-                    in
+                    let qualified = qualifier @ sanitized in
                     scope, Access qualified
                 | Starred (Starred.Once access) ->
                     let scope, access = qualify_target ~scope access in

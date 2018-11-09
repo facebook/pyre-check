@@ -666,6 +666,20 @@ let test_qualify _ =
           ...
         def qualifier.C.x():
           ...
+    |};
+
+  assert_qualify
+    {|
+      class slice:
+        pass
+      class C:
+        slice: int = ...
+    |}
+    {|
+      class qualifier.slice:
+        pass
+      class qualifier.C:
+        qualifier.C.slice: int = ...
     |}
 
 
