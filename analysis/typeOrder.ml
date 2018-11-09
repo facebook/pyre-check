@@ -572,7 +572,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
               with _ ->
                 false
             end
-        | _ ->
+        | Defined _, Undefined ->
+            true
+        | Undefined, Defined _ ->
             false
       in
       less_or_equal order ~left:left.annotation ~right:right.annotation &&

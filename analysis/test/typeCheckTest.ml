@@ -6330,7 +6330,29 @@ let test_check_callables _ =
       def g() -> int:
         return takes_return(foo)
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def foo(f: typing.Callable[..., int]) -> None:
+        ...
+      def i2i(x: int) -> int:
+        return x
+      foo(i2i)
+    |}
+  [];
+  assert_type_errors
+    {|
+      def foo(f: typing.Callable[..., int]) -> None:
+        ...
+      def i2s(x: int) -> str:
+        return ""
+      foo(i2s)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[..., int]` but got" ^
+      " `typing.Callable(i2s)[[Named(x, int)], str]`.";
+    ]
 
 
 let test_check_assert_functions _ =

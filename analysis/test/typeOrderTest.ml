@@ -671,7 +671,24 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:"typing.Callable('foo')[[str], int]"
-       ~right:"typing.Callable('foo')[[int], int]")
+       ~right:"typing.Callable('foo')[[int], int]");
+
+  (* Undefined callables. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[..., int]"
+       ~right:"typing.Callable[..., float]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable[..., int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[..., int]"
+       ~right:"typing.Callable[[int], float]")
 
 
 let test_join _ =
