@@ -236,6 +236,10 @@ let test_select _ =
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"
     (`Found "[[int, Named(i, int)], int]");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**{'i': 1}, j=2)"
+    (`Found "[[Named(i, int), Named(j, int)], int]");
 
 
   (* Keywords. *)

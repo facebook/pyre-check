@@ -125,7 +125,6 @@ let select
     in
     let rec consume
         ({ argument_mapping; reasons = ({ arity; _ } as reasons); _; } as signature_match)
-        ~position
         ~arguments
         ~parameters =
       let update_mapping parameter argument =
@@ -135,12 +134,18 @@ let select
       | [], [] ->
           (* Both empty *)
           Some signature_match
-      | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: arguments_tail,
+      | Argument {
+          argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+          _;
+        } :: arguments_tail,
         []
-      | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: arguments_tail,
+      | Argument {
+          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          _;
+        } :: arguments_tail,
         [] ->
           (* Starred or double starred arguments; parameters empty *)
-          consume ~position:(position + 1) ~arguments:arguments_tail ~parameters signature_match
+          consume ~arguments:arguments_tail ~parameters signature_match
       | _, [] ->
           (* Arguments; parameters empty *)
           let reasons =
@@ -160,7 +165,6 @@ let select
           (* Arguments empty, default parameter *)
           let argument_mapping = update_mapping parameter Default in
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
@@ -172,20 +176,21 @@ let select
             | None -> Map.set ~key:parameter ~data:[] argument_mapping
           in
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | ({ Argument.name = Some _; _ } as argument) :: arguments_tail,
+      | Argument ({ argument = { Argument.name = Some _; _ }; _ } as argument) :: arguments_tail,
         ((Parameter.Keywords _) as parameter) :: _ ->
           (* Labeled argument, keywords parameter *)
-          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          let argument_mapping = update_mapping parameter (Argument argument) in
           consume
-            ~position:(position + 1)
             ~arguments:arguments_tail
             ~parameters
             { signature_match with argument_mapping }
-      | ({ Argument.name = Some { Node.value = name; _ }; _ } as argument) :: arguments_tail,
+      | Argument ({
+          argument = { Argument.name = Some { Node.value = name; _ }; _ };
+          _;
+        } as argument) :: arguments_tail,
         parameters ->
           (* Labeled argument *)
           let rec extract_matching_name searched to_search =
@@ -201,83 +206,112 @@ let select
           in
           let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
           matching_parameter
-          >>| (fun parameter -> update_mapping parameter (Argument {argument; position}))
+          >>| (fun parameter -> update_mapping parameter (Argument argument))
           >>= (fun argument_mapping ->
               (* Ignore signatures where this isn't found;
                  should throw new class of arity error instead *)
               consume
-                ~position:(position + 1)
                 ~arguments:arguments_tail
                 ~parameters:remaining_parameters
                 { signature_match with argument_mapping })
-      | ({ Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } as argument)
+      | Argument ({
+          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          _;
+        } as argument)
         :: arguments_tail,
         (Parameter.Keywords _ as parameter) :: _
-      | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument)
+      | Argument ({
+            argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+            _;
+          } as argument)
         :: arguments_tail,
         (Parameter.Variable _ as parameter) :: _ ->
           (* (Double) starred argument, (double) starred parameter *)
-          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          let argument_mapping = update_mapping parameter (Argument argument) in
           consume
-            ~position:(position + 1)
             ~arguments:arguments_tail
             ~parameters
             { signature_match with argument_mapping }
-      | { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } :: _,
+      | Argument {
+          argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+          _;
+        } :: _,
         Parameter.Keywords _ :: parameters_tail ->
           (* Starred argument, double starred parameter *)
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | { Argument.name = None; _ } :: _, Parameter.Keywords _ :: parameters_tail ->
+      | Argument { argument = { Argument.name = None; _ }; _ } :: _,
+        Parameter.Keywords _ :: parameters_tail ->
           (* Unlabeled argument, double starred parameter *)
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } :: _,
+      | Argument {
+          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          _;
+        } :: _,
         Parameter.Variable _ :: parameters_tail ->
           (* Double starred argument, starred parameter *)
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | ({ Argument.name = None; _ } as argument):: arguments_tail,
+      | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
         (Parameter.Variable _ as parameter) :: _ ->
           (* Unlabeled argument, starred parameter *)
-          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          let argument_mapping = update_mapping parameter (Argument argument) in
           consume
-            ~position:(position + 1)
             ~arguments:arguments_tail
             ~parameters
             { signature_match with argument_mapping }
-      | ({ Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ } as argument) :: _,
+      | Argument ({
+          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          _;
+        } as argument) :: _,
         parameter :: parameters_tail
-      | ({ Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ } as argument) :: _,
+      | Argument ({
+            argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+            _;
+          } as argument) :: _,
         parameter :: parameters_tail ->
           (* Double starred or starred argument, parameter *)
-          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          let argument_mapping = update_mapping parameter (Argument argument) in
           consume
-            ~position
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | ({ Argument.name = None; _ } as argument) :: arguments_tail, parameter :: parameters_tail ->
+      | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
+        parameter :: parameters_tail ->
           (* Unlabeled argument, parameter *)
-          let argument_mapping = update_mapping parameter (Argument {argument; position}) in
+          let argument_mapping = update_mapping parameter (Argument argument) in
           consume
-            ~position:(position + 1)
             ~arguments:arguments_tail
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
+      | Default :: _, _ ->
+          failwith "Unpossible"
     in
     match all_parameters with
     | Defined parameters ->
-        consume base_signature_match ~position:1 ~arguments ~parameters
+        let ordered_arguments =
+          let add_original_positions index argument =
+            Argument { argument; position = index + 1 }
+          in
+          let is_labeled = function
+            | Argument { argument = { Argument.name = Some _; _ }; _ } -> true
+            | _ -> false
+          in
+          let labeled_arguments, unlabeled_arguments =
+            arguments
+            |> List.mapi ~f:add_original_positions
+            |> List.partition_tf ~f:is_labeled
+          in
+          labeled_arguments @ unlabeled_arguments
+        in
+        consume base_signature_match ~arguments:ordered_arguments ~parameters
     | Undefined ->
         Some base_signature_match
   in
@@ -322,7 +356,8 @@ let select
                 {
                   actual = argument_annotation;
                   expected = parameter_annotation;
-                  name = Option.map name ~f:Node.value; position;
+                  name = Option.map name ~f:Node.value;
+                  position;
                 }
                 |> Node.create ~location
                 |> fun mismatch -> Mismatch mismatch
