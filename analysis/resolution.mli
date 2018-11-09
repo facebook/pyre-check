@@ -51,6 +51,7 @@ val order: t -> (module TypeOrder.Handler)
 val resolve: t -> Expression.t -> Type.t
 val resolve_literal: t -> Expression.t -> Type.t
 val parse_annotation: t -> Expression.t -> Type.t
+val parse_meta_annotation: t -> Expression.t -> Type.t option
 
 val global: t -> Access.t -> global option
 

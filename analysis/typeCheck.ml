@@ -1703,23 +1703,40 @@ module State = struct
                 _;
               };
             } when Identifier.show name = "isinstance" ->
-              let expected = Resolution.parse_annotation resolution annotation in
-              let { resolved; _ } = forward_expression ~state ~expression:value in
-              if (Type.equal resolved Type.Bottom
-                  || Type.is_unknown resolved
-                  || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
-              then
-                None
-              else
-                Some
-                  (Error.create
-                     ~location:(Node.location test)
-                     ~kind:(Error.ImpossibleIsinstance {
-                         mismatch = { Error.expected; actual = resolved };
-                         expression = value;
-                       })
-                     ~define)
-
+              begin
+                match Resolution.parse_meta_annotation resolution annotation with
+                | Some expected ->
+                    let { resolved; _ } = forward_expression ~state ~expression:value in
+                    if (Type.equal resolved Type.Bottom
+                        || Type.is_unknown resolved
+                        || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
+                    then
+                      None
+                    else
+                      Some
+                        (Error.create
+                           ~location:(Node.location test)
+                           ~kind:(Error.ImpossibleIsinstance {
+                               mismatch = { Error.expected; actual = resolved };
+                               expression = value;
+                             })
+                           ~define)
+                | None ->
+                    let { resolved; _ } = forward_expression ~state ~expression:annotation in
+                    Some
+                      (Error.create
+                         ~location:(Node.location test)
+                         ~kind:(Error.IncompatibleParameterType {
+                             name = None;
+                             position = 1;
+                             callee = Some (Access.create "isinstance");
+                             mismatch = {
+                               Error.expected = Type.meta (Type.variable "T");
+                               actual = resolved;
+                             }
+                           })
+                         ~define)
+              end
           | _ ->
               None
         in
@@ -1769,8 +1786,7 @@ module State = struct
                     Access.Call {
                       Node.value = [
                         { Argument.name = None; value = { Node.value = Access access; _ } };
-                        { Argument.name = None; value = annotation };
-                      ];
+                        { Argument.name = None; value = annotation };];
                       _;
                     };
                   ];
@@ -1779,17 +1795,28 @@ module State = struct
             } when Identifier.show name = "isinstance" ->
               begin
                 match Resolution.get_local resolution ~access with
-                | Some { Annotation.annotation = Type.Union parameters; _ } ->
-                    let parameters = Type.Set.of_list parameters in
+                | Some {
+                    Annotation.annotation = (Type.Optional (Type.Union parameters)) as unrefined;
+                    _;
+                  }
+                | Some { Annotation.annotation = (Type.Union parameters) as unrefined; _ } ->
+                    let parameters =
+                      match unrefined with
+                      | Type.Optional _ ->
+                          Type.Set.of_list (Type.none :: parameters)
+                      | _ ->
+                          Type.Set.of_list parameters
+                    in
                     let constraints =
                       begin
                         match annotation with
                         | { Node.value = Tuple elements; _ } ->
-                            List.map
-                              ~f:(Resolution.parse_annotation resolution)
+                            List.filter_map
                               elements
+                              ~f:(Resolution.parse_meta_annotation resolution)
                         | _ ->
-                            [Resolution.parse_annotation resolution annotation]
+                            Resolution.parse_meta_annotation resolution annotation
+                            |> Option.to_list
                       end
                       |> Type.Set.of_list
                     in

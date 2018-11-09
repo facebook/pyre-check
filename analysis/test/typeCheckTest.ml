@@ -790,12 +790,12 @@ let test_forward_statement _ =
     "assert (not x) or 1"
     ["x", Type.optional Type.integer];
 
+  (* Isinstance. *)
   assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward
     ["x", Type.Object; "y", Type.Top]
     "assert isinstance(y, str)"
     ["x", Type.Object; "y", Type.string];
-
   assert_forward
     ["x", Type.Object]
     "assert isinstance(x, (int, str))"
@@ -804,23 +804,28 @@ let test_forward_statement _ =
     ["x", Type.integer]
     "assert isinstance(x, (int, str))"
     ["x", Type.integer];
-
   assert_forward
     ~bottom:false
     ["x", Type.integer]
     "assert isinstance(x, str)"
     ["x", Type.string];
-
   assert_forward
     ~bottom:false
     ["x", Type.Bottom]
     "assert isinstance(x, str)"
     ["x", Type.string];
-
   assert_forward
     ~bottom:false
     ["x", Type.float]
     "assert isinstance(x, int)"
+    ["x", Type.integer];
+  assert_forward
+    ~bottom:false
+    ~errors:
+      (`Specific
+        ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `int`."])
+    ["x", Type.integer]
+    "assert isinstance(x, 1)"
     ["x", Type.integer];
 
   assert_forward
@@ -832,7 +837,6 @@ let test_forward_statement _ =
     ["x", Type.integer]
     "assert not isinstance(x, int)"
     ["x", Type.integer];
-
   assert_forward
     ~errors:
       (`Specific
@@ -848,6 +852,17 @@ let test_forward_statement _ =
     ["x", Type.float]
     "assert not isinstance(x, int)"
     ["x", Type.float];
+  assert_forward
+    ["x", Type.optional (Type.union [Type.integer; Type.string])]
+    "assert not isinstance(x, int)"
+    ["x", Type.optional Type.string];
+  assert_forward
+    ["x", Type.optional (Type.union [Type.integer; Type.string])]
+    "assert not isinstance(x, type(None))"
+    [
+      "$type", Type.meta Type.none;
+      "x", Type.union [Type.integer; Type.string];
+    ];
 
   (* Works for general expressions. *)
   assert_forward

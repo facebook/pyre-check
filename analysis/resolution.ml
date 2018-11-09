@@ -164,6 +164,19 @@ let parse_annotation { parse_annotation; module_definition; _ } expression =
   Type.instantiate parsed ~constraints
 
 
+let parse_meta_annotation resolution expression =
+  match parse_annotation resolution expression with
+  | Type.Top ->
+      (* Try to resolve meta-types. *)
+      let annotation = resolve resolution expression in
+      if Type.is_meta annotation then
+        Some (Type.single_parameter annotation)
+      else
+        None
+  | annotation ->
+      Some annotation
+
+
 let global { global; _ } =
   global
 
