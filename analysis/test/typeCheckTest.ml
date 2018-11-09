@@ -4884,7 +4884,17 @@ let test_check_ternary _ =
         x = s if s is not None else "foo"
         f(x)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[bytes]) -> None: ...
+      a: typing.Union[int, bytes]
+      foo(x=a if isinstance(a, bytes) else None)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Optional[bytes]` but got " ^
+      "`typing.Optional[typing.Union[bytes, int]]`.";
+    ]
 
 
 let test_check_union _ =

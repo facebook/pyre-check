@@ -737,6 +737,10 @@ let test_join _ =
     "typing.Union[int, typing.Optional[bool]]"
     "typing.Union[int, typing.Optional[bool]]";
   assert_join "typing.Union[int, str]" "typing.Union[int, bytes]" "typing.Union[int, str, bytes]";
+  assert_join
+    "typing.Union[int, str]"
+    "typing.Optional[$bottom]"
+    "typing.Optional[typing.Union[int, str]]";
 
   assert_join
     "typing.Dict[str, str]"

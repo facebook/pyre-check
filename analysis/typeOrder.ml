@@ -809,6 +809,8 @@ and join ((module Handler: Handler) as order) left right =
         else
           begin
             match other with
+            | Type.Optional Type.Bottom ->
+                Type.Optional union
             | Type.Optional element ->
                 Type.Optional (Type.union (element :: elements))
             | _ ->
