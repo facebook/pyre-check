@@ -911,10 +911,20 @@ module State = struct
         let _, state, resolved =
           let open Annotated in
           let open Access.Element in
-          let forward_access (found_error, state, _) ~resolution ~resolved ~element =
+          let forward_access (found_error, state, _) ~resolution ~resolved ~element ~lead =
             let state = { state with resolution } in
             if found_error then
               found_error, state, Annotation.annotation resolved
+            else if
+              Type.exists
+                (Annotation.annotation resolved)
+                ~predicate:(fun annotation -> Type.equal annotation Type.undeclared) then
+              let state =
+                Error.UndefinedName lead
+                |> (fun kind -> Error.create ~location ~kind ~define)
+                |> add_error ~state
+              in
+              true, state, Annotation.annotation resolved
             else
               let error =
                 match element with
@@ -984,17 +994,22 @@ module State = struct
                       let kind =
                         match origin with
                         | Instance class_attribute ->
-                            Error.UndefinedAttribute {
-                              attribute;
-                              origin =
-                                Error.Class {
-                                  annotation =
-                                    Class.annotation
-                                      ~resolution
-                                      (Attribute.parent class_attribute);
-                                  class_attribute = Attribute.class_attribute class_attribute;
-                                };
-                            }
+                            let annotation =
+                              Class.annotation
+                                ~resolution
+                                (Attribute.parent class_attribute)
+                            in
+                            if Type.equal annotation Type.undeclared then
+                              Error.UndefinedName lead
+                            else
+                              Error.UndefinedAttribute {
+                                attribute;
+                                origin =
+                                  Error.Class {
+                                    annotation;
+                                    class_attribute = Attribute.class_attribute class_attribute;
+                                  };
+                              }
                         | Module access when not (List.is_empty access) ->
                             Error.UndefinedAttribute {
                               attribute;
@@ -1460,7 +1475,7 @@ module State = struct
               let annotation, element =
                 let annotation, element =
                   let open Annotated in
-                  let fold (_, _) ~resolution:_ ~resolved ~element =
+                  let fold (_, _) ~resolution:_ ~resolved ~element ~lead:_ =
                     resolved, element
                   in
                   Access.create access
@@ -2057,7 +2072,7 @@ module State = struct
           | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
         in
         let to_import_error import =
-          let add_import_error errors ~resolution:_ ~resolved:_ ~element =
+          let add_import_error errors ~resolution:_ ~resolved:_ ~element ~lead:_ =
             let open Annotated.Access.Element in
             match element with
             | Attribute { origin = Module _; defined = false; _ } ->

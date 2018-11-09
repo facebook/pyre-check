@@ -101,7 +101,7 @@ let rec resolve ~resolution expression =
 
   match Node.value expression with
   | Access access ->
-      let annotation _ ~resolution:_ ~resolved ~element:_ = resolved in
+      let annotation _ ~resolution:_ ~resolved ~element:_ ~lead:_ = resolved in
       Access.fold
         ~resolution
         ~initial:(Annotation.create Type.Top)

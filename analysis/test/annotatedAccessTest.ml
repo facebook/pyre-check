@@ -86,7 +86,7 @@ let test_fold _ =
   in
   let assert_fold access expected =
     let steps =
-      let steps steps ~resolution:_ ~resolved ~element =
+      let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
           let module Element = Annotated.Access.Element in
           let stripped element: stripped =
@@ -191,7 +191,7 @@ let assert_resolved sources access expected =
     |> Annotated.Access.fold
       ~resolution
       ~initial:Type.Top
-      ~f:(fun _ ~resolution:_ ~resolved ~element:_ -> Annotation.annotation resolved)
+      ~f:(fun _ ~resolution:_ ~resolved ~element:_ ~lead:_ -> Annotation.annotation resolved)
   in
   assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 

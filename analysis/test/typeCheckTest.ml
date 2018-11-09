@@ -2701,6 +2701,17 @@ let test_check_function_parameters _ =
           int_to_int(self.attribute)
     |}
     ["Undefined attribute [16]: `A` has no attribute `attribute`."];
+  assert_type_errors
+    {|
+      class C:
+       attribute: int
+      try:
+        x = C()
+      except:
+        pass
+      x.attribute
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
 
   assert_type_errors
     {|
@@ -6193,7 +6204,9 @@ let test_check_unbound_variables _ =
         return result
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `typing.Union[int, typing.Undeclared]`."
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[int, typing.Undeclared]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
     ];
   assert_type_errors
     {|

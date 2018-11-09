@@ -66,6 +66,7 @@ module State = struct
       -> resolution: Resolution.t
       -> resolved: Annotation.t
       -> element: Element.t
+      -> lead: Access.t
       -> 'accumulator;
     resolved: Annotation.t option;
     target: target option;
@@ -83,11 +84,12 @@ module State = struct
       ?resolved
       ?target
       ?(continue = true)
+      ~lead
       () =
     let accumulator =
       let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
       let element = Option.value element ~default:Element.Value in
-      f accumulator ~resolution ~resolved ~element
+      f accumulator ~resolution ~resolved ~element ~lead
     in
     {
       state with
@@ -98,8 +100,8 @@ module State = struct
     }
 
 
-  let abort state ?element () =
-    step state ?element ~continue:false ()
+  let abort state ?element ~lead () =
+    step state ?element ~continue:false ~lead ()
 
 
   let annotation { annotation; _ } =
@@ -302,10 +304,11 @@ let fold ~resolution ~initial ~f access =
             { state with State.resolution }
             ~element:(Element.Signature { Element.signature; arguments })
             ~resolved:(Annotation.create annotation)
+            ~lead
             ()
 
       | _ ->
-          State.abort state ()
+          State.abort state ~lead ()
     in
 
     let local_attribute ~resolved ~lead ~name =
@@ -398,14 +401,14 @@ let fold ~resolution ~initial ~f access =
               in
               callable
               >>| (fun callable -> resolve_callable ~implicit_annotation ~callable ~arguments)
-              |> Option.value ~default:(State.abort state ())
+              |> Option.value ~default:(State.abort state ~lead ())
 
           | Some resolved, Access.Identifier _
             when Type.is_callable (Annotation.annotation resolved) ->
               (* Nested function. *)
               Resolution.get_local resolution ~access:lead
-              >>| (fun resolved -> State.step state ~resolved ())
-              |> Option.value ~default:(State.abort state ())
+              >>| (fun resolved -> State.step state ~resolved ~lead ())
+              |> Option.value ~default:(State.abort ~lead state ())
 
           | Some resolved, Access.Identifier _ ->
               (* Attribute access. *)
@@ -425,13 +428,13 @@ let fold ~resolution ~initial ~f access =
                       defined;
                     }
                   in
-                  State.step state ~resolved ~target ~element ~continue:defined ())
-              |> Option.value ~default:(State.abort state ())
+                  State.step state ~resolved ~target ~element ~continue:defined ~lead ())
+              |> Option.value ~default:(State.abort state ~lead ())
 
           | None, Access.Expression expression ->
               (* Arbitrary expression. *)
               let resolved = Annotation.create (Resolution.resolve resolution expression) in
-              State.step state ~resolved ()
+              State.step state ~resolved ~lead ()
 
           | None, _ ->
               (* Module or global variable. *)
@@ -489,14 +492,14 @@ let fold ~resolution ~initial ~f access =
                       |> suppressed []
                     in
                     if not suppressed then
-                      State.step state ~resolved ()
+                      State.step state ~resolved ~lead ()
                     else
-                      State.abort state ()
+                      State.abort state ~lead ()
                 | None ->
                     begin
                       match Resolution.module_definition resolution lead with
                       | Some definition when Module.empty_stub definition ->
-                          State.abort state ()
+                          State.abort state ~lead ()
                       | Some _ ->
                           State.create ~resolution ~accumulator ~f ()
                       | None ->
@@ -507,12 +510,12 @@ let fold ~resolution ~initial ~f access =
                               defined = false;
                             }
                           in
-                          State.abort state ~element ()
+                          State.abort state ~element ~lead ()
                     end
               end
 
           | _ ->
-              State.abort state ()
+              State.abort state ~lead ()
         in
         if continue then
           fold ~state ~lead ~tail
@@ -528,5 +531,5 @@ let last_element ~resolution access =
   fold
     ~resolution
     ~initial:Element.Value
-    ~f:(fun _ ~resolution:_ ~resolved:_ ~element -> element)
+    ~f:(fun _ ~resolution:_ ~resolved:_ ~element ~lead:_ -> element)
     access

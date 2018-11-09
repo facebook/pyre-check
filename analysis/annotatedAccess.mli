@@ -51,6 +51,7 @@ val fold
         -> resolution: Resolution.t
         -> resolved: Annotation.t
         -> element: Element.t
+        -> lead: Access.t
         -> 'accumulator)
   -> t
   -> 'accumulator
