@@ -1325,18 +1325,17 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
-    let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
-    in
-    let expected =
+    let return_annotation =
       let annotation =
         Annotated.Callable.return_annotation ~define:define_without_location ~resolution
       in
       if async then
-        Resolution.join resolution (Type.awaitable Type.Bottom) annotation
-        |> Type.awaitable_value
+        Type.awaitable_value annotation
       else
         annotation
+    in
+    let instantiate location =
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
     match value with
     | Assign { Assign.target; annotation; value; _ } ->
@@ -2042,31 +2041,32 @@ module State = struct
             ~default:{ state; resolved = Type.none }
             ~f:(fun expression -> forward_expression ~state ~expression)
         in
-        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) &&
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
            not (Define.is_abstract_method define_without_location) &&
            not (Define.is_overloaded_method define_without_location) &&
            not (Type.is_none actual &&
                 (Annotated.Define.create define_without_location
                  |> Annotated.Define.is_generator)) &&
-           not (Type.is_none actual && Type.is_noreturn expected) then
+           not (Type.is_none actual && Type.is_noreturn return_annotation) then
           let error =
             Error.create
               ~location
               ~kind:(Error.IncompatibleReturnType {
-                  mismatch = { Error.expected; actual };
+                  mismatch = { Error.expected = return_annotation; actual };
                   is_implicit;
                 })
               ~define
           in
           add_error ~state error
-        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+        else if Type.equal return_annotation Type.Top ||
+                Type.equal return_annotation Type.Object then
           let error =
             Error.create
               ~location
               ~kind:(Error.MissingReturnAnnotation {
                   annotation = actual;
                   evidence_locations = [location.Location.start.Location.line];
-                  due_to_any = Type.equal expected Type.Object;
+                  due_to_any = Type.equal return_annotation Type.Object;
                 })
               ~define
           in
@@ -2083,22 +2083,23 @@ module State = struct
           | None ->
               { state; resolved = Type.generator ~async Type.none }
         in
-        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) then
           Error.create
             ~location
             ~kind:(Error.IncompatibleReturnType {
-                mismatch = { Error.expected; actual };
+                mismatch = { Error.expected = return_annotation; actual };
                 is_implicit = false;
               })
             ~define
           |> add_error ~state
-        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+        else if Type.equal return_annotation Type.Top ||
+                Type.equal return_annotation Type.Object then
           Error.create
             ~location
             ~kind:(Error.MissingReturnAnnotation {
                 annotation = actual;
                 evidence_locations = [location.Location.start.Location.line];
-                due_to_any = Type.equal expected Type.Object;
+                due_to_any = Type.equal return_annotation Type.Object;
               })
             ~define
           |> add_error ~state
@@ -2117,22 +2118,23 @@ module State = struct
           | annotation ->
               Type.generator annotation
         in
-        if not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) then
           Error.create
             ~location
             ~kind:(Error.IncompatibleReturnType {
-                mismatch = { Error.expected; actual };
+                mismatch = { Error.expected = return_annotation; actual };
                 is_implicit = false;
               })
             ~define
           |> add_error ~state
-        else if Type.equal expected Type.Top || Type.equal expected Type.Object then
+        else if Type.equal return_annotation Type.Top ||
+                Type.equal return_annotation Type.Object then
           Error.create
             ~location
             ~kind:(Error.MissingReturnAnnotation {
                 annotation = actual;
                 evidence_locations = [location.Location.start.Location.line];
-                due_to_any = Type.equal expected Type.Object;
+                due_to_any = Type.equal return_annotation Type.Object;
               })
             ~define
           |> add_error ~state
