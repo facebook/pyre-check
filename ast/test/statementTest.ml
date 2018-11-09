@@ -56,6 +56,26 @@ let test_is_classmethod _ =
   assert_true (Define.is_class_method (define "__class_getitem__" []))
 
 
+let test_is_class_property _ =
+  let define name decorators =
+    {
+      Define.name = Access.create name;
+      parameters = [];
+      body = [+Pass];
+      decorators;
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      generated = false;
+      parent = Some (Access.create "bar");
+    }
+  in
+  assert_false (Define.is_class_property (define "foo" []));
+  assert_false (Define.is_class_property (define "__init__" []));
+  assert_true (Define.is_class_property (define "foo" [!"pyre_extensions.classproperty"]));
+  assert_false (Define.is_class_property (define "__new__" []))
+
+
 let test_decorator _ =
   let define decorators =
     {
@@ -960,6 +980,7 @@ let () =
   "define">:::[
     "is_method">::test_is_method;
     "classmethod">::test_is_classmethod;
+    "is_class_property">::test_is_class_property;
     "decorator">::test_decorator;
     "is_constructor">::test_is_constructor;
     "dump">::test_dump;

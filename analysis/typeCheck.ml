@@ -492,7 +492,7 @@ module State = struct
                     Access.expression parent
                     |> Resolution.parse_annotation resolution
                   in
-                  if Define.is_class_method define then
+                  if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
                     Type.meta annotation
                   else

@@ -349,6 +349,11 @@ module Define = struct
        ~equal:String.equal)
 
 
+  let is_class_property ({ parent; _ } as define) =
+    Option.is_some parent &&
+    Set.exists Recognized.classproperty_decorators ~f:(has_decorator define)
+
+
   let is_constructor ?(in_test = false) { name; parent; _ } =
     let name =
       match List.last name with
