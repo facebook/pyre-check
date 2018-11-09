@@ -50,14 +50,8 @@ let mock_parent =
   |> Annotated.Class.create
 
 
-let error ?(define = mock_define) kind =
-  let any_position = { Location.line = -1; column = -1 } in
-
-  {
-    Error.location = { Location.path = "*"; start = any_position; stop = any_position };
-    kind;
-    define;
-  }
+let error ?(define = mock_define) ?(location = Location.Instantiated.any) kind =
+  { Error.location; kind; define }
 
 
 let revealed_type access annotation =
@@ -503,10 +497,10 @@ let test_filter _ =
 
 
 let test_suppress _ =
-  let assert_suppressed mode ?(define = mock_define) kind =
+  let assert_suppressed mode ?(define = mock_define) ?location kind =
     assert_equal
       true
-      (Error.suppress ~mode (error ~define kind))
+      (Error.suppress ~mode (error ~define ?location kind))
   in
   let assert_not_suppressed mode ?(define = mock_define) kind =
     assert_equal
@@ -551,7 +545,25 @@ let test_suppress _ =
   assert_suppressed suppress_missing_return (missing_return Type.Object);
   (* Defer to Default policy if not specifically suppressed *)
   assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
-  assert_suppressed suppress_missing_return (Error.UndefinedName (Access.create "reveal_type"))
+  assert_suppressed suppress_missing_return (Error.UndefinedName (Access.create "reveal_type"));
+
+  (* Always suppress synthetic locations. *)
+  assert_suppressed
+    Source.Infer
+    ~location:Location.Instantiated.synthetic
+    (missing_return Type.integer);
+  assert_suppressed
+    Source.Declare
+    ~location:Location.Instantiated.synthetic
+    (missing_return Type.integer);
+  assert_suppressed
+    Source.Default
+    ~location:Location.Instantiated.synthetic
+    (missing_return Type.integer);
+  assert_suppressed
+    Source.Strict
+    ~location:Location.Instantiated.synthetic
+    (missing_return Type.integer)
 
 
 let () =

@@ -31,6 +31,7 @@ module Reference : sig
 
   val create: start: Lexing.position -> stop: Lexing.position -> t
   val any: t
+  val synthetic: t
 end
 
 module Instantiated : sig
@@ -39,6 +40,7 @@ module Instantiated : sig
 
   val create: start: Lexing.position -> stop: Lexing.position -> t
   val any: t
+  val synthetic: t
 
   val pp_start: Format.formatter -> t -> unit
 end

@@ -61,7 +61,9 @@ module ExpressionVisitor = struct
       None
 
   let store_lookup ~table ~location ~data =
-    if not (Location.equal location Location.Reference.any) then
+    if not (
+        Location.equal location Location.Reference.any
+        || Location.equal location Location.Reference.synthetic) then
       Hashtbl.set
         table
         ~key:location

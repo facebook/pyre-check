@@ -2398,14 +2398,17 @@ let check
         errors
       else
         let keep_error error =
-          let mode =
-            let (module Handler: Environment.Handler) = environment in
-            Handler.mode
-              (Error.path error
-               |> File.Handle.create)
-            |> Option.value ~default:Source.Default
-          in
-          not (Error.suppress ~mode error)
+          if Location.Instantiated.equal (Error.location error) Location.Instantiated.synthetic then
+            false
+          else
+            let mode =
+              let (module Handler: Environment.Handler) = environment in
+              Handler.mode
+                (Error.path error
+                 |> File.Handle.create)
+              |> Option.value ~default:Source.Default
+            in
+            not (Error.suppress ~mode error)
         in
         List.filter ~f:keep_error errors
     in

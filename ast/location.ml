@@ -15,7 +15,11 @@ type position = {
 
 
 let any_position =
-  { line = -1; column = -1; }
+  { line = -1; column = -1 }
+
+(* We explicitly do not analyze expressions/statements at synthetic positions. *)
+let synthetic_position =
+  { line = -1; column = -2 }
 
 
 let show_position { line; column } =
@@ -94,6 +98,9 @@ module Reference = struct
 
   let any =
     { path = -1; start = any_position; stop = any_position }
+
+  let synthetic =
+    { path = -1; start = synthetic_position; stop = synthetic_position }
 end
 
 
@@ -130,6 +137,9 @@ module Instantiated = struct
 
   let any =
     { path = "*"; start = any_position; stop = any_position }
+
+  let synthetic =
+    { path = "*"; start = synthetic_position; stop = synthetic_position }
 end
 
 
