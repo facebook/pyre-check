@@ -204,7 +204,7 @@ let rec resolve ~resolution expression =
       end
 
   | Ternary ternary ->
-      let rec normalize ({ Ternary.target; alternative; test; } as ternary) =
+      let rec normalize ({ Ternary.target; alternative; test } as ternary) =
         let test = Expression.normalize test in
         match Node.value test with
         | Expression.UnaryOperator {
@@ -242,7 +242,7 @@ let rec resolve ~resolution expression =
         Resolution.set_local resolution ~access:key ~annotation
       in
 
-      let { Ternary.target; alternative; test; } = normalize ternary in
+      let { Ternary.target; alternative; test } = normalize ternary in
       let updated_resolution =
         match Node.value test with
         | Expression.Access access ->
