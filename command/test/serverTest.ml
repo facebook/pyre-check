@@ -895,7 +895,7 @@ let test_incremental_dependencies context =
     List.zip_exn handles sources
     |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
 
-    let environment = Environment.Builder.create () in
+    let environment = environment ~local_root in
     let environment_handler =
       Environment.handler ~configuration:(configuration ~local_root) environment
     in

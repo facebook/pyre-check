@@ -211,3 +211,7 @@ let widen { order; _ } =
 
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order
+
+
+let is_tracked { order; _ } annotation =
+  TypeOrder.contains order annotation

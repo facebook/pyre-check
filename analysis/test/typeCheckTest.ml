@@ -4947,7 +4947,18 @@ let test_check_union _ =
           return None
       variable = ret_opt_int()
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: Union[int, Undefined]) -> None:
+        pass
+      foo(1)
+    |}
+    [
+      "Undefined type [11]: Type `Undefined` is not defined.";
+      "Incompatible parameter type [6]: Expected `Union[int, Undefined]` but got `int`."
+    ]
 
 
 let test_check_return_joining _ =
@@ -5276,11 +5287,11 @@ let test_check_tuple _ =
     [];
   assert_type_errors
     {|
-      def foo() -> typing.Tuple[int, string]:
+      def foo() -> typing.Tuple[int, str]:
         return (1, "string", 3)
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, string]` but got " ^
+      "Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got " ^
       "`typing.Tuple[int, str, int]`.";
     ];
   assert_type_errors
@@ -6451,6 +6462,25 @@ let test_check_assert_functions _ =
 
 
 let test_check_undefined_type _ =
+  assert_type_errors
+    {|
+      def foo(x: Derp) -> Herp:
+        return x
+    |}
+    ["Undefined type [11]: Type `Derp` is not defined."];
+  assert_type_errors
+    {|
+      def foo(x: int) -> Herp:
+        return x
+    |}
+    ["Undefined type [11]: Type `Herp` is not defined."];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[Derp, Herp]) -> List[Herp]:
+        return x
+    |}
+    ["Undefined type [11]: Type `Derp` is not defined."];
+
   (* Ensure other errors are not missed when undefined type is thrown. *)
   assert_type_errors
     {|
@@ -6464,6 +6494,7 @@ let test_check_undefined_type _ =
                 return x
       |}
     [
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
       "Undefined type [11]: Type `Herp` is not defined."
     ]

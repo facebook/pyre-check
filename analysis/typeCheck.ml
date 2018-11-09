@@ -433,7 +433,19 @@ module State = struct
       create ~configuration ~resolution ~define:define_node ()
     in
     let check_annotation errors annotation =
-      let f errors annotation =
+      let check_untracked_annotation errors annotation =
+        if Resolution.is_tracked resolution annotation then
+          errors
+        else
+          let error =
+            Error.create
+              ~location
+              ~kind:(Error.UndefinedType annotation)
+              ~define:define_node
+          in
+          Map.set ~key:location ~data:error errors
+      in
+      let check_missing_type_parameters errors annotation =
         match annotation with
         | Type.Primitive _ ->
             let generics =
@@ -459,7 +471,8 @@ module State = struct
             errors
       in
       let primitives = Type.primitives annotation in
-      List.fold primitives ~f ~init:errors
+      List.fold ~init:errors ~f:check_untracked_annotation primitives
+      |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
     in
     (* Check return annotation. *)
     let errors =
