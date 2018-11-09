@@ -614,17 +614,20 @@ module State = struct
                    errors
                in
                (* Check weakening of precondition. *)
-               let parameters =
+               let overriding_parameters =
                  let remove_unused_parameter_denotation ~key ~data map =
                    Identifier.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                  in
                  Method.parameter_annotations original_method ~resolution
                  |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
                in
-               let parameter errors parameter =
-                 let expected = Type.Callable.Parameter.annotation parameter in
-                 let name = Type.Callable.Parameter.name parameter in
-                 match Map.find parameters name with
+               let check_parameter errors overridden_parameter =
+                 let expected = Type.Callable.Parameter.annotation overridden_parameter in
+                 let name =
+                   Type.Callable.Parameter.name overridden_parameter
+                   |> Identifier.remove_leading_underscores
+                 in
+                 match Map.find overriding_parameters name with
                  | Some actual ->
                      begin
                        try
@@ -661,7 +664,7 @@ module State = struct
                            else
                              starred
                          in
-                         Map.fold ~f:collect_starred_parameters ~init:[] parameters
+                         Map.fold ~f:collect_starred_parameters ~init:[] overriding_parameters
                        in
                        let count_stars parameter =
                          Identifier.show parameter
@@ -694,7 +697,7 @@ module State = struct
                in
                Type.Callable.Overload.parameters implementation
                |> Option.value ~default:[]
-               |> List.fold ~init:errors ~f:parameter
+               |> List.fold ~init:errors ~f:check_parameter
            | _ ->
                errors)
           |> Option.value ~default:errors

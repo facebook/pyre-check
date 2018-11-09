@@ -5862,6 +5862,51 @@ let test_check_behavioral_subtyping _ =
       "supertype of the overridden parameter `typing.Union[int, str]`."
     ];
 
+  (* A leading underscore indicates parameters are unused; they should still be recognized *)
+  assert_type_errors
+    {|
+      class Foo:
+          def bar(self, _x) -> str:
+              return ""
+      class Bar(Foo):
+          def bar(self, x) -> str:
+              return ""
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+          def bar(self, _x) -> str:
+              return ""
+      class Baz(Foo):
+          def bar(self, _x) -> str:
+              return ""
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+          def bar(self, x) -> str:
+              return ""
+      class Bar(Foo):
+          def bar(self, _x) -> str:
+              return ""
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+          def bar(self, _y) -> str:
+              return ""
+      class Bar(Foo):
+          def bar(self, x) -> str:
+              return ""
+    |}
+    [
+      "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` " ^
+      "inconsistently. Could not find parameter `y` in overriding signature."
+    ];
+
   (* Don't warn on constructors or class methods. *)
   assert_type_errors
     {|
