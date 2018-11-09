@@ -1852,7 +1852,7 @@ let test_check _ =
       def f() -> None:
         a = foo(1,2)
     |}
-    ["Too many arguments [19]: Call `foo` expects 1 positional argument, 2 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 1 argument, 2 were provided."];
 
   assert_type_errors
     {|
@@ -1890,7 +1890,7 @@ let test_check _ =
       def f(c: C) -> None:
         a = c.f("", "")
     |}
-    ["Too many arguments [19]: Call `C.f` expects 2 positional arguments, 3 were provided."];
+    ["Too many arguments [19]: Call `C.f` expects 2 arguments, 3 were provided."];
 
   assert_type_errors
     {|
@@ -1908,7 +1908,7 @@ let test_check _ =
       def f() -> None:
         a = foo(1,2,3,4)
     |}
-    ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 0 arguments, 4 were provided."];
 
   assert_type_errors
     {|
@@ -2949,7 +2949,7 @@ let test_check_variable_arguments _ =
         foo ( *b, 'asdf' )
     |}
     [
-      "Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided.";
+      "Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -2959,7 +2959,7 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> None:
         foo ( *b, 1, 'asdf' )
     |}
-    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 4 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 2 arguments, 4 were provided."];
 
   assert_type_errors
     {|
@@ -2968,7 +2968,7 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[int]) -> None:
         foo ( *b, 'asdf' )
     |}
-    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided."];
 
   assert_type_errors
     {|
@@ -2978,7 +2978,7 @@ let test_check_variable_arguments _ =
         durp( *b, 1.0 )
     |}
     [
-      "Too many arguments [19]: Call `durp` expects 2 positional arguments, 3 were provided.";
+      "Too many arguments [19]: Call `durp` expects 2 arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -4160,7 +4160,7 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
       " specified.";
-      "Too many arguments [19]: Call `object.__init__` expects 1 positional argument, 5 were" ^
+      "Too many arguments [19]: Call `object.__init__` expects 1 argument, 5 were" ^
       " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`."]
 
@@ -6657,7 +6657,7 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 2 positional arguments, " ^
+    ["Too many arguments [19]: Call `Foo.__init__` expects 2 arguments, " ^
      "3 were provided."];
   assert_type_errors
     {|
@@ -6667,7 +6667,7 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 2 positional arguments, " ^
+    ["Too many arguments [19]: Call `Foo.__init__` expects 2 arguments, " ^
      "3 were provided."];
   assert_type_errors
     {|
@@ -6680,7 +6680,7 @@ let test_check_data_class _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, 2 were" ^
+      "Too many arguments [19]: Call `Foo.__init__` expects 1 argument, 2 were" ^
       " provided.";
     ];
   assert_type_errors
