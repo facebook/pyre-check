@@ -82,9 +82,10 @@ def _normalize(targets: List[str]) -> List[str]:
             .strip()
             .split("\n")
         )
-        if len(targets_to_destinations) == 0:
+        targets_to_destinations = list(filter(bool, targets_to_destinations))
+        if not targets_to_destinations:
             LOG.warning(
-                "Provided TARGETS files do not contain any binary or unittest targets."
+                "Provided targets do not contain any binary or unittest targets."
             )
             return []
         else:
