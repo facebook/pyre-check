@@ -168,8 +168,11 @@ let rec resolve ~resolution expression =
       Type.integer
 
   | Lambda { Lambda.body; Lambda.parameters; _ } ->
+      let to_lambda_parameter { Node.value = { Parameter.name; _ }; _ } =
+        Expression.Access.create (Identifier.show name), Type.Object
+      in
       Type.lambda
-        ~parameters:(List.map parameters ~f:(fun _ -> Type.Object))
+        ~parameters:(List.map parameters ~f:to_lambda_parameter)
         ~return_annotation:(resolve ~resolution body)
 
   | List elements ->

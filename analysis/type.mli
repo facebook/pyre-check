@@ -18,13 +18,7 @@ module Record : sig
         default: bool;
       }
 
-      type 'annotation anonymous = {
-        index: int;
-        annotation: 'annotation;
-      }
-
       and 'annotation t =
-        | Anonymous of 'annotation anonymous
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -125,7 +119,7 @@ val generic: t
 val integer: t
 val iterable: t -> t
 val iterator: t -> t
-val lambda: parameters: t list -> return_annotation: t -> t
+val lambda: parameters: (Access.t * t) list -> return_annotation: t -> t
 val list: t -> t
 val meta: t -> t
 val named_tuple: t

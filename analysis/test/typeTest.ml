@@ -212,8 +212,16 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
-              Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
+              Parameter.Named {
+                Parameter.name = Access.create "$0";
+                annotation = Type.integer;
+                default = false;
+              };
+              Parameter.Named {
+                Parameter.name = Access.create "$1";
+                annotation = Type.string;
+                default = false;
+              };
             ];
         };
         overloads = [];
@@ -226,7 +234,11 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+              Parameter.Named {
+                Parameter.name = Access.create "$0";
+                annotation = Type.integer;
+                default = false;
+              };
               Parameter.Named {
                 Parameter.name = Access.create "a";
                 annotation = Type.integer;
@@ -254,7 +266,11 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
+              Parameter.Named {
+                Parameter.name = Access.create "$0";
+                annotation = Type.integer;
+                default = false;
+              };
               Parameter.Variable {
                 Parameter.name = Access.create "variable";
                 annotation = Type.integer;
@@ -377,12 +393,20 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
-           Parameter.Anonymous { Parameter.index = 0; annotation = Type.integer};
-           Parameter.Anonymous { Parameter.index = 1; annotation = Type.string};
+           Parameter.Named {
+             Parameter.name = Access.create "$0";
+             annotation = Type.integer;
+             default = false;
+           };
+           Parameter.Named {
+             Parameter.name = Access.create "$1";
+             annotation = Type.string;
+             default = false;
+           };
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([int, str], int))";
+    "typing.Callable.__getitem__(([Named($0, int), Named($1, str)], int))";
   assert_expression
     (Type.callable
        ~parameters:(Type.Callable.Defined [
@@ -415,7 +439,11 @@ let test_expression _ =
   assert_expression
     (Type.callable
        ~parameters:(Defined [
-           Parameter.Anonymous { Parameter.index = 1; annotation = Type.integer};
+           Parameter.Named {
+             Parameter.name = Access.create "$0";
+             annotation = Type.integer;
+             default = false;
+           };
            Parameter.Variable {
              Parameter.name = Access.create "variable";
              annotation = Type.integer;
@@ -429,7 +457,7 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([int, Variable(variable, int), Keywords(keywords, str)], int))";
+    "typing.Callable.__getitem__(([Named($0, int), Variable(variable, int), Keywords(keywords, str)], int))";
 
   assert_expression
     (Type.TypedDictionary {

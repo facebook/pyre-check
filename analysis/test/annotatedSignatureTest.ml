@@ -146,7 +146,7 @@ let test_select _ =
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
 
-  assert_select "[[int], int]" "()" (`NotFoundMissingArgument "anonymous");
+  assert_select "[[int], int]" "()" (`NotFoundMissingArgument "$0");
   assert_select "[[], int]" "(1)" (`NotFoundTooManyArguments (0, 1));
 
   assert_select "[[int], int]" "(1)" (`Found "[[int], int]");
@@ -329,7 +329,7 @@ let test_select _ =
     "(0)"
     (* Ambiguous, pick the first one. *)
     (`NotFoundMissingArgumentWithClosest
-       ("[[int, int, str], int]", "anonymous"));
+       ("[[int, int, str], int]", "$1"));
 
   assert_select
     ~allow_undefined:true
@@ -367,14 +367,14 @@ let test_select _ =
     (* Clear winner. *)
     (`NotFoundMissingArgumentWithClosest
        ("[[int, str, str], int]",
-        "anonymous"));
+        "$2"));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
     (`NotFoundMissingArgumentWithClosest
-       ("[[int, str, bool], int]", "anonymous"));
+       ("[[int, str, bool], int]", "$2"));
 
   (* Match not found in overloads: error against implementation if it exists. *)
   assert_select

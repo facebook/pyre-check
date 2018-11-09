@@ -469,23 +469,27 @@ let test_forward_expression _ =
   let callable ~parameters ~annotation =
     let parameters =
       let open Type.Callable in
-      let rec anonymous_parameters = function
-        | count when count > 0 ->
-            Parameter.Anonymous { Parameter.index = (count - 1); annotation = Type.Object }
-            :: anonymous_parameters (count - 1)
-        | _ ->
-            []
+      let to_parameter name =
+        Parameter.Named {
+          Parameter.name = Access.create name;
+          annotation = Type.Object;
+          default = false;
+        }
       in
-      Defined (List.rev (anonymous_parameters parameters))
+      Defined (List.map parameters ~f:to_parameter)
     in
     Type.callable ~parameters ~annotation ()
   in
-  assert_forward "lambda: 1" (callable ~parameters:0 ~annotation:Type.integer);
-  assert_forward "lambda parameter: parameter" (callable ~parameters:1 ~annotation:Type.Object);
+  assert_forward "lambda: 1" (callable ~parameters:[] ~annotation:Type.integer);
+  assert_forward
+    "lambda parameter: parameter"
+    (callable
+       ~parameters:["parameter"]
+       ~annotation:Type.Object);
   assert_forward
     ~errors:(`Undefined 1)
     "lambda: undefined"
-    (callable ~parameters:0 ~annotation:Type.Top);
+    (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
   assert_forward "[]" (Type.list Type.Bottom);
@@ -827,7 +831,6 @@ let test_forward_statement _ =
     ["x", Type.integer]
     "assert isinstance(x, 1)"
     ["x", Type.integer];
-
   assert_forward
     ~errors:
       (`Specific
@@ -846,7 +849,6 @@ let test_forward_statement _ =
     ["x", Type.integer]
     "assert not isinstance(x, float)"
     ["x", Type.integer];
-
   assert_forward
     ~bottom:false
     ["x", Type.float]

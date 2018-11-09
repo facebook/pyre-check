@@ -285,8 +285,6 @@ let select
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _; } as signature_match) =
       let (parameter_name, parameter_annotation) =
         match key with
-        | Parameter.Anonymous { Parameter.annotation; _ } ->
-            (Access.create "anonymous"), annotation
         | Parameter.Named { Parameter.name; annotation; _ }
         | Parameter.Variable { Parameter.name; annotation; _ }
         | Parameter.Keywords { Parameter.name; annotation; _ } ->

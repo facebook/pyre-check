@@ -1212,14 +1212,15 @@ module State = struct
             ~state:{ state with resolution = resolution_with_parameters }
             ~expression:body
         in
-        let create_anonymous index _ =
-          Type.Callable.Parameter.Anonymous {
-            Type.Callable.Parameter.index;
+        let create_parameter { Node.value = { Parameter.name; _ }; _ } =
+          Type.Callable.Parameter.Named {
+            Type.Callable.Parameter.name = Access.create (Identifier.show name);
             annotation = Type.Object;
+            default = false;
           }
         in
         let parameters =
-          List.mapi parameters ~f:create_anonymous
+          List.map parameters ~f:create_parameter
           |> fun parameters -> Type.Callable.Defined parameters
         in
         {
