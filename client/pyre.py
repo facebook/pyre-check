@@ -144,8 +144,8 @@ def main() -> int:
         action="append",
         default=[],
         type=readable_directory,
-        help="Additional directories with modules and stubs "
-        "to include in type environment",
+        help="adds an additional directory of modules and stubs to include in type"
+        " environment each time it is passed",
     )
     parser.add_argument(
         "--preserve-pythonpath",
