@@ -541,8 +541,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Tuple _ ->
       false
 
-  | Type.Callable { Callable.kind = Callable.Anonymous; implementation = left; _ },
-    Type.Callable { Callable.kind = Callable.Anonymous; implementation = right; _ } ->
+  | Type.Callable { Callable.kind = Callable.Named left; _ },
+    Type.Callable { Callable.kind = Callable.Named right; _ }
+    when Expression.Access.equal left right ->
+      true
+  | Type.Callable { Callable.implementation = left; _ },
+    Type.Callable { Callable.implementation = right; _ } ->
       let open Callable in
       let parameters_less_or_equal () =
         match left.parameters, right.parameters with
@@ -551,16 +555,16 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
         | Defined left, Defined right ->
             begin
               try
-                let parameter_less_or_equal left right =
-                  match left, right with
+                let parameter_less_or_equal left_parameter right_parameter =
+                  match left_parameter, right_parameter with
                   | Parameter.Named left, Parameter.Named right
                   | Parameter.Keywords left, Parameter.Keywords right
-                  | Parameter.Variable left, Parameter.Variable right
-                    when Expression.Access.equal left.Parameter.name right.Parameter.name ->
+                  | Parameter.Variable left, Parameter.Variable right ->
+                      Parameter.names_compatible left_parameter right_parameter &&
                       less_or_equal
                         order
                         ~left:right.Parameter.annotation
-                        ~right:left.Parameter.annotation;
+                        ~right:left.Parameter.annotation
                   | _ ->
                       false
                 in
@@ -573,10 +577,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       in
       less_or_equal order ~left:left.annotation ~right:right.annotation &&
       parameters_less_or_equal ()
-  | Type.Callable { Callable.kind = Callable.Named left; _ },
-    Type.Callable { Callable.kind = Callable.Named right; _ }
-    when Expression.Access.equal left right ->
-      true
   | Type.Callable _, _
   | _, Type.Callable _ ->
       false

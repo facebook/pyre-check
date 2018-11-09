@@ -476,8 +476,11 @@ let test_less_or_equal _ =
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
     add_simple (Type.string);
-    add_simple (Type.integer);
-    add_simple (Type.float);
+    insert order Type.integer;
+    insert order Type.float;
+    connect order ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect order ~predecessor:Type.integer ~successor:Type.float;
+    connect order ~predecessor:Type.float ~successor:Type.Top;
     add_simple !"tuple";
     insert order !"A";
     insert order !"B";
@@ -575,7 +578,100 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"))
+       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"));
+
+  (* Behavioral subtyping of callables. *)
+  let less_or_equal order ~left ~right =
+    let parse serialized =
+      parse_single_expression serialized
+      |> Type.create ~aliases:(fun _ -> None)
+    in
+    less_or_equal order ~left:(parse left) ~right:(parse right)
+  in
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[str], int]"
+       ~right:"typing.Callable[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable[[str], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], str]"
+       ~right:"typing.Callable[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], float]"
+       ~right:"typing.Callable[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable[[int], float]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[float], int]"
+       ~right:"typing.Callable[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable[[float], int]");
+
+  (* Named vs. anonymous callables. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int]"
+       ~right:"typing.Callable('foo')[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[str], int]"
+       ~right:"typing.Callable('foo')[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable('foo')[[int], int]"
+       ~right:"typing.Callable[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable('foo')[[str], int]"
+       ~right:"typing.Callable[[int], int]");
+
+  (* Named callables. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable('foo')[[int], int]"
+       ~right:"typing.Callable('foo')[[int], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable('bar')[[str], int]"
+       ~right:"typing.Callable('foo')[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable('foo')[[int], int]"
+       ~right:"typing.Callable('bar')[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable('foo')[[str], int]"
+       ~right:"typing.Callable('foo')[[int], int]")
 
 
 let test_join _ =

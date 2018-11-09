@@ -1812,7 +1812,31 @@ module Callable = struct
       | Variable { annotation; _ }
       | Keywords { annotation; _ } ->
           annotation
+
+    let names_compatible left right =
+      match left, right with
+      | Named { name = left; _ }, Named { name = right; _ }
+      | Variable { name = left; _ }, Variable { name = right; _ }
+      | Keywords { name = left; _ }, Keywords { name = right; _ } ->
+          if String.is_prefix ~prefix:"$" (Access.show left) ||
+             String.is_prefix ~prefix:"$" (Access.show right) then
+            true
+          else
+            let left =
+              Access.show left
+              |> Identifier.create
+              |> Identifier.remove_leading_underscores
+            in
+            let right =
+              Access.show right
+              |> Identifier.create
+              |> Identifier.remove_leading_underscores
+            in
+            Identifier.equal left right
+      | _ ->
+          false
   end
+
 
   include Record.Callable
 
