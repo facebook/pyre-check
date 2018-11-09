@@ -26,6 +26,7 @@ module type Fixpoint = sig
   [@@deriving show]
 
   val entry: t -> state option
+  val normal_exit: t -> state option
   val exit: t -> state option
 
   val forward: cfg: Cfg.t -> initial: state -> t
@@ -51,6 +52,9 @@ module Make (State: State) = struct
 
   let entry fixpoint =
     Hashtbl.find fixpoint Cfg.entry_index
+
+  let normal_exit fixpoint =
+    Hashtbl.find fixpoint Cfg.normal_index
 
   let exit fixpoint =
     Hashtbl.find fixpoint Cfg.exit_index

@@ -2283,15 +2283,14 @@ let check
             ~relative:(Format.asprintf "cfgs%a.dot" Access.pp name)
           |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
           |> File.write
-        end;
-      fixpoint
+        end
     in
     try
-      let exit =
+      let normal_exit, exit =
         let cfg = Cfg.create define in
-        Fixpoint.forward ~cfg ~initial
-        |> dump_cfg cfg
-        |> Fixpoint.exit
+        let fixpoint = Fixpoint.forward ~cfg ~initial in
+        dump_cfg cfg fixpoint;
+        Fixpoint.normal_exit fixpoint, Fixpoint.exit fixpoint
       in
       if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
@@ -2307,7 +2306,7 @@ let check
 
       let () =
         (* Schedule nested functions for analysis. *)
-        match exit with
+        match normal_exit with
         | Some ({ State.resolution; _ } as exit) ->
             State.nested_defines exit
             |> List.iter ~f:(fun define -> Queue.enqueue queue (define, resolution))

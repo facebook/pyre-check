@@ -5056,7 +5056,20 @@ let test_check_nested _ =
       def shadowing(i: int) -> None: ...
       shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  assert_type_errors
+  {|
+    def can_fail() -> None:
+      try:
+        x = 3
+      except:
+        pass
+      always_declared = 4
+      def bar() -> int:
+        return always_declared
+  |}
+  []
 
 
 let test_check_invalid_constructor _ =

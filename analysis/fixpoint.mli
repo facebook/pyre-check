@@ -25,6 +25,7 @@ module type Fixpoint = sig
   [@@deriving show]
 
   val entry: t -> state option
+  val normal_exit: t -> state option
   val exit: t -> state option
 
   val forward: cfg: Cfg.t -> initial: state -> t
