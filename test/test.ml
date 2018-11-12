@@ -348,18 +348,21 @@ let typeshed_stubs = (* Yo dawg... *)
         class Sized: ...
 
         _T = TypeVar('_T')
-        _T_co = TypeVar('_T_co')
         _S = TypeVar('_S')
-        _V = TypeVar('_V')
         _KT = TypeVar('_KT')
-        _VT_co = TypeVar('_VT_co')
+        _VT = TypeVar('_VT')
+        _T_co = TypeVar('_T_co', covariant=True)
+        _V_co = TypeVar('_V_co', covariant=True)
+        _KT_co = TypeVar('_KT_co', covariant=True)
+        _VT_co = TypeVar('_VT_co', covariant=True)
+        _T_contra = TypeVar('_T_contra', contravariant=True)
 
         class Generic(): pass
 
-        class Iterable(Generic[_T]):
-          def __iter__(self) -> Iterator[_T]: pass
-        class Iterator(Iterable[_T], Generic[_T]):
-          def __next__(self) -> _T: ...
+        class Iterable(Protocol[_T_co]):
+          def __iter__(self) -> Iterator[_T_co]: pass
+        class Iterator(Iterable[_T_co], Protocol[_T_co]):
+          def __next__(self) -> _T_co: ...
 
         class AsyncIterable(Protocol[_T_co]):
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
@@ -373,17 +376,17 @@ let typeshed_stubs = (* Yo dawg... *)
           _Collection = Collection
         else:
           class _Collection(Iterable[_T_co]): ...
-        class Sequence(_Collection[_T], Iterable[_T]): pass
+        class Sequence(_Collection[_T_co], Generic[_T_co]): pass
 
-        class Generator(Generic[_T, _S, _V], Iterator[_T]):
+        class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
           pass
         class Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
           pass
 
         class Awaitable: pass
-        class AsyncGenerator(Generic[_T, _S]):
-          def __aiter__(self) -> 'AsyncGenerator[_T, _S]': ...
-          def __anext__(self) -> Awaitable[_T]: ...
+        class AsyncGenerator(Generic[_T_co, _T_contra]):
+          def __aiter__(self) -> 'AsyncGenerator[_T_co, _T_contra]': ...
+          def __anext__(self) -> Awaitable[_T_co]: ...
 
         def cast(tp: Type[_T], o: Any) -> _T: ...
       |}
