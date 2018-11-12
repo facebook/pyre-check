@@ -570,7 +570,7 @@ let infer
       recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
     else
       errors @ added_global_errors
-      |> List.map ~f:(Error.dequalify dequalify_map environment)
+      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
       |> fun errors -> {
         TypeCheck.Result.errors;
@@ -587,7 +587,7 @@ let infer
       List.map results ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
-      |> List.map ~f:(Error.dequalify dequalify_map environment)
+      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
     in
 

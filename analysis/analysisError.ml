@@ -1364,13 +1364,12 @@ let suppress ~mode error =
 
 let dequalify
     dequalify_map
-    environment
+    ~resolution
     ({
       kind;
       define = { Node.location; value = ({ Define.parameters; return_annotation; _ } as define) };
       _;
     } as error) =
-  let resolution = Environment.resolution environment () in
   let dequalify = Type.dequalify dequalify_map in
   let kind =
     match kind with

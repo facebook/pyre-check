@@ -2418,7 +2418,7 @@ let check
     |> List.map ~f:filter
     |> List.concat
     |> Error.join_at_source ~resolution
-    |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) environment)
+    |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution)
     |> List.sort ~compare:Error.compare
   in
 
