@@ -883,6 +883,17 @@ let test_forward_statement _ =
     "assert not isinstance(x, int)"
     ["x", Type.Bottom];
 
+  assert_forward
+    ~bottom:true
+    []
+    "assert False"
+    [];
+  assert_forward
+    ~bottom:false
+    []
+    "assert (not True)"
+    [];
+
   (* Raise. *)
   assert_forward [] "raise 1" [];
   assert_forward ~errors:(`Undefined 1) [] "raise undefined" [];
@@ -1363,7 +1374,7 @@ let test_coverage _ =
   assert_coverage
     {|
      def foo(y: int):
-       if True:
+       if condition():
          x = y
        else:
          x = z
@@ -1372,7 +1383,7 @@ let test_coverage _ =
   assert_coverage
     {|
      def foo(y: asdf):
-      if True:
+      if condition():
         x = y
       else:
         x = 1
@@ -1719,25 +1730,25 @@ let test_check _ =
   assert_type_errors
     {|
       def x() -> int:
-        if condition:
+        if unknown_condition:
           return 1
     |}
     [
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `condition` is undefined.";
+      "Undefined name [18]: Global name `unknown_condition` is undefined.";
     ];
 
   assert_type_errors
     {|
       def foo() -> int:
-        if condition:
+        if unknown_condition:
           return 1
         else:
           x = 1
     |}
     [
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `condition` is undefined.";
+      "Undefined name [18]: Global name `unknown_condition` is undefined.";
     ];
 
   assert_type_errors
@@ -1804,7 +1815,7 @@ let test_check _ =
   assert_type_errors
     {|
      def foo() -> str:
-      if True:
+      if condition():
         return 1
       else:
         return 2
@@ -2239,7 +2250,8 @@ let test_check_coverage _ =
 
   (* Boolean operator. *)
   assert_covered "ERROR or False";
-  assert_covered "True or ERROR";
+  (* True or UNDEFINED evaluates to True in python. *)
+  assert_not_covered "True or ERROR";
   assert_covered "ERROR and False";
   assert_covered "True and ERROR";
 
@@ -2505,7 +2517,7 @@ let test_check_optional _ =
   assert_type_errors
     {|
       def foo() -> typing.Any:
-        if True:
+        if condition():
           return 1
     |}
     [
@@ -3360,7 +3372,7 @@ let test_check_init _ =
       class Foo:
         attribute: int
         def __init__(self) -> None:
-          if True:
+          if condition():
             self.attribute = 0
           else:
             self.attribute = 1
@@ -3383,7 +3395,7 @@ let test_check_init _ =
       class Foo:
         attribute: int
         def __init__(self) -> None:
-          if True:
+          if condition():
             raise
           self.attribute = 1
     |}
@@ -3394,7 +3406,7 @@ let test_check_init _ =
       class Foo:
         attribute: int
         def __init__(self) -> None:
-          self.attribute = unknown if True else unknown2
+          self.attribute = unknown if condition() else unknown2
     |}
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` " ^
@@ -4919,7 +4931,7 @@ let test_check_union _ =
   assert_type_errors
     {|
       def foo() -> typing.Union[str, int]:
-        if True:
+        if condition():
           return 1
         else:
           return 'foo'
@@ -4986,7 +4998,7 @@ let test_check_return_joining _ =
   assert_type_errors
     {|
       def foo():
-        if True:
+        if condition():
           return 1
         else:
           return 'asdf'
@@ -4998,7 +5010,7 @@ let test_check_return_joining _ =
   assert_type_errors
     {|
       def foo():
-        if True:
+        if condition():
           return 1
         else:
           return 2.0
@@ -5007,7 +5019,7 @@ let test_check_return_joining _ =
   assert_type_errors
     {|
       def foo():
-        if True:
+        if condition():
           return None
         else:
           return 'asdf'
@@ -5019,7 +5031,7 @@ let test_check_return_joining _ =
   assert_type_errors
     {|
       def foo():
-        if True:
+        if condition():
           return A()
         else:
           return B()
@@ -5583,6 +5595,45 @@ let test_check_assert _ =
       def foo(optional: typing.Optional[str]) -> None:
         if optional and len(optional) > 0:
           pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        if 1 > 2:
+          x = 2
+        else:
+          assert False
+        return int_to_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        if 1 > 2:
+          x = 2
+        else:
+          assert False, "unreachable, surely"
+        return int_to_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        if 1 > 2:
+          x = 2
+        else:
+          assert not True
+        return int_to_int(x)
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        if True:
+          return 0
+        else:
+          return int_to_int("monkey news")
     |}
     []
 
@@ -6277,7 +6328,7 @@ let test_check_noreturn _ =
   assert_type_errors
     {|
       def may_not_return() -> str:
-        if True:
+        if condition():
           sys.exit(0)
         else:
           return ""
@@ -6287,7 +6338,7 @@ let test_check_noreturn _ =
   assert_type_errors
     {|
       def no_return() -> int:
-        if True:
+        if condition():
           return 1
         else:
           sys.exit(0)

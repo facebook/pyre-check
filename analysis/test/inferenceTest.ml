@@ -458,7 +458,7 @@ let test_infer _ =
   assert_infer
     {|
       def return_both ():
-          if True:
+          if condition():
               return 5
           else:
               return "Hello"

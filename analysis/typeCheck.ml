@@ -1805,6 +1805,11 @@ module State = struct
           | _ ->
               None
         in
+        let explicit_bottom =
+          match Node.value test with
+          | False -> true
+          | _ -> false
+        in
         let resolution =
           match Node.value test with
           | Access [
@@ -2015,10 +2020,12 @@ module State = struct
               resolution
         in
         begin
-          match contradiction_error with
-          | Some error ->
+          match contradiction_error, explicit_bottom with
+          | Some error, _ ->
               add_error ~state:{ state with bottom = true } error
-          | None ->
+          | None, true ->
+              { state with bottom = true }
+          | None, false ->
               { state with resolution }
         end
 
