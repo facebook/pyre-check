@@ -21,7 +21,9 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "UserControlled" } ]
+            "leaves": [
+              { "kind": "UserControlled", "name": "__userControlled" }
+            ]
           }
         ]
       },
@@ -35,7 +37,7 @@
               "start": 10,
               "end": 13
             },
-            "leaves": [ { "kind": "RemoteCodeExecution" } ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "__eval" } ]
           }
         ]
       }
@@ -65,7 +67,9 @@
               "start": 24,
               "end": 26
             },
-            "leaves": [ { "kind": "UserControlled" } ]
+            "leaves": [
+              { "kind": "UserControlled", "name": "__userControlled" }
+            ]
           }
         ]
       },
@@ -79,7 +83,12 @@
               "start": 25,
               "end": 40
             },
-            "leaves": [ { "kind": "RemoteCodeExecution" } ]
+            "leaves": [
+              {
+                "kind": "RemoteCodeExecution",
+                "name": "subprocess.check_call"
+              }
+            ]
           }
         ]
       }

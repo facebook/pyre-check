@@ -19,7 +19,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
       },
@@ -33,7 +33,7 @@
               "start": 41,
               "end": 54
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
             "call": {
@@ -47,7 +47,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
             "call": {
@@ -61,7 +61,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
             "call": {
@@ -75,7 +75,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
       }
@@ -117,7 +117,7 @@
               "port": "formal(obj)",
               "length": 1
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
       }
@@ -159,7 +159,7 @@
               "port": "formal(obj)",
               "length": 2
             },
-            "leaves": [ { "kind": "GetAttr" } ]
+            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
       }

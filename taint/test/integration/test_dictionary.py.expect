@@ -14,7 +14,7 @@
               "start": 23,
               "end": 28
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -37,7 +37,7 @@
               "start": 25,
               "end": 27
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }

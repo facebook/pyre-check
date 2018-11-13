@@ -160,14 +160,32 @@ module TraceInfo = struct
         left = right
 
 end
+module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 
 
-module TraceInfoSet = struct
-  include AbstractElementSetDomain.Make(TraceInfo)
+module FlowInfo = struct
+  type t =
+    | LeafName of string
+  [@@deriving show, sexp, compare]
+end
+module FlowInfoSet = AbstractSetDomain.Make(FlowInfo)
 
-  let initial = singleton (TraceInfo.Declaration)
 
-  let trace_info = Element
+module FeatureConfig = struct
+  let route (type a) (part: a AbstractDomain.part) =
+    match part with
+    | TraceInfoSet.Element -> `Left
+    | _ -> `Right
+end
+
+module FlowFeatures = struct
+  include AbstractPairDomain.Make(FeatureConfig)(TraceInfoSet)(FlowInfoSet)
+
+  let initial = make (TraceInfoSet.singleton TraceInfo.Declaration) FlowInfoSet.bottom
+
+  let trace_info = TraceInfoSet.Element
+  let flow_info = FlowInfoSet.Element
+  let flow_info_set = FlowInfoSet.Set
 end
 
 
@@ -175,7 +193,6 @@ module type TAINT_DOMAIN = sig
   include AbstractDomain.S
 
   type leaf
-  val trace: TraceInfo.t AbstractDomain.part
   val leaf: leaf AbstractDomain.part
 
   (* Add trace info at call-site *)
@@ -203,23 +220,16 @@ end = struct
     include Leaf
 
     let absence_implicitly_maps_to_bottom = true
-
-    let to_json leaf =
-      let element_to_json leaf =
-        let kind = `String (Leaf.show leaf) in
-        `Assoc ["kind", kind]
-      in
-      [element_to_json leaf]
   end
 
-  module Map = AbstractMapDomain.Make(Key)(TraceInfoSet)
+  module Map = AbstractMapDomain.Make(Key)(FlowFeatures)
   include Map
 
   type leaf = Leaf.t
   [@@derviving compare]
 
   let add map leaf =
-    Map.set map ~key:leaf ~data:TraceInfoSet.initial
+    Map.set map ~key:leaf ~data:FlowFeatures.initial
 
   let singleton leaf =
     add Map.bottom leaf
@@ -230,14 +240,29 @@ end = struct
   let leaves map =
     Map.to_alist map |> List.map ~f:fst
 
+  let leaf = Map.Key
+
   let to_json taint =
-    let element_to_json (leaf, trace_info_set) =
+    let element_to_json (leaf, features) =
       let trace_info =
-        TraceInfoSet.(fold trace_info ~init: [] ~f:(Fn.flip List.cons) trace_info_set)
+        FlowFeatures.(fold trace_info ~f:(Fn.flip List.cons) ~init:[] features)
         |> List.dedup_and_sort ~compare:TraceInfo.compare
       in
+      let leaf_kind_json = `String (Leaf.show leaf) in
+      let leaf_json =
+        let gather_leaf_json leaves = function
+          | FlowInfo.LeafName name ->
+              `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves
+        in
+        FlowFeatures.(fold flow_info ~f:gather_leaf_json ~init:[] features)
+      in
       let trace_json = List.map ~f:TraceInfo.to_json trace_info in
-      let leaf_json = Key.to_json leaf in
+      let leaf_json =
+        if leaf_json = [] then
+          [`Assoc ["kind", leaf_kind_json]]
+        else
+          leaf_json
+      in
       List.map
         trace_json
         ~f:(fun trace_pair ->
@@ -252,25 +277,35 @@ end = struct
     in
     `List elements
 
-  type _ AbstractDomain.part +=
-    | TraceInfo: TraceInfo.t AbstractDomain.part
-
-  let trace = TraceInfo
-  let leaf = Map.Key
-
   let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in
+    let needs_leaf_name =
+      let is_declaration is_declaration = function
+        | Declaration -> true
+        | _ -> is_declaration
+      in
+      Map.fold FlowFeatures.trace_info ~init:false ~f:is_declaration taint
+    in
     let call_trace = CallSite { location; callees; port; path; trace_length = 1 } in
-    let translate feature =
-      match feature with
+    let translate = function
       | Origin _ ->
           call_trace
-      | CallSite { trace_length; _} ->
+      | CallSite { trace_length; _ } ->
           CallSite { location; callees; port; path; trace_length = trace_length + 1 }
       | Declaration ->
           Origin location
     in
-    Map.transform TraceInfoSet.trace_info ~f:translate taint
+    let taint = Map.transform FlowFeatures.trace_info ~f:translate taint in
+    if needs_leaf_name then
+      let add_leaf_names info_set =
+        let add_leaf_name info_set callee =
+          FlowInfo.LeafName (Interprocedural.Callable.external_target_name callee) :: info_set
+        in
+        List.fold callees ~f:add_leaf_name ~init:info_set
+      in
+      Map.transform FlowFeatures.flow_info_set ~f:add_leaf_names taint
+    else
+      taint
 
 end
 

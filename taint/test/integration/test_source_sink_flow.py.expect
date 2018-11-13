@@ -26,7 +26,7 @@
               "port": "result",
               "length": 2
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       },
@@ -45,7 +45,7 @@
               "port": "formal(arg)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -73,7 +73,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -96,7 +96,7 @@
               "start": 23,
               "end": 25
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }
@@ -121,7 +121,7 @@
               "start": 14,
               "end": 19
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -149,7 +149,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }
