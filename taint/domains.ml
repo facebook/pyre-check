@@ -66,7 +66,7 @@ module TraceInfo = struct
         location: Location.t;
         callees: Interprocedural.Callable.t list;
       }
-  [@@deriving compare, sexp]
+  [@@deriving compare, sexp, show]
 
   let show = function
     | Declaration -> "declaration"
@@ -133,18 +133,45 @@ module TraceInfo = struct
         in
         "call", call_json
 
-  let absence_implicitly_maps_to_bottom = true
+  let less_or_equal ~left ~right =
+    match left, right with
+    | CallSite {
+        path = path_left;
+        location = location_left;
+        port = port_left;
+        callees = callees_left;
+      },
+      CallSite {
+        path = path_right;
+        location = location_right;
+        port = port_right;
+        callees = callees_right;
+      } ->
+        port_left = port_right
+        && Location.compare location_left location_right = 0
+        && callees_left = callees_right
+        && AccessPathTree.Label.is_prefix ~prefix:path_right path_left
+    | _ ->
+        left = right
+
 end
 
 
-module SourceSet = Set(Sources)
-module SinkSet = Set(Sinks)
+module TraceInfoSet = struct
+  include AbstractElementSetDomain.Make(TraceInfo)
+
+  let initial = singleton (TraceInfo.Declaration)
+
+  let trace_info = Element
+end
 
 
 module type TAINT_DOMAIN = sig
   include AbstractDomain.S
 
-  val trace_info: TraceInfo.t AbstractDomain.part
+  type leaf
+  val trace: TraceInfo.t AbstractDomain.part
+  val leaf: leaf AbstractDomain.part
 
   (* Add trace info at call-site *)
   val apply_call:
@@ -161,85 +188,86 @@ module type TAINT_DOMAIN = sig
 end
 
 
-module MakeTaint(TaintSet : TAINT_SET) : sig
-  include TAINT_DOMAIN
-  type leaf = TaintSet.element
+module MakeTaint(Leaf: SET_ARG) : sig
+  include TAINT_DOMAIN with type leaf = Leaf.t
   val leaves: t -> leaf list
   val singleton: leaf -> t
   val of_list: leaf list -> t
-
-  val leaf: leaf AbstractDomain.part
 end = struct
-  module Map = AbstractMapDomain.Make(TraceInfo)(TaintSet)
+  module Key = struct
+    include Leaf
+
+    let absence_implicitly_maps_to_bottom = true
+
+    let to_json leaf =
+      let element_to_json leaf =
+        let kind = `String (Leaf.show leaf) in
+        `Assoc ["kind", kind]
+      in
+      [element_to_json leaf]
+  end
+
+  module Map = AbstractMapDomain.Make(Key)(TraceInfoSet)
   include Map
 
-  type leaf = TaintSet.element
+  type leaf = Leaf.t
   [@@derviving compare]
 
-  let trace_info = Map.Key
-  let leaf = TaintSet.element
+  let add map leaf =
+    Map.set map ~key:leaf ~data:TraceInfoSet.initial
 
-  let add taint leaf =
-    let key = TraceInfo.Declaration in
-    match Map.find taint key with
-    | None ->
-        Map.set taint ~key ~data:(TaintSet.singleton leaf)
-    | Some elements ->
-        Map.set taint ~key ~data:(TaintSet.add elements leaf)
+  let singleton leaf =
+    add Map.bottom leaf
 
   let of_list leaves =
-    if List.length leaves = 0 then
-      Map.bottom
-    else
-      TaintSet.of_list leaves
-      |> (fun elements -> Map.set Map.bottom ~key:TraceInfo.Declaration ~data:elements)
+    List.fold leaves ~init:Map.bottom ~f:add
+
+  let leaves map =
+    Map.to_alist map |> List.map ~f:fst
+
+  let to_json taint =
+    let element_to_json (leaf, trace_info_set) =
+      let trace_info =
+        TraceInfoSet.(fold trace_info ~init: [] ~f:(Fn.flip List.cons) trace_info_set)
+        |> List.dedup_and_sort ~compare:TraceInfo.compare
+      in
+      let trace_json = List.map ~f:TraceInfo.to_json trace_info in
+      let leaf_json = Key.to_json leaf in
+      List.map
+        trace_json
+        ~f:(fun trace_pair ->
+            `Assoc [
+              trace_pair;
+              "leaves", `List leaf_json;
+            ])
+    in
+    let elements =
+      Map.to_alist taint
+      |> List.concat_map ~f:element_to_json
+    in
+    `List elements
+
+  type _ AbstractDomain.part +=
+    | TraceInfo: TraceInfo.t AbstractDomain.part
+
+  let trace = TraceInfo
+  let leaf = Map.Key
 
   let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in
     let call_trace = CallSite { location; callees; port; path; } in
-    let translate trace_key =
-      match trace_key with
+    let translate feature =
+      match feature with
       | CallSite _ | Origin _ -> call_trace
       | Declaration -> Origin location
     in
-    Map.transform Map.Key ~f:translate taint
+    Map.transform TraceInfoSet.trace_info ~f:translate taint
 
-  let show taint =
-    let show_pair (trace, elements) =
-      Format.sprintf "%s -> %s" (TraceInfo.show trace) (TaintSet.show elements)
-    in
-    let pairs =
-      Map.to_alist taint
-      |> List.map ~f:show_pair
-    in
-    String.concat ~sep:"\n" pairs
-
-  let to_json taint =
-    let element_to_json (trace, elements) =
-      let trace_pair = TraceInfo.to_json trace in
-      let leaves = TaintSet.to_json elements in
-      `Assoc [
-        trace_pair;
-        "leaves", `List leaves;
-      ]
-    in
-    let elements =
-      to_alist taint
-      |> List.map ~f:element_to_json
-    in
-    `List elements
-
-  let leaves map =
-    Map.fold TaintSet.element ~init:[] ~f:(fun tail head -> head :: tail) map
-    |> List.dedup_and_sort ~compare:TaintSet.compare_element
-
-  let singleton element =
-    of_list [element]
 end
 
 
-module ForwardTaint = MakeTaint(SourceSet)
-module BackwardTaint = MakeTaint(SinkSet)
+module ForwardTaint = MakeTaint(Sources)
+module BackwardTaint = MakeTaint(Sinks)
 
 
 module MakeTaintTree(Taint : TAINT_DOMAIN) = struct

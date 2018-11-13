@@ -439,45 +439,32 @@ end
 (* Split the inferred entry state into externally visible taint_in_taint_out
    parts and sink_taint. *)
 let extract_tito_and_sink_models parameters entry_taint =
-  let filter ~f taint =
-    BackwardTaint.partition BackwardTaint.leaf ~f taint
-    |> Fn.flip Map.Poly.find true
-    |> Option.value ~default:BackwardTaint.bottom
-  in
-  let is_return_sink = function
-    | Sinks.LocalReturn -> true
-    | _ -> false
-  in
-  let filter_to_local_return = filter ~f:is_return_sink in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-  let extract_taint_in_taint_out model (parameter, name, _annotation) =
-    let taint_in_taint_out_taint =
+  let split_and_simplify model (parameter, name, _annotation) =
+    let partition =
       BackwardState.read (Root.Variable name) entry_taint
-      |> BackwardState.filter_map_tree ~f:filter_to_local_return
+      |> BackwardState.partition_tree BackwardTaint.leaf ~f:Fn.id
     in
-    if not (BackwardState.is_empty_tree taint_in_taint_out_taint) then
-      BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out_taint model
-    else
-      model
-  in
-  let filter_to_real_sinks = filter ~f:(Fn.non is_return_sink) in
-  let extract_sink_taint model (parameter, name, _annotation) =
+    let taint_in_taint_out =
+      Map.Poly.find partition Sinks.LocalReturn |> Option.value ~default:BackwardState.empty_tree
+    in
     let sink_taint =
-      BackwardState.read (Root.Variable name) entry_taint
-      |> BackwardState.filter_map_tree ~f:filter_to_real_sinks
+      let simplify_sink_taint ~key ~data sink_tree =
+        if key = Sinks.LocalReturn then
+          sink_tree
+        else
+          BackwardState.join_trees sink_tree data
+      in
+      Map.Poly.fold ~init:BackwardState.empty_tree ~f:simplify_sink_taint partition
     in
-    if not (BackwardState.is_empty_tree sink_taint) then
-      BackwardState.assign ~root:parameter ~path:[] sink_taint model
-    else
-      model
+    TaintResult.Backward.{
+      taint_in_taint_out =
+        BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out model.taint_in_taint_out;
+      sink_taint =
+        BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
+    }
   in
-  let taint_in_taint_out =
-    List.fold normalized_parameters ~f:extract_taint_in_taint_out ~init:BackwardState.empty
-  in
-  let sink_taint =
-    List.fold normalized_parameters ~f:extract_sink_taint ~init:BackwardState.empty
-  in
-  TaintResult.Backward.{ taint_in_taint_out; sink_taint; }
+  List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
 let run ~environment ~define:({ Node.value = { Define.parameters; name; _ }; _ } as define) =

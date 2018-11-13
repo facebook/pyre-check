@@ -206,4 +206,15 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: AbstractDomain.S): sig
     : f: (path:Label.path -> element: Element.t -> unit)
     -> access_path_tree
     -> unit
+  val partition_tree:
+    'a Analysis.AbstractDomain.part
+    -> f: ('a -> 'b)
+    -> access_path_tree
+    -> ('b, access_path_tree) Core.Map.Poly.t
+  val partition:
+    'a Analysis.AbstractDomain.part
+    -> f: ('a -> 'b)
+    -> t
+    -> ('b, t) Core.Map.Poly.t
+
 end

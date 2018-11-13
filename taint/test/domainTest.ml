@@ -13,7 +13,16 @@ open Core
 
 let test_partition_call_map _ =
   let taint = ForwardTaint.singleton Sources.UserControlled in
-  let call_taint =
+  let call_taint1 =
+    ForwardTaint.apply_call
+      Location.Reference.any
+      ~callees:[]
+      ~port:AccessPath.Root.LocalResult
+      ~path:[AccessPathTree.Label.create_name_field "a"]
+      ~path_element:ForwardTaint.bottom
+      ~element:taint
+  in
+  let call_taint2 =
     ForwardTaint.apply_call
       Location.Reference.any
       ~callees:[]
@@ -22,12 +31,21 @@ let test_partition_call_map _ =
       ~path_element:ForwardTaint.bottom
       ~element:taint
   in
+  let joined = ForwardTaint.join call_taint1 call_taint2 in
+  assert_equal
+    ~cmp:(fun left right -> ForwardTaint.less_or_equal ~left ~right)
+    ~printer:ForwardTaint.show
+    ~msg:"call info not joined properly"
+    joined call_taint2;
+  assert_bool
+    "joined should not be less or equal to non trivial access path in call trace"
+    (ForwardTaint.less_or_equal ~left:joined ~right:call_taint1);
   let split partition =
     Map.Poly.find partition true |> Option.value ~default:ForwardTaint.bottom,
     Map.Poly.find partition false |> Option.value ~default:ForwardTaint.bottom
   in
   let matches, does_not_match =
-    ForwardTaint.partition ForwardTaint.leaf ~f:((=) Sources.UserControlled) call_taint
+    ForwardTaint.partition ForwardTaint.leaf ~f:((=) Sources.UserControlled) joined
     |> split
   in
   assert_equal
@@ -39,7 +57,7 @@ let test_partition_call_map _ =
     ~msg:"matches must be equal to original"
     ~printer:ForwardTaint.show
     matches
-    call_taint
+    joined
 
 
 let () =

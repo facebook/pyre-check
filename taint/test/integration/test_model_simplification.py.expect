@@ -5,37 +5,6 @@
     "sources": [],
     "sinks": [
       {
-        "port": "formal(obj)[*][*]",
-        "taint": [
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 23,
-                "start": 38,
-                "end": 55
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 23,
-                "start": 38,
-                "end": 55
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*][*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          }
-        ]
-      },
-      {
         "port": "formal(obj)[*]",
         "taint": [
           {
@@ -103,84 +72,6 @@
               "port": "formal(obj)"
             },
             "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 16,
-                "start": 33,
-                "end": 69
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 28,
-                "start": 33,
-                "end": 50
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 38,
-                "start": 33,
-                "end": 50
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 16,
-                "start": 33,
-                "end": 69
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*][*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 28,
-                "start": 33,
-                "end": 50
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*][*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          },
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 38,
-                "start": 33,
-                "end": 50
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*][*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
           }
         ]
       }
@@ -207,42 +98,6 @@
     "callable": "qualifier.asdict",
     "sources": [],
     "sinks": [
-      {
-        "port": "formal(obj)[*][*]",
-        "taint": [
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 7,
-                "start": 24,
-                "end": 43
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*][*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(obj)[*]",
-        "taint": [
-          {
-            "call": {
-              "position": {
-                "filename": "test.py",
-                "line": 7,
-                "start": 24,
-                "end": 43
-              },
-              "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)[*]"
-            },
-            "leaves": [ { "kind": "GetAttr" } ]
-          }
-        ]
-      },
       {
         "port": "formal(obj)",
         "taint": [

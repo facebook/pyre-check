@@ -1319,4 +1319,39 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
 
 
   let keys = RootMap.keys
+
+  let partition_tree (type a b) (part: a Analysis.AbstractDomain.part) ~(f: a -> b) tree
+    : (b, access_path_tree) Map.Poly.t =
+    let partition ~path ~path_element:_ ~element result =
+      let element_partition = Element.partition part ~f element in
+      let distribute ~key ~data result =
+        let leaf = create_leaf data in
+        let update = function
+          | None ->
+              create_tree path leaf
+          | Some tree ->
+              assign_tree_path ~tree path ~subtree:leaf
+        in
+        Map.Poly.update result key ~f:update
+      in
+      Map.Poly.fold ~init:result ~f:distribute element_partition
+    in
+    fold_tree_paths ~init:Map.Poly.empty ~f:partition tree
+
+
+  let partition (type a b) (part: a Analysis.AbstractDomain.part) ~(f: a -> b) root_map
+    : (b, t) Map.Poly.t =
+    let merge ~key:_ = function
+      | `Both (left, right) ->
+          Some (join left right)
+      | `Left root_map
+      | `Right root_map ->
+          Some root_map
+    in
+    let partition ~key ~data result =
+      let tree_partition = partition_tree part ~f data in
+      Map.Poly.map tree_partition ~f:(fun tree -> RootMap.singleton key tree)
+      |> Map.Poly.merge result ~f:merge
+    in
+    RootMap.fold ~f:partition ~init:Map.Poly.empty root_map
 end
