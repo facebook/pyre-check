@@ -23,6 +23,7 @@ module type AbstractDomainUnderTest = sig
   val test_fold: test_ctxt -> unit
   val test_transform: test_ctxt -> unit
   val test_partition: test_ctxt -> unit
+  val test_additional: test_ctxt -> unit
 end
 
 
@@ -124,6 +125,7 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
       "test_fold" >:: Domain.test_fold;
       "test_transform" >:: Domain.test_transform;
       "test_partition" >:: Domain.test_partition;
+      "test_additional" >:: Domain.test_additional;
     ]
 end
 
@@ -205,6 +207,8 @@ module StringSet = struct
       ~f:(fun x -> String.length x)
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
 
+  let test_additional _ =
+    ()
 end
 
 module TestStringSet = TestAbstractDomain(StringSet)
@@ -347,7 +351,10 @@ module IntToStringSet = struct
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
       ~f:(fun key -> Bool.to_string (key <= 1))
-      ~expected_keys:["false", [2]; "true", [0; 1]];
+      ~expected_keys:["false", [2]; "true", [0; 1]]
+
+  let test_additional _ =
+    ()
 end
 
 module TestIntToStringSet = TestAbstractDomain(IntToStringSet)
@@ -459,7 +466,10 @@ module StrictIntToStringSet = struct
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
       ~f:(fun key -> Bool.to_string (key <= 1))
-      ~expected_keys:["false", [2; 3]; "true", [0; 1]];
+      ~expected_keys:["false", [2; 3]; "true", [0; 1]]
+
+    let test_additional _ =
+      ()
 end
 
 module TestStrictIntToStringSet = TestAbstractDomain(StrictIntToStringSet)
@@ -625,10 +635,179 @@ module PairStringMapIntToString = struct
       ~expected_keys:[
         "false", [2];
         "true", [0; 1];
-      ];
+      ]
+
+  let test_additional _ =
+    ()
 end
 
 module TestPair = TestAbstractDomain(PairStringMapIntToString)
+
+module AbstractElement = struct
+  type t =
+    | A
+    | B
+    | C of string * int
+    | CSuper  (* Above all Cs *)
+  [@@deriving eq, compare, sexp, show]
+
+  let less_or_equal ~left ~right =
+    left = right
+    ||
+    match left, right with
+    | C _, CSuper -> true
+    | C (left, x), C (right, y) -> left = right && x <= y
+    | _ -> false
+
+  let show_short = function
+    | A -> "A"
+    | B -> "B"
+    | C (s, n) -> Format.sprintf "C(%s,%d)" s n
+    | CSuper -> "CSuper"
+end
+
+module AbstractElementSet = struct
+  include AbstractElementSetDomain.Make(AbstractElement)
+
+  let top =
+    None
+
+  let unrelated =
+    let open AbstractElement in
+    [singleton A; singleton B; singleton (C ("x", 5)); singleton (C ("y", 5))]
+
+  let values =
+    let open AbstractElement in
+    [
+      singleton (C ("x", 0));
+      singleton (C ("x", 6));
+      singleton (C ("y", 0));
+      singleton (C ("y", 6));
+    ]
+
+  let accumulate_elements_as_strings list element =
+    AbstractElement.show_short element :: list
+
+  let test_fold _ =
+    let test ~initial ~expected =
+      let element_set = of_list initial in
+      let actual =
+        fold Element ~init:[] ~f:accumulate_elements_as_strings element_set
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal
+        expected
+        actual
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
+    in
+    test
+      ~initial:[A; B; C ("x", 5); C ("y", 5)]
+      ~expected:["A"; "B"; "C(x,5)"; "C(y,5)"]
+
+  let test_transform _ =
+    let test ~initial ~f ~expected =
+      let element_set = of_list initial in
+      let actual =
+        transform Element ~f element_set
+        |> fold Element ~init:[] ~f:accumulate_elements_as_strings
+        |> List.sort ~compare:String.compare
+      in
+      assert_equal
+        expected
+        actual
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
+    in
+    test
+      ~initial:[
+        A;
+        C ("x", 5);
+        C ("y", 5);
+      ]
+      ~f:(function A -> B | B -> A | C (s, n) -> C (s, n + 1) | CSuper -> CSuper)
+      ~expected:[
+        "B";
+        "C(x,6)";
+        "C(y,6)";
+      ];
+    test
+      ~initial:[
+        A;
+        C ("x", 5);
+        C ("y", 5);
+      ]
+      ~f:(function A -> B | _ -> CSuper)
+      ~expected:[
+        "B";
+        "CSuper";
+      ]
+
+  let test_partition _ =
+    let test ~initial ~f ~expected =
+      let element_set = of_list initial in
+      let actual =
+        partition Element ~f element_set
+        |> Map.Poly.fold
+          ~init:[]
+          ~f:(fun ~key ~data result ->
+              let elements =
+                fold Element ~init:[] ~f:accumulate_elements_as_strings data
+                |> List.sort ~compare:String.compare
+              in
+              (key, elements) :: result
+            )
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal
+        expected
+        actual
+        ~printer:(fun elements ->
+            Format.asprintf "%a" Sexp.pp [%message (elements: (int * string list) list)]
+          )
+    in
+    test
+      ~initial:[A; B; C ("x", 5); C("y", 5)]
+      ~f:(function C (_, i) -> i | _ -> -1)
+      ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
+
+  let test_additional _ =
+    let cmp a b =
+      List.equal (elements a) (elements b) ~equal:AbstractElement.equal
+    in
+    let set = of_list [B; C ("x", 5); C ("y", 5)] in
+    assert_equal
+      set
+      (add set (C ("x", 4)))
+      ~msg:"add subsumed"
+      ~cmp
+      ~printer:show;
+    assert_equal
+      (of_list [B; C ("x", 6); C ("y", 5)])
+      (add set (C ("x", 6)))
+      ~msg:"add subsuming"
+      ~cmp
+      ~printer:show;
+    assert_equal
+      set
+      (add set (C ("x", 5)))
+      ~msg:"add existing"
+      ~cmp
+      ~printer:show;
+    assert_equal
+      (of_list [A; B; C ("x", 5); C ("y", 5)])
+      (add set A)
+      ~msg:"add A"
+      ~cmp
+      ~printer:show;
+    assert_equal
+      (of_list [B; CSuper])
+      (add set CSuper)
+      ~msg:"add CSuper"
+      ~cmp
+      ~printer:show
+
+end
+
+module TestAbstractElement = TestAbstractDomain(AbstractElementSet)
 
 module PairStringString = struct
   include AbstractPairDomain.Make(struct
@@ -705,7 +884,10 @@ module PairStringString = struct
         "a", "((set(a)), (set()))";
         "b", "((set(b)), (set(b)))";
         "c", "((set()), (set(c)))";
-      ];
+      ]
+
+  let test_additional _ =
+    ()
 end
 
 module TestPairStringString = TestAbstractDomain(PairStringString)
@@ -717,5 +899,6 @@ let () =
     "strict_int_to_string_set">:::(TestStrictIntToStringSet.suite ());
     "string_x_maps_int_to_string_set">:::(TestPair.suite ());
     "dual_string">:::(TestPairStringString.suite ());
+    "abstract_element">:::(TestAbstractElement.suite ());
   ]
   |> Test.run
