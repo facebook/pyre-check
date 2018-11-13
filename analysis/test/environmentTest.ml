@@ -44,6 +44,12 @@ let populate_with_sources sources =
 let populate source =
   populate_with_sources [parse source]
 
+let populate_preprocess source =
+  populate_with_sources [
+    source
+    |> parse
+    |> Preprocessing.preprocess
+  ]
 
 let global environment =
   Environment.resolution environment ()
@@ -785,10 +791,10 @@ let test_populate _ =
      |> Annotation.create_immutable ~global:true ~original:(Some Type.Top))
 
 
-let test_infer_protocols _ =
+let test_infer_protocols_edges _ =
   let edges =
     let environment =
-      populate {|
+      populate_preprocess {|
         class Empty(typing.Protocol):
           pass
         class Sized(typing.Protocol):
@@ -1349,6 +1355,7 @@ let test_infer_protocols _ =
   let configuration = Configuration.Analysis.create () in
   let type_sources = Test.typeshed_stubs in
   let assert_protocols ?classes_to_infer source expected_edges =
+    Annotated.Class.Attribute.Cache.clear ();
     let expected_edges =
       let to_edge (source, target) =
         {
@@ -1463,7 +1470,7 @@ let test_infer_protocols _ =
         def foo() -> str:
           pass
     |}
-    ["A", "P"]
+    ["A", "P"; "C", "P"]
 
 
 let () =
@@ -1479,7 +1486,7 @@ let () =
     "class_definition">::test_class_definition;
     "connect_definition">::test_connect_definition;
     "import_dependencies">::test_import_dependencies;
-    "infer_protocols">::test_infer_protocols;
+    "infer_protocols_edges">::test_infer_protocols_edges;
     "infer_protocols">::test_infer_protocols;
     "modules">::test_modules;
     "populate">::test_populate;

@@ -54,7 +54,6 @@ module Method : sig
     -> Type.t Int.Map.t
   val return_annotation: t -> resolution: Resolution.t -> Type.t
 
-  val implements: t -> protocol_method: t -> bool
 end
 
 val generics: t -> resolution: Resolution.t -> Type.t list
@@ -88,7 +87,7 @@ val immediate_superclasses
 val methods: t -> Method.t list
 
 val is_protocol: t -> bool
-val implements: t -> protocol: t -> bool
+val implements: resolution: Resolution.t -> t -> protocol: t -> bool
 
 module Attribute : sig
   type attribute = {

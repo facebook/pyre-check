@@ -156,20 +156,6 @@ module Method = struct
       end
     else
       annotation
-
-
-  let implements
-      { define; _ }
-      ~protocol_method:{ define = protocol; _ } =
-    let open Define in
-    let parameter_equal
-        { Node.value = { Parameter.annotation; _ }; _ }
-        { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
-      Option.equal Expression.equal annotation protocol_annotation
-    in
-    Access.equal (Define.unqualified_name define) (Define.unqualified_name protocol) &&
-    Option.equal Expression.equal define.return_annotation protocol.return_annotation &&
-    List.equal ~equal:parameter_equal define.parameters protocol.parameters
 end
 
 
@@ -350,23 +336,6 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
         false
   in
   List.exists ~f:is_protocol bases
-
-
-let implements definition ~protocol =
-  let rec implements instance_methods protocol_methods =
-    match instance_methods, protocol_methods with
-    | _, [] ->
-        true
-    | [], _ :: _ ->
-        false
-    | instance_method :: instance_methods,
-      ((protocol_method :: protocol_methods) as old_protocol_methods) ->
-        if Method.implements ~protocol_method instance_method then
-          implements instance_methods protocol_methods
-        else
-          implements instance_methods old_protocol_methods
-  in
-  implements (methods definition) (methods protocol)
 
 
 module Attribute = struct
@@ -714,6 +683,46 @@ let attributes
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
+let implements ~resolution definition ~protocol =
+  let overload_implements (name, overload) (protocol_name, protocol_overload) =
+    let open Type.Callable in
+    Access.equal name protocol_name &&
+    Type.equal overload.annotation protocol_overload.annotation &&
+    equal_parameters Type.equal overload.parameters protocol_overload.parameters
+  in
+  let rec implements instance_methods protocol_methods =
+    match instance_methods, protocol_methods with
+    | _, [] ->
+        true
+    | [], _ :: _ ->
+        false
+    | instance_method :: instance_methods,
+      ((protocol_method :: protocol_methods) as old_protocol_methods) ->
+        if overload_implements instance_method protocol_method then
+          implements instance_methods protocol_methods
+        else
+          implements instance_methods old_protocol_methods
+  in
+  let callables_of_attribute =
+    function
+    | { Node.value =
+          { Attribute.annotation = {
+                Annotation.annotation = Type.Callable {
+                    kind = Type.Record.Callable.Named callable_name;
+                    overloads;
+                    _ };
+                _ };
+            parent;
+            _ }; _ } ->
+        let local_name = Access.drop_prefix ~prefix:(name parent) callable_name in
+        List.map ~f:(fun overload -> (local_name, overload)) overloads
+    | _ -> []
+  in
+  let definition_attributes = attributes ~resolution definition in
+  let protocol_attributes = attributes ~resolution protocol in
+  implements
+    (List.concat_map ~f:callables_of_attribute definition_attributes)
+    (List.concat_map ~f:callables_of_attribute protocol_attributes)
 
 let attribute_fold
     ?(transitive = false)

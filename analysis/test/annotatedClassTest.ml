@@ -418,20 +418,40 @@ let test_is_protocol _ =
 
 
 let test_implements _ =
+  (* TODO(T36516076) Adapt assert_conforms to fit testing idioms *)
   let assert_conforms definition protocol conforms =
-    match parse_last_statement definition with
-    | { Node.value = Statement.Class definition; _ } ->
-        begin
-          match parse_last_statement protocol with
-          | { Node.value = Statement.Class protocol; _ } ->
-              assert_equal
-                (Class.implements
-                   ~protocol:(Class.create (Node.create_with_default_location protocol))
-                   (Class.create (Node.create_with_default_location definition)))
-                conforms
-          | _ ->
-              assert_unreached ()
-        end
+    let get_last_statement { Source.statements; _ } =
+      List.last_exn statements
+    in
+    let environment = Environment.Builder.create () in
+    let definition =
+      definition
+      |> parse
+      |> Preprocessing.preprocess
+    in
+    let protocol =
+      protocol
+      |> parse
+      |> Preprocessing.preprocess
+    in
+    Service.Environment.populate
+      (Environment.handler ~configuration environment)
+      (definition :: protocol :: Test.typeshed_stubs);
+    let ((module Handler: Environment.Handler) as handler) =
+      Environment.handler environment ~configuration
+    in
+    let resolution = Environment.resolution handler () in
+    Annotated.Class.Attribute.Cache.clear ();
+    match definition |> get_last_statement,
+          protocol |> get_last_statement with
+    | { Node.value = Statement.Class definition; _ },
+      { Node.value = Statement.Class protocol; _ } ->
+        assert_equal
+          (Class.implements
+             ~resolution
+             ~protocol:(Class.create (Node.create_with_default_location protocol))
+             (Class.create (Node.create_with_default_location definition)))
+          conforms
     | _ ->
         assert_unreached ()
   in
@@ -480,7 +500,50 @@ let test_implements _ =
         def foo(): pass
         def bar(): pass
     |}
-    true
+    true;
+  assert_conforms
+    {|
+      class List():
+        def empty() -> bool: pass
+        def length() -> int: pass
+    |}
+    {|
+      class Sized(typing.Protocol):
+        def empty() -> bool: pass
+        def len() -> int: pass
+    |}
+    false;
+  assert_conforms
+    {|
+      class List():
+        def empty() -> bool: pass
+        @typing.overload
+        def length(x: int) -> str: pass
+        def length() -> str: pass
+        def length(x: int) -> int: pass
+        def length() -> int: pass
+    |}
+    {|
+      class Sized(typing.Protocol):
+        def empty() -> bool: pass
+        def length() -> int: pass
+    |}
+    true;
+  assert_conforms
+    {|
+      class List():
+        def empty() -> bool: pass
+        @typing.overload
+        def length(x: int) -> str: pass
+        def length() -> str: pass
+        def length(x: int) -> int: pass
+    |}
+    {|
+      class Sized(typing.Protocol):
+        def empty() -> bool: pass
+        def length() -> int: pass
+    |}
+    false
 
 
 let test_class_attributes _ =
@@ -1137,106 +1200,6 @@ let test_overrides _ =
     (Access.create "Foo")
 
 
-let test_method_implements _ =
-  let definition ?(parameters = []) ?return_annotation name =
-    Method.create
-      ~define:{
-        Statement.Define.name = Access.create name;
-        parameters;
-        body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation;
-        async = false;
-        generated = false;
-        parent = Some (Access.create "Parent");
-      }
-      ~parent:
-        (Class.create
-           (Node.create_with_default_location
-              {
-                Statement.Class.name = Access.create "Parent";
-                bases = [];
-                body = [+Pass];
-                decorators = [];
-                docstring = None;
-              }))
-  in
-
-  assert_true
-    (Method.implements
-       ~protocol_method:(definition "match")
-       (definition "match"));
-  assert_false
-    (Method.implements
-       ~protocol_method:(definition "mismatch")
-       (definition "match"));
-
-  let parameters =
-    [
-      Parameter.create ~name:(~~"a") ();
-      Parameter.create ~name:(~~"b") ();
-    ]
-  in
-  assert_true
-    (Method.implements
-       ~protocol_method:(definition ~parameters "match")
-       (definition ~parameters "match"));
-
-  (* Naming of parameters doesn't matter. *)
-  let definition_parameters =
-    [
-      Parameter.create ~name:(~~"a") ();
-      Parameter.create ~name:(~~"b") ();
-    ]
-  in
-  let protocol_parameters =
-    [
-      Parameter.create ~name:(~~"a") ();
-      Parameter.create ~name:(~~"c") ();
-    ]
-  in
-  assert_true
-    (Method.implements
-       ~protocol_method:(definition ~parameters:protocol_parameters "match")
-       (definition ~parameters:definition_parameters "match"));
-
-  (* Number of parameters, parameter and return annotations matter. *)
-  let definition_parameters =
-    [
-      Parameter.create ~name:(~~"a") ();
-      Parameter.create ~name:(~~"b") ();
-    ]
-  in
-  let protocol_parameters =
-    [
-      Parameter.create ~name:(~~"a") ();
-      Parameter.create ~name:(~~"c") ();
-      Parameter.create ~name:(~~"z") ();
-    ]
-  in
-  assert_false
-    (Method.implements
-       ~protocol_method:(definition ~parameters:protocol_parameters "match")
-       (definition ~parameters:definition_parameters "match"));
-
-  let definition_parameters = [Parameter.create ~name:(~~"a") ~annotation:!"int" ()] in
-  let protocol_parameters = [Parameter.create ~name:(~~"a") ()] in
-  assert_false
-    (Method.implements
-       ~protocol_method:(definition ~parameters:protocol_parameters "match")
-       (definition ~parameters:definition_parameters "match"));
-
-  assert_true
-    (Method.implements
-       ~protocol_method:(definition ~return_annotation:!"int" "match")
-       (definition ~return_annotation:!"int" "match"));
-  assert_false
-    (Method.implements
-       ~protocol_method:(definition ~return_annotation:!"int" "match")
-       (definition ~return_annotation:!"float" "match"))
-
-
 let () =
   "class">:::[
     "attributes">::test_class_attributes;
@@ -1252,9 +1215,5 @@ let () =
     "methods">::test_methods;
     "overrides">::test_overrides;
     "superclasses">::test_superclasses;
-  ]
-  |> Test.run;
-  "method">:::[
-    "implements">::test_method_implements;
   ]
   |> Test.run

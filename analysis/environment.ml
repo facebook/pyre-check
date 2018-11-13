@@ -871,7 +871,7 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
           >>| Class.create
           >>| (fun definition ->
               not (Class.is_protocol definition) &&
-              Class.implements ~protocol:protocol_definition definition)
+              Class.implements ~resolution ~protocol:protocol_definition definition)
           |> Option.value ~default:false
         in
         List.filter ~f:implements classes_to_analyze
