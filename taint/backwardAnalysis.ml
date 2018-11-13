@@ -437,10 +437,16 @@ end
 (* Split the inferred entry state into externally visible taint_in_taint_out
    parts and sink_taint. *)
 let extract_tito_and_sink_models parameters entry_taint =
-  let filter_to_local_return taint =
-    BackwardTaint.partition_tf ~f:((=) Sinks.LocalReturn) taint
-    |> fst
+  let filter ~f taint =
+    BackwardTaint.partition BackwardTaint.leaf ~f taint
+    |> Fn.flip Map.Poly.find true
+    |> Option.value ~default:BackwardTaint.bottom
   in
+  let is_return_sink = function
+    | Sinks.LocalReturn -> true
+    | _ -> false
+  in
+  let filter_to_local_return = filter ~f:is_return_sink in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   let extract_taint_in_taint_out model (parameter, name, _annotation) =
     let taint_in_taint_out_taint =
@@ -452,10 +458,7 @@ let extract_tito_and_sink_models parameters entry_taint =
     else
       model
   in
-  let filter_to_real_sinks taint =
-    BackwardTaint.partition_tf ~f:((<>) Sinks.LocalReturn) taint
-    |> fst
-  in
+  let filter_to_real_sinks = filter ~f:(Fn.non is_return_sink) in
   let extract_sink_taint model (parameter, name, _annotation) =
     let sink_taint =
       BackwardState.read (Root.Variable name) entry_taint

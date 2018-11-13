@@ -8,30 +8,18 @@ open Ast
 open Analysis
 
 
-module type LEAF = sig
-  type t
-  [@@deriving compare]
-end
-
-
-module type S = sig
+module type TAINT_SET = sig
   include AbstractDomain.S
 
-  module Leaf : LEAF
+  type element
+  [@@deriving compare]
 
-  val leaves: t -> Leaf.t list
-  val partition_tf: t -> f: (Leaf.t -> bool) -> t * t
-end
+  val element: element AbstractDomain.part
 
-
-module type TAINT_SET = sig
-  include S
-
-  val singleton: Leaf.t -> t
-  val add: t -> Leaf.t -> t
-  val of_list: Leaf.t list -> t
+  val add: t -> element -> t
+  val of_list: element list -> t
   val to_json: t -> Yojson.Safe.json list
-
+  val singleton: element -> t
 end
 
 
@@ -42,27 +30,18 @@ module type SET_ARG = sig
 end
 
 
-module Set(Element: SET_ARG) : TAINT_SET with type Leaf.t = Element.t = struct
+module Set(Element: SET_ARG) : TAINT_SET with type element = Element.t = struct
 
-  include Analysis.AbstractSetDomain.Make(Element)
+  module Set = Analysis.AbstractSetDomain.Make(Element)
+  include Set
 
-  module Leaf = struct
-    type t = Element.t
-    let compare = Element.compare
-  end
+  let element = Set.Element
 
-  let leaves set =
-    elements set
-    |> List.sort ~compare:Element.compare
-
-  let partition_tf set =
-    partition_tf set
-
-  let of_list leaves =
-    List.fold leaves ~init:bottom ~f:add
+  type element = Element.t
+  [@@deriving compare]
 
   let show set =
-    leaves set
+    elements set
     |> List.map ~f:Element.show
     |> String.concat ~sep:", "
     |> Format.sprintf "{%s}"
@@ -72,48 +51,8 @@ module Set(Element: SET_ARG) : TAINT_SET with type Leaf.t = Element.t = struct
       let kind = `String (Element.show element) in
       `Assoc ["kind", kind]
     in
-    leaves set
+    elements set
     |> List.map ~f:element_to_json
-end
-
-
-module Map(Key: Map.Key)(Element: TAINT_SET) : sig
-  include S with type Leaf.t = Element.Leaf.t
-  val set: t -> key: Key.t -> data: Element.t -> t
-  val find: t -> Key.t -> Element.t option
-  val fold : t -> init:'b -> f:(key:Key.t -> data:Element.t -> 'b -> 'b) -> 'b
-  val to_alist: ?key_order:[`Increasing | `Decreasing] -> t -> (Key.t * Element.t) list
-end = struct
-
-  include Analysis.AbstractMapDomain.Make(Key)(Element)
-
-  module Leaf = Element.Leaf
-
-  let leaves map =
-    fold
-      map
-      ~init:[]
-      ~f:(fun ~key:_ ~data leaves ->
-          Element.leaves data
-          |> List.merge ~compare:Leaf.compare leaves
-          |> List.remove_consecutive_duplicates ~equal:(=)
-        )
-
-  let partition_tf map ~f =
-    let set_if_non_empty map ~key ~data =
-      if Element.is_bottom data then
-        map
-      else
-        set map ~key ~data
-    in
-    fold
-      map
-      ~init:(empty, empty)
-      ~f:(fun ~key ~data (true_result, false_result) ->
-          let true_elements, false_elements = Element.partition_tf data ~f in
-          set_if_non_empty true_result ~key ~data:true_elements,
-          set_if_non_empty false_result ~key ~data:false_elements)
-
 end
 
 
@@ -194,6 +133,7 @@ module TraceInfo = struct
         in
         "call", call_json
 
+  let absence_implicitly_maps_to_bottom = true
 end
 
 
@@ -202,7 +142,9 @@ module SinkSet = Set(Sinks)
 
 
 module type TAINT_DOMAIN = sig
-  include TAINT_SET
+  include AbstractDomain.S
+
+  val trace_info: TraceInfo.t AbstractDomain.part
 
   (* Add trace info at call-site *)
   val apply_call:
@@ -215,13 +157,27 @@ module type TAINT_DOMAIN = sig
     -> t
 
   val to_json: t -> Yojson.Safe.json
+
 end
 
 
-module MakeTaint(TaintSet : TAINT_SET) :
-  TAINT_DOMAIN with type Leaf.t = TaintSet.Leaf.t = struct
-  module Map = Map(TraceInfo)(TaintSet)
+module MakeTaint(TaintSet : TAINT_SET) : sig
+  include TAINT_DOMAIN
+  type leaf = TaintSet.element
+  val leaves: t -> leaf list
+  val singleton: leaf -> t
+  val of_list: leaf list -> t
+
+  val leaf: leaf AbstractDomain.part
+end = struct
+  module Map = AbstractMapDomain.Make(TraceInfo)(TaintSet)
   include Map
+
+  type leaf = TaintSet.element
+  [@@derviving compare]
+
+  let trace_info = Map.Key
+  let leaf = TaintSet.element
 
   let add taint leaf =
     let key = TraceInfo.Declaration in
@@ -230,9 +186,6 @@ module MakeTaint(TaintSet : TAINT_SET) :
         Map.set taint ~key ~data:(TaintSet.singleton leaf)
     | Some elements ->
         Map.set taint ~key ~data:(TaintSet.add elements leaf)
-
-  let singleton leaf =
-    Map.set Map.bottom ~key:TraceInfo.Declaration ~data:(TaintSet.singleton leaf)
 
   let of_list leaves =
     if List.length leaves = 0 then
@@ -244,16 +197,12 @@ module MakeTaint(TaintSet : TAINT_SET) :
   let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in
     let call_trace = CallSite { location; callees; port; path; } in
-    let translate ~key:trace_key ~data taint =
-      let new_trace =
-        match trace_key with
-        | CallSite _ | Origin _ -> call_trace
-        | Declaration -> Origin location
-      in
-      let singleton_map = Map.set Map.bottom ~key:new_trace ~data in
-      Map.join singleton_map taint
+    let translate trace_key =
+      match trace_key with
+      | CallSite _ | Origin _ -> call_trace
+      | Declaration -> Origin location
     in
-    Map.fold taint ~init:Map.bottom ~f:translate
+    Map.transform Map.Key ~f:translate taint
 
   let show taint =
     let show_pair (trace, elements) =
@@ -279,6 +228,13 @@ module MakeTaint(TaintSet : TAINT_SET) :
       |> List.map ~f:element_to_json
     in
     `List elements
+
+  let leaves map =
+    Map.fold TaintSet.element ~init:[] ~f:(fun tail head -> head :: tail) map
+    |> List.dedup_and_sort ~compare:TaintSet.compare_element
+
+  let singleton element =
+    of_list [element]
 end
 
 

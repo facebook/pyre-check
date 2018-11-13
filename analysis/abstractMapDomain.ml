@@ -5,21 +5,41 @@
 
 open Core
 
+open AbstractDomain
 
-module Make(Key: Map.Key)(Element : AbstractDomain.S) = struct
+
+module type KEY = sig
+  include Map.Key
+
+  val absence_implicitly_maps_to_bottom: bool
+end
+
+
+module Make(Key: KEY)(Element : AbstractDomain.S) = struct
   module Map = struct
     module ElementMap = Map.Make(Key)
     include ElementMap.Tree
   end
 
-  include (Map : module type of Map with type 'a t := 'a Map.t)
   type t = Element.t Map.t
   [@@deriving sexp]
 
   let bottom = Map.empty
+
   let is_bottom d =
-    Map.is_empty d ||
-    for_all d ~f:Element.is_bottom
+    Map.is_empty d
+
+  let set map ~key ~data =
+    if Key.absence_implicitly_maps_to_bottom && Element.is_bottom data then
+      Map.remove map key
+    else
+      Map.set map ~key ~data
+
+  let singleton key data =
+    set bottom ~key ~data
+
+  let to_alist = Map.to_alist
+  let find = Map.find
 
   let join x y =
     let merge ~key:_ = function
@@ -40,10 +60,13 @@ module Make(Key: Map.Key)(Element : AbstractDomain.S) = struct
       match data with
       | `Both (left, right) ->
           if not (Element.less_or_equal ~left ~right) then raise Exit
-      | `Left left ->
-          if not (Element.is_bottom left) then
-            raise Exit  (* key not in b *)
-      | `Right _ -> ()
+      | `Left _ ->
+          (* If absence_implicitly_maps_to_bottom, then left is not bottom, so
+             in either case, the relation does not hold. *)
+          raise Exit
+      | `Right _ ->
+          (* An absent key is less than a present key in either case. *)
+          ()
     in
     try
       Map.iter2 ~f:find_witness left right;
@@ -53,4 +76,59 @@ module Make(Key: Map.Key)(Element : AbstractDomain.S) = struct
 
   let show map =
     Sexp.to_string [%message (map: Element.t Map.t)]
+
+  type _ part +=
+    | Key: Key.t part
+
+  let transform (type a) (part: a part) ~(f: a -> a) (map: t) : t =
+    match part with
+    | Key ->
+        Map.fold
+          map
+          ~f:(fun ~key ~data result -> set ~key:(f key) ~data result)
+          ~init:Map.empty
+    | _ ->
+        if Key.absence_implicitly_maps_to_bottom then
+          Map.fold
+            map
+            ~f:(fun ~key ~data result -> set ~key ~data:(Element.transform part ~f data) result)
+            ~init:Map.empty
+        else
+          Map.map ~f:(Element.transform part ~f) map
+
+  let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) (map: t) : b =
+    match part with
+    | Key ->
+        Map.fold ~f:(fun ~key ~data:_ result -> f result key) ~init map
+    | _ ->
+        Map.fold
+          map
+          ~f:(fun ~key:_ ~data result -> Element.fold part ~f ~init:result data)
+          ~init
+
+  let partition (type a b) (part: a part) ~(f: a -> b) (map: t)
+    : (b, t) Core.Map.Poly.t =
+    let update ~key ~data = function
+      | None ->
+          Map.singleton key data
+      | Some existing ->
+          set existing ~key ~data
+    in
+    match part with
+    | Key ->
+        let partition_by_key ~key ~data partition =
+          let partition_key = f key in
+          Core.Map.Poly.update partition partition_key ~f:(update ~key ~data)
+        in
+        Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_key
+    | _ ->
+        let partition_by_elements ~key ~data partition =
+          let element_partition = Element.partition part ~f data in
+          Core.Map.Poly.fold
+            element_partition
+            ~init:partition
+            ~f:(fun ~key:partition_key ~data partition ->
+                Core.Map.Poly.update partition partition_key ~f:(update ~key ~data))
+        in
+        Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_elements
 end

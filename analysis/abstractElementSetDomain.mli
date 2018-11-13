@@ -22,6 +22,9 @@ end
 module Make(Element : ELEMENT_DOMAIN) : sig
   include AbstractDomain.S
 
+  type _ AbstractDomain.part +=
+    | Element: Element.t AbstractDomain.part
+
   val add: t -> Element.t -> t
   val elements: t -> Element.t list
   val singleton: Element.t -> t

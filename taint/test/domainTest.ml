@@ -22,8 +22,13 @@ let test_partition_call_map _ =
       ~path_element:ForwardTaint.bottom
       ~element:taint
   in
+  let split partition =
+    Map.Poly.find partition true |> Option.value ~default:ForwardTaint.bottom,
+    Map.Poly.find partition false |> Option.value ~default:ForwardTaint.bottom
+  in
   let matches, does_not_match =
-    ForwardTaint.partition_tf ~f:((=) Sources.UserControlled) call_taint
+    ForwardTaint.partition ForwardTaint.leaf ~f:((=) Sources.UserControlled) call_taint
+    |> split
   in
   assert_equal
     ~msg:"does_not_match must be equal to bottom"

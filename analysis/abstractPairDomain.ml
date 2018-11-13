@@ -5,8 +5,16 @@
 
 open Core
 
+open AbstractDomain
+
+
+module type CONFIG = sig
+  val route: 'a part -> [ `Left | `Right | `Both ]
+end
+
 
 module Make
+    (Config : CONFIG)
     (Left : AbstractDomain.S)
     (Right : AbstractDomain.S) =
 struct
@@ -31,5 +39,47 @@ struct
   let show (left, right) =
     Format.sprintf "(%s, %s)" (Left.show left) (Right.show right)
 
-  let make l r = (l, r)
+  let make l r =
+    (l, r)
+
+  let get pair =
+    pair
+
+  let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) ((left, right): t) : b =
+    match Config.route part with
+    | `Left ->
+        Left.fold part ~f ~init left
+    | `Right ->
+        Right.fold part ~f ~init right
+    | `Both ->
+        let left_fold = Left.fold part ~f ~init left in
+        Right.fold part ~f ~init:left_fold right
+
+  let transform (type a) (part: a part) ~(f: a -> a) ((left, right): t) : t =
+    match Config.route part with
+    | `Left ->
+        make (Left.transform part ~f left) right
+    | `Right ->
+        make left (Right.transform part ~f right)
+    | `Both ->
+        make (Left.transform part ~f left) (Right.transform part ~f right)
+
+  let partition (type a b) (part: a part) ~(f: a -> b) ((left, right): t)
+    : (b, t) Map.Poly.t =
+    match Config.route part with
+    | `Left ->
+        Left.partition part ~f left
+        |> Map.Poly.map ~f:(fun left -> make left right)
+    | `Right ->
+        Right.partition part ~f right
+        |> Map.Poly.map ~f:(fun right -> make left right)
+    | `Both ->
+        let left_partition = Left.partition part ~f left in
+        let right_partition = Right.partition part ~f right in
+        let combine ~key:_ = function
+          | `Both (left, right) -> Some (make left right)
+          | `Left left -> Some (make left Right.bottom)
+          | `Right right -> Some (make Left.bottom right)
+        in
+        Map.Poly.merge left_partition right_partition ~f:combine
 end

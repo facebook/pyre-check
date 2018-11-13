@@ -5,6 +5,8 @@
 
 open Core
 
+open AbstractDomain
+
 
 module type ELEMENT_DOMAIN = sig
   type t
@@ -21,15 +23,7 @@ end
 
 
 (* A set of abstract elements where set adding will join elements by group *)
-module Make(Element : ELEMENT_DOMAIN) : sig
-  include AbstractDomain.S
-
-  val add: t -> Element.t -> t
-  val elements: t -> Element.t list
-  val partition_tf: t -> f: (Element.t -> bool) -> t * t
-  val singleton: Element.t -> t
-end
-= struct
+module Make(Element : ELEMENT_DOMAIN) = struct
   module Key = struct
     type t = Element.group
     [@@deriving compare, sexp]
@@ -95,12 +89,43 @@ end
 
   let elements = Map.data
 
-  let partition_tf map ~f =
-    let partition_target ~key ~data (true_result, false_result) =
-      if f data then
-        (Map.set true_result ~key ~data, false_result)
-      else
-        (true_result, Map.set false_result ~key ~data)
-    in
-    Map.fold map ~init:(empty, empty) ~f:partition_target
+  type _ part +=
+    | Element: Element.t part
+
+  let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) (set: t) : b =
+    match part with
+    | Element ->
+        Map.fold ~f:(fun ~key:_ ~data result -> f result data) ~init set
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> failwith "Unknown part %s in fold"
+
+  let transform (type a) (part: a part) ~(f: a -> a) (set: t) : t =
+    match part with
+    | Element ->
+        elements set
+        |> List.fold ~f:(fun result element -> add result (f element)) ~init:empty
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> failwith "Unknown part %s in transform"
+
+  let partition (type a b) (part: a part) ~(f: a -> b) (set: t)
+    : (b, t) Core.Map.Poly.t =
+    match part with
+    | Element ->
+        let partition_target ~key ~data partition =
+          let update = function
+            | None -> Map.singleton key data
+            | Some existing -> Map.set existing ~key ~data
+          in
+          let partition_key = f data in
+          Core.Map.Poly.update partition partition_key ~f:update
+        in
+        Map.fold set ~init:Core.Map.Poly.empty ~f:partition_target
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> failwith "Unknown part %s in partition"
 end
