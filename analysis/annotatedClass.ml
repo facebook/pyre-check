@@ -709,13 +709,14 @@ let implements ~resolution definition ~protocol =
           { Attribute.annotation = {
                 Annotation.annotation = Type.Callable {
                     kind = Type.Record.Callable.Named callable_name;
+                    implementation;
                     overloads;
                     _ };
                 _ };
             parent;
             _ }; _ } ->
         let local_name = Access.drop_prefix ~prefix:(name parent) callable_name in
-        List.map ~f:(fun overload -> (local_name, overload)) overloads
+        List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
     | _ -> []
   in
   let definition_attributes = attributes ~resolution definition in

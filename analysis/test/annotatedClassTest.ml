@@ -442,8 +442,8 @@ let test_implements _ =
     in
     let resolution = Environment.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match definition |> get_last_statement,
-          protocol |> get_last_statement with
+    match get_last_statement definition,
+          get_last_statement protocol with
     | { Node.value = Statement.Class definition; _ },
       { Node.value = Statement.Class protocol; _ } ->
         assert_equal
