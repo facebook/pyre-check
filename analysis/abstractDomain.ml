@@ -16,6 +16,7 @@ type _ part = ..
 module type S = sig
   type t
   [@@deriving sexp]
+
   val bottom: t
   val is_bottom: t -> bool
   val join: t -> t -> t
@@ -28,3 +29,15 @@ module type S = sig
   val partition: 'a part -> f: ('a -> 'b) -> t -> ('b, t) Core.Map.Poly.t
   val transform: 'a part -> f: ('a -> 'a) -> t -> t
 end
+
+
+(* First class abstract domain value. Used e.g., in the product domain.
+   Should not be stored as part of abstract values.
+*)
+type 'a abstract_domain = (module S with type t = 'a)
+
+
+(* Equality witness used as result of comparing GADTs. *)
+type ('a, 'b) equality_witness =
+  | Equal: ('a, 'a) equality_witness
+  | Distinct: ('a, 'b) equality_witness

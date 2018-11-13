@@ -10,7 +10,7 @@ open AbstractDomain
 
 module type KEY = sig
   include Map.Key
-
+  val show: t -> string
   val absence_implicitly_maps_to_bottom: bool
 end
 
@@ -75,7 +75,12 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     | Exit -> false
 
   let show map =
-    Sexp.to_string [%message (map: Element.t Map.t)]
+    let show_pair (key, value) =
+      Format.sprintf "%s -> %s" (Key.show key) (Element.show value)
+    in
+    Map.to_alist map
+    |> List.map ~f:show_pair
+    |> String.concat ~sep:"\n"
 
   type _ part +=
     | Key: Key.t part
@@ -110,7 +115,7 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     : (b, t) Core.Map.Poly.t =
     let update ~key ~data = function
       | None ->
-          Map.singleton key data
+          singleton key data
       | Some existing ->
           set existing ~key ~data
     in

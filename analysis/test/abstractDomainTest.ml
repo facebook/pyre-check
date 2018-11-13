@@ -217,6 +217,7 @@ module TestStringSet = TestAbstractDomain(StringSet)
 module IntToStringSet = struct
   module Map = AbstractMapDomain.Make(struct
       include Int
+      let show = Int.to_string
       let absence_implicitly_maps_to_bottom = true
     end)(StringSet)
 
@@ -234,7 +235,7 @@ module IntToStringSet = struct
       Map.bottom
       bottom
       ~msg:"strict in bottom"
-      ~printer:(fun domain -> Format.asprintf "%a" Sexp.pp [%message (domain: t)])
+      ~printer:Map.show
 
   (* Builds maps from i -> string sets, where all unrelated string elements are in the range
      except for one, and keys are from [0,n), n being the number of unrelated string elements.
@@ -363,6 +364,7 @@ module TestIntToStringSet = TestAbstractDomain(IntToStringSet)
 module StrictIntToStringSet = struct
   module Map = AbstractMapDomain.Make(struct
       include Int
+      let show = Int.to_string
       let absence_implicitly_maps_to_bottom = false
     end)(StringSet)
 
@@ -469,29 +471,40 @@ module StrictIntToStringSet = struct
       ~f:(fun key -> Bool.to_string (key <= 1))
       ~expected_keys:["false", [2; 3]; "true", [0; 1]]
 
-    let test_additional _ =
-      ()
+  let test_additional _ =
+    ()
 end
 
 module TestStrictIntToStringSet = TestAbstractDomain(StrictIntToStringSet)
 
 module PairStringMapIntToString = struct
   module LeftStringSet = AbstractSetDomain.Make(String)
-  include AbstractPairDomain.Make(struct
-      let route (type a) (part: a AbstractDomain.part) =
-        match part with
-        | LeftStringSet.Element ->
-            `Left
-        | _ ->
-            `Right
-    end)(LeftStringSet)(IntToStringSet)
+  module Slots = struct
+    type 'a slot =
+      | Left: LeftStringSet.t slot
+      | Right: IntToStringSet.t slot
+
+    let slot_name (type a) (slot : a slot) =
+      match slot with
+      | Left -> "left"
+      | Right -> "right"
+
+    let slot_domain (type a) (slot : a slot) =
+      match slot with
+      | Left -> (module LeftStringSet : AbstractDomain.S with type t = a)
+      | Right -> (module IntToStringSet : AbstractDomain.S with type t = a)
+  end
+  include AbstractProductDomain.Make(Slots)
+
+  let build left right =
+    product [Element (Slots.Left, left); Element (Slots.Right, right)]
 
   let unrelated =
     let fold_sets accumulator v1 =
       List.fold
         IntToStringSet.unrelated
         ~init:accumulator
-        ~f:(fun accumulator v2 -> make v1 v2 :: accumulator)
+        ~f:(fun accumulator v2 -> (build v1 v2) :: accumulator)
     in
     List.map
       ~f:LeftStringSet.of_list
@@ -507,14 +520,15 @@ module PairStringMapIntToString = struct
 
   let build elements =
     let add_elements pair (key, elements) =
-      let (set, map) = get pair in
+      let set = get Slots.Left pair in
+      let map = get Slots.Right pair in
       let left =
         List.map ~f:(fun x -> "left." ^ x) elements
         |> LeftStringSet.of_list
         |> LeftStringSet.join set
       in
       let right = IntToStringSet.set map ~key ~data:(StringSet.of_list elements) in
-      make left right
+      build left right
     in
     List.fold ~f:add_elements ~init:bottom elements
 
@@ -529,17 +543,17 @@ module PairStringMapIntToString = struct
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:LeftStringSet.Element
+      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
       ~f:Fn.id
       ~expected:["left.d"; "left.c"; "left.b"; "left.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:StringSet.Element
+      ~by:(ProductSlot (Slots.Right, StringSet.Element))
       ~f:Fn.id
       ~expected:["d"; "c"; "c"; "b"; "b"; "a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:IntToStringSet.Key
+      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
       ~f:Int.to_string
       ~expected:["2"; "1"; "0"]
 
@@ -556,19 +570,19 @@ module PairStringMapIntToString = struct
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:LeftStringSet.Element
+      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
       ~f:(fun x -> "left." ^ x)
       ~to_result:Fn.id
       ~expected:["left.left.d"; "left.left.c"; "left.left.b"; "left.left.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:StringSet.Element
+      ~by:(ProductSlot (Slots.Right, StringSet.Element))
       ~f:(fun x -> "right." ^ x)
       ~to_result:Fn.id
       ~expected:["right.d"; "right.c"; "right.c"; "right.b"; "right.b"; "right.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:IntToStringSet.Key
+      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
       ~f:(fun x -> x + 1)
       ~to_result:Int.to_string
       ~expected:["3"; "2"; "1"]
@@ -582,7 +596,8 @@ module PairStringMapIntToString = struct
           ~init:[]
           ~f:(fun ~key ~data result ->
               let elements =
-                fold IntToStringSet.Key ~init:[] ~f:(Fn.flip List.cons) data
+                let part = ProductSlot (Slots.Right, IntToStringSet.Key) in
+                fold part ~init:[] ~f:(Fn.flip List.cons) data
                 |> List.sort ~compare:Int.compare
               in
               (key, elements) :: result
@@ -602,7 +617,7 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:LeftStringSet.Element
+      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
       ~f:Fn.id
       (* Pair right side distributed over left partition *)
       ~expected_keys:[
@@ -617,7 +632,7 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:StringSet.Element
+      ~by:(ProductSlot (Slots.Right, StringSet.Element))
       ~f:Fn.id
       ~expected_keys:[
         "a", [0];
@@ -631,7 +646,7 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:IntToStringSet.Key
+      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
       ~f:(fun key -> Bool.to_string (key <= 1))
       ~expected_keys:[
         "false", [2];
@@ -650,7 +665,7 @@ module AbstractElement = struct
     | B
     | C of string * int
     | CSuper  (* Above all Cs *)
-  [@@deriving eq, compare, sexp, show]
+  [@@deriving eq, compare, show, sexp]
 
   let less_or_equal ~left ~right =
     left = right
@@ -825,12 +840,28 @@ end
 module TestAbstractElement = TestAbstractDomain(AbstractElementSet)
 
 module PairStringString = struct
-  include AbstractPairDomain.Make(struct
-      let route _ = `Both
-    end)(StringSet)(StringSet)
+  module Slots = struct
+    type 'a slot =
+      | Left: StringSet.t slot
+      | Right: StringSet.t slot
+
+    let slot_name (type a) (slot : a slot) =
+      match slot with
+      | Left -> "left"
+      | Right -> "right"
+
+     let slot_domain (type a) (slot : a slot) =
+      match slot with
+      | Left -> (module StringSet : AbstractDomain.S with type t = a)
+      | Right -> (module StringSet : AbstractDomain.S with type t = a)
+  end
+  include AbstractProductDomain.Make(Slots)
 
   let build left right =
-    make (StringSet.of_list left) (StringSet.of_list right)
+    product [
+      Element (Slots.Left, StringSet.of_list left);
+      Element (Slots.Right, StringSet.of_list right);
+    ]
 
   let unrelated = [
     build ["a"; "b"] ["c"; "d"];
@@ -852,7 +883,7 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:StringSet.Element
+      ~by:(AllSlots StringSet.Element)
       ~f:Fn.id
       ~expected:["c"; "b"; "b"; "a"]
 
@@ -869,7 +900,7 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:StringSet.Element
+      ~by:(AllSlots StringSet.Element)
       ~f:(fun x -> "both." ^ x)
       ~to_result:Fn.id
       ~expected:["both.c"; "both.b"; "both.b"; "both.a"]
@@ -893,12 +924,12 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:StringSet.Element
+      ~by:(AllSlots StringSet.Element)
       ~f:Fn.id
       ~expected:[
-        "a", "((set(a)), (set()))";
-        "b", "((set(b)), (set(b)))";
-        "c", "((set()), (set(c)))";
+        "a", "left: (set(a))";
+        "b", "left: (set(b)), right: (set(b))";
+        "c", "right: (set(c))";
       ]
 
   let test_additional _ =
@@ -906,6 +937,169 @@ module PairStringString = struct
 end
 
 module TestPairStringString = TestAbstractDomain(PairStringString)
+
+
+module ProductDomain = struct
+  module CitySet = AbstractSetDomain.Make(String)
+  module YearSet = AbstractSetDomain.Make(Int)
+  module RiverSet = AbstractSetDomain.Make(String)
+
+  module Slots = struct
+
+    type 'a slot =
+      | Cities: CitySet.t slot
+      | Years: YearSet.t slot
+      | Rivers: RiverSet.t slot
+
+    let slot_name (type a) (slot: a slot) =
+      match slot with
+      | Cities -> "Cities"
+      | Years -> "Years"
+      | Rivers -> "Rivers"
+
+    let slot_domain (type a) (slot: a slot) =
+      match slot with
+      | Cities -> (module CitySet : AbstractDomain.S with type t = a)
+      | Years -> (module YearSet : AbstractDomain.S with type t = a)
+      | Rivers -> (module RiverSet : AbstractDomain.S with type t = a)
+
+  end
+
+  include AbstractProductDomain.Make(Slots)
+
+  let build (cities, years, rivers) =
+    product [
+      Element (Cities, CitySet.of_list cities);
+      Element (Years, YearSet.of_list years);
+      Element (Rivers, RiverSet.of_list rivers);
+    ]
+
+  let unrelated = [
+    build (["Bern"], [1191], ["Aare"]);
+    build (["Neuchatel"], [1214], ["Thielle"]);
+    build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]);
+  ]
+
+  let values = [
+  ]
+
+  let test_fold _ =
+    let test ~initial ~by:part ~f ~expected =
+      let map = build initial in
+      let result = fold part map ~f:(fun list element -> (f element) :: list) ~init:[] in
+      assert_equal
+        expected
+        result
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)]);
+    in
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Cities, CitySet.Element))
+      ~f:Fn.id
+      ~expected:["Lausanne"; "Fribourg"];
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Years, YearSet.Element))
+      ~f:Int.to_string
+      ~expected:["1157"; "280"];
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Rivers, RiverSet.Element))
+      ~f:Fn.id
+      ~expected:["Sarine"; "Louve"; "Flon"]
+
+
+  let test_transform _ =
+    let test ~initial ~by:part ~f ~expected ~to_result =
+      let map = build initial in
+      let result =
+        transform part map ~f
+        |> fold part ~f:(fun list element -> (to_result element) :: list) ~init:[] in
+      assert_equal
+        expected
+        result
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)]);
+    in
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Cities, CitySet.Element))
+      ~f:(fun x -> x ^ " in Switzerland")
+      ~to_result:Fn.id
+      ~expected:["Lausanne in Switzerland"; "Fribourg in Switzerland"];
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Years, YearSet.Element))
+      ~f:(fun x -> x + 1)
+      ~to_result:Int.to_string
+      ~expected:["1158"; "281"]
+
+  let test_partition _ =
+    let test ~initial ~by:part ~f ~expected =
+      let map = build initial in
+      let partition =
+        partition part map ~f
+        |> Core.Map.Poly.fold
+          ~init:[]
+          ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal
+        expected
+        partition
+        ~printer:(fun elements ->
+            Format.asprintf "%a" Sexp.pp [%message (elements: (string * string) list)]
+          )
+    in
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Cities, CitySet.Element))
+      ~f:Fn.id
+      ~expected:[
+        "Fribourg",
+        "Cities: (set(Fribourg)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))";
+        "Lausanne",
+        "Cities: (set(Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280 1157))";
+      ];
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Years, YearSet.Element))
+      ~f:Int.to_string
+      ~expected:[
+        "1157",
+        "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(1157))";
+        "280",
+        "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon Louve Sarine)), Years: (set(280))";
+      ];
+    test
+      ~initial:(["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"])
+      ~by:(ProductSlot (Rivers, RiverSet.Element))
+      ~f:Fn.id
+      ~expected:[
+        "Flon",
+        "Cities: (set(Fribourg Lausanne)), Rivers: (set(Flon)), Years: (set(280 1157))";
+        "Louve",
+        "Cities: (set(Fribourg Lausanne)), Rivers: (set(Louve)), Years: (set(280 1157))";
+        "Sarine",
+        "Cities: (set(Fribourg Lausanne)), Rivers: (set(Sarine)), Years: (set(280 1157))";
+      ]
+
+  let test_additional _ =
+    let materialized_slot =
+      transform (ProductSlot (Years, YearSet.Set)) bottom ~f:(function _ -> [0;1;2;3])
+    in
+    let actual =
+      fold (ProductSlot (Years, YearSet.Element)) ~f:(Fn.flip List.cons) ~init:[] materialized_slot
+    in
+    assert_equal
+      [3;2;1;0]
+      actual
+      ~printer:(fun elements ->
+          Format.asprintf "%a" Sexp.pp [%message (elements: int list)]
+        )
+
+end
+
+module TestProductDomain = TestAbstractDomain(ProductDomain)
 
 let () =
   "abstractDomainTest">:::[
@@ -915,5 +1109,6 @@ let () =
     "string_x_maps_int_to_string_set">:::(TestPair.suite ());
     "dual_string">:::(TestPairStringString.suite ());
     "abstract_element">:::(TestAbstractElement.suite ());
+    "product">:::(TestProductDomain.suite ());
   ]
   |> Test.run

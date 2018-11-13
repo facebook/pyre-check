@@ -7,6 +7,8 @@
 module type KEY = sig
   include Core.Map.Key
 
+  val show: t -> string
+
   (* If true, an absent key and a key mapping to bottom are equivalent. Map
      won't keep elements that map to bottom. Presence of keys is still
      observable via fold, transform, and partition. *)
