@@ -383,7 +383,7 @@ let typeshed_stubs = (* Yo dawg... *)
         class Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
           pass
 
-        class Awaitable: pass
+        class Awaitable(Protocol[_T_co]): pass
         class AsyncGenerator(Generic[_T_co, _T_contra]):
           def __aiter__(self) -> 'AsyncGenerator[_T_co, _T_contra]': ...
           def __anext__(self) -> Awaitable[_T_co]: ...
