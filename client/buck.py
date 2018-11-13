@@ -77,7 +77,7 @@ def _normalize(targets: List[str]) -> List[str]:
             + ["--type", "python_binary", "python_test"]
         )
         targets_to_destinations = (
-            subprocess.check_output(command, stderr=subprocess.PIPE, timeout=200)
+            subprocess.check_output(command, stderr=subprocess.PIPE, timeout=600)
             .decode()
             .strip()
             .split("\n")

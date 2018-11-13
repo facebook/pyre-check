@@ -124,7 +124,7 @@ class BuckTest(unittest.TestCase):
                             "python_test",
                         ],
                         stderr=subprocess.PIPE,
-                        timeout=200,
+                        timeout=600,
                     )
                 ]
             )
