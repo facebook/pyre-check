@@ -43,3 +43,7 @@ def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
         return dict_factory(result)
     else:
         return obj
+
+
+def asdict_test(obj):
+    return asdict(obj)

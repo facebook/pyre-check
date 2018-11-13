@@ -65,6 +65,7 @@ module TraceInfo = struct
         path: AccessPathTree.Label.path;
         location: Location.t;
         callees: Interprocedural.Callable.t list;
+        trace_length: int;
       }
   [@@deriving compare, sexp, show]
 
@@ -113,7 +114,7 @@ module TraceInfo = struct
           |> location_to_json
         in
         "root", location_json
-    | CallSite { location; callees; port; path; } ->
+    | CallSite { location; callees; port; path; trace_length; } ->
         let location_json =
           Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
           |> location_to_json
@@ -129,6 +130,7 @@ module TraceInfo = struct
             "position", location_json;
             "resolves_to", `List callee_json;
             "port", port_json;
+            "length", `Int trace_length;
           ]
         in
         "call", call_json
@@ -140,16 +142,19 @@ module TraceInfo = struct
         location = location_left;
         port = port_left;
         callees = callees_left;
+        trace_length = trace_length_left
       },
       CallSite {
         path = path_right;
         location = location_right;
         port = port_right;
         callees = callees_right;
+        trace_length = trace_length_right;
       } ->
         port_left = port_right
         && Location.compare location_left location_right = 0
         && callees_left = callees_right
+        && trace_length_right <= trace_length_left
         && AccessPathTree.Label.is_prefix ~prefix:path_right path_left
     | _ ->
         left = right
@@ -255,11 +260,15 @@ end = struct
 
   let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
     let open TraceInfo in
-    let call_trace = CallSite { location; callees; port; path; } in
+    let call_trace = CallSite { location; callees; port; path; trace_length = 1 } in
     let translate feature =
       match feature with
-      | CallSite _ | Origin _ -> call_trace
-      | Declaration -> Origin location
+      | Origin _ ->
+          call_trace
+      | CallSite { trace_length; _} ->
+          CallSite { location; callees; port; path; trace_length = trace_length + 1 }
+      | Declaration ->
+          Origin location
     in
     Map.transform TraceInfoSet.trace_info ~f:translate taint
 

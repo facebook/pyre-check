@@ -16,7 +16,8 @@
                 "end": 55
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)"
+              "port": "formal(obj)",
+              "length": 1
             },
             "leaves": [ { "kind": "GetAttr" } ]
           }
@@ -43,7 +44,8 @@
                 "end": 69
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)"
+              "port": "formal(obj)",
+              "length": 1
             },
             "leaves": [ { "kind": "GetAttr" } ]
           },
@@ -56,7 +58,8 @@
                 "end": 50
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)"
+              "port": "formal(obj)",
+              "length": 1
             },
             "leaves": [ { "kind": "GetAttr" } ]
           },
@@ -69,7 +72,8 @@
                 "end": 50
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)"
+              "port": "formal(obj)",
+              "length": 1
             },
             "leaves": [ { "kind": "GetAttr" } ]
           }
@@ -110,7 +114,8 @@
                 "end": 43
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
-              "port": "formal(obj)"
+              "port": "formal(obj)",
+              "length": 1
             },
             "leaves": [ { "kind": "GetAttr" } ]
           }
@@ -124,6 +129,42 @@
           { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
         ]
       },
+      {
+        "port": "formal(obj)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.asdict_test",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(obj)",
+        "taint": [
+          {
+            "call": {
+              "position": {
+                "filename": "test.py",
+                "line": 49,
+                "start": 17,
+                "end": 22
+              },
+              "resolves_to": [ "qualifier.asdict" ],
+              "port": "formal(obj)",
+              "length": 2
+            },
+            "leaves": [ { "kind": "GetAttr" } ]
+          }
+        ]
+      }
+    ],
+    "tito": [
       {
         "port": "formal(obj)",
         "taint": [
