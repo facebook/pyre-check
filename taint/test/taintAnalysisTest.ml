@@ -428,13 +428,14 @@ let test_integration _ =
       remove_old_output ()
     else begin
       write_output ();
-      Printf.printf "Expectations differ for %s" (Path.show path);
-      assert_equal
-        ~printer:ident
-        ~cmp:String.equal
-        ~pp_diff:(Test.diff ~print:String.pp)
-        expected
-        serialized_models
+      Printf.printf "Expectations differ for %s\n" (Path.show path);
+      assert_bool
+        (Format.asprintf
+           "Expectations differ for %s\n%a"
+           (Path.show path)
+           (Test.diff ~print:String.pp)
+           (expected, serialized_models))
+        false
     end
   in
   List.iter test_paths ~f:run_test

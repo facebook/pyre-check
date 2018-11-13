@@ -111,9 +111,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           | Some model ->
               model.is_obscure, Interprocedural.Result.get_model TaintResult.kind model
         in
+        let collapsed_call_taint = BackwardState.collapse call_taint in
         match taint_model with
         | Some { backward; _ } when not is_obscure ->
-            let collapsed_call_taint = BackwardState.collapse call_taint in
             let sink_roots = BackwardState.keys backward.sink_taint in
             let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
             let tito_roots = BackwardState.keys backward.taint_in_taint_out in
@@ -151,12 +151,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             List.fold ~f:analyze_argument combined_matches ~init:state
         | _ ->
             (* obscure or no model *)
-            List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
+            let obscure_taint = BackwardState.create_leaf collapsed_call_taint in
+            List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
       in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
-          List.fold_right ~f:(analyze_argument ~resolution call_taint) arguments ~init:state
+            let obscure_taint = BackwardState.collapse call_taint |> BackwardState.create_leaf in
+          List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
       | call_targets ->
           List.map call_targets ~f:analyze_call_target
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
