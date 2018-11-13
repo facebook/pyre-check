@@ -192,13 +192,13 @@ let test_fixpoint _ =
         x = [__testSource(), 5]
         list_sink(x)
 
-      def test_getattr_obj_match():
+      def test_getattr_obj_no_match():
         obj = __userControlled()
         getattr(obj, 'foo')
 
       def test_getattr_field_match(some_obj):
         field = __userControlled()
-        getattr(some_obj, field)
+        return getattr(some_obj, field)
       |}
     ~expect:{
       iterations = 4;
@@ -331,24 +331,17 @@ let test_fixpoint _ =
           ]
         };
         {
-          define_name = "qualifier.test_getattr_obj_match";
+          define_name = "qualifier.test_getattr_obj_no_match";
           returns = [];
           sink_parameters = [];
           tito_parameters = [];
-          errors = [
-            {
-              code = 5010;
-              pattern = ".*Attacker may control at least one argument to getattr(,)";
-            };
-          ]
+          errors = [];
         };
         {
           define_name = "qualifier.test_getattr_field_match";
           returns = [];
-          sink_parameters = [
-            { name = "some_obj"; sinks = [Sinks.GetAttr]; };
-          ];
-          tito_parameters = [];
+          sink_parameters = [];
+          tito_parameters = ["some_obj"];
           errors = [
             {
               code = 5010;

@@ -153,7 +153,12 @@ let check_expectation
   assert_equal
     (Map.length expected_sinks)
     (Map.length taint_map)
-    ~msg:(Format.sprintf "Define %s: List of tainted parameters differ in length." define_name);
+    ~printer:Int.to_string
+    ~msg:(
+      Format.sprintf
+        "Define %s: List of tainted parameters differ in length."
+        define_name
+    );
   String.Map.iter2 ~f:check_each_sink expected_sinks taint_map;
 
   let expected_tito = tito_parameters |> String.Set.of_list in
@@ -184,7 +189,12 @@ let run_with_taint_models tests =
       def __no_tito(x): ...
       def __eval(arg: TaintSink[RemoteCodeExecution]): ...
       def __userControlled() -> TaintSource[UserControlled]: ...
-      def getattr(obj: TaintSink[GetAttr], field: TaintSink[GetAttr]): ...
+      def getattr(
+          o: TaintInTaintOut[LocalReturn],
+          name: TaintSink[GetAttr],
+          default: TaintInTaintOut[LocalReturn] = ...,
+      ): ...
+      def copy(obj: TaintInTaintOut[LocalReturn]): ...
     |}
     |> Test.trim_extra_indentation
   in
