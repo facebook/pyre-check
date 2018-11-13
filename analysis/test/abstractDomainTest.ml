@@ -165,10 +165,10 @@ module StringSet = struct
     test ["a"; "b"; "c"]
 
   let test_transform _ =
-    let test ~initial ~f ~expected =
+    let test ~initial ~by ~f ~expected =
       let element_set = of_list initial in
       let actual =
-        transform Element ~f element_set
+        transform by ~f element_set
         |> fold Element ~init:[] ~f:(Fn.flip List.cons)
         |> List.sort ~compare:String.compare
       in
@@ -177,7 +177,8 @@ module StringSet = struct
         actual
         ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
     in
-    test ~initial:["a"; "b"] ~f:(fun x -> "t." ^ x)  ~expected:["t.a"; "t.b"]
+    test ~initial:["a"; "b"] ~by:Element ~f:(fun x -> "t." ^ x) ~expected:["t.a"; "t.b"];
+    test ~initial:["a"; "b"] ~by:Set ~f:(fun set -> "c" :: set) ~expected:["a"; "b"; "c"]
 
   let test_partition _ =
     let test ~initial ~f ~expected =
@@ -705,10 +706,10 @@ module AbstractElementSet = struct
       ~expected:["A"; "B"; "C(x,5)"; "C(y,5)"]
 
   let test_transform _ =
-    let test ~initial ~f ~expected =
+    let test ~initial ~over ~f ~expected =
       let element_set = of_list initial in
       let actual =
-        transform Element ~f element_set
+        transform over ~f element_set
         |> fold Element ~init:[] ~f:accumulate_elements_as_strings
         |> List.sort ~compare:String.compare
       in
@@ -723,6 +724,7 @@ module AbstractElementSet = struct
         C ("x", 5);
         C ("y", 5);
       ]
+      ~over:Element
       ~f:(function A -> B | B -> A | C (s, n) -> C (s, n + 1) | CSuper -> CSuper)
       ~expected:[
         "B";
@@ -735,9 +737,22 @@ module AbstractElementSet = struct
         C ("x", 5);
         C ("y", 5);
       ]
+      ~over:Element
       ~f:(function A -> B | _ -> CSuper)
       ~expected:[
         "B";
+        "CSuper";
+      ];
+    test
+      ~initial:[
+        A;
+        C ("x", 5);
+        C ("y", 5);
+      ]
+      ~over:Set
+      ~f:(function existing -> CSuper :: existing)
+      ~expected:[
+        "A";
         "CSuper";
       ]
 

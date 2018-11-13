@@ -43,12 +43,15 @@ module Make(Element : Set.Elt) = struct
 
   type _ part +=
     | Element: Element.t part
+    | Set: Element.t list part
 
 
   let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) set : b =
     match part with
     | Element ->
         fold ~f ~init set
+    | Set ->
+        f init (Set.elements set)
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name
@@ -60,6 +63,8 @@ module Make(Element : Set.Elt) = struct
     | Element ->
         elements set
         |> List.fold ~f:(fun result element -> add result (f element)) ~init:empty
+    | Set ->
+        f (Set.elements set) |> Set.of_list
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name
@@ -78,6 +83,8 @@ module Make(Element : Set.Elt) = struct
           Map.Poly.update result key ~f:(update element)
         in
         Set.fold set ~f ~init:Map.Poly.empty
+    | Set ->
+        Map.Poly.singleton (f (Set.elements set)) set
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name

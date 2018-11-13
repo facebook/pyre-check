@@ -9,6 +9,7 @@ module Make(Element : Core.Set.Elt) : sig
 
   type _ AbstractDomain.part +=
     | Element: Element.t AbstractDomain.part
+    | Set: Element.t list AbstractDomain.part
 
   val add: t -> Element.t -> t
 
