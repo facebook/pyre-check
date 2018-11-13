@@ -25,12 +25,12 @@ let transform_environment ((module Handler: Handler) as environment) { Source.st
       Annotated.Class.get_decorator annotated ~decorator:"dataclasses.dataclass"
       @ Annotated.Class.get_decorator annotated ~decorator:"dataclass"
     in
+    let is_dataclass class_node =
+      not (List.is_empty (get_dataclass_decorator class_node))
+    in
     match ast_class with
     | { Node.value = Class ({ Class.name = parent;  _ } as ast_class); location }
-      when not (
-          List.is_empty
-            (get_dataclass_decorator
-               (Annotated.Class.create { Node.location; value = ast_class }))) ->
+      when is_dataclass (Annotated.Class.create { Node.location; value = ast_class }) ->
         let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
         let { init; repr; eq; _ } =
           let default =
@@ -120,6 +120,7 @@ let transform_environment ((module Handler: Handler) as environment) { Source.st
                 in
                 let parent_dataclasses =
                   Annotated.Class.superclasses ~resolution annotated_class
+                  |> List.filter ~f:is_dataclass
                   |> (fun superclasses -> annotated_class :: superclasses)
                   |> List.rev
                 in
@@ -127,7 +128,7 @@ let transform_environment ((module Handler: Handler) as environment) { Source.st
                   let compare_by_location left right =
                     Ast.Location.compare (Node.location left) (Node.location right)
                   in
-                  Annotated.Class.attributes ~include_generated_attributes:false parent ~resolution
+                  Annotated.Class.attributes ~include_generated_attributes:false ~resolution parent
                   |> List.sort ~compare:compare_by_location
                 in
                 parent_dataclasses
