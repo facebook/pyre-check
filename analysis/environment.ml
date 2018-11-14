@@ -352,40 +352,6 @@ let handler
   end: Handler)
 
 
-let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) () =
-  let parse_annotation = Type.create ~aliases:Handler.aliases in
-
-  let class_representation annotation =
-    let primitive, _ = Type.split annotation in
-    Handler.class_definition primitive
-  in
-
-  let class_definition annotation =
-    match class_representation annotation with
-    | Some { class_definition; _ } ->
-        Some class_definition
-    | None ->
-        None
-  in
-
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  Resolution.create
-    ~annotations
-    ~order
-    ~resolve:
-      (fun ~resolution expression ->
-         Annotated.resolve
-           ~resolution
-           expression)
-    ~resolve_literal:Annotated.resolve_literal
-    ~parse_annotation
-    ~global:Handler.globals
-    ~module_definition:Handler.module_definition
-    ~class_definition
-    ~class_representation
-    ()
-
-
 let dependencies (module Handler: Handler) =
   Handler.dependencies
 
@@ -614,8 +580,8 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
+    resolution
     ({ Source.handle; qualifier; statements; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let qualified_access access =
     let access =
@@ -722,9 +688,7 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let connect_type_order (module Handler: Handler) source =
-  let resolution = resolution (module Handler) () in
-
+let connect_type_order (module Handler: Handler) resolution source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
@@ -770,8 +734,7 @@ let register_dependencies (module Handler: Handler) source =
   Visit.visit () source
 
 
-let register_functions (module Handler: Handler) ({ Source.handle; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+let register_functions (module Handler: Handler) resolution ({ Source.handle; _ } as source) =
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
@@ -836,9 +799,8 @@ let register_functions (module Handler: Handler) ({ Source.handle; _ } as source
   |> Map.iteri ~f:(register_callables handle)
 
 
-let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =
+let infer_implementations (module Handler: Handler) resolution ~implementing_classes ~protocol =
   let module Edge = TypeOrder.Edge in
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
   let open Annotated in
 
   Resolution.class_definition resolution protocol
@@ -897,7 +859,10 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
   |> Option.value ~default:Edge.Set.empty
 
 
-let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classes_to_infer =
+let infer_protocol_edges
+    ~handler:((module Handler: Handler) as handler)
+    resolution
+    ~classes_to_infer =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let protocols =
@@ -965,13 +930,17 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classe
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in
   let add_protocol_edges edges protocol =
-    infer_implementations handler ~implementing_classes ~protocol
+    infer_implementations handler resolution ~implementing_classes ~protocol
     |> Set.union edges
   in
   List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
 
 
-let infer_protocols ?classes_to_infer ~handler:((module Handler: Handler) as handler) () =
+let infer_protocols
+    ?classes_to_infer
+    ~handler:((module Handler: Handler) as handler)
+    resolution
+    () =
   let timer = Timer.start () in
   let classes_to_infer =
     match classes_to_infer with
@@ -982,7 +951,7 @@ let infer_protocols ?classes_to_infer ~handler:((module Handler: Handler) as han
     | None ->
         Handler.TypeOrderHandler.keys ()
   in
-  infer_protocol_edges ~handler ~classes_to_infer
+  infer_protocol_edges ~handler resolution ~classes_to_infer
   |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)

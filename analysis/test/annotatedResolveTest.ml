@@ -27,7 +27,7 @@ let test_resolve_literal _ =
       t = 1, 1.0
       awaitable: typing.Awaitable[int]
     |}
-    |> fun environment -> Environment.resolution environment ()
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let assert_resolve_literal source expected =
     let expression =

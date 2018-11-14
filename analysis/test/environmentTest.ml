@@ -52,17 +52,17 @@ let populate_preprocess source =
   ]
 
 let global environment =
-  Environment.resolution environment ()
+  TypeCheck.resolution environment ()
   |> Resolution.global
 
 
 let class_definition environment =
-  Environment.resolution environment ()
+  TypeCheck.resolution environment ()
   |> Resolution.class_definition
 
 
 let parse_annotation environment =
-  Environment.resolution environment ()
+  TypeCheck.resolution environment ()
   |> Resolution.parse_annotation
 
 
@@ -148,7 +148,8 @@ let test_refine_class_definitions _ =
     Environment.register_class_definitions (module Handler) source
     |> Set.to_list
   in
-  Environment.connect_type_order (module Handler) source;
+  let resolution = TypeCheck.resolution (module Handler) () in
+  Environment.connect_type_order (module Handler) resolution source;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
@@ -399,7 +400,7 @@ let test_register_aliases _ =
 let test_connect_definition _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-  let resolution = Environment.resolution (module Handler) () in
+  let resolution = TypeCheck.resolution (module Handler) () in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
   TypeOrder.insert (module TypeOrderHandler) (Type.primitive "C");
@@ -459,6 +460,7 @@ let test_connect_definition _ =
 let test_register_globals _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse
       {|
@@ -473,7 +475,7 @@ let test_register_globals _ =
           qualifier.in_branch: int = 2
       |}
   in
-  Environment.register_globals (module Handler) source;
+  Environment.register_globals (module Handler) resolution source;
 
   let assert_global access expected =
     let actual =
@@ -497,6 +499,7 @@ let test_register_globals _ =
 let test_connect_type_order _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse {|
        class C:
@@ -515,7 +518,7 @@ let test_connect_type_order _ =
     |> Set.to_list
   in
   Environment.register_aliases (module Handler) [source];
-  Environment.connect_type_order (module Handler) source;
+  Environment.connect_type_order (module Handler) resolution source;
   let assert_successors annotation successors =
     assert_equal (TypeOrder.successors order annotation) successors
   in
@@ -531,6 +534,7 @@ let test_connect_type_order _ =
 let test_register_functions _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse {|
        def function() -> int: ...
@@ -561,7 +565,7 @@ let test_register_functions _ =
            pass
     |}
   in
-  Environment.register_functions (module Handler) source;
+  Environment.register_functions (module Handler) resolution source;
   assert_is_some (Handler.function_definitions (access ["function"]));
   assert_is_some (Handler.function_definitions (access ["Class.__init__"]));
   assert_is_none (Handler.function_definitions (access ["nested_in_function"]));
@@ -820,6 +824,7 @@ let test_infer_protocols_edges _ =
             def __hash__(self) -> int: ...
       |}
     in
+    let resolution = TypeCheck.resolution environment () in
 
     let methods_to_implementing_classes =
       let add key values map =
@@ -840,17 +845,20 @@ let test_infer_protocols_edges _ =
     let empty_edges =
       Environment.infer_implementations
         environment
+        resolution
         ~implementing_classes
         ~protocol:(Type.primitive "Empty")
     in
     assert_equal 9 (Set.length empty_edges);
     Environment.infer_implementations
       environment
+      resolution
       ~implementing_classes
       ~protocol:(Type.primitive "Sized")
     |> Set.union
       (Environment.infer_implementations
          environment
+         resolution
          ~implementing_classes
          ~protocol:(Type.primitive "SuperObject"))
     |> Set.union empty_edges
@@ -1377,6 +1385,7 @@ let test_infer_protocols _ =
     let ((module Handler: Environment.Handler) as handler) =
       Environment.handler environment ~configuration
     in
+    let resolution = TypeCheck.resolution (module Handler) () in
     let classes_to_infer =
       match classes_to_infer with
       | None ->
@@ -1386,7 +1395,7 @@ let test_infer_protocols _ =
           |> List.filter_map
             ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
     in
-    let edges = Environment.infer_protocol_edges ~handler ~classes_to_infer in
+    let edges = Environment.infer_protocol_edges ~handler resolution ~classes_to_infer in
     let expected_edges = Edge.Set.of_list expected_edges in
     assert_equal
       ~cmp:Edge.Set.equal

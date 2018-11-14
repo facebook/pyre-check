@@ -2241,13 +2241,63 @@ module SingleSourceResult = struct
 end
 
 
+let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.empty) () =
+  let parse_annotation = Type.create ~aliases:Handler.aliases in
+
+  let class_representation annotation =
+    let primitive, _ = Type.split annotation in
+    Handler.class_definition primitive
+  in
+
+  let class_definition annotation =
+    match class_representation annotation with
+    | Some { class_definition; _ } ->
+        Some class_definition
+    | None ->
+        None
+  in
+
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  Resolution.create
+    ~annotations
+    ~order
+    ~resolve:
+      (fun ~resolution expression ->
+         Annotated.resolve
+           ~resolution
+           expression)
+    ~resolve_literal:Annotated.resolve_literal
+    ~parse_annotation
+    ~global:Handler.globals
+    ~module_definition:Handler.module_definition
+    ~class_definition
+    ~class_representation
+    ()
+
+
+let resolution_with_key ~environment ~access ~key =
+  let annotations =
+    match key, ResolutionSharedMemory.get access with
+    | Some key, Some map ->
+        map
+        |> Int.Map.of_tree
+        |> (fun map -> Int.Map.find map key)
+        >>| (fun { precondition; _ } -> precondition)
+        >>| Access.Map.of_tree
+        |> Option.value ~default:Access.Map.empty
+    | _ ->
+        Access.Map.empty
+  in
+  resolution environment ~annotations ()
+
+
 let check
     ~configuration
     ~environment
     ~source:({ Source.handle; qualifier; statements; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
 
-  let resolution = Environment.resolution environment () in
+  let resolution = resolution environment () in
 
   let check
       ~define:({ Node.location; value = { Define.name; parent; _ } as define } as define_node)

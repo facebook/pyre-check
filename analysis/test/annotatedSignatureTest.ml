@@ -44,7 +44,7 @@ let resolution =
 
       unknown: $unknown = ...
     |}
-  |> fun environment -> Environment.resolution environment ()
+  |> fun environment -> TypeCheck.resolution environment ()
 
 
 let parse_annotation annotation =

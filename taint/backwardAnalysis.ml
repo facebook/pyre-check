@@ -418,7 +418,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let backward ?key state ~statement:({ Node.value = statement; _ }) =
       let resolution =
-        ResolutionSharedMemory.resolution
+        TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
           ~access:FunctionContext.definition.value.name
           ~key

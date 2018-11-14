@@ -28,7 +28,7 @@ let create ~environment ~source =
       let statements = Cfg.Node.statements node in
       let fold_statements index callees statement =
         let resolution =
-          ResolutionSharedMemory.resolution
+          TypeCheck.resolution_with_key
             ~environment
             ~access:caller
             ~key:(Some ([%hash: int * int](node_id, index)))

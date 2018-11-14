@@ -630,7 +630,7 @@ let mock_define = {
 let resolution ?(sources = typeshed_stubs) () =
   let environment = environment ~sources () in
   add_defaults_to_environment environment;
-  Environment.resolution environment ()
+  TypeCheck.resolution environment ()
 
 
 type test_update_environment_with_t = {

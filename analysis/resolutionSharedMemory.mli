@@ -23,8 +23,3 @@ val add: Access.t -> annotations -> unit
 val remove: Access.t list -> unit
 
 val get: Access.t -> annotations option
-val resolution
-  :  environment: (module Environment.Handler)
-  -> access: Access.t
-  -> key: int option
-  -> Resolution.t

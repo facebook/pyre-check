@@ -219,7 +219,7 @@ let test_type_collection _ =
         |> (fun { ResolutionSharedMemory.precondition; _ } ->
             Access.Map.of_tree precondition)
       in
-      let resolution = Environment.resolution environment ~annotations () in
+      let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_accesses_with_location statement
       |> List.hd_exn

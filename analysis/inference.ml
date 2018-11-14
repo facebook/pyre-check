@@ -343,7 +343,7 @@ let infer
     ~mode_override
     ~source:({ Source.handle; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
-  let resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
 

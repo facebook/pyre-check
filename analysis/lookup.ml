@@ -233,7 +233,7 @@ let create_of_source environment source =
               Access.Map.of_tree precondition)
           |> Option.value ~default:Access.Map.empty
         in
-        let resolution = Environment.resolution environment ~annotations () in
+        let resolution = TypeCheck.resolution environment ~annotations () in
         Visit.visit
           { ExpressionVisitor.resolution; annotations_lookup; definitions_lookup }
           (Source.create [statement])

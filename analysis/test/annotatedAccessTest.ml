@@ -77,7 +77,7 @@ let test_fold _ =
           sep: str = '/'
         |};
     ]
-    |> fun environment -> Environment.resolution environment ()
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let parse_annotation annotation =
     annotation
@@ -183,7 +183,7 @@ let test_fold _ =
 let assert_resolved sources access expected =
   let resolution =
     populate_with_sources (sources @ typeshed_stubs)
-    |> fun environment -> Environment.resolution environment ()
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =
     parse_single_access access

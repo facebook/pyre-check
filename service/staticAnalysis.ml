@@ -14,7 +14,7 @@ open Pyre
 
 let overrides_of_source ~environment ~source =
   let open Annotated in
-  let resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution environment () in
   let filter_overrides child_method =
     Class.overrides
       (Method.parent child_method)
@@ -87,7 +87,7 @@ let add_models ~environment ~model_source =
   in
   let models =
     Model.create
-      ~resolution:(Environment.resolution environment ())
+      ~resolution:(TypeCheck.resolution environment ())
       ~model_source
       ()
     |> Or_error.ok_exn

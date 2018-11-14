@@ -386,7 +386,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   let (module Handler: Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-    let resolution = Environment.resolution environment () in
+    let resolution = TypeCheck.resolution environment () in
     let parse_and_validate access =
       let annotation =
         Expression.Access.expression access
@@ -812,7 +812,8 @@ let process_type_check_request
     in
     List.concat_map repopulate_handles ~f:get_class_keys
   in
-  Analysis.Environment.infer_protocols ~handler:environment ~classes_to_infer ();
+  let resolution = TypeCheck.resolution environment () in
+  Analysis.Environment.infer_protocols ~handler:environment resolution ~classes_to_infer ();
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

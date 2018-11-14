@@ -445,7 +445,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         pp state
         Statement.pp_statement statement;
       let resolution =
-        ResolutionSharedMemory.resolution
+        TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
           ~access:FunctionContext.definition.value.name
           ~key

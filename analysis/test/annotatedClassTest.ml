@@ -26,7 +26,7 @@ let test_generics _ =
     | { Node.value = Statement.Class definition; _ } ->
         let resolution =
           populate source
-          |> fun environment -> Environment.resolution environment ()
+          |> fun environment -> TypeCheck.resolution environment ()
         in
         assert_equal
           ~cmp:(List.equal ~equal:Type.equal)
@@ -88,7 +88,7 @@ let test_superclasses _ =
     |> Node.create_with_default_location
     |> Class.create
   in
-  let resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution environment () in
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
@@ -230,7 +230,7 @@ let test_constructors _ =
     Class.Attribute.Cache.clear ();
     let resolution =
       populate source
-      |> fun environment -> Environment.resolution environment ()
+      |> fun environment -> TypeCheck.resolution environment ()
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
@@ -351,7 +351,7 @@ let test_has_method _ =
   let get_actual source target_method =
     let resolution =
       populate source
-      |> fun environment -> Environment.resolution environment ()
+      |> fun environment -> TypeCheck.resolution environment ()
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
@@ -440,7 +440,7 @@ let test_implements _ =
     let ((module Handler: Environment.Handler) as handler) =
       Environment.handler environment ~configuration
     in
-    let resolution = Environment.resolution handler () in
+    let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
     match get_last_statement definition,
           get_last_statement protocol with
@@ -557,7 +557,7 @@ let test_class_attributes _ =
     in
     populate source
     |> fun environment ->
-    Environment.resolution environment (),
+    TypeCheck.resolution environment (),
     Class.create (Node.create_with_default_location parent)
   in
 
@@ -830,7 +830,7 @@ let test_fallback_attribute _ =
     Class.Attribute.Cache.clear ();
     let resolution =
       populate source
-      |> fun environment -> Environment.resolution environment ()
+      |> fun environment -> TypeCheck.resolution environment ()
     in
     let attribute =
       parse_last_statement source
@@ -886,7 +886,7 @@ let test_constraints _ =
   let assert_constraints ~target ~instantiated ?parameters source expected =
     let resolution =
       populate source
-      |> fun environment -> Environment.resolution environment ()
+      |> fun environment -> TypeCheck.resolution environment ()
     in
     let target =
       let { Source.statements; _ } = parse source in
@@ -1173,7 +1173,7 @@ let test_overrides _ =
         def Baz.foo(): pass
         def Baz.baz(): pass
     |}
-    |> fun environment -> Environment.resolution environment ()
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let definition =
     let definition =

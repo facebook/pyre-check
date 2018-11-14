@@ -19,7 +19,7 @@ type dataclass_options = {
 }
 
 
-let transform_environment ((module Handler: Handler) as environment) { Source.statements; _ } =
+let transform_environment (module Handler: Handler) resolution { Source.statements; _ } =
   let update_dataclasses ast_class =
     let get_dataclass_decorator annotated =
       Annotated.Class.get_decorator annotated ~decorator:"dataclasses.dataclass"
@@ -58,7 +58,6 @@ let transform_environment ((module Handler: Handler) as environment) { Source.st
           | _ ->
               default
         in
-        let resolution = Environment.resolution environment () in
         let class_type = Annotated.Class.annotation ~resolution annotated_class in
         let generated_methods =
           let create_method ~name ~parameters ~return_annotation =
