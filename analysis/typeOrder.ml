@@ -712,43 +712,54 @@ and join_implementations ~parameter_join ~return_join order left right =
               match sofar with
               | Some sofar ->
                   let joined =
-                    match left, right with
-                    | Parameter.Named left, Parameter.Named right
-                      when Expression.Access.equal left.Parameter.name right.Parameter.name &&
-                           left.Parameter.default = right.Parameter.default ->
-                        Some
-                          (Parameter.Named {
-                              left with
-                              Parameter.annotation =
-                                parameter_join
-                                  order
-                                  left.Parameter.annotation
-                                  right.Parameter.annotation;
-                            })
-                    | Parameter.Variable left, Parameter.Variable right
-                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
-                        Some
-                          (Parameter.Variable {
-                              left with
-                              Parameter.annotation =
-                                parameter_join
-                                  order
-                                  left.Parameter.annotation
-                                  right.Parameter.annotation;
-                            })
-                    | Parameter.Keywords left, Parameter.Keywords right
-                      when Expression.Access.equal left.Parameter.name right.Parameter.name ->
-                        Some
-                          (Parameter.Keywords {
-                              left with
-                              Parameter.annotation =
-                                parameter_join
-                                  order
-                                  left.Parameter.annotation
-                                  right.Parameter.annotation;
-                            })
-                    | _ ->
-                        None
+                    let join_names left right =
+                      if String.is_prefix ~prefix:"$" (Expression.Access.show left) then
+                        left
+                      else if String.is_prefix ~prefix:"$" (Expression.Access.show right) then
+                        right
+                      else
+                        left
+                    in
+                    if Type.Callable.Parameter.names_compatible left right then
+                      match left, right with
+                      | Parameter.Named left, Parameter.Named right
+                        when left.Parameter.default = right.Parameter.default ->
+                          Some
+                            (Parameter.Named {
+                                left with
+                                Parameter.annotation =
+                                  parameter_join
+                                    order
+                                    left.Parameter.annotation
+                                    right.Parameter.annotation;
+                                name = join_names left.Parameter.name right.Parameter.name;
+                              })
+                      | Parameter.Variable left, Parameter.Variable right ->
+                          Some
+                            (Parameter.Variable {
+                                left with
+                                Parameter.annotation =
+                                  parameter_join
+                                    order
+                                    left.Parameter.annotation
+                                    right.Parameter.annotation;
+                                name = join_names left.Parameter.name right.Parameter.name;
+                              })
+                      | Parameter.Keywords left, Parameter.Keywords right ->
+                          Some
+                            (Parameter.Keywords {
+                                left with
+                                Parameter.annotation =
+                                  parameter_join
+                                    order
+                                    left.Parameter.annotation
+                                    right.Parameter.annotation;
+                                name = join_names left.Parameter.name right.Parameter.name;
+                              })
+                      | _ ->
+                          None
+                    else
+                      None
                   in
                   joined
                   >>| (fun joined -> joined :: sofar)

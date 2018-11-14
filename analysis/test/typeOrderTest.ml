@@ -843,7 +843,7 @@ let test_join _ =
   assert_join
     "typing.Callable[[Named(a, int)], int]"
     "typing.Callable[[int], int]"
-    "typing.Any";
+    "typing.Callable[[int], int]";
 
   (* Behavioral subtyping is preserved. *)
   assert_join
@@ -854,6 +854,14 @@ let test_join _ =
     "typing.Callable[..., int]"
     "typing.Callable[..., $bottom]"
     "typing.Callable[..., int]";
+  assert_join
+    "typing.Callable[[int], int]"
+    "typing.Callable[[Named(a, int)], int]"
+    "typing.Callable[[int], int]";
+  assert_join
+    "typing.Callable[[Named(b, int)], int]"
+    "typing.Callable[[Named(a, int)], int]"
+    "typing.Any";
 
   (* Variables. *)
   assert_equal
