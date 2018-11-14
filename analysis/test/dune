@@ -30,7 +30,6 @@
   annotatedCallableTest
   annotatedClassTest
   annotatedDefineTest
-  annotatedResolveTest
   annotatedSignatureTest)
  (modules :standard \ annotatedTest)
  (preprocess

@@ -2264,7 +2264,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~annotations:Access.Map.empty
         ~order:(module Handler.TypeOrderHandler)
         ~resolve:(fun ~resolution:_ _ -> Type.Top)
-        ~resolve_literal:(fun ~resolution:_ _ -> Type.Top)
         ~parse_annotation:(fun _ -> Type.Top)
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
@@ -2293,7 +2292,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ~annotations
     ~order
     ~resolve
-    ~resolve_literal:Annotated.resolve_literal
     ~parse_annotation
     ~global:Handler.globals
     ~module_definition:Handler.module_definition

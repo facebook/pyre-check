@@ -30,7 +30,6 @@ type t = {
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
-  resolve_literal: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
@@ -46,7 +45,6 @@ let create
     ~annotations
     ~order
     ~resolve
-    ~resolve_literal
     ~parse_annotation
     ~global
     ~module_definition
@@ -58,7 +56,6 @@ let create
     annotations;
     order;
     resolve;
-    resolve_literal;
     parse_annotation;
     global;
     module_definition;
@@ -129,10 +126,6 @@ let order { order; _ } =
 
 let resolve ({ resolve; _  } as resolution) =
   resolve ~resolution
-
-
-let resolve_literal ({ resolve_literal; _  } as resolution) =
-  resolve_literal ~resolution
 
 
 let parse_annotation { parse_annotation; module_definition; _ } expression =
@@ -215,3 +208,64 @@ let is_instantiated { order; _ } =
 
 let is_tracked { order; _ } annotation =
   TypeOrder.contains order annotation
+
+
+(* In general, python expressions can be self-referential. This non-recursive resolution only checks
+   literals and annotations found in the resolution map, without any resolutions/joins. *)
+let rec resolve_literal resolution expression =
+  let open Ast.Expression in
+  match Node.value expression with
+  | Access access ->
+      begin
+        match Expression.Access.name_and_arguments ~call:access with
+        | Some { Expression.Access.callee; _ } ->
+            let class_name =
+              Expression.Access.create callee
+              |> Expression.Access.expression
+              |> parse_annotation resolution
+            in
+            let is_defined =
+              class_definition resolution class_name
+              |> Option.is_some
+            in
+            if is_defined then
+              class_name
+            else
+              Type.Top
+        | None ->
+            Type.Top
+      end
+  | Await expression ->
+      resolve_literal resolution expression
+      |> Type.awaitable_value
+
+  | Complex _ ->
+      Type.complex
+
+  | False ->
+      Type.bool
+
+  | Float _ ->
+      Type.float
+
+  | Integer _ ->
+      Type.integer
+
+  | String { StringLiteral.kind; _ } ->
+      begin
+        match kind with
+        | StringLiteral.Bytes -> Type.bytes
+        | _ -> Type.string
+      end
+
+  | True ->
+      Type.bool
+
+  | Tuple elements ->
+      Type.tuple (List.map elements ~f:(resolve_literal resolution))
+
+  | Expression.Yield _ ->
+      Type.yield Type.Top
+
+  | _ ->
+      Type.Top
