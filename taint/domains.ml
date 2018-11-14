@@ -248,10 +248,10 @@ end = struct
   let of_list leaves =
     List.fold leaves ~init:Map.bottom ~f:add
 
-  let leaves map =
-    Map.to_alist map |> List.map ~f:fst
-
   let leaf = Map.Key
+
+  let leaves map =
+    Map.fold leaf ~init:[] ~f:(Fn.flip List.cons) map
 
   let to_json taint =
     let element_to_json (leaf, features) =
