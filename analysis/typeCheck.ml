@@ -2258,14 +2258,41 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
   in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let state_without_resolution =
+    let empty_resolution =
+      Resolution.create
+        ~annotations:Access.Map.empty
+        ~order:(module Handler.TypeOrderHandler)
+        ~resolve:(fun ~resolution:_ _ -> Type.Top)
+        ~resolve_literal:(fun ~resolution:_ _ -> Type.Top)
+        ~parse_annotation:(fun _ -> Type.Top)
+        ~global:(fun _ -> None)
+        ~module_definition:(fun _ -> None)
+        ~class_definition:(fun _ -> None)
+        ~class_representation:(fun _ -> None)
+        ()
+    in
+    {
+      State.configuration = Configuration.Analysis.create ();
+      errors = Location.Reference.Map.empty;
+      define =
+        Define.create_toplevel ~qualifier:[] ~statements:[]
+        |> Node.create_with_default_location;
+      nested_defines = Location.Reference.Map.empty;
+      bottom = false;
+      resolution_fixpoint = Int.Map.Tree.empty;
+      resolution = empty_resolution;
+    }
+  in
+  let resolve ~resolution expression =
+    let state = { state_without_resolution with State.resolution } in
+    State.forward_expression ~state ~expression
+    |> fun { State.resolved; _ } -> resolved
+  in
   Resolution.create
     ~annotations
     ~order
-    ~resolve:
-      (fun ~resolution expression ->
-         Annotated.resolve
-           ~resolution
-           expression)
+    ~resolve
     ~resolve_literal:Annotated.resolve_literal
     ~parse_annotation
     ~global:Handler.globals

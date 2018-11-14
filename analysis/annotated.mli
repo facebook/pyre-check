@@ -14,11 +14,6 @@ module Access = AnnotatedAccess
 module Signature = AnnotatedSignature
 
 
-val resolve
-  :  resolution: Resolution.t
-  -> Expression.t
-  -> Type.t
-
 val resolve_literal
   :  resolution: Resolution.t
   -> Expression.t

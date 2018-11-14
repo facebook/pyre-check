@@ -2891,7 +2891,10 @@ let test_check_function_parameter_errors _ =
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.attribute)
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `unknown`."];
+    [
+      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got " ^
+      "`typing.Optional[int]`.";
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -4914,10 +4917,7 @@ let test_check_ternary _ =
       a: typing.Union[int, bytes]
       foo(x=a if isinstance(a, bytes) else None)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.Optional[bytes]` but got " ^
-      "`typing.Optional[typing.Union[bytes, int]]`.";
-    ]
+    []
 
 
 let test_check_union _ =
