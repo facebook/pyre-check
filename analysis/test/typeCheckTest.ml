@@ -6545,6 +6545,20 @@ let test_check_assert_functions _ =
           pyretestassert(o)
           return o.a
     |}
+    [];
+  assert_type_errors
+    {|
+      class One:
+          a: int
+
+      def f(o: typing.Optional[One]) -> int:
+          assert o
+          return o.a
+
+      def f2(o: typing.Optional[One]) -> int:
+          pyretestassert(o)
+          return o.a
+    |}
     []
 
 

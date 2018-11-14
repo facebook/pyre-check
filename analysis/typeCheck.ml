@@ -2029,11 +2029,11 @@ module State = struct
               { state with resolution }
         end
 
-    | Expression { Node.value = Access access; _; } when Access.is_assert_function access ->
+    | Expression { Node.value = Access access; _ } when Access.is_assert_function access ->
         let find_assert_test access =
           match access with
           | Expression.Record.Access.Call {
-              Node.value = [{ Argument.value = test ; _ }];
+              Node.value = { Argument.value = test; _ } :: _;
               _;
             } -> Some test
           | _ -> None
