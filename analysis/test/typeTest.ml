@@ -558,7 +558,17 @@ let test_primitives _ =
     (Type.primitives Type.integer);
   assert_equal
     []
-    (Type.primitives Type.Object)
+    (Type.primitives Type.Object);
+
+  assert_equal
+    [Type.integer; Type.string]
+    (Type.TypedDictionary {
+        name = (Identifier.create "Movie");
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+      } |> Type.primitives)
 
 
 let test_exists _ =

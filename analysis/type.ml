@@ -1465,9 +1465,9 @@ let rec primitives annotation =
             []
       end
 
-  | TypedDictionary { name; fields } ->
-      let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-      Primitive name :: (List.concat_map annotations ~f:primitives)
+  | TypedDictionary { fields; _ } ->
+      List.map fields ~f:(fun { annotation; _ } -> annotation)
+      |> List.concat_map ~f:primitives
   | Parametric { parameters; _ }
   | Tuple (Bounded parameters)
   | Union parameters ->
