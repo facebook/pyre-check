@@ -2096,7 +2096,38 @@ let test_check _ =
           ...
       reveal_type(1 in Multiple())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `int`."]
+    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `int`."];
+  assert_type_errors
+    {|
+      class Equal:
+        def __eq__(self, other: object) -> typing.List[int]:
+          ...
+      class GetItemA:
+        def __getitem__(self, x: int) -> Equal:
+          ...
+      class GetItemB:
+        def __getitem__(self, x: int) -> Equal:
+          ...
+      def foo(a: typing.Union[GetItemA, GetItemB]) -> None:
+        5 in a
+    |}
+    [];
+  (* We require that all elements in a union have the same method for `in`. *)
+  assert_type_errors
+    {|
+      class Equal:
+        def __eq__(self, other: object) -> typing.List[int]:
+          ...
+      class GetItem:
+        def __getitem__(self, x: int) -> Equal:
+          ...
+      class Contains:
+        def __contains__(self, a: object) -> bool:
+          ...
+      def foo(a: typing.Union[GetItem, Contains]) -> None:
+        5 in a
+    |}
+    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."]
 
 
 let test_check_assign _ =

@@ -1123,18 +1123,22 @@ module State = struct
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let { state; resolved = iterator } = forward_expression ~state ~expression:right in
-        let has_method name =
-          Resolution.class_definition resolution iterator
-          >>| Annotated.Class.create
-          >>| Annotated.Class.has_method ~transitive:true ~resolution ~name:(Access.create name)
-          |> Option.value ~default:false
+        let rec has_method name annotation =
+          match annotation with
+          | Type.Union annotations ->
+              List.for_all annotations ~f:(has_method name)
+          | _ ->
+              Resolution.class_definition resolution annotation
+              >>| Annotated.Class.create
+              >>| Annotated.Class.has_method ~transitive:true ~resolution ~name:(Access.create name)
+              |> Option.value ~default:false
         in
         let converted_call =
           let { Node.location; _ } = left in
-          if has_method "__contains__" then
+          if has_method "__contains__" iterator then
             let arguments = [{ Argument.name = None; value = left }] in
             Access ((access right) @ Access.call ~arguments ~location ~name:"__contains__" ())
-          else if has_method "__iter__" then
+          else if has_method "__iter__" iterator then
             Access (
               (access right) @
               Access.call ~location ~name:"__iter__" () @
