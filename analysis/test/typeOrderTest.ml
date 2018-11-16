@@ -1273,11 +1273,8 @@ let test_to_dot _ =
 
 
 let () =
-  "builder">:::[
-    "default">::test_default;
-  ]
-  |> Test.run;
   "order">:::[
+    "default">::test_default;
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "successors">::test_successors;
     "predecessors">::test_predecessors;
