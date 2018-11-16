@@ -70,12 +70,12 @@ type kind =
     }
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
-  | IncompatibleAttributeType of { parent: Annotated.Class.t; incompatible_type: incompatible_type }
+  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
-      parent: Annotated.Class.t;
+      parent: Type.t;
       missing_annotation: missing_annotation;
     }
   | MissingGlobalAnnotation of missing_annotation
@@ -97,7 +97,7 @@ type kind =
   | UndefinedType of Type.t
   | UninitializedAttribute of {
       name: Access.t;
-      parent: Annotated.Class.t;
+      parent: Type.t;
       mismatch: mismatch;
     }
   | UnusedIgnore of int list
@@ -276,7 +276,7 @@ let messages ~detailed:_ ~define location kind =
             Format.asprintf
               "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
               Access.pp name
-              Access.pp (Annotated.Class.name parent)
+              Type.pp parent
               Type.pp annotation;
             Format.asprintf
               "Attribute `%a` declared on line %d, type `%a` deduced from %s."
@@ -290,7 +290,7 @@ let messages ~detailed:_ ~define location kind =
             Format.asprintf
               "Attribute `%a` of class `%a` has type `%a` but no type is specified."
               Access.pp name
-              Access.pp (Annotated.Class.name parent)
+              Type.pp parent
               Type.pp annotation;
             Format.asprintf
               "Attribute `%a` declared on line %d, type `%a` deduced from %s."
@@ -405,7 +405,7 @@ let messages ~detailed:_ ~define location kind =
         (Format.asprintf
            "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
            Access.pp name
-           Access.pp (Annotated.Class.name parent)
+           Type.pp parent
            Type.pp expected
            Type.pp actual);
         (Format.asprintf
@@ -578,7 +578,7 @@ let messages ~detailed:_ ~define location kind =
            "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
             initialized."
            Access.pp name
-           Access.pp (Annotated.Class.name parent)
+           Type.pp parent
            Type.pp expected);
         (Format.asprintf
            "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
@@ -691,7 +691,7 @@ let inference_information
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
       `Assoc [
         "annotation", `String (print_annotation annotation);
-        "parent", `String (Annotated.Class.name parent |> Access.show_sanitized);
+        "parent", `String (Type.show parent);
         "attribute_name", `String (Access.show_sanitized name);
       ]
   | MissingGlobalAnnotation { name; annotation; _ } ->
@@ -857,7 +857,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleAttributeType left, IncompatibleAttributeType right
-      when Annotated.Class.name_equal left.parent right.parent &&
+      when Type.equal left.parent right.parent &&
            left.incompatible_type.name = right.incompatible_type.name ->
         less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
     | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
@@ -950,7 +950,7 @@ let join ~resolution left right =
         }
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
       when (Access.equal left.missing_annotation.name right.missing_annotation.name) &&
-           Annotated.Class.name_equal left.parent right.parent ->
+           Type.equal left.parent right.parent ->
         MissingAttributeAnnotation {
           parent = left.parent;
           missing_annotation =
@@ -991,7 +991,7 @@ let join ~resolution left right =
           is_implicit = left.is_implicit && right.is_implicit;
         }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
-      when Annotated.Class.name_equal left.parent right.parent &&
+      when Type.equal left.parent right.parent &&
            left.incompatible_type.name = right.incompatible_type.name ->
         IncompatibleAttributeType {
           parent = left.parent;
@@ -1033,7 +1033,7 @@ let join ~resolution left right =
         else
           Top
     | UninitializedAttribute left, UninitializedAttribute right
-      when left.name = right.name && Annotated.Class.name_equal left.parent right.parent ->
+      when left.name = right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal left right ->
         UnawaitedAwaitable left
@@ -1106,7 +1106,7 @@ let join_at_source ~resolution errors =
   let key error =
     match error with
     | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
-        Annotated.Class.show parent ^ Access.show name
+        Type.show parent ^ Access.show name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
         Access.show name
     | { kind = UndefinedImport name; _ }

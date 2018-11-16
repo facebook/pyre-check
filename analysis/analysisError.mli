@@ -59,12 +59,12 @@ type kind =
     }
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
-  | IncompatibleAttributeType of { parent: Annotated.Class.t; incompatible_type: incompatible_type }
+  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
-      parent: Annotated.Class.t;
+      parent: Type.t;
       missing_annotation: missing_annotation;
     }
   | MissingGlobalAnnotation of missing_annotation
@@ -84,7 +84,7 @@ type kind =
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
-  | UninitializedAttribute of { name: Access.t; parent: Annotated.Class.t; mismatch: mismatch }
+  | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
   | UnusedIgnore of int list
 
   (* Additionals errors. *)

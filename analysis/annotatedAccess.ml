@@ -343,7 +343,13 @@ let fold ~resolution ~initial ~f access =
       >>| fun attribute ->
       let resolved = Attribute.annotation attribute in
       if not (Attribute.defined attribute) then
-        match Class.fallback_attribute ~resolution ~access:name (Attribute.parent attribute) with
+        let fallback_attribute =
+          Attribute.parent attribute
+          |> Resolution.class_definition resolution
+          >>| Class.create
+          >>= Class.fallback_attribute ~resolution ~access:name
+        in
+        match fallback_attribute with
         | Some attribute ->
             Attribute.annotation attribute,
             attribute

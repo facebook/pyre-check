@@ -38,16 +38,7 @@ let mock_define =
   define ()
 
 
-let mock_parent =
-  {
-    Statement.Class.name = Access.create "foo";
-    bases = [];
-    body = [];
-    decorators = [];
-    docstring = None;
-  }
-  |> Node.create_with_default_location
-  |> Annotated.Class.create
+let mock_parent = Type.primitive "foo"
 
 
 let error ?(define = mock_define) ?(location = Location.Instantiated.any) kind =
@@ -138,7 +129,7 @@ let test_due_to_analysis_limitations _ =
   assert_true
     (Error.due_to_analysis_limitations
        (error
-          (Error.UninitializedAttribute{
+          (Error.UninitializedAttribute {
               name = [Access.Identifier (~~"")];
               parent = mock_parent;
               mismatch = {
@@ -473,7 +464,7 @@ let test_filter _ =
   let inconsistent_override name override =
     InconsistentOverride {
       overridden_method = Access.create name;
-      parent = Annotated.Class.name mock_parent;
+      parent = Access.create (Type.show mock_parent);
       override;
     }
   in

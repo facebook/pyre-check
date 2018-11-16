@@ -343,7 +343,7 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
 module Attribute = struct
   type attribute = {
     name: Expression.expression;
-    parent: class_t;
+    parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
     defined: bool;
@@ -374,7 +374,7 @@ module Attribute = struct
           primitive;
         };
       } =
-    let class_annotation = annotation in
+    let class_annotation = annotation parent ~resolution in
 
     (* Account for class attributes. *)
     let annotation, class_attribute =
@@ -396,7 +396,7 @@ module Attribute = struct
       in
       if not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
          primitive then
-        Some (class_annotation ~resolution parent), None, true  (* Enums override values. *)
+        Some class_annotation, None, true  (* Enums override values. *)
       else
         annotation, value, class_attribute
     in
@@ -453,11 +453,10 @@ module Attribute = struct
       in
       if property && not (List.is_empty free_variables) then
         let constraints =
-          let parent_annotation = class_annotation parent ~resolution in
           List.fold
             free_variables
             ~init:Type.Map.empty
-            ~f:(fun map variable -> Map.set map ~key:variable ~data:parent_annotation)
+            ~f:(fun map variable -> Map.set map ~key:variable ~data:class_annotation)
           |> Map.find
         in
         Annotation.annotation annotation
@@ -471,7 +470,16 @@ module Attribute = struct
 
     {
       Node.location;
-      value = { name = target; parent; annotation; value; defined; class_attribute; async };
+      value = {
+        name = target;
+        parent = class_annotation;
+        annotation;
+        value;
+        defined;
+        class_attribute;
+        async;
+      };
+
     }
 
 
@@ -717,7 +725,11 @@ let implements ~resolution definition ~protocol =
                 _ };
             parent;
             _ }; _ } ->
-        let local_name = Access.drop_prefix ~prefix:(name parent) callable_name in
+        let local_name =
+          Access.drop_prefix
+            callable_name
+            ~prefix:(Expression.Access.create (Type.show parent))
+        in
         List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
     | _ -> []
   in
@@ -776,14 +788,18 @@ let attribute
     ~f:(fun attribute -> Expression.equal_expression (Access name) (Attribute.name attribute))
   |> Option.value ~default:undefined
   |> (fun attribute ->
-      let constraints =
-        constraints
-          ~target:(Attribute.parent attribute)
-          ~instantiated
-          ~resolution
-          definition
-      in
-      Attribute.instantiate ~constraints attribute)
+      Attribute.parent attribute
+      |> Resolution.class_definition resolution
+      >>| (fun target ->
+          let constraints =
+            constraints
+              ~target
+              ~instantiated
+              ~resolution
+              definition
+          in
+          Attribute.instantiate ~constraints attribute)
+      |> Option.value ~default:undefined)
 
 
 let fallback_attribute ~resolution ~access definition =
@@ -859,7 +875,8 @@ let constructor definition ~resolution =
   let definition_index attribute =
     attribute
     |> Attribute.parent
-    |> name
+    |> Type.show
+    |> Access.create
     |> (fun class_name -> List.findi definitions ~f:(fun _ name -> Access.equal name class_name))
     >>| fst
     |> Option.value ~default:Int.max_value

@@ -615,7 +615,7 @@ let test_class_attributes _ =
     let attribute_list_equal =
       let equal left right =
         Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
-        Class.equal (Attribute.parent left) (Attribute.parent right)
+        Type.equal (Attribute.parent left) (Attribute.parent right)
       in
       List.equal ~equal
     in
@@ -803,7 +803,7 @@ let test_class_attributes _ =
   let create_expected_attribute name callable =
     {
       Class.Attribute.name = Expression.Access (Access.create name);
-      parent = Class.create (+parent);
+      parent = Type.primitive "Attributes";
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = Node.create_with_default_location Expression.Ellipses;
       defined = true;
@@ -1200,7 +1200,8 @@ let test_overrides _ =
     ~printer:Access.show
     (Option.value_exn overrides
      |> Attribute.parent
-     |> Class.name)
+     |> Type.show
+     |> Access.create)
     (Access.create "Foo")
 
 

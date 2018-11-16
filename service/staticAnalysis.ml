@@ -27,7 +27,8 @@ let overrides_of_source ~environment ~source =
       >>| fun ancestor ->
       let ancestor_parent =
         Attribute.parent ancestor
-        |> Class.name
+        |> Type.show
+        |> Expression.Access.create
       in
       (ancestor_parent @ Attribute.access ancestor, Method.name child_method)
   in

@@ -92,7 +92,7 @@ val implements: resolution: Resolution.t -> t -> protocol: t -> bool
 module Attribute : sig
   type attribute = {
     name: Expression.expression;
-    parent: class_t;
+    parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
     defined: bool;
@@ -117,7 +117,7 @@ module Attribute : sig
   val async: t -> bool
 
   val annotation: t -> Annotation.t
-  val parent: t -> class_t
+  val parent: t -> Type.t
   val value: t -> Expression.t
   val initialized: t -> bool
   val location: t -> Location.t

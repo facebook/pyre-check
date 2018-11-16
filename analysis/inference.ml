@@ -539,7 +539,7 @@ let infer
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:((Annotated.Class.name parent) @ name)
+              ~access:((Type.show parent |> Access.create) @ name)
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation

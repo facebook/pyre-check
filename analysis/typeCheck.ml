@@ -186,7 +186,7 @@ module State = struct
                       ~kind:(
                         Error.UninitializedAttribute {
                           name;
-                          parent = class_definition;
+                          parent = Annotated.Class.annotation class_definition ~resolution;
                           mismatch = {
                             Error.expected;
                             actual = (Type.optional expected)
@@ -619,7 +619,10 @@ module State = struct
                        ~location
                        ~kind:(Error.InconsistentOverride {
                            overridden_method = Statement.Define.unqualified_name define;
-                           parent = Class.name (Attribute.parent overridden_attribute);
+                           parent =
+                             Attribute.parent overridden_attribute
+                             |> Type.show
+                             |> Expression.Access.create;
                            override = Error.WeakenedPostcondition { Error.actual; expected };
                          })
                        ~define:define_node
@@ -656,7 +659,10 @@ module State = struct
                                ~location
                                ~kind:(Error.InconsistentOverride {
                                    overridden_method = Statement.Define.unqualified_name define;
-                                   parent = Class.name (Attribute.parent overridden_attribute);
+                                   parent =
+                                     Attribute.parent overridden_attribute
+                                     |> Type.show
+                                     |> Expression.Access.create;
                                    override =
                                      Error.StrengthenedPrecondition
                                        (Error.Found { Error.actual; expected });
@@ -702,7 +708,10 @@ module State = struct
                            ~location
                            ~kind:(Error.InconsistentOverride {
                                overridden_method = Statement.Define.unqualified_name define;
-                               parent = Class.name (Attribute.parent overridden_attribute);
+                               parent =
+                                 Attribute.parent overridden_attribute
+                                 |> Type.show
+                                 |> Expression.Access.create;
                                override =
                                  Error.StrengthenedPrecondition (Error.NotFound parameter_name);
                              })
@@ -996,11 +1005,7 @@ module State = struct
                       let kind =
                         match origin with
                         | Instance class_attribute ->
-                            let annotation =
-                              Class.annotation
-                                ~resolution
-                                (Attribute.parent class_attribute)
-                            in
+                            let annotation = Attribute.parent class_attribute in
                             if Type.equal annotation Type.undeclared then
                               Error.UndefinedName lead
                             else
