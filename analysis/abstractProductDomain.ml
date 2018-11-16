@@ -36,16 +36,9 @@ struct
     let show = Fn.id
   end
 
-  (* Product parts need to be routed to the proper slot. This can be done by
-     wrapping the part in a ProductSlot, or if a part should be routed to all
-     slots using AllSlots.
-  *)
   type 'a AbstractDomain.part +=
     | ProductSlot: 'b Config.slot * 'a AbstractDomain.part -> 'a AbstractDomain.part
-    | AllSlots: 'a AbstractDomain.part -> 'a AbstractDomain.part
 
-  (* An actual abstract value for a particular slot.
-  *)
   type element = Element: 'a Config.slot * 'a -> element
 
   let sexp_of_element = function
@@ -119,9 +112,6 @@ struct
             | Distinct ->
                 init
           end
-      | AllSlots nested_part, Element (slot, value) ->
-          let module D = (val (Config.slot_domain slot)) in
-          D.fold nested_part ~f ~init value
       | _ ->
           failwith "Must use product part"
 
@@ -136,9 +126,6 @@ struct
             | Distinct ->
                 element
           end
-      | AllSlots nested_part, Element (slot, value) ->
-          let module D = (val (Config.slot_domain slot)) in
-          Element (slot, D.transform nested_part ~f value)
       | _ ->
           failwith "Must use product part"
 
@@ -154,10 +141,6 @@ struct
             | Distinct ->
                 `Snd element
           end
-      | AllSlots nested_part, Element (slot, value) ->
-          let module D = (val (Config.slot_domain slot)) in
-          let partition = D.partition nested_part ~f value in
-          `Fst (Map.Poly.map partition ~f:(fun value -> Element (slot, value)))
       | _ ->
           failwith "Must use product part"
 
@@ -225,7 +208,6 @@ struct
   let ensure_slots part product =
     match part with
     | ProductSlot (slot, _) -> ensure_slot slot product
-    | AllSlots _ -> product (* No way to materialize missing parts. *)
     | _ -> failwith "Need ProductSlot or AllSlots"
 
   let transform (type a) (part: a part) ~(f: a -> a) (product: t) : t =

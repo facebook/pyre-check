@@ -883,9 +883,14 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(AllSlots StringSet.Element)
+      ~by:(ProductSlot (Left, StringSet.Element))
       ~f:Fn.id
-      ~expected:["c"; "b"; "b"; "a"]
+      ~expected:["b"; "a"];
+    test
+      ~initial:(["a"; "b"], ["b"; "c"])
+      ~by:(ProductSlot (Right, StringSet.Element))
+      ~f:Fn.id
+      ~expected:["c"; "b"]
 
   let test_transform _ =
     let test ~initial:(left, right) ~by:part ~f ~expected ~to_result =
@@ -900,10 +905,16 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(AllSlots StringSet.Element)
-      ~f:(fun x -> "both." ^ x)
+      ~by:(ProductSlot (Left, StringSet.Element))
+      ~f:(fun x -> "left." ^ x)
       ~to_result:Fn.id
-      ~expected:["both.c"; "both.b"; "both.b"; "both.a"]
+      ~expected:["left.b"; "left.a"];
+    test
+      ~initial:(["a"; "b"], ["b"; "c"])
+      ~by:(ProductSlot (Right, StringSet.Element))
+      ~f:(fun x -> "right." ^ x)
+      ~to_result:Fn.id
+      ~expected:["right.c"; "right.b"]
 
   let test_partition _ =
     let test ~initial:(left, right) ~by:part ~f ~expected =
@@ -924,12 +935,19 @@ module PairStringString = struct
     in
     test
       ~initial:(["a"; "b"], ["b"; "c"])
-      ~by:(AllSlots StringSet.Element)
+      ~by:(ProductSlot (Left, StringSet.Element))
       ~f:Fn.id
       ~expected:[
-        "a", "left: (set(a))";
-        "b", "left: (set(b)), right: (set(b))";
-        "c", "right: (set(c))";
+        "a", "left: (set(a)), right: (set(b c))";
+        "b", "left: (set(b)), right: (set(b c))";
+      ];
+    test
+      ~initial:(["a"; "b"], ["b"; "c"])
+      ~by:(ProductSlot (Right, StringSet.Element))
+      ~f:Fn.id
+      ~expected:[
+        "b", "left: (set(a b)), right: (set(b))";
+        "c", "left: (set(a b)), right: (set(c))";
       ]
 
   let test_additional _ =

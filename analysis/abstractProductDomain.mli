@@ -30,14 +30,18 @@ end
 module Make(Config : PRODUCT_CONFIG) : sig
   include AbstractDomain.S
 
+  (* Product parts need to be routed to the proper slot. This can be done by
+     wrapping the part in a ProductSlot.
+  *)
   type 'a AbstractDomain.part +=
     | ProductSlot: 'b Config.slot * 'a AbstractDomain.part -> 'a AbstractDomain.part
-    | AllSlots: 'a AbstractDomain.part -> 'a AbstractDomain.part
 
   val singleton: 'a Config.slot -> 'a -> t
   val update: 'a Config.slot -> 'a -> t -> t
   val get: 'a Config.slot -> t -> 'a
 
+  (* An actual abstract value for a particular slot.
+  *)
   type element = Element: 'a Config.slot * 'a -> element
   val product: element list -> t
 end
