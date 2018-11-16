@@ -6538,9 +6538,9 @@ let test_check_callables _ =
         map(y, [])
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Named($0, int)], str]` but got" ^
+      "Incompatible parameter type [6]: Expected `typing.Callable[[int], str]` but got" ^
       " `CallMe`.";
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Named($0, int)], str]` but got" ^
+      "Incompatible parameter type [6]: Expected `typing.Callable[[int], str]` but got" ^
       " `CallMeToo`.";
     ];
 
@@ -6557,7 +6557,7 @@ let test_check_callables _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `CallMe` but got " ^
-      "`typing.Callable[[Named($0, int)], str]`."
+      "`typing.Callable[[int], str]`."
     ]
 
 

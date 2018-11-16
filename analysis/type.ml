@@ -218,11 +218,18 @@ let rec pp format annotation =
           | Defined parameters ->
               let parameter = function
                 | Parameter.Named { Parameter.name; annotation; default } ->
-                    Format.asprintf
-                      "Named(%a, %a%s)"
-                      Access.pp_sanitized name
-                      pp annotation
-                      (if default then ", default" else "")
+                    let name = Access.show_sanitized name in
+                    if String.is_prefix ~prefix:"$" name then
+                      Format.asprintf
+                        "%a%s"
+                        pp annotation
+                        (if default then ", default" else "")
+                    else
+                      Format.asprintf
+                        "Named(%s, %a%s)"
+                        name
+                        pp annotation
+                        (if default then ", default" else "")
                 | Parameter.Variable { Parameter.name; annotation; _ } ->
                     Format.asprintf
                       "Variable(%a, %a)"
