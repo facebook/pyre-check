@@ -797,6 +797,11 @@ let test_join _ =
       ~predecessor:!"B"
       ~successor:!"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
+    connect
+      order
+      ~predecessor:!"C"
+      ~successor:!"typing.Generic"
+      ~parameters:[Type.variable "_T"];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
     order
   in
