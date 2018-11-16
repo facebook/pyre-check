@@ -506,6 +506,9 @@ let test_connect_type_order _ =
          ...
        class D(C):
          pass
+       class CallMe:
+         def CallMe.__call__(self, x: int) -> str:
+           ...
        B = D
        A = B
        def foo()->A:
@@ -520,7 +523,10 @@ let test_connect_type_order _ =
   Environment.register_aliases (module Handler) [source];
   Environment.connect_type_order (module Handler) resolution source;
   let assert_successors annotation successors =
-    assert_equal (TypeOrder.successors order annotation) successors
+    assert_equal
+      ~printer:(List.to_string ~f:Type.show)
+      (TypeOrder.successors order annotation)
+      successors
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors (Type.primitive "C") [];
@@ -529,7 +535,10 @@ let test_connect_type_order _ =
   TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
 
   assert_successors (Type.primitive "C") [Type.Object; Type.Deleted; Type.Top];
-  assert_successors (Type.primitive "D") [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top]
+  assert_successors (Type.primitive "D") [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top];
+  assert_successors
+    (Type.primitive "CallMe")
+    [Type.primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
 
 let test_register_functions _ =
   let environment = Environment.Builder.create () in
@@ -648,7 +657,7 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
 
-  let assert_superclasses ~environment ~base ~superclasses =
+  let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
     let (module Handler: Environment.Handler) = environment in
     let index annotation =
       Handler.TypeOrderHandler.find_unsafe
@@ -660,7 +669,11 @@ let test_populate _ =
          (Handler.TypeOrderHandler.edges ())
          (index (Type.primitive base)))
     in
-    let to_target annotation = { TypeOrder.Target.target = index annotation; parameters = [] } in
+    let to_target annotation = {
+      TypeOrder.Target.target = index annotation;
+      parameters = superclass_parameters annotation;
+    }
+    in
     assert_equal targets (Some (List.map superclasses ~f:to_target))
   in
   (* Metaclasses aren't superclasses. *)
@@ -670,7 +683,7 @@ let test_populate _ =
       class C(metaclass=abc.ABCMeta): ...
     |}
   in
-  assert_superclasses ~environment ~base:"C" ~superclasses:[Type.Object];
+  assert_superclasses ~environment "C" ~superclasses:[Type.Object];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
@@ -681,7 +694,7 @@ let test_populate _ =
         pass
     |}
   in
-  assert_superclasses ~environment ~base:"C" ~superclasses:[Type.Object];
+  assert_superclasses ~environment "C" ~superclasses:[Type.Object];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -792,7 +805,37 @@ let test_populate _ =
     "A"
     (Type.primitive "A"
      |> Type.meta
-     |> Annotation.create_immutable ~global:true ~original:(Some Type.Top))
+     |> Annotation.create_immutable ~global:true ~original:(Some Type.Top));
+
+  (* Callable classes. *)
+  let environment = populate {|
+      class CallMe:
+        def CallMe.__call__(self, x: int) -> str:
+          pass
+      class AlsoCallable(CallMe):
+        pass
+  |}
+  in
+  let type_parameters annotation =
+    match Type.show annotation with
+    | "typing.Callable" ->
+        [
+          parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
+          |> Type.create ~aliases:(fun _ -> None)
+          |> function
+          | Type.Callable callable ->
+              Type.Callable { callable with Type.Callable.implicit = Type.Callable.Instance }
+          | annotation ->
+              annotation
+        ]
+    | _ ->
+        []
+  in
+  assert_superclasses
+    ~superclass_parameters:type_parameters
+    ~environment
+    "CallMe"
+    ~superclasses:[Type.primitive "typing.Callable"]
 
 
 let test_infer_protocols_edges _ =

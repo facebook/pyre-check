@@ -51,7 +51,9 @@ let populate
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations;
 
-  List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources
+  List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
+  (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
+  Annotated.Class.Attribute.Cache.clear ()
 
 
 let build

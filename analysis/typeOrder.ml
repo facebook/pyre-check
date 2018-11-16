@@ -579,9 +579,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       in
       less_or_equal order ~left:left.annotation ~right:right.annotation &&
       parameters_less_or_equal ()
-  | Type.Callable _, _
-  | _, Type.Callable _ ->
-      false
 
   (* A[...] <= B iff A <= B. *)
   | Type.Parametric _, Type.Primitive _  ->
@@ -591,6 +588,20 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Primitive name, Type.Parametric _ ->
       let left = Type.Parametric { name; parameters = [] } in
       less_or_equal order ~left ~right
+
+  | left, Type.Callable _ ->
+      let joined = join (module Handler) (Type.parametric "typing.Callable" [Type.Bottom]) left in
+      begin
+        match joined with
+        | Type.Parametric { name; parameters = [left] }
+          when Identifier.equal name (Identifier.create "typing.Callable") ->
+            less_or_equal (module Handler) ~left ~right
+        | _ ->
+            false
+      end
+
+  | Type.Callable _, _ ->
+      false
 
   | _ ->
       raise_if_untracked order left;
@@ -917,27 +928,38 @@ and join ((module Handler: Handler) as order) left right =
         else
           Type.Object
 
-    | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
-      Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
-      when left.Callable.implicit = right.Callable.implicit
-        && List.is_empty left.Callable.overloads
-        && List.is_empty right.Callable.overloads ->
-        join_implementations
-          ~parameter_join:meet
-          ~return_join:join
-          order
-          left.Callable.implementation
-          right.Callable.implementation
-        >>| (fun implementation -> Type.Callable { left with Callable.implementation })
-        |> Option.value ~default:Type.Object
     | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
       Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
-    | Type.Callable _, _
-    | _, Type.Callable _ ->
-        Type.Object
 
+    | Type.Callable left,
+      Type.Callable right ->
+        if left.Callable.implicit = right.Callable.implicit
+        && List.is_empty left.Callable.overloads
+        && List.is_empty right.Callable.overloads then
+          join_implementations
+            ~parameter_join:meet
+            ~return_join:join
+            order
+            left.Callable.implementation
+            right.Callable.implementation
+          >>| (fun implementation -> Type.Callable { left with Callable.implementation })
+          |> Option.value ~default:Type.Object
+        else
+          Type.Object
+
+    | Type.Callable callable, other
+    | other, Type.Callable callable ->
+        let other = join (module Handler) (Type.parametric "typing.Callable" [Type.Bottom]) other in
+        begin
+          match other with
+          | Type.Parametric { name; parameters = [other_callable] }
+            when Identifier.equal name (Identifier.create "typing.Callable") ->
+              join (module Handler) (Type.Callable callable) other_callable
+          | _ ->
+              Type.union [left; right]
+        end
     | _ ->
         match List.hd (least_upper_bound order left right) with
         | Some joined ->

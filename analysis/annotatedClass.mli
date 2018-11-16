@@ -164,3 +164,5 @@ val constructor: t -> resolution: Resolution.t -> Type.t
 val overrides: t -> resolution: Resolution.t -> name: Access.t -> Attribute.t option
 
 val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Access.t -> bool
+
+val inferred_callable_type: t -> resolution: Resolution.t -> Type.t option

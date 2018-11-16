@@ -99,6 +99,16 @@ let connect_definition
     |> Type.split
   in
   connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
+  begin
+    match Annotated.Class.inferred_callable_type annotated ~resolution with
+    | Some callable ->
+        connect
+          ~predecessor:primitive
+          ~successor:(Type.primitive "typing.Callable")
+          ~parameters:[callable]
+    | None ->
+        ()
+  end;
   if not (Type.equal primitive Type.Object) or Access.show name = "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =

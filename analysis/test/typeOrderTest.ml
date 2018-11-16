@@ -486,6 +486,8 @@ let test_less_or_equal _ =
     insert order !"B";
     insert order !"C";
     insert order !"typing.Generic";
+    insert order !"FloatToStrCallable";
+    insert order !"typing.Callable";
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
     connect
@@ -509,6 +511,14 @@ let test_less_or_equal _ =
       ~successor:!"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:Type.Bottom ~successor:!"FloatToStrCallable";
+    connect
+      order
+      ~parameters:[parse_callable "typing.Callable[[float], str]"]
+      ~predecessor:!"FloatToStrCallable"
+      ~successor:!"typing.Callable";
+    connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
+
     order
   in
   assert_true
@@ -688,7 +698,25 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:"typing.Callable[..., int]"
-       ~right:"typing.Callable[[int], float]")
+       ~right:"typing.Callable[[int], float]");
+
+  (* Callable classes. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"FloatToStrCallable"
+       ~right:"typing.Callable[[float], str]");
+  (* Subtyping is handled properly for callable classes. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"FloatToStrCallable"
+       ~right:"typing.Callable[[int], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"FloatToStrCallable"
+       ~right:"typing.Callable[[float], int]")
 
 
 let test_join _ =
@@ -774,6 +802,8 @@ let test_join _ =
     insert order !"A";
     insert order !"B";
     insert order !"C";
+    insert order !"CallableClass";
+    insert order !"typing.Callable";
     insert order !"typing.Generic";
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
@@ -803,6 +833,13 @@ let test_join _ =
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_T"];
     connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:Type.Bottom ~successor:!"CallableClass";
+    connect
+      order
+      ~parameters:[parse_callable "typing.Callable[[int], str]"]
+      ~predecessor:!"CallableClass"
+      ~successor:!"typing.Callable";
+    connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
     order
   in
   let aliases =
@@ -867,6 +904,23 @@ let test_join _ =
     "typing.Callable[[Named(b, int)], int]"
     "typing.Callable[[Named(a, int)], int]"
     "typing.Any";
+
+  (* Classes with __call__ are callables. *)
+  assert_join
+    ~order
+    "CallableClass"
+    "typing.Callable[[int], str]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], str]"
+    "CallableClass"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], int]"
+    "CallableClass"
+    "typing.Callable[[int], typing.Union[int, str]]";
 
   (* Variables. *)
   assert_equal

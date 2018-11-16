@@ -6505,6 +6505,59 @@ let test_check_callables _ =
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[..., int]` but got" ^
       " `typing.Callable(i2s)[[Named(x, int)], str]`.";
+    ];
+
+  (* Classes with __call__ are callables. *)
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x:int) -> str:
+          ...
+      class CallMeToo(CallMe):
+        pass
+
+      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+        ...
+      def apply(x: CallMe, y: CallMeToo) -> None:
+        map(x, [])
+        map(y, [])
+    |}
+  [];
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x: str) -> str:
+          ...
+      class CallMeToo(CallMe):
+        pass
+
+      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+        ...
+      def apply(x: CallMe, y: CallMeToo) -> None:
+        map(x, [])
+        map(y, [])
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Named($0, int)], str]` but got" ^
+      " `CallMe`.";
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Named($0, int)], str]` but got" ^
+      " `CallMeToo`.";
+    ];
+
+  (* Sanity check: Callables do not subclass classes. *)
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x: int) -> str:
+          ...
+      def map(callable_object: CallMe, x: int) -> None:
+         callable_object(x)
+      def apply(f: typing.Callable[[int], str]) -> None:
+        map(f, 1)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `CallMe` but got " ^
+      "`typing.Callable[[Named($0, int)], str]`."
     ]
 
 

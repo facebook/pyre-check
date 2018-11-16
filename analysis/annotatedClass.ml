@@ -955,3 +955,35 @@ let has_method ?transitive definition ~resolution ~name =
   |> Attribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
+
+
+let inferred_callable_type definition ~resolution =
+  let callable_type =
+    attribute
+      ~transitive:false
+      definition
+      ~resolution
+      ~name:(Access.create "__call__")
+      ~instantiated:(annotation definition ~resolution)
+    |> Attribute.annotation
+    |> Annotation.annotation
+  in
+  match callable_type with
+  | Type.Callable ({
+      Type.Callable.implementation = {
+        Type.Callable.parameters = Type.Callable.Defined parameters;
+        _;
+      } as implementation;
+      _;
+    } as callable) ->
+      Some (Type.Callable {
+          callable with
+          Type.Callable.implementation = {
+            implementation with
+            Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
+          };
+        })
+  | Type.Callable _ ->
+      Some callable_type
+  | _ ->
+      None
