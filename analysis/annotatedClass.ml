@@ -650,14 +650,14 @@ let attributes
         in
         List.exists ~f:is_unit_test (definition :: superclass_definitions)
       in
-      let definitions =
-        if transitive then
-          definition :: superclass_definitions
-        else
-          [definition]
-      in
       (* Pass over normal class hierarchy. *)
       let accumulator =
+        let definitions =
+          if transitive then
+            definition :: superclass_definitions
+          else
+            [definition]
+        in
         List.fold
           ~f:(definition_attributes ~in_test)
           ~init:[]
