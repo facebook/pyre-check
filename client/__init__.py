@@ -8,16 +8,15 @@ import logging
 import multiprocessing
 import os
 import platform
-import shlex
 import subprocess
 import sys
 import traceback
 from argparse import Namespace
-from typing import Any, Dict, Optional, Sized
+from typing import Any, Dict, Optional
 
 from . import buck
 from .exceptions import EnvironmentException as EnvironmentException
-from .filesystem import SharedAnalysisDirectory
+from .filesystem import SharedAnalysisDirectory  # noqa
 
 
 LOG = logging.getLogger(__name__)

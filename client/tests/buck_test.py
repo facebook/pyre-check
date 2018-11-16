@@ -1,7 +1,6 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
 import glob
-import json
 import subprocess
 import unittest
 from collections import OrderedDict, namedtuple
