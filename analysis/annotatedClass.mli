@@ -37,12 +37,12 @@ module Method : sig
   type t
   [@@deriving compare, eq, sexp, show, hash]
 
-  val create: define: Define.t -> parent: class_t -> t
+  val create: define: Define.t -> parent: Type.t -> t
 
   val name: t -> Access.t
 
   val define: t -> Define.t
-  val parent: t -> class_t
+  val parent: t -> Type.t
 
   val parameter_annotations
     :  t
@@ -84,7 +84,7 @@ val immediate_superclasses
   -> t option
 
 
-val methods: t -> Method.t list
+val methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
 val implements: resolution: Resolution.t -> t -> protocol: t -> bool

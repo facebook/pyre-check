@@ -606,7 +606,9 @@ module State = struct
            (* Check strengthening of postcondition. *)
            match Annotation.annotation (Attribute.annotation overridden_attribute) with
            | Type.Callable { Type.Callable.implementation; _ } ->
-               let original_method = Method.create ~define ~parent:definition in
+               let original_method =
+                 Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+               in
                let errors =
                  let expected = Type.Callable.Overload.return_annotation implementation in
                  let actual = Method.return_annotation original_method ~resolution in

@@ -16,16 +16,20 @@ let overrides_of_source ~environment ~source =
   let open Annotated in
   let resolution = TypeCheck.resolution environment () in
   let filter_overrides child_method =
-    Class.overrides
-      (Method.parent child_method)
-      ~name:(Statement.Define.unqualified_name (Method.define child_method))
-      ~resolution
-    >>| fun ancestor ->
-    let ancestor_parent =
-      Attribute.parent ancestor
-      |> Class.name
-    in
-    ( ancestor_parent @ Attribute.access ancestor, Method.name child_method)
+      Method.parent child_method
+      |> Resolution.class_definition resolution
+      >>| Annotated.Class.create
+      >>= (fun definition ->
+      Class.overrides
+        definition
+        ~name:(Statement.Define.unqualified_name (Method.define child_method))
+        ~resolution)
+      >>| fun ancestor ->
+      let ancestor_parent =
+        Attribute.parent ancestor
+        |> Class.name
+      in
+      (ancestor_parent @ Attribute.access ancestor, Method.name child_method)
   in
   let record_overrides map (ancestor_method, child_method) =
     let ancestor_callable = Interprocedural.Callable.create_real ancestor_method in
@@ -37,7 +41,7 @@ let overrides_of_source ~environment ~source =
     Interprocedural.Callable.Map.update map ancestor_callable ~f:update_children
   in
   Preprocessing.classes source
-  |> List.concat_map ~f:(Fn.compose Class.methods Class.create)
+  |> List.concat_map ~f:(Fn.compose (Class.methods ~resolution) Class.create)
   |> List.filter_map ~f:filter_overrides
   |> List.fold ~init:Interprocedural.Callable.Map.empty ~f:record_overrides
 

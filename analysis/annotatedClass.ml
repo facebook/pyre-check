@@ -86,7 +86,7 @@ let successors_fold class_node ~resolution ~f ~initial =
 module Method = struct
   type t = {
     define: Define.t;
-    parent: class_t
+    parent: Type.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -318,10 +318,12 @@ let metaclass definition ~resolution =
   |> Option.value ~default:(Type.primitive "type")
 
 
-let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
+let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
   let extract_define = function
-    | { Node.value = Define define; _ } -> Some (Method.create ~define ~parent:definition)
-    | _ -> None
+    | { Node.value = Define define; _ } ->
+        Some (Method.create ~define ~parent:(annotation definition ~resolution))
+    | _ ->
+        None
   in
   List.filter_map ~f:extract_define body
 

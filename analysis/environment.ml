@@ -820,7 +820,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
         let classes_to_analyze =
           (* Get all implementing classes. *)
           let names =
-            Class.methods protocol_definition
+            Class.methods protocol_definition ~resolution
             |> List.map ~f:Class.Method.name
             |> List.map ~f:(fun access -> [List.last_exn access])
           in
@@ -883,7 +883,7 @@ let infer_protocol_edges
           let protocol_definition = Annotated.Class.create protocol_definition in
           let whitelisted = ["typing.Hashable"] in
           let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
-          List.is_empty (Annotated.Class.methods protocol_definition) ||
+          List.is_empty (Annotated.Class.methods protocol_definition ~resolution) ||
           List.mem ~equal:String.equal whitelisted name
       | _ ->
           true
@@ -898,7 +898,7 @@ let infer_protocol_edges
           Handler.class_definition protocol
           >>| (fun { class_definition; _ } -> class_definition)
           >>| Annotated.Class.create
-          >>| Annotated.Class.methods
+          >>| Annotated.Class.methods ~resolution
           >>| List.map ~f:Annotated.Class.Method.name
           >>| List.map ~f:(fun name -> [List.last_exn name])
           |> Option.value ~default:[]

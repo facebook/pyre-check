@@ -321,6 +321,10 @@ let test_methods _ =
   let assert_methods source methods =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
+        let resolution =
+          populate source
+          |> fun environment -> TypeCheck.resolution environment ()
+        in
         let actuals =
           let method_name { Define.name; _ } =
             List.tl_exn name
@@ -328,7 +332,7 @@ let test_methods _ =
           in
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.methods
+          |> Class.methods ~resolution
           |> List.map ~f:(fun definition -> Method.define definition |> method_name)
         in
         assert_equal methods actuals

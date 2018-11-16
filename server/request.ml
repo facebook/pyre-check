@@ -466,7 +466,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> Handler.class_definition
         >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
-        >>| Annotated.Class.methods
+        >>| Annotated.Class.methods ~resolution
         >>| List.map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
