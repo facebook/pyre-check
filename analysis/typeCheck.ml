@@ -15,7 +15,15 @@ module Error = AnalysisError
 
 
 module State = struct
-  type nested_define = Define.t
+  type nested_define_state = {
+    nested_resolution: Resolution.t;
+    nested_bottom: bool;
+  }
+
+  type nested_define = {
+    nested: Define.t;
+    initial: nested_define_state;
+  }
 
   and t = {
     configuration: Configuration.Analysis.t;
@@ -28,7 +36,7 @@ module State = struct
   }
 
 
-  let pp_nested_define format { Define.name; _ } =
+  let pp_nested_define format { nested = { Define.name; _ }; _ } =
     Format.fprintf format "%a" Access.pp name
 
 
@@ -97,7 +105,8 @@ module State = struct
 
   let equal_nested_define left right =
     (* Ignore initial state. *)
-    Define.equal left right
+    Define.equal left.nested right.nested
+
 
 
   and equal left right =
@@ -227,8 +236,8 @@ module State = struct
 
 
   let nested_defines { nested_defines; _ } =
-    let process_define (location, nested) =
-      Node.create ~location nested
+    let process_define (location, { nested; initial = { nested_resolution; _ } }) =
+      Node.create ~location nested, nested_resolution
     in
     Map.to_alist nested_defines
     |> List.map ~f:process_define
@@ -262,6 +271,22 @@ module State = struct
               (Refinement.less_or_equal ~resolution))
         (Resolution.annotations left.resolution)
 
+
+  let join_resolutions left_resolution right_resolution =
+    let merge_annotations ~key:_ = function
+      | `Both (left, right) ->
+          Some (Refinement.join ~resolution:left_resolution left right)
+      | `Left _
+      | `Right _ ->
+          Some (Annotation.create Type.Top)
+    in
+    let annotations =
+      Map.merge
+        ~f:merge_annotations
+        (Resolution.annotations left_resolution)
+        (Resolution.annotations right_resolution)
+    in
+    Resolution.with_annotations left_resolution ~annotations
 
 
   let join ({ resolution; _ } as left) right =
@@ -2175,6 +2200,7 @@ module State = struct
         resolution_fixpoint;
         nested_defines;
         bottom;
+        configuration;
         _;
       } as state)
       ~statement:({ Node.location; _ } as statement) =
@@ -2186,7 +2212,42 @@ module State = struct
     in
     let state =
       let nested_defines =
-        let schedule ~define = Map.set nested_defines ~key:location ~data:define in
+        let schedule ~define =
+          let update = function
+            | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
+                let resolution, bottom =
+                  if nested_bottom then
+                    state.resolution, state.bottom
+                  else if state.bottom then
+                    nested_resolution, nested_bottom
+                  else
+                    join_resolutions nested_resolution state.resolution, false
+                in
+                Some {
+                  nested with
+                  initial = { nested_resolution = resolution; nested_bottom = bottom };
+                }
+            | None ->
+                let ({ resolution = initial_resolution; _ }) =
+                  initial
+                    ~configuration
+                    ~resolution
+                    (Node.create define ~location)
+                in
+                let nested_resolution =
+                  let update ~key ~data initial_resolution =
+                    Resolution.set_local initial_resolution ~access:key ~annotation:data
+                  in
+                  Resolution.annotations resolution
+                  |> Map.fold ~init:initial_resolution ~f:update
+                in
+                Some {
+                  nested = define;
+                  initial = { nested_resolution; nested_bottom = false };
+                }
+          in
+          Map.change ~f:update nested_defines location
+        in
         match Node.value statement with
         | Class { Class.name; body; _ } ->
             schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
@@ -2379,11 +2440,11 @@ let check
         end
     in
     try
-      let normal_exit, exit =
+      let exit =
         let cfg = Cfg.create define in
         let fixpoint = Fixpoint.forward ~cfg ~initial in
         dump_cfg cfg fixpoint;
-        Fixpoint.normal_exit fixpoint, Fixpoint.exit fixpoint
+        Fixpoint.exit fixpoint
       in
       if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
@@ -2399,12 +2460,10 @@ let check
 
       let () =
         (* Schedule nested functions for analysis. *)
-        match normal_exit with
-        | Some ({ State.resolution; _ } as exit) ->
-            State.nested_defines exit
-            |> List.iter ~f:(fun define -> Queue.enqueue queue (define, resolution))
-        | None ->
-            ()
+        exit
+        >>| State.nested_defines
+        >>| List.iter ~f:(Queue.enqueue queue)
+        |> ignore
       in
 
       let errors =
