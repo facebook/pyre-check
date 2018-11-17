@@ -104,6 +104,8 @@ type kind =
 
   (* Additionals errors. *)
   | UnawaitedAwaitable of Access.t
+  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -138,6 +140,8 @@ let code = function
   | Unpack _ -> 23
   | MissingTypeParameters _ -> 24
   | ImpossibleIsinstance _ -> 25
+  | TypedDictionaryAccessWithNonLiteral _ -> 26
+  | TypedDictionaryKeyNotFound _ -> 27
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -162,6 +166,8 @@ let name = function
   | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
+  | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
+  | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedName _ -> "Undefined name"
@@ -488,6 +494,23 @@ let messages ~detailed:_ ~define location kind =
           provided
           (if provided > 1 then "were" else "was");
       ]
+  | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
+      let acceptable_keys =
+        List.map acceptable_keys ~f:(Format.sprintf "'%s'")
+        |> String.concat ~sep:", "
+      in
+      [
+        Format.asprintf
+          "TypedDict key must be a string literal; expected one of (%s)."
+          acceptable_keys
+      ]
+  | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
+      [
+        Format.asprintf
+          "TypedDict `%a` has no key `%s`."
+          Identifier.pp typed_dictionary_name
+          missing_key
+      ]
   | Unpack { expected_count; unpack_problem } ->
       begin
         match unpack_problem with
@@ -748,6 +771,8 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | TooManyArguments _
+  | TypedDictionaryAccessWithNonLiteral _
+  | TypedDictionaryKeyNotFound _
   | Unpack _
   | RevealedType _
   | UnawaitedAwaitable _
@@ -804,6 +829,8 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
   | Top
+  | TypedDictionaryAccessWithNonLiteral _
+  | TypedDictionaryKeyNotFound _
   | UndefinedType _
   | MissingArgument _
   | UnawaitedAwaitable _
@@ -1273,6 +1300,8 @@ let suppress ~mode error =
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
       | MissingTypeParameters _
+      | TypedDictionaryAccessWithNonLiteral _
+      | TypedDictionaryKeyNotFound _
       | UnawaitedAwaitable _
       | UndefinedAttribute _
       | UndefinedName _
@@ -1464,6 +1493,10 @@ let dequalify
               expected = dequalify expected
             };
         }
+    | TypedDictionaryAccessWithNonLiteral expression ->
+        TypedDictionaryAccessWithNonLiteral expression
+    | TypedDictionaryKeyNotFound key ->
+        TypedDictionaryKeyNotFound key
     | UninitializedAttribute ({ mismatch = { actual; expected }; _ } as inconsistent_usage) ->
         UninitializedAttribute {
           inconsistent_usage with

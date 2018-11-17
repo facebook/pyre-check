@@ -89,6 +89,8 @@ type kind =
 
   (* Additionals errors. *)
   | UnawaitedAwaitable of Access.t
+  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
 [@@deriving compare, eq, show, hash]
 
 include BaseError.ERROR with type kind := kind

@@ -316,12 +316,12 @@ let fold ~resolution ~initial ~f access =
             State.abort state ~lead ()
       in
 
-      let resolve_typed_dictionary_get_item_callable ~fields ~callable ~arguments =
-        let fail () =
+      let resolve_typed_dictionary_get_item_callable ~fields ~name ~callable ~arguments =
+        let fail ~reason =
           State.step
             state
             ~element:(Element.Signature {
-                Element.signature = Signature.NotFound { callable; reason = None };
+                Element.signature = Signature.NotFound { callable; reason };
                 arguments;
               })
             ~resolved:(Annotation.create Type.Top)
@@ -352,12 +352,15 @@ let fold ~resolution ~initial ~f access =
                     ~lead
                     ()
               | None ->
-                  (* TODO(T35907494): Add a reason that triggers an AnalysisError *)
-                  fail ()
+                  fail
+                    ~reason:(Some (Signature.TypedDictionaryMissingKey {
+                        typed_dictionary_name = name;
+                        missing_key = key;
+                      }))
             end
         | _ ->
-            (* TODO(T35907494): Add a reason that triggers an AnalysisError *)
-            fail ()
+            let keys = List.map fields ~f:(fun { name; _ } -> name) in
+            fail ~reason:(Some (Signature.TypedDictionaryAccessWithNonLiteral keys))
       in
 
       let tail_is_get_item access =
@@ -366,9 +369,10 @@ let fold ~resolution ~initial ~f access =
         | _ -> false
       in
       match implicit_annotation, callable with
-      | Some (Type.TypedDictionary { fields; _ }), { Type.Record.Callable.kind = Named access; _ }
+      | Some (Type.TypedDictionary { fields; name }),
+        { Type.Record.Callable.kind = Named access; _ }
         when tail_is_get_item access ->
-          resolve_typed_dictionary_get_item_callable ~fields ~callable ~arguments
+          resolve_typed_dictionary_get_item_callable ~fields ~name ~callable ~arguments
       | _ ->
           resolve_independent_callable ~implicit_annotation ~callable ~arguments ~location
     in

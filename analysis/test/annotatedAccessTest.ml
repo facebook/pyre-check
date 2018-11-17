@@ -26,7 +26,8 @@ type attribute = {
 and stripped =
   | Attribute of attribute
   | Unknown
-  | Signature
+  | SignatureFound
+  | SignatureNotFound of Annotated.Signature.reason option
   | Value
 
 
@@ -100,8 +101,16 @@ let test_fold _ =
                 Unknown
             | Element.Attribute { Element.attribute; defined; _ } ->
                 Attribute { name = Access.show attribute; defined }
-            | Element.Signature _ ->
-                Signature
+            | Element.Signature {
+                Element.signature = Annotated.Signature.Found _;
+                _;
+              } ->
+                SignatureFound
+            | Element.Signature {
+                Element.signature = Annotated.Signature.NotFound { reason; _; };
+                _;
+              } ->
+                SignatureNotFound reason
             | Element.Value ->
                 Value
           in
@@ -150,14 +159,14 @@ let test_fold _ =
           parse_annotation "typing.Callable('Class.method')[[Named(self, $unknown)], int]";
         element = Attribute { name = "method"; defined = true };
       };
-      { annotation = Type.integer; element = Signature };
+      { annotation = Type.integer; element = SignatureFound };
     ];
 
   assert_fold
     "function()"
     [
       { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
-      { annotation = Type.string; element = Signature };
+      { annotation = Type.string; element = SignatureFound };
     ];
   assert_fold
     "function.nested()"
@@ -167,7 +176,7 @@ let test_fold _ =
         annotation = parse_annotation "typing.Callable('function.nested')[[], str]";
         element = Value;
       };
-      { annotation = Type.string; element = Signature };
+      { annotation = Type.string; element = SignatureFound };
     ];
   assert_fold
     "function.unknown_nested()"
@@ -217,21 +226,44 @@ let test_fold _ =
     [
       movie_typed_dictionary;
       get_item;
-      { annotation = parse_annotation "str"; element = Signature };
+      { annotation = parse_annotation "str"; element = SignatureFound };
     ];
   assert_fold
     "movie['year']"
     [
       movie_typed_dictionary;
       get_item;
-      { annotation = parse_annotation "int"; element = Signature };
+      { annotation = parse_annotation "int"; element = SignatureFound };
     ];
+
+  let signature_not_found signature = SignatureNotFound signature in
   assert_fold
     "movie['missing']"
     [
       movie_typed_dictionary;
       get_item;
-      { annotation = parse_annotation "$unknown"; element = Signature };
+      { annotation = parse_annotation "$unknown";
+        element =
+          Annotated.Signature.TypedDictionaryMissingKey {
+            typed_dictionary_name = Identifier.create "Movie";
+            missing_key = "missing";
+          }
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "movie[string]"
+    [
+      movie_typed_dictionary;
+      get_item;
+      {
+        annotation = parse_annotation "$unknown";
+        element =
+          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          |> Option.some
+          |> signature_not_found;
+      };
     ]
 
 

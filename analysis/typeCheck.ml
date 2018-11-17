@@ -1013,6 +1013,19 @@ module State = struct
                             ~location
                             ~kind:(Error.TooManyArguments { callee; expected; provided })
                             ~define
+                      | TypedDictionaryAccessWithNonLiteral expression ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.TypedDictionaryAccessWithNonLiteral expression)
+                            ~define
+                      | TypedDictionaryMissingKey { typed_dictionary_name; missing_key } ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.TypedDictionaryKeyNotFound {
+                                typed_dictionary_name;
+                                missing_key;
+                              })
+                            ~define
                     in
                     Some error
 
