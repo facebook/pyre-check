@@ -1473,6 +1473,42 @@ let test_replace_mypy_extensions_stub _ =
   assert_source_equal expected (Preprocessing.replace_mypy_extensions_stub given)
 
 
+let test_expand_typed_dictionaries _ =
+  let assert_expand source expected =
+    assert_source_equal
+      (parse expected)
+      (Preprocessing.expand_typed_dictionary_declarations (parse source))
+  in
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+    |}
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+    |};
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {})
+    |}
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie',)]
+    |};
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict({'name': str, 'year': int})
+    |}
+    {|
+      Movie = mypy_extensions.TypedDict[{'name': str, 'year': int}]
+    |};
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict(A, B, C)
+    |}
+    {|
+      Movie = mypy_extensions.TypedDict.__getitem__(A, B, C)
+    |}
+
+
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
     let parse source =
@@ -1513,6 +1549,7 @@ let () =
     "defines">::test_defines;
     "classes">::test_classes;
     "typed_dictionary_stub_fix">::test_replace_mypy_extensions_stub;
+    "typed_dictionaries">::test_expand_typed_dictionaries;
     "try_preprocess">::test_try_preprocess;
   ]
   |> Test.run

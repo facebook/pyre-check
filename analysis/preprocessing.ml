@@ -1288,6 +1288,67 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
     source
 
 
+let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
+  let expand_typed_dictionaries ({ Node.value; _ } as statement) =
+    let expanded_declaration =
+      match value with
+      | Assign ({
+          value = ({
+              Node.value =
+                Access [
+                  Access.Identifier module_name;
+                  Access.Identifier typed_dictionary;
+                  Access.Call ({ Node.value = arguments; _ } as call);
+                ];
+              _;
+            } as assign_value);
+          _;
+        } as assignment)
+        when Identifier.show module_name = "mypy_extensions" &&
+             Identifier.show typed_dictionary = "TypedDict" ->
+          let arguments =
+            match arguments with
+            | [
+              { Argument.name = None; value = name };
+              {
+                Argument.name = None;
+                value = { Node.value = Dictionary { Dictionary.entries; _ }; location };
+                _;
+              };
+            ] ->
+                let fields =
+                  let entry_to_tuple { Dictionary.key; value } =
+                    Node.create (Expression.Tuple [key; value]) ~location
+                  in
+                  List.map entries ~f:entry_to_tuple
+                in
+                [{
+                  Argument.name = None;
+                  value = Node.create (Expression.Tuple (name :: fields)) ~location;
+                }]
+            | _ ->
+                arguments
+          in
+          Assign {
+            assignment with
+            value = {
+              assign_value with
+              value = Access [
+                  Access.Identifier module_name;
+                  Access.Identifier typed_dictionary;
+                  Access.Identifier (Identifier.create "__getitem__");
+                  Access.Call { call with value = arguments };
+                ];
+            }
+          }
+      | _ ->
+          value
+    in
+    { statement with Node.value = expanded_declaration }
+  in
+  { source with Source.statements = List.map ~f:expand_typed_dictionaries statements }
+
+
 let preprocess_steps ~force source =
   source
   |> expand_relative_imports
@@ -1300,6 +1361,7 @@ let preprocess_steps ~force source =
   |> qualify
   |> expand_returns
   |> replace_mypy_extensions_stub
+  |> expand_typed_dictionary_declarations
 
 
 let preprocess source =

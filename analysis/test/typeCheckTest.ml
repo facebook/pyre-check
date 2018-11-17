@@ -6943,7 +6943,7 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
-      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
       def f() -> None:
@@ -6954,7 +6954,7 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
-      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
       def f() -> None:
@@ -6965,7 +6965,7 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
-      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
       def f() -> None:
@@ -6976,7 +6976,7 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
-      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def foo(x: int) -> str:
         return ""
       def f() -> None:
