@@ -1373,6 +1373,11 @@ let is_tuple (annotation: t) =
   | _ -> false
 
 
+let is_typed_dictionary = function
+  | TypedDictionary _ -> true
+  | _ -> false
+
+
 let is_unbound = function
   | Bottom -> true
   | _ -> false
@@ -1637,6 +1642,8 @@ let split = function
         | Unbounded parameter -> [parameter]
       in
       Primitive (Identifier.create "tuple"), parameters
+  | (TypedDictionary _) as typed_dictionary ->
+      primitive "TypedDictionary", [typed_dictionary]
   | annotation ->
       annotation, []
 

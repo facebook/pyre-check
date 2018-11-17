@@ -215,100 +215,162 @@ let fold ~resolution ~initial ~f access =
         ~implicit_annotation
         ~callable
         ~arguments:{ Node.value = arguments; location } =
-      let signature =
-        let implicit, resolution =
-          let { Type.Callable.implicit; _ } = callable in
-          match implicit_annotation with
-          | Some annotation
-            when implicit <> Type.Callable.Function &&
-                 (not (Type.is_meta annotation) || implicit = Type.Callable.Class) ->
-              let self = Access.create "$self" in
-              let annotation = Annotation.create annotation in
-              Some self, (Resolution.set_local resolution ~access:self ~annotation)
-          | _ ->
-              None, resolution
-        in
-        let arguments =
-          implicit >>|
-          (fun implicit ->
-             let argument =
-               {
-                 Argument.name = None;
-                 value = Node.create ~location (Access implicit);
-               }
-             in
-             argument :: arguments)
-          |> Option.value ~default:arguments
-        in
-        let signature = Signature.select ~arguments ~resolution ~callable in
-
-        let backup () =
-          let name =
-            match target, List.rev lead with
-            | Some _, (Access.Identifier _ as name) :: _ -> [name]
-            | _ -> []
+      let resolve_independent_callable
+          ~implicit_annotation
+          ~callable
+          ~arguments
+          ~location =
+        let signature =
+          let implicit, resolution =
+            let { Type.Callable.implicit; _ } = callable in
+            match implicit_annotation with
+            | Some annotation
+              when implicit <> Type.Callable.Function &&
+                   (not (Type.is_meta annotation) || implicit = Type.Callable.Class) ->
+                let self = Access.create "$self" in
+                let annotation = Annotation.create annotation in
+                Some self, (Resolution.set_local resolution ~access:self ~annotation)
+            | _ ->
+                None, resolution
           in
-          match Access.backup ~arguments ~name with
-          | Some (([{ Argument.value; _ }; _ ] as arguments), name) ->
-              Resolution.resolve resolution value
-              |> Type.expression
-              |> Expression.access
-              |> (fun access -> access @ name)
-              |> (fun access -> Resolution.get_local_callable resolution ~access)
-              >>| (fun callable -> Signature.select ~arguments ~resolution ~callable)
+          let arguments =
+            implicit >>|
+            (fun implicit ->
+               let argument =
+                 {
+                   Argument.name = None;
+                   value = Node.create ~location (Access implicit);
+                 }
+               in
+               argument :: arguments)
+            |> Option.value ~default:arguments
+          in
+          let signature = Signature.select ~arguments ~resolution ~callable in
+
+          let backup () =
+            let name =
+              match target, List.rev lead with
+              | Some _, (Access.Identifier _ as name) :: _ -> [name]
+              | _ -> []
+            in
+            match Access.backup ~arguments ~name with
+            | Some (([{ Argument.value; _ }; _ ] as arguments), name) ->
+                Resolution.resolve resolution value
+                |> Type.expression
+                |> Expression.access
+                |> (fun access -> access @ name)
+                |> (fun access -> Resolution.get_local_callable resolution ~access)
+                >>| (fun callable -> Signature.select ~arguments ~resolution ~callable)
+            | _ ->
+                None
+          in
+
+          match signature, target with
+          | Signature.NotFound _, Some _ ->
+              backup ()
+              |> Option.value ~default:signature
           | _ ->
-              None
+              signature
         in
 
-        match signature, target with
-        | Signature.NotFound _, Some _ ->
-            backup ()
-            |> Option.value ~default:signature
+        (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
+        let resolution =
+          target
+          >>= (fun { State.access; annotation } ->
+              Signature.determine signature ~resolution ~annotation
+              >>| (fun determined ->
+                  match access with
+                  | [Access.Identifier _] ->
+                      Resolution.set_local
+                        resolution
+                        ~access
+                        ~annotation:(Annotation.create determined)
+                  | _ ->
+                      resolution))
+          |> Option.value ~default:resolution
+        in
+
+        match signature with
+        | Signature.Found {
+            Signature.callable = {
+              Type.Callable.implementation = { Type.Callable.annotation; _ };
+              _;
+            };
+            _;
+          }
+        | Signature.NotFound {
+            Signature.callable = {
+              Type.Callable.implementation = { Type.Callable.annotation; _ };
+              _;
+            };
+            _;
+          } when Type.is_resolved annotation ->
+            State.step
+              { state with State.resolution }
+              ~element:(Element.Signature { Element.signature; arguments })
+              ~resolved:(Annotation.create annotation)
+              ~lead
+              ()
+
         | _ ->
-            signature
+            State.abort state ~lead ()
       in
 
-      (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
-      let resolution =
-        target
-        >>= (fun { State.access; annotation } ->
-            Signature.determine signature ~resolution ~annotation
-            >>| (fun determined ->
-                match access with
-                | [Access.Identifier _] ->
-                    Resolution.set_local
-                      resolution
-                      ~access
-                      ~annotation:(Annotation.create determined)
-                | _ ->
-                    resolution))
-        |> Option.value ~default:resolution
-      in
-
-      match signature with
-      | Signature.Found {
-          Signature.callable = {
-            Type.Callable.implementation = { Type.Callable.annotation; _ };
-            _;
-          };
-          _;
-        }
-      | Signature.NotFound {
-          Signature.callable = {
-            Type.Callable.implementation = { Type.Callable.annotation; _ };
-            _;
-          };
-          _;
-        } when Type.is_resolved annotation ->
+      let resolve_typed_dictionary_get_item_callable ~fields ~callable ~arguments =
+        let fail () =
           State.step
-            { state with State.resolution }
-            ~element:(Element.Signature { Element.signature; arguments })
-            ~resolved:(Annotation.create annotation)
+            state
+            ~element:(Element.Signature {
+                Element.signature = Signature.NotFound { callable; reason = None };
+                arguments;
+              })
+            ~resolved:(Annotation.create Type.Top)
             ~lead
             ()
+        in
+        match arguments with
+        | {
+          Record.Argument.value = {
+            Node.value = Expression.String { value = key; _ };
+            _;
+          };
+          _;
+        } :: [] ->
+            begin
+              match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+              | Some { annotation; _ } ->
+                  State.step
+                    state
+                    ~element:(Element.Signature {
+                        Element.signature = Signature.Found {
+                            callable;
+                            constraints = Type.Map.empty;
+                          };
+                        arguments;
+                      })
+                    ~resolved:(Annotation.create annotation)
+                    ~lead
+                    ()
+              | None ->
+                  (* TODO(T35907494): Add a reason that triggers an AnalysisError *)
+                  fail ()
+            end
+        | _ ->
+            (* TODO(T35907494): Add a reason that triggers an AnalysisError *)
+            fail ()
+      in
 
+      let tail_is_get_item access =
+        match List.last access with
+        | Some (Access.Identifier get_item) -> Identifier.show get_item = "__getitem__"
+        | _ -> false
+      in
+      match implicit_annotation, callable with
+      | Some (Type.TypedDictionary { fields; _ }), { Type.Record.Callable.kind = Named access; _ }
+        when tail_is_get_item access ->
+          resolve_typed_dictionary_get_item_callable ~fields ~callable ~arguments
       | _ ->
-          State.abort state ~lead ()
+          resolve_independent_callable ~implicit_annotation ~callable ~arguments ~location
     in
 
     let local_attribute ~resolved ~lead ~name =

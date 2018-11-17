@@ -1066,6 +1066,16 @@ module Builder = struct
           }
           |> Node.create_with_default_location
         ];
+        "TypedDictionary",
+        [
+          {
+            Argument.name = None;
+            value =
+              Type.primitive "dict"
+              |> Type.expression
+          };
+        ],
+        []
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set
@@ -1082,6 +1092,10 @@ module Builder = struct
       aliases
       ~key:(Type.primitive "PathLike")
       ~data:(Type.primitive "_PathLike");
+
+    TypeOrder.insert
+      (TypeOrder.handler order)
+      (Type.primitive "TypedDictionary");
 
 
     {

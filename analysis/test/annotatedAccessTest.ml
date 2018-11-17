@@ -39,7 +39,7 @@ and step = {
 
 let test_fold _ =
   let resolution =
-    populate_with_sources [
+    let sources = [
       parse
         ~qualifier:(Access.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
@@ -55,7 +55,6 @@ let test_fold _ =
         "def __getattr__(name: str) -> Any: ..."
       |> Preprocessing.preprocess;
       parse
-        ~qualifier:[]
         {|
           integer: int = 1
           string: str = 'string'
@@ -76,7 +75,13 @@ let test_fold _ =
         {|
           sep: str = '/'
         |};
-    ]
+      parse
+        {|
+          movie: "mypy_extensions.TypedDict[('Movie', ('year', int), ('title', str))]"
+        |}
+      |> Preprocessing.preprocess;
+    ] in
+    populate_with_sources (sources @ Test.typeshed_stubs)
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let parse_annotation annotation =
@@ -177,7 +182,57 @@ let test_fold _ =
   assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }];
 
   assert_fold "empty.stub.any_attribute" [{ annotation = Type.Top; element = Value }];
-  assert_fold "has_getattr.any_attribute" [{ annotation = parse_annotation "Any"; element = Value }]
+  assert_fold
+    "has_getattr.any_attribute"
+    [{ annotation = parse_annotation "Any"; element = Value }];
+
+  let movie_typed_dictionary = {
+    annotation = Type.TypedDictionary {
+        name = Identifier.create "Movie";
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "title"; annotation = Type.string };
+        ];
+      };
+    element = Value;
+  } in
+
+  assert_fold
+    "movie.title"
+    [
+      movie_typed_dictionary;
+      { annotation = Type.Top; element = Attribute { name = "title"; defined = false } };
+    ];
+
+  let get_item = {
+    annotation =
+      parse_annotation (
+        "typing.Callable('dict.__getitem__')" ^
+        "[[Named(self, $unknown),  Named(k, _T)], _S]");
+    element = Attribute { name = "__getitem__"; defined = true } ;
+  } in
+
+  assert_fold
+    "movie['title']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      { annotation = parse_annotation "str"; element = Signature };
+    ];
+  assert_fold
+    "movie['year']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      { annotation = parse_annotation "int"; element = Signature };
+    ];
+  assert_fold
+    "movie['missing']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      { annotation = parse_annotation "$unknown"; element = Signature };
+    ]
 
 
 let assert_resolved sources access expected =
