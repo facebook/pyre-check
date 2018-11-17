@@ -1266,6 +1266,28 @@ let dequalify_map source =
   |> fst
 
 
+let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
+  if String.is_suffix (File.Handle.show handle) ~suffix:"mypy_extensions.pyi" then
+    let typed_dictionary_stub ~location =
+      let node = Node.create ~location in
+      Assign {
+        target = node (Access (Access.create "TypedDict"));
+        annotation = Some (node (Access (Access.create "typing._SpecialForm")));
+        value = node Ellipses;
+        parent = None;
+      } |> Node.create ~location
+    in
+    let replace_typed_dictionary_define = function
+      | { Node.location; value = Define { name; _ } } when Access.show name = "TypedDict" ->
+          typed_dictionary_stub ~location
+      | statement ->
+          statement
+    in
+    { source with statements = List.map ~f:replace_typed_dictionary_define statements }
+  else
+    source
+
+
 let preprocess_steps ~force source =
   source
   |> expand_relative_imports
@@ -1277,6 +1299,7 @@ let preprocess_steps ~force source =
   |> expand_wildcard_imports ~force
   |> qualify
   |> expand_returns
+  |> replace_mypy_extensions_stub
 
 
 let preprocess source =

@@ -1274,9 +1274,8 @@ let rec exists annotation ~predicate =
     | Union parameters ->
         List.exists ~f:(exists ~predicate) parameters
 
-    | TypedDictionary { name; fields } ->
+    | TypedDictionary { fields; _ } ->
         let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-        exists (Primitive name) ~predicate ||
         List.exists annotations ~f:(exists ~predicate)
 
     | Bottom

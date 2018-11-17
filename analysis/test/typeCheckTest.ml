@@ -827,7 +827,7 @@ let test_forward_statement _ =
     ~bottom:false
     ~errors:
       (`Specific
-        ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `int`."])
+         ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `int`."])
     ["x", Type.integer]
     "assert isinstance(x, 1)"
     ["x", Type.integer];
@@ -5102,7 +5102,7 @@ let test_check_nested _ =
     ["Incompatible parameter type [6]: Expected `int` but got `str`."];
 
   assert_type_errors
-  {|
+    {|
     def can_fail() -> None:
       try:
         x = 3
@@ -5112,7 +5112,7 @@ let test_check_nested _ =
       def bar() -> int:
         return always_declared
   |}
-  []
+    []
 
 
 let test_check_invalid_constructor _ =
@@ -6524,7 +6524,7 @@ let test_check_callables _ =
         return x
       foo(i2i)
     |}
-  [];
+    [];
   assert_type_errors
     {|
       def foo(f: typing.Callable[..., int]) -> None:
@@ -6553,7 +6553,7 @@ let test_check_callables _ =
         map(x, [])
         map(y, [])
     |}
-  [];
+    [];
   assert_type_errors
     {|
       class CallMe:
@@ -6910,6 +6910,86 @@ let test_check_data_class _ =
     []
 
 
+let test_check_typed_dictionaries _ =
+  let assert_test_typed_dictionary source =
+    let typing_stub =
+      {
+        qualifier = Access.create "typing";
+        handle = "typing.pyi";
+        source =
+          {|
+            Any = object()
+            class _SpecialForm:
+                def __getitem__(self, typeargs: Any) -> Any: ...
+          |};
+      }
+    in
+    let mypy_extensions_stub =
+      {
+        qualifier = Access.create "mypy_extensions";
+        handle = "mypy_extensions.pyi";
+        source =
+          "def TypedDict(typename: str, fields: Dict[str, Type[_T]], total: bool = ...) -> \
+           Type[dict]: ..."
+      }
+    in
+    assert_type_errors
+      ~update_environment_with:[
+        typing_stub;
+        mypy_extensions_stub;
+      ]
+      source
+  in
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        movie: Movie
+        a = foo(movie['year'])
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        movie: Movie
+        a = foo(movie['name'])
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        movie: Movie
+        a = foo(movie['yar'])
+    |}
+    ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        movie: Movie
+        key = "year"
+        a = foo(movie[key])
+    |}
+    [
+      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal; " ^
+      "expected one of ('name', 'year')."
+    ]
+
+
 let test_check_getattr _ =
   let assert_test_getattr source =
     let getattr_stub =
@@ -7099,5 +7179,6 @@ let () =
     "check_format_string">::test_format_string;
     "check_dataclass">::test_check_data_class;
     "check_getattr">::test_check_getattr;
+    "check_typed_dictionarys">::test_check_typed_dictionaries;
   ]
   |> Test.run

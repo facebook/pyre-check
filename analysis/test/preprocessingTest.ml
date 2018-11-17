@@ -1440,6 +1440,39 @@ let test_classes _ =
     [class_define; inner]
 
 
+let test_replace_mypy_extensions_stub _ =
+  let given = parse
+      ~handle:"mypy_extensions.pyi"
+      {|
+      from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
+
+      _T = TypeVar('_T')
+      _U = TypeVar('_U')
+
+      def TypedDict(typename: str, fields: Dict[str, Type[_T]], total: bool = ...) -> Type[dict]:
+        ...
+
+      def Arg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+      def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+    |}
+  in
+  let expected = parse
+      ~handle:"mypy_extensions.pyi"
+      {|
+      from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
+
+      _T = TypeVar('_T')
+      _U = TypeVar('_U')
+
+      TypedDict: typing._SpecialForm = ...
+
+      def Arg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+      def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+    |}
+  in
+  assert_source_equal expected (Preprocessing.replace_mypy_extensions_stub given)
+
+
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
     let parse source =
@@ -1479,6 +1512,7 @@ let () =
     "expand_returns">::test_expand_returns;
     "defines">::test_defines;
     "classes">::test_classes;
+    "typed_dictionary_stub_fix">::test_replace_mypy_extensions_stub;
     "try_preprocess">::test_try_preprocess;
   ]
   |> Test.run

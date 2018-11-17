@@ -27,6 +27,8 @@ val expand_type_checking_imports: Source.t -> Source.t
 val return_access: Access.t
 val expand_returns: Source.t -> Source.t
 
+val replace_mypy_extensions_stub: Source.t -> Source.t
+
 (* List of function definitions in a source. extract_into_toplevel copies all definitions into a
    toplevel definition. *)
 val defines
