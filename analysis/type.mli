@@ -230,4 +230,13 @@ module Callable : sig
   val with_return_annotation: return_annotation: type_t -> t -> t
 end
 
+module TypedDictionary : sig
+  val anonymous: typed_dictionary_field list -> t
+
+  val fields_have_colliding_keys
+    : typed_dictionary_field list
+    -> typed_dictionary_field list
+    -> bool
+end
+
 val to_yojson: t -> Yojson.Safe.json

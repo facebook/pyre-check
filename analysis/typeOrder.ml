@@ -603,6 +603,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Callable _, _ ->
       false
 
+  | Type.TypedDictionary left, Type.TypedDictionary right ->
+      let field_not_found field =
+        not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
+      in
+      not (List.exists right.fields ~f:field_not_found)
+
   | _ ->
       raise_if_untracked order left;
       raise_if_untracked order right;
@@ -932,6 +938,23 @@ and join ((module Handler: Handler) as order) left right =
       Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
+    | Type.TypedDictionary { fields = left_fields; _ },
+      Type.TypedDictionary { fields = right_fields; _ } ->
+        if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
+          Type.Object
+        else
+          let join_fields =
+            if less_or_equal order ~left ~right then
+              right_fields
+            else if less_or_equal order ~left:right ~right:left then
+              left_fields
+            else
+              let found_match field =
+                List.exists left_fields ~f:(Type.equal_typed_dictionary_field field)
+              in
+              List.filter right_fields ~f:found_match
+          in
+          Type.TypedDictionary.anonymous join_fields
 
     | Type.Callable left,
       Type.Callable right ->
@@ -1092,6 +1115,22 @@ and meet order left right =
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Bottom
+    | Type.TypedDictionary { fields = left_fields; _ },
+      Type.TypedDictionary { fields = right_fields; _ } ->
+        if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
+          Type.Bottom
+        else
+          let meet_fields =
+            if less_or_equal order ~left ~right then
+              left_fields
+            else if less_or_equal order ~left:right ~right:left then
+              right_fields
+            else
+              List.dedup_and_sort
+                (left_fields @ right_fields)
+                ~compare:Type.compare_typed_dictionary_field
+          in
+          Type.TypedDictionary.anonymous meet_fields
 
     | _ ->
         match List.hd (greatest_lower_bound order left right) with

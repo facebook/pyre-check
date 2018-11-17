@@ -301,11 +301,14 @@ let rec pp format annotation =
         |> List.map ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp annotation)
         |> String.concat ~sep:", "
       in
-      Format.fprintf format
-        "TypedDict `%a` with fields (%s)"
-        Identifier.pp
-        name
-        fields
+      if Identifier.show name = "$anonymous" then
+        Format.fprintf format "TypedDict with fields (%s)" fields
+      else
+        Format.fprintf format
+          "TypedDict `%a` with fields (%s)"
+          Identifier.pp
+          name
+          fields
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
@@ -1910,6 +1913,20 @@ module Callable = struct
       overloads = List.map ~f:re_annotate overloads }
 end
 
+
+module TypedDictionary = struct
+  let anonymous fields =
+    TypedDictionary { name = Identifier.create "$anonymous"; fields }
+
+  let fields_have_colliding_keys left_fields right_fields =
+    let found_collision { name = needle_name; annotation = needle_annotation } =
+      let same_name_different_annotation { name; annotation } =
+        name = needle_name && not (equal annotation needle_annotation)
+      in
+      List.exists left_fields ~f:same_name_different_annotation
+    in
+    List.exists right_fields ~f:found_collision
+end
 
 let to_yojson annotation =
   `String (show annotation)

@@ -716,7 +716,24 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:"FloatToStrCallable"
-       ~right:"typing.Callable[[float], int]")
+       ~right:"typing.Callable[[float], int]");
+
+  (* TypedDictionaries *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('foo', str), ('bar', int), ('baz', int))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('foo', str), ('bar', float))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]")
 
 
 let test_join _ =
@@ -922,6 +939,20 @@ let test_join _ =
     "CallableClass"
     "typing.Callable[[int], typing.Union[int, str]]";
 
+  (* TypedDictionaries *)
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int), ('baz', int))]"
+    "mypy_extensions.TypedDict[('$anonymous', ('foo', str), ('bar', int))]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', ('foo', str))]"
+    "mypy_extensions.TypedDict[('$anonymous', )]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "typing.Any";
+
   (* Variables. *)
   assert_equal
     (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.float) "T"))
@@ -978,6 +1009,17 @@ let test_meet _ =
     "typing.Dict[str, $bottom]";
 
   assert_meet ~order:disconnected_order "A" "B" "$bottom";
+
+  (* TypedDictionaries *)
+  assert_meet
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int), ('baz', int))]"
+    ("mypy_extensions.TypedDict" ^
+     "[('$anonymous', ('bar', int), ('baz', int), ('ben', int), ('foo', str))]");
+  assert_meet
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "$bottom";
 
   (* Variables. *)
   assert_equal

@@ -6987,7 +6987,51 @@ let test_check_typed_dictionaries _ =
     [
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal; " ^
       "expected one of ('name', 'year')."
-    ]
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      Film = mypy_extensions.TypedDict('Film', {'name': str, 'year': 'int', 'director': str})
+      def foo(movie: Movie) -> str:
+        return movie["name"]
+      def f() -> None:
+        movie: Film
+        a = foo(movie)
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      Actor = mypy_extensions.TypedDict('Actor', {'name': str, 'birthyear': 'int'})
+      def foo(movie: Movie) -> str:
+        return movie["name"]
+      def f() -> None:
+        actor: Actor
+        a = foo(actor)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with " ^
+      "fields (name: str, year: int)` but got `TypedDict `Actor` with fields " ^
+      "(name: str, birthyear: int)`."
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      from mypy_extensions import TypedDict
+      Movie = TypedDict('Movie', {'name': str, 'year': int})
+      Cat = TypedDict('Cat', {'name': str, 'breed': str})
+      Named = TypedDict('Named', {'name': str})
+
+      def foo(x: int, a: Movie, b: Cat) -> Named:
+        if x == 7:
+            q = a
+        else:
+            q = b
+        return q
+    |}
+    []
 
 
 let test_check_getattr _ =
