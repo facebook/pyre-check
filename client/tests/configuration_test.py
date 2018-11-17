@@ -13,12 +13,20 @@ from ..configuration import Configuration  # noqa
 
 
 class ConfigurationTest(unittest.TestCase):
+    @patch("os.path.isdir", return_value=True)
+    @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("json.load")
     @patch.object(os, "getenv", return_value=None)
     @patch.object(Configuration, "_validate")
     def test_init(
-        self, configuration_validate, os_environ, json_load, builtins_open
+        self,
+        configuration_validate,
+        os_environ,
+        json_load,
+        builtins_open,
+        access,
+        isdir,
     ) -> None:
         json_load.side_effect = [
             {
@@ -35,6 +43,14 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
         )
+
+        json_load.side_effect = [
+            {"source_directories": ["a"]},
+            {"source_directories": ["a"]},
+            {},
+        ]
+        configuration = Configuration("local/path")
+        self.assertEqual(configuration.analysis_directories, ["local/path/a"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()

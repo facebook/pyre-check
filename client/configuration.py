@@ -268,12 +268,20 @@ class Configuration:
 
                 configuration = _ConfigurationFile(file)
 
-                self.analysis_directories = configuration.consume(
+                source_directories = configuration.consume(
                     "source_directories",
                     default=[],
                     current=self.analysis_directories,
                     print_on_success=True,
                 )
+                configuration_directory = os.path.dirname(path)
+                if configuration_directory:
+                    self.analysis_directories = [
+                        os.path.join(configuration_directory, directory)
+                        for directory in source_directories
+                    ]
+                else:
+                    self.analysis_directories = source_directories
 
                 self.targets = configuration.consume(
                     "targets", default=[], current=self.targets, print_on_success=True
