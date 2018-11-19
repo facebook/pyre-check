@@ -487,6 +487,7 @@ let test_less_or_equal _ =
     insert order !"C";
     insert order !"typing.Generic";
     insert order !"FloatToStrCallable";
+    insert order !"ParametricCallableToStr";
     insert order !"typing.Callable";
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
@@ -518,6 +519,27 @@ let test_less_or_equal _ =
       ~predecessor:!"FloatToStrCallable"
       ~successor:!"typing.Callable";
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
+    connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
+    let callable =
+      let aliases annotation =
+        match Type.show annotation with
+        | "_T" ->
+            Some (Type.variable "_T")
+        | _ ->
+            None
+      in
+      parse_callable ~aliases "typing.Callable[[_T], str]"
+    in
+    connect
+      order
+      ~parameters:[callable]
+      ~predecessor:!"ParametricCallableToStr"
+      ~successor:!"typing.Callable";
+    connect
+      order
+      ~parameters:[Type.variable "_T"]
+      ~predecessor:!"ParametricCallableToStr"
+      ~successor:!"typing.Generic";
 
     order
   in
@@ -592,11 +614,7 @@ let test_less_or_equal _ =
 
   (* Behavioral subtyping of callables. *)
   let less_or_equal order ~left ~right =
-    let parse serialized =
-      parse_single_expression serialized
-      |> Type.create ~aliases:(fun _ -> None)
-    in
-    less_or_equal order ~left:(parse left) ~right:(parse right)
+    less_or_equal order ~left:(parse_callable left) ~right:(parse_callable right)
   in
   assert_true
     (less_or_equal
@@ -717,6 +735,27 @@ let test_less_or_equal _ =
        order
        ~left:"FloatToStrCallable"
        ~right:"typing.Callable[[float], int]");
+  (* Parametric classes are also callables. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"ParametricCallableToStr[int]"
+       ~right:"typing.Callable[[int], str]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"ParametricCallableToStr[float]"
+       ~right:"typing.Callable[[int], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"ParametricCallableToStr[int]"
+       ~right:"typing.Callable[[float], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"ParametricCallableToStr[int]"
+       ~right:"typing.Callable[[int], int]");
 
   (* TypedDictionaries *)
   assert_true
@@ -814,14 +853,20 @@ let test_join _ =
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
     add_simple (Type.string);
-    add_simple (Type.integer);
-    add_simple (Type.float);
+    insert order Type.integer;
+    insert order Type.float;
     insert order !"A";
     insert order !"B";
     insert order !"C";
     insert order !"CallableClass";
+    insert order !"ParametricCallableToStr";
     insert order !"typing.Callable";
     insert order !"typing.Generic";
+
+    connect order ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect order ~predecessor:Type.integer ~successor:Type.float;
+    connect order ~predecessor:Type.float ~successor:Type.Top;
+
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
     connect
@@ -857,6 +902,28 @@ let test_join _ =
       ~predecessor:!"CallableClass"
       ~successor:!"typing.Callable";
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
+    let callable =
+      let aliases annotation =
+        match Type.show annotation with
+        | "_T" ->
+            Some (Type.variable "_T")
+        | _ ->
+            None
+      in
+      parse_callable ~aliases "typing.Callable[[_T], str]"
+    in
+    connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
+    connect
+      order
+      ~parameters:[callable]
+      ~predecessor:!"ParametricCallableToStr"
+      ~successor:!"typing.Callable";
+    connect
+      order
+      ~parameters:[Type.variable "_T"]
+      ~predecessor:!"ParametricCallableToStr"
+      ~successor:!"typing.Generic";
+
     order
   in
   let aliases =
@@ -938,6 +1005,42 @@ let test_join _ =
     "typing.Callable[[int], int]"
     "CallableClass"
     "typing.Callable[[int], typing.Union[int, str]]";
+  assert_join
+    ~order
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], str]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], str]"
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], int]"
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], typing.Union[int, str]]";
+
+  assert_join
+    ~order
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], str]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[float], str]"
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], str]"
+    "ParametricCallableToStr[float]"
+    "typing.Callable[[int], str]";
+  assert_join
+    ~order
+    "typing.Callable[[int], int]"
+    "ParametricCallableToStr[int]"
+    "typing.Callable[[int], typing.Union[int, str]]";
 
   (* TypedDictionaries *)
   assert_join
@@ -955,8 +1058,8 @@ let test_join _ =
 
   (* Variables. *)
   assert_equal
-    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.float) "T"))
-    (Type.union [Type.float; Type.integer]);
+    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.string) "T"))
+    (Type.union [Type.string; Type.integer]);
   assert_equal
     (join
        order

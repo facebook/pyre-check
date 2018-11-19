@@ -214,9 +214,9 @@ let parse_single_access source =
   | _ -> failwith "Could not parse single access"
 
 
-let parse_callable callable =
+let parse_callable ?(aliases = fun _ -> None) callable =
   parse_single_expression callable
-  |> Type.create ~aliases:(fun _ -> None)
+  |> Type.create ~aliases
 
 
 let diff ~print format (left, right) =
