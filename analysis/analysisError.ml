@@ -1326,8 +1326,6 @@ let suppress ~mode error =
       match kind with
       | MissingParameterAnnotation { due_to_any; _ } ->
           due_to_any
-      | UndefinedType _ ->
-          true
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
