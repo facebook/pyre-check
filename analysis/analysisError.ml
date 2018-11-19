@@ -1339,6 +1339,11 @@ let suppress ~mode error =
         (Define.is_untyped define && not (Define.is_toplevel define))
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
+    | InconsistentOverride {
+        override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ });
+        _;
+      } ->
+        true
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _

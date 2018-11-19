@@ -459,6 +459,11 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Deleted, _ ->
       false
 
+  | _, Type.Variable { constraints = Type.Unconstrained; _ } ->
+      true
+  | Type.Variable { constraints = Type.Unconstrained; _ },
+    (Type.Primitive _ | Type.Parametric _) ->
+      false
   | _, Type.Object ->
       true
   | Type.Object, _ ->
@@ -468,6 +473,16 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       true
   | _, Type.Bottom ->
       false
+
+  | Type.Variable { constraints = Type.Bound left; _ }, right ->
+      less_or_equal order ~left ~right
+  | _, Type.Variable { constraints = Type.Bound _; _ } ->
+      false
+  | Type.Variable { constraints = Type.Explicit left; _ }, right ->
+      less_or_equal order ~left:(Type.union left) ~right
+  | left, Type.Variable { constraints = Type.Explicit right; _ } ->
+      less_or_equal order ~left ~right:(Type.union right)
+
 
   | Type.Parametric _,
     Type.Parametric _ ->
@@ -480,15 +495,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             parameters
             right_parameters)
       |> Option.value ~default:false
-
-  | Type.Variable { constraints = Type.Bound left; _ }, right ->
-      less_or_equal order ~left ~right
-  | _, Type.Variable { constraints = Type.Bound _; _ } ->
-      false
-  | Type.Variable { constraints = Type.Explicit left; _ }, right ->
-      less_or_equal order ~left:(Type.union left) ~right
-  | left, Type.Variable { constraints = Type.Explicit right; _ } ->
-      less_or_equal order ~left ~right:(Type.union right)
 
   (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
   | Type.Union left, right ->
@@ -818,6 +824,9 @@ and join ((module Handler: Handler) as order) left right =
     | other, Type.Bottom ->
         other
 
+    | (Type.Variable { constraints = Type.Unconstrained; _ } as variable), other
+    | other, (Type.Variable { constraints = Type.Unconstrained; _ } as variable) ->
+        Type.union [variable; other]
     | Type.Variable { constraints = Type.Bound left; _ }, right ->
         join order left right
     | left, Type.Variable { constraints = Type.Bound right; _ } ->
@@ -1015,6 +1024,9 @@ and meet order left right =
     | _, Type.Bottom ->
         Type.Bottom
 
+    | Type.Variable { constraints = Type.Unconstrained; _ }, other
+    | other, Type.Variable { constraints = Type.Unconstrained; _ } ->
+        other
     | Type.Variable ({ constraints = Type.Bound left; _ } as variable), right ->
         Type.Variable { variable with constraints = Type.Bound (meet order left right) }
     | left, Type.Variable ({ constraints = Type.Bound right; _ } as variable) ->

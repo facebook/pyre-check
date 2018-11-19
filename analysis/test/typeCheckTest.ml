@@ -5164,6 +5164,33 @@ let test_check_invalid_constructor _ =
     ]
 
 
+let test_check_unbounded_variables _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def expects_any(input) -> None: ...
+      def expects_string(inut: str) -> None: ...
+      def foo(input: T) -> None:
+        expects_any(input)
+        expects_string(input)
+    |}
+    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T]`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(input: T) -> typing.Any:
+        return input
+    |}
+    ["Missing return annotation [3]: Returning `Variable[T]` but type `Any` is specified."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(input: T) -> int:
+        return input
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `Variable[T]`."]
+
+
 let test_check_variable_restrictions _ =
   assert_type_errors
     {|
@@ -5919,7 +5946,7 @@ let test_check_behavioral_subtyping _ =
         def foo(self) -> None:
           pass
     |}
-    ["Undefined type [11]: Type `Variable[T]` is not defined."];
+    [];
 
   assert_type_errors ~show_error_traces:true
     {|
@@ -6694,6 +6721,14 @@ let test_check_undefined_type _ =
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
 
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(x: T) -> typing.Union[str, T]:
+        return x
+    |}
+    [];
+
   (* Ensure other errors are not missed when undefined type is thrown. *)
   assert_type_errors
     {|
@@ -7224,6 +7259,7 @@ let () =
     "check_union">::test_check_union;
     "check_return_joining">::test_check_return_joining;
     "check_nested">::test_check_nested;
+    "check_unbounded_variables">::test_check_unbounded_variables;
     "check_variable_restrictions">::test_check_variable_restrictions;
     "check_variable_bindings">::test_check_variable_bindings;
     "check_refinement">::test_check_refinement;

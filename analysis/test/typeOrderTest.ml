@@ -576,6 +576,16 @@ let test_less_or_equal _ =
            [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
 
   (* Variables. *)
+  assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Object);
+  assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
+  assert_true (less_or_equal order ~left:Type.Object ~right:(Type.variable "T"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable "T")
+       ~right:(Type.union [Type.string; Type.variable "T"]));
+
   assert_true
     (less_or_equal
        order
@@ -1066,6 +1076,9 @@ let test_join _ =
 
   (* Variables. *)
   assert_equal
+    (join order Type.integer (Type.variable "T"))
+    (Type.union [Type.integer; Type.variable "T"]);
+  assert_equal
     (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.string) "T"))
     (Type.union [Type.string; Type.integer]);
   assert_equal
@@ -1133,6 +1146,7 @@ let test_meet _ =
     "$bottom";
 
   (* Variables. *)
+  assert_equal (meet default Type.integer (Type.variable "T")) Type.integer;
   assert_equal
     (meet
        default
