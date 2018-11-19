@@ -1540,6 +1540,8 @@ let rec mismatch_with_any left right =
   | Parametric _, Object
   | Object, Primitive _
   | Primitive _, Object
+  | Object, Callable _
+  | Callable _, Object
   | Object, Top
   | Top, Object
   | Object, Tuple _

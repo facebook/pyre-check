@@ -844,7 +844,20 @@ let test_mismatch_with_any _ =
   assert_false
     (Type.mismatch_with_any
        (Type.Union [Type.list Type.integer; Type.string])
-       (Type.parametric "unknown" [Type.Object]))
+       (Type.parametric "unknown" [Type.Object]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.callable ~annotation:Type.integer ())
+       Type.Object);
+  assert_true
+    (Type.mismatch_with_any
+       Type.Object
+       (Type.callable ~annotation:Type.integer ()));
+  assert_true
+    (Type.mismatch_with_any
+       Type.Object
+       (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]))
 
 
 let test_class_name _ =
