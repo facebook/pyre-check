@@ -1,5 +1,9 @@
 # @nolint
 
+from typing import Any
+
+class RecordSchema: pass
+
 def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
     """Return the fields of a RecordSchema instance as a new dictionary mapping
     field names to field values.

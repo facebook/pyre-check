@@ -9,7 +9,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_dictionary.py",
               "line": 13,
               "start": 23,
               "end": 28
@@ -32,7 +32,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_dictionary.py",
               "line": 6,
               "start": 25,
               "end": 27

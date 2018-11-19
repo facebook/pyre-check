@@ -7,7 +7,7 @@
     "line": 14,
     "start": 15,
     "end": 16,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -17,7 +17,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 13,
                 "start": 20,
                 "end": 22
@@ -36,7 +36,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 14,
                 "start": 14,
                 "end": 17
@@ -61,7 +61,7 @@
     "line": 27,
     "start": 31,
     "end": 43,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -71,7 +71,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 27,
                 "start": 43,
                 "end": 45
@@ -90,7 +90,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 27,
                 "start": 20,
                 "end": 51
@@ -115,7 +115,7 @@
     "line": 24,
     "start": 26,
     "end": 31,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -125,7 +125,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 23,
                 "start": 27,
                 "end": 29
@@ -144,7 +144,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 24,
                 "start": 20,
                 "end": 32
@@ -169,7 +169,7 @@
     "line": 43,
     "start": 40,
     "end": 52,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -179,7 +179,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 43,
                 "start": 52,
                 "end": 54
@@ -198,7 +198,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 43,
                 "start": 25,
                 "end": 55
@@ -223,7 +223,7 @@
     "line": 40,
     "start": 31,
     "end": 37,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -233,7 +233,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 38,
                 "start": 27,
                 "end": 29
@@ -252,7 +252,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 40,
                 "start": 25,
                 "end": 38
@@ -278,7 +278,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_port.py",
               "line": 49,
               "start": 27,
               "end": 29
@@ -303,7 +303,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_port.py",
               "line": 55,
               "start": 14,
               "end": 21
@@ -325,7 +325,7 @@
     "line": 55,
     "start": 15,
     "end": 20,
-    "filename": "test.py",
+    "filename": "test_port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -335,7 +335,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 54,
                 "start": 12,
                 "end": 27
@@ -353,7 +353,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_port.py",
               "line": 55,
               "start": 14,
               "end": 21
@@ -376,7 +376,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_port.py",
               "line": 10,
               "start": 14,
               "end": 21
@@ -399,7 +399,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_port.py",
               "line": 6,
               "start": 27,
               "end": 29
@@ -425,7 +425,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 17,
                 "start": 14,
                 "end": 23
@@ -454,7 +454,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 20,
                 "start": 12,
                 "end": 32
@@ -483,7 +483,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 30,
                 "start": 14,
                 "end": 29
@@ -512,7 +512,7 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_port.py",
                 "line": 33,
                 "start": 17,
                 "end": 30

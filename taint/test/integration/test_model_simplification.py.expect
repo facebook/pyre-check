@@ -10,8 +10,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 23,
+                "filename": "test_model_simplification.py",
+                "line": 27,
                 "start": 38,
                 "end": 55
               },
@@ -28,8 +28,8 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
-              "line": 16,
+              "filename": "test_model_simplification.py",
+              "line": 20,
               "start": 41,
               "end": 54
             },
@@ -38,8 +38,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 16,
+                "filename": "test_model_simplification.py",
+                "line": 20,
                 "start": 33,
                 "end": 69
               },
@@ -52,8 +52,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 28,
+                "filename": "test_model_simplification.py",
+                "line": 32,
                 "start": 33,
                 "end": 50
               },
@@ -66,8 +66,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 38,
+                "filename": "test_model_simplification.py",
+                "line": 42,
                 "start": 33,
                 "end": 50
               },
@@ -108,8 +108,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 7,
+                "filename": "test_model_simplification.py",
+                "line": 11,
                 "start": 24,
                 "end": 43
               },
@@ -150,8 +150,8 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
-                "line": 49,
+                "filename": "test_model_simplification.py",
+                "line": 53,
                 "start": 17,
                 "end": 22
               },

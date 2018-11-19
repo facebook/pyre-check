@@ -7,6 +7,9 @@ open Core
 open OUnit2
 
 open Analysis
+
+module AnalysisError = Analysis.Error
+
 open Ast
 open Expression
 open Pyre
@@ -22,10 +25,10 @@ type expect_fixpoint = {
 }
 
 
-let create_call_graph ?(test_file = "test_file") source =
-  let handle = File.Handle.create test_file in
+let create_call_graph ?(path = "test.py") source =
+  let handle = File.Handle.create path in
   let source =
-    Test.parse ~qualifier:(Access.create "qualifier") source
+    Test.parse ~qualifier:(Access.create "qualifier") ~handle:path source
     |> Preprocessing.preprocess
   in
   let () =
@@ -38,8 +41,25 @@ let create_call_graph ?(test_file = "test_file") source =
   let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
   Service.Environment.populate environment [source];
-  let configuration = Configuration.Analysis.create () in
-  TypeCheck.check ~configuration ~environment ~source |> ignore;
+
+  let configuration = Configuration.Analysis.create ~strict:true () in
+  let errors =
+    let { TypeCheck.Result.errors; _ } = TypeCheck.check ~configuration ~environment ~source in
+    List.filter errors ~f:(fun error -> AnalysisError.code error = 11)  (* Undefined types. *)
+  in
+  if not (List.is_empty errors) then
+    begin
+      let errors =
+        List.map errors ~f:(AnalysisError.description ~detailed:false)
+        |> String.concat ~sep:"\n"
+      in
+      failwithf
+        "Unable to construct callgraph for %s because of undefined types:\n%s"
+        (File.Handle.show source.Source.handle)
+        errors
+        ()
+    end;
+
   let call_graph =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
@@ -372,7 +392,12 @@ let test_integration _ =
         |> File.content
         |> (fun content -> Option.value_exn content)
       in
-      let call_graph, all_callables, environment = create_call_graph source in
+      let handle =
+        Path.show path
+        |> String.split ~on:'/'
+        |> List.last_exn
+      in
+      let call_graph, all_callables, environment = create_call_graph ~path:handle source in
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())

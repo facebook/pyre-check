@@ -7,7 +7,7 @@
     "line": 6,
     "start": 11,
     "end": 12,
-    "filename": "test.py",
+    "filename": "remote_code_execution.py",
     "message":
       "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "traces": [
@@ -16,7 +16,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "remote_code_execution.py",
               "line": 5,
               "start": 24,
               "end": 26
@@ -32,7 +32,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "remote_code_execution.py",
               "line": 6,
               "start": 10,
               "end": 13
@@ -53,7 +53,7 @@
     "line": 11,
     "start": 26,
     "end": 27,
-    "filename": "test.py",
+    "filename": "remote_code_execution.py",
     "message":
       "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "traces": [
@@ -62,7 +62,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "remote_code_execution.py",
               "line": 10,
               "start": 24,
               "end": 26
@@ -78,7 +78,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "remote_code_execution.py",
               "line": 11,
               "start": 25,
               "end": 40

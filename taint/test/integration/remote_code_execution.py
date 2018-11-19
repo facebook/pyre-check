@@ -6,6 +6,6 @@ def rce_problem():
     __eval(x)
 
 
-def subprocess_problem ():
+def subprocess_problem():
     x = __userControlled()
     subprocess.check_call(x, shell=True)
