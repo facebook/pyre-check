@@ -1325,6 +1325,13 @@ let is_generic = function
       false
 
 
+let is_iterable = function
+  | Parametric { name; _ } ->
+      String.equal (Identifier.show name) "typing.Iterable"
+  | _ ->
+      false
+
+
 let is_iterator = function
   | Parametric { name; _ } ->
       String.equal (Identifier.show name) "typing.Iterator"

@@ -1972,7 +1972,24 @@ let test_check _ =
         return f( *args)
     |}
     [];
-  ();
+  assert_type_errors
+    {|
+      def f(a: int, b: int) -> None:
+       pass
+      def g(collection: typing.Collection[str]) -> None:
+        return f( *collection)
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      class C(typing.Iterable[int]):
+        ...
+      def f(a: int, b: int) -> None:
+       pass
+      def g(c: C) -> None:
+        return f( *c)
+    |}
+    [];
 
   assert_type_errors
     {|

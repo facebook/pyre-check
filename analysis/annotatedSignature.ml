@@ -547,15 +547,19 @@ let select
                       |> mapping_value_parameter
                   | { Argument.value = { Node.value = Starred (Starred.Once expression); _ }; _ } ->
                       let sequence_parameter annotation =
-                        let sequence = Type.parametric "typing.Sequence" [Type.Object] in
-                        if Resolution.less_or_equal resolution ~left:annotation ~right:sequence then
-                          (* Try to extract first parameter. *)
-                          let _, parameters = Type.split annotation in
-                          parameters
-                          |> List.hd
-                          |> Option.value ~default:Type.Top
+                        let iterable =
+                          (* Unannotated parameters are assigned a type of Bottom for inference,
+                             in which case we should avoid joining with an iterable, as doing so
+                             would suppress errors. *)
+                          if Type.equal annotation Type.Bottom then
+                            Type.Top
+                          else
+                            Resolution.join resolution annotation (Type.iterable Type.Bottom)
+                        in
+                        if Type.is_iterable iterable then
+                          Type.single_parameter iterable
                         else
-                          annotation
+                          Type.Top
                       in
                       Resolution.resolve resolution expression
                       |> sequence_parameter
