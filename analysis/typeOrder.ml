@@ -906,12 +906,11 @@ and join ((module Handler: Handler) as order) left right =
       when List.for_all ~f:(fun element -> Type.equal element left) tail &&
            less_or_equal order ~left ~right ->
         Type.Tuple (Type.Unbounded right)
-    | (Type.Tuple _ as tuple), (Type.Parametric _ as parametric)
-    | (Type.Parametric _ as parametric), (Type.Tuple _ as tuple) ->
-        if less_or_equal order ~left:tuple ~right:parametric then
-          parametric
-        else
-          Type.Object
+    | (Type.Tuple (Type.Unbounded parameter)), (Type.Parametric _ as annotation)
+    | (Type.Tuple (Type.Unbounded parameter)), (Type.Primitive _ as annotation)
+    | (Type.Parametric _ as annotation), (Type.Tuple (Type.Unbounded parameter))
+    | (Type.Primitive _ as annotation), (Type.Tuple (Type.Unbounded parameter)) ->
+        join order (Type.parametric "tuple" [parameter]) annotation
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
         Type.Object

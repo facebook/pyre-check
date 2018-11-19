@@ -160,6 +160,7 @@ let default =
 
   insert order !"typing.Iterator";
   connect order ~predecessor:!"list" ~successor:!"typing.Iterator" ~parameters:[variable];
+  connect order ~predecessor:!"typing.Iterator" ~successor:!"typing.Generic" ~parameters:[variable];
   connect order ~predecessor:!"typing.Iterator" ~successor:Type.Top;
 
   insert order !"typing.Iterable";
@@ -167,6 +168,7 @@ let default =
     ~predecessor:!"typing.Iterator"
     ~successor:!"typing.Iterable"
     ~parameters:[variable];
+  connect order ~predecessor:!"typing.Iterable" ~successor:!"typing.Generic" ~parameters:[variable];
   connect order ~predecessor:!"typing.Iterable" ~successor:Type.Top;
 
   insert order !"tuple";
@@ -832,6 +834,12 @@ let test_join _ =
     "typing.Dict[str, typing.Any]";
 
   assert_join "typing.Union[typing.List[int], typing.Set[int]]" "typing.Sized" "typing.Sized";
+  assert_join "typing.Tuple[int, ...]" "typing.Iterable[int]" "typing.Iterable[int]";
+  assert_join "typing.Tuple[str, ...]" "typing.Iterator[str]" "typing.Iterator[str]";
+  assert_join
+    "typing.Tuple[int, ...]"
+    "typing.Iterable[str]"
+    "typing.Iterable[typing.Union[int, str]]";
 
   assert_join
     "typing.Optional[float]"
