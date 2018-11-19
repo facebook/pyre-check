@@ -46,17 +46,16 @@ let register_ignores ~configuration scheduler handles =
     | _ ->
         ()
   in
-  let register_mode ~configuration handle =
-    let mode =
-      match Ast.SharedMemory.Sources.get handle with
-      | Some source -> Source.mode source ~configuration
-      | _ -> Source.Default
-    in
-    ErrorModes.add handle mode
+  let register_local_mode handle =
+    match Ast.SharedMemory.Sources.get handle with
+    | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
+        ErrorModes.add handle local_mode
+    | _ ->
+        ()
   in
   let register handles =
     List.iter handles ~f:register_ignores_for_handle;
-    List.iter handles ~f:(register_mode ~configuration);
+    List.iter handles ~f:(register_local_mode);
   in
   Scheduler.iter scheduler ~configuration ~f:register ~inputs:handles;
   Statistics.performance ~name:"registered ignores" ~timer ()

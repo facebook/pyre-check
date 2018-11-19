@@ -4019,7 +4019,18 @@ let test_check_attributes _ =
     |}
     [];
 
-  (* Any has all attributes. *)
+  (* Any has all attributes in default mode, but not strict mode. *)
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(any: typing.Any) -> int:
+        return any.attribute
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `typing.Any` has no attribute `attribute`.";
+    ];
   assert_type_errors
     ~debug:false
     {|

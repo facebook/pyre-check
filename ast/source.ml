@@ -197,20 +197,20 @@ type t = {
 [@@deriving compare, eq, show]
 
 
-let mode source ~configuration =
-  match configuration, source with
+let mode ~configuration ~local_mode =
+  match configuration, local_mode with
   | { Configuration.Analysis.infer = true; _ }, _ ->
       Infer
 
   | { Configuration.Analysis.strict = true; _ }, _
-  | _, { metadata = { Metadata.local_mode = Strict; _ }; _ } ->
+  | _, Some Strict ->
       Strict
 
   | { Configuration.Analysis.declare = true; _ }, _
-  | _, { metadata = { Metadata.local_mode = Declare; _ }; _ } ->
+  | _, Some Declare ->
       Declare
 
-  | _, { metadata = { Metadata.local_mode = DefaultButDontCheck suppressed_codes; _ }; _ } ->
+  | _, Some (DefaultButDontCheck suppressed_codes) ->
       DefaultButDontCheck suppressed_codes
 
   | _ ->

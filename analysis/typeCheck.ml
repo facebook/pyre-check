@@ -1430,8 +1430,8 @@ module State = struct
                 is_implicit;
               })
             ~define
-          in
-          add_error ~state error
+        in
+        add_error ~state error
       else if Type.equal return_annotation Type.Top ||
               Type.equal return_annotation Type.Object then
         let error =
@@ -2563,10 +2563,10 @@ let check
           else
             let mode =
               let (module Handler: Environment.Handler) = environment in
-              Handler.mode
+              Handler.local_mode
                 (Error.path error
                  |> File.Handle.create)
-              |> Option.value ~default:Source.Default
+              |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
             in
             not (Error.suppress ~mode error)
         in

@@ -437,7 +437,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       (* If in debug mode, make sure the TypeOrder is still consistent. *)
       TypeOrder.check_integrity (module TypeOrderHandler)
 
-  let mode path = ErrorModes.get path
+  let local_mode path = ErrorModes.get path
 end
 
 

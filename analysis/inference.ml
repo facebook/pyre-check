@@ -398,8 +398,8 @@ let infer
               | Some mode ->
                   mode
               | None ->
-                  Handler.mode (Error.path error |> File.Handle.create)
-                  |> Option.value ~default:Source.Default
+                  Handler.local_mode (Error.path error |> File.Handle.create)
+                  |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
             in
             not (Error.suppress ~mode error)
           in
