@@ -599,6 +599,7 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
+    "typing.Callable", callable ~annotation:Object ();
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;

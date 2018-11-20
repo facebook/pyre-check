@@ -6644,7 +6644,19 @@ let test_check_callables _ =
     [
       "Incompatible parameter type [6]: Expected `CallMe` but got " ^
       "`typing.Callable[[int], str]`."
-    ]
+    ];
+
+  (* The annotation for callable gets expanded automatically. *)
+  assert_type_errors
+    {|
+      def i2i(x: int) -> int:
+        return 0
+      def hof(c: typing.Callable) -> None:
+        return
+      hof(i2i)
+      hof(1)
+    |}
+    ["Incompatible parameter type [6]: Expected `typing.Callable[..., unknown]` but got `int`."]
 
 
 let test_check_assert_functions _ =
