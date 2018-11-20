@@ -451,7 +451,22 @@ let lambda ~parameters ~return_annotation =
         Defined
           (List.map
              ~f:(fun (name, parameter) ->
-                 Parameter.Named { Parameter.name; annotation = parameter; default = false })
+                 let name = Access.show name in
+                 if String.is_prefix ~prefix:"**" name then
+                   let name =
+                     String.drop_prefix name 2
+                     |> Access.create
+                   in
+                   Parameter.Keywords { Parameter.name; annotation = parameter; default = false }
+                 else if String.is_prefix ~prefix:"*" name then
+                   let name =
+                     String.drop_prefix name 1
+                     |> Access.create
+                   in
+                   Parameter.Variable { Parameter.name; annotation = parameter; default = false }
+                 else
+                   let name = Access.create name in
+                   Parameter.Named { Parameter.name; annotation = parameter; default = false })
              parameters);
     };
     overloads = [];

@@ -1123,6 +1123,28 @@ let test_parameter_name_compatibility _ =
        (parameter "other"))
 
 
+let test_lambda _ =
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Named(x, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "x", Type.string]
+          ~return_annotation:Type.integer));
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "**kwargs", Type.string]
+          ~return_annotation:Type.integer));
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Variable(args, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "*args", Type.string]
+          ~return_annotation:Type.integer))
+
+
+
 let () =
   "type">:::[
     "create">::test_create;
@@ -1146,6 +1168,7 @@ let () =
     "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
     "variables">::test_variables;
+    "lambda">::test_lambda;
   ]
   |> Test.run;
   "callable">:::[
