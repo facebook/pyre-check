@@ -7094,7 +7094,25 @@ let test_check_typed_dictionaries _ =
             q = b
         return q
     |}
-    []
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      from mypy_extensions import TypedDict
+      Movie = TypedDict('Movie', {'name': str, 'year': int})
+      Cat = TypedDict('Cat', {'name': str, 'breed': str})
+
+      def foo(x: int, a: Movie, b: Cat) -> int:
+          if x == 7:
+              q = a
+          else:
+              q = b
+          return q["year"]
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "TypedDict accessed with a missing key [27]: TypedDict has no key `year`.";
+    ]
 
 
 let test_check_getattr _ =

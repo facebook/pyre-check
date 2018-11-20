@@ -505,12 +505,15 @@ let messages ~detailed:_ ~define location kind =
           acceptable_keys
       ]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
-      [
-        Format.asprintf
-          "TypedDict `%a` has no key `%s`."
-          Identifier.pp typed_dictionary_name
-          missing_key
-      ]
+      if Identifier.show typed_dictionary_name = "$anonymous" then
+        [ Format.asprintf "TypedDict has no key `%s`." missing_key ]
+      else
+        [
+          Format.asprintf
+            "TypedDict `%a` has no key `%s`."
+            Identifier.pp typed_dictionary_name
+            missing_key
+        ]
   | Unpack { expected_count; unpack_problem } ->
       begin
         match unpack_problem with
