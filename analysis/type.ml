@@ -1859,17 +1859,19 @@ module Callable = struct
       | Named { name = left; _ }, Named { name = right; _ }
       | Variable { name = left; _ }, Variable { name = right; _ }
       | Keywords { name = left; _ }, Keywords { name = right; _ } ->
-          if String.is_prefix ~prefix:"$" (Access.show left) ||
-             String.is_prefix ~prefix:"$" (Access.show right) then
+          let left = Access.show_sanitized left in
+          let right = Access.show_sanitized right in
+          if String.is_prefix ~prefix:"$" left ||
+             String.is_prefix ~prefix:"$" right then
             true
           else
             let left =
-              Access.show left
+              left
               |> Identifier.create
               |> Identifier.remove_leading_underscores
             in
             let right =
-              Access.show right
+              right
               |> Identifier.create
               |> Identifier.remove_leading_underscores
             in

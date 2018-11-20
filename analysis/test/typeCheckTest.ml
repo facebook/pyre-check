@@ -6656,7 +6656,29 @@ let test_check_callables _ =
       hof(i2i)
       hof(1)
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Callable[..., unknown]` but got `int`."]
+    ["Incompatible parameter type [6]: Expected `typing.Callable[..., unknown]` but got `int`."];
+
+  (* Lambdas. *)
+  assert_type_errors
+    {|
+      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+        return 0
+      takes_callable(lambda y: 0)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Named(x, typing.Any)], int]` but"
+      ^ " got `typing.Callable[[Named(y, typing.Any)], int]`.";
+    ];
+  assert_type_errors
+    {|
+      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+        return 0
+      takes_callable(lambda y: "")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[Named(x, typing.Any)], int]` but"
+      ^ " got `typing.Callable[[Named(y, typing.Any)], str]`.";
+    ]
 
 
 let test_check_assert_functions _ =
