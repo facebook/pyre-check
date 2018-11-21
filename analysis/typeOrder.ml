@@ -561,20 +561,36 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
         | Defined left, Defined right ->
             begin
               try
-                let parameter_less_or_equal left_parameter right_parameter =
-                  match left_parameter, right_parameter with
-                  | Parameter.Named left, Parameter.Named right
-                  | Parameter.Keywords left, Parameter.Keywords right
-                  | Parameter.Variable left, Parameter.Variable right ->
-                      Parameter.names_compatible left_parameter right_parameter &&
-                      less_or_equal
-                        order
-                        ~left:right.Parameter.annotation
-                        ~right:left.Parameter.annotation
+                let rec parameters_less_or_equal left right =
+                  match left, right with
+                  | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
+                    :: left_parameters,
+                    Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
+                    :: right_parameters
+                  | Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
+                    :: left_parameters,
+                    Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
+                    :: right_parameters
+                  | Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
+                    :: left_parameters,
+                    Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
+                    :: right_parameters ->
+                      Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) &&
+                      less_or_equal order ~left:right_annotation ~right:left_annotation &&
+                      parameters_less_or_equal left_parameters right_parameters
+                  | left :: left_parameters, [] ->
+                      if Parameter.default left then
+                        parameters_less_or_equal left_parameters []
+                      else
+                        false
+
+                  | [], [] ->
+                      true
+
                   | _ ->
                       false
                 in
-                List.for_all2_exn ~f:parameter_less_or_equal left right
+                parameters_less_or_equal left right
               with _ ->
                 false
             end

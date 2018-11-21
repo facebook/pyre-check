@@ -1855,6 +1855,14 @@ module Callable = struct
       | Keywords { annotation; _ } ->
           annotation
 
+
+    let default = function
+      | Named { default; _ }
+      | Variable { default; _ }
+      | Keywords { default; _ } ->
+          default
+
+
     let names_compatible left right =
       match left, right with
       | Named { name = left; _ }, Named { name = right; _ }

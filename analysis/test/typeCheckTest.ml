@@ -6678,7 +6678,17 @@ let test_check_callables _ =
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[[Named(x, typing.Any)], int]` but"
       ^ " got `typing.Callable[[Named(y, typing.Any)], str]`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      def exec(f: typing.Callable[[], int]) -> int:
+        return f()
+      def with_default(x: int = 0) -> int:
+        return x
+      exec(with_default)
+    |}
+    []
 
 
 let test_check_assert_functions _ =
