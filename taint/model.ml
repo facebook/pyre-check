@@ -144,12 +144,12 @@ let create ~resolution ?(verify = true) ~model_source () =
       match verify, annotation with
       | true,
         (Type.Callable {
-          Type.Callable.implementation = {
-            Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
+            Type.Callable.implementation = {
+              Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
+              _;
+            };
             _;
-          };
-          _;
-        } as callable) ->
+          } as callable) ->
           if List.length parameters <> List.length implementation_parameters then
             Format.asprintf
               "Model signature parameters for `%a` do not match implementation `%a`"

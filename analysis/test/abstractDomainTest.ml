@@ -850,7 +850,7 @@ module PairStringString = struct
       | Left -> "left"
       | Right -> "right"
 
-     let slot_domain (type a) (slot : a slot) =
+    let slot_domain (type a) (slot : a slot) =
       match slot with
       | Left -> (module StringSet : AbstractDomain.S with type t = a)
       | Right -> (module StringSet : AbstractDomain.S with type t = a)

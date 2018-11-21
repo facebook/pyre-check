@@ -157,7 +157,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
-            let obscure_taint = BackwardState.collapse call_taint |> BackwardState.create_leaf in
+          let obscure_taint = BackwardState.collapse call_taint |> BackwardState.create_leaf in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
       | call_targets ->
           List.map call_targets ~f:analyze_call_target
