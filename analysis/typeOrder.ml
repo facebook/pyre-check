@@ -1020,7 +1020,9 @@ and join ((module Handler: Handler) as order) left right =
                 |> List.fold ~f:(join order) ~init:Type.Bottom
           end
 
-    | Type.Parametric _, Type.Parametric _ ->
+    | Type.Parametric _, Type.Parametric _
+    | Type.Parametric _, Type.Primitive _
+    | Type.Primitive _, Type.Parametric _ ->
         if less_or_equal order ~left ~right then
           right
         else if less_or_equal order ~left:right ~right:left then
@@ -1070,6 +1072,10 @@ and join ((module Handler: Handler) as order) left right =
               | Some left, Some right, Some variables
                 when List.length left = List.length right &&
                      List.length left = List.length variables ->
+                  let join_parameters left right variable =
+                    join_parameters left right variable
+                    |> Type.instantiate_variables ~replacement:Type.Top
+                  in
                   Some (List.map3_exn ~f:join_parameters left right variables)
               | _ ->
                   None
@@ -1078,6 +1084,8 @@ and join ((module Handler: Handler) as order) left right =
               match target, parameters with
               | Type.Primitive name, Some parameters ->
                   Type.Parametric { name; parameters }
+              | Type.Primitive _, None ->
+                  target
               | _ ->
                   Type.Object
             end
@@ -1117,25 +1125,6 @@ and join ((module Handler: Handler) as order) left right =
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
         Type.Object
-
-    | Type.Parametric parametric, ((Type.Primitive _) as primitive)
-    | ((Type.Primitive _) as primitive), Type.Parametric parametric ->
-        let instantiated_parametric =
-          instantiate_successors_parameters
-            order
-            ~source:primitive
-            ~target:(Type.split (Type.Parametric parametric) |> fst)
-          >>| (fun instantiated ->
-              Type.Parametric { parametric with parameters = instantiated })
-          |> Option.value ~default:(Type.Parametric parametric)
-          |> Type.instantiate_variables
-        in
-        if less_or_equal order ~left:primitive ~right:instantiated_parametric then
-          instantiated_parametric
-        else if less_or_equal order ~left:instantiated_parametric ~right:primitive then
-          primitive
-        else
-          Type.Object
 
     | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
       Type.Callable { Callable.kind = Callable.Named right; _ }

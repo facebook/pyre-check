@@ -197,7 +197,7 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
-val instantiate_variables: t -> t
+val instantiate_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t

@@ -1708,12 +1708,12 @@ let instantiate ?(widen = false) annotation ~constraints =
   instantiate annotation
 
 
-let instantiate_variables annotation =
+let instantiate_variables ~replacement annotation =
   let constraints =
     variables annotation
     |> List.fold
       ~init:Map.empty
-      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:Bottom)
+      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
   in
   instantiate annotation ~constraints:(Map.find constraints)
 
