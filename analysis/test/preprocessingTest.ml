@@ -395,18 +395,54 @@ let test_qualify _ =
     |};
 
 
-  (* Qualify strings. *)
+  (* Only qualify strings for annotations and potential type aliases. *)
   assert_qualify
     {|
       from typing import List
       T = 'List'
       def foo() -> 'List[int]': ...
+      a = ['List']
+      d = {'List': 'List'}
+      f = MayBeType['List']
     |}
     {|
       from typing import List
       $local_qualifier$T = 'typing.List'
       def qualifier.foo() -> 'typing.List[int]': ...
+      $local_qualifier$a = ['List']
+      $local_qualifier$d = {'List': 'List'}
+      $local_qualifier$f = MayBeType['typing.List']
     |};
+  assert_qualify
+    {|
+      from typing import List
+      def f():
+        T = 'List'
+        def foo() -> 'List[int]': ...
+        a = ['List']
+        d = {'List': 'List'}
+        f = MayBeType['List']
+    |}
+    {|
+      from typing import List
+      def qualifier.f():
+        $local_qualifier?f$T = 'List'
+        def qualifier.f.foo() -> 'typing.List[int]': ...
+        $local_qualifier?f$a = ['List']
+        $local_qualifier?f$d = {'List': 'List'}
+        $local_qualifier?f$f = MayBeType['List']
+    |};
+  assert_qualify
+  {|
+    def foo(arg):
+      x = 'arg'
+      return {'arg': x}
+  |}
+  {|
+    def qualifier.foo($parameter$arg):
+      $local_qualifier?foo$x = 'arg'
+      return {'arg': $local_qualifier?foo$x}
+  |};
 
   (* Qualify functions. *)
   assert_qualify
