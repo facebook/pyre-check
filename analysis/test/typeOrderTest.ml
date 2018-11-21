@@ -218,6 +218,12 @@ let variance_order =
    V  \--  B[int, int]    >  B[float, int]  ----/   V
    |            ^                   ^               |
    \----   B[int, float]  >  B[float, float]  ------/
+
+
+   Additionally, classes C and D are defined as follows:
+
+   class C(B[int, int])
+   class D(B[float, float])
 *)
 let multiplane_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -244,6 +250,8 @@ let multiplane_variance_order =
   add_simple variable_t_contra;
   insert order !"A";
   insert order !"B";
+  insert order !"C";
+  insert order !"D";
   connect
     order
     ~predecessor:!"A"
@@ -259,6 +267,16 @@ let multiplane_variance_order =
     ~predecessor:!"B"
     ~successor:!"typing.Generic"
     ~parameters:[variable_t_contra; variable_t_co];
+  connect
+    order
+    ~predecessor:!"C"
+    ~successor:!"B"
+    ~parameters:[Type.integer; Type.integer];
+  connect
+    order
+    ~predecessor:!"D"
+    ~successor:!"B"
+    ~parameters:[Type.float; Type.float];
   order
 
 
@@ -281,6 +299,12 @@ let multiplane_variance_order =
    V  \--  B[int, int]    <  B[float, int]  ----/   V
    |            V                   V               |
    \----   B[int, float]  <  B[float, float]  ------/
+
+
+   Additionally, classes C and D are defined as follows:
+
+   class C(B[int, int])
+   class D(B[float, float])
 *)
 let parallel_planes_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -307,6 +331,8 @@ let parallel_planes_variance_order =
   add_simple variable_t_contra;
   insert order !"A";
   insert order !"B";
+  insert order !"C";
+  insert order !"D";
   connect
     order
     ~predecessor:!"A"
@@ -322,6 +348,16 @@ let parallel_planes_variance_order =
     ~predecessor:!"B"
     ~successor:!"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
+  connect
+    order
+    ~predecessor:!"C"
+    ~successor:!"B"
+    ~parameters:[Type.integer; Type.integer];
+  connect
+    order
+    ~predecessor:!"D"
+    ~successor:!"B"
+    ~parameters:[Type.float; Type.float];
   order
 
 
@@ -1132,6 +1168,42 @@ let test_less_or_equal_variance _ =
     ~order:multiplane_variance_order
     ~left:(Type.parametric "B" [Type.float; Type.integer])
     ~right:(Type.parametric "A" [Type.float; Type.integer]);
+  assert_strict_less
+    ~order:multiplane_variance_order
+    ~left:(Type.parametric "C" [])
+    ~right:(Type.parametric "A" [Type.float; Type.float]);
+  assert_strict_less
+    ~order:multiplane_variance_order
+    ~left:!"C"
+    ~right:(Type.parametric "A" [Type.float; Type.float]);
+  assert_strict_less
+    ~order:multiplane_variance_order
+    ~left:(Type.parametric "D" [])
+    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+  assert_strict_less
+    ~order:multiplane_variance_order
+    ~left:!"D"
+    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+  assert_false
+    (less_or_equal
+       parallel_planes_variance_order
+       ~left:(Type.parametric "C" [])
+       ~right:(Type.parametric "A" [Type.float; Type.float]));
+  assert_false
+    (less_or_equal
+       parallel_planes_variance_order
+       ~left:!"C"
+       ~right:(Type.parametric "A" [Type.float; Type.float]));
+  assert_false
+    (less_or_equal
+       parallel_planes_variance_order
+       ~left:(Type.parametric "D" [])
+       ~right:(Type.parametric "A" [Type.integer; Type.integer]));
+  assert_false
+    (less_or_equal
+       parallel_planes_variance_order
+       ~left:!"D"
+       ~right:(Type.parametric "A" [Type.integer; Type.integer]));
   ()
 
 
