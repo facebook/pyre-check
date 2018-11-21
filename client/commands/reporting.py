@@ -52,7 +52,7 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        current_project_directory = self._original_directory
+        current_project_directory = self._analysis_directory.get_root()
         if self._local_configuration:
             current_project_directory = self._local_configuration
         directories_to_analyze = {

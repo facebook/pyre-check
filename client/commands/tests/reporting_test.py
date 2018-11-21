@@ -100,7 +100,7 @@ class ReportingTest(unittest.TestCase):
     def test_get_directories_to_analyze(self, run) -> None:
         arguments = mock_arguments()
         arguments.current_directory = "base"
-        arguments.original_directory = "base"
+        arguments.analysis_directory = "base"
         configuration = mock_configuration()
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("base")
@@ -136,3 +136,11 @@ class ReportingTest(unittest.TestCase):
             arguments, configuration, AnalysisDirectory("base")
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a"})
+
+        arguments.local_configuration_directory = None
+        arguments.local_configuration = None
+        arguments.original_directory = "base/subdirectory"
+        handler = commands.Reporting(
+            arguments, configuration, AnalysisDirectory("base")
+        )
+        self.assertEqual(handler._get_directories_to_analyze(), {"base"})
