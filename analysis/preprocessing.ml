@@ -379,7 +379,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | { Node.value = Access (Access.Identifier _ :: Access.Identifier getitem :: _); _ }
-              when Identifier.show getitem = "__getitem__" ->
+            when Identifier.show getitem = "__getitem__" ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ ->
               qualify_expression ~qualify_strings:false value ~scope
@@ -538,7 +538,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             List.map
               decorators
               ~f:(qualify_expression
-                   ~qualify_strings:false
+                    ~qualify_strings:false
                     ~scope:{ scope with use_forward_references = Option.is_none parent });
           return_annotation = return_annotation >>| qualify_expression ~qualify_strings:true ~scope;
           parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;

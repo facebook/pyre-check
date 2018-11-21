@@ -433,16 +433,16 @@ let test_qualify _ =
         $local_qualifier?f$f = MayBeType['List']
     |};
   assert_qualify
-  {|
-    def foo(arg):
-      x = 'arg'
-      return {'arg': x}
-  |}
-  {|
-    def qualifier.foo($parameter$arg):
-      $local_qualifier?foo$x = 'arg'
-      return {'arg': $local_qualifier?foo$x}
-  |};
+    {|
+      def foo(arg):
+        x = 'arg'
+        return {'arg': x}
+    |}
+    {|
+      def qualifier.foo($parameter$arg):
+        $local_qualifier?foo$x = 'arg'
+        return {'arg': $local_qualifier?foo$x}
+    |};
 
   (* Qualify functions. *)
   assert_qualify

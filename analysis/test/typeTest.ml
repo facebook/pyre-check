@@ -867,15 +867,15 @@ let test_mismatch_with_any _ =
     (Type.mismatch_with_any
        (parse_callable "typing.Callable[[typing.Any], int]")
        (parse_callable "typing.Callable[[str], int]"));
-   assert_true
+  assert_true
     (Type.mismatch_with_any
        (parse_callable "typing.Callable[[int], typing.Any]")
        (parse_callable "typing.Callable[[int], int]"));
-   assert_true
+  assert_true
     (Type.mismatch_with_any
        (parse_callable "typing.Callable[[int], typing.Any]")
        (parse_callable "typing.Callable[[str], int]"));
-   assert_false
+  assert_false
     (Type.mismatch_with_any
        (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
        (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
