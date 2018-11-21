@@ -1071,7 +1071,7 @@ module Builder = struct
           {
             Argument.name = None;
             value =
-              Type.primitive "dict"
+              Type.primitive "typing.Mapping"
               |> Type.expression
           };
         ],

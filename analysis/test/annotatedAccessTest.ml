@@ -216,8 +216,8 @@ let test_fold _ =
   let get_item = {
     annotation =
       parse_annotation (
-        "typing.Callable('dict.__getitem__')" ^
-        "[[Named(self, $unknown),  Named(k, _T)], _S]");
+        "typing.Callable('typing.Mapping.__getitem__')" ^
+        "[[Named(self, $unknown),  Named(k, typing._KT)], typing._VT_co]");
     element = Attribute { name = "__getitem__"; defined = true } ;
   } in
 
