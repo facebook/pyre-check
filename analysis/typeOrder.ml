@@ -506,26 +506,13 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             less_or_equal order ~left ~right &&
             less_or_equal order ~left:right ~right:left
       in
-      let variables_for_type ~generic_index annotation =
-        if Type.is_meta annotation then
-          (* Despite what typeshed says, typing.Type is covariant:
-             https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-          Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-        else
-          let primitive = Type.split annotation |> fst in
-          generic_index
-          >>= fun generic_index ->
-          Handler.find (Handler.edges ()) (index_of order primitive)
-          >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-          >>| fun { Target.parameters; _ } -> parameters
-      in
 
       let left_primitive, left_parameters = Type.split left in
       let right_primitive, right_parameters = Type.split right in
       raise_if_untracked order left_primitive;
       raise_if_untracked order right_primitive;
       let generic_index = Handler.find (Handler.indices ()) Type.generic in
-      let left_variables = variables_for_type ~generic_index left in
+      let left_variables = variables_for_type order left in
 
       if Type.equal left_primitive right_primitive then
         (* Left and right variables coincide, a simple parameter comparison is enough. *)
@@ -1055,39 +1042,68 @@ and join ((module Handler: Handler) as order) left right =
           end
 
     | Type.Parametric _, Type.Parametric _ ->
-        let left_primitive, _ = Type.split left in
-        let right_primitive, _ = Type.split right in
-        let target =
-          try
-            if less_or_equal ~left:left_primitive ~right:right_primitive order then
-              right_primitive
-            else if less_or_equal ~left:right_primitive ~right:left_primitive order then
-              left_primitive
-            else
-              join order left_primitive right_primitive
-          with Untracked _ ->
-            Type.Object
-        in
-        if Handler.contains (Handler.indices ()) target then
-          let left_parameters = instantiate_parameters order ~source:left ~target in
-          let right_parameters = instantiate_parameters order ~source:right ~target in
-          let parameters =
-            match left_parameters, right_parameters with
-            | Some left, Some right when List.length left = List.length right ->
-                Some (List.map2_exn ~f:(join order) left right)
-            | _ ->
-                None
-          in
-          begin
-            match target, parameters with
-            | Type.Primitive name, Some parameters ->
-                Type.Parametric { name; parameters }
-            | _ ->
-                Type.Object
-          end
-
+        if less_or_equal order ~left ~right then
+          right
+        else if less_or_equal order ~left:right ~right:left then
+          left
         else
-          Type.Object
+          let left_primitive, _ = Type.split left in
+          let right_primitive, _ = Type.split right in
+          let target =
+            try
+              if less_or_equal ~left:left_primitive ~right:right_primitive order then
+                right_primitive
+              else if less_or_equal ~left:right_primitive ~right:left_primitive order then
+                left_primitive
+              else
+                join order left_primitive right_primitive
+            with Untracked _ ->
+              Type.Object
+          in
+          if Handler.contains (Handler.indices ()) target then
+            let left_parameters = instantiate_parameters order ~source:left ~target in
+            let right_parameters = instantiate_parameters order ~source:right ~target in
+            let variables = variables_for_type order target in
+            let parameters =
+              let join_parameters left right variable =
+                match left, right, variable with
+                | Type.Bottom, other, _
+                | other, Type.Bottom, _ ->
+                    other
+                | Type.Object, _, _
+                | _, Type.Object, _ ->
+                    Type.Object
+                | _, _, Type.Variable { variance = Covariant; _ } ->
+                    join order left right
+                | _, _, Type.Variable { variance = Contravariant; _ } ->
+                    meet order left right
+                | _ ->
+                    (* If the parent type is invariant in this variable, then only exact type
+                       equality is allowed. We fallback to Type.Object if type equality fails
+                       to help display meaningful error messages. *)
+                    if less_or_equal order ~left ~right &&
+                       less_or_equal order ~left:right ~right:left then
+                      left
+                    else
+                      Type.Object
+              in
+              match left_parameters, right_parameters, variables with
+              | Some left, Some right, Some variables
+                when List.length left = List.length right &&
+                     List.length left = List.length variables ->
+                  Some (List.map3_exn ~f:join_parameters left right variables)
+              | _ ->
+                  None
+            in
+            begin
+              match target, parameters with
+              | Type.Primitive name, Some parameters ->
+                  Type.Parametric { name; parameters }
+              | _ ->
+                  Type.Object
+            end
+          else
+            Type.Object
 
     (* Special case joins of optional collections with their uninstantated counterparts. *)
     | Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
@@ -1368,6 +1384,26 @@ and meet order left right =
         | None ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
             Type.Bottom
+
+
+and variables_for_type ((module Handler: Handler) as order) annotation =
+  if Type.is_meta annotation then
+    (* Despite what typeshed says, typing.Type is covariant:
+       https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
+    Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+  else
+    match Type.split annotation with
+    | left, _ when String.equal (Type.show left) "typing.Callable" ->
+        (* This is not the "real" typing.Callable. We are just
+           proxying to the Callable instance in the type order here. *)
+        Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+    | _ ->
+        let primitive = Type.split annotation |> fst in
+        Handler.find (Handler.indices ()) Type.generic
+        >>= fun generic_index ->
+        Handler.find (Handler.edges ()) (index_of order primitive)
+        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+        >>| fun { Target.parameters; _ } -> parameters
 
 
 (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
