@@ -605,6 +605,7 @@ let primitive_substitution_map =
     "$deleted", Deleted;
     "$unknown", Top;
     "None", none;
+    "function", callable ~annotation:Object ();
     "dict", parametric_anys "dict" 2;
     "list", list Object;
     "object", Object;

@@ -304,6 +304,10 @@ let test_create _ =
         implicit = Type.Callable.Function;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
+  assert_create "function" (Type.callable ~annotation:Type.Object ());
+  assert_create
+    "typing.Callable[..., function]"
+    (Type.callable ~annotation:(Type.callable ~annotation:Type.Object ()) ());
 
   assert_create
     "mypy_extensions.TypedDict[('Movie', ('year', int), ('name', str))]"
