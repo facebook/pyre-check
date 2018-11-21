@@ -112,7 +112,7 @@ val widen
   -> iteration: int
   -> Type.t
 
-val instantiate_parameters
+val instantiate_successors_parameters
   :  (module Handler)
   -> source: Type.t
   -> target: Type.t

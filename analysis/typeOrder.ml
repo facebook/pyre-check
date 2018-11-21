@@ -588,27 +588,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
           (* Mapping from a variable in `left` to the target parameter (via subclass
              substitutions) in `right`. *)
           let variable_substitutions =
-            let rec diff_variables substitutions left right =
-              match left, right with
-              | Type.Optional left, Type.Optional right ->
-                  diff_variables substitutions left right
-              | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
-                  diff_variables_list substitutions left right
-              | Tuple (Bounded left), Tuple (Bounded right) ->
-                  diff_variables_list substitutions left right
-              | Tuple (Unbounded left), Tuple (Unbounded right) ->
-                  diff_variables substitutions left right
-              | Union left, Union right ->
-                  diff_variables_list substitutions left right
-              | Variable _, _ ->
-                  Map.set substitutions ~key:left ~data:right
-              | _ ->
-                  substitutions
-            and diff_variables_list substitutions left right =
-              match List.fold2 left right ~init:substitutions ~f:diff_variables with
-              | Ok substitutions -> substitutions
-              | Unequal_lengths -> substitutions
-            in
             match
               List.fold2 right_propagated right_parameters ~init:Type.Map.empty ~f:diff_variables
             with
@@ -1061,8 +1040,8 @@ and join ((module Handler: Handler) as order) left right =
               Type.Object
           in
           if Handler.contains (Handler.indices ()) target then
-            let left_parameters = instantiate_parameters order ~source:left ~target in
-            let right_parameters = instantiate_parameters order ~source:right ~target in
+            let left_parameters = instantiate_successors_parameters order ~source:left ~target in
+            let right_parameters = instantiate_successors_parameters order ~source:right ~target in
             let variables = variables_for_type order target in
             let parameters =
               let join_parameters left right variable =
@@ -1142,7 +1121,8 @@ and join ((module Handler: Handler) as order) left right =
     | Type.Parametric parametric, ((Type.Primitive _) as primitive)
     | ((Type.Primitive _) as primitive), Type.Parametric parametric ->
         let instantiated_parametric =
-          instantiate_parameters order
+          instantiate_successors_parameters
+            order
             ~source:primitive
             ~target:(Type.split (Type.Parametric parametric) |> fst)
           >>| (fun instantiated ->
@@ -1235,7 +1215,7 @@ and join ((module Handler: Handler) as order) left right =
             Type.Object
 
 
-and meet order left right =
+and meet ((module Handler: Handler) as order) left right =
   if Type.equal left right then
     left
   else
@@ -1283,23 +1263,64 @@ and meet order left right =
           |> List.fold ~f:(meet order) ~init:Type.Top
 
     | Type.Parametric _, Type.Parametric _ ->
-        let left_primitive, left_parameters = Type.split left in
-        let right_primitive, right_parameters = Type.split right in
-        let primitive = meet order left_primitive right_primitive in
-        let parameters =
-          (* TODO(T22785171): take type variables into account. *)
-          if List.length left_parameters = List.length right_parameters then
-            Some (List.map2_exn ~f:(meet order) left_parameters right_parameters)
+        if less_or_equal order ~left ~right then
+          left
+        else if less_or_equal order ~left:right ~right:left then
+          right
+        else
+          let left_primitive, _ = Type.split left in
+          let right_primitive, _ = Type.split right in
+          let target = meet order left_primitive right_primitive in
+          if Handler.contains (Handler.indices ()) target then
+            let left_parameters = instantiate_predecessors_parameters order ~source:left ~target in
+            let right_parameters =
+              instantiate_predecessors_parameters
+                order
+                ~source:right
+                ~target
+            in
+            let variables = variables_for_type order target in
+
+            let parameters =
+              let meet_parameters left right variable =
+                match left, right, variable with
+                | Type.Object, other, _
+                | other, Type.Object, _ when not (Type.is_unknown other) ->
+                    other
+                | Type.Bottom, _, _
+                | _, Type.Bottom, _ ->
+                    Type.Bottom
+                | _, _, Type.Variable { variance = Covariant; _ } ->
+                    meet order left right
+                | _, _, Type.Variable { variance = Contravariant; _ } ->
+                    join order left right
+                | _ ->
+                    (* If the parent type is invariant in this variable, then only exact type
+                       equality is allowed. We fallback to Type.Bottom if type equality fails
+                       to help display meaningful error messages. *)
+                    if less_or_equal order ~left ~right &&
+                       less_or_equal order ~left:right ~right:left then
+                      left
+                    else
+                      Type.Bottom
+              in
+              match left_parameters, right_parameters, variables with
+              | Some left, Some right, Some variables
+                when List.length left = List.length right &&
+                     List.length left = List.length variables ->
+                  Some (List.map3_exn ~f:meet_parameters left right variables)
+              | _ ->
+                  None
+            in
+            begin
+              match target, parameters with
+              | Type.Primitive name, Some parameters ->
+                  Type.Parametric { name; parameters }
+              | _ ->
+                  Type.Bottom
+            end
           else
-            None
-        in
-        begin
-          match primitive, parameters with
-          | Type.Primitive name, Some parameters ->
-              Type.Parametric { name; parameters }
-          | _ ->
-              Type.Bottom
-        end
+            Type.Bottom
 
     (* A <= B -> glb(A, Optional[B]) = A. *)
     | other, Type.Optional parameter
@@ -1441,7 +1462,55 @@ and get_instantiated_successors ~generic_index ~parameters successors =
   |> Option.value ~default:successors
 
 
-and instantiate_parameters
+and get_instantiated_predecessors
+    (module Handler: Handler)
+    ~generic_index
+    ~parameters
+    predecessors =
+  let instantiate { Target.target; parameters = predecessor_variables } =
+    let generic_parameters =
+      let generic_parameters { Target.target; parameters } =
+        if Some target = generic_index then
+          Some parameters
+        else
+          None
+      in
+      Handler.find (Handler.edges ()) target
+      >>= List.find_map ~f:generic_parameters
+      |> Option.value ~default:[]
+    in
+
+    (* Mappings from the generic variables, as they appear in the predecessor, to the
+       instantiated parameter in the current annotation. For example, given:
+
+       Derived(Base[T1, int, T2], Generic[ ...irrelevant... ])
+
+       and an instantiated: Base[str, int, float]
+       This mapping would include: { T1 => str; T2 => float }
+    *)
+    let substitutions =
+      match
+        List.fold2 predecessor_variables parameters ~init:Type.Map.empty ~f:diff_variables
+      with
+      | Ok result -> result
+      | Unequal_lengths -> Type.Map.empty
+    in
+
+    let propagated =
+      let replace parameter =
+        Map.find substitutions parameter
+        (* Use Bottom if we could not determine the value of the generic because the
+           predecessor did not propagate it to the base class. *)
+        |> Option.value ~default:Type.Bottom
+      in
+      List.map generic_parameters ~f:replace
+    in
+    { Target.target; parameters = propagated }
+  in
+  List.map predecessors ~f:instantiate
+
+
+and instantiate_successors_parameters
     ((module Handler: Handler) as order)
     ~source
     ~target =
@@ -1473,6 +1542,64 @@ and instantiate_parameters
         None
   in
   iterate worklist
+
+
+and instantiate_predecessors_parameters
+    ((module Handler: Handler) as order)
+    ~source
+    ~target =
+  let primitive, parameters = Type.split source in
+
+  raise_if_untracked order primitive;
+  raise_if_untracked order target;
+
+  let generic_index = Handler.find (Handler.indices ()) Type.generic in
+
+  let worklist = Queue.create () in
+  Queue.enqueue
+    worklist
+    { Target.target = index_of order primitive; parameters };
+  let rec iterate worklist =
+    match Queue.dequeue worklist with
+    | Some { Target.target = target_index; parameters } ->
+        if target_index = index_of order target then
+          Some parameters
+        else
+          begin
+            Handler.find (Handler.backedges ()) target_index
+            >>| get_instantiated_predecessors order ~generic_index ~parameters
+            >>| List.iter ~f:(Queue.enqueue worklist)
+            |> ignore;
+            iterate worklist
+          end
+    | None ->
+        None
+  in
+  iterate worklist
+
+
+and diff_variables substitutions left right =
+  match left, right with
+  | Type.Optional left, Type.Optional right ->
+      diff_variables substitutions left right
+  | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
+      diff_variables_list substitutions left right
+  | Tuple (Bounded left), Tuple (Bounded right) ->
+      diff_variables_list substitutions left right
+  | Tuple (Unbounded left), Tuple (Unbounded right) ->
+      diff_variables substitutions left right
+  | Union left, Union right ->
+      diff_variables_list substitutions left right
+  | Variable _, _ ->
+      Map.set substitutions ~key:left ~data:right
+  | _ ->
+      substitutions
+
+
+and diff_variables_list substitutions left right =
+  match List.fold2 left right ~init:substitutions ~f:diff_variables with
+  | Ok substitutions -> substitutions
+  | Unequal_lengths -> substitutions
 
 
 let widen order ~widening_threshold ~previous ~next ~iteration =

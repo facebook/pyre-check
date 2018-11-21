@@ -385,7 +385,7 @@ let test_query context =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (parse_annotation "typing.List[C]")));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.list Type.Bottom)));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"

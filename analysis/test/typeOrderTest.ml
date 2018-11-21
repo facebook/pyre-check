@@ -1582,7 +1582,7 @@ let test_meet _ =
 
   (* Parametric types. *)
   assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
-  assert_meet "typing.List[float]" "typing.Iterator[int]" "typing.List[int]";
+  assert_meet "typing.List[float]" "typing.Iterator[int]" "typing.List[$bottom]";
   assert_meet "typing.List[float]" "float[int]" "$bottom";
   assert_meet
     "typing.Dict[str, str]"
@@ -1619,7 +1619,80 @@ let test_meet _ =
        default
        Type.string
        (Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"))
-    Type.string
+    Type.string;
+
+  (* Variance. *)
+  assert_meet
+    ~order:variance_order
+    "Derived[int]"
+    "Base[int]"
+    "Derived[int]";
+  assert_meet
+    ~order:variance_order
+    "Derived[float]"
+    "Base[float]"
+    "Derived[float]";
+  assert_meet
+    ~order:variance_order
+    "Derived[int]"
+    "Base[float]"
+    "Derived[int]";
+  assert_meet
+    ~order:variance_order
+    "Derived[float]"
+    "Base[int]"
+    "Derived[float]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[int, float]"
+    "A[int, float]"
+    "B[int, float]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[int, int]"
+    "A[int, float]"
+    "B[int, int]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[float, int]"
+    "A[int, float]"
+    "B[float, int]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[float, float]"
+    "A[int, float]"
+    "B[float, float]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[int, float]"
+    "A[float, float]"
+    "B[int, float]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[int, int]"
+    "A[float, float]"
+    "B[int, int]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[float, int]"
+    "A[float, float]"
+    "B[float, int]";
+  assert_meet
+    ~order:multiplane_variance_order
+    "B[float, float]"
+    "A[float, float]"
+    "B[float, float]";
+  assert_meet
+    ~order:parallel_planes_variance_order
+    "B[float, float]"
+    "A[int, float]"
+    "B[int, float]";
+  assert_meet
+    ~order:parallel_planes_variance_order
+    "B[float, float]"
+    "A[int, int]"
+    "B[int, float]";
+  ()
 
 
 let test_least_upper_bound _ =
@@ -1659,18 +1732,21 @@ let test_greatest_lower_bound _ =
 
 let test_instantiate_parameters _ =
   assert_equal
-    (instantiate_parameters default ~source:(Type.list Type.string) ~target:(!"typing.Iterator"))
+    (instantiate_successors_parameters
+       default
+       ~source:(Type.list Type.string)
+       ~target:(!"typing.Iterator"))
     (Some [Type.string]);
 
   assert_equal
-    (instantiate_parameters
+    (instantiate_successors_parameters
        default
        ~source:(Type.dictionary ~key:Type.integer ~value:Type.string)
        ~target:(!"typing.Iterator"))
     (Some [Type.integer]);
 
   assert_equal
-    (instantiate_parameters default ~source:(Type.string) ~target:!"typing.Iterable")
+    (instantiate_successors_parameters default ~source:(Type.string) ~target:!"typing.Iterable")
     (Some [Type.string])
 
 

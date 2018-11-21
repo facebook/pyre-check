@@ -236,7 +236,10 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
       |> Type.split
       |> fst
     in
-    TypeOrder.instantiate_parameters (Resolution.order resolution) ~source:instantiated ~target
+    TypeOrder.instantiate_successors_parameters
+      (Resolution.order resolution)
+      ~source:instantiated
+      ~target
     |> Option.value ~default:[]
   in
   if List.length parameters = List.length resolved_parameters then
