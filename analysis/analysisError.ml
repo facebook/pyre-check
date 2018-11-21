@@ -1126,6 +1126,14 @@ let join ~resolution left right =
 
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
+
+    | TypedDictionaryKeyNotFound left, TypedDictionaryKeyNotFound right
+      when Identifier.equal left.typed_dictionary_name right.typed_dictionary_name &&
+           left.missing_key = right.missing_key ->
+        TypedDictionaryKeyNotFound left
+    | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
+      when left = right ->
+        TypedDictionaryAccessWithNonLiteral left
     | _ ->
         Log.debug
           "Incompatible type in error join at %a: %a %a"

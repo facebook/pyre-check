@@ -7218,6 +7218,38 @@ let test_check_typed_dictionaries _ =
     [
       "Incompatible return type [7]: " ^
       "Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': int})
+      def foo(x: int, a: Baz) -> int:
+        if x == 7:
+            q = a["fou"]
+        else:
+            q = a["bar"]
+        return q
+    |}
+    [
+      "TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `fou`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': int})
+      def foo(x: int, a: Baz) -> int:
+        if x == 7:
+            k = "foo"
+            q = a[k]
+        else:
+            q = a["bar"]
+        return q
+    |}
+    [
+      "TypedDict accessed with a non-literal [26]: " ^
+      "TypedDict key must be a string literal; expected one of ('foo', 'bar').";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
 
