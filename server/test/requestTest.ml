@@ -234,7 +234,7 @@ let test_process_display_type_errors_request _ =
       let configuration =
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
       in
-      let files = List.map paths ~f:(fun path -> mock_path path |> File.create) in
+      let files = List.map paths ~f:File.create in
       Request.process_display_type_errors_request ~state ~configuration ~files
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
@@ -262,9 +262,13 @@ let test_process_display_type_errors_request _ =
     ~errors:["one.py", ["one"]; "two.py", ["two"]]
     ~expected_errors:["one.py", ["one"]; "two.py", ["two"]];
   assert_response
-    ~paths:["one.py"]
+    ~paths:[mock_path "one.py"]
     ~errors:["one.py", ["one"]; "two.py", ["two"]]
-    ~expected_errors:["one.py", ["one"]; "two.py", []]
+    ~expected_errors:["one.py", ["one"]; "two.py", []];
+  assert_response
+    ~paths:[Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"]
+    ~errors:["one.py", ["one"]]
+    ~expected_errors:["one.py", []]
 
 
 let test_process_type_check_request context =
@@ -382,7 +386,22 @@ let test_process_type_check_request context =
     ~check:["first.py", "def function() -> int: ..."]
     ~expected_errors:[]
     ~expected_deferred_requests:[]
-    ()
+    ();
+
+  (* Check nonexistent handles. *)
+  begin
+    let configuration, state = initialize [] in
+    let check =
+      Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"
+      |> File.create ~content:"def function() -> int: return ''"
+      |> fun file -> [file]
+    in
+    let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
+    let { Request.response; _ } =
+      Request.process_type_check_request ~state ~configuration ~request
+    in
+    assert_equal (Some (Protocol.TypeCheckResponse [])) response
+  end
 
 
 let test_process_get_definition_request context =
