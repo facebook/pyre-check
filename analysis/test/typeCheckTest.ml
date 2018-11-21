@@ -6686,7 +6686,16 @@ let test_check_callables _ =
         return f()
       def with_default(x: int = 0) -> int:
         return x
+      def with_kwargs( **kwargs) -> int:
+        return 0
+      def with_varargs( *varargs) -> int:
+        return 0
+      def with_everything( *varargs, **kwargs) -> int:
+        return 0
       exec(with_default)
+      exec(with_kwargs)
+      exec(with_varargs)
+      exec(with_everything)
     |}
     []
 

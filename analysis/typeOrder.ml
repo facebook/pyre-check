@@ -578,6 +578,11 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                       Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) &&
                       less_or_equal order ~left:right_annotation ~right:left_annotation &&
                       parameters_less_or_equal left_parameters right_parameters
+
+                  | Parameter.Variable _ :: left_parameters, []
+                  | Parameter.Keywords _ :: left_parameters, [] ->
+                      parameters_less_or_equal left_parameters []
+
                   | left :: left_parameters, [] ->
                       if Parameter.default left then
                         parameters_less_or_equal left_parameters []
