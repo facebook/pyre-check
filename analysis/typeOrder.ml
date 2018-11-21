@@ -1580,7 +1580,34 @@ and instantiate_predecessors_parameters
 
 and diff_variables substitutions left right =
   match left, right with
-  | Type.Optional left, Type.Optional right ->
+  | Callable { implementation = left_implementation; overloads = left_overloads; _ },
+    Callable { implementation = right_implementation; overloads = right_overloads; _ } ->
+      begin
+        let open Type.Callable in
+        let diff_overloads
+            substitutions
+            { annotation = left_annotation; parameters = left_parameters }
+            { annotation = right_annotation; parameters = right_parameters } =
+          let substitutions = diff_variables substitutions left_annotation right_annotation in
+          match left_parameters, right_parameters with
+          | Defined left, Defined right ->
+              begin
+                let diff_parameters substitutions left right =
+                  diff_variables substitutions (Parameter.annotation left) (Parameter.annotation right)
+                in
+                match List.fold2 ~init:substitutions ~f:diff_parameters left right with
+                | Ok substitutions -> substitutions
+                | Unequal_lengths -> substitutions
+              end
+          | _ ->
+              substitutions
+        in
+        let substitutions = diff_overloads substitutions left_implementation right_implementation in
+        match List.fold2 ~init:substitutions ~f:diff_overloads left_overloads right_overloads with
+        | Ok substitutions -> substitutions
+        | Unequal_lengths -> substitutions
+      end
+  | Optional left, Optional right ->
       diff_variables substitutions left right
   | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
       diff_variables_list substitutions left right
@@ -1588,6 +1615,15 @@ and diff_variables substitutions left right =
       diff_variables_list substitutions left right
   | Tuple (Unbounded left), Tuple (Unbounded right) ->
       diff_variables substitutions left right
+  | TypedDictionary { fields = left_fields; _ }, TypedDictionary { fields = right_fields; _ } ->
+      begin
+        let diff_fields substitutions { Type.annotation = left; _ } { Type.annotation = right; _ } =
+          diff_variables substitutions left right
+        in
+        match List.fold2 ~init:substitutions ~f:diff_fields left_fields right_fields with
+        | Ok substitutions -> substitutions
+        | Unequal_lengths -> substitutions
+      end
   | Union left, Union right ->
       diff_variables_list substitutions left right
   | Variable _, _ ->
