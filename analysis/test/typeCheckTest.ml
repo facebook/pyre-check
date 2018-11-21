@@ -2035,6 +2035,14 @@ let test_check _ =
       "`typing.Type[typing.Any]`.";
     ];
 
+  assert_type_errors
+    {|
+      def expect_type_float(meta: typing.Type[float]) -> None:
+        pass
+      expect_type_float(int)
+    |}
+    [];
+
   (* object methods are picked up for optionals. *)
   assert_type_errors
     {|

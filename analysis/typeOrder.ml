@@ -506,19 +506,26 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             less_or_equal order ~left ~right &&
             less_or_equal order ~left:right ~right:left
       in
+      let variables_for_type ~generic_index annotation =
+        if Type.is_meta annotation then
+          (* Despite what typeshed says, typing.Type is covariant:
+             https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
+          Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+        else
+          let primitive = Type.split annotation |> fst in
+          generic_index
+          >>= fun generic_index ->
+          Handler.find (Handler.edges ()) (index_of order primitive)
+          >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+          >>| fun { Target.parameters; _ } -> parameters
+      in
 
       let left_primitive, left_parameters = Type.split left in
       let right_primitive, right_parameters = Type.split right in
       raise_if_untracked order left_primitive;
       raise_if_untracked order right_primitive;
       let generic_index = Handler.find (Handler.indices ()) Type.generic in
-      let left_variables =
-        generic_index
-        >>= fun generic_index ->
-        Handler.find (Handler.edges ()) (index_of order left_primitive)
-        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-        >>| fun { Target.parameters; _ } -> parameters
-      in
+      let left_variables = variables_for_type ~generic_index left in
 
       if Type.equal left_primitive right_primitive then
         (* Left and right variables coincide, a simple parameter comparison is enough. *)
