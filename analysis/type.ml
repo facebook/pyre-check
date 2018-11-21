@@ -93,6 +93,12 @@ and constraints =
   | Unconstrained
 
 
+and variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
+
 and typed_dictionary_field = {
   name: string;
   annotation: t;
@@ -111,7 +117,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -314,7 +320,7 @@ let rec pp format annotation =
         "typing.Union[%s]"
         (List.map parameters ~f:show
          |> String.concat ~sep:", ")
-  | Variable { variable; constraints } ->
+  | Variable { variable; constraints; variance } ->
       let constraints =
         match constraints with
         | Bound bound ->
@@ -327,11 +333,18 @@ let rec pp format annotation =
         | Unconstrained ->
             ""
       in
+      let variance =
+        match variance with
+        | Covariant -> "(covariant)"
+        | Contravariant -> "(contravariant)"
+        | Invariant -> ""
+      in
       Format.fprintf
         format
-        "Variable[%s%s]"
+        "Variable[%s%s]%s"
         (Identifier.show variable)
         constraints
+        variance
 
 
 and show annotation =
@@ -353,8 +366,8 @@ let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 
 
-let variable ?(constraints = Unconstrained) name =
-  Variable { variable = Identifier.create name; constraints }
+let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
+  Variable { variable = Identifier.create name; constraints; variance }
 
 
 let awaitable parameter =
@@ -991,9 +1004,28 @@ let rec create ~aliases { Node.value = expression; _ } =
               else
                 Unconstrained
             in
+            let variance =
+              let variance_definition = function
+                | {
+                  Argument.name = Some { Node.value = name; _ };
+                  Argument.value = { Node.value = True; _ };
+                } when Identifier.show_sanitized name = "covariant" ->
+                    Some Covariant
+                | {
+                  Argument.name = Some { Node.value = name; _ };
+                  Argument.value = { Node.value = True; _ };
+                } when Identifier.show_sanitized name = "contravariant" ->
+                    Some Contravariant
+                | _ ->
+                    None
+              in
+              List.find_map arguments ~f:variance_definition
+              |> Option.value ~default:Invariant
+            in
             Variable {
               variable = Identifier.create value;
               constraints;
+              variance;
             }
 
         | Access
@@ -1722,14 +1754,14 @@ let rec dequalify map annotation =
         parameters = List.map parameters ~f:(dequalify map);
       }
   | Primitive name -> Primitive (dequalify_identifier name)
-  | Variable { variable = name; constraints } ->
+  | Variable { variable = name; constraints; variance } ->
       let constraints =
         match constraints with
         | Bound bound -> Bound (dequalify map bound)
         | Explicit constraints -> Explicit (List.map constraints ~f:(dequalify map))
         | Unconstrained -> Unconstrained
       in
-      Variable { variable = dequalify_identifier name; constraints }
+      Variable { variable = dequalify_identifier name; constraints; variance }
   | _ -> annotation
 
 

@@ -484,17 +484,178 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       less_or_equal order ~left ~right:(Type.union right)
 
 
-  | Type.Parametric _,
+  | Type.Parametric { name = left_name; _ },
     Type.Parametric _ ->
+      let compare_parameter left right variable =
+        match left, right, variable with
+        | Type.Bottom, _, _ ->
+            (* Bottom is special cased. A parametric type T[Bottom] is a subtype of
+               T[_T2], for any _T2 and regardless of its variance. *)
+            true
+        | _ , Type.Object, _ ->
+            (* Any/Object is special cased. A parametric type T[_T2] is a subtype of
+               T[Any], for any _T2 and regardless of its variance. *)
+            true
+        | _ , _ , Type.Variable { variance = Covariant; _ } ->
+            less_or_equal order ~left ~right
+        | _ , _ , Type.Variable { variance = Contravariant; _ } ->
+            less_or_equal order ~left:right ~right:left
+        | _ ->
+            (* If the parent type is invariant in this variable,
+               then only exact type equality is allowed. *)
+            less_or_equal order ~left ~right &&
+            less_or_equal order ~left:right ~right:left
+      in
+
+      let left_primitive, left_parameters = Type.split left in
       let right_primitive, right_parameters = Type.split right in
-      instantiate_parameters order ~source:left ~target:right_primitive
-      >>| (fun parameters ->
-          List.length parameters = List.length right_parameters &&
-          List.for_all2_exn
-            ~f:(fun left right -> less_or_equal order ~left ~right)
-            parameters
-            right_parameters)
-      |> Option.value ~default:false
+      raise_if_untracked order left_primitive;
+      raise_if_untracked order right_primitive;
+      let generic_index = Handler.find (Handler.indices ()) Type.generic in
+      let left_variables =
+        generic_index
+        >>= fun generic_index ->
+        Handler.find (Handler.edges ()) (index_of order left_primitive)
+        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+        >>| fun { Target.parameters; _ } -> parameters
+      in
+
+      if Type.equal left_primitive right_primitive then
+        (* Left and right variables coincide, a simple parameter comparison is enough. *)
+        let compare_parameters ~left ~right variables =
+          List.length variables = List.length left &&
+          List.length variables = List.length right &&
+          List.map3_exn
+            ~f:compare_parameter
+            left
+            right
+            variables
+          |> List.for_all ~f:Fn.id
+        in
+        left_variables
+        >>| compare_parameters ~left:left_parameters ~right:right_parameters
+        |> Option.value ~default:false
+      else
+        (* Perform one step in all appropriate directions. *)
+        (* 1. Go one level down in the class hierarchy and try from there. *)
+        let step_into_subclasses () =
+          let target_to_parametric { Target.target; parameters } =
+            Handler.find (Handler.annotations ()) target
+            >>= fun annotation ->
+            Type.split annotation
+            |> fst
+            |> function
+            | Primitive name ->
+                Some (Type.Parametric { name; parameters })
+            | _ ->
+                None
+          in
+
+          let successors =
+            let left_index = index_of order left_primitive in
+            Handler.find (Handler.edges ()) left_index
+            |> Option.value ~default:[]
+          in
+
+          get_instantiated_successors ~generic_index ~parameters:left_parameters successors
+          |> List.filter_map ~f:target_to_parametric
+          |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
+        in
+        (* 2. Try and replace all parameters, one at a time, to get closer to the destination. *)
+        let replace_parameters_with_destination left_variables =
+          let right_propagated =
+            let propagate_variables ~target variables =
+              let worklist = Queue.create () in
+              Queue.enqueue
+                worklist
+                { Target.target = index_of order left_primitive; parameters = variables };
+              let rec iterate worklist =
+                match Queue.dequeue worklist with
+                | Some { Target.target = target_index; parameters } ->
+                    if target_index = index_of order target then
+                      Some parameters
+                    else
+                      begin
+                        Handler.find (Handler.edges ()) target_index
+                        >>| get_instantiated_successors ~generic_index ~parameters
+                        >>| List.iter ~f:(Queue.enqueue worklist)
+                        |> ignore;
+                        iterate worklist
+                      end
+                | None ->
+                    None
+              in
+              iterate worklist
+            in
+
+            propagate_variables ~target:right_primitive left_variables
+            |> Option.value ~default:[]
+          in
+          (* Mapping from a variable in `left` to the target parameter (via subclass
+             substitutions) in `right`. *)
+          let variable_substitutions =
+            let rec diff_variables substitutions left right =
+              match left, right with
+              | Type.Optional left, Type.Optional right ->
+                  diff_variables substitutions left right
+              | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
+                  diff_variables_list substitutions left right
+              | Tuple (Bounded left), Tuple (Bounded right) ->
+                  diff_variables_list substitutions left right
+              | Tuple (Unbounded left), Tuple (Unbounded right) ->
+                  diff_variables substitutions left right
+              | Union left, Union right ->
+                  diff_variables_list substitutions left right
+              | Variable _, _ ->
+                  Map.set substitutions ~key:left ~data:right
+              | _ ->
+                  substitutions
+            and diff_variables_list substitutions left right =
+              match List.fold2 left right ~init:substitutions ~f:diff_variables with
+              | Ok substitutions -> substitutions
+              | Unequal_lengths -> substitutions
+            in
+            match
+              List.fold2 right_propagated right_parameters ~init:Type.Map.empty ~f:diff_variables
+            with
+            | Ok result -> result
+            | Unequal_lengths -> Type.Map.empty
+          in
+          let propagate_with_substitutions index variable =
+            let replace replacement =
+              let parametric ~head ~replacement ~tail =
+                (* Remove the element to be replaced from the tail. *)
+                let tail = List.tl tail |> Option.value ~default:[] in
+                let parameters = head @ [replacement] @ tail in
+                Type.Parametric { name = left_name; parameters }
+              in
+              let head, tail = List.split_n left_parameters index in
+              match List.hd tail with
+              | Some original when Type.equal original replacement ->
+                  (* If the original and replacement do not differ, no recursion is needed. *)
+                  None
+              | Some original ->
+                  (* Perform the replament only if variance allows it. *)
+                  if compare_parameter original replacement variable then
+                    Some (parametric ~head ~replacement ~tail)
+                  else
+                    None
+              | None ->
+                  Some (parametric ~head ~replacement ~tail)
+            in
+            Map.find variable_substitutions variable
+            >>= replace
+            >>| (fun left -> less_or_equal order ~left ~right)
+            |> Option.value ~default:false
+          in
+          List.existsi left_variables ~f:propagate_with_substitutions
+        in
+        step_into_subclasses () or
+        ( left_variables
+          >>| (fun left_variables ->
+              (List.length left_variables == List.length left_parameters) &&
+              replace_parameters_with_destination left_variables)
+          |> Option.value ~default:false)
 
   (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
   | Type.Union left, right ->
@@ -1202,6 +1363,41 @@ and meet order left right =
             Type.Bottom
 
 
+(* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
+   concrete parameters, all occurrences of _T1, _T2, etc. in other supertypes
+   need to be replaced with the concrete parameter corresponding to the type
+   variable. This function takes a target with concrete parameters and its supertypes,
+   and instantiates the supertypes accordingly. *)
+and get_instantiated_successors ~generic_index ~parameters successors =
+  let generic_parameters =
+    let generic_parameters { Target.target; parameters } =
+      if Some target = generic_index then
+        Some parameters
+      else
+        None
+    in
+    List.find_map ~f:generic_parameters successors
+  in
+  generic_parameters
+  >>| (fun variables ->
+      if List.length variables = List.length parameters then
+        let constraints =
+          List.zip_exn variables parameters
+          |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
+          |> Map.find
+        in
+        let instantiate_parameters { Target.target; parameters } =
+          {
+            Target.target;
+            parameters = List.map parameters ~f:(Type.instantiate ~constraints);
+          }
+        in
+        List.map successors ~f:instantiate_parameters
+      else
+        successors)
+  |> Option.value ~default:successors
+
+
 and instantiate_parameters
     ((module Handler: Handler) as order)
     ~source
@@ -1212,41 +1408,6 @@ and instantiate_parameters
   raise_if_untracked order target;
 
   let generic_index = Handler.find (Handler.indices ()) Type.generic in
-
-  (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
-     concrete parameters, all occurrences of _T1, _T2, etc. in other supertypes
-     need to be replaced with the concrete parameter corresponding to the type
-     variable. This function takes a target with concrete parameters and its supertypes,
-     and instantiates the supertypes accordingly. *)
-  let get_instantiated_successors { Target.parameters; _ } successors =
-    let generic_parameters =
-      let generic_parameters { Target.target; parameters } =
-        if Some target = generic_index then
-          Some parameters
-        else
-          None
-      in
-      List.find_map ~f:generic_parameters successors
-    in
-    generic_parameters
-    >>| (fun variables ->
-        if List.length variables = List.length parameters then
-          let constraints =
-            List.zip_exn variables parameters
-            |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
-            |> Map.find
-          in
-          let instantiate_parameters { Target.target; parameters } =
-            {
-              Target.target;
-              parameters = List.map parameters ~f:(Type.instantiate ~constraints);
-            }
-          in
-          List.map successors ~f:instantiate_parameters
-        else
-          successors)
-    |> Option.value ~default:successors
-  in
 
   let worklist = Queue.create () in
   Queue.enqueue
@@ -1260,7 +1421,7 @@ and instantiate_parameters
         else
           begin
             Handler.find (Handler.edges ()) target_index
-            >>| get_instantiated_successors { Target.target = target_index; parameters }
+            >>| get_instantiated_successors ~generic_index ~parameters
             >>| List.iter ~f:(Queue.enqueue worklist)
             |> ignore;
             iterate worklist

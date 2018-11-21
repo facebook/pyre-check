@@ -376,7 +376,7 @@ let test_query context =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"join(list[C], list[int])"

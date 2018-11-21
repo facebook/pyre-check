@@ -79,7 +79,14 @@ let test_create _ =
 
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
-  assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', $parameter$covariant=True)"
+    (Type.variable ~variance:Covariant "_T");
+  assert_create "typing.TypeVar('_T', $parameter$covariant=False)" (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', $parameter$contravariant=True)"
+    (Type.variable ~variance:Contravariant "_T");
+  assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
     (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");

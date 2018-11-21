@@ -62,6 +62,11 @@ and constraints =
   | Explicit of t list
   | Unconstrained
 
+and variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
 and typed_dictionary_field = {
   name: string;
   annotation: t;
@@ -79,7 +84,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
@@ -98,7 +103,7 @@ val serialize: t -> string
 
 val primitive: string -> t
 val parametric: string -> t list -> t
-val variable: ?constraints: constraints -> string -> t
+val variable: ?constraints: constraints -> ?variance: variance -> string -> t
 
 val awaitable: t -> t
 val bool: t

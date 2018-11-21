@@ -145,6 +145,10 @@ let default =
   insert order other_variable;
   connect order ~predecessor:Type.Bottom ~successor:other_variable;
   connect order ~predecessor:other_variable ~successor:Type.Top;
+  let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+  insert order variable_covariant;
+  connect order ~predecessor:Type.Bottom ~successor:variable_covariant;
+  connect order ~predecessor:variable_covariant ~successor:Type.Top;
 
   insert order !"list";
   insert order !"typing.Sized";
@@ -159,16 +163,24 @@ let default =
   connect order ~predecessor:!"set" ~successor:!"typing.Generic" ~parameters:[variable];
 
   insert order !"typing.Iterator";
+  connect order ~predecessor:Type.Bottom ~successor:!"typing.Iterator";
   connect order ~predecessor:!"list" ~successor:!"typing.Iterator" ~parameters:[variable];
-  connect order ~predecessor:!"typing.Iterator" ~successor:!"typing.Generic" ~parameters:[variable];
+  connect order
+    ~predecessor:!"typing.Iterator"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable_covariant];
   connect order ~predecessor:!"typing.Iterator" ~successor:Type.Top;
 
   insert order !"typing.Iterable";
+  connect order ~predecessor:Type.Bottom ~successor:!"typing.Iterable";
   connect order
     ~predecessor:!"typing.Iterator"
     ~successor:!"typing.Iterable"
-    ~parameters:[variable];
-  connect order ~predecessor:!"typing.Iterable" ~successor:!"typing.Generic" ~parameters:[variable];
+    ~parameters:[variable_covariant];
+  connect order
+    ~predecessor:!"typing.Iterable"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable_covariant];
   connect order ~predecessor:!"typing.Iterable" ~successor:Type.Top;
 
   insert order !"tuple";
@@ -496,11 +508,6 @@ let test_less_or_equal _ =
     connect
       order
       ~predecessor:!"A"
-      ~successor:!"B"
-      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
-    connect
-      order
-      ~predecessor:!"A"
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_1"; Type.variable "_2"];
     connect
@@ -508,6 +515,17 @@ let test_less_or_equal _ =
       ~predecessor:!"B"
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_T"];
+    connect
+      order
+      ~predecessor:!"C"
+      ~successor:!"typing.Generic"
+      ~parameters:[Type.variable "_T"];
+    connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect
+      order
+      ~predecessor:!"A"
+      ~successor:!"B"
+      ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     connect
       order
       ~predecessor:!"B"
@@ -806,6 +824,248 @@ let test_less_or_equal _ =
        order
        ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
        ~right:"dict[str, typing.Any]")
+
+
+let test_less_or_equal_variance _ =
+  let assert_strict_less ~order ~right ~left =
+    assert_true (less_or_equal order ~left ~right);
+    assert_false (less_or_equal order ~left:right ~right:left)
+  in
+  let order =
+    let order = Builder.create () |> TypeOrder.handler in
+    let add_simple annotation =
+      insert order annotation;
+      connect order ~predecessor:Type.Bottom ~successor:annotation;
+      connect order ~predecessor:annotation ~successor:Type.Top
+    in
+
+    insert order Type.Bottom;
+    insert order Type.Object;
+    insert order Type.Top;
+    add_simple (Type.string);
+    insert order Type.integer;
+    insert order Type.float;
+    connect order ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect order ~predecessor:Type.integer ~successor:Type.float;
+    connect order ~predecessor:Type.float ~successor:Type.Top;
+    insert order !"typing.Generic";
+
+    (* Variance examples borrowed from https://www.python.org/dev/peps/pep-0483 *)
+    let variable_t = Type.variable "_T" in
+    let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
+    let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
+    add_simple variable_t;
+    add_simple variable_t_co;
+    add_simple variable_t_contra;
+    insert order !"LinkedList";
+    insert order !"Box";
+    insert order !"Sink";
+    connect
+      order
+      ~predecessor:!"LinkedList"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t];
+    connect
+      order
+      ~predecessor:!"Box"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_co];
+    connect
+      order
+      ~predecessor:!"Sink"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_contra];
+    insert order !"Base";
+    insert order !"Derived";
+    connect
+      order
+      ~predecessor:!"Base"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_contra];
+    connect
+      order
+      ~predecessor:!"Derived"
+      ~successor:!"Base"
+      ~parameters:[variable_t_co];
+    connect
+      order
+      ~predecessor:!"Derived"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_co];
+
+    order
+  in
+  (* Invariant. *)
+  assert_false
+    (less_or_equal
+       order
+       ~left:(Type.parametric "LinkedList" [Type.integer])
+       ~right:(Type.parametric "LinkedList" [Type.float]));
+  assert_false
+    (less_or_equal
+       order
+       ~left:(Type.parametric "LinkedList" [Type.float])
+       ~right:(Type.parametric "LinkedList" [Type.integer]));
+  (* Covariant. *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.parametric "Box" [Type.integer])
+       ~right:(Type.parametric "Box" [Type.float]));
+  assert_false
+    (less_or_equal
+       order
+       ~left:(Type.parametric "Box" [Type.float])
+       ~right:(Type.parametric "Box" [Type.integer]));
+  (* Contravariant. *)
+  assert_false
+    (less_or_equal
+       order
+       ~left:(Type.parametric "Sink" [Type.integer])
+       ~right:(Type.parametric "Sink" [Type.float]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.parametric "Sink" [Type.float])
+       ~right:(Type.parametric "Sink" [Type.integer]));
+  (* More complex rules. *)
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Derived" [Type.integer])
+    ~right:(Type.parametric "Derived" [Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Derived" [Type.integer])
+    ~right:(Type.parametric "Base" [Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Derived" [Type.float])
+    ~right:(Type.parametric "Base" [Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Base" [Type.float])
+    ~right:(Type.parametric "Base" [Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Derived" [Type.integer])
+    ~right:(Type.parametric "Base" [Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "Derived" [Type.float])
+    ~right:(Type.parametric "Base" [Type.integer]);
+
+  (* A much more complicated set of rules, to explore the full combination of generic types.
+     These rules define a situation like this:
+
+     _T_co = covariant
+     _T_contra = contravariant
+
+     class A(Generic[_T_co, _T_contra])
+     class B(A[_T_contra, _T_co])
+
+     Hence the graph:
+
+        /--  A[int, int]    <  A[float, int]  ----\
+        |         V                   V           |
+     /--|--  A[int, float]  <  A[float, float]  --|---\
+     |  V                                         V   |
+     |  |                                         |   |
+     V  \--  B[int, int]    >  B[float, int]  ----/   V
+     |            ^                   ^               |
+     \----   B[int, float]  >  B[float, float]  ------/
+  *)
+  let order =
+    let order = Builder.create () |> TypeOrder.handler in
+    let add_simple annotation =
+      insert order annotation;
+      connect order ~predecessor:Type.Bottom ~successor:annotation;
+      connect order ~predecessor:annotation ~successor:Type.Top
+    in
+
+    insert order Type.Bottom;
+    insert order Type.Object;
+    insert order Type.Top;
+    add_simple (Type.string);
+    insert order Type.integer;
+    insert order Type.float;
+    connect order ~predecessor:Type.Bottom ~successor:Type.integer;
+    connect order ~predecessor:Type.integer ~successor:Type.float;
+    connect order ~predecessor:Type.float ~successor:Type.Top;
+    insert order !"typing.Generic";
+
+    let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
+    let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
+    add_simple variable_t_co;
+    add_simple variable_t_contra;
+    insert order !"A";
+    insert order !"B";
+    connect
+      order
+      ~predecessor:!"A"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_co; variable_t_contra];
+    connect
+      order
+      ~predecessor:!"B"
+      ~successor:!"A"
+      ~parameters:[variable_t_contra; variable_t_co];
+    connect
+      order
+      ~predecessor:!"B"
+      ~successor:!"typing.Generic"
+      ~parameters:[variable_t_contra; variable_t_co];
+
+    order
+  in
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "A" [Type.integer; Type.float])
+    ~right:(Type.parametric "A" [Type.float; Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.integer])
+    ~right:(Type.parametric "B" [Type.integer; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.integer; Type.integer])
+    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.integer; Type.integer])
+    ~right:(Type.parametric "A" [Type.integer; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.integer; Type.integer])
+    ~right:(Type.parametric "A" [Type.float; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.float])
+    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.float])
+    ~right:(Type.parametric "A" [Type.integer; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.float])
+    ~right:(Type.parametric "A" [Type.float; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.integer])
+    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.integer])
+    ~right:(Type.parametric "A" [Type.integer; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.integer])
+    ~right:(Type.parametric "A" [Type.float; Type.float]);
+  assert_strict_less
+    ~order
+    ~left:(Type.parametric "B" [Type.float; Type.integer])
+    ~right:(Type.parametric "A" [Type.float; Type.integer]);
+  ()
 
 
 let test_join _ =
@@ -1484,6 +1744,7 @@ let () =
     "predecessors">::test_predecessors;
     "greatest">::test_greatest;
     "less_or_equal">::test_less_or_equal;
+    "less_or_equal_variance">::test_less_or_equal_variance;
     "join">::test_join;
     "meet">::test_meet;
     "least_upper_bound">::test_least_upper_bound;
