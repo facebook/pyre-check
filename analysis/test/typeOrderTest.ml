@@ -784,7 +784,28 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]")
+       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
+
+  assert_true
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~right:"typing.Mapping[str, typing.Any]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~right:"typing.Mapping[str, int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Mapping[str, typing.Any]"
+       ~right:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~right:"dict[str, typing.Any]")
 
 
 let test_join _ =
@@ -1072,6 +1093,18 @@ let test_join _ =
   assert_join
     "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
     "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "typing.Mapping[str, typing.Any]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "typing.Mapping[str, str]"
+    "typing.Mapping[str, typing.Any]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "typing.Mapping[int, str]"
+    "typing.Any";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "typing.Dict[str, str]"
     "typing.Any";
 
   (* Variables. *)
@@ -1143,6 +1176,10 @@ let test_meet _ =
   assert_meet
     "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
     "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "$bottom";
+  assert_meet
+    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "typing.Mapping[str, typing.Any]"
     "$bottom";
 
   (* Variables. *)

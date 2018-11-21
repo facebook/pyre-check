@@ -7165,6 +7165,59 @@ let test_check_typed_dictionaries _ =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "TypedDict accessed with a missing key [27]: TypedDict has no key `year`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      from typing import Mapping
+      Baz = mypy_extensions.TypedDict('Baz', {'foo': int, 'bar': str})
+      def foo(dictionary: Mapping[str, typing.Any]) -> None:
+        pass
+      def f() -> None:
+        baz: Baz
+        a = foo(baz)
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      from typing import Mapping
+      class A:
+        pass
+      class B(A):
+        pass
+      Baz = mypy_extensions.TypedDict('Baz', {'foo': A, 'bar': B})
+      def foo(dictionary: Mapping[str, A]) -> A:
+        return dictionary["foo"]
+      def f() -> None:
+        baz: Baz
+        a = foo(baz)
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `Mapping[str, A]` but got `TypedDict `Baz` with fields (foo: A, bar: B)`."
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      from typing import Mapping
+      class A:
+        pass
+      class B(A):
+        pass
+      class C(A):
+        pass
+      Baz = mypy_extensions.TypedDict('Baz', {'foo': A, 'bar': B})
+      def foo(x: int, a: Baz, b: Mapping[str, C]) -> Mapping[str, A]:
+        if x == 7:
+            q = a
+        else:
+            q = b
+        return q
+    |}
+    [
+      "Incompatible return type [7]: " ^
+      "Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`.";
     ]
 
 

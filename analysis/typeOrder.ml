@@ -636,6 +636,16 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       in
       not (List.exists right.fields ~f:field_not_found)
 
+  | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key; value ] }
+    when Identifier.show mapping = "typing.Mapping" &&
+         Type.equal Type.string key &&
+         Type.equal Type.Object value ->
+      true
+
+  | Type.TypedDictionary _, _
+  | _, Type.TypedDictionary _ ->
+      false
+
   | _ ->
       raise_if_untracked order left;
       raise_if_untracked order right;
@@ -970,7 +980,10 @@ and join ((module Handler: Handler) as order) left right =
     | Type.TypedDictionary { fields = left_fields; _ },
       Type.TypedDictionary { fields = right_fields; _ } ->
         if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
-          Type.Object
+          Type.Parametric {
+            name = Identifier.create "typing.Mapping";
+            parameters = [ Type.string; Type.Object ]
+          }
         else
           let join_fields =
             if less_or_equal order ~left ~right then
@@ -984,6 +997,20 @@ and join ((module Handler: Handler) as order) left right =
               List.filter right_fields ~f:found_match
           in
           Type.TypedDictionary.anonymous join_fields
+
+    | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }
+    | Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }, Type.TypedDictionary _
+      when Identifier.show mapping = "typing.Mapping" &&
+           (* Mappings are only covariant in their value annotations. *)
+           Type.equal key_annotation Type.string ->
+        Type.Parametric {
+          name = Identifier.create "typing.Mapping";
+          parameters = [ Type.string; Type.Object ]
+        }
+
+    | Type.TypedDictionary _, _
+    | _, Type.TypedDictionary _ ->
+        Type.Object
 
     | Type.Callable left,
       Type.Callable right ->
@@ -1163,6 +1190,9 @@ and meet order left right =
                 ~compare:Type.compare_typed_dictionary_field
           in
           Type.TypedDictionary.anonymous meet_fields
+    | Type.TypedDictionary _, _
+    | _, Type.TypedDictionary _ ->
+        Type.Bottom
 
     | _ ->
         match List.hd (greatest_lower_bound order left right) with
