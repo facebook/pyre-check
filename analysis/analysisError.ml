@@ -95,6 +95,7 @@ type kind =
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
+  | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
   | UninitializedAttribute of {
       name: Access.t;
       parent: Type.t;
@@ -142,6 +143,7 @@ let code = function
   | ImpossibleIsinstance _ -> 25
   | TypedDictionaryAccessWithNonLiteral _ -> 26
   | TypedDictionaryKeyNotFound _ -> 27
+  | UnexpectedKeyword _ -> 28
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -172,6 +174,7 @@ let name = function
   | UndefinedAttribute _ -> "Undefined attribute"
   | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined type"
+  | UnexpectedKeyword _ -> "Unexpected keyword"
   | UndefinedImport _ -> "Undefined import"
   | UninitializedAttribute _ -> "Uninitialized attribute"
   | UnusedIgnore _ -> "Unused ignore"
@@ -594,6 +597,20 @@ let messages ~detailed:_ ~define location kind =
           "Type `%a` is not defined."
           Type.pp annotation
       ]
+  | UnexpectedKeyword { name; callee } ->
+      let callee =
+        match callee with
+        | Some name ->
+            Format.asprintf "call `%a`" Access.pp name
+        | _ ->
+            "anonymous call"
+      in
+      [
+        Format.asprintf
+          "Unexpected keyword argument `%s` to %s."
+          (Identifier.show_sanitized name)
+          callee
+      ]
   | UninitializedAttribute {
       name;
       parent;
@@ -782,6 +799,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
+  | UnexpectedKeyword _
   | UnusedIgnore _ ->
       false
 
@@ -835,6 +853,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
   | UndefinedType _
+  | UnexpectedKeyword _
   | MissingArgument _
   | UnawaitedAwaitable _
   | UndefinedAttribute _
@@ -928,6 +947,9 @@ let less_or_equal ~resolution left right =
         true
     | UndefinedType left, UndefinedType right ->
         Resolution.less_or_equal resolution ~left ~right
+    | UnexpectedKeyword left, UnexpectedKeyword right ->
+        Option.equal Access.equal left.callee right.callee &&
+        Identifier.equal left.name right.name
     | UndefinedImport left, UndefinedImport right ->
         Access.equal left right
     | UnusedIgnore left, UnusedIgnore right ->
@@ -1086,6 +1108,12 @@ let join ~resolution left right =
         UndefinedName left
     | UndefinedType left, UndefinedType right ->
         UndefinedType (Resolution.join resolution left right)
+    | UnexpectedKeyword left, UnexpectedKeyword right ->
+        if Option.equal Access.equal left.callee right.callee &&
+           Identifier.equal left.name right.name then
+          UnexpectedKeyword left
+        else
+          Top
     | UndefinedImport left, UndefinedImport right when Access.equal left right ->
         UndefinedImport left
 
@@ -1224,6 +1252,8 @@ let filter ~configuration ~resolution errors =
                 ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock"))))
           in
           Type.exists actual ~predicate:is_subclass_of_mock
+      | UnexpectedKeyword { callee = Some callee; _ } ->
+          String.is_prefix ~prefix:"unittest.mock" (Access.show callee)
       | _ ->
           false
     in
@@ -1294,6 +1324,7 @@ let suppress ~mode error =
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
+      | UnexpectedKeyword _
       | RedundantCast _
       | RevealedType _
       | MissingArgument _ ->
@@ -1517,6 +1548,8 @@ let dequalify
         UndefinedType (dequalify annotation)
     | UndefinedImport access ->
         UndefinedImport access
+    | UnexpectedKeyword access ->
+        UnexpectedKeyword access
     | MissingArgument missing_argument ->
         MissingArgument missing_argument
     | UnusedIgnore codes ->

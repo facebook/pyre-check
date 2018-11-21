@@ -8,6 +8,7 @@ open OUnit2
 
 open Ast
 open Analysis
+open Pyre
 open Statement
 open Test
 
@@ -74,6 +75,12 @@ let undefined_attribute actual =
         annotation = actual;
         class_attribute = false;
       };
+  }
+
+let unexpected_keyword name callee =
+  Error.UnexpectedKeyword {
+    name = Identifier.create name;
+    callee = callee >>| Access.create;
   }
 
 
@@ -442,6 +449,8 @@ let test_filter _ =
   assert_unfiltered (undefined_attribute (Type.primitive "NonMockChild"));
   assert_filtered (undefined_attribute (Type.Optional (Type.primitive "NonCallableChild")));
   assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
+  assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
+  assert_unfiltered (unexpected_keyword "foo" None);
 
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);

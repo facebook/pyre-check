@@ -1881,7 +1881,7 @@ let test_check _ =
       def f() -> None:
         a = foo(y=4)
     |}
-    [];
+    ["Unexpected keyword [28]: Unexpected keyword argument `y` to call `foo`."];
 
   assert_type_errors
     {|

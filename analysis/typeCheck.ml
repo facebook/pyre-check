@@ -1026,6 +1026,11 @@ module State = struct
                                 missing_key;
                               })
                             ~define
+                      | UnexpectedKeyword name ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.UnexpectedKeyword { callee; name })
+                            ~define
                     in
                     Some error
 

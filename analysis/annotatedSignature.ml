@@ -42,6 +42,7 @@ type reason =
   | TooManyArguments of too_many_arguments
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryMissingKey of typed_dictionary_missing_key
+  | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
 
@@ -164,7 +165,7 @@ let select
                 let provided = expected + List.length arguments in
                 {
                   reasons with
-                  arity = TooManyArguments { expected; provided } :: arity
+                  arity = arity @ [TooManyArguments { expected; provided }]
                 }
             | _ ->
                 reasons
@@ -210,19 +211,25 @@ let select
               :: tail
               when Identifier.equal parameter_name name ->
                 Some head, (List.rev searched) @ tail
+            | (Parameter.Keywords _ as head) :: tail ->
+                let matching, parameters = extract_matching_name (head :: searched) tail in
+                let matching = Some (Option.value matching ~default:head) in
+                matching, parameters
             | head :: tail ->
                 extract_matching_name (head :: searched) tail
           in
           let matching_parameter, remaining_parameters = extract_matching_name [] parameters in
-          matching_parameter
-          >>| (fun parameter -> update_mapping parameter (Argument argument))
-          >>= (fun argument_mapping ->
-              (* Ignore signatures where this isn't found;
-                 should throw new class of arity error instead *)
-              consume
-                ~arguments:arguments_tail
-                ~parameters:remaining_parameters
-                { signature_match with argument_mapping })
+          let argument_mapping, reasons =
+            match matching_parameter with
+            | Some matching_parameter ->
+                update_mapping matching_parameter (Argument argument), reasons
+            | None ->
+                argument_mapping, { reasons with arity = arity @ [UnexpectedKeyword name] }
+          in
+          consume
+            ~arguments:arguments_tail
+            ~parameters:remaining_parameters
+            { signature_match with argument_mapping; reasons }
       | Argument ({
           argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;

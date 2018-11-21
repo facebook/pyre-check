@@ -105,6 +105,13 @@ let test_select _ =
             callable = parse_callable closest;
             reason = Some (TooManyArguments { expected; provided });
           }
+      | `NotFoundUnexpectedKeyword name ->
+          NotFound { callable; reason = Some (UnexpectedKeyword (Identifier.create name)) }
+      | `NotFoundUnexpectedKeywordWithClosest (closest, name) ->
+          NotFound {
+            callable = parse_callable closest;
+            reason = Some (UnexpectedKeyword (Identifier.create name));
+          }
       | `NotFoundMismatch (actual, expected, name, position) ->
           let reason =
             { actual; expected; name = name >>| Identifier.create; position }
@@ -158,7 +165,7 @@ let test_select _ =
     "[[int], int]"
     "('string')"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
-  assert_select "[[int], int]" "(name='string')" `NotFoundNoReason;
+  assert_select "[[int], int]" "(name='string')" (`NotFoundUnexpectedKeyword "name");
 
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
   assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
@@ -212,11 +219,26 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, i=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
-  assert_select "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)" `NotFoundNoReason;
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)"
+    (`NotFoundUnexpectedKeyword "q");
+  (* May want new class of error for `keyword argument repeated` *)
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(j=1, j=2, q=3)"
-    `NotFoundNoReason;
+    (`NotFoundUnexpectedKeyword "j");
+  assert_select
+    "[[Named(i, int), Named(j, int), Named(k, int)], int]"
+    "(j=1, a=2, b=3)"
+    (`NotFoundUnexpectedKeyword "a");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(j=1, a=2, b=3)"
+    (`NotFoundUnexpectedKeyword "a");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(i='string', a=2, b=3)"
+    (`NotFoundUnexpectedKeyword "a");
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
@@ -249,6 +271,10 @@ let test_select _ =
     "[[Keywords(keywords, int)], int]"
     "(a=1, b=2)"
     (`Found "[[Keywords(keywords, int)], int]");
+  assert_select
+    "[[Named(a, int), Named(c, int), Keywords(keywords, int)], int]"
+    "(a=1, b=2, c=3)"
+    (`Found "[[Named(a, int), Named(c, int), Keywords(keywords, int)], int]");
   assert_select
     "[[Keywords(keywords, str)], int]"
     "(a=1, b=2)"
@@ -400,6 +426,12 @@ let test_select _ =
     "[[bool], bool][[[str, str], str][[int, int], int]]"
     "(int, str)"
     (`NotFoundTooManyArguments (1, 2));
+
+  assert_select
+    ~allow_undefined:true
+    "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
+    "(i=1, d=2)"
+    (`NotFoundUnexpectedKeywordWithClosest ("[[Named(c, int), Named(d, int)], int]", "i"));
 
   (* Void functions. *)
   assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");

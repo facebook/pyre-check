@@ -36,6 +36,7 @@ type reason =
   | TooManyArguments of too_many_arguments
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryMissingKey of typed_dictionary_missing_key
+  | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
 type found = {

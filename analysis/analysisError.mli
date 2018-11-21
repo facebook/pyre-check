@@ -84,6 +84,7 @@ type kind =
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
+  | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
   | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
   | UnusedIgnore of int list
 
