@@ -1532,102 +1532,6 @@ let is_untyped = function
   | _ -> false
 
 
-let rec mismatch_with_any left right =
-  let compatible left right =
-    let symmetric left right =
-      (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
-      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
-    in
-    Identifier.equal left right ||
-    symmetric left right ||
-    symmetric right left
-  in
-
-  match left, right with
-  | Object, Bottom
-  | Bottom, Object
-  | Object, Optional _
-  | Optional _, Object
-  | Object, Parametric _
-  | Parametric _, Object
-  | Object, Primitive _
-  | Primitive _, Object
-  | Object, Callable _
-  | Callable _, Object
-  | Object, Top
-  | Top, Object
-  | Object, Tuple _
-  | Tuple _, Object
-  | Object, Union _
-  | Union _, Object
-  | Object, Variable _
-  | Variable _, Object ->
-      true
-  | Parametric { name; parameters = [left] }, right
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
-      mismatch_with_any left right
-  | left, Parametric { name; parameters = [right] }
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
-      mismatch_with_any left right
-  | Optional left, Optional right
-  | Optional left, right
-  | left, Optional right ->
-      mismatch_with_any left right
-
-  | Parametric left, Parametric right
-    when compatible left.name right.name &&
-         List.length left.parameters = List.length right.parameters ->
-      List.exists2_exn ~f:mismatch_with_any left.parameters right.parameters
-
-  | Parametric { name = iterator; parameters = [iterator_parameter] },
-    Parametric { name = generator; parameters = generator_parameter :: _ }
-  | Parametric { name = generator; parameters = generator_parameter :: _ },
-    Parametric { name = iterator; parameters = [iterator_parameter] }
-    when (Identifier.show iterator = "typing.Iterator" ||
-          Identifier.show iterator = "typing.Iterable") &&
-         Identifier.show generator = "typing.Generator" ->
-      mismatch_with_any iterator_parameter generator_parameter
-
-  | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
-      List.exists2_exn ~f:mismatch_with_any left right
-  | Tuple (Unbounded left), Tuple (Unbounded right) ->
-      mismatch_with_any left right
-  | Tuple (Bounded bounded), Tuple (Unbounded unbounded)
-  | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
-      begin
-        match unbounded, bounded with
-        | Object, _ ->
-            true
-        | unbounded, head :: tail ->
-            mismatch_with_any unbounded head ||
-            List.for_all ~f:(equal Object) tail
-        | _ ->
-            false
-      end
-
-  | Union left, Union right ->
-      let left = Set.of_list left in
-      let right = Set.of_list right in
-      let mismatched left right =
-        Set.length left = Set.length right &&
-        Set.mem left Object &&
-        not (Set.mem right Object) &&
-        Set.length (Set.diff left right) = 1
-      in
-      mismatched left right || mismatched right left
-  | Union union, other
-  | other, Union union ->
-      List.exists ~f:(mismatch_with_any other) union
-
-  | _ ->
-      false
-
-
 let optional_value = function
   | Optional annotation -> annotation
   | annotation -> annotation
@@ -1963,6 +1867,140 @@ module TypedDictionary = struct
     in
     List.exists right_fields ~f:found_collision
 end
+
+
+let rec mismatch_with_any left right =
+  let compatible left right =
+    let symmetric left right =
+      (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
+      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
+    in
+    Identifier.equal left right ||
+    symmetric left right ||
+    symmetric right left
+  in
+
+  match left, right with
+  | Object, Bottom
+  | Bottom, Object
+  | Object, Optional _
+  | Optional _, Object
+  | Object, Parametric _
+  | Parametric _, Object
+  | Object, Primitive _
+  | Primitive _, Object
+  | Object, Callable _
+  | Callable _, Object
+  | Object, Top
+  | Top, Object
+  | Object, Tuple _
+  | Tuple _, Object
+  | Object, Union _
+  | Union _, Object
+  | Object, Variable _
+  | Variable _, Object ->
+      true
+  | Callable {
+      Callable.implementation = {
+        Callable.annotation = left_annotation;
+        parameters = left_parameters;
+      };
+      _;
+    },
+    Callable {
+      Callable.implementation = {
+        Callable.annotation = right_annotation;
+        parameters = right_parameters;
+      };
+      _;
+    } ->
+      let parameters_mismatch_with_any left right =
+        match left, right with
+        | Defined left, Defined right when List.length left = List.length right ->
+            let left = List.map ~f:Callable.Parameter.annotation left in
+            let right = List.map ~f:Callable.Parameter.annotation right in
+            List.exists2_exn left right ~f:mismatch_with_any
+        | _ ->
+            false
+      in
+      let parameters_compatible =
+        match left_parameters, right_parameters with
+        | Defined left, Defined right when List.length left = List.length right ->
+            true
+        | Defined _, Defined _ ->
+            false
+        | _ ->
+            true
+      in
+      if parameters_compatible then
+        mismatch_with_any left_annotation right_annotation
+        || parameters_mismatch_with_any left_parameters right_parameters
+      else
+        false
+  | Parametric { name; parameters = [left] }, right
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
+  | left, Parametric { name; parameters = [right] }
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
+  | Optional left, Optional right
+  | Optional left, right
+  | left, Optional right ->
+      mismatch_with_any left right
+
+  | Parametric left, Parametric right
+    when compatible left.name right.name &&
+         List.length left.parameters = List.length right.parameters ->
+      List.exists2_exn ~f:mismatch_with_any left.parameters right.parameters
+
+  | Parametric { name = iterator; parameters = [iterator_parameter] },
+    Parametric { name = generator; parameters = generator_parameter :: _ }
+  | Parametric { name = generator; parameters = generator_parameter :: _ },
+    Parametric { name = iterator; parameters = [iterator_parameter] }
+    when (Identifier.show iterator = "typing.Iterator" ||
+          Identifier.show iterator = "typing.Iterable") &&
+         Identifier.show generator = "typing.Generator" ->
+      mismatch_with_any iterator_parameter generator_parameter
+
+  | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
+      List.exists2_exn ~f:mismatch_with_any left right
+  | Tuple (Unbounded left), Tuple (Unbounded right) ->
+      mismatch_with_any left right
+  | Tuple (Bounded bounded), Tuple (Unbounded unbounded)
+  | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
+      begin
+        match unbounded, bounded with
+        | Object, _ ->
+            true
+        | unbounded, head :: tail ->
+            mismatch_with_any unbounded head ||
+            List.for_all ~f:(equal Object) tail
+        | _ ->
+            false
+      end
+
+  | Union left, Union right ->
+      let left = Set.of_list left in
+      let right = Set.of_list right in
+      let mismatched left right =
+        Set.length left = Set.length right &&
+        Set.mem left Object &&
+        not (Set.mem right Object) &&
+        Set.length (Set.diff left right) = 1
+      in
+      mismatched left right || mismatched right left
+  | Union union, other
+  | other, Union union ->
+      List.exists ~f:(mismatch_with_any other) union
+
+  | _ ->
+      false
+
 
 let to_yojson annotation =
   `String (show annotation)

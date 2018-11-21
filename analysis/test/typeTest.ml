@@ -861,7 +861,24 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        Type.Object
-       (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]))
+       (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any], int]")
+       (parse_callable "typing.Callable[[str], int]"));
+   assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[int], int]"));
+   assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[str], int]"));
+   assert_false
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
+       (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
 
 
 let test_class_name _ =
