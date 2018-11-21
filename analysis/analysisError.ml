@@ -1227,20 +1227,6 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
-    let is_callable_error { kind;_ } =
-      match kind with
-      | IncompatibleAttributeType {
-          incompatible_type = { mismatch = { actual; expected }; _ }; _ }
-      | IncompatibleParameterType { mismatch = { actual; expected }; _ }
-      | IncompatibleReturnType { mismatch = { actual; expected }; _ }
-      | IncompatibleVariableType { mismatch = { actual; expected }; _ } ->
-          Type.contains_callable actual || Type.contains_callable expected
-      | IncompatibleAwaitableType actual ->
-          Type.contains_callable actual
-      | _ ->
-          false
-    in
-
     let is_unimplemented_return_error error =
       match error with
       | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
@@ -1281,7 +1267,6 @@ let filter ~configuration ~resolution errors =
     in
 
     is_mock_error error ||
-    is_callable_error error ||
     is_unimplemented_return_error error ||
     is_builtin_import_error error ||
     is_override_on_dunder_method error

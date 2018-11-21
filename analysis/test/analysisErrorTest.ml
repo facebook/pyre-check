@@ -443,12 +443,6 @@ let test_filter _ =
   assert_filtered (undefined_attribute (Type.Optional (Type.primitive "NonCallableChild")));
   assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
 
-  (* Suppress callable errors. *)
-  assert_filtered
-    (incompatible_return_type (Type.callable ~annotation:Type.integer ()) Type.integer);
-  assert_filtered
-    (incompatible_return_type Type.integer (Type.callable ~annotation:Type.integer ()));
-
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered
