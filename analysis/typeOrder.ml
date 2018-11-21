@@ -446,6 +446,26 @@ let greatest ((module Handler: Handler) as order) ~matches =
     Type.Top
 
 
+let variables ((module Handler: Handler) as order) annotation =
+  if Type.is_meta annotation then
+    (* Despite what typeshed says, typing.Type is covariant:
+       https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
+    Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+  else
+    match Type.split annotation with
+    | left, _ when String.equal (Type.show left) "typing.Callable" ->
+        (* This is not the "real" typing.Callable. We are just
+           proxying to the Callable instance in the type order here. *)
+        Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+    | _ ->
+        let primitive = Type.split annotation |> fst in
+        Handler.find (Handler.indices ()) Type.generic
+        >>= fun generic_index ->
+        Handler.find (Handler.edges ()) (index_of order primitive)
+        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+        >>| fun { Target.parameters; _ } -> parameters
+
+
 let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   Type.equal left right ||
   match left, right with
@@ -489,22 +509,22 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       let compare_parameter left right variable =
         match left, right, variable with
         | Type.Bottom, _, _ ->
-            (* Bottom is special cased. A parametric type T[Bottom] is a subtype of
-               T[_T2], for any _T2 and regardless of its variance. *)
+            (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
             true
         | _ , Type.Object, _ ->
-            (* Any/Object is special cased. A parametric type T[_T2] is a subtype of
-               T[Any], for any _T2 and regardless of its variance. *)
+            (* T[_T2] is a subtype of T[Any], for any _T2 and regardless of its variance. *)
             true
         | _ , _ , Type.Variable { variance = Covariant; _ } ->
             less_or_equal order ~left ~right
         | _ , _ , Type.Variable { variance = Contravariant; _ } ->
             less_or_equal order ~left:right ~right:left
-        | _ ->
-            (* If the parent type is invariant in this variable,
-               then only exact type equality is allowed. *)
+        | _, _, Type.Variable { variance = Invariant; _ } ->
             less_or_equal order ~left ~right &&
             less_or_equal order ~left:right ~right:left
+        | _ ->
+            Log.warning "Cannot compare %a and %a, not a variable: %a"
+              Type.pp left Type.pp right Type.pp variable;
+            false
       in
 
       let left_primitive, left_parameters = Type.split left in
@@ -512,18 +532,14 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       raise_if_untracked order left_primitive;
       raise_if_untracked order right_primitive;
       let generic_index = Handler.find (Handler.indices ()) Type.generic in
-      let left_variables = variables_for_type order left in
+      let left_variables = variables order left in
 
       if Type.equal left_primitive right_primitive then
-        (* Left and right variables coincide, a simple parameter comparison is enough. *)
+        (* Left and right primitives coincide, a simple parameter comparison is enough. *)
         let compare_parameters ~left ~right variables =
           List.length variables = List.length left &&
           List.length variables = List.length right &&
-          List.map3_exn
-            ~f:compare_parameter
-            left
-            right
-            variables
+          List.map3_exn ~f:compare_parameter left right variables
           |> List.for_all ~f:Fn.id
         in
         left_variables
@@ -531,6 +547,14 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
         |> Option.value ~default:false
       else
         (* Perform one step in all appropriate directions. *)
+        let parametric ~primitive ~parameters =
+          match primitive with
+          | Type.Primitive name ->
+              Some (Type.Parametric { name; parameters })
+          | _ ->
+              None
+        in
+
         (* 1. Go one level down in the class hierarchy and try from there. *)
         let step_into_subclasses () =
           let target_to_parametric { Target.target; parameters } =
@@ -538,56 +562,30 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             >>= fun annotation ->
             Type.split annotation
             |> fst
-            |> function
-            | Primitive name ->
-                Some (Type.Parametric { name; parameters })
-            | _ ->
-                None
+            |> fun primitive -> parametric ~primitive ~parameters
           in
-
           let successors =
             let left_index = index_of order left_primitive in
             Handler.find (Handler.edges ()) left_index
             |> Option.value ~default:[]
           in
-
           get_instantiated_successors ~generic_index ~parameters:left_parameters successors
           |> List.filter_map ~f:target_to_parametric
           |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
         in
+
         (* 2. Try and replace all parameters, one at a time, to get closer to the destination. *)
         let replace_parameters_with_destination left_variables =
-          let right_propagated =
-            let propagate_variables ~target variables =
-              let worklist = Queue.create () in
-              Queue.enqueue
-                worklist
-                { Target.target = index_of order left_primitive; parameters = variables };
-              let rec iterate worklist =
-                match Queue.dequeue worklist with
-                | Some { Target.target = target_index; parameters } ->
-                    if target_index = index_of order target then
-                      Some parameters
-                    else
-                      begin
-                        Handler.find (Handler.edges ()) target_index
-                        >>| get_instantiated_successors ~generic_index ~parameters
-                        >>| List.iter ~f:(Queue.enqueue worklist)
-                        |> ignore;
-                        iterate worklist
-                      end
-                | None ->
-                    None
-              in
-              iterate worklist
-            in
-
-            propagate_variables ~target:right_primitive left_variables
-            |> Option.value ~default:[]
-          in
           (* Mapping from a variable in `left` to the target parameter (via subclass
              substitutions) in `right`. *)
           let variable_substitutions =
+            let right_propagated =
+              (* Create a "fake" primitive+variables type that we can propagate to the target. *)
+              parametric ~primitive:left_primitive ~parameters:left_variables
+              >>= (fun source ->
+                  instantiate_successors_parameters order ~source ~target:right_primitive)
+              |> Option.value ~default:[]
+            in
             match
               List.fold2 right_propagated right_parameters ~init:Type.Map.empty ~f:diff_variables
             with
@@ -595,40 +593,37 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             | Unequal_lengths -> Type.Map.empty
           in
           let propagate_with_substitutions index variable =
-            let replace replacement =
-              let parametric ~head ~replacement ~tail =
-                (* Remove the element to be replaced from the tail. *)
-                let tail = List.tl tail |> Option.value ~default:[] in
-                let parameters = head @ [replacement] @ tail in
-                Type.Parametric { name = left_name; parameters }
-              in
+            let replace_one_parameter replacement =
               let head, tail = List.split_n left_parameters index in
               match List.hd tail with
-              | Some original when Type.equal original replacement ->
+              | Some original when
                   (* If the original and replacement do not differ, no recursion is needed. *)
+                  Type.equal original replacement or
+                  (* Cannot perform the replacement if variance does not allow it. *)
+                  not (compare_parameter original replacement variable) ->
                   None
-              | Some original ->
-                  (* Perform the replament only if variance allows it. *)
-                  if compare_parameter original replacement variable then
-                    Some (parametric ~head ~replacement ~tail)
-                  else
-                    None
-              | None ->
-                  Some (parametric ~head ~replacement ~tail)
+              | _ ->
+                  let tail = List.tl tail |> Option.value ~default:[] in
+                  let parameters = head @ [replacement] @ tail in
+                  Some (Type.Parametric { name = left_name; parameters })
             in
             Map.find variable_substitutions variable
-            >>= replace
+            >>= replace_one_parameter
             >>| (fun left -> less_or_equal order ~left ~right)
             |> Option.value ~default:false
           in
           List.existsi left_variables ~f:propagate_with_substitutions
         in
-        step_into_subclasses () or
-        ( left_variables
+        let step_sideways () =
+          left_variables
           >>| (fun left_variables ->
               (List.length left_variables == List.length left_parameters) &&
               replace_parameters_with_destination left_variables)
-          |> Option.value ~default:false)
+          |> Option.value ~default:false
+        in
+
+        step_into_subclasses () or
+        step_sideways ()
 
   (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
   | Type.Union left, right ->
@@ -1044,7 +1039,7 @@ and join ((module Handler: Handler) as order) left right =
           if Handler.contains (Handler.indices ()) target then
             let left_parameters = instantiate_successors_parameters order ~source:left ~target in
             let right_parameters = instantiate_successors_parameters order ~source:right ~target in
-            let variables = variables_for_type order target in
+            let variables = variables order target in
             let parameters =
               let join_parameters left right variable =
                 match left, right, variable with
@@ -1058,15 +1053,18 @@ and join ((module Handler: Handler) as order) left right =
                     join order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->
                     meet order left right
-                | _ ->
-                    (* If the parent type is invariant in this variable, then only exact type
-                       equality is allowed. We fallback to Type.Object if type equality fails
-                       to help display meaningful error messages. *)
+                | _, _, Type.Variable { variance = Invariant; _ } ->
                     if less_or_equal order ~left ~right &&
                        less_or_equal order ~left:right ~right:left then
                       left
                     else
+                      (* We fallback to Type.Object if type equality fails to help display
+                         meaningful error messages. *)
                       Type.Object
+                | _ ->
+                    Log.warning "Cannot join %a and %a, not a variable: %a"
+                      Type.pp left Type.pp right Type.pp variable;
+                    Type.Object
               in
               match left_parameters, right_parameters, variables with
               | Some left, Some right, Some variables
@@ -1268,7 +1266,7 @@ and meet ((module Handler: Handler) as order) left right =
                 ~source:right
                 ~target
             in
-            let variables = variables_for_type order target in
+            let variables = variables order target in
 
             let parameters =
               let meet_parameters left right variable =
@@ -1283,15 +1281,18 @@ and meet ((module Handler: Handler) as order) left right =
                     meet order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->
                     join order left right
-                | _ ->
-                    (* If the parent type is invariant in this variable, then only exact type
-                       equality is allowed. We fallback to Type.Bottom if type equality fails
-                       to help display meaningful error messages. *)
+                | _, _, Type.Variable { variance = Invariant; _ } ->
                     if less_or_equal order ~left ~right &&
                        less_or_equal order ~left:right ~right:left then
                       left
                     else
+                      (* We fallback to Type.Bottom if type equality fails to help display
+                         meaningful error messages. *)
                       Type.Bottom
+                | _ ->
+                    Log.warning "Cannot meet %a and %a, not a variable: %a"
+                      Type.pp left Type.pp right Type.pp variable;
+                    Type.Bottom
               in
               match left_parameters, right_parameters, variables with
               | Some left, Some right, Some variables
@@ -1394,26 +1395,6 @@ and meet ((module Handler: Handler) as order) left right =
         | None ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
             Type.Bottom
-
-
-and variables_for_type ((module Handler: Handler) as order) annotation =
-  if Type.is_meta annotation then
-    (* Despite what typeshed says, typing.Type is covariant:
-       https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-    Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-  else
-    match Type.split annotation with
-    | left, _ when String.equal (Type.show left) "typing.Callable" ->
-        (* This is not the "real" typing.Callable. We are just
-           proxying to the Callable instance in the type order here. *)
-        Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-    | _ ->
-        let primitive = Type.split annotation |> fst in
-        Handler.find (Handler.indices ()) Type.generic
-        >>= fun generic_index ->
-        Handler.find (Handler.edges ()) (index_of order primitive)
-        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-        >>| fun { Target.parameters; _ } -> parameters
 
 
 (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
