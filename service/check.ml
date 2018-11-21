@@ -188,10 +188,10 @@ let analyze_sources
   let errors = Postprocess.ignore ~configuration scheduler handles errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
 
-  let timer = Timer.start () in
   let additional_errors =
     if run_additional_checks then
       begin
+        let timer = Timer.start () in
         Log.info "Running additional checks...";
         let run_additional_check (module Check: Analysis.Check.Signature) =
           Log.info "Running check `%s`..." Check.name;
@@ -222,14 +222,16 @@ let analyze_sources
           Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
           errors
         in
-        List.map Analysis.Check.additional_checks ~f:run_additional_check
-        |> List.concat
+        let additional_errors =
+          List.map Analysis.Check.additional_checks ~f:run_additional_check
+          |> List.concat
+        in
+        Statistics.performance ~name:"additional checks" ~timer ();
+        additional_errors
       end
     else
       []
   in
-  Statistics.performance ~name:"additional_checks" ~timer ();
-
   errors @ additional_errors, coverage
 
 
