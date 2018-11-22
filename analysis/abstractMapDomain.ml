@@ -92,6 +92,12 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     |> List.map ~f:show_pair
     |> String.concat ~sep:"\n"
 
+  let pp formatter map =
+    Format.fprintf
+      formatter
+      "%s"
+      (show map)
+
   type _ part +=
     | Key: Key.t part
     | KeyValue: (Key.t * Element.t) part

@@ -197,6 +197,12 @@ struct
     |> List.map ~f:show_pair
     |> String.concat ~sep:", "
 
+  let pp formatter map =
+    Format.fprintf
+      formatter
+      "%s"
+      (show map)
+
   let ensure_slot (type a) (slot: a Config.slot) product =
     let slot_name = Config.slot_name slot in
     if Map.mem product slot_name then

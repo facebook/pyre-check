@@ -41,6 +41,13 @@ module Make(Element : Set.Elt) = struct
     Sexp.to_string [%message (set: Set.t)]
 
 
+  let pp formatter set =
+    Format.fprintf
+      formatter
+      "%s"
+      (show set)
+
+
   type _ part +=
     | Element: Element.t part
     | Set: Element.t list part

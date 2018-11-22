@@ -68,6 +68,12 @@ module Make(Element : ELEMENT_DOMAIN) = struct
     |> String.concat ~sep:", "
     |> Format.sprintf "[%s]"
 
+  let pp formatter map =
+    Format.fprintf
+      formatter
+      "%s"
+      (show map)
+
   type _ AbstractDomain.part +=
     | Element: Element.t AbstractDomain.part
     | Set: Element.t list part

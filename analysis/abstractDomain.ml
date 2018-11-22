@@ -18,13 +18,12 @@ type value_part = Part: 'a part * 'a -> value_part
 
 module type S = sig
   type t
-  [@@deriving sexp]
+  [@@deriving show, sexp]
 
   val bottom: t
   val is_bottom: t -> bool
   val join: t -> t -> t
   val less_or_equal: left:t -> right:t -> bool
-  val show : t -> string
   val widen: iteration:int -> previous:t -> next:t -> t
 
   (* Access specific parts of composed abstract domains. *)
