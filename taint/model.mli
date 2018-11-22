@@ -12,6 +12,7 @@ open Interprocedural
 
 
 type t = {
+  is_obscure: bool;
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
@@ -28,4 +29,4 @@ val get_callsite_model
   :  resolution: Resolution.t
   -> call_target: [<Callable.t]
   -> arguments: Argument.t list
-  -> Interprocedural.Result.model_t option
+  -> t

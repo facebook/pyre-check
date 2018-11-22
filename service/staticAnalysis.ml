@@ -84,7 +84,7 @@ let record_path_of_definitions ~path ~source =
 let add_models ~environment ~model_source =
   let open Taint in
   let open Interprocedural in
-  let add_model_to_memory Model.{ call_target; model } =
+  let add_model_to_memory Model.{ call_target; model; _ } =
     Log.info "Adding taint model %S to shared memory" (Callable.external_target_name call_target);
     Result.empty_model
     |> Result.with_model Taint.Result.kind model

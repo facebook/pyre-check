@@ -84,82 +84,77 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution location arguments state call_targets =
       let apply_call_target call_target =
-        let is_obscure, taint_model =
-          match Model.get_callsite_model ~resolution ~call_target ~arguments with
-          | None -> true, None
-          | Some model ->
-              model.is_obscure, Interprocedural.Result.get_model TaintResult.kind model
-        in
-        match taint_model with
-        | Some { TaintResult.forward; backward; _ } when not is_obscure ->
-            let sink_roots = BackwardState.keys backward.sink_taint in
-            let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
-            let tito_roots = BackwardState.keys backward.taint_in_taint_out in
-            let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
-            let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
-            let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
+        if not taint_model.is_obscure then
+          let { TaintResult.forward; backward; _ } = taint_model.model in
+          let sink_roots = BackwardState.keys backward.sink_taint in
+          let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
+          let tito_roots = BackwardState.keys backward.taint_in_taint_out in
+          let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
+          let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
+          let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+            BackwardState.read_access_path
+              ~root
+              ~path:[]
+              backward.sink_taint
+            |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
+            |> BackwardState.read_tree formal_path
+            |> BackwardState.create_tree actual_path
+            |> BackwardState.join_trees taint_tree
+          in
+          let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
+            let new_tito =
               BackwardState.read_access_path
                 ~root
-                ~path:[]
-                backward.sink_taint
-              |> BackwardState.apply_call location ~callees:[ call_target ] ~port:root
-              |> BackwardState.read_tree formal_path
+                ~path:formal_path
+                backward.taint_in_taint_out
               |> BackwardState.create_tree actual_path
-              |> BackwardState.join_trees taint_tree
             in
-            let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
-              let new_tito =
-                BackwardState.read_access_path
-                  ~root
-                  ~path:formal_path
-                  backward.taint_in_taint_out
-                |> BackwardState.create_tree actual_path
-              in
-              BackwardState.join_trees taint_tree new_tito
-            in
-            let analyze_argument tito ((argument, sink_matches), (_dup, tito_matches)) =
-              let { Node.location; _ } = argument in
-              let argument_taint = analyze_unstarred_expression ~resolution argument state in
-              let tito =
-                let convert_tito ~path ~path_element:_ ~element:_ tito =
-                  ForwardState.read_tree path argument_taint
-                  |> ForwardState.collapse
-                  |> ForwardTaint.join tito
-                in
-                let taint_in_taint_out =
-                  List.fold tito_matches ~f:combine_tito ~init:BackwardState.empty_tree
-                in
-                BackwardState.fold_tree_paths taint_in_taint_out ~init:tito ~f:convert_tito
-              in
-              let flow_candidate =
-                let sink_tree =
-                  List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.empty_tree
-                in
-                Flow.generate_source_sink_matches
-                  ~location
-                  ~source_tree:argument_taint
-                  ~sink_tree
-              in
-              FunctionContext.add_flow_candidate flow_candidate;
-              tito
-            in
+            BackwardState.join_trees taint_tree new_tito
+          in
+          let analyze_argument tito ((argument, sink_matches), (_dup, tito_matches)) =
+            let { Node.location; _ } = argument in
+            let argument_taint = analyze_unstarred_expression ~resolution argument state in
             let tito =
-              List.fold ~f:analyze_argument combined_matches ~init:ForwardTaint.bottom
+              let convert_tito ~path ~path_element:_ ~element:_ tito =
+                ForwardState.read_tree path argument_taint
+                |> ForwardState.collapse
+                |> ForwardTaint.join tito
+              in
+              let taint_in_taint_out =
+                List.fold tito_matches ~f:combine_tito ~init:BackwardState.empty_tree
+              in
+              BackwardState.fold_tree_paths taint_in_taint_out ~init:tito ~f:convert_tito
             in
-            let result_taint =
-              ForwardState.read AccessPath.Root.LocalResult forward.source_taint
-              |> ForwardState.apply_call
-                location
-                ~callees:[call_target]
-                ~port:AccessPath.Root.LocalResult
+            let flow_candidate =
+              let sink_tree =
+                List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.empty_tree
+              in
+              Flow.generate_source_sink_matches
+                ~location
+                ~source_tree:argument_taint
+                ~sink_tree
             in
-            ForwardState.join_root_element result_taint tito
-        | _ ->
-            (* Obscure/no model. *)
-            List.fold
-              arguments
-              ~init:ForwardState.empty_tree
-              ~f:(analyze_argument ~resolution state)
+            FunctionContext.add_flow_candidate flow_candidate;
+            tito
+          in
+          let tito =
+            List.fold ~f:analyze_argument combined_matches ~init:ForwardTaint.bottom
+          in
+          let result_taint =
+            ForwardState.read AccessPath.Root.LocalResult forward.source_taint
+            |> ForwardState.apply_call
+              location
+              ~callees:[call_target]
+              ~port:AccessPath.Root.LocalResult
+          in
+          ForwardState.join_root_element result_taint tito
+        else
+          (* Obscure/no model. *)
+          List.fold
+            arguments
+            ~init:ForwardState.empty_tree
+            ~f:(analyze_argument ~resolution state)
       in
       match call_targets with
       | [] ->

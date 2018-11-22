@@ -17,6 +17,7 @@ open TaintResult
 
 
 type t = {
+  is_obscure: bool;
   call_target: Callable.t;
   model: TaintResult.call_model;
 }
@@ -164,7 +165,7 @@ let create ~resolution ?(verify = true) ~model_source () =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters
     >>= Fn.flip taint_return return_annotation
-    >>= (fun model -> Ok { model; call_target })
+    >>= (fun model -> Ok { model; call_target; is_obscure = false })
   in
   match List.map defines ~f:create_model with
   | models -> Or_error.combine_errors models
@@ -187,6 +188,7 @@ let model_cache =
 
 let get_callsite_model ~resolution ~call_target ~arguments =
   let open Pyre in
+  let call_target = (call_target :> Callable.t) in
   let subprocess_model =
     let shell_set_to_true ~arguments =
       let shell_set_to_true argument =
@@ -221,7 +223,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
        shell_set_to_true ~arguments then
       match Hashtbl.find model_cache target with
       | Some model ->
-          model
+          Some model
       | None ->
           let { model; _ } =
             let model_source =
@@ -233,18 +235,28 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             |> Or_error.ok_exn
             |> List.hd_exn
           in
-          let result =
-            Result.empty_model
-            |> Result.with_model TaintResult.kind model
-            |> Option.some
+          let result = {
+            call_target;
+            model;
+            is_obscure = false;
+          }
           in
           Hashtbl.set model_cache ~key:target ~data:result;
-          result
+          Some result
     else
       None
   in
 
-  if Option.is_some subprocess_model then
-    subprocess_model
-  else
-    Interprocedural.Fixpoint.get_model call_target
+  match subprocess_model with
+  | Some model ->
+      model
+  | None ->
+      match Interprocedural.Fixpoint.get_model call_target with
+      | None ->
+          { is_obscure = true; call_target; model = TaintResult.empty_model }
+      | Some model ->
+          let taint_model =
+            Interprocedural.Result.get_model TaintResult.kind model
+            |> Option.value ~default:TaintResult.empty_model
+          in
+          { is_obscure = model.is_obscure; call_target; model = taint_model }
