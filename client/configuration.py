@@ -6,6 +6,7 @@
 import json
 import logging
 import os
+import sys
 import shutil
 from typing import List, Optional
 
@@ -97,9 +98,9 @@ class Configuration:
 
         # Handle search path from multiple sources
         self.search_path = []
-        pythonpath = os.getenv("PYTHONPATH")
+        pythonpath = os.getenv("PYTHONPATH", default='')
         if preserve_pythonpath and pythonpath:
-            for path in pythonpath.split(":"):
+            for path in pythonpath.split(":") + sys.path:
                 if os.path.isdir(path):
                     self.search_path.append(path)
                 else:
