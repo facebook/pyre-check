@@ -308,7 +308,12 @@ module IntToStringSet = struct
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
       ~f:Int.to_string
-      ~expected:["2"; "1"; "0"]
+      ~expected:["2"; "1"; "0"];
+    test
+      ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
+      ~by:Map.KeyValue
+      ~f:(fun (key, set) -> Format.sprintf "%d:%d" key (StringSet.elements set |> List.length))
+      ~expected:["2:2"; "1:2"; "0:2"]
 
   let test_transform _ =
     let test ~initial ~by:part ~f ~expected ~to_result =
@@ -332,7 +337,17 @@ module IntToStringSet = struct
       ~by:Map.Key
       ~f:(fun key -> key + 1)
       ~to_result:Int.to_string
-      ~expected:["3"; "2"; "1"]
+      ~expected:["3"; "2"; "1"];
+    test
+      ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
+      ~by:Map.KeyValue
+      ~f:(fun (key, set) -> (key + 1, StringSet.add set "new"))
+      ~to_result:(fun (key, set) -> Format.sprintf "%d: %s" key (StringSet.show set))
+      ~expected:[
+        "3: (set(c d new))";
+        "2: (set(b c new))";
+        "1: (set(a b new))";
+      ]
 
   let test_partition _ =
     let test ~initial ~by:part ~f ~expected_keys =
@@ -365,7 +380,17 @@ module IntToStringSet = struct
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []]
       ~by:Map.Key
       ~f:(fun key -> Bool.to_string (key <= 1))
-      ~expected_keys:["false", [2]; "true", [0; 1]]
+      ~expected_keys:["false", [2]; "true", [0; 1]];
+    test
+      ~initial:[0, ["a"; "b"]; 1, ["b"; "c"; "d"]; 2, ["c"; "d"]; 3, []]
+      ~by:Map.KeyValue
+      ~f:(fun (key, set) ->
+          Format.sprintf "%b:%d" (key <= 1) (StringSet.elements set |> List.length))
+      ~expected_keys:[
+        "false:2", [2];
+        "true:2", [0];
+        "true:3", [1];
+      ]
 
   let test_create _ =
     assert_equal

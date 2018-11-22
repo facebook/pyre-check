@@ -94,6 +94,7 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
 
   type _ part +=
     | Key: Key.t part
+    | KeyValue: (Key.t * Element.t) part
 
   let transform (type a) (part: a part) ~(f: a -> a) (map: t) : t =
     match part with
@@ -101,6 +102,13 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
         Map.fold
           map
           ~f:(fun ~key ~data result -> set ~key:(f key) ~data result)
+          ~init:Map.empty
+    | KeyValue ->
+        Map.fold
+          map
+          ~f:(fun ~key ~data result ->
+              let key, data = f (key, data) in
+              set ~key ~data result)
           ~init:Map.empty
     | _ ->
         if Key.absence_implicitly_maps_to_bottom then
@@ -115,6 +123,8 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     match part with
     | Key ->
         Map.fold ~f:(fun ~key ~data:_ result -> f result key) ~init map
+    | KeyValue ->
+        Map.fold ~f:(fun ~key ~data result -> f result (key, data)) ~init map
     | _ ->
         Map.fold
           map
@@ -133,6 +143,12 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     | Key ->
         let partition_by_key ~key ~data partition =
           let partition_key = f key in
+          Core.Map.Poly.update partition partition_key ~f:(update ~key ~data)
+        in
+        Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_key
+    | KeyValue ->
+        let partition_by_key ~key ~data partition =
+          let partition_key = f (key, data) in
           Core.Map.Poly.update partition partition_key ~f:(update ~key ~data)
         in
         Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_key
@@ -156,6 +172,9 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
           let elements, pairs = split_into_alist rest in
           let element_value = Element.create (List.rev elements) in
           [], ((value : Key.t), element_value) :: pairs
+      | Part (KeyValue, value) :: rest ->
+          let elements, pairs = split_into_alist rest in
+          elements, ((fst value : Key.t), (snd value : Element.t)) :: pairs
       | element_part :: rest ->
           let elements, pairs = split_into_alist rest in
           element_part :: elements, pairs

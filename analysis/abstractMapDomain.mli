@@ -21,6 +21,7 @@ module Make(Key: KEY)(Element : AbstractDomain.S) : sig
 
   type _ AbstractDomain.part +=
     | Key: Key.t AbstractDomain.part
+    | KeyValue: (Key.t * Element.t) AbstractDomain.part
 
   val set: t -> key: Key.t -> data: Element.t -> t
   val find: t -> Key.t -> Element.t option
