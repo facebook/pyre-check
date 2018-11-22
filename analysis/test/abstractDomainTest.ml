@@ -23,6 +23,7 @@ module type AbstractDomainUnderTest = sig
   val test_fold: test_ctxt -> unit
   val test_transform: test_ctxt -> unit
   val test_partition: test_ctxt -> unit
+  val test_create: test_ctxt -> unit
   val test_additional: test_ctxt -> unit
 end
 
@@ -125,6 +126,7 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
       "test_fold" >:: Domain.test_fold;
       "test_transform" >:: Domain.test_transform;
       "test_partition" >:: Domain.test_partition;
+      "test_create" >:: Domain.test_create;
       "test_additional" >:: Domain.test_additional;
     ]
 end
@@ -207,6 +209,16 @@ module StringSet = struct
       ~initial:["abc"; "bef"; "g"]
       ~f:(fun x -> String.length x)
       ~expected:[1, ["g"]; 3, ["abc"; "bef"]]
+
+  let test_create _ =
+    assert_equal
+      (of_list ["a"; "b"; "c"])
+      (create [Part (Set, ["a"; "b"; "c"])])
+      ~printer:show;
+    assert_equal
+      (of_list ["a"; "b"; "c"])
+      (create [Part (Element, "a"); Part (Element, "b"); Part (Element, "c")])
+      ~printer:show
 
   let test_additional _ =
     ()
@@ -355,6 +367,17 @@ module IntToStringSet = struct
       ~f:(fun key -> Bool.to_string (key <= 1))
       ~expected_keys:["false", [2]; "true", [0; 1]]
 
+  let test_create _ =
+    assert_equal
+      (build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []])
+      (create [
+          Part (Key, 0); Part (StringSet.Set, ["a"; "b"]);
+          Part (Key, 1); Part (StringSet.Set, ["b"; "c"]);
+          Part (Key, 2); Part (StringSet.Set, ["c"; "d"]);
+          Part (Key, 3); Part (StringSet.Set, []);
+        ])
+      ~printer:show
+
   let test_additional _ =
     ()
 end
@@ -471,6 +494,17 @@ module StrictIntToStringSet = struct
       ~f:(fun key -> Bool.to_string (key <= 1))
       ~expected_keys:["false", [2; 3]; "true", [0; 1]]
 
+  let test_create _ =
+    assert_equal
+      (build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []])
+      (create [
+          Part (Key, 0); Part (StringSet.Set, ["a"; "b"]);
+          Part (Key, 1); Part (StringSet.Set, ["b"; "c"]);
+          Part (Key, 2); Part (StringSet.Set, ["c"; "d"]);
+          Part (Key, 3); Part (StringSet.Set, []);
+        ])
+      ~printer:show
+
   let test_additional _ =
     ()
 end
@@ -498,6 +532,12 @@ module PairStringMapIntToString = struct
 
   let build left right =
     product [Element (Slots.Left, left); Element (Slots.Right, right)]
+
+  let left_element = ProductSlot (Slots.Left, LeftStringSet.Element)
+  let left_set = ProductSlot (Slots.Left, LeftStringSet.Set)
+  let right_key = ProductSlot (Slots.Right, IntToStringSet.Key)
+  let right_element = ProductSlot (Slots.Right, StringSet.Element)
+  let right_set = ProductSlot (Slots.Right, StringSet.Set)
 
   let unrelated =
     let fold_sets accumulator v1 =
@@ -543,17 +583,17 @@ module PairStringMapIntToString = struct
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
+      ~by:left_element
       ~f:Fn.id
       ~expected:["left.d"; "left.c"; "left.b"; "left.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Right, StringSet.Element))
+      ~by:right_element
       ~f:Fn.id
       ~expected:["d"; "c"; "c"; "b"; "b"; "a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
+      ~by:right_key
       ~f:Int.to_string
       ~expected:["2"; "1"; "0"]
 
@@ -570,19 +610,19 @@ module PairStringMapIntToString = struct
     in
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
+      ~by:left_element
       ~f:(fun x -> "left." ^ x)
       ~to_result:Fn.id
       ~expected:["left.left.d"; "left.left.c"; "left.left.b"; "left.left.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Right, StringSet.Element))
+      ~by:right_element
       ~f:(fun x -> "right." ^ x)
       ~to_result:Fn.id
       ~expected:["right.d"; "right.c"; "right.c"; "right.b"; "right.b"; "right.a"];
     test
       ~initial:[0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]]
-      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
+      ~by:right_key
       ~f:(fun x -> x + 1)
       ~to_result:Int.to_string
       ~expected:["3"; "2"; "1"]
@@ -596,8 +636,7 @@ module PairStringMapIntToString = struct
           ~init:[]
           ~f:(fun ~key ~data result ->
               let elements =
-                let part = ProductSlot (Slots.Right, IntToStringSet.Key) in
-                fold part ~init:[] ~f:(Fn.flip List.cons) data
+                fold right_key ~init:[] ~f:(Fn.flip List.cons) data
                 |> List.sort ~compare:Int.compare
               in
               (key, elements) :: result
@@ -617,7 +656,7 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:(ProductSlot (Slots.Left, LeftStringSet.Element))
+      ~by:left_element
       ~f:Fn.id
       (* Pair right side distributed over left partition *)
       ~expected_keys:[
@@ -632,7 +671,7 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:(ProductSlot (Slots.Right, StringSet.Element))
+      ~by:right_element
       ~f:Fn.id
       ~expected_keys:[
         "a", [0];
@@ -646,12 +685,23 @@ module PairStringMapIntToString = struct
         1, ["b"; "c"];
         2, ["c"; "d"];
       ]
-      ~by:(ProductSlot (Slots.Right, IntToStringSet.Key))
+      ~by:right_key
       ~f:(fun key -> Bool.to_string (key <= 1))
       ~expected_keys:[
         "false", [2];
         "true", [0; 1];
       ]
+
+  let test_create _ =
+    assert_equal
+      (build [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]])
+      (create [
+          Part (left_set, ["left.a"; "left.b"; "left.c"; "left.d"]);
+          Part (right_key, 0); Part (right_set, ["a"; "b"]);
+          Part (right_key, 1); Part (right_set, ["b"; "c"]);
+          Part (right_key, 2); Part (right_set, ["c"; "d"]);
+        ])
+      ~printer:show
 
   let test_additional _ =
     ()
@@ -798,6 +848,27 @@ module AbstractElementSet = struct
       ~initial:[A; B; C ("x", 5); C("y", 5)]
       ~f:(function C (_, i) -> i | _ -> -1)
       ~expected:[-1, ["A"; "B"]; 5, ["C(x,5)"; "C(y,5)"]]
+
+  let compare left right =
+    less_or_equal ~left ~right &&
+    less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal
+      (of_list [A; B; C ("x", 5); C("y", 5)])
+      (create [Part (Set, [A; B; C ("x", 5); C("y", 5)])])
+      ~printer:show
+      ~cmp:compare;
+    assert_equal
+      (of_list [A; B; C ("x", 5); C("y", 5)])
+      (create [
+          Part (Element, A);
+          Part (Element, B);
+          Part (Element, C ("x", 5));
+          Part (Element, C("y", 5));
+        ])
+      ~printer:show
+      ~cmp:compare
 
   let test_additional _ =
     let cmp a b =
@@ -950,6 +1021,20 @@ module PairStringString = struct
         "c", "left: (set(a b)), right: (set(c))";
       ]
 
+  let compare left right =
+    less_or_equal ~left ~right &&
+    less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal
+      (build ["a"; "b"] ["a"; "b"])
+      (create [
+          Part (ProductSlot (Slots.Left, StringSet.Set), ["a"; "b"]);
+          Part (ProductSlot (Slots.Right, StringSet.Set), ["a"; "b"]);
+        ])
+      ~printer:show
+      ~cmp:compare
+
   let test_additional _ =
     ()
 end
@@ -1100,6 +1185,21 @@ module ProductDomain = struct
         "Sarine",
         "Cities: (set(Fribourg Lausanne)), Rivers: (set(Sarine)), Years: (set(280 1157))";
       ]
+
+  let compare left right =
+    less_or_equal ~left ~right &&
+    less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal
+      (build (["Lausanne"; "Fribourg"], [280; 1157], ["Flon"; "Louve"; "Sarine"]))
+      (create [
+          Part (ProductSlot (Cities, CitySet.Set), ["Lausanne"; "Fribourg"]);
+          Part (ProductSlot (Years, YearSet.Set), [280; 1157]);
+          Part (ProductSlot (Rivers, RiverSet.Set), ["Flon"; "Louve"; "Sarine"]);
+        ])
+      ~printer:show
+      ~cmp:compare
 
   let test_additional _ =
     let materialized_slot =

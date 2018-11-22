@@ -12,6 +12,9 @@
    the range. *)
 type _ part = ..
 
+(* Packages a part and a corresponding value. See create function below.
+*)
+type value_part = Part: 'a part * 'a -> value_part
 
 module type S = sig
   type t
@@ -28,6 +31,9 @@ module type S = sig
   val fold: 'a part -> f: ('b -> 'a -> 'b) -> init: 'b -> t -> 'b
   val partition: 'a part -> f: ('a -> 'b) -> t -> ('b, t) Core.Map.Poly.t
   val transform: 'a part -> f: ('a -> 'a) -> t -> t
+
+  (* Create an abstract value based on a part list. *)
+  val create: value_part list -> t
 end
 
 

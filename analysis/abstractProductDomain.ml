@@ -261,5 +261,32 @@ struct
         | Equal -> value
         | Distinct -> failwith "internal invariant broken"
 
+  let create parts =
+    let update slot_representative part = function
+      | Some (representative, parts) -> (representative, part :: parts)
+      | None -> (slot_representative, [part])
+    in
+    let partition_by_slot partition part_value =
+      match part_value with
+      | Part (ProductSlot (slot, nested_part), value) ->
+          let key = Config.slot_name slot in
+          let part = Part (nested_part, value) in
+          Core.Map.Poly.update partition key ~f:(update part_value part)
+      | _ ->
+          failwith "Must use ProductSlot or AllSlots part"
+    in
+    let partition = List.fold parts ~f:partition_by_slot ~init:Core.Map.Poly.empty in
+    let create_slot (representative, parts) =
+      match representative with
+      | Part (ProductSlot (slot, _), _) ->
+          let module D = (val (Config.slot_domain slot)) in
+          (Config.slot_name slot, Element (slot, List.rev parts |> D.create))
+      | _ ->
+          failwith "broken invariant"
+    in
+    Core.Map.Poly.data partition
+    |> List.map ~f:create_slot
+    |> Map.of_alist_reduce ~f:ProductElement.join
+
   let product = make
 end

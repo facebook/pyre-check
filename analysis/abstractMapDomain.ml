@@ -35,6 +35,16 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     else
       Map.set map ~key ~data
 
+  let update map ~key ~data =
+    let update = function
+      | None -> data
+      | Some existing -> Element.join existing data
+    in
+    if Key.absence_implicitly_maps_to_bottom && Element.is_bottom data then
+      map
+    else
+      Map.update map key ~f:update
+
   let singleton key data =
     set bottom ~key ~data
 
@@ -136,4 +146,26 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
                 Core.Map.Poly.update partition partition_key ~f:(update ~key ~data))
         in
         Map.fold map ~init:Core.Map.Poly.empty ~f:partition_by_elements
+
+  let rec create parts =
+    let rec split_into_alist parts =
+      match parts with
+      | [] ->
+          [], []
+      | Part (Key, value) :: rest ->
+          let elements, pairs = split_into_alist rest in
+          let element_value = Element.create (List.rev elements) in
+          [], ((value : Key.t), element_value) :: pairs
+      | element_part :: rest ->
+          let elements, pairs = split_into_alist rest in
+          element_part :: elements, pairs
+    in
+    let common_elements, key_values = split_into_alist parts in
+    let () =
+      if key_values = [] && common_elements <> [] then failwith "No keys specified"
+    in
+    let common = Element.create (List.rev common_elements) in
+    List.map key_values ~f:(fun (key, value) -> (key, Element.join common value))
+    |> List.fold ~init:bottom ~f:(fun map (key, data) -> update map ~key ~data)
+
 end

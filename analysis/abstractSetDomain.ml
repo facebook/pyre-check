@@ -55,7 +55,8 @@ module Make(Element : Set.Elt) = struct
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name
-        |> failwith "Unknown part %s in fold"
+        |> Format.sprintf "Unknown part %s in fold"
+        |> failwith
 
 
   let transform (type a) (part: a part) ~(f: a -> a) set =
@@ -68,7 +69,8 @@ module Make(Element : Set.Elt) = struct
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name
-        |> failwith "Unknown part %s in transform"
+        |> Format.sprintf "Unknown part %s in transform"
+        |> failwith
 
 
   let partition (type a b) (part: a part) ~(f: a -> b) set =
@@ -88,6 +90,21 @@ module Make(Element : Set.Elt) = struct
     | _ ->
         Obj.extension_constructor part
         |> Obj.extension_name
-        |> failwith "Unknown part %s in partition"
+        |> Format.sprintf "Unknown part %s in partition"
+        |> failwith
 
+  let create parts =
+    let create_part so_far (Part (part, value)) =
+      match part with
+      | Set ->
+          join so_far (of_list value)
+      | Element ->
+          add so_far value
+      | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> Format.sprintf "Unknown part %s in transform"
+        |> failwith
+    in
+    List.fold parts ~f:create_part ~init:bottom
 end
