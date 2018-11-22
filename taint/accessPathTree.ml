@@ -307,6 +307,14 @@ module Make (Checks: Checks.S) (Root: Root.S) (Element: Analysis.AbstractDomain.
     to_string_tree ~show_element:false "" tree
 
 
+  let show_access_path_tree =
+    tree_to_string
+
+
+  let pp_access_path_tree format tree =
+    Format.fprintf format "%s" (show_access_path_tree tree)
+
+
   let rec max_depth { children; _ } =
     LabelMap.fold
       children

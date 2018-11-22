@@ -254,10 +254,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Global access ->
           global_model access
       | Local identifier ->
-          Log.log
-            ~section:`Taint
-            "Analyzing identifier: %a"
-            Identifier.pp identifier;
           ForwardState.read_access_path
             ~root:(AccessPath.Root.Variable identifier)
             ~path:[]
@@ -505,8 +501,8 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
   let () =
     Log.log
       ~section:`Taint
-      "Issues %s"
-      (Sexp.to_string [%message (issues: Flow.issue list)])
+      "Issues %a"
+      Sexp.pp [%message (issues: Flow.issue list)]
   in
   let model =
     exit_state

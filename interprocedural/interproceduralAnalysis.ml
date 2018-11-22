@@ -135,13 +135,13 @@ let widen ~iteration ~previous ~next =
     let result = widen_models ~iteration ~previous ~next in
     if not (reached_fixpoint ~iteration ~previous:result ~next:previous) then
       begin
-        Log.log ~section:`Interprocedural "WIDEN DOES NOT RESPECT JOIN: previous = %s\nwiden = %s\n"
+        Log.error "WIDEN DOES NOT RESPECT JOIN: previous = %s\nwiden = %s\n"
           (show_models previous) (show_models result);
         explain_non_fixpoint ~iteration ~previous:result ~next:previous
       end;
     if not (reached_fixpoint ~iteration ~previous:result ~next:next) then
       begin
-        Log.log ~section:`Interprocedural "WIDEN DOES NOT RESPECT JOIN: next = %s\nwiden = %s\n"
+        Log.error "WIDEN DOES NOT RESPECT JOIN: next = %s\nwiden = %s\n"
           (show_models next) (show_models result);
         explain_non_fixpoint ~iteration ~previous:result ~next:next
       end;
@@ -157,13 +157,6 @@ let widen_if_necessary step callable new_model result =
   (* Check if we've reached a fixed point *)
   match Fixpoint.get_old_model callable with
   | None ->
-      let () =
-        Log.log
-          ~section:`Interprocedural
-          "Initial model for %s\n%s"
-          (Callable.show callable)
-          (show_models new_model)
-      in
       let model =
         Result.{
           models = new_model;
@@ -176,13 +169,6 @@ let widen_if_necessary step callable new_model result =
           ~previous:old_model.models ~next:new_model then
         Fixpoint.{ is_partial = false; model = old_model; result }
       else
-        let () =
-          Log.log
-            ~section:`Interprocedural
-            "Model changed for %s\n%s"
-            (Callable.show callable)
-            (show_models new_model)
-        in
         let model = Result.{
             models =
               widen
@@ -265,7 +251,7 @@ let analyze_callable analyses step callable environment =
             (Fixpoint.Epoch.show step.epoch)
             (Fixpoint.Epoch.show epoch)
         in
-        Log.log ~section:`Interprocedural "%s" message;
+        Log.error "%s" message;
         failwith message
     | _ -> ()
   in
@@ -275,8 +261,7 @@ let analyze_callable analyses step callable environment =
         match Callable.get_definition callable with
         | None ->
             let () =
-              Log.log
-                ~section:`Interprocedural
+              Log.error
                 "Found no definition for %s"
                 (Callable.show callable)
             in
@@ -288,7 +273,7 @@ let analyze_callable analyses step callable environment =
                     (Callable.show callable)
                     (Fixpoint.show_step step)
                 in
-                Log.log ~section:`Interprocedural "%s" message;
+                Log.error "%s" message;
                 failwith message
             in
             Fixpoint.{
@@ -417,7 +402,7 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
                 (Fixpoint.Epoch.show step.epoch)
                 (Fixpoint.meta_data_to_string meta)
             in
-            Log.log ~section:`Interprocedural "%s" message;
+            Log.error "%s" message;
             failwith message
       in
       Callable.Set.iter check_missing missing
@@ -471,7 +456,7 @@ let compute_fixpoint
             (String.concat ~sep:", " (List.take bucket max_to_show))
             (if bucket_len > max_to_show then "..." else "")
         in
-        Log.log ~section:`Info "%s" message;
+        Log.error "%s" message;
         failwith message
       end
     else

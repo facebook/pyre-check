@@ -57,8 +57,9 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     let () =
       Log.log
         ~section:`Taint
-        "Analyzing %s"
-        (Interprocedural.Callable.show call_target)
+        "Analyzing %a"
+        Interprocedural.Callable.pp
+        call_target
     in
     let forward, _errors = ForwardAnalysis.run ~environment ~define in
     let model = { Taint.Result.empty_model with forward } in

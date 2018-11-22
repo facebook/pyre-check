@@ -42,8 +42,9 @@ let assert_taint source expected =
     let () =
       Log.log
         ~section:`Taint
-        "Analyzing %s"
-        (Interprocedural.Callable.show call_target)
+        "Analyzing %a"
+        Interprocedural.Callable.pp
+        call_target
     in
     let backward = BackwardAnalysis.run ~environment ~define in
     let model = { Taint.Result.empty_model with backward } in

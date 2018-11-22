@@ -201,8 +201,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_normalized_expression ~resolution state taint expression =
       Log.log
         ~section:`Taint
-        "analyze_normalized_expression: %a"
-        pp_normalized_expression expression;
+        "analyze_normalized_expression: %a\n  under taint %a"
+        pp_normalized_expression expression
+        BackwardState.pp_access_path_tree taint;
       match expression with
       | Access { expression; member } ->
           let field = AccessPathTree.Label.Field member in
