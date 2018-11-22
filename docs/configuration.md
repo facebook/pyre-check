@@ -94,8 +94,8 @@ optional arguments:
   --show-parse-errors   Display detailed information about parse errors
   --binary-version      Print the pyre.bin version to be used
   --search-path SEARCH_PATH
-                        Additional directories with modules and stubs to
-                        include in type environment
+                        Add an additional directory of modules and stubs to
+                        include in the type environment
   --preserve-pythonpath
                         Preserves the value of the PYTHONPATH environment
                         variable
