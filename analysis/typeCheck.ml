@@ -539,10 +539,7 @@ module State = struct
                 in
                 Annotation.create annotation, errors
             | _ ->
-                let add_missing_parameter_error value ~due_to_any =
-                  let { resolved = annotation; _ } =
-                    forward_expression ~state:initial ~expression:value
-                  in
+                let add_missing_parameter_error ~annotation ~due_to_any errors =
                   let error =
                     Error.create
                       ~location
@@ -553,38 +550,35 @@ module State = struct
                         })
                       ~define:define_node
                   in
-                  Annotation.create annotation,
                   Map.set ~key:location ~data:error errors
                 in
-                let annotation, errors =
-                  match annotation with
-                  | Some annotation ->
-                      let annotation = Resolution.parse_annotation resolution annotation in
-                      Some annotation, check_annotation errors annotation
-                  | None ->
-                      None, errors
-                in
-                begin
-                  match value, annotation with
-                  | Some value, Some annotation when
-                      Type.equal annotation Type.Object ->
-                      add_missing_parameter_error value ~due_to_any:true
-                  | Some value, None ->
-                      add_missing_parameter_error value ~due_to_any:false
-                  | _, Some annotation ->
-                      let annotation =
-                        match annotation with
-                        | Type.Variable { constraints = Type.Explicit constraints; _ } ->
-                            Type.union constraints
-                        | _ ->
-                            annotation
-                      in
-                      Annotation.create_immutable ~global:false annotation,
-                      errors
-                  | _ ->
-                      Annotation.create Type.Bottom,
-                      errors
-                end
+                match annotation, value with
+                | Some annotation, Some value
+                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                    let { resolved = annotation; _ } =
+                      forward_expression ~state:initial ~expression:value
+                    in
+                    Annotation.create annotation,
+                    add_missing_parameter_error ~annotation ~due_to_any:true errors
+                | None, Some value ->
+                    let { resolved = annotation; _ } =
+                      forward_expression ~state:initial ~expression:value
+                    in
+                    Annotation.create annotation,
+                    add_missing_parameter_error ~annotation ~due_to_any:false errors
+                | Some annotation, _ ->
+                    let annotation = Resolution.parse_annotation resolution annotation in
+                    let errors = check_annotation errors annotation in
+                    let annotation =
+                      match annotation with
+                      | Type.Variable { constraints = Type.Explicit constraints; _ } ->
+                          Type.union constraints
+                      | _ ->
+                          annotation
+                    in
+                    Annotation.create_immutable ~global:false annotation, errors
+                | _ ->
+                    Annotation.create Type.Bottom, errors
           in
           let annotation =
             if String.is_prefix ~prefix:"**" (Identifier.show name) then
