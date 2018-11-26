@@ -299,12 +299,11 @@ let test_fixpoint_backward _ =
 
 let test_check_missing_parameter _ =
   let assert_inference_errors =
-    let check ~configuration ~environment ?mode_override ~source =
+    let check ~configuration ~environment ~source =
       let { TypeCheck.Result.errors; _ } =
         Inference.infer
           ~configuration
           ~environment
-          ~mode_override
           ~source
       in
       errors
@@ -342,12 +341,11 @@ let assert_infer
     ?(fields = ["description"])
     source
     errors =
-  let check_errors configuration environment ?mode_override source =
+  let check_errors configuration environment source =
     let { TypeCheck.Result.errors; _ } =
       Inference.infer
         ~configuration
         ~environment
-        ~mode_override
         ~source
     in
     errors
@@ -387,7 +385,6 @@ let assert_infer
     (List.map
        ~f:fields_of_error
        (check_errors
-          ~mode_override:Source.Infer
           (Configuration.Analysis.create ~debug ~infer ~recursive_infer ()) environment source)
      |> List.concat
      |> List.map ~f:to_string)

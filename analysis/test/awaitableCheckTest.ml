@@ -11,7 +11,7 @@ open Test
 
 
 let assert_awaitable_errors =
-  let check ~configuration ~environment ?mode_override:_ ~source =
+  let check ~configuration ~environment ~source =
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     AwaitableCheck.run ~configuration ~environment ~source
   in

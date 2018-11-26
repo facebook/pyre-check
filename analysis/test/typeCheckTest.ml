@@ -18,7 +18,7 @@ open Test
 
 
 let assert_type_errors =
-  let check ~configuration ~environment ?mode_override:_ ~source =
+  let check ~configuration ~environment ~source =
     let { TypeCheck.Result.errors; _ } =
       TypeCheck.check
         ~configuration

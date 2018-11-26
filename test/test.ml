@@ -686,19 +686,7 @@ let assert_errors
     errors =
   Annotated.Class.Attribute.Cache.clear ();
   let descriptions =
-    let mode_override =
-      if infer then
-        Some Source.Infer
-      else if strict then
-        Some Source.Strict
-      else if declare then
-        Some Source.Declare
-      else if debug then
-        None
-      else
-        Some Source.Default
-    in
-    let check ?mode_override source =
+    let check source =
       let parse ~qualifier ~handle ~source =
         let metadata =
           Source.Metadata.create
@@ -731,10 +719,10 @@ let assert_errors
       let configuration =
         Configuration.Analysis.create ~debug ~strict ~declare ~infer ()
       in
-      check ~configuration ~environment ?mode_override ~source
+      check ~configuration ~environment ~source
     in
     List.map
-      (check ?mode_override source)
+      (check source)
       ~f:(fun error -> Error.description error ~detailed:show_error_traces)
   in
   assert_equal

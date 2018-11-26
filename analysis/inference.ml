@@ -340,7 +340,6 @@ end
 let infer
     ~configuration
     ~environment
-    ~mode_override
     ~source:({ Source.handle; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = TypeCheck.resolution environment () in
@@ -394,12 +393,8 @@ let infer
         else
           let keep_error error =
             let mode =
-              match mode_override with
-              | Some mode ->
-                  mode
-              | None ->
-                  Handler.local_mode (Error.path error |> File.Handle.create)
-                  |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
+              Handler.local_mode (Error.path error |> File.Handle.create)
+              |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
             in
             not (Error.suppress ~mode error)
           in
