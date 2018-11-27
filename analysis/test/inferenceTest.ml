@@ -368,8 +368,9 @@ let assert_infer
   let source =
     parse source
     |> Preprocessing.preprocess in
+  let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
   let environment = Test.environment () in
-  Service.Environment.populate environment [source];
+  Service.Environment.populate ~configuration environment [source];
   let to_string json =
     Yojson.Safe.sort json
     |> Yojson.Safe.to_string
@@ -384,8 +385,7 @@ let assert_infer
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
     (List.map
        ~f:fields_of_error
-       (check_errors
-          (Configuration.Analysis.create ~debug ~infer ~recursive_infer ()) environment source)
+       (check_errors configuration  environment source)
      |> List.concat
      |> List.map ~f:to_string)
 

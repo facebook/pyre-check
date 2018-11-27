@@ -32,7 +32,7 @@ let configuration = Configuration.Analysis.create ~infer:true ()
 let plain_populate sources =
   let environment = Environment.Builder.create () in
   let handler = Environment.handler ~configuration environment in
-  Service.Environment.populate handler sources;
+  Service.Environment.populate ~configuration handler sources;
   environment
 
 
@@ -1382,6 +1382,7 @@ let test_purge _ =
     |}
   in
   Service.Environment.populate
+    ~configuration
     handler
     [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
@@ -1423,6 +1424,7 @@ let test_infer_protocols _ =
     in
     let environment = Environment.Builder.create () in
     Service.Environment.populate
+      ~configuration
       (Environment.handler ~configuration environment)
       (source :: type_sources);
     let ((module Handler: Environment.Handler) as handler) =

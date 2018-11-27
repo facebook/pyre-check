@@ -8,6 +8,7 @@ open Analysis
 
 val populate
   :  (module Environment.Handler)
+  -> configuration: Configuration.Analysis.t
   -> Source.t list
   -> unit
 

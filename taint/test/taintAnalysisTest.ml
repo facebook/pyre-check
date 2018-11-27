@@ -40,7 +40,7 @@ let create_call_graph ?(path = "test.py") source =
   let () = Ast.SharedMemory.Sources.remove ~handles:[handle] in
   let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
-  Service.Environment.populate environment [source];
+  Service.Environment.populate ~configuration:Test.mock_configuration environment [source];
 
   let configuration = Configuration.Analysis.create ~strict:true () in
   let errors =

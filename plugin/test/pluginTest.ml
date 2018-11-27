@@ -15,13 +15,12 @@ open Test
 
 let assert_environment_contains source expected =
   Annotated.Class.Attribute.Cache.clear ();
+  let configuration = Configuration.Analysis.create ~infer:true () in
   let (module Handler: Environment.Handler) =
-    Environment.handler
-      ~configuration:(Configuration.Analysis.create ~infer:true ())
-      (Environment.Builder.create ())
+    Environment.handler ~configuration (Environment.Builder.create ())
   in
   let source = Analysis.Preprocessing.preprocess (parse source) in
-  Service.Environment.populate (module Handler) [source];
+  Service.Environment.populate ~configuration (module Handler) [source];
 
   let class_types =
     let get_name_if_class { Node.value; _ } =

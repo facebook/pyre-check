@@ -29,7 +29,7 @@ let create_call_graph ?(update_environment_with = []) source =
       update_environment_with
       ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle source)
   in
-  Service.Environment.populate environment sources;
+  Service.Environment.populate ~configuration environment sources;
   TypeCheck.check ~configuration ~environment ~source |> ignore;
   DependencyGraph.create ~environment ~source
 
@@ -199,7 +199,7 @@ let test_type_collection _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines source ~extract_into_toplevel:true
@@ -303,7 +303,7 @@ let test_method_overrides _ =
     let source = parse_source source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
     let expected_overrides = Callable.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Callable.equal in
@@ -344,7 +344,7 @@ let test_strongly_connected_components _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges = DependencyGraph.create ~environment ~source in

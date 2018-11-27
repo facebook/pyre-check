@@ -25,7 +25,7 @@ let assert_taint source expected =
   in
   let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
-  Service.Environment.populate environment [source];
+  Service.Environment.populate ~configuration environment [source];
   TypeCheck.check ~configuration ~environment ~source |> ignore;
   let defines =
     source

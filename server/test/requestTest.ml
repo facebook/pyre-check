@@ -13,18 +13,19 @@ open Test
 
 
 let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) () =
+  let configuration = Test.mock_configuration in
   let environment =
-    let configuration = Test.mock_configuration in
     let environment =
       let environment = Analysis.Environment.Builder.create () in
       Service.Environment.populate
+        ~configuration
         (Analysis.Environment.handler ~configuration environment)
         (typeshed_stubs @ sources);
       environment
     in
     Analysis.Environment.handler ~configuration environment
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   {
     State.deferred_requests = [];
     environment;

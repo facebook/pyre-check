@@ -820,7 +820,7 @@ let process_type_check_request
     "Repopulating the environment with %a"
     Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
-  |> Service.Environment.populate environment;
+  |> Service.Environment.populate ~configuration environment;
   let classes_to_infer =
     let get_class_keys handle =
       Handler.DependencyHandler.get_class_keys ~handle

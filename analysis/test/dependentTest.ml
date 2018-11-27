@@ -18,6 +18,7 @@ let configuration = Configuration.Analysis.create ()
 let populate source =
   let environment = Environment.Builder.create () in
   Service.Environment.populate
+    ~configuration
     (Environment.handler ~configuration environment)
     [parse source];
   environment
@@ -40,6 +41,7 @@ let test_index _ =
     |}
   in
   Service.Environment.populate
+    ~configuration
     (Environment.handler ~configuration environment)
     [parse ~handle:"test.py" source];
   let {

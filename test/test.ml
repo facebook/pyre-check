@@ -243,7 +243,7 @@ let assert_source_equal =
     ~pp_diff:(diff ~print:Source.pp)
 
 
-let add_defaults_to_environment environment_handler =
+let add_defaults_to_environment ~configuration environment_handler =
   let source =
     parse {|
       class unittest.mock.Base: ...
@@ -251,7 +251,7 @@ let add_defaults_to_environment environment_handler =
       class unittest.mock.NonCallableMock: ...
     |};
   in
-  Service.Environment.populate environment_handler [source]
+  Service.Environment.populate ~configuration environment_handler [source]
 
 
 (* Expression helpers. *)
@@ -638,9 +638,15 @@ let typeshed_stubs = (* Yo dawg... *)
   ]
 
 
-let environment ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
+let environment
+    ?(sources = typeshed_stubs)
+    ?(configuration = mock_configuration)
+    () =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources;
+  Service.Environment.populate
+    ~configuration
+    (Environment.handler ~configuration environment)
+    sources;
   Environment.handler ~configuration environment
 
 
@@ -657,9 +663,9 @@ let mock_define = {
 }
 
 
-let resolution ?(sources = typeshed_stubs) () =
+let resolution ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
   let environment = environment ~sources () in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   TypeCheck.resolution environment ()
 
 
@@ -713,7 +719,7 @@ let assert_errors
             ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle ~source)
         in
         let environment = environment ~configuration:mock_configuration () in
-        Service.Environment.populate environment sources;
+        Service.Environment.populate ~configuration:mock_configuration environment sources;
         environment
       in
       let configuration =

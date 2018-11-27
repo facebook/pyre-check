@@ -439,6 +439,7 @@ let test_implements _ =
       |> Preprocessing.preprocess
     in
     Service.Environment.populate
+      ~configuration
       (Environment.handler ~configuration environment)
       (definition :: protocol :: Test.typeshed_stubs);
     let ((module Handler: Environment.Handler) as handler) =

@@ -159,8 +159,10 @@ let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer
 
 let environment ~local_root =
   let environment = Environment.Builder.create () in
+  let configuration = configuration ~local_root in
   Service.Environment.populate
-    (Environment.handler ~configuration:(configuration ~local_root) environment)
+    ~configuration
+    (Environment.handler ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -177,8 +179,8 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment = Environment.handler ~configuration (environment ~local_root) in
-  add_defaults_to_environment environment;
-  Service.Environment.populate environment [source];
+  add_defaults_to_environment ~configuration environment;
+  Service.Environment.populate ~configuration environment [source];
   let { TypeCheck.Result.errors; _ } =
     TypeCheck.check
       ~configuration
@@ -191,10 +193,11 @@ let mock_server_state
     ~local_root
     ?(initial_environment = environment ~local_root)
     errors =
+  let configuration = configuration ~local_root in
   let environment =
-    Environment.handler ~configuration:(configuration ~local_root) initial_environment
+    Environment.handler ~configuration initial_environment
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   {
     State.deferred_requests = [];
     environment;
@@ -235,8 +238,10 @@ let assert_response
   in
   let initial_environment =
     let environment = environment ~local_root in
+    let configuration = configuration ~local_root in
     Service.Environment.populate
-      (Environment.handler ~configuration:(configuration ~local_root) environment)
+      ~configuration
+      (Environment.handler ~configuration environment)
       [parsed];
     environment
   in
@@ -897,11 +902,12 @@ let test_incremental_dependencies context =
     |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
 
     let environment = environment ~local_root in
+    let configuration = configuration ~local_root in
     let environment_handler =
-      Environment.handler ~configuration:(configuration ~local_root) environment
+      Environment.handler ~configuration environment
     in
-    add_defaults_to_environment environment_handler;
-    Service.Environment.populate environment_handler sources;
+    add_defaults_to_environment ~configuration environment_handler;
+    Service.Environment.populate ~configuration environment_handler sources;
     let expected_errors = [
       File.Handle.create "b.py", [];
     ]
@@ -996,8 +1002,8 @@ let test_incremental_lookups _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate environment_handler [parse source];
+  add_defaults_to_environment ~configuration environment_handler;
+  Service.Environment.populate ~configuration environment_handler [parse source];
 
   let request =
     Protocol.Request.TypeCheckRequest
@@ -1071,12 +1077,13 @@ let test_incremental_repopulate context =
     |> trim_extra_indentation
   in
   let environment = Environment.Builder.create () in
+  let configuration = configuration ~local_root in
   let ((module Handler: Environment.Handler) as environment_handler) =
-    Environment.handler ~configuration:(configuration ~local_root) environment
+    Environment.handler ~configuration environment
   in
   Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate environment_handler [parse source];
+  add_defaults_to_environment ~configuration environment_handler;
+  Service.Environment.populate ~configuration environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -1178,7 +1185,7 @@ let test_incremental_attribute_caching context =
     Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler ~configuration
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   let ({ State.connections; lock = server_lock; _ } as old_state) =
     mock_server_state ~local_root (File.Handle.Table.create ())
   in

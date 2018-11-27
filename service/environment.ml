@@ -15,6 +15,7 @@ open PostprocessSharedMemory
 
 let populate
     (module Handler: Environment.Handler)
+    ~configuration:{ Configuration.Analysis.debug; _ }
     sources =
   let resolution = TypeCheck.resolution (module Handler) () in
   List.iter ~f:(Environment.register_module (module Handler)) sources;
@@ -35,6 +36,11 @@ let populate
   (* Build type order. *)
   List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+
+  if debug then
+    (* Validate integrity of the type order built so far before moving forward.
+       Further transformations might be incorrect or not terminate otherwise. *)
+    TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
@@ -87,7 +93,7 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate handler (stubs @ sources);
+  populate ~configuration handler (stubs @ sources);
   Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then

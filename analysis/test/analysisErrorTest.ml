@@ -416,8 +416,9 @@ let test_filter _ =
   let environment =
     Environment.handler ~configuration (Environment.Builder.create ())
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   Service.Environment.populate
+    ~configuration
     environment
     [
       parse {|

@@ -78,6 +78,7 @@ let test_resolve_literal _ =
       let environment =
         let environment = Environment.Builder.create () in
         Service.Environment.populate
+          ~configuration
           (Environment.handler ~configuration environment)
           (parse source :: typeshed_stubs);
         environment
