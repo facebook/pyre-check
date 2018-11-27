@@ -1329,6 +1329,7 @@ let test_reveal_type _ =
     ];
 
   assert_type_errors
+    ~debug:false
     {|
       def foo(x) -> None:
         reveal_type(x)
@@ -1477,6 +1478,7 @@ let test_check _ =
     [];
 
   assert_type_errors
+    ~debug:false
     {|
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
@@ -1484,6 +1486,7 @@ let test_check _ =
     [];
 
   assert_type_errors
+    ~debug:false
     {|
       def f(d: typing.Dict[int, str], x) -> str:
         return d.get(x, "")
@@ -1558,6 +1561,7 @@ let test_check _ =
     [];
 
   assert_type_errors
+    ~debug:false
     {|
       def f(x) -> int:
         class Stub:
@@ -2758,7 +2762,7 @@ let test_check_function_parameters _ =
       def foo(i) -> None:
         int_to_int(i)
     |}
-    [];
+    ["Missing parameter annotation [2]: Parameter `i` has no type specified."];
 
   assert_type_errors
     {|
@@ -2870,7 +2874,7 @@ let test_check_function_parameters _ =
       def foo(x) -> None:
         takes_iterable(x)
     |}
-    [];
+    ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
   assert_type_errors
     {|
       def foo(a):  # type: (typing.Optional[int]) -> None
@@ -2990,6 +2994,7 @@ let test_check_variable_arguments _ =
         return foo ( *b )
     |}
     [
+      "Missing parameter annotation [2]: Parameter `b` has no type specified.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
       "Incompatible parameter type [6]: Expected `int` but got `unknown`.";
     ];
@@ -2998,7 +3003,7 @@ let test_check_variable_arguments _ =
     {|
       def foo(a: int, b: int) -> int:
         return 1
-      def bar(b) -> int:
+      def bar(b: typing.Any) -> int:
         return foo ( *b )
     |}
     ["Incompatible parameter type [6]: Expected `int` but got `unknown`."];
@@ -3346,7 +3351,7 @@ let test_check_static _ =
           return cls
         def __new__(cls) -> typing.Type[Foo]:
           return cls
-        def __class_getitem__(cls, key) -> typing.Type[Foo]:
+        def __class_getitem__(cls, key: typing.Any) -> typing.Type[Foo]:
           return cls
     |}
     []
@@ -3690,7 +3695,7 @@ let test_check_attributes _ =
     {|
       class Bar:
         bar: int = 1
-      def foo(self) -> int:
+      def foo() -> int:
         return Bar.bar
     |}
     [];
@@ -3700,7 +3705,7 @@ let test_check_attributes _ =
     {|
       class Bar:
         bar: int = 1
-      def foo(self) -> int:
+      def foo() -> int:
         x = Bar()
         return x.baz
     |}
@@ -4405,7 +4410,7 @@ let test_check_immutables _ =
   assert_type_errors
     {|
     constant: int
-    def foo(x) -> str:
+    def foo(x: int) -> str:
       if x > 10:
         global constant
         constant: str
@@ -4455,7 +4460,7 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    def foo(x) -> None:
+    def foo(x: int) -> None:
       if x > 10:
         y: int
       else:
@@ -4467,7 +4472,7 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    def foo(x) -> None:
+    def foo(x: int) -> None:
       if x > 10:
         y: int
       else:
@@ -4696,6 +4701,18 @@ let test_check_named_arguments _ =
     ]
 
 
+let test_check_missing_parameter _ =
+  assert_type_errors
+    {|
+      def foo(x):
+        return 1
+    |}
+    [
+      "Missing return annotation [3]: Returning `int` but no return type is specified.";
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    ]
+
+
 let test_check_missing_return _ =
   assert_type_errors
     {|
@@ -4741,7 +4758,7 @@ let test_check_missing_return _ =
 
   assert_type_errors
     {|
-      def foo(a):
+      def foo(a: int):
         if a > 10:
           return None
         else:
@@ -5534,7 +5551,7 @@ let test_check_tuple _ =
 let test_check_meta _ =
   assert_type_errors
     {|
-      def foo(input) -> typing.List[int]:
+      def foo(input: typing.Any) -> typing.List[int]:
         return typing.cast(typing.List[float], input)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
@@ -5549,10 +5566,10 @@ let test_check_meta _ =
       T = typing.TypeVar('T')
       S = typing.TypeVar('S')
       class C(typing.Generic[T]): pass
-      def foo(input) -> None:
+      def foo(input: typing.Any) -> None:
         typing.cast(C[int], input)
       class D(typing.Generic[T, S]): pass
-      def foo(input) -> None:
+      def foo(input: typing.Any) -> None:
         typing.cast(D[int, float], input)
     |}
     [];
@@ -5649,7 +5666,7 @@ let test_check_redundant_cast _ =
     [];
   assert_type_errors
     {|
-      def foo(x) -> None:
+      def foo(x: typing.Any) -> None:
         typing.cast(int, x)
     |}
     [];
@@ -5838,7 +5855,7 @@ let test_check_async _ =
 
   assert_type_errors
     {|
-      async def read(self, file: typing.AsyncIterable[str]) -> typing.List[str]:
+      async def read(file: typing.AsyncIterable[str]) -> typing.List[str]:
         return [data async for data in file]
     |}
     []
@@ -6054,40 +6071,40 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo:
-          def bar(self, _x) -> str:
+          def bar(self, _x: int) -> str:
               return ""
       class Bar(Foo):
-          def bar(self, x) -> str:
+          def bar(self, x: int) -> str:
               return ""
     |}
     [];
   assert_type_errors
     {|
       class Foo:
-          def bar(self, _x) -> str:
+          def bar(self, _x: int) -> str:
               return ""
       class Baz(Foo):
-          def bar(self, _x) -> str:
+          def bar(self, _x: int) -> str:
               return ""
     |}
     [];
   assert_type_errors
     {|
       class Foo:
-          def bar(self, x) -> str:
+          def bar(self, x: int) -> str:
               return ""
       class Bar(Foo):
-          def bar(self, _x) -> str:
+          def bar(self, _x: int) -> str:
               return ""
     |}
     [];
   assert_type_errors
     {|
       class Foo:
-          def bar(self, _y) -> str:
+          def bar(self, _y: int) -> str:
               return ""
       class Bar(Foo):
-          def bar(self, x) -> str:
+          def bar(self, x: int) -> str:
               return ""
     |}
     [
@@ -6175,7 +6192,7 @@ let test_check_behavioral_subtyping _ =
       class Foo():
         def f(self, a: float) -> None: ...
       class Bar(Foo):
-        def f(self, *args) -> None: pass
+        def f(self, *args: typing.Any) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
@@ -6186,7 +6203,7 @@ let test_check_behavioral_subtyping _ =
       class Foo():
         def f(self, b: int) -> None: ...
       class Bar(Foo):
-        def f(self, **kwargs) -> None: pass
+        def f(self, **kwargs: typing.Any) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
@@ -6197,7 +6214,7 @@ let test_check_behavioral_subtyping _ =
       class Foo():
         def f(self, c: str) -> None: ...
       class Bar(Foo):
-        def f(self, *args, **kwargs) -> None: pass
+        def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
     []
 
@@ -6352,7 +6369,7 @@ let test_check_meta_annotations _ =
 let test_check_unbound_variables _ =
   assert_type_errors
     {|
-      def foo(flag) -> int:
+      def foo(flag: bool) -> int:
         if flag:
           result = 1
         else:
@@ -6687,6 +6704,7 @@ let test_check_callables _ =
     ];
 
   assert_type_errors
+    ~debug:false
     {|
       def exec(f: typing.Callable[[], int]) -> int:
         return f()
@@ -6713,7 +6731,7 @@ let test_check_assert_functions _ =
           a: int
 
       # The actual content of this function does not really matter.
-      def pyretestassert(x) -> None:
+      def pyretestassert(x: typing.Any) -> None:
           pass
 
       def f(o: typing.Optional[One]) -> int:
@@ -6732,7 +6750,7 @@ let test_check_assert_functions _ =
           a: int
 
       # The actual content of this function does not really matter.
-      def pyretestassert(x) -> None:
+      def pyretestassert(x: typing.Any) -> None:
           pass
 
       def f(o: typing.Optional[One]) -> int:
@@ -7415,6 +7433,7 @@ let () =
     "check_immutables">::test_check_immutables;
     "check_imports">::test_check_imports;
     "check_named_arguments">::test_check_named_arguments;
+    "check_missing_parameter">::test_check_missing_parameter;
     "check_missing_return">::test_check_missing_return;
     "check_yield">::test_check_yield;
     "check_ternary">::test_check_ternary;

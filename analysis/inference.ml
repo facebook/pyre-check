@@ -96,7 +96,7 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation { name; annotation; due_to_any })
                 ~define:define_node
             in
-            Map.set ~key:(Error.location error |> Location.reference) ~data:error errors)
+            Map.set errors ~key:location ~data:error)
         |> Option.value ~default:errors
       in
       match annotation with

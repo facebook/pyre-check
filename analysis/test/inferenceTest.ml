@@ -426,7 +426,7 @@ let test_infer _ =
 
   assert_infer ~fields:["inference.parameters"]
     {|
-      def with_params (x: int,y):
+      def with_params (x: int, y):
           return 5
     |}
     [{|[{"name":"x","type":"int","value":null},{"name":"y","type":null,"value":null}]|}];

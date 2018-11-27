@@ -560,12 +560,6 @@ module State = struct
                     in
                     Annotation.create annotation,
                     add_missing_parameter_error ~annotation ~due_to_any:true errors
-                | None, Some value ->
-                    let { resolved = annotation; _ } =
-                      forward_expression ~state:initial ~expression:value
-                    in
-                    Annotation.create annotation,
-                    add_missing_parameter_error ~annotation ~due_to_any:false errors
                 | Some annotation, _ ->
                     let annotation = Resolution.parse_annotation resolution annotation in
                     let errors = check_annotation errors annotation in
@@ -577,8 +571,15 @@ module State = struct
                           annotation
                     in
                     Annotation.create_immutable ~global:false annotation, errors
-                | _ ->
-                    Annotation.create Type.Bottom, errors
+                | None, Some value ->
+                    let { resolved = annotation; _ } =
+                      forward_expression ~state:initial ~expression:value
+                    in
+                    Annotation.create annotation,
+                    add_missing_parameter_error ~annotation ~due_to_any:false errors
+                | None, None ->
+                    Annotation.create Type.Bottom,
+                    add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:false errors
           in
           let annotation =
             if String.is_prefix ~prefix:"**" (Identifier.show name) then

@@ -217,6 +217,13 @@ let messages ~detailed:_ ~define location kind =
         );
       ]
   | Top -> [ "Problem with analysis." ]
+  | MissingParameterAnnotation { name; annotation; due_to_any = false }
+    when Type.equal annotation Type.Bottom ->
+      [
+        Format.asprintf
+          "Parameter `%s` has no type specified."
+          (Access.show_sanitized name)
+      ]
   | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
       [
         Format.asprintf
@@ -1400,7 +1407,8 @@ let suppress ~mode error =
     | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = actual; _ } ->
         due_to_analysis_limitations error ||
-        Type.equal actual Type.Object
+        Type.equal actual Type.Object ||
+        Type.equal actual Type.Bottom
     | _ ->
         true
   in
