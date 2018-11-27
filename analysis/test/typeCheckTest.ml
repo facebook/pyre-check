@@ -4059,8 +4059,8 @@ let test_check_attributes _ =
         return any.attribute
     |}
     [
+      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `typing.Any` has no attribute `attribute`.";
     ];
   assert_type_errors
     ~debug:false
@@ -4706,14 +4706,37 @@ let test_check_named_arguments _ =
 
 let test_check_missing_parameter _ =
   assert_type_errors
+    ~debug:false
+    ~strict:false
     {|
       def foo(x):
         return 1
     |}
-    [
-      "Missing return annotation [3]: Returning `int` but no return type is specified.";
-      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-    ]
+    [];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x = 1) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x: typing.Any) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
 
 
 let test_check_missing_return _ =
@@ -6718,11 +6741,11 @@ let test_check_callables _ =
         return f()
       def with_default(x: int = 0) -> int:
         return x
-      def with_kwargs( **kwargs) -> int:
+      def with_kwargs( **kwargs: int) -> int:
         return 0
-      def with_varargs( *varargs) -> int:
+      def with_varargs( *varargs: int) -> int:
         return 0
-      def with_everything( *varargs, **kwargs) -> int:
+      def with_everything( *varargs: int, **kwargs: int) -> int:
         return 0
       exec(with_default)
       exec(with_kwargs)

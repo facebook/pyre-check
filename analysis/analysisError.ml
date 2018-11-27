@@ -1365,12 +1365,10 @@ let suppress ~mode error =
           true
     else
       match kind with
-      | MissingParameterAnnotation { due_to_any; _ } ->
-          due_to_any
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
-          false
+          due_to_mismatch_with_any error
   in
 
   let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
