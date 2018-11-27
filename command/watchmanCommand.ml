@@ -180,7 +180,7 @@ let listen_for_changed_files
   try
     (fun () ->
        let symlinks =
-         Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
+         Path.list ~file_filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root ()
          |> build_symlink_map
        in
        let socket_path =

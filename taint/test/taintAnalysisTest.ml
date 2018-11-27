@@ -383,7 +383,7 @@ let test_integration _ =
     |> String.chop_suffix_exn ~suffix:"_build/default/taint/test"
     |> (fun root -> Path.create_absolute root)
     |> (fun root -> Path.create_relative ~root ~relative:"taint/test/integration/")
-    |> (fun root -> Path.list ~filter:(String.is_suffix ~suffix:".py") ~root)
+    |> (fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ())
   in
   let run_test path =
     let serialized_models =

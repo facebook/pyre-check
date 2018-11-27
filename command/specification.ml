@@ -60,4 +60,8 @@ let base_command_line_arguments =
       "-typeshed"
       (optional string)
       ~doc:"DIRECTORY Typeshed root directory."
+    +> flag
+      "-exclude"
+      (listed string)
+      ~doc:"REGEXP Do not parse relative paths (files and directories) matching this regexp."
     +> anon (maybe_with_default "." ("source-root" %: string)))

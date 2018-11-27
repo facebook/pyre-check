@@ -27,6 +27,7 @@ module Analysis: sig
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
+    excludes: Str.regexp list;
   }
   [@@deriving show, eq]
 
@@ -51,6 +52,7 @@ module Analysis: sig
     -> ?show_error_traces: bool
     -> ?log_identifier: string
     -> ?logger: string
+    -> ?excludes: string list
     -> unit
     -> t
 

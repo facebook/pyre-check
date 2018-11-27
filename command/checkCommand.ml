@@ -31,6 +31,7 @@ let run_check
     project_root
     search_path
     typeshed
+    excludes
     local_root
     () =
   let filter_directories =
@@ -59,6 +60,7 @@ let run_check
       ~number_of_workers
       ~search_path:(List.map ~f:Path.create_absolute search_path)
       ?typeshed:(typeshed >>| Path.create_absolute)
+      ~excludes
       ~local_root:(Path.create_absolute local_root)
       ()
   in

@@ -101,9 +101,18 @@ let test_find_stubs context =
     write_file module_root "c.py";
     write_file local_root "ttypes.py";
     write_file local_root "ttypes.pyi";
+    write_file local_root "dir/legit.pyi";
+    write_file local_root "excluded.pyi";
+    write_file local_root "nested/excluded.pyi";
 
-    Service.Parser.find_stubs
-      ~configuration:(Configuration.Analysis.create ~local_root ~search_path:[module_root] ())
+    let configuration =
+      Configuration.Analysis.create
+        ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
+        ~local_root
+        ~search_path:[module_root]
+        ()
+    in
+    Service.Parser.find_stubs ~configuration
     |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
