@@ -34,7 +34,8 @@ let base_command_line_arguments =
     +> flag
       "-filter-directories"
       (optional string)
-      ~doc:"Only report errors for files under one of the semicolon-separated filter directories."
+      ~doc:"DIRECTORY1;... Only report errors for files \
+            under one of the semicolon-separated filter directories."
     +> flag
       "-workers"
       (optional_with_default 4 int)
