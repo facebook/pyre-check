@@ -552,6 +552,27 @@ module State = struct
                   in
                   Map.set ~key:location ~data:error errors
                 in
+                let add_incompatible_variable_error errors annotation default =
+                  let error =
+                    let instantiate location =
+                      Location.instantiate
+                        ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
+                        location
+                    in
+                    Error.create
+                      ~location
+                      ~kind:(Error.IncompatibleVariableType {
+                          name = [Expression.Access.Identifier name];
+                          mismatch = { Error.expected = annotation; actual = default };
+                          declare_location = instantiate location;
+                        })
+                      ~define:define_node
+                  in
+                  if Resolution.less_or_equal resolution ~left:default ~right:annotation then
+                    errors
+                  else
+                    Map.set ~key:location ~data:error errors
+                in
                 match annotation, value with
                 | Some annotation, Some value
                   when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
@@ -568,9 +589,16 @@ module State = struct
                     in
                     annotation,
                     add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:true errors
-                | Some annotation, _ ->
+                | Some annotation, value ->
                     let annotation = Resolution.parse_annotation resolution annotation in
-                    let errors = check_annotation errors annotation in
+                    let errors =
+                      value
+                      >>| (fun value -> forward_expression ~state:initial ~expression:value)
+                      >>| (fun {resolved; _ } -> resolved)
+                      >>| add_incompatible_variable_error errors annotation
+                      |> Option.value ~default:errors
+                      |> (fun errors -> check_annotation errors annotation)
+                    in
                     let annotation =
                       match annotation with
                       | Type.Variable { constraints = Type.Explicit constraints; _ } ->

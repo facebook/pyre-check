@@ -4319,6 +4319,16 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
+      def foo(x: str = 1) -> str:
+        return x
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` but is used as " ^
+      "type `int`. Redeclare `x` on line 2 if you wish to override the previously declared type."
+    ];
+
+  assert_type_errors
+    {|
     constant: int
     def foo() -> None:
       constant = "hi"
