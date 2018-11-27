@@ -231,6 +231,13 @@ let messages ~detailed:_ ~define location kind =
           (Access.show_sanitized name)
           Type.pp annotation
       ]
+  | MissingParameterAnnotation { name; annotation; due_to_any = true }
+    when Type.equal annotation Type.Bottom ->
+      [
+        Format.asprintf
+          "Parameter `%s` must have a type other than `Any`."
+          (Access.show_sanitized name)
+      ]
   | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
       [
         Format.asprintf

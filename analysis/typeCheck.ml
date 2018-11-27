@@ -560,6 +560,14 @@ module State = struct
                     in
                     Annotation.create annotation,
                     add_missing_parameter_error ~annotation ~due_to_any:true errors
+                | Some annotation, None
+                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                    let annotation =
+                      Resolution.parse_annotation resolution annotation
+                      |> Annotation.create_immutable ~global:false
+                    in
+                    annotation,
+                    add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:true errors
                 | Some annotation, _ ->
                     let annotation = Resolution.parse_annotation resolution annotation in
                     let errors = check_annotation errors annotation in

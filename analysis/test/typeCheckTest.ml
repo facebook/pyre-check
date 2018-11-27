@@ -3006,7 +3006,10 @@ let test_check_variable_arguments _ =
       def bar(b: typing.Any) -> int:
         return foo ( *b )
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `unknown`."];
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
+      "Incompatible parameter type [6]: Expected `int` but got `unknown`."
+    ];
 
   assert_type_errors
     {|
@@ -3156,7 +3159,7 @@ let test_check_method_parameters _ =
 
   assert_type_errors
     {|
-      def foo(input: typing.Any) -> str:
+      def foo(input: str) -> str:
         return input.__sizeof__()
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
@@ -3351,7 +3354,7 @@ let test_check_static _ =
           return cls
         def __new__(cls) -> typing.Type[Foo]:
           return cls
-        def __class_getitem__(cls, key: typing.Any) -> typing.Type[Foo]:
+        def __class_getitem__(cls, key: int) -> typing.Type[Foo]:
           return cls
     |}
     []
@@ -5551,7 +5554,7 @@ let test_check_tuple _ =
 let test_check_meta _ =
   assert_type_errors
     {|
-      def foo(input: typing.Any) -> typing.List[int]:
+      def foo(input: str) -> typing.List[int]:
         return typing.cast(typing.List[float], input)
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
@@ -5562,6 +5565,7 @@ let test_check_meta _ =
     |}
     ["Undefined type [11]: Type `unknown` is not defined."];
   assert_type_errors
+    ~debug:false
     {|
       T = typing.TypeVar('T')
       S = typing.TypeVar('S')
@@ -5665,6 +5669,7 @@ let test_check_redundant_cast _ =
     |}
     [];
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: typing.Any) -> None:
         typing.cast(int, x)
@@ -6188,6 +6193,7 @@ let test_check_behavioral_subtyping _ =
 
   (* Overrides when both *args and **kwargs exist are not inconsistent. *)
   assert_type_errors
+    ~debug:false
     {|
       class Foo():
         def f(self, a: float) -> None: ...
@@ -6199,6 +6205,7 @@ let test_check_behavioral_subtyping _ =
       "Could not find parameter `a` in overriding signature.";
     ];
   assert_type_errors
+    ~debug:false
     {|
       class Foo():
         def f(self, b: int) -> None: ...
@@ -6210,6 +6217,7 @@ let test_check_behavioral_subtyping _ =
       "Could not find parameter `b` in overriding signature.";
     ];
   assert_type_errors
+    ~debug:false
     {|
       class Foo():
         def f(self, c: str) -> None: ...
@@ -6726,6 +6734,7 @@ let test_check_callables _ =
 
 let test_check_assert_functions _ =
   assert_type_errors
+    ~debug:false
     {|
       class One:
           a: int
@@ -6744,6 +6753,7 @@ let test_check_assert_functions _ =
     |}
     [];
   assert_type_errors
+    ~debug:false
     ~qualifier:(Access.create "foo")
     {|
       class One:
