@@ -386,6 +386,55 @@ let test_integration _ =
     |> (fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ())
   in
   let run_test path =
+    let check_expectation ~suffix actual =
+      let output_filename ~suffix =
+        Path.show path
+        |> (fun path -> path ^ suffix ^ ".actual")
+      in
+      let write_output ~suffix content =
+        try
+          output_filename ~suffix
+          |> Path.create_absolute ~follow_symbolic_links:false
+          |> File.create ~content
+          |> File.write
+        with Unix.Unix_error _ ->
+          failwith (Format.asprintf "Could not write `%s` file for %a" suffix Path.pp path)
+      in
+      let remove_old_output ~suffix =
+        try
+          output_filename ~suffix
+          |> Sys.remove
+        with Sys_error _ ->
+          (* be silent *)
+          ()
+      in
+      let get_expected ~suffix =
+        try
+          Path.show path
+          |> (fun path -> path ^ suffix)
+          |> Path.create_absolute
+          |> File.create
+          |> File.content
+          |> (fun content -> Option.value_exn content)
+        with Unix.Unix_error _ ->
+          ""
+      in
+      let expected = get_expected ~suffix in
+      if String.equal expected actual then
+        remove_old_output ~suffix
+      else begin
+        write_output ~suffix actual;
+        Printf.printf "Expectations differ for %s %s\n" suffix (Path.show path);
+        assert_bool
+          (Format.asprintf
+             "Expectations differ for %s %s\n%a"
+             suffix
+             (Path.show path)
+             (Test.diff ~print:String.pp)
+             (expected, actual))
+          false
+      end
+    in
     let serialized_models =
       let source =
         File.create path
@@ -397,7 +446,12 @@ let test_integration _ =
         |> String.split ~on:'/'
         |> List.last_exn
       in
+      let check_call_graph_expectation call_graph =
+        let actual = Format.asprintf "%a" DependencyGraph.pp call_graph in
+        check_expectation ~suffix:".cg" actual
+      in
       let call_graph, all_callables, environment = create_call_graph ~path:handle source in
+      check_call_graph_expectation call_graph;
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())
@@ -419,49 +473,7 @@ let test_integration _ =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    let expected =
-      try
-        Path.show path
-        |> (fun path -> path ^ ".expect")
-        |> Path.create_absolute
-        |> File.create
-        |> File.content
-        |> (fun content -> Option.value_exn content)
-      with Unix.Unix_error _ ->
-        failwith (Format.asprintf "Could not read `.expect` file for %a" Path.pp path)
-    in
-    let write_output () =
-      try
-        Path.show path
-        |> (fun path -> path ^ ".output")
-        |> Path.create_absolute ~follow_symbolic_links:false
-        |> File.create ~content:serialized_models
-        |> File.write
-      with Unix.Unix_error _ ->
-        failwith (Format.asprintf "Could not write `.output` file for %a" Path.pp path)
-    in
-    let remove_old_output () =
-      try
-        Path.show path
-        |> (fun path -> path ^ ".output")
-        |> Sys.remove
-      with Sys_error _ ->
-        (* be silent *)
-        ()
-    in
-    if String.equal expected serialized_models then
-      remove_old_output ()
-    else begin
-      write_output ();
-      Printf.printf "Expectations differ for %s\n" (Path.show path);
-      assert_bool
-        (Format.asprintf
-           "Expectations differ for %s\n%a"
-           (Path.show path)
-           (Test.diff ~print:String.pp)
-           (expected, serialized_models))
-        false
-    end
+    check_expectation ~suffix:".models" serialized_models
   in
   List.iter test_paths ~f:run_test
 

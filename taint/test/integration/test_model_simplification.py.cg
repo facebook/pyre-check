@@ -1,0 +1,3 @@
+qualifier._asdict_inner (real) -> [$parameter$dict_factory (real) _is_dataclass_instance (real) fields (real) getattr (real) isinstance (real) qualifier._asdict_inner (real) type.__init__ (real)]
+qualifier.asdict (real) -> [qualifier._asdict_inner (real)]
+qualifier.asdict_test (real) -> [qualifier.asdict (real)]
