@@ -303,7 +303,7 @@ let test_due_to_analysis_limitations _ =
             })));
 
   (* UndefinedType. *)
-  assert_true
+  assert_false
     (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.Top)));
   assert_false
     (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.string)))

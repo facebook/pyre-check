@@ -798,8 +798,7 @@ let due_to_analysis_limitations { kind; _ } =
       Type.is_unknown actual ||
       Type.is_type_alias actual
   | Top -> true
-  | UndefinedAttribute { origin = Class { annotation; _ }; _ }
-  | UndefinedType annotation ->
+  | UndefinedAttribute { origin = Class { annotation; _ }; _ } ->
       Type.is_unknown annotation
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
@@ -813,6 +812,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
+  | UndefinedType _
   | UnexpectedKeyword _
   | UnusedIgnore _ ->
       false
@@ -1346,6 +1346,7 @@ let suppress ~mode error =
       | UndefinedAttribute _
       | UndefinedName _
       | UndefinedImport _
+      | UndefinedType _
       | UnexpectedKeyword _
       | RedundantCast _
       | RevealedType _
@@ -1359,7 +1360,6 @@ let suppress ~mode error =
       | MissingAttributeAnnotation _
       | MissingGlobalAnnotation _
       | Top
-      | UndefinedType _
       | UninitializedAttribute _
       | UnusedIgnore _ ->
           true
