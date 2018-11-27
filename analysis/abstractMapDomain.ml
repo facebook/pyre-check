@@ -84,6 +84,19 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     with
     | Exit -> false
 
+  let subtract to_remove ~from =
+    let subtract_element ~key ~data result =
+      match data with
+      | `Both (to_remove, from) ->
+          let difference = Element.subtract to_remove ~from in
+          set result ~key ~data:difference
+      | `Left _ ->
+          result
+      | `Right keep ->
+          set result ~key ~data:keep
+    in
+    Map.fold2 to_remove from ~f:subtract_element ~init:bottom
+
   let show map =
     let show_pair (key, value) =
       Format.sprintf "%s -> %s" (Key.show key) (Element.show value)

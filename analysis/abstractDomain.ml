@@ -25,6 +25,8 @@ module type S = sig
   val join: t -> t -> t
   val less_or_equal: left:t -> right:t -> bool
   val widen: iteration:int -> previous:t -> next:t -> t
+  (* subtract a from = b, s.t. b <= from <= b |_| a *)
+  val subtract: t -> from:t -> t
 
   (* Access specific parts of composed abstract domains. *)
   val fold: 'a part -> f: ('b -> 'a -> 'b) -> init: 'b -> t -> 'b

@@ -59,6 +59,12 @@ module Make(Element : ELEMENT_DOMAIN) = struct
   let less_or_equal ~left ~right =
     Set.for_all left ~f:(fun element -> is_subsumed element right)
 
+  let subtract to_remove ~from =
+    let keep_non_subsumed element =
+      not (is_subsumed element to_remove)
+    in
+    Set.filter ~f:keep_non_subsumed from
+
   let of_list elements =
     List.fold elements ~f:add ~init:bottom
 

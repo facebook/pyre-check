@@ -101,6 +101,17 @@ struct
           | Distinct ->
               failwith "unmatched slots"
 
+    let subtract to_remove ~from =
+      match to_remove, from with
+      | Element (to_remove_slot, to_remove_value),
+        Element (from_slot, from_value) ->
+          match equal_slot to_remove_slot from_slot with
+          | Equal ->
+              let module D = (val (Config.slot_domain to_remove_slot)) in
+              Element (to_remove_slot, D.subtract to_remove_value ~from:from_value)
+          | Distinct ->
+              failwith "unmatched slots"
+
     let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) element =
       match part, element with
       | ProductSlot (desired_slot, nested_part), Element (slot, value) ->
@@ -156,8 +167,8 @@ struct
 
   let bottom = Map.empty
 
-  let is_bottom d =
-    Map.is_empty d
+  let is_bottom product =
+    Map.for_all product ~f:ProductElement.is_bottom
 
   let join x y =
     let merge ~key:_ = function
@@ -178,8 +189,9 @@ struct
       match data with
       | `Both (left, right) ->
           if not (ProductElement.less_or_equal ~left ~right) then raise Exit
-      | `Left _ ->
-          raise Exit
+      | `Left element ->
+          if not (ProductElement.is_bottom element) then
+            raise Exit
       | `Right _ ->
           ()
     in
@@ -188,6 +200,19 @@ struct
       true
     with
     | Exit -> false
+
+  let subtract to_remove ~from =
+    let subtract_element ~key ~data result =
+      match data with
+      | `Both (to_remove, from) ->
+          let difference = ProductElement.subtract to_remove ~from in
+          Map.set result ~key ~data:difference
+      | `Left _ ->
+          result
+      | `Right keep ->
+          Map.set result ~key ~data:keep
+    in
+    Map.fold2 to_remove from ~f:subtract_element ~init:bottom
 
   let show product =
     let show_pair (key, value) =

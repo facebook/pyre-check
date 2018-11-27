@@ -37,6 +37,10 @@ module Make(Element : Set.Elt) = struct
     Set.is_subset left ~of_:right
 
 
+  let subtract to_remove ~from =
+    Set.diff from to_remove
+
+
   let show set =
     Sexp.to_string [%message (set: Set.t)]
 

@@ -109,16 +109,37 @@ module TestAbstractDomain(Domain: AbstractDomainUnderTest) = struct
       ~f:(test_widen_conformance ~iteration)
       values
 
+  let test_subtract_conformance v1 v2 =
+    let check_difference ~title value ~from ~removed =
+      let reconstituted = Domain.join value removed in
+      assert_bool
+        (Format.sprintf "%s: difference is less or equal to original" title)
+        (Domain.less_or_equal ~left:value ~right:from);
+      assert_bool
+        "original is less or equal to reconstitued"
+        (Domain.less_or_equal ~left:from ~right:reconstituted)
+    in
+    let v1_minus_v2 = Domain.subtract v2 ~from:v1 in
+    check_difference ~title:"v1_minus_v2" v1_minus_v2 ~from:v1 ~removed:v2;
+    let v2_minus_v1 = Domain.subtract v1 ~from:v2 in
+    check_difference ~title:"v2_minus_v1" v2_minus_v1 ~from:v2 ~removed:v1;
+    let joined = Domain.join v1 v2 in
+    let joined_minus_v1 = Domain.subtract v1 ~from:joined in
+    check_difference ~title:"joined_minus_v1" joined_minus_v1 ~from:joined ~removed:v1;
+    let joined_minus_v2 = Domain.subtract v2 ~from:joined in
+    check_difference ~title:"joined_minus_v2" joined_minus_v2 ~from:joined ~removed:v2
+
   (* The test suite created by this functor. *)
   let suite () =
     let create_test value ~f = (Domain.show value) >:: (f value) in
     let test_basic_values = List.map values ~f:(create_test ~f:test_basic) in
     let test_joins = test_cartesian ~title:"join" ~f:test_join_conformance values in
-
+    let test_subtract = test_cartesian ~title:"subtract" ~f:test_subtract_conformance values in
     test_basic_values
     |> List.rev_append [ "test_bottom_top" >:: test_bottom_top]
     |> List.rev_append test_diff_unrelated
     |> List.rev_append test_joins
+    |> List.rev_append test_subtract
     |> List.rev_append (test_widens ~iteration:0)
     |> List.rev_append (test_widens ~iteration:1)
     |> List.rev_append (test_widens ~iteration:100)
@@ -966,6 +987,7 @@ module PairStringString = struct
   ]
 
   let values = [
+    build [] [];
   ]
 
   let test_fold _ =
@@ -1061,7 +1083,12 @@ module PairStringString = struct
       ~cmp:compare
 
   let test_additional _ =
-    ()
+    assert_bool
+      "product of bottoms is bottom"
+      (is_bottom (build [] []));
+    assert_bool
+      "product of bottoms is less equal to bottom"
+      (less_or_equal ~left:(build [] []) ~right:bottom)
 end
 
 module TestPairStringString = TestAbstractDomain(PairStringString)
