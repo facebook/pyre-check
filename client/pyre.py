@@ -366,7 +366,7 @@ def main() -> int:
     except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
-            commands.Persistent.run_null_server(timeout=3600)
+            commands.Persistent.run_null_server(timeout=3600 * 12)
         exit_code = ExitCode.FAILURE
     except commands.ClientException as error:
         LOG.error(str(error))

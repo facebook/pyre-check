@@ -31,7 +31,7 @@ class PyreTest(unittest.TestCase):
         validate.side_effect = EnvironmentException
         with patch.object(sys, "argv", ["pyre", "persistent"]):
             self.assertEqual(pyre.main(), 2)
-            run_null_server.assert_has_calls([call(timeout=3600)])
+            run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 
     @patch.object(json, "dump")
     @patch.object(json, "load")
