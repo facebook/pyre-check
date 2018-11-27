@@ -46,8 +46,8 @@ val partition_flows:
 
 val generate_source_sink_matches:
   location: Location.t
-  -> source_tree: ForwardState.access_path_tree
-  -> sink_tree: BackwardState.access_path_tree
+  -> source_tree: ForwardState.Tree.t
+  -> sink_tree: BackwardState.Tree.t
   -> candidate
 
 val generate_issues:

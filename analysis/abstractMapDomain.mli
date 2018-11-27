@@ -23,7 +23,12 @@ module Make(Key: KEY)(Element : AbstractDomain.S) : sig
     | Key: Key.t AbstractDomain.part
     | KeyValue: (Key.t * Element.t) AbstractDomain.part
 
+  (* Replace map at key with new element or set if missing. *)
   val set: t -> key: Key.t -> data: Element.t -> t
+
+  (* Update map at key with result of ~f, passing possibly existing element. *)
+  val update: t -> Key.t -> f:(Element.t option -> Element.t) -> t
+
   val find: t -> Key.t -> Element.t option
   val to_alist:
     ?key_order:[ `Decreasing | `Increasing ]

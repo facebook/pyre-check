@@ -40,11 +40,11 @@ let check_expectation
     { define_name; sink_parameters; tito_parameters; returns; errors }
   =
   let open Taint.Result in
-  let extract_sinks_by_parameter_name root sink_tree sink_map =
+  let extract_sinks_by_parameter_name sink_map (root, sink_tree) =
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks =
-          Domains.BackwardState.collapse sink_tree
+          Domains.BackwardState.Tree.collapse sink_tree
           |> Domains.BackwardTaint.leaves
         in
         let sinks =
@@ -65,17 +65,19 @@ let check_expectation
   in
   let taint_map =
     Domains.BackwardState.fold
+      Domains.BackwardState.KeyValue
       backward.sink_taint
       ~f:extract_sinks_by_parameter_name
       ~init:String.Map.empty
   in
-  let extract_tito_parameter_name root _ positions =
+  let extract_tito_parameter_name positions root =
     match AccessPath.Root.parameter_name root with
     | Some name -> String.Set.add positions name
     | _ -> positions
   in
   let taint_in_taint_out_names =
     Domains.BackwardState.fold
+      Domains.BackwardState.Key
       backward.taint_in_taint_out
       ~f:extract_tito_parameter_name
       ~init:String.Set.empty
@@ -106,8 +108,8 @@ let check_expectation
   in
   (* Check sources. *)
   let returned_sources =
-    Domains.ForwardState.read AccessPath.Root.LocalResult forward.source_taint
-    |> Domains.ForwardState.collapse
+    Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
+    |> Domains.ForwardState.Tree.collapse
     |> Domains.ForwardTaint.leaves
     |> List.map ~f:Sources.show
     |> String.Set.of_list

@@ -1271,6 +1271,212 @@ end
 
 module TestProductDomain = TestAbstractDomain(ProductDomain)
 
+
+module TreeOfStringSets = struct
+  include AbstractTreeDomain.Make(struct
+      let max_tree_depth_after_widening = 3
+      let check_invariants = true
+    end)
+      (StringSet)
+      ()
+
+  let make_path path =
+    List.map path ~f:AbstractTreeDomain.Label.create_name_field
+
+  let unrelated = [
+    create [
+      Part (Path, (make_path ["a"], StringSet.of_list ["aa"]));
+    ];
+    create [
+      Part (Path, (make_path ["b"], StringSet.of_list ["bb"]));
+    ];
+    create [
+      Part (Path, (make_path ["a"; "b"], StringSet.of_list ["ab"]));
+      Part (Path, (make_path ["c"; "d"], StringSet.of_list ["cd"]));
+    ]
+  ]
+
+  let values = [
+    create [
+      Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]));
+    ];
+    create [
+      Part (Path, (make_path ["b"; "c"], StringSet.of_list ["bb"]));
+    ];
+    create [
+      Part (Path, (make_path [], StringSet.of_list ["ab"]));
+    ];
+    create [
+      Part (Path, (make_path [], StringSet.of_list ["cd"]));
+    ];
+  ]
+
+  let show_path_element {path; ancestors; tip} =
+    Format.sprintf
+      "path:%s; ancestors:%s; tip:%s"
+      (AbstractTreeDomain.Label.show_path path)
+      (StringSet.show ancestors)
+      (StringSet.show tip)
+
+  let test_fold _ =
+    let test ~initial ~by:part ~f ~expected =
+      let map = create initial in
+      let result = fold part map ~f:(fun list element -> (f element) :: list) ~init:[] in
+      assert_equal
+        expected
+        result
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)]);
+    in
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"]));
+      ]
+      ~by:StringSet.Element
+      ~f:Fn.id
+      ~expected:["aa"];
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+      ]
+      ~by:StringSet.Element
+      ~f:Fn.id
+      ~expected:["bb"; "aa"];
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+        Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+      ]
+      ~by:RawPath
+      ~f:show_path_element
+      ~expected:[
+        "path:[a][b]; ancestors:(set(a)); tip:(set(aa bb))";
+        "path:[a]; ancestors:(set()); tip:(set(a))";
+      ]
+
+
+  let test_transform _ =
+    let test ~initial ~by:part ~f ~expected ~to_result =
+      let map = create initial in
+      let result =
+        transform part map ~f
+        |> fold RawPath ~f:(fun list element -> (to_result element) :: list) ~init:[] in
+      assert_equal
+        expected
+        result
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)]);
+    in
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+        Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+      ]
+      ~by:StringSet.Element
+      ~f:(fun x -> "t." ^ x)
+      ~to_result:show_path_element
+      ~expected:[
+        "path:[a][b]; ancestors:(set(t.a)); tip:(set(t.aa t.bb))";
+        "path:[a]; ancestors:(set()); tip:(set(t.a))";
+      ];
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+        Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+      ]
+      ~by:Path
+      ~f:(fun (path, element) -> (AbstractTreeDomain.Label.Field "prefix" :: path, element))
+      ~to_result:show_path_element
+      ~expected:[
+        "path:[prefix][a][b]; ancestors:(set(a)); tip:(set(aa bb))";
+        "path:[prefix][a]; ancestors:(set()); tip:(set(a))";
+      ]
+
+  let test_partition _ =
+    let test ~initial ~by:part ~f ~expected =
+      let map = create initial in
+      let partition =
+        partition part map ~f
+        |> Core.Map.Poly.fold
+          ~init:[]
+          ~f:(fun ~key ~data result -> (key, show data) :: result)
+        |> List.sort ~compare:Pervasives.compare
+      in
+      assert_equal
+        expected
+        partition
+        ~printer:(fun elements ->
+            Format.asprintf "%a" Sexp.pp [%message (elements: (string * string) list)]
+          )
+    in
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+        Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+      ]
+      ~by:StringSet.Element
+      ~f:Fn.id
+      ~expected:[
+        "a", "(set())\n  [a] -> (set(a))\n";
+        "aa", "(set())\n  [a] -> (set())\n    [b] -> (set(aa))\n";
+        "bb", "(set())\n  [a] -> (set())\n    [b] -> (set(bb))\n";
+      ];
+    test
+      ~initial:[
+        Part (Path, (make_path ["a"; "b"], StringSet.of_list ["aa"; "bb"]));
+        Part (Path, (make_path ["a"], StringSet.of_list ["a"]));
+      ]
+      ~by:Path
+      ~f:(fun (path, _) -> List.take path 1 |> AbstractTreeDomain.Label.show_path)
+      ~expected:[
+        "[a]", "(set())\n  [a] -> (set(a))\n    [b] -> (set(aa bb))\n";
+      ]
+
+  let compare left right =
+    less_or_equal ~left ~right &&
+    less_or_equal ~left:right ~right:left
+
+  let test_create _ =
+    assert_equal
+      (create [
+          Part (Path, ([], StringSet.of_list ["a"; "b"]));
+        ])
+      (create [
+          Part (StringSet.Element, "a");
+          Part (StringSet.Element,  "b");
+        ])
+      ~printer:show
+      ~cmp:compare
+
+  let test_additional _ =
+    let deep_element =
+      create [
+        Part (Path, (make_path ["a";"b";"c";"d"], StringSet.of_list ["x";"y"]));
+      ]
+    in
+    assert_equal
+      (widen ~iteration:0 ~previous:deep_element ~next:deep_element)
+      (create [
+          Part (Path, (make_path ["a";"b";"c"], StringSet.of_list ["x";"y"]));
+        ])
+      ~printer:show
+      ~cmp:compare;
+    let open AbstractTreeDomain.Label in
+    let path1 = [create_name_field "foo"; create_name_field "bar"] in
+    let path2 = [create_name_field "foo"; create_name_field "baz"] in
+    let common = [create_name_field "foo"] in
+    let path3 = common_prefix path1 path2 in
+    let path4 = common_prefix path1 path3 in
+    let path5 = common_prefix path3 path2 in
+    assert_equal common path3;
+    assert_equal path3 path4;
+    assert_equal path4 path5;
+    ()
+
+
+end
+
+
+module TestTreeDomain = TestAbstractDomain(TreeOfStringSets)
+
 let () =
   "abstractDomainTest">:::[
     "string_set">:::(TestStringSet.suite ());
@@ -1280,5 +1486,6 @@ let () =
     "dual_string">:::(TestPairStringString.suite ());
     "abstract_element">:::(TestAbstractElement.suite ());
     "product">:::(TestProductDomain.suite ());
+    "tree">:::(TestTreeDomain.suite ());
   ]
   |> Test.run

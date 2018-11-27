@@ -6,6 +6,7 @@
 open OUnit2
 
 open Ast
+open Analysis
 open Taint
 open Domains
 open Core
@@ -18,8 +19,7 @@ let test_partition_call_map _ =
       Location.Reference.any
       ~callees:[]
       ~port:AccessPath.Root.LocalResult
-      ~path:[AccessPathTree.Label.create_name_field "a"]
-      ~path_element:ForwardTaint.bottom
+      ~path:[AbstractTreeDomain.Label.create_name_field "a"]
       ~element:taint
   in
   let call_taint2 =
@@ -28,7 +28,6 @@ let test_partition_call_map _ =
       ~callees:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[]
-      ~path_element:ForwardTaint.bottom
       ~element:taint
   in
   let joined = ForwardTaint.join call_taint1 call_taint2 in

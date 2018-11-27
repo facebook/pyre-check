@@ -27,16 +27,16 @@ end
 
 type t = {
   root: Root.t;
-  path: AccessPathTree.Label.path;
+  path: AbstractTreeDomain.Label.path;
 }
 
-val create: Root.t -> AccessPathTree.Label.path -> t
+val create: Root.t -> AbstractTreeDomain.Label.path -> t
 
 val of_accesses: Access.t -> t option
 
 val of_expression: Expression.t -> t option
 
-val get_index: Expression.t -> AccessPathTree.Label.t
+val get_index: Expression.t -> AbstractTreeDomain.Label.t
 
 type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
@@ -46,7 +46,7 @@ type normalized_expression =
     }
   | Index of {
       expression: normalized_expression;
-      index: AccessPathTree.Label.t;
+      index: AbstractTreeDomain.Label.t;
       original: Identifier.t;
       arguments: ((Expression.t Argument.record) list) Node.t;
     }
@@ -63,8 +63,8 @@ val to_json: t -> Yojson.Safe.json
 
 type argument_match = {
   root: Root.t;
-  actual_path: AccessPathTree.Label.path;
-  formal_path: AccessPathTree.Label.path;
+  actual_path: AbstractTreeDomain.Label.path;
+  formal_path: AbstractTreeDomain.Label.path;
 }
 
 val match_actuals_to_formals :

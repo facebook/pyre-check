@@ -44,18 +44,22 @@ type issue = {
    taint T, we match T with the join of taint in the upward and downward closure
    from node at path p in F. *)
 let generate_source_sink_matches ~location ~source_tree ~sink_tree =
-  let make_source_sink_matches ~path ~path_element:_ ~element:sink_taint matches =
-    let source_taint = ForwardState.collapse (ForwardState.read_tree path source_tree) in
+  let make_source_sink_matches matches {BackwardState.Tree.path; tip=sink_taint; _} =
+    let source_taint = ForwardState.Tree.collapse (ForwardState.Tree.read path source_tree) in
     if ForwardTaint.is_bottom source_taint then
       matches
     else
       { source_taint; sink_taint; } :: matches
   in
   let flows =
-    if ForwardState.is_empty_tree source_tree then
+    if ForwardState.Tree.is_empty source_tree then
       []
     else
-      BackwardState.fold_tree_paths ~init:[] ~f:make_source_sink_matches sink_tree
+      BackwardState.Tree.fold
+        BackwardState.Tree.RawPath
+        ~init:[]
+        ~f:make_source_sink_matches
+        sink_tree
   in
   { location; flows; }
 

@@ -34,7 +34,7 @@ let introduce_sink_taint
         ~root
         ~path:[]
         (BackwardTaint.singleton taint_sink_kind
-         |> BackwardState.create_leaf)
+         |> BackwardState.Tree.create_leaf)
         taint
     in
     match taint_sink_kind with
@@ -54,7 +54,7 @@ let introduce_source_taint taint_source_kind =
       ~root:AccessPath.Root.LocalResult
       ~path:[]
       (ForwardTaint.singleton taint_source_kind
-       |> ForwardState.create_leaf)
+       |> ForwardState.Tree.create_leaf)
       ForwardState.empty
   in
   TaintResult.Forward.{ source_taint }

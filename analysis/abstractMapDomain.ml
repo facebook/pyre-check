@@ -206,4 +206,11 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     List.map key_values ~f:(fun (key, value) -> (key, Element.join common value))
     |> List.fold ~init:bottom ~f:(fun map (key, data) -> update map ~key ~data)
 
+  let update map key ~f =
+    let data =
+      Map.find map key
+      |> f
+    in
+    set map ~key ~data
+
 end

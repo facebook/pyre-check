@@ -62,7 +62,7 @@ module TraceInfo = struct
     | Origin of Location.t
     | CallSite of {
         port: AccessPath.Root.t;
-        path: AccessPathTree.Label.path;
+        path: AbstractTreeDomain.Label.path;
         location: Location.t;
         callees: Interprocedural.Callable.t list;
         trace_length: int;
@@ -155,7 +155,7 @@ module TraceInfo = struct
         && Location.compare location_left location_right = 0
         && callees_left = callees_right
         && trace_length_right <= trace_length_left
-        && AccessPathTree.Label.is_prefix ~prefix:path_right path_left
+        && AbstractTreeDomain.Label.is_prefix ~prefix:path_right path_left
     | _ ->
         left = right
 
@@ -197,6 +197,11 @@ module FlowDetails = struct
   let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
   let simple_feature = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Element)
   let simple_feature_set = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Set)
+
+  let gather_leaf_names accumulator = function
+    | SimpleFeatures.LeafName name ->
+        name :: accumulator
+
 end
 
 
@@ -211,8 +216,7 @@ module type TAINT_DOMAIN = sig
     Location.t
     -> callees: Interprocedural.Callable.t list
     -> port: AccessPath.Root.t
-    -> path: AccessPathTree.Label.path
-    -> path_element: t
+    -> path: AbstractTreeDomain.Label.path
     -> element: t
     -> t
 
@@ -261,11 +265,15 @@ end = struct
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
       let leaf_json =
-        let gather_leaf_json leaves = function
-          | SimpleFeatures.LeafName name ->
-              `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves
+        let make_leaf_json name =
+          `Assoc ["kind", leaf_kind_json; "name", `String name]
         in
-        FlowDetails.(fold simple_feature ~f:gather_leaf_json ~init:[] features)
+        FlowDetails.fold
+          FlowDetails.simple_feature
+          features
+          ~f:FlowDetails.gather_leaf_names
+          ~init:[]
+        |> List.map ~f:make_leaf_json
       in
       let trace_json = List.map ~f:TraceInfo.to_json trace_info in
       let leaf_json =
@@ -288,7 +296,7 @@ end = struct
     in
     `List elements
 
-  let apply_call location ~callees ~port ~path ~path_element:_ ~element:taint =
+  let apply_call location ~callees ~port ~path ~element:taint =
     let open TraceInfo in
     let needs_leaf_name =
       let is_declaration is_declaration = function
@@ -325,36 +333,102 @@ module ForwardTaint = MakeTaint(Sources)
 module BackwardTaint = MakeTaint(Sinks)
 
 
-module MakeTaintTree(Taint : TAINT_DOMAIN) = struct
-  include AccessPathTree.Make
-      (AccessPathTree.WithChecks)
-      (AccessPath.Root)
+module MakeTaintTree(Taint : TAINT_DOMAIN)() = struct
+  include AbstractTreeDomain.Make(struct
+      let max_tree_depth_after_widening = 4
+      let check_invariants = true
+    end)
       (Taint)
+      ()
 
   let apply_call location ~callees ~port taint_tree =
-    filter_map_tree_paths ~f:(Taint.apply_call location ~callees ~port) taint_tree
-
-  let to_json taint =
-    let element_to_json ~root ~path ~path_element:_ ~element json_list =
-      let port =
-        AccessPath.create root path
-        |> AccessPath.to_json
-      in
-      (`Assoc [
-          "port", port;
-          "taint", Taint.to_json element;
-        ]
-      ) :: json_list
+    let transform_path {path; ancestors=_; tip} =
+      {
+        path;
+        ancestors = Taint.bottom;
+        tip = Taint.apply_call location ~callees ~port ~path ~element:tip;
+      }
     in
-    let paths = fold_paths ~f:element_to_json ~init:[] taint in
+    transform RawPath ~f:transform_path taint_tree
+
+  let empty = bottom
+  let is_empty = is_bottom
+end
+
+
+module MakeTaintEnvironment(Taint : TAINT_DOMAIN)() = struct
+  module Tree = MakeTaintTree(Taint)()
+
+  include AbstractMapDomain.Make(
+    struct
+      include AccessPath.Root
+      let absence_implicitly_maps_to_bottom = true
+    end)(Tree)
+
+  let to_json environment =
+    let element_to_json json_list (root, tree) =
+      let path_to_json json_list { Tree.path; ancestors; tip } =
+        let tip =
+          let ancestor_leaf_names =
+            Taint.fold
+              FlowDetails.simple_feature
+              ancestors
+              ~f:FlowDetails.gather_leaf_names
+              ~init:[]
+            |> List.map ~f:(fun name -> SimpleFeatures.LeafName name)
+          in
+          let join_ancestor_leaf_names leaves =
+            leaves @ ancestor_leaf_names
+          in
+          Taint.transform FlowDetails.simple_feature_set tip ~f:join_ancestor_leaf_names
+        in
+        let port =
+          AccessPath.create root path
+          |> AccessPath.to_json
+        in
+        (`Assoc [
+            "port", port;
+            "taint", Taint.to_json tip;
+          ]
+        ) :: json_list
+      in
+      Tree.fold Tree.RawPath ~f:path_to_json tree ~init:json_list
+    in
+    let paths =
+      to_alist environment
+      |> List.fold ~f:element_to_json ~init:[]
+    in
     `List paths
+
+  let assign ?(weak=false) ~root ~path subtree environment =
+    let assign_tree = function
+      | None ->
+          Tree.assign ~weak ~tree:Tree.bottom path ~subtree
+      | Some tree ->
+          Tree.assign ~weak ~tree path ~subtree
+    in
+    update environment root ~f:assign_tree
+
+  let read ?(transform_non_leaves = fun _ e -> e) ~root ~path environment =
+    match find environment root with
+    | None ->
+        Tree.bottom
+    | Some tree ->
+        Tree.read ~transform_non_leaves path tree
+
+  let empty = bottom
+  let is_empty = is_bottom
+
+  let roots environment =
+    fold Key ~f:(Fn.flip List.cons) ~init:[] environment
+
 end
 
 
 (** Used to infer which sources reach the exit points of a function. *)
-module ForwardState = MakeTaintTree(ForwardTaint)
+module ForwardState = MakeTaintEnvironment(ForwardTaint)()
 
 
 (** Used to infer which sinks are reached from parameters, as well as the
     taint-in-taint-out (TITO) using the special LocalReturn sink. *)
-module BackwardState = MakeTaintTree(BackwardTaint)
+module BackwardState = MakeTaintEnvironment(BackwardTaint)()
