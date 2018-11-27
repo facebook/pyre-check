@@ -22,7 +22,9 @@ class BuckException(Exception):
 
 
 def presumed_target_root(target):
-    target = target.lstrip("/")
+    root_index = target.find("//")
+    if root_index != -1:
+        target = target[root_index + 2 :]
     target = target.replace("/...", "")
     target = target.split(":")[0]
     return target
@@ -34,8 +36,9 @@ def _find_analysis_directories(targets_map) -> BuckOut:
     analysis_directories = []
     for target in targets:
         target_path = target
-        if target_path.startswith("//"):
-            target_path = target_path[2:]
+        target_prefix_index = target_path.find("//")
+        if target_prefix_index != -1:
+            target_path = target_path[target_prefix_index + 2 :]
         target_path = target_path.replace(":", "/")
 
         discovered_analysis_directories = glob.glob(

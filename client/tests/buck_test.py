@@ -18,7 +18,13 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("//path/directory/..."), "path/directory"
         )
         self.assertEqual(
-            buck.presumed_target_root("/path/directory:target"), "path/directory"
+            buck.presumed_target_root("/path/directory:target"), "/path/directory"
+        )
+        self.assertEqual(
+            buck.presumed_target_root("prefix//path/directory/..."), "path/directory"
+        )
+        self.assertEqual(
+            buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
     def test_find_analysis_directories(self) -> None:
@@ -39,6 +45,7 @@ class BuckTest(unittest.TestCase):
                     "//path/targets:name": None,
                     "//path/targets:namelibrary": None,
                     "//path/...": None,
+                    "prefix//path/targets:name": None,
                 }
             )
             glob_glob.assert_has_calls(
@@ -46,6 +53,7 @@ class BuckTest(unittest.TestCase):
                     call("buck-out/gen/path/targets/name#*link-tree"),
                     call("buck-out/gen/path/targets/namelibrary#*link-tree"),
                     call("buck-out/gen/path/...#*link-tree"),
+                    call("buck-out/gen/path/targets/name#*link-tree"),
                 ],
                 any_order=True,
             )
