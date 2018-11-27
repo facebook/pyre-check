@@ -776,6 +776,13 @@ module AbstractElement = struct
     | B -> "B"
     | C (s, n) -> Format.sprintf "C(%s,%d)" s n
     | CSuper -> "CSuper"
+
+  let widen set =
+    if List.length set > 5 then
+      List.filter set ~f:(function (A | B) -> true | _ -> false)
+      |> List.cons CSuper
+    else
+      set
 end
 
 module AbstractElementSet = struct
@@ -949,6 +956,15 @@ module AbstractElementSet = struct
       (of_list [B; CSuper])
       (add set CSuper)
       ~msg:"add CSuper"
+      ~cmp
+      ~printer:show;
+    let big_set =
+      of_list [A; B; C ("x", 5); C ("y", 5); C("z", 5); C("q", 5)]
+    in
+    assert_equal
+      (of_list [A; B; CSuper])
+      (widen ~iteration:0 ~previous:big_set ~next:bottom)
+      ~msg:"widen"
       ~cmp
       ~printer:show
 

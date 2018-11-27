@@ -13,6 +13,8 @@ module type ELEMENT_DOMAIN = sig
   [@@deriving show, compare, sexp]
 
   val less_or_equal: left: t -> right: t -> bool
+
+  val widen: t list -> t list
 end
 
 
@@ -55,6 +57,9 @@ module Make(Element : ELEMENT_DOMAIN) = struct
 
   let widen ~iteration:_ ~previous ~next =
     join previous next
+    |> Set.to_list
+    |> Element.widen
+    |> of_list
 
   let less_or_equal ~left ~right =
     Set.for_all left ~f:(fun element -> is_subsumed element right)

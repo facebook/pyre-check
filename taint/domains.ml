@@ -159,6 +159,7 @@ module TraceInfo = struct
     | _ ->
         left = right
 
+  let widen set = set
 end
 module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 

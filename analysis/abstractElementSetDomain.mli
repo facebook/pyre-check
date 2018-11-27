@@ -9,6 +9,9 @@ module type ELEMENT_DOMAIN = sig
   [@@deriving show, compare, sexp]
 
   val less_or_equal: left: t -> right: t -> bool
+
+  (* Called after widen steps to further simplify the set. *)
+  val widen: t list -> t list
 end
 
 
