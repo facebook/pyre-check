@@ -71,4 +71,11 @@ module Make (Config: CONFIG) (Element: AbstractDomain.S) () : sig
     -> t
 
   val collapse: t -> Element.t
+
+  (* Collapse subtrees at depth *)
+  val collapse_to: depth:int -> t -> t
+
+  (* shape tree ~mold performs a join of tree and mold such that the resulting
+     tree only has branches that are already in mold. *)
+  val shape: t -> mold:t -> t
 end

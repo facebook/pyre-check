@@ -1459,16 +1459,46 @@ module TreeOfStringSets = struct
         ])
       ~printer:show
       ~cmp:compare;
-    let open AbstractTreeDomain.Label in
-    let path1 = [create_name_field "foo"; create_name_field "bar"] in
-    let path2 = [create_name_field "foo"; create_name_field "baz"] in
-    let common = [create_name_field "foo"] in
-    let path3 = common_prefix path1 path2 in
-    let path4 = common_prefix path1 path3 in
-    let path5 = common_prefix path3 path2 in
-    assert_equal common path3;
-    assert_equal path3 path4;
-    assert_equal path4 path5;
+    let () =
+      let open AbstractTreeDomain.Label in
+      let path1 = [create_name_field "foo"; create_name_field "bar"] in
+      let path2 = [create_name_field "foo"; create_name_field "baz"] in
+      let common = [create_name_field "foo"] in
+      let path3 = common_prefix path1 path2 in
+      let path4 = common_prefix path1 path3 in
+      let path5 = common_prefix path3 path2 in
+      assert_equal common path3;
+      assert_equal path3 path4;
+      assert_equal path4 path5;
+    in
+    let () =
+      let tree =
+        create [
+          Part (Path, (make_path ["a";"b"], StringSet.of_list ["x";"y"]));
+          Part (Path, (make_path ["c"], StringSet.of_list ["z"]));
+          Part (Path, (make_path ["d"], StringSet.of_list ["q"]));
+        ]
+      in
+      let mold =
+        create [
+          Part (Path, (make_path ["a"], StringSet.of_list ["x";"z"]));
+          Part (Path, (make_path ["c"], StringSet.of_list ["p"]));
+        ]
+      in
+      let expected =
+        create [
+          Part (Path, (make_path ["a"], StringSet.of_list ["x";"y";"z"]));
+          Part (Path, (make_path ["c"], StringSet.of_list ["p";"z"]));
+          Part (Path, (make_path [], StringSet.of_list ["q"]));
+        ]
+      in
+      assert_equal
+        expected
+        (shape tree ~mold)
+        ~msg:"molded tree"
+        ~printer:show
+        ~cmp:compare;
+    in
     ()
 
 

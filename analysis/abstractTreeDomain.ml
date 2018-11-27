@@ -195,18 +195,17 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
     not (LabelMap.is_empty children)
 
 
-  let rec create_tree_internal path tree =
-    match path with
-    | [] ->
-        tree
-    | label_element :: rest ->
-        {
-          element = Element.bottom;
-          children = LabelMap.singleton label_element (create_tree_internal rest tree);
-        }
-
-
   let create_tree_option path tree =
+    let rec create_tree_internal path tree =
+      match path with
+      | [] ->
+          tree
+      | label_element :: rest ->
+          {
+            element = Element.bottom;
+            children = LabelMap.singleton label_element (create_tree_internal rest tree);
+          }
+    in
     if is_empty_tree tree then
       None
     else
@@ -344,11 +343,14 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
 
 
   let create_leaf_option ~ancestors ~element =
-    let difference = Element.subtract ancestors ~from:element in
-    if Element.is_bottom difference then
+    if Element.less_or_equal ~left:element ~right:ancestors then
       None
     else
-      Some (create_leaf difference)
+      let difference = Element.subtract ancestors ~from:element in
+      if Element.is_bottom difference then
+        None
+      else
+        Some (create_leaf difference)
 
 
   let create_node_option element children =
@@ -374,11 +376,14 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
 
 
   let filter_by_ancestors ~ancestors ~element =
-    let difference = Element.subtract ancestors ~from:element in
-    if Element.is_bottom difference then
+    if Element.less_or_equal ~left:element ~right:ancestors then
       { new_element = Element.bottom; ancestors = ancestors }
     else
-      { new_element = difference; ancestors = Element.join ancestors element }
+      let difference = Element.subtract ancestors ~from:element in
+      if Element.is_bottom difference then
+        { new_element = Element.bottom; ancestors = ancestors }
+      else
+        { new_element = difference; ancestors = Element.join ancestors element }
 
 
   let rec prune_tree ancestors { element; children } =
@@ -508,7 +513,7 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
     if is_empty_tree tree then
       (* Shortcut *)
       prune_tree ancestors subtree
-      >>| create_tree_internal path
+      >>= create_tree_option path
     else
       match path with
       | [] ->
@@ -866,6 +871,65 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
     join_trees Element.bottom ~widen_depth:(Some Config.max_tree_depth_after_widening) previous next
     |> option_node_tree ~message
     |> check_join_property previous next
+
+
+  (* Shape tree ~mold performs a join of the two trees but makes sure the result
+     has only branches present in mold. *)
+  let rec shape_tree
+      ~ancestors
+      { element = left_element; children = left_children }
+      ~mold:({ element = mold_element; children = mold_children }) =
+    let joined_element = element_join ~widen_depth:None left_element mold_element in
+    let joined_element, left_children =
+      let lift_dead_branches ~key ~data (lifted, result) =
+        match data with
+        | `Both (left, _mold) ->
+            (lifted, LabelMap.set result ~key ~data:left)
+        | `Left left ->
+            (Element.join lifted (collapse left), result)
+        | `Right _ ->
+            (lifted, result)
+      in
+      LabelMap.fold2
+        left_children
+        mold_children
+        ~init:(joined_element, LabelMap.empty)
+        ~f:lift_dead_branches
+    in
+    let { new_element; ancestors } = filter_by_ancestors ~ancestors ~element:joined_element in
+    let children = shape_children ancestors left_children ~mold:mold_children in
+    create_node_option new_element children
+
+  (* left_tree already contains only branches that are also in mold. *)
+  and shape_children ancestors left_children ~mold =
+    let mold_branch ~key ~data result =
+      match data with
+      | `Both (left_tree, mold) ->
+          begin
+            match shape_tree ~ancestors left_tree ~mold with
+            | Some merged ->
+                LabelMap.set result ~key ~data:merged
+            | None ->
+                result
+          end
+      | `Right mold ->
+          LabelMap.set result ~key ~data:mold
+      | `Left _ ->
+          failwith "Invariant broken. Left branch should have been lifted"
+    in
+    LabelMap.fold2 left_children mold ~init:LabelMap.empty ~f:mold_branch
+
+
+  let shape tree ~mold =
+    let message () =
+      Format.sprintf
+        "shape tree\n%s\nmold:\n%s\n"
+        (show tree)
+        (show mold)
+    in
+    shape_tree ~ancestors:Element.bottom tree ~mold
+    |> option_node_tree ~message
+    |> check_join_property tree mold
 
 
   let get_root_taint { element; _ } =
