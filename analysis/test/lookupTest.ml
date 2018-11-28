@@ -285,7 +285,6 @@ let test_lookup_identifier_accesses _ =
       "test.py:8:8-8:9/typing.Type[test.A]";
       "test.py:9:11-9:14/int";
       "test.py:9:11-9:14/test.A";
-      "test.py:9:4-9:14/int";
     ];
   assert_annotation
     ~lookup
@@ -384,12 +383,10 @@ let test_lookup_multiline_accesses _ =
       "test.py:12:8-12:9/typing.Type[test.A]";
       "test.py:13:12-14:13/int";
       "test.py:13:12-14:13/test.A";
-      "test.py:13:4-14:13/int";
       "test.py:16:21-16:24/typing.Type[int]";
       "test.py:17:12-19:13/int";
       "test.py:17:12-19:13/test.A";
       "test.py:17:12-19:13/typing.Type[test.A]";
-      "test.py:17:4-19:13/int";
       "test.py:2:13-2:17/None";
       "test.py:3:7-5:14/bool";
       "test.py:9:13-9:15/int";

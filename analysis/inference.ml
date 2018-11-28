@@ -18,6 +18,9 @@ module State = struct
   include TypeCheck.State
 
 
+  let return_access = Access.create "$return"
+
+
   let initial_backward
       ?(configuration = Configuration.Analysis.create ())
       define
@@ -30,7 +33,7 @@ module State = struct
       let resolution =
         Resolution.with_annotations
           resolution
-          ~annotations:(Access.Map.of_alist_exn [Preprocessing.return_access, expected_return])
+          ~annotations:(Access.Map.of_alist_exn [return_access, expected_return])
       in
       create ~configuration ~resolution ~define ()
     in
@@ -38,7 +41,7 @@ module State = struct
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
            Type.is_not_instantiated data.Annotation.annotation ||
-           Access.equal key Preprocessing.return_access then
+           Access.equal key return_access then
           map
         else
           Map.set ~key ~data map
@@ -286,6 +289,17 @@ module State = struct
                   ~expression:target
               in
               propagate_assign resolution resolved value)
+
+      | Return { Return.expression = Some { Node.value = Access access; _ }; _ } ->
+          let return_annotation =
+            Option.value_exn (Resolution.get_local resolution ~access:return_access)
+            |> Annotation.annotation
+          in
+          Resolution.set_local
+            resolution
+            ~access:access
+            ~annotation:(Annotation.create return_annotation)
+
       | _ ->
           annotate_call_accesses statement resolution
     in

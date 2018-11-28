@@ -1123,29 +1123,13 @@ let expand_wildcard_imports ~force source =
   |> snd
 
 
-let return_access = Access.create "$return"
-
-
-let expand_returns source =
+let expand_implicit_returns source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = unit
 
       let statement state statement =
         match statement with
-        (* Expand returns to make them more amenable for analyses. E.g:
-           `return x` -> `$return = x; return $return` *)
-        | { Node.location; value = Return ({ Return.expression = Some value; _ } as return) } ->
-            let target = { Node.location; value = Access return_access } in
-            state,
-            [
-              {
-                Node.location;
-                value = Assign { Assign.target; annotation = None; value; parent = None };
-              };
-              { Node.location; value = Return { return with Return.expression = Some target } };
-            ]
-
         (* Insert implicit return statements at the end of function bodies. *)
         | { Node.location; value = Define define } ->
             let define =
@@ -1401,7 +1385,7 @@ let preprocess_steps ~force source =
   |> expand_type_checking_imports
   |> expand_wildcard_imports ~force
   |> qualify
-  |> expand_returns
+  |> expand_implicit_returns
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
 

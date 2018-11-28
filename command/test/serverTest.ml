@@ -1048,9 +1048,7 @@ let test_incremental_lookups _ =
     ~printer:(String.concat ~sep:", ")
     [
       ":3:11-3:12/int";
-      ":3:4-3:12/int";
       ":6:11-6:12/int";
-      ":6:4-6:12/int";
     ]
     annotations
 

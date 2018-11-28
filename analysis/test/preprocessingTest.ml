@@ -1173,15 +1173,15 @@ let test_expand_wildcard_imports _ =
     |}
 
 
-let test_expand_returns _ =
+let test_expand_implicit_returns _ =
   let assert_expand source expected =
     assert_source_equal
       (parse expected)
-      (Preprocessing.expand_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
-      (Preprocessing.expand_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse source))
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
@@ -1197,29 +1197,6 @@ let test_expand_returns _ =
            };
          ])
   in
-  assert_expand
-    "return None"
-    {|
-      $return = None
-      return $return
-    |};
-  assert_expand
-    "return foo"
-    {|
-      $return = foo
-      return $return
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        return None
-    |}
-    {|
-      def foo():
-        $return = None
-        return $return
-    |};
   assert_expand_implicit_returns
     {|
       def foo():
@@ -1263,22 +1240,6 @@ let test_expand_returns _ =
         is_implicit = true
       }
     ];
-  assert_expand
-    {|
-      def foo():
-        try:
-          pass
-        finally:
-          return 1
-    |}
-    {|
-      def foo():
-        try:
-          pass
-        finally:
-          $return = 1
-          return $return
-    |};
 
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
@@ -1585,7 +1546,7 @@ let () =
     "replace_platform_specific_code">::test_replace_platform_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_wildcard_imports">::test_expand_wildcard_imports;
-    "expand_returns">::test_expand_returns;
+    "expand_implicit_returns">::test_expand_implicit_returns;
     "defines">::test_defines;
     "classes">::test_classes;
     "typed_dictionary_stub_fix">::test_replace_mypy_extensions_stub;
