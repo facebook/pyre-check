@@ -78,7 +78,8 @@ let test_fold _ =
         |};
       parse
         {|
-          movie: "mypy_extensions.TypedDict[('Movie', ('year', int), ('title', str))]"
+          Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+          movie: Movie
         |}
       |> Preprocessing.preprocess;
     ] in
@@ -118,7 +119,7 @@ let test_fold _ =
         in
         step :: steps
       in
-      parse_single_access access
+      parse_single_access access ~preprocess:true
       |> Annotated.Access.create
       |> Annotated.Access.fold ~resolution ~initial:[] ~f:steps
       |> List.rev
@@ -242,7 +243,8 @@ let test_fold _ =
     [
       movie_typed_dictionary;
       get_item;
-      { annotation = parse_annotation "$unknown";
+      {
+        annotation = parse_annotation "$unknown";
         element =
           Annotated.Signature.TypedDictionaryMissingKey {
             typed_dictionary_name = Identifier.create "Movie";
@@ -261,6 +263,67 @@ let test_fold _ =
         annotation = parse_annotation "$unknown";
         element =
           Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "Movie(title='Blade Runner', year=1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element = SignatureFound;
+      };
+    ];
+  assert_fold
+    "Movie(year=1982, title='Blade Runner')"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element = SignatureFound;
+      };
+    ];
+  assert_fold
+    "Movie(year='Blade Runner', title=1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element =
+          {
+            Annotated.Signature.actual = parse_annotation "str";
+            expected = parse_annotation "int";
+            name = (Some (Identifier.create "$parameter$year"));
+            position = 2;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "Movie('Blade Runner', 1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element =
+          Annotated.Signature.MissingArgument (Access.create "$parameter$title")
           |> Option.some
           |> signature_not_found;
       };

@@ -7317,7 +7317,47 @@ let test_check_typed_dictionaries _ =
       "TypedDict accessed with a non-literal [26]: " ^
       "TypedDict key must be a string literal; expected one of ('foo', 'bar').";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ]
+    ];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie(name='Blade Runner', year=1982)
+        return movie['year']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie(year=1982, name='Blade Runner')
+        return movie['year']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie(name=1982, year='Blade Runner')
+        return movie['year']
+    |}
+    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie('Blade Runner', 1982)
+        return movie['year']
+    |}
+    ["Missing argument [20]: Call `__init__` expects argument `name`."];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie(name='Blade Runner', year=1982, extra=42)
+        return movie['year']
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `__init__`."]
 
 
 let test_check_getattr _ =

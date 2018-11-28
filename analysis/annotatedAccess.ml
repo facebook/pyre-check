@@ -452,13 +452,18 @@ let fold ~resolution ~initial ~f access =
                 match resolved with
                 | meta when Type.is_meta resolved ->
                     let callable =
-                      let class_definition =
-                        Resolution.class_definition resolution (Type.single_parameter meta)
-                        >>| Class.create
-                      in
-                      match class_definition >>| Class.constructor ~resolution with
-                      | Some (Type.Callable callable) -> Some callable
-                      | _ -> None
+                      match Type.single_parameter meta with
+                      | TypedDictionary { name; fields } ->
+                          Type.TypedDictionary.constructor ~name ~fields
+                          |> Option.some
+                      | meta_parameter ->
+                          let class_definition =
+                            Resolution.class_definition resolution meta_parameter
+                            >>| Class.create
+                          in
+                          match class_definition >>| Class.constructor ~resolution with
+                          | Some (Type.Callable callable) -> Some callable
+                          | _ -> None
                     in
                     target >>| State.annotation,
                     callable

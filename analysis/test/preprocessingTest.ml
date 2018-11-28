@@ -1520,28 +1520,32 @@ let test_expand_typed_dictionaries _ =
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
     |}
     {|
-      Movie = mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
     |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {})
     |}
     {|
-      Movie = mypy_extensions.TypedDict[('Movie',)]
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie',)]] = (
+        mypy_extensions.TypedDict[('Movie',)])
     |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict({'name': str, 'year': int})
     |}
     {|
-      Movie = mypy_extensions.TypedDict[{'name': str, 'year': int}]
+      Movie: typing.Type[mypy_extensions.TypedDict[{'name': str, 'year': int}]] = (
+        mypy_extensions.TypedDict[{'name': str, 'year': int}])
     |};
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict(A, B, C)
     |}
     {|
-      Movie = mypy_extensions.TypedDict.__getitem__(A, B, C)
+      Movie: typing.Type[mypy_extensions.TypedDict.__getitem__(A, B, C)] = (
+        mypy_extensions.TypedDict.__getitem__(A, B, C))
     |}
 
 

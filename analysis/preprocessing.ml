@@ -1302,13 +1302,13 @@ let dequalify_map source =
 let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
   if String.is_suffix (File.Handle.show handle) ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
-      let node = Node.create ~location in
+      let node value = Node.create ~location value in
       Assign {
         target = node (Access (Access.create "TypedDict"));
         annotation = Some (node (Access (Access.create "typing._SpecialForm")));
         value = node Ellipses;
         parent = None;
-      } |> Node.create ~location
+      } |> node
     in
     let replace_typed_dictionary_define = function
       | { Node.location; value = Define { name; _ } } when Access.show name = "TypedDict" ->
@@ -1335,6 +1335,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
                 ];
               _;
             } as assign_value);
+          target = { Node.location = target_location; _ };
           _;
         } as assignment)
         when Identifier.show module_name = "mypy_extensions" &&
@@ -1362,18 +1363,26 @@ let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
             | _ ->
                 arguments
           in
-          Assign {
-            assignment with
-            value = {
-              assign_value with
-              value = Access [
-                  Access.Identifier module_name;
-                  Access.Identifier typed_dictionary;
-                  Access.Identifier (Identifier.create "__getitem__");
-                  Access.Call { call with value = arguments };
-                ];
-            }
-          }
+          let access =
+            Access [
+              Access.Identifier module_name;
+              Access.Identifier typed_dictionary;
+              Access.Identifier (Identifier.create "__getitem__");
+              Access.Call { call with value = arguments };
+            ];
+          in
+          let annotation =
+            let node value = Node.create ~location:target_location value in
+            Access [
+              Access.Identifier (Identifier.create "typing");
+              Access.Identifier (Identifier.create "Type");
+              Access.Identifier (Identifier.create "__getitem__");
+              Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
+            ]
+            |> node
+            |> Option.some
+          in
+          Assign { assignment with annotation; value = { assign_value with value = access } }
       | _ ->
           value
     in

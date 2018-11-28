@@ -171,8 +171,9 @@ let parse_list named_sources =
     ~files:(List.map ~f:create_file named_sources)
 
 
-let parse_single_statement source =
-  match parse source with
+let parse_single_statement ?(preprocess = false) source =
+  let preprocess = if preprocess then Preprocessing.preprocess else Fn.id in
+  match preprocess (parse source)  with
   | { Source.statements = [statement]; _ } -> statement
   | _ -> failwith "Could not parse single statement"
 
@@ -202,14 +203,14 @@ let parse_single_class source =
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression source =
-  match parse_single_statement source with
+let parse_single_expression ?(preprocess = false) source =
+  match parse_single_statement ~preprocess source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
 
-let parse_single_access source =
-  match parse_single_expression source with
+let parse_single_access ?(preprocess = false) source =
+  match parse_single_expression ~preprocess source with
   | { Node.value = Expression.Access access; _ } -> access
   | _ -> failwith "Could not parse single access"
 

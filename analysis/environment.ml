@@ -438,8 +438,27 @@ let register_aliases (module Handler: Handler) sources =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.handle; statements; qualifier; _ } =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
+      let is_allowable_alias_annotation = function
+        | Some {
+            Node.value = Access [
+                Access.Identifier typing;
+                Access.Identifier typ;
+                Access.Identifier getitem;
+                Access.Call _;
+              ];
+            _;
+          } when Identifier.show typing = "typing"
+              && Identifier.show typ = "Type"
+              && Identifier.show getitem = "__getitem__" ->
+            true
+        | None ->
+            true
+        | _ ->
+            false
+      in
       match value with
-      | Assign { Assign.target; annotation = None; value; _ } ->
+      | Assign { Assign.target; annotation; value; _ }
+        when is_allowable_alias_annotation annotation ->
           let target =
             let access =
               let access =

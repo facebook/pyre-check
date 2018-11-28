@@ -1898,6 +1898,44 @@ module TypedDictionary = struct
       List.exists left_fields ~f:same_name_different_annotation
     in
     List.exists right_fields ~f:found_collision
+
+  let constructor ~name ~fields =
+    let parameters =
+      let self_parameter =
+        Record.Callable.RecordParameter.Named {
+          name = Access.create "self";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let single_star =
+        Record.Callable.RecordParameter.Variable {
+          name = Access.create "";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let field_arguments =
+        let field_to_argument { name; annotation } =
+          Record.Callable.RecordParameter.Named {
+            name = Access.create (Format.asprintf "$parameter$%s" name);
+            annotation;
+            default = false;
+          }
+        in
+        List.map ~f:field_to_argument fields
+      in
+      self_parameter :: single_star :: field_arguments
+    in
+    {
+      Callable.kind = Named (Access.create "__init__");
+      implementation = {
+        annotation = TypedDictionary { name; fields };
+        parameters = Defined parameters;
+      };
+      overloads = [];
+      implicit = Class;
+    }
 end
 
 
