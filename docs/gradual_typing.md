@@ -97,7 +97,7 @@ the annotations for classes & functions, and omit the implementations.
   def fetch(self, id):
     return get_from_network(id)
 
-  C.cached_fetch = memoize(function)
+  C.cached_fetch = memoize(fetch)
 
   # file.pyi
   class C:
