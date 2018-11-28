@@ -1442,7 +1442,36 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
-    let validate_return ~state ~actual ~is_implicit =
+    (* We weaken type inference of mutable literals for assingments and returns
+       to get around the invariance of containers when we can prove that casting to
+       a supertype is safe. *)
+    let resolve_mutable_literals resolution ~expression ~resolved ~expected =
+      match expression, resolved, expected with
+      | Some { Node.value = Expression.List _; _ },
+        Type.Parametric { name = actual_name; parameters = [actual] },
+        Type.Parametric { name = expected_name; parameters = [expected_parameter] }
+        when Identifier.equal actual_name (Identifier.create "list") &&
+             Identifier.equal expected_name (Identifier.create "list") &&
+             Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
+          expected
+      | Some { Node.value = Expression.Dictionary _; _ },
+        Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
+        Type.Parametric {
+          name = expected_name;
+          parameters = [expected_key; expected_value];
+        }
+        when Identifier.equal actual_name (Identifier.create "dict") &&
+             Identifier.equal expected_name (Identifier.create "dict") &&
+             Resolution.less_or_equal resolution ~left:actual_key ~right:expected_key &&
+             Resolution.less_or_equal
+               resolution
+               ~left:actual_value
+               ~right:expected_value ->
+          expected
+      | _ ->
+          resolved
+    in
+    let validate_return ~expression ~state ~actual ~is_implicit =
       let return_annotation =
         let annotation =
           Annotated.Callable.return_annotation ~define:define_without_location ~resolution
@@ -1451,6 +1480,9 @@ module State = struct
           Type.awaitable_value annotation
         else
           annotation
+      in
+      let actual =
+        resolve_mutable_literals resolution ~expression ~resolved:actual ~expected:return_annotation
       in
       if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
          not (Define.is_abstract_method define_without_location) &&
@@ -1576,32 +1608,7 @@ module State = struct
                   annotation, element
               in
               let expected = Annotation.original annotation in
-              let resolved =
-                match expression, resolved, expected with
-                | Some { Node.value = Expression.List _; _ },
-                  Type.Parametric { name = actual_name; parameters = [actual] },
-                  Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-                  when Identifier.equal actual_name (Identifier.create "list") &&
-                       Identifier.equal expected_name (Identifier.create "list") &&
-                       Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
-                    expected
-                | Some { Node.value = Expression.Dictionary _; _ },
-                  Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
-                  Type.Parametric {
-                    name = expected_name;
-                    parameters = [expected_key; expected_value];
-                  }
-                  when Identifier.equal actual_name (Identifier.create "dict") &&
-                       Identifier.equal expected_name (Identifier.create "dict") &&
-                       Resolution.less_or_equal resolution ~left:actual_key ~right:expected_key &&
-                       Resolution.less_or_equal
-                         resolution
-                         ~left:actual_value
-                         ~right:expected_value ->
-                    expected
-                | _ ->
-                    resolved
-              in
+              let resolved = resolve_mutable_literals resolution ~expression ~resolved ~expected in
               (* Check if assignment is valid. *)
               let state =
                 let error =
@@ -2229,7 +2236,7 @@ module State = struct
             ~default:{ state; resolved = Type.none }
             ~f:(fun expression -> forward_expression ~state ~expression)
         in
-        validate_return ~state ~actual ~is_implicit
+        validate_return ~expression ~state ~actual ~is_implicit
 
     | Statement.Yield { Node.value = Expression.Yield return; _ } ->
         let { state; resolved = actual } =
@@ -2240,7 +2247,7 @@ module State = struct
           | None ->
               { state; resolved = Type.generator ~async Type.none }
         in
-        validate_return ~state ~actual ~is_implicit:false
+        validate_return ~expression:None ~state ~actual ~is_implicit:false
 
     | Statement.Yield _ ->
         state
@@ -2255,7 +2262,7 @@ module State = struct
           | annotation ->
               Type.generator annotation
         in
-        validate_return ~state ~actual ~is_implicit:false
+        validate_return ~expression:None ~state ~actual ~is_implicit:false
 
     | YieldFrom _ ->
         state

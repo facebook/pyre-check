@@ -7585,6 +7585,37 @@ let test_check_literal_variance _ =
       "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but " ^
       "is used as type `typing.Dict[str, int]`. Redeclare `x` on line 4 if you wish to " ^
       "override the previously declared type.";
+    ];
+
+  (* Returns. *)
+  assert_type_errors
+    {|
+      def foo() -> typing.List[float]:
+        return [1]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.List[float]:
+        a = [1]
+        return a
+    |}
+    ["Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`."];
+  assert_type_errors
+    {|
+      def foo() -> typing.Dict[float, float]:
+        return {1: 1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Dict[float, float]:
+        a = {1: 1}
+        return a
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got " ^
+      "`typing.Dict[int, int]`.";
     ]
 
 
