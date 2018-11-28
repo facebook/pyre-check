@@ -217,6 +217,61 @@ let messages ~detailed:_ ~define location kind =
         );
       ]
   | Top -> [ "Problem with analysis." ]
+  | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; due_to_any; _ } }
+    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
+      begin
+        if due_to_any then
+          [
+            Format.asprintf
+              "Attribute `%a` of class `%a` must have a type other than `Any`."
+              Access.pp name
+              Type.pp parent;
+          ]
+        else
+          [
+            Format.asprintf
+              "Attribute `%a` of class `%a` has no type specified."
+              Access.pp name
+              Type.pp parent;
+          ]
+      end
+  | MissingAttributeAnnotation {
+      parent;
+      missing_annotation = { name; annotation; evidence_locations; due_to_any };
+    } ->
+      let detail =
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+          |> String.concat ~sep:", "
+        in
+        Format.asprintf
+          "Attribute `%a` declared on line %d, type `%a` deduced from %s."
+          Access.pp name
+          start_line
+          Type.pp annotation
+          evidence_string
+      in
+      begin
+        if due_to_any then
+          [
+            Format.asprintf
+              "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+              Access.pp name
+              Type.pp parent
+              Type.pp annotation;
+            detail;
+          ]
+        else
+          [
+            Format.asprintf
+              "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+              Access.pp name
+              Type.pp parent
+              Type.pp annotation;
+            detail;
+          ]
+      end
   | MissingParameterAnnotation { name; annotation; due_to_any = false }
     when Type.equal annotation Type.Bottom ->
       [
@@ -248,11 +303,10 @@ let messages ~detailed:_ ~define location kind =
   | MissingReturnAnnotation { annotation; due_to_any; _ }
     when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
       begin
-        match due_to_any with
-        | true ->
-            ["Return type must be specified as type other than `Any`."]
-        | false ->
-            ["Return type is not specified."]
+        if due_to_any then
+          ["Return type must be specified as type other than `Any`."]
+        else
+          ["Return type is not specified."]
       end
   | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
       let detail =
@@ -267,64 +321,19 @@ let messages ~detailed:_ ~define location kind =
           start_line
       in
       begin
-        match due_to_any with
-        | true ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but type `Any` is specified."
-                 Type.pp annotation);
-              detail;
-            ]
-        | false ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but no return type is specified."
-                 Type.pp annotation);
-              detail;
-            ]
-      end
-  | MissingAttributeAnnotation {
-      parent;
-      missing_annotation = {
-        name;
-        annotation;
-        evidence_locations;
-        due_to_any;
-      };
-    } ->
-      begin
-        let evidence_string =
-          evidence_locations
-          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-          |> String.concat ~sep:", "
-        in
         if due_to_any then
           [
-            Format.asprintf
-              "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-              Access.pp name
-              Type.pp parent
-              Type.pp annotation;
-            Format.asprintf
-              "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-              Access.pp name
-              start_line
-              Type.pp annotation
-              evidence_string
+            (Format.asprintf
+               "Returning `%a` but type `Any` is specified."
+               Type.pp annotation);
+            detail;
           ]
         else
           [
-            Format.asprintf
-              "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-              Access.pp name
-              Type.pp parent
-              Type.pp annotation;
-            Format.asprintf
-              "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-              Access.pp name
-              start_line
-              Type.pp annotation
-              evidence_string
+            (Format.asprintf
+               "Returning `%a` but no return type is specified."
+               Type.pp annotation);
+            detail;
           ]
       end
   | MissingGlobalAnnotation {

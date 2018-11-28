@@ -4890,6 +4890,58 @@ let test_check_missing_return _ =
     ["Incompatible parameter type [6]: Expected `int` but got `str`."]
 
 
+let test_check_missing_attribute _ =
+  assert_type_errors
+    {|
+      class Foo:
+        a = unknown
+      Foo.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but no type is specified.";
+      "Undefined name [18]: Global name `unknown` is undefined.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but no type is specified."
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, a) -> None:
+          self.a = a
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `a` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+    ];
+
+  (* Don't report in non-debug mode. *)
+  assert_type_errors
+    ~debug:false
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      class Foo:
+        a: typing.Any
+      Foo.a = 1
+    |}
+    []
+
+
 let test_check_yield _ =
   assert_type_errors
     {|
@@ -7658,6 +7710,7 @@ let () =
     "check_named_arguments">::test_check_named_arguments;
     "check_missing_parameter">::test_check_missing_parameter;
     "check_missing_return">::test_check_missing_return;
+    "check_missing_attribute">::test_check_missing_attribute;
     "check_yield">::test_check_yield;
     "check_ternary">::test_check_ternary;
     "check_union">::test_check_union;
