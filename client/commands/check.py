@@ -32,6 +32,9 @@ class Check(Reporting):
         search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
         return flags
 
     def _run(self, retries: int = 1) -> None:

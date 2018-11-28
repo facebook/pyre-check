@@ -31,7 +31,7 @@ class Start(Reporting):
         self._changed_files_path = arguments.changed_files_path  # type: Optional[str]
         # type: Optional[str]
         self._load_initial_state_from = arguments.load_initial_state_from
-        self._saved_state_project = arguments.saved_state_project  # type: Optiona[str]
+        self._saved_state_project = arguments.saved_state_project  # type: Optional[str]
 
     def _run(self) -> None:
         blocking = False
@@ -129,5 +129,9 @@ class Start(Reporting):
         search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
+
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
 
         return flags

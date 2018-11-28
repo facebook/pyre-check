@@ -151,7 +151,7 @@ def main() -> int:
         "--preserve-pythonpath",
         action="store_true",
         default=False,
-        help="Preserves the value of the PYTHONPATH environment variable",
+        help="Preserve the value of the PYTHONPATH environment variable",
     )
 
     parser.add_argument(
@@ -159,6 +159,13 @@ def main() -> int:
         default=None,
         type=executable_file,
         help="Location of the pyre binary",
+    )
+
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Exclude files and directories matching this regexp from parsing",
     )
 
     # Typeshed stubs location
@@ -316,6 +323,7 @@ def main() -> int:
                 binary=arguments.binary,
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
+                excludes=arguments.exclude,
             )
             if configuration.disabled:
                 LOG.log(

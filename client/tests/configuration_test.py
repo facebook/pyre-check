@@ -183,6 +183,20 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
+        json_load.side_effect = [{"exclude": "regexp"}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.excludes, ["regexp"])
+
+        json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.excludes, ["regexp1", "regexp2"])
+
+        json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
+        configuration = Configuration(excludes=["regexp3", "regexp4"])
+        self.assertEqual(
+            configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
+        )
+
     @patch("os.path.isfile")
     @patch("os.path.isdir")
     @patch("os.path.exists")
@@ -358,3 +372,4 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.do_not_check, [])
             self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
+            self.assertEqual(configuration.excludes, [])

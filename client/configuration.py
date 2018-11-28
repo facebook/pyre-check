@@ -73,6 +73,7 @@ class Configuration:
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
+        excludes: Optional[List[str]] = None,
     ) -> None:
         self.analysis_directories = []
         self.targets = []
@@ -108,6 +109,10 @@ class Configuration:
 
         if typeshed:
             self._typeshed = typeshed
+
+        self.excludes = []  # type: List[str]
+        if excludes:
+            self.excludes.extend(excludes)
 
         if local_configuration:
             # Handle local configuration explicitly configured on the
@@ -340,6 +345,13 @@ class Configuration:
                 assert taint_models_path is None or isinstance(taint_models_path, str)
                 self.taint_models_path = taint_models_path
 
+                excludes = configuration.consume("exclude", default=[])
+                if isinstance(excludes, list):
+                    self.excludes.extend(excludes)
+                else:
+                    self.excludes.append(excludes)
+
+                # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
                 if unused_keys:
                     LOG.warning(

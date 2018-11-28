@@ -48,6 +48,8 @@ provides typed stubs for library functions.
 
 `workers`: Number of workers to spawn for multiprocessing.
 
+`exclude`: List of regular expressions for files and directories that should not be parsed.
+
 
 # Local Configuration
 If you have sub-projects within your project root that you would like to run Pyre on, you
@@ -87,18 +89,21 @@ optional arguments:
   -h, --help            show this help message and exit
   -l LOCAL_CONFIGURATION, --local-configuration LOCAL_CONFIGURATION
                         Use a local configuration
+  --version             show program's version number and exit
+  --binary-version      Print the pyre.bin version to be used
   --show-error-traces   Display errors trace information
   --output {text,json}  How to format output
   --verbose             Enable verbose logging
   --noninteractive      Disable interactive logging
   --show-parse-errors   Display detailed information about parse errors
-  --binary-version      Print the pyre.bin version to be used
   --search-path SEARCH_PATH
                         Add an additional directory of modules and stubs to
                         include in the type environment
   --preserve-pythonpath
-                        Preserves the value of the PYTHONPATH environment
+                        Preserve the value of the PYTHONPATH environment
                         variable
+  --binary BINARY       Location of the pyre binary
+  --exclude EXCLUDE     Exclude files and directories matching this regexp from parsing
   --typeshed TYPESHED   Location of the typeshed stubs
 
 buck:
