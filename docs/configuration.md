@@ -27,10 +27,11 @@ setup and needs. The following configuration options are supported:
 
 `source_directories`: List of paths to type check. Defaults to current directory.
 
-`do_not_check`: A list of paths to omit from type-checking. This may be useful for
+`ignore_all_errors`: A list of paths to omit from type-checking. This may be useful for
 generated files, virtualenv directories, etc.  These should be paths relative to the location of
 the configuration file (or the local configuration if applicable).  These can also include basic
-globs using *.
+globs using *. **Note**: files matching these paths will still be parsed, please refer to the
+`exclude` configuration item for further options.
 
 `binary`: Location of pyre binary. This can be specified to gradually upgrade a Pyre
 binary in a CI setting.

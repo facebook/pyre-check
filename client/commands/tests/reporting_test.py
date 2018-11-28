@@ -51,7 +51,7 @@ class ReportingTest(unittest.TestCase):
             create_error.reset_mock()
 
         arguments.target = []
-        configuration.do_not_check = ["/test/auto/gen"]
+        configuration.ignore_all_errors = ["/test/auto/gen"]
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
@@ -89,7 +89,7 @@ class ReportingTest(unittest.TestCase):
         arguments.local_configuration = None
         error_dictionary = {"path": "b/c"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
-        configuration.do_not_check = ["*/b"]
+        configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)

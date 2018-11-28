@@ -32,7 +32,7 @@ class ConfigurationTest(unittest.TestCase):
             {
                 "source_directories": ["a"],
                 "logger": "/usr/logger",
-                "do_not_check": ["buck-out/dev/gen"],
+                "ignore_all_errors": ["buck-out/dev/gen"],
             },
             {},
         ]
@@ -41,7 +41,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
         self.assertEqual(
-            configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
+            configuration.ignore_all_errors, ["%s/buck-out/dev/gen" % os.getcwd()]
         )
 
         json_load.side_effect = [
@@ -58,7 +58,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
-        self.assertEqual(configuration.do_not_check, [])
+        self.assertEqual(configuration.ignore_all_errors, [])
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
@@ -166,14 +166,14 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration()
             self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
 
-        # Test multiple definitions of the do_not_check files.
+        # Test multiple definitions of the ignore_all_errors files.
         json_load.side_effect = [
-            {"do_not_check": ["buck-out/dev/gen"]},
-            {"do_not_check": ["buck-out/dev/gen2"]},
+            {"ignore_all_errors": ["buck-out/dev/gen"]},
+            {"ignore_all_errors": ["buck-out/dev/gen2"]},
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.do_not_check,
+            configuration.ignore_all_errors,
             ["%s/buck-out/dev/gen" % os.getcwd(), "%s/buck-out/dev/gen2" % os.getcwd()],
         )
 
@@ -369,7 +369,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.targets, [])
             self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
-            self.assertEqual(configuration.do_not_check, [])
+            self.assertEqual(configuration.ignore_all_errors, [])
             self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
             self.assertEqual(configuration.excludes, [])

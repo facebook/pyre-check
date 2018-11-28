@@ -28,6 +28,7 @@ class InvalidConfiguration(Exception):
 
 class _ConfigurationFile:
     def __init__(self, file):
+        self._deprecated = {"do_not_check": "ignore_all_errors"}
         self._configuration = json.load(file)
 
     def consume(self, key, default=None, current=None, print_on_success=False):
@@ -45,6 +46,13 @@ class _ConfigurationFile:
             return current
         if value and print_on_success:
             LOG.debug("Found %s: `%s`", key, ", ".join(value))
+        if value and key in self._deprecated:
+            LOG.warning(
+                "Configuration file uses deprecated item `%s`: "
+                "please migrate to its replacement `%s`",
+                key,
+                self._deprecated[key],
+            )
         return value
 
     def unused_keys(self):
@@ -78,7 +86,7 @@ class Configuration:
         self.analysis_directories = []
         self.targets = []
         self.logger = None
-        self.do_not_check = []
+        self.ignore_all_errors = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = None
@@ -160,9 +168,9 @@ class Configuration:
                     "strings."
                 )
 
-            if not is_list_of_strings(self.do_not_check):
+            if not is_list_of_strings(self.ignore_all_errors):
                 raise InvalidConfiguration(
-                    "`do_not_check` field must be a list of strings."
+                    "`ignore_all_errors` field must be a list of strings."
                 )
 
             if not os.path.exists(self.binary):
@@ -297,9 +305,13 @@ class Configuration:
 
                 self.logger = configuration.consume("logger", current=self.logger)
 
-                do_not_check = configuration.consume("do_not_check", default=[])
+                ignore_all_errors = configuration.consume(
+                    "ignore_all_errors", default=[]
+                )
+                # Deprecated.
+                ignore_all_errors += configuration.consume("do_not_check", default=[])
                 configuration_path = os.path.dirname(os.path.realpath(path))
-                self.do_not_check.extend(
+                self.ignore_all_errors.extend(
                     map(
                         lambda do_not_check_relative_to_configuration: os.path.realpath(
                             os.path.join(
@@ -307,7 +319,7 @@ class Configuration:
                                 do_not_check_relative_to_configuration,
                             )
                         ),
-                        do_not_check,
+                        ignore_all_errors,
                     )
                 )
 
