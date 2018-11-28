@@ -7529,6 +7529,66 @@ let test_check_getattr _ =
     ]
 
 
+let test_check_literal_variance _ =
+  (* We special case literal lists and dicts for convenience, as they can never escape scope. *)
+  assert_type_errors
+    {|
+      x: typing.List[float] = []
+      x = [1]
+    |}
+    [];
+  (* Mutable default arguments may escape scope, and we shouldn't allow subtyping. *)
+  assert_type_errors
+    {|
+      def foo(x: typing.List[float] = [1]) -> typing.List[float]:
+        return x
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
+      "used as type `typing.List[int]`. Redeclare `x` on line 2 if you wish to override the " ^
+      "previously declared type.";
+    ];
+  assert_type_errors
+    {|
+      x: typing.List[float] = []
+      y: typing.List[int] = [1]
+      x = y
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
+      "used as type `typing.List[int]`. Redeclare `x` on line 4 if you wish to override the " ^
+      "previously declared type.";
+    ];
+  assert_type_errors
+    {|
+      x: typing.Dict[str, float] = {}
+      x = { "s": 1 }
+    |}
+    [];
+  assert_type_errors
+    {|
+      x: typing.Dict[str, float] = {}
+      x = { "s": "" }
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but " ^
+      "is used as type `typing.Dict[str, str]`. Redeclare `x` on line 3 if you wish to " ^
+      "override the previously declared type.";
+    ];
+  assert_type_errors
+    {|
+      x: typing.Dict[str, float] = { "s": 1 }
+      y: typing.Dict[str, int] = { "s": 1 }
+      x = y
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but " ^
+      "is used as type `typing.Dict[str, int]`. Redeclare `x` on line 4 if you wish to " ^
+      "override the previously declared type.";
+    ]
+
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -7601,5 +7661,6 @@ let () =
     "check_dataclass">::test_check_data_class;
     "check_getattr">::test_check_getattr;
     "check_typed_dictionarys">::test_check_typed_dictionaries;
+    "check_literal_variance">::test_check_literal_variance;
   ]
   |> Test.run

@@ -1500,12 +1500,12 @@ module State = struct
           |> Option.value ~default:resolved
         in
         let explicit = Option.is_some annotation in
-
         let rec forward_assign
             ~state:({ resolution; errors; _ } as state)
             ~target:{ Node.location; value }
             ~guide
-            ~resolved =
+            ~resolved
+            ~expression =
 
           let is_uniform_sequence annotation =
             match annotation with
@@ -1576,7 +1576,32 @@ module State = struct
                   annotation, element
               in
               let expected = Annotation.original annotation in
-
+              let resolved =
+                match expression, resolved, expected with
+                | Some { Node.value = Expression.List _; _ },
+                  Type.Parametric { name = actual_name; parameters = [actual] },
+                  Type.Parametric { name = expected_name; parameters = [expected_parameter] }
+                  when Identifier.equal actual_name (Identifier.create "list") &&
+                       Identifier.equal expected_name (Identifier.create "list") &&
+                       Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
+                    expected
+                | Some { Node.value = Expression.Dictionary _; _ },
+                  Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
+                  Type.Parametric {
+                    name = expected_name;
+                    parameters = [expected_key; expected_value];
+                  }
+                  when Identifier.equal actual_name (Identifier.create "dict") &&
+                       Identifier.equal expected_name (Identifier.create "dict") &&
+                       Resolution.less_or_equal resolution ~left:actual_key ~right:expected_key &&
+                       Resolution.less_or_equal
+                         resolution
+                         ~left:actual_value
+                         ~right:expected_value ->
+                    expected
+                | _ ->
+                    resolved
+              in
               (* Check if assignment is valid. *)
               let state =
                 let error =
@@ -1715,11 +1740,11 @@ module State = struct
               let propagate state element =
                 match Node.value element with
                 | Starred (Starred.Once target) ->
-                    forward_assign ~state ~target ~guide ~resolved
+                    forward_assign ~state ~target ~guide ~resolved ~expression:None
                 | _ ->
                     let guide = uniform_sequence_parameter guide in
                     let resolved = uniform_sequence_parameter resolved in
-                    forward_assign ~state ~target:element ~guide ~resolved
+                    forward_assign ~state ~target:element ~guide ~resolved ~expression:None
               in
               List.fold elements ~init:state ~f:propagate
           | List elements, guide
@@ -1797,7 +1822,7 @@ module State = struct
               |> List.fold
                 ~init:state
                 ~f:(fun state (resolved, (target, guide)) ->
-                    forward_assign ~state ~target ~guide ~resolved)
+                    forward_assign ~state ~target ~guide ~resolved ~expression:None)
           | List elements, guide
           | Tuple elements, guide ->
               let kind =
@@ -1824,11 +1849,16 @@ module State = struct
                 elements
                 ~init:state
                 ~f:(fun state target ->
-                    forward_assign ~state ~target ~guide:Type.Top ~resolved:Type.Top)
+                    forward_assign
+                      ~state
+                      ~target
+                      ~guide:Type.Top
+                      ~resolved:Type.Top
+                      ~expression:None)
           | _ ->
               state
         in
-        forward_assign ~state ~target ~guide ~resolved
+        forward_assign ~state ~target ~guide ~resolved ~expression:(Some value)
 
     | Assert { Assert.test; _ } ->
         let { resolution; _ } as state =
