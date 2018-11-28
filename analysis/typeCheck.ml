@@ -553,24 +553,24 @@ module State = struct
                   Map.set ~key:location ~data:error errors
                 in
                 let add_incompatible_variable_error errors annotation default =
-                  let error =
-                    let instantiate location =
-                      Location.instantiate
-                        ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
-                        location
-                    in
-                    Error.create
-                      ~location
-                      ~kind:(Error.IncompatibleVariableType {
-                          name = [Expression.Access.Identifier name];
-                          mismatch = { Error.expected = annotation; actual = default };
-                          declare_location = instantiate location;
-                        })
-                      ~define:define_node
-                  in
                   if Resolution.less_or_equal resolution ~left:default ~right:annotation then
                     errors
                   else
+                    let error =
+                      let instantiate location =
+                        Location.instantiate
+                          ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
+                          location
+                      in
+                      Error.create
+                        ~location
+                        ~kind:(Error.IncompatibleVariableType {
+                            name = [Expression.Access.Identifier name];
+                            mismatch = { Error.expected = annotation; actual = default };
+                            declare_location = instantiate location;
+                          })
+                        ~define:define_node
+                    in
                     Map.set ~key:location ~data:error errors
                 in
                 match annotation, value with
