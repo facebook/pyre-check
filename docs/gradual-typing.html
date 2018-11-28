@@ -96,7 +96,7 @@ the annotations for classes &amp; functions, and omit the implementations.</p>
   <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">fetch</span><span class="hljs-params">(self, id)</span>:</span>
     <span class="hljs-keyword">return</span> get_from_network(id)
 
-  C.cached_fetch = memoize(function)
+  C.cached_fetch = memoize(fetch)
 
   <span class="hljs-comment"># file.pyi</span>
   <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
