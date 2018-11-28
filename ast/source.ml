@@ -74,11 +74,21 @@ module Metadata = struct
     let is_strict = is_pyre_comment "pyre-strict" in
     (* We do not fall back to declarative mode on a typo when attempting to only
        suppress certain errors. *)
-    let is_declare line = Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0 in
-    let default_with_suppress_regex =
-      Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+    let is_declare line =
+      Str.string_match (Str.regexp "^[ \t]*# *pyre-ignore-all-errors *$") line 0 or
+      (* Deprecated. *)
+      Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0
     in
-    let is_default_with_suppress line = Str.string_match default_with_suppress_regex line 0 in
+    let is_default_with_suppress line =
+      let default_with_suppress_regex =
+        Str.regexp "^[ \t]*# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+      in
+      let deprecated_default_with_suppress_regex =
+        Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+      in
+      Str.string_match default_with_suppress_regex line 0 or
+      Str.string_match deprecated_default_with_suppress_regex line 0
+    in
     let is_placeholder_stub = is_pyre_comment "pyre-placeholder-stub" in
     let parse_ignore index line ignored_lines =
       let create_ignore ~index ~line ~kind =

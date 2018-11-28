@@ -14,7 +14,7 @@ In default mode, pyre **will not** throw errors error on:
 
 Strict mode (`# pyre-strict`) will not suppress any of the above errors in a file.
 
-Declare mode (`# pyre-do-not-check`) will suppress all errors in a file.
+Declare mode (`# pyre-ignore-all-errors`) will suppress all errors in a file.
 
 ## Explicitly Suppressing Errors
 

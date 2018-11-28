@@ -25,7 +25,7 @@ let test_coverage _ =
             ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
           File.create
-            ~content:"#pyre-do-not-check\ndef foo()->int:\n    return 1\n"
+            ~content:"#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
         ]
     in
