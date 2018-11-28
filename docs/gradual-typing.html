@@ -60,7 +60,7 @@ codebase to a statically typed one this happens quite frequently.
 We could go in, refactor and clean up sometimes_returns_a_string to behave more consistently
 but more likely than not this will just put us in the same situation over and over again.</p>
 <p>Pyre solves this problem with a per-file declarative mode:</p>
-<pre><code class="hljs">  <span class="hljs-comment"># pyre-do-not-check</span>
+<pre><code class="hljs">  <span class="hljs-comment"># pyre-ignore-all-errors</span>
   <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">unannotated_library_function</span><span class="hljs-params">()</span> -&gt; int:</span>
     <span class="hljs-keyword">return</span> sometimes_returns_a_string(return_string=<span class="hljs-keyword">False</span>)  <span class="hljs-comment"># this is fine</span>
 </code></pre>
@@ -71,7 +71,7 @@ but allows us to deal with internal type correctness later.</p>
 of dynamic behavior.
 If we have a file with several of these above kind of incompatible return type errors, we could
 suppress all of them, but no other kinds of errors with:</p>
-<pre><code class="hljs">  <span class="hljs-comment"># pyre-do-not-check[7]</span>
+<pre><code class="hljs">  <span class="hljs-comment"># pyre-ignore-all-errors[7]</span>
 
   <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">unannotated_library_function_A</span><span class="hljs-params">()</span> -&gt; int:</span>
     <span class="hljs-keyword">return</span> sometimes_returns_a_string(return_string=<span class="hljs-keyword">False</span>)  <span class="hljs-comment"># this is fine</span>
