@@ -553,7 +553,8 @@ module State = struct
                   Map.set ~key:location ~data:error errors
                 in
                 let add_incompatible_variable_error errors annotation default =
-                  if Resolution.less_or_equal resolution ~left:default ~right:annotation then
+                  if Type.equal default Type.Object ||
+                     Resolution.less_or_equal resolution ~left:default ~right:annotation then
                     errors
                   else
                     let error =

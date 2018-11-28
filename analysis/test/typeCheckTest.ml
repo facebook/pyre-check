@@ -4329,6 +4329,15 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
+      def bar() -> typing.Any:
+        ...
+      def foo(x: str = bar()) -> str:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
     constant: int
     def foo() -> None:
       constant = "hi"
