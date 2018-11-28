@@ -4818,6 +4818,39 @@ let test_check_missing_return _ =
       "Incompatible return type [7]: Expected `None` but got `int`."
     ];
 
+  assert_type_errors
+    {|
+      def foo(x) -> typing.Any:
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x):
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type is not specified.";
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    ];
+
+  assert_type_errors
+    {|
+      def unknown_call():
+        pass
+      def foo():
+        x = unknown_call()
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Returning `None` but no return type is specified.";
+      "Missing return annotation [3]: Return type is not specified.";
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_type_errors
     ~debug:false
@@ -4831,6 +4864,13 @@ let test_check_missing_return _ =
     {|
       def foo():
         pass
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x):
+        return x
     |}
     [];
   assert_type_errors

@@ -232,7 +232,7 @@ let messages ~detailed:_ ~define location kind =
           Type.pp annotation
       ]
   | MissingParameterAnnotation { name; annotation; due_to_any = true }
-    when Type.equal annotation Type.Bottom ->
+    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
       [
         Format.asprintf
           "Parameter `%s` must have a type other than `Any`."
@@ -245,38 +245,42 @@ let messages ~detailed:_ ~define location kind =
           (Access.show_sanitized name)
           Type.pp annotation
       ]
-  | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
+  | MissingReturnAnnotation { annotation; due_to_any; _ }
+    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
       begin
         match due_to_any with
+        | true ->
+            ["Return type must be specified as type other than `Any`."]
         | false ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but no return type is specified."
-                 Type.pp annotation);
-              (Format.asprintf
-                 "Type `%a` was returned on %s %s, return type should be specified on line %d."
-                 Type.pp annotation
-                 (if (List.length evidence_locations) > 1 then "lines" else "line")
-                 (evidence_locations
-                  |> List.map
-                    ~f:Int.to_string
-                  |> String.concat ~sep:", ")
-                 start_line)
-            ]
+            ["Return type is not specified."]
+      end
+  | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
+      let detail =
+        Format.asprintf
+          "Type `%a` was returned on %s %s, return type should be specified on line %d."
+          Type.pp annotation
+          (if (List.length evidence_locations) > 1 then "lines" else "line")
+          (evidence_locations
+           |> List.map
+             ~f:Int.to_string
+           |> String.concat ~sep:", ")
+          start_line
+      in
+      begin
+        match due_to_any with
         | true ->
             [
               (Format.asprintf
                  "Returning `%a` but type `Any` is specified."
                  Type.pp annotation);
+              detail;
+            ]
+        | false ->
+            [
               (Format.asprintf
-                 "Type `%a` was returned on %s %s, return type should be specified on line %d."
-                 Type.pp annotation
-                 (if (List.length evidence_locations) > 1 then "lines" else "line")
-                 (evidence_locations
-                  |> List.map
-                    ~f:Int.to_string
-                  |> String.concat ~sep:", ")
-                 start_line)
+                 "Returning `%a` but no return type is specified."
+                 Type.pp annotation);
+              detail;
             ]
       end
   | MissingAttributeAnnotation {
