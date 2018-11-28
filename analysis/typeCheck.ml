@@ -1560,7 +1560,7 @@ module State = struct
               let annotation, element =
                 let annotation, element =
                   let open Annotated in
-                  let fold (_, _) ~resolution:_ ~resolved ~element ~lead:_ =
+                  let fold _ ~resolution:_ ~resolved ~element ~lead:_ =
                     resolved, element
                   in
                   Access.create access
