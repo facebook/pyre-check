@@ -157,13 +157,8 @@ let widen_if_necessary step callable new_model result =
   (* Check if we've reached a fixed point *)
   match Fixpoint.get_old_model callable with
   | None ->
-      let model =
-        Result.{
-          models = new_model;
-          is_obscure = false;
-        }
-      in
-      Fixpoint.{ is_partial = true; model; result; }
+      Format.asprintf "No initial model found for %a" Callable.pp_real_target callable
+      |> failwith
   | Some old_model ->
       if reached_fixpoint ~iteration:step.Fixpoint.iteration
           ~previous:old_model.models ~next:new_model then
@@ -191,6 +186,12 @@ let analyze_define
     callable
     environment
     ({ Node.value = { Define.name; _ }; _ } as define) =
+  let () =
+    Log.log
+      ~section:`Interprocedural
+      "Analyzing %a"
+      Callable.pp_real_target callable
+  in
   let new_model, results =
     let analyze (Result.Analysis { Result.kind; analysis; }) =
       let open Result in
@@ -303,10 +304,14 @@ let get_errors results =
 let externalize_all_analyses callable models results =
   let open Result in
   let merge _ model_opt result_opt =
-    match model_opt with
-    | Some model ->
+    match model_opt, result_opt with
+    | Some model, _ ->
         Some (model, result_opt)
-    | None ->
+    | None, Some (Pkg { kind = ResultPart kind; _ }) ->
+        let module Analysis = (val (Result.get_analysis kind)) in
+        let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model} in
+        Some (model, result_opt)
+    | _ ->
         None
   in
   let merged = Kind.Map.merge merge models results in

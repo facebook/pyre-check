@@ -32,10 +32,19 @@ let create_call_graph ?(path = "test.py") source =
     |> Preprocessing.preprocess
   in
   let () =
-    Preprocessing.defines source
-    |> List.map ~f:Callable.create
-    |> Fixpoint.KeySet.of_list
-    |> Fixpoint.remove_new
+    let callables =
+      Preprocessing.defines source
+      |> List.map ~f:Callable.create
+    in
+    let () =
+      let keys = Fixpoint.KeySet.of_list callables in
+      Fixpoint.remove_new keys;
+      Fixpoint.remove_old keys
+    in
+    let add_initial_model callable =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
+    in
+    List.iter callables ~f:add_initial_model
   in
   let () = Ast.SharedMemory.Sources.remove ~handles:[handle] in
   let () = Ast.SharedMemory.Sources.add handle source in
@@ -92,10 +101,6 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  let get_model call_target =
-    Fixpoint.get_model call_target
-    >>= Result.get_model Taint.Result.kind
-  in
   let read_analysis_result { define_name; _ } =
     let call_target = Callable.create_real (Access.create define_name) in
     Fixpoint.get_result call_target
@@ -139,7 +144,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   in
   assert_bool "Callgraph is empty!" (Callable.Map.length call_graph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
-  List.iter ~f:(check_expectation ~get_model) expect;
+  List.iter ~f:check_expectation expect;
   List.iter2_exn expect_results results ~f:assert_errors
 
 

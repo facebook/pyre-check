@@ -68,11 +68,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target;
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  let get_model callable =
-    Fixpoint.get_model callable
-    >>= Result.get_model Taint.Result.kind
-  in
-  List.iter ~f:(check_expectation ~get_model) expect
+  List.iter ~f:check_expectation expect
 
 
 
@@ -95,7 +91,7 @@ let test_no_model _ =
       ]
   in
   assert_raises
-    (OUnitTest.OUnit_failure "model not found for does_not_exist")
+    (OUnitTest.OUnit_failure "model not found for `RealTarget (\"does_not_exist\")")
     assert_no_model
 
 

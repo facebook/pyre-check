@@ -35,8 +35,20 @@ type expectation = {
 }
 
 
+let get_model callable =
+  let error =
+    Base.Error.of_exn (
+      OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable)
+    )
+  in
+  Fixpoint.get_model callable
+  |> Option.value_exn ?here:None ~error ?message:None
+  |> Result.get_model Taint.Result.kind
+  |> Option.value ~default:Taint.Result.empty_model
+
+
 let check_expectation
-    ~get_model
+    ?(get_model = get_model)
     { define_name; sink_parameters; tito_parameters; returns; errors }
   =
   let open Taint.Result in
@@ -58,10 +70,8 @@ let check_expectation
         sink_map
   in
   let backward, forward =
-    let model = get_model (Callable.create_real (Access.create define_name)) in
-    match model with
-    | None -> Format.sprintf "model not found for %s" define_name |> assert_failure
-    | Some { backward; forward } -> backward, forward
+    let { backward; forward } = get_model (Callable.create_real (Access.create define_name)) in
+    backward, forward
   in
   let taint_map =
     Domains.BackwardState.fold

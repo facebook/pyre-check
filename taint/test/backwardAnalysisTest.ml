@@ -53,11 +53,7 @@ let assert_taint source expected =
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  let get_model callable =
-    Fixpoint.get_model callable
-    >>= Result.get_model Taint.Result.kind
-  in
-  List.iter ~f:(check_expectation ~get_model) expected
+  List.iter ~f:check_expectation expected
 
 
 let test_plus_taint_in_taint_out _ =

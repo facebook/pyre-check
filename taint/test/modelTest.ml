@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 
-open Pyre
 open Taint
 open Model
 
@@ -29,7 +28,8 @@ let assert_model ~model_source ~expect =
   in
   let get_model callable =
     List.find ~f:(is_model callable) models
-    >>| (fun { model; _ } -> model)
+    |> Option.value_exn ?here:None ?error:None ~message:"No model"
+    |> (fun { model; _ } -> model)
   in
   List.iter ~f:(check_expectation ~get_model) expect
 
