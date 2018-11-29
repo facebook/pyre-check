@@ -429,19 +429,24 @@ let test_filter _ =
       |};
     ];
   let resolution = TypeCheck.resolution environment () in
-  let assert_filtered ?(define = mock_define) kind =
-    let errors = [error ~define kind] in
+  let assert_filtered ?(location = Location.Instantiated.any) ?(define = mock_define) kind =
+    let errors = [error ~define ~location kind] in
     assert_equal
       []
       (filter ~configuration ~resolution errors)
   in
-  let assert_unfiltered ?(define = mock_define) kind =
-    let errors = [error ~define kind] in
+  let assert_unfiltered ?(location = Location.Instantiated.any) ?(define = mock_define) kind =
+    let errors = [error ~define ~location kind] in
     assert_equal
       ~cmp:(List.equal ~equal)
       errors
       (filter ~configuration ~resolution errors)
   in
+  (* Suppress stub errors. *)
+  let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
+  assert_filtered ~location:stub (undefined_attribute (Type.primitive "Foo"));
+  assert_unfiltered ~location:Location.Instantiated.any (undefined_attribute (Type.primitive "Foo"));
+
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
   assert_unfiltered (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));

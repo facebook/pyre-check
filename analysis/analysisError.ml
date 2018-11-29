@@ -1317,6 +1317,9 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
+    let is_stub_error error =
+      String.is_suffix ~suffix:".pyi" (path error)
+    in
     (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
     let is_override_on_dunder_method { kind; _ } =
       match kind with
@@ -1331,6 +1334,7 @@ let filter ~configuration ~resolution errors =
       | _ -> false
     in
 
+    is_stub_error error ||
     is_mock_error error ||
     is_unimplemented_return_error error ||
     is_builtin_import_error error ||
