@@ -140,6 +140,18 @@ let select
       let update_mapping parameter argument =
         Map.add_multi argument_mapping ~key:parameter ~data:argument
       in
+      let arity_mismatch reasons ~parameters ~arguments =
+        match parameters with
+        | Defined parameters ->
+            let expected = List.length parameters in
+            let provided = expected + List.length arguments in
+            {
+              reasons with
+              arity = arity @ [TooManyArguments { expected; provided }]
+            }
+        | _ ->
+            reasons
+      in
       match arguments, parameters with
       | [], [] ->
           (* Both empty *)
@@ -158,18 +170,7 @@ let select
           consume ~arguments:arguments_tail ~parameters signature_match
       | _, [] ->
           (* Arguments; parameters empty *)
-          let reasons =
-            match all_parameters with
-            | Defined parameters ->
-                let expected = List.length parameters in
-                let provided = expected + List.length arguments in
-                {
-                  reasons with
-                  arity = arity @ [TooManyArguments { expected; provided }]
-                }
-            | _ ->
-                reasons
-          in
+          let reasons = arity_mismatch reasons ~parameters:all_parameters ~arguments in
           Some { signature_match with reasons }
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
@@ -278,11 +279,20 @@ let select
       | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
         (Parameter.Variable _ as parameter) :: _ ->
           (* Unlabeled argument, starred parameter *)
-          let argument_mapping = update_mapping parameter (Argument argument) in
+          let signature_match =
+            if Identifier.show_sanitized (Parameter.name parameter) = "*" then
+              {
+                signature_match with
+                reasons = arity_mismatch reasons ~parameters:all_parameters ~arguments;
+              }
+            else
+              let argument_mapping = update_mapping parameter (Argument argument) in
+              { signature_match with argument_mapping }
+          in
           consume
             ~arguments:arguments_tail
             ~parameters
-            { signature_match with argument_mapping }
+            signature_match
       | Argument ({
           argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;

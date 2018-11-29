@@ -7479,7 +7479,7 @@ let test_check_typed_dictionaries _ =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Missing argument [20]: Call `__init__` expects argument `name`."];
+    ["Too many arguments [19]: Call `__init__` expects 4 arguments, 6 were provided."];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})

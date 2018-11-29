@@ -323,7 +323,7 @@ let test_fold _ =
       {
         annotation = parse_annotation "Movie";
         element =
-          Annotated.Signature.MissingArgument (Access.create "$parameter$title")
+          Annotated.Signature.TooManyArguments { Annotated.Signature.expected = 4; provided = 6 }
           |> Option.some
           |> signature_not_found;
       };

@@ -205,6 +205,15 @@ let test_select _ =
     "[[Variable(variable, int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+  (* A single * is special. *)
+  assert_select
+    "[[Variable($parameter$, int), Named(i, int)], int]"
+    "(i=1)"
+    (`Found "[[Variable($parameter$, int), Named(i, int)], int]");
+  assert_select
+    "[[Variable($parameter$, int), Named(i, int)], int]"
+    "(2, i=1)"
+    (`NotFoundTooManyArguments (2, 3));
 
   (* Named arguments. *)
   assert_select
