@@ -1,6 +1,6 @@
 # @nolint
 
-from typing import Any
+from typing import Any, Dict
 
 class RecordSchema: pass
 

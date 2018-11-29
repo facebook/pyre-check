@@ -496,7 +496,12 @@ module State = struct
             errors
       in
       let primitives = Type.primitives annotation in
-      List.fold ~init:errors ~f:check_untracked_annotation primitives
+      let primitives_and_parametric_base =
+        match Type.split annotation with
+        | _, [] -> primitives
+        | primitive, _ -> primitive :: primitives
+      in
+      List.fold ~init:errors ~f:check_untracked_annotation primitives_and_parametric_base
       |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
     in
     (* Check return annotation. *)

@@ -6958,6 +6958,18 @@ let test_check_undefined_type _ =
         return x
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
+  assert_type_errors
+    {|
+      def foo(x: Derp[int]) -> None:
+        pass
+    |}
+    ["Undefined type [11]: Type `Derp` is not defined."];
+  assert_type_errors
+    {|
+      def foo(x: Optional) -> None:
+        pass
+    |}
+    ["Undefined type [11]: Type `Optional` is not defined."];
 
   assert_type_errors
     {|
