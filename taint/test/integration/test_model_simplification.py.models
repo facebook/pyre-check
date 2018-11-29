@@ -84,13 +84,19 @@
       {
         "port": "formal(dict_factory)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
         ]
       },
       {
         "port": "formal(obj)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
         ]
       }
     ]
@@ -126,13 +132,19 @@
       {
         "port": "formal(dict_factory)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
         ]
       },
       {
         "port": "formal(obj)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
         ]
       }
     ]
@@ -168,7 +180,10 @@
       {
         "port": "formal(obj)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
         ]
       }
     ]

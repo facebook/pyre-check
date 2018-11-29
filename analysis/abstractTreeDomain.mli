@@ -70,6 +70,9 @@ module Make (Config: CONFIG) (Element: AbstractDomain.S) () : sig
     -> t
     -> t
 
+  (* Compute minimum path length to non-bottom element. *)
+  val min_depth: t -> int
+
   val collapse: t -> Element.t
 
   (* Collapse subtrees at depth *)

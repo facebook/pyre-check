@@ -56,7 +56,10 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+          }
         ]
       }
     ]

@@ -224,6 +224,19 @@ let test_fixpoint _ =
       def test_getattr_field_match(some_obj):
         field = __userControlled()
         return getattr(some_obj, field)
+
+      def deep_tito(tito, no_tito):
+          x = { 'f': tito }
+          y = { 'g': x }
+          return y
+
+      def test_deep_tito_no_match():
+        obj = deep_tito(__userControlled(), __testSource())
+        getattr('obj', obj.f.g)
+
+      def test_deep_tito_match():
+        obj = deep_tito(__userControlled(), __testSource())
+        getattr('obj', obj.g.f)
       |}
     ~expect:{
       iterations = 4;
@@ -367,6 +380,32 @@ let test_fixpoint _ =
           returns = [];
           sink_parameters = [];
           tito_parameters = ["some_obj"];
+          errors = [
+            {
+              code = 5010;
+              pattern = ".*Attacker may control at least one argument to getattr(,)";
+            };
+          ]
+        };
+        {
+          define_name = "qualifier.deep_tito";
+          returns = [];
+          sink_parameters = [];
+          tito_parameters = ["tito"];
+          errors = [];
+        };
+        {
+          define_name = "qualifier.test_deep_tito_no_match";
+          returns = [];
+          sink_parameters = [];
+          tito_parameters = [];
+          errors = [];
+        };
+        {
+          define_name = "qualifier.test_deep_tito_match";
+          returns = [];
+          sink_parameters = [];
+          tito_parameters = [];
           errors = [
             {
               code = 5010;

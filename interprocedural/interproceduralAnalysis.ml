@@ -161,8 +161,14 @@ let widen_if_necessary step callable new_model result =
       |> failwith
   | Some old_model ->
       if reached_fixpoint ~iteration:step.Fixpoint.iteration
-          ~previous:old_model.models ~next:new_model then
+          ~previous:old_model.models ~next:new_model then begin
+        Log.log
+          ~section:`Interprocedural
+          "Reached fixpoint for %a\n%a"
+          Callable.pp_real_target callable
+          Result.pp_model_t old_model;
         Fixpoint.{ is_partial = false; model = old_model; result }
+      end
       else
         let model = Result.{
             models =
@@ -173,6 +179,13 @@ let widen_if_necessary step callable new_model result =
             is_obscure = false;
           }
         in
+        Log.log
+          ~section:`Interprocedural
+          "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
+          Callable.pp_real_target callable
+          Result.pp_model_t old_model
+          Result.pp_model_t {models=new_model; is_obscure=false}
+          Result.pp_model_t model;
         Fixpoint.{
           is_partial = true;
           model;

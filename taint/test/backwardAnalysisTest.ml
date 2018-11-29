@@ -1689,6 +1689,62 @@ let test_constructor_argument_tito _ =
       def tito_via_construction(tito, no_tito):
           x = Data(tito, no_tito)
           return x
+
+      def no_tito_via_construction(tito, no_tito):
+          x = Data(tito, no_tito)
+          return x.no_tito
+
+      def precise_tito_via_construction(tito, no_tito):
+          x = Data(tito, no_tito)
+          return x.field
+
+      def deep_tito_via_assignments(tito, no_tito):
+          x = {}
+          x.f = tito
+          y = {}
+          y.g = x
+          return y
+
+      def apply_deep_tito_some(tito, no_tito):
+          x = deep_tito_via_assignments(tito, no_tito)
+          return x.g.f
+
+      def apply_deep_tito_none(tito, no_tito):
+          x = deep_tito_via_assignments(tito, no_tito)
+          return x.f.g
+
+      def deep_tito_via_objects(tito, no_tito):
+          x = { 'f': tito }
+          y = { 'g': x }
+          return y
+
+      def apply_deep_tito_via_objects_some(tito, no_tito):
+          x = deep_tito_via_objects(tito, no_tito)
+          return x.g.f
+
+      def apply_deep_tito_via_objects_none(tito, no_tito):
+          x = deep_tito_via_objects(tito, no_tito)
+          return x.f.g
+
+      def deep_tito_wrapper(tito, no_tito):
+          return deep_tito_via_assignments(tito, no_tito)
+
+      def deep_tito_via_multiple(tito, no_tito):
+          x = { 'f': tito, 'h': tito }
+          y = { 'g': x }
+          return y
+
+      def test_tito_via_multiple_some(tito, no_tito):
+          x = deep_tito_via_multiple(tito, no_tito)
+          return x.g.f
+
+      def test_tito_via_multiple_some_more(tito, no_tito):
+          x = deep_tito_via_multiple(tito, no_tito)
+          return x.g.h
+
+      def test_tito_via_multiple_none(tito, no_tito):
+          x = deep_tito_via_multiple(tito, no_tito)
+          return x.g.q
     |}
     [
       {
@@ -1703,6 +1759,97 @@ let test_constructor_argument_tito _ =
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.no_tito_via_construction";
+        sink_parameters = [];
+        tito_parameters = [];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.precise_tito_via_construction";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.deep_tito_via_assignments";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.apply_deep_tito_some";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.apply_deep_tito_none";
+        sink_parameters = [];
+        tito_parameters = [];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.deep_tito_via_objects";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.apply_deep_tito_via_objects_some";
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.apply_deep_tito_via_objects_none";
+        sink_parameters = [];
+        tito_parameters = [];
+        returns = [];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.deep_tito_wrapper";
+        returns = [];
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.deep_tito_via_multiple";
+        returns = [];
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.test_tito_via_multiple_some";
+        returns = [];
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.test_tito_via_multiple_some_more";
+        returns = [];
+        sink_parameters = [];
+        tito_parameters = ["tito"];
+        errors = [];
+      };
+      {
+        define_name = "qualifier.test_tito_via_multiple_none";
+        returns = [];
+        sink_parameters = [];
+        tito_parameters = [];
         errors = [];
       };
     ]

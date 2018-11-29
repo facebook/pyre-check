@@ -282,6 +282,16 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
       ~f:(fun ~key:_ ~data:tree accumulator -> max (1 + max_depth tree) accumulator)
 
 
+  let rec min_depth { children; element } =
+    if not (Element.is_bottom element) then
+      0
+    else
+      LabelMap.fold
+        children
+        ~init:0
+        ~f:(fun ~key:_ ~data:tree accumulator -> min (1 + min_depth tree) accumulator)
+
+
   let rec is_minimal ancestors ({ element; children } as tree) =
     if is_empty_tree tree then
       Checks.false_witness ~message:(fun () -> "empty leaf.")

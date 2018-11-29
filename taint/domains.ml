@@ -164,6 +164,7 @@ end
 module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 
 
+(* Simple set of features that are unrelated, thus cheap to maintain *)
 module SimpleFeatures = struct
   type t =
     | LeafName of string
@@ -172,29 +173,55 @@ end
 module SimpleFeatureSet = AbstractSetDomain.Make(SimpleFeatures)
 
 
+(* Set of complex features, where element can be abstracted and joins are
+   expensive. Should only be used for elements that need this kind of
+   joining.
+*)
+module ComplexFeatures = struct
+  type t =
+    | ReturnAccessPath of AbstractTreeDomain.Label.path
+  [@@deriving show, sexp, compare]
+
+  let less_or_equal ~left ~right =
+    match left, right with
+    | ReturnAccessPath left_path, ReturnAccessPath right_path ->
+        AbstractTreeDomain.Label.is_prefix ~prefix:right_path left_path
+
+  let widen set =
+    if List.length set > 3 then
+      [ReturnAccessPath []]
+    else
+      set
+end
+module ComplexFeatureSet = AbstractElementSetDomain.Make(ComplexFeatures)
+
+
 module FlowDetails = struct
   module Slots = struct
     type 'a slot =
       | TraceInfo: TraceInfoSet.t slot
       | SimpleFeature: SimpleFeatureSet.t slot
+      | ComplexFeature: ComplexFeatureSet.t slot
 
     let slot_name (type a) (slot: a slot) =
       match slot with
       | TraceInfo -> "TraceInfo"
-      | SimpleFeature -> "SimpleFeatures"
+      | SimpleFeature -> "SimpleFeature"
+      | ComplexFeature -> "ComplexFeature"
 
     let slot_domain (type a) (slot: a slot) =
       match slot with
       | TraceInfo -> (module TraceInfoSet : AbstractDomain.S with type t = a)
       | SimpleFeature -> (module SimpleFeatureSet : AbstractDomain.S with type t = a)
+      | ComplexFeature -> (module ComplexFeatureSet : AbstractDomain.S with type t = a)
   end
 
   include AbstractProductDomain.Make(Slots)
 
   let initial = product [
       (Element (Slots.TraceInfo, TraceInfoSet.singleton TraceInfo.Declaration));
-      (Element (Slots.SimpleFeature, SimpleFeatureSet.bottom));
     ]
+
   let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
   let simple_feature = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Element)
   let simple_feature_set = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Set)
@@ -202,6 +229,9 @@ module FlowDetails = struct
   let gather_leaf_names accumulator = function
     | SimpleFeatures.LeafName name ->
         name :: accumulator
+
+  let complex_feature = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Element)
+  let complex_feature_set = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Set)
 
 end
 
@@ -211,6 +241,11 @@ module type TAINT_DOMAIN = sig
 
   type leaf
   val leaf: leaf AbstractDomain.part
+  val trace_info: TraceInfo.t AbstractDomain.part
+  val simple_feature: SimpleFeatures.t AbstractDomain.part
+  val simple_feature_set: SimpleFeatures.t list AbstractDomain.part
+  val complex_feature: ComplexFeatures.t AbstractDomain.part
+  val complex_feature_set: ComplexFeatures.t list AbstractDomain.part
 
   (* Add trace info at call-site *)
   val apply_call:
@@ -242,7 +277,7 @@ end = struct
   include Map
 
   type leaf = Leaf.t
-  [@@derviving compare]
+  [@@deriving compare]
 
   let add map leaf =
     Map.set map ~key:leaf ~data:FlowDetails.initial
@@ -254,6 +289,11 @@ end = struct
     List.fold leaves ~init:Map.bottom ~f:add
 
   let leaf = Map.Key
+  let trace_info = FlowDetails.trace_info
+  let simple_feature = FlowDetails.simple_feature
+  let complex_feature = FlowDetails.complex_feature
+  let simple_feature_set = FlowDetails.simple_feature_set
+  let complex_feature_set = FlowDetails.complex_feature_set
 
   let leaves map =
     Map.fold leaf ~init:[] ~f:(Fn.flip List.cons) map
@@ -269,12 +309,20 @@ end = struct
         let make_leaf_json name =
           `Assoc ["kind", leaf_kind_json; "name", `String name]
         in
-        FlowDetails.fold
-          FlowDetails.simple_feature
-          features
-          ~f:FlowDetails.gather_leaf_names
-          ~init:[]
-        |> List.map ~f:make_leaf_json
+        let gather_return_access_path leaves = function
+          | ComplexFeatures.ReturnAccessPath path ->
+              let path_name = AbstractTreeDomain.Label.show_path path in
+              `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
+        in
+        let leaves =
+          FlowDetails.fold
+            FlowDetails.simple_feature
+            features
+            ~f:FlowDetails.gather_leaf_names
+            ~init:[]
+          |> List.map ~f:make_leaf_json
+        in
+        FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features)
       in
       let trace_json = List.map ~f:TraceInfo.to_json trace_info in
       let leaf_json =
@@ -283,13 +331,16 @@ end = struct
         else
           leaf_json
       in
-      List.map
-        trace_json
-        ~f:(fun trace_pair ->
-            `Assoc [
-              trace_pair;
-              "leaves", `List leaf_json;
-            ])
+      if List.is_empty trace_json then
+        [`Assoc [ "decl", `String "MISSING"; "leaves", `List leaf_json]]
+      else
+        List.map
+          trace_json
+          ~f:(fun trace_pair ->
+              `Assoc [
+                trace_pair;
+                "leaves", `List leaf_json;
+              ])
     in
     let elements =
       Map.to_alist taint
@@ -354,6 +405,22 @@ module MakeTaintTree(Taint : TAINT_DOMAIN)() = struct
 
   let empty = bottom
   let is_empty = is_bottom
+
+  (* Keep only non-essential structure. *)
+  let essential tree =
+    let essential_trace_info = function
+      | TraceInfo.CallSite callsite ->
+          TraceInfo.CallSite { callsite with trace_length = 100; }
+      | default -> default
+    in
+    let essential_complex_features set =
+      let simplify_feature = function
+        | ComplexFeatures.ReturnAccessPath _ -> None
+      in
+      List.filter_map ~f:simplify_feature set
+    in
+    transform Taint.trace_info ~f:essential_trace_info tree
+    |> transform Taint.complex_feature_set ~f:essential_complex_features
 end
 
 
@@ -433,3 +500,12 @@ module ForwardState = MakeTaintEnvironment(ForwardTaint)()
 (** Used to infer which sinks are reached from parameters, as well as the
     taint-in-taint-out (TITO) using the special LocalReturn sink. *)
 module BackwardState = MakeTaintEnvironment(BackwardTaint)()
+
+
+(* Special sink as it needs the return access path *)
+let local_return_taint =
+  BackwardTaint.create [
+    Part (BackwardTaint.leaf, Sinks.LocalReturn);
+    Part (BackwardTaint.trace_info, TraceInfo.Declaration);
+    Part (BackwardTaint.complex_feature, ComplexFeatures.ReturnAccessPath [])
+  ]

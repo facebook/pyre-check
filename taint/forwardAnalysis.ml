@@ -116,11 +116,27 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let { Node.location; _ } = argument in
             let argument_taint = analyze_unstarred_expression ~resolution argument state in
             let tito =
-              let convert_tito tito {BackwardState.Tree.path; _} =
-                ForwardState.Tree.read path argument_taint
-                |> ForwardState.Tree.collapse
-                |> ForwardState.Tree.create_leaf
-                |> ForwardState.Tree.join tito
+              let convert_tito tito {BackwardState.Tree.path; tip=return_taint; _} =
+                let taint_to_propagate =
+                  ForwardState.Tree.read path argument_taint
+                  |> ForwardState.Tree.collapse
+                  |> ForwardState.Tree.create_leaf
+                in
+                let return_paths =
+                  let gather_paths paths (ComplexFeatures.ReturnAccessPath extra_path) =
+                    extra_path :: paths
+                  in
+                  BackwardTaint.fold
+                    BackwardTaint.complex_feature
+                    return_taint
+                    ~f:gather_paths
+                    ~init:[]
+                in
+                let create_tito_return_paths tito return_path =
+                  ForwardState.Tree.prepend return_path taint_to_propagate
+                  |> ForwardState.Tree.join tito
+                in
+                List.fold return_paths ~f:create_tito_return_paths ~init:tito
               in
               let taint_in_taint_out =
                 List.fold tito_matches ~f:combine_tito ~init:BackwardState.Tree.empty
@@ -461,7 +477,14 @@ end
 
 
 let extract_source_model _parameters exit_taint =
-  let return_taint = ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] exit_taint in
+  let simplify tree =
+    let essential = ForwardState.Tree.essential tree in
+    ForwardState.Tree.shape tree ~mold:essential
+  in
+  let return_taint =
+    ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] exit_taint
+    |> simplify
+  in
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 

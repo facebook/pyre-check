@@ -226,17 +226,24 @@ let analyze
 
   Log.info "Analysis fixpoint started...";
   let timer = Timer.start () in
-  let iterations =
-    Interprocedural.Analysis.compute_fixpoint
-      ~configuration
-      ~scheduler
-      ~environment
-      ~analyses
-      ~caller_map
-      ~all_callables
-      Interprocedural.Fixpoint.Epoch.initial
+  let () =
+    try
+      let iterations =
+        Interprocedural.Analysis.compute_fixpoint
+          ~configuration
+          ~scheduler
+          ~environment
+          ~analyses
+          ~caller_map
+          ~all_callables
+          Interprocedural.Fixpoint.Epoch.initial
+      in
+      Log.info "Fixpoint iterations: %d" iterations;
+    with
+      exn ->
+        Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables;
+        raise exn
   in
-  Log.info "Fixpoint iterations: %d" iterations;
   let () =
     Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables
   in

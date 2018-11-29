@@ -29,20 +29,24 @@ let introduce_sink_taint
     ~taint_sink_kind
     ({ TaintResult.backward = { sink_taint; taint_in_taint_out }; _ } as taint) =
   let backward =
-    let assign_backward_taint taint =
+    let assign_backward_taint environment taint =
       BackwardState.assign
         ~root
         ~path:[]
-        (BackwardTaint.singleton taint_sink_kind
-         |> BackwardState.Tree.create_leaf)
         taint
+        environment
     in
     match taint_sink_kind with
     | Sinks.LocalReturn ->
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out  in
+        let return_taint = Domains.local_return_taint |> BackwardState.Tree.create_leaf in
+        let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         { taint.backward with taint_in_taint_out }
     | _ ->
-        let sink_taint = assign_backward_taint sink_taint in
+        let leaf_taint =
+          BackwardTaint.singleton taint_sink_kind
+          |> BackwardState.Tree.create_leaf
+        in
+        let sink_taint = assign_backward_taint sink_taint leaf_taint in
         { taint.backward with sink_taint }
   in
   { taint with backward }
