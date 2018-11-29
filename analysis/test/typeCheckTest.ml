@@ -2766,6 +2766,23 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
+      def foo(i: int, *, j: int) -> None:
+        pass
+    |}
+    ["Missing parameter annotation [2]: Parameter `*` has no type specified."];
+
+  assert_type_errors
+    {|
+      def foo( *args, **kwargs) -> None:
+        pass
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `*args` has no type specified.";
+      "Missing parameter annotation [2]: Parameter `**kwargs` has no type specified.";
+    ];
+
+  assert_type_errors
+    {|
       class A:
         def foo(self) -> None:
           int_to_int(self.attribute)

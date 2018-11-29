@@ -541,10 +541,15 @@ module State = struct
             | _ ->
                 let add_missing_parameter_error ~annotation ~due_to_any errors =
                   let error =
+                    let sanitized_access =
+                      name
+                      |> Identifier.sanitized
+                      |> fun name -> [Access.Identifier name]
+                    in
                     Error.create
                       ~location
                       ~kind:(Error.MissingParameterAnnotation {
-                          name = access;
+                          name = sanitized_access;
                           annotation;
                           due_to_any;
                         })
