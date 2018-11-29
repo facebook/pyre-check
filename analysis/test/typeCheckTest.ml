@@ -993,10 +993,10 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        self.attribute = ""
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          self.attribute = ""
     |}
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
@@ -1006,10 +1006,10 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    constant: int
-    def foo() -> None:
-      global constant
-      constant = "hi"
+      constant: int
+      def foo() -> None:
+        global constant
+        constant = "hi"
     |}
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
@@ -1030,10 +1030,10 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        attribute = 0
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          attribute = 0
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
@@ -1059,10 +1059,10 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    constant = x
-    def foo() -> None:
-      global constant
-      constant = 1
+      constant = x
+      def foo() -> None:
+        global constant
+        constant = 1
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
@@ -1073,11 +1073,11 @@ let test_show_error_traces _ =
 
   assert_type_errors ~show_error_traces:true
     {|
-    constant = x
-    def foo() -> None:
-      global constant
-      constant = "hi"
-      constant = 1
+      constant = x
+      def foo() -> None:
+        global constant
+        constant = "hi"
+        constant = 1
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
@@ -1372,20 +1372,20 @@ let test_coverage _ =
     { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
   assert_coverage
     {|
-     def foo(y: int):
-       if condition():
-         x = y
-       else:
-         x = z
+      def foo(y: int):
+        if condition():
+          x = y
+        else:
+          x = z
     |}
     { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
   assert_coverage
     {|
-     def foo(y: asdf):
-      if condition():
-        x = y
-      else:
-        x = 1
+      def foo(y: asdf):
+        if condition():
+          x = y
+        else:
+          x = 1
     |}
     { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
 
@@ -1800,15 +1800,15 @@ let test_check _ =
 
   assert_type_errors
     {|
-     def derp()->typing.Set[int]:
-      return {1}
+      def derp()->typing.Set[int]:
+        return {1}
     |}
     [];
 
   assert_type_errors
     {|
-     def derp()->typing.Set[int]:
-      return {""}
+      def derp()->typing.Set[int]:
+        return {""}
     |}
     [
       "Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."
@@ -1816,11 +1816,11 @@ let test_check _ =
 
   assert_type_errors
     {|
-     def foo() -> str:
-      if condition():
-        return 1
-      else:
-        return 2
+      def foo() -> str:
+        if condition():
+          return 1
+        else:
+          return 2
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `int`.";
@@ -2364,22 +2364,22 @@ let test_check_coverage _ =
 let test_check_comprehensions _ =
   assert_type_errors
     {|
-    def foo(input: typing.List[str]) -> typing.List[str]:
-      return [a for a in input]
+      def foo(input: typing.List[str]) -> typing.List[str]:
+        return [a for a in input]
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(input: typing.List[str]) -> typing.List[str]:
-      return [a for a in input if len(a) < 5]
+      def foo(input: typing.List[str]) -> typing.List[str]:
+        return [a for a in input if len(a) < 5]
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(input: str) -> typing.List[int]:
-      return [a for a in input]
+      def foo(input: str) -> typing.List[int]:
+        return [a for a in input]
     |}
     ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[str]`."];
 
@@ -2432,32 +2432,32 @@ let test_check_comprehensions _ =
 
   assert_type_errors
     {|
-    def foo(input: typing.List[str]) -> typing.List[str]:
-      return [a.lower() for a in input]
+      def foo(input: typing.List[str]) -> typing.List[str]:
+        return [a.lower() for a in input]
     |}
     [];
   assert_type_errors
     {|
-    def foo(input: typing.List[str]) -> typing.List[int]:
-      return [str_to_int(a) for a in input]
+      def foo(input: typing.List[str]) -> typing.List[int]:
+        return [str_to_int(a) for a in input]
     |}
     [];
   assert_type_errors
     {|
-    def foo(input: typing.Set[str]) -> typing.Set[str]:
-      return {a for a in input}
+      def foo(input: typing.Set[str]) -> typing.Set[str]:
+        return {a for a in input}
     |}
     [];
   assert_type_errors
     {|
-    def foo(input: typing.Set[str]) -> typing.Set[str]:
-      return {a.lower() for a in input}
+      def foo(input: typing.Set[str]) -> typing.Set[str]:
+        return {a.lower() for a in input}
     |}
     [];
   assert_type_errors
     {|
-    def foo(a: typing.List[str], b: typing.List[str]) -> int:
-      return {x + y for x in a for y in b}
+      def foo(a: typing.List[str], b: typing.List[str]) -> int:
+        return {x + y for x in a for y in b}
     |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Set[str]`."];
 
@@ -2817,15 +2817,15 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
-     def foo(a: typing.Optional[int]) -> int:
-      return to_int(a and int_to_str(a))
+      def foo(a: typing.Optional[int]) -> int:
+        return to_int(a and int_to_str(a))
     |}
     [];
 
   assert_type_errors
     {|
-     def foo(a: typing.Optional[int]) -> int:
-      return to_int(a or int_to_str(a))
+      def foo(a: typing.Optional[int]) -> int:
+        return to_int(a or int_to_str(a))
     |}
     [
       "Incompatible parameter type [6]: Expected `int` but got `typing.Optional[int]`.";
@@ -3380,10 +3380,10 @@ let test_check_static _ =
 let test_check_init _ =
   assert_type_errors
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        pass
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          pass
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
@@ -3401,28 +3401,28 @@ let test_check_init _ =
 
   assert_type_errors
     {|
-    class Foo:
-      def __init__(self) -> None:
-        self.attribute: bool = False
+      class Foo:
+        def __init__(self) -> None:
+          self.attribute: bool = False
     |}
     [];
 
   assert_type_errors
     {|
-    class Foo:
-      attribute: int = 1
-      def __init__(self) -> None:
-        pass
+      class Foo:
+        attribute: int = 1
+        def __init__(self) -> None:
+          pass
     |}
     [];
 
   assert_type_errors
     {|
-    class Foo:
-      attribute: int
-      attribute_two: str
-      def __init__(self) -> None:
-        pass
+      class Foo:
+        attribute: int
+        attribute_two: str
+        def __init__(self) -> None:
+          pass
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
@@ -3433,10 +3433,10 @@ let test_check_init _ =
 
   assert_type_errors
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        self.attribute = 0
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          self.attribute = 0
     |}
     [];
 
@@ -3500,21 +3500,21 @@ let test_check_init _ =
   (* No need to initialize properties. *)
   assert_type_errors
     {|
-    class Foo:
-      def __init__(sefl) -> None:
-        pass
-      @property
-      def foo() -> str:
-        return "asdf"
+      class Foo:
+        def __init__(sefl) -> None:
+          pass
+        @property
+        def foo() -> str:
+          return "asdf"
     |}
     [];
 
   assert_type_errors
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        attribute = 0
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          attribute = 0
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
@@ -3543,10 +3543,10 @@ let test_check_init _ =
 
   assert_type_errors
     {|
-    class Foo:
-      attribute: int
-      def __init__(self) -> None:
-        self.attribute = ""
+      class Foo:
+        attribute: int
+        def __init__(self) -> None:
+          self.attribute = ""
     |}
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
@@ -3555,10 +3555,10 @@ let test_check_init _ =
 
   assert_type_errors
     {|
-    class Foo:
-      def __init__(self, x:int) -> None:
-        pass
-    a = Foo("")
+      class Foo:
+        def __init__(self, x:int) -> None:
+          pass
+      a = Foo("")
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `a` has type `Foo` " ^
@@ -4355,28 +4355,28 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant: int
-    def foo() -> None:
-      constant = "hi"
+      constant: int
+      def foo() -> None:
+        constant = "hi"
     |}
     [];
 
   assert_type_errors
     {|
-    constant: int
-    def foo() -> None:
-      global constant
-      constant: str
-      constant = "hi"
+      constant: int
+      def foo() -> None:
+        global constant
+        constant: str
+        constant = "hi"
     |}
     [];
 
   assert_type_errors
     {|
-    constant: typing.Union[int, str]
-    def foo() -> None:
-      global constant
-      constant = 1
+      constant: typing.Union[int, str]
+      def foo() -> None:
+        global constant
+        constant = 1
     |}
     [];
 
@@ -4402,20 +4402,20 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant: typing.Optional[int]
-    def foo() -> int:
-      if constant is not None:
-        return 0
-      return constant
-  |}
+      constant: typing.Optional[int]
+      def foo() -> int:
+        if constant is not None:
+          return 0
+        return constant
+    |}
     ["Incompatible return type [7]: Expected `int` but got `None`."];
 
   assert_type_errors
     {|
-    constant
-    def foo() -> None:
-      global constant
-      constant = 1
+      constant
+      def foo() -> None:
+        global constant
+        constant = 1
     |}
     [
       "Undefined name [18]: Global name `constant` is undefined.";
@@ -4425,20 +4425,20 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant: typing.Any
-    def foo() -> None:
-      global constant
-      constant = 1
+      constant: typing.Any
+      def foo() -> None:
+        global constant
+        constant = 1
     |}
     [];
 
   assert_type_errors
     {|
-    constant
-    def foo() -> int:
-      global constant
-      constant = 1
-      return constant
+      constant
+      def foo() -> int:
+        global constant
+        constant = 1
+        return constant
     |}
     [
       "Undefined name [18]: Global name `constant` is undefined.";
@@ -4448,12 +4448,12 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    constant: int
-    def foo(x: int) -> str:
-      if x > 10:
-        global constant
-        constant: str
-      return constant
+      constant: int
+      def foo(x: int) -> str:
+        if x > 10:
+          global constant
+          constant: str
+        return constant
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `typing.Union[int, str]`."
@@ -4461,8 +4461,8 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    def foo(x: int) -> None:
-      x = "hi"
+      def foo(x: int) -> None:
+        x = "hi"
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
@@ -4471,26 +4471,26 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    def foo(x: typing.Optional[int]) -> None:
-      x = 1
+      def foo(x: typing.Optional[int]) -> None:
+        x = 1
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(x: int) -> None:
-      x: str
-      x = "hi"
+      def foo(x: int) -> None:
+        x: str
+        x = "hi"
     |}
     [];
 
   assert_type_errors
     {|
-    def foo() -> None:
-      x = 1
-      y: str
-      y = x
-      x = y
+      def foo() -> None:
+        x = 1
+        y: str
+        y = x
+        x = y
     |}
     [
       "Incompatible variable type [9]: y is declared to have type `str` but is used as " ^
@@ -4499,24 +4499,24 @@ let test_check_immutables _ =
 
   assert_type_errors
     {|
-    def foo(x: int) -> None:
-      if x > 10:
-        y: int
-      else:
-        y: str
+      def foo(x: int) -> None:
+        if x > 10:
+          y: int
+        else:
+          y: str
 
-      y = "hi"
+        y = "hi"
     |}
     [];
 
   assert_type_errors
     {|
-    def foo(x: int) -> None:
-      if x > 10:
-        y: int
-      else:
-        y: str
-      y = 1
+      def foo(x: int) -> None:
+        if x > 10:
+          y: int
+        else:
+          y: str
+        y = 1
     |}
     [];
 
@@ -5308,14 +5308,14 @@ let test_check_nested _ =
 
   assert_type_errors
     {|
-    def can_fail() -> None:
-      try:
-        x = 3
-      except:
-        pass
-      always_declared = 4
-      def bar() -> int:
-        return always_declared
+      def can_fail() -> None:
+        try:
+          x = 3
+        except:
+          pass
+        always_declared = 4
+        def bar() -> int:
+          return always_declared
   |}
     []
 
@@ -5418,12 +5418,12 @@ let test_check_variable_bindings _ =
 let test_check_refinement _ =
   assert_type_errors
     {|
-    def takes_int(a: int) -> None: pass
-    def foo() -> None:
-      x: float
-      x = 1
-      takes_int(x)
-      x = 1.0
+      def takes_int(a: int) -> None: pass
+      def foo() -> None:
+        x: float
+        x = 1
+        takes_int(x)
+        x = 1.0
     |}
     [];
 
@@ -6183,18 +6183,18 @@ let test_check_behavioral_subtyping _ =
     [];
   assert_type_errors
     {|
-    class Foo():
-      def foo(a) -> None: ...
-    class Bar(Foo):
-      def foo(a: int) -> None: pass
+      class Foo():
+        def foo(a) -> None: ...
+      class Bar(Foo):
+        def foo(a: int) -> None: pass
     |}
     [];
   assert_type_errors
     {|
-    class Foo():
-      def foo(a: int) -> None: pass
-    class Bar(Foo):
-      def foo(b: int) -> None: pass
+      class Foo():
+        def foo(a: int) -> None: pass
+      class Bar(Foo):
+        def foo(b: int) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -6202,10 +6202,10 @@ let test_check_behavioral_subtyping _ =
     ];
   assert_type_errors
     {|
-    class Foo():
-      def foo(a: int) -> None: pass
-    class Bar(Foo):
-      def foo(_a: int) -> None: pass
+      class Foo():
+        def foo(a: int) -> None: pass
+      class Bar(Foo):
+        def foo(_a: int) -> None: pass
     |}
     [];
   assert_type_errors ~show_error_traces:true
@@ -6970,15 +6970,15 @@ let test_check_undefined_type _ =
   (* Ensure other errors are not missed when undefined type is thrown. *)
   assert_type_errors
     {|
-        class Bar:
-            async def undefined(self, x: Derp) -> Derp:
-                return x
-        class Foo(Bar):
-            def error(self) -> int:
-                return None
-            async def undefined(self, x: Herp) -> Herp:
-                return x
-      |}
+      class Bar:
+          async def undefined(self, x: Derp) -> Derp:
+              return x
+      class Foo(Bar):
+          def error(self) -> int:
+              return None
+          async def undefined(self, x: Herp) -> Herp:
+              return x
+    |}
     [
       "Undefined type [11]: Type `Derp` is not defined.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
