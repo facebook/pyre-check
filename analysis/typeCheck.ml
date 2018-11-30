@@ -1009,7 +1009,7 @@ module State = struct
                 | Signature {
                     signature =
                       (Signature.NotFound {
-                          Signature.callable = { Type.Callable.kind; _ };
+                          callable = { Type.Callable.kind; _ };
                           reason = Some reason;
                           _;
                         });

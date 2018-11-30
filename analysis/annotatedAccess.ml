@@ -292,17 +292,11 @@ let fold ~resolution ~initial ~f access =
 
         match signature with
         | Signature.Found {
-            Signature.callable = {
-              Type.Callable.implementation = { Type.Callable.annotation; _ };
-              _;
-            };
+            callable = { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ };
             _;
           }
         | Signature.NotFound {
-            Signature.callable = {
-              Type.Callable.implementation = { Type.Callable.annotation; _ };
-              _;
-            };
+            callable = { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ };
             _;
           } when Type.is_resolved annotation ->
             State.step

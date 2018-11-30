@@ -235,10 +235,7 @@ let test_type_collection _ =
         | Signature {
             signature =
               Signature.Found {
-                Signature.callable = {
-                  Type.Callable.kind = Type.Callable.Named callable_type;
-                  _;
-                };
+                callable = { Type.Callable.kind = Type.Callable.Named callable_type; _ };
                 _;
               };
             _;

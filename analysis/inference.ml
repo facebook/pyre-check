@@ -190,13 +190,13 @@ module State = struct
           match element with
           | Signature {
               signature =
-                Annotated.Signature.Found { Annotated.Signature.callable; _ };
+                Annotated.Signature.Found { callable; _ };
               arguments;
             }
           | Signature {
               signature =
                 Annotated.Signature.NotFound {
-                  Annotated.Signature.callable;
+                  callable;
                   reason = Some (Annotated.Signature.Mismatch _);
                   _;
                 };

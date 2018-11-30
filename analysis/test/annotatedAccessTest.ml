@@ -338,7 +338,7 @@ let test_fold _ =
       {
         annotation = parse_annotation "Movie";
         element =
-          Annotated.Signature.TooManyArguments { Annotated.Signature.expected = 4; provided = 6 }
+          Annotated.Signature.TooManyArguments { expected = 4; provided = 6 }
           |> Option.some
           |> signature_not_found;
       };
