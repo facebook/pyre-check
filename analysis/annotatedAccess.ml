@@ -30,22 +30,9 @@ module Element = struct
     | Module of Access.t
   [@@deriving show]
 
-  type attribute = {
-    attribute: Access.t;
-    origin: origin;
-    defined: bool;
-  }
-  [@@deriving show]
-
-  type signature = {
-    signature: Signature.t;
-    arguments: Argument.t list;
-  }
-  [@@deriving show]
-
   type t =
-    | Signature of signature
-    | Attribute of attribute
+    | Signature of { signature: AnnotatedSignature.t; arguments: Argument.t list }
+    | Attribute of { attribute: Access.t; origin: origin; defined: bool }
     | Value
   [@@deriving show]
 end
@@ -301,7 +288,7 @@ let fold ~resolution ~initial ~f access =
           } when Type.is_resolved annotation ->
             State.step
               { state with State.resolution }
-              ~element:(Element.Signature { Element.signature; arguments })
+              ~element:(Element.Signature { signature; arguments })
               ~resolved:(Annotation.create annotation)
               ~lead
               ()
@@ -315,7 +302,7 @@ let fold ~resolution ~initial ~f access =
           State.step
             state
             ~element:(Element.Signature {
-                Element.signature = Signature.NotFound { callable; reason };
+                signature = Signature.NotFound { callable; reason };
                 arguments;
               })
             ~resolved:(Annotation.create Type.Top)
@@ -336,7 +323,7 @@ let fold ~resolution ~initial ~f access =
                   State.step
                     state
                     ~element:(Element.Signature {
-                        Element.signature = Signature.Found {
+                        signature = Signature.Found {
                             callable;
                             constraints = Type.Map.empty;
                           };
@@ -494,7 +481,7 @@ let fold ~resolution ~initial ~f access =
                   let defined = Attribute.defined attribute in
                   let element =
                     Element.Attribute {
-                      Element.attribute = [head];
+                      attribute = [head];
                       origin = Element.Instance attribute;
                       defined;
                     }
@@ -576,7 +563,7 @@ let fold ~resolution ~initial ~f access =
                       | None ->
                           let element =
                             Element.Attribute {
-                              Element.attribute = [head];
+                              attribute = [head];
                               origin = Element.Module qualifier;
                               defined = false;
                             }

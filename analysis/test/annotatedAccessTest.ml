@@ -99,19 +99,13 @@ let test_fold _ =
           let module Element = Annotated.Access.Element in
           let stripped element: stripped =
             match element with
-            | Element.Attribute { Element.origin = Element.Module []; _ } ->
+            | Element.Attribute { origin = Element.Module []; _ } ->
                 Unknown
-            | Element.Attribute { Element.attribute; defined; _ } ->
+            | Element.Attribute { attribute; defined; _ } ->
                 Attribute { name = Access.show attribute; defined }
-            | Element.Signature {
-                Element.signature = Annotated.Signature.Found _;
-                _;
-              } ->
+            | Element.Signature { signature = Annotated.Signature.Found _; _ } ->
                 SignatureFound
-            | Element.Signature {
-                Element.signature = Annotated.Signature.NotFound { reason; _; };
-                _;
-              } ->
+            | Element.Signature { signature = Annotated.Signature.NotFound { reason; _; }; _ } ->
                 SignatureNotFound reason
             | Element.Value ->
                 Value
