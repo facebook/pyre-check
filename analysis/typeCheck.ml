@@ -2469,7 +2469,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ()
 
 
-let resolution_with_key ~environment ~access ~key =
+let resolution_with_key ~environment ~parent ~access ~key =
   let annotations =
     match key, ResolutionSharedMemory.get access with
     | Some key, Some map ->
@@ -2483,6 +2483,7 @@ let resolution_with_key ~environment ~access ~key =
         Access.Map.empty
   in
   resolution environment ~annotations ()
+  |> Resolution.with_parent ~parent
 
 
 let check

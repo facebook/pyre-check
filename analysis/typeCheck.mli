@@ -100,6 +100,7 @@ val resolution
 
 val resolution_with_key
   :  environment: (module Environment.Handler)
-  -> access: Ast.Expression.Access.t
+  -> parent: Expression.Access.t option
+  -> access: Expression.Access.t
   -> key: int option
   -> Resolution.t

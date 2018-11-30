@@ -30,9 +30,9 @@ let create ~environment ~source =
         let resolution =
           TypeCheck.resolution_with_key
             ~environment
+            ~parent
             ~access:caller
             ~key:(Some ([%hash: int * int](node_id, index)))
-          |> Resolution.with_parent ~parent
         in
         let process_access callees access =
           let add_call_edge callees callee =
