@@ -96,18 +96,20 @@ let test_fold _ =
     let steps =
       let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
-          let module Element = Annotated.Access.Element in
           let stripped element: stripped =
             match element with
-            | Element.Attribute { origin = Element.Module []; _ } ->
+            | Annotated.Access.Attribute { origin = Annotated.Access.Module []; _ } ->
                 Unknown
-            | Element.Attribute { attribute; defined; _ } ->
+            | Annotated.Access.Attribute { attribute; defined; _ } ->
                 Attribute { name = Access.show attribute; defined }
-            | Element.Signature { signature = Annotated.Signature.Found _; _ } ->
+            | Annotated.Access.Signature { signature = Annotated.Signature.Found _; _ } ->
                 SignatureFound
-            | Element.Signature { signature = Annotated.Signature.NotFound { reason; _; }; _ } ->
+            | Annotated.Access.Signature {
+                signature = Annotated.Signature.NotFound { reason; _; };
+                _;
+              } ->
                 SignatureNotFound reason
-            | Element.Value ->
+            | Annotated.Access.Value ->
                 Value
           in
           { annotation = Annotation.annotation resolved; element = stripped element }

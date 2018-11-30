@@ -226,7 +226,7 @@ let test_type_collection _ =
       |> fun { Node.value = access; _ } ->
       if String.equal (Access.show access) (Access.show test_access) then
         let open Annotated in
-        let open Access.Element in
+        let open Access in
         let last_element =
           Annotated.Access.create access
           |> Annotated.Access.last_element ~resolution

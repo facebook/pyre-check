@@ -24,18 +24,17 @@ let create access =
   access
 
 
-module Element = struct
-  type origin =
-    | Instance of Attribute.t
-    | Module of Access.t
-  [@@deriving show]
+type origin =
+  | Instance of Attribute.t
+  | Module of Access.t
+[@@deriving show]
 
-  type t =
-    | Signature of { signature: AnnotatedSignature.t; arguments: Argument.t list }
-    | Attribute of { attribute: Access.t; origin: origin; defined: bool }
-    | Value
-  [@@deriving show]
-end
+
+type element =
+  | Signature of { signature: AnnotatedSignature.t; arguments: Argument.t list }
+  | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+  | Value
+[@@deriving show]
 
 
 module State = struct
@@ -52,7 +51,7 @@ module State = struct
     f: 'accumulator
       -> resolution: Resolution.t
       -> resolved: Annotation.t
-      -> element: Element.t
+      -> element: element
       -> lead: Access.t
       -> 'accumulator;
     resolved: Annotation.t option;
@@ -75,7 +74,7 @@ module State = struct
       () =
     let accumulator =
       let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
-      let element = Option.value element ~default:Element.Value in
+      let element = Option.value element ~default:Value in
       f accumulator ~resolution ~resolved ~element ~lead
     in
     {
@@ -288,7 +287,7 @@ let fold ~resolution ~initial ~f access =
           } when Type.is_resolved annotation ->
             State.step
               { state with State.resolution }
-              ~element:(Element.Signature { signature; arguments })
+              ~element:(Signature { signature; arguments })
               ~resolved:(Annotation.create annotation)
               ~lead
               ()
@@ -301,7 +300,7 @@ let fold ~resolution ~initial ~f access =
         let fail ~reason =
           State.step
             state
-            ~element:(Element.Signature {
+            ~element:(Signature {
                 signature = Signature.NotFound { callable; reason };
                 arguments;
               })
@@ -322,7 +321,7 @@ let fold ~resolution ~initial ~f access =
               | Some { annotation; _ } ->
                   State.step
                     state
-                    ~element:(Element.Signature {
+                    ~element:(Signature {
                         signature = Signature.Found {
                             callable;
                             constraints = Type.Map.empty;
@@ -480,9 +479,9 @@ let fold ~resolution ~initial ~f access =
               >>| (fun (resolved, attribute) ->
                   let defined = Attribute.defined attribute in
                   let element =
-                    Element.Attribute {
+                    Attribute {
                       attribute = [head];
-                      origin = Element.Instance attribute;
+                      origin = Instance attribute;
                       defined;
                     }
                   in
@@ -562,9 +561,9 @@ let fold ~resolution ~initial ~f access =
                           State.create ~resolution ~accumulator ~f ()
                       | None ->
                           let element =
-                            Element.Attribute {
+                            Attribute {
                               attribute = [head];
-                              origin = Element.Module qualifier;
+                              origin = Module qualifier;
                               defined = false;
                             }
                           in
@@ -588,6 +587,6 @@ let fold ~resolution ~initial ~f access =
 let last_element ~resolution access =
   fold
     ~resolution
-    ~initial:Element.Value
+    ~initial:Value
     ~f:(fun _ ~resolution:_ ~resolved:_ ~element ~lead:_ -> element)
     access

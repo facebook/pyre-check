@@ -186,7 +186,7 @@ module State = struct
               resolution
         in
         let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
-          let open Annotated.Access.Element in
+          let open Annotated.Access in
           match element with
           | Signature {
               signature =

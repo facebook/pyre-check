@@ -988,7 +988,7 @@ module State = struct
         (* Walk through the access. *)
         let _, state, resolved =
           let open Annotated in
-          let open Access.Element in
+          let open Access in
           let forward_access (found_error, state, _) ~resolution ~resolved ~element ~lead =
             let state = { state with resolution } in
             if found_error then
@@ -1610,9 +1610,9 @@ module State = struct
                   |> Access.fold
                     ~f:fold
                     ~resolution
-                    ~initial:(Annotation.create Type.Top, Access.Element.Value)
+                    ~initial:(Annotation.create Type.Top, Access.Value)
                 in
-                if element = Annotated.Access.Element.Value && explicit then
+                if element = Annotated.Access.Value && explicit then
                   Annotation.create_immutable ~global:false guide, element
                 else
                   annotation, element
@@ -1628,7 +1628,7 @@ module State = struct
                      not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) then
                     let kind =
                       let open Annotated in
-                      let open Access.Element in
+                      let open Access in
                       match element with
                       | Attribute { attribute = access; origin = Instance attribute; _ } ->
                           Error.IncompatibleAttributeType {
@@ -1658,7 +1658,7 @@ module State = struct
                 let error =
                   let error =
                     let open Annotated in
-                    let open Access.Element in
+                    let open Access in
                     let insufficiently_annotated =
                       (Type.equal expected Type.Top || Type.equal expected Type.Object) &&
                       not (Type.equal resolved Type.Top || Type.equal resolved Type.ellipses)
@@ -2038,7 +2038,7 @@ module State = struct
 
           | Access access ->
               let open Annotated in
-              let open Access.Element in
+              let open Access in
               let element = Access.last_element ~resolution (Access.create access) in
               begin
                 match Resolution.get_local resolution ~access, element with
@@ -2136,7 +2136,7 @@ module State = struct
               right = { Node.value = Access [Access.Identifier identifier; ]; _ };
             } when Identifier.show identifier = "None" ->
               let open Annotated in
-              let open Access.Element in
+              let open Access in
               let element = Access.last_element ~resolution (Access.create access) in
               let refined =
                 match element with
@@ -2213,7 +2213,7 @@ module State = struct
         in
         let to_import_error import =
           let add_import_error errors ~resolution:_ ~resolved:_ ~element ~lead:_ =
-            let open Annotated.Access.Element in
+            let open Annotated.Access in
             match element with
             | Attribute { origin = Module _; defined = false; _ } ->
                 Error.create
