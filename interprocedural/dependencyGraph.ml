@@ -21,7 +21,7 @@ let empty = Callable.Map.empty
 let create ~environment ~source =
   let fold_defines
       dependencies
-      { Node.value = ({ Define.name = caller; _ } as define); _ } =
+      { Node.value = ({ Define.name = caller; parent; _ } as define); _ } =
     let cfg = Cfg.create define in
     let caller_callable = Callable.create_real caller in
     let fold_cfg ~key:node_id ~data:node callees =
@@ -32,6 +32,7 @@ let create ~environment ~source =
             ~environment
             ~access:caller
             ~key:(Some ([%hash: int * int](node_id, index)))
+          |> Resolution.with_parent ~parent
         in
         let process_access callees access =
           let add_call_edge callees callee =
