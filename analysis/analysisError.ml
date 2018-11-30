@@ -383,7 +383,7 @@ let messages ~detailed:_ ~define location kind =
           number_of_parameters;
       ]
   | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
-      let evidence =
+      let target =
         let parameter =
           match name with
           | Some name ->
@@ -395,13 +395,13 @@ let messages ~detailed:_ ~define location kind =
         let callee =
           match callee with
           | Some callee ->
-              Format.asprintf "call `%a`." Access.pp callee
+              Format.asprintf "call `%a`" Access.pp callee
           | _ ->
               "anoynmous call"
         in
         Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      [Format.asprintf "Expected `%a` but got `%a`." Type.pp expected Type.pp actual; evidence]
+      [Format.asprintf "Expected `%a` for %s but got `%a`." Type.pp expected target Type.pp actual]
   | IncompatibleConstructorAnnotation annotation ->
       [
         Format.asprintf

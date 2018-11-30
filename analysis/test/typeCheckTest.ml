@@ -331,7 +331,8 @@ let test_forward_expression _ =
     ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~errors:(`Specific [
-        "Incompatible parameter type [6]: Expected `int` but got `str`.";
+        "Incompatible parameter type [6]: "^
+        "Expected `int` for 2nd anonymous parameter to call `dict.add_key` but got `str`.";
       ])
     "x.add_key('string')"
     Type.none;
@@ -825,7 +826,9 @@ let test_forward_statement _ =
     ~bottom:false
     ~errors:
       (`Specific
-         ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `int`."])
+         ["Incompatible parameter type [6]: " ^
+          "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` " ^
+          "but got `int`."])
     ["x", Type.integer]
     "assert isinstance(x, 1)"
     ["x", Type.integer];
@@ -1582,10 +1585,14 @@ let test_check _ =
   assert_type_errors "isinstance(1, (int, (int, str)))" [];
   assert_type_errors
     "isinstance(str, '')"
-    ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` " ^
+     "but got `str`."];
   assert_type_errors
     "isinstance(1, (int, ('', str)))"
-    ["Incompatible parameter type [6]: Expected `typing.Type[typing.Any]` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` " ^
+     "but got `str`."];
 
   assert_type_errors
     {|
@@ -1593,10 +1600,9 @@ let test_check _ =
       def meta(x: typing.Type[_T]) -> None: ...
       meta(typing.Dict)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[_T]]` but got " ^
-      "`typing.TypeAlias`.";
-    ];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got " ^
+     "`typing.TypeAlias`."];
 
   assert_type_errors
     {|
@@ -1856,7 +1862,8 @@ let test_check _ =
           expect_string(x)
 
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."];
 
   assert_type_errors
     {|
@@ -1981,7 +1988,8 @@ let test_check _ =
       def g(collection: typing.Collection[str]) -> None:
         return f( *collection)
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `f` but got `str`."];
   assert_type_errors
     {|
       class C(typing.Iterable[int]):
@@ -2211,7 +2219,8 @@ let test_check_assign _ =
         x = 1
         x += 'asdf'
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
 
 
 let test_check_coverage _ =
@@ -2591,7 +2600,9 @@ let test_check_optional _ =
     [
       "Missing return annotation [3]: Returning `typing.Union[bool, int]` " ^
       "but type `Any` is specified.";
-      "Incompatible parameter type [6]: Expected `int` but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_bool` but got " ^
+      "`typing.Optional[int]`.";
     ];
 
   assert_type_errors
@@ -2735,7 +2746,8 @@ let test_check_function_parameters _ =
         int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -2745,7 +2757,8 @@ let test_check_function_parameters _ =
         preprocessed(1.0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 1st anonymous parameter to call `preprocessed` but got `float`.";
     ];
 
   assert_type_errors
@@ -2754,7 +2767,8 @@ let test_check_function_parameters _ =
         return int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
     ];
 
   assert_type_errors
@@ -2828,7 +2842,9 @@ let test_check_function_parameters _ =
         return to_int(a or int_to_str(a))
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_str` but got " ^
+      "`typing.Optional[int]`.";
     ];
 
   assert_type_errors
@@ -2905,7 +2921,8 @@ let test_check_function_parameters _ =
         pass
       foo("hello")
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Optional[int]` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`."];
   assert_type_errors
     {|
       def foo(a):
@@ -2913,7 +2930,8 @@ let test_check_function_parameters _ =
         pass
       foo("hello")
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Optional[int]` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Optional[int]` for 1st anonymous parameter to call `foo` but got `str`."];
   assert_type_errors
     {|
       def foo(a, b):
@@ -2929,7 +2947,8 @@ let test_check_function_parameters _ =
         pass
       foo(1, 1)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`."]
 
 
 let test_check_function_parameters_with_backups _ =
@@ -2967,8 +2986,9 @@ let test_check_function_parameter_errors _ =
         optional_str_to_int(input and input.attribute)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got " ^
-      "`typing.Optional[int]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Optional[str]` for 1st anonymous parameter to call `optional_str_to_int` " ^
+      "but got `typing.Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -2978,7 +2998,9 @@ let test_check_function_parameter_errors _ =
         optional_str_to_int(input and input.undefined)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `unknown`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Optional[str]` for 1st anonymous parameter to call `optional_str_to_int` " ^
+      "but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
     ];
   assert_type_errors
@@ -3013,7 +3035,8 @@ let test_check_variable_arguments _ =
     [
       "Missing parameter annotation [2]: Parameter `b` has no type specified.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible parameter type [6]: Expected `int` but got `unknown`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
     ];
 
   assert_type_errors
@@ -3025,7 +3048,8 @@ let test_check_variable_arguments _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
-      "Incompatible parameter type [6]: Expected `int` but got `unknown`."
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
     ];
 
   assert_type_errors
@@ -3035,7 +3059,8 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> int:
         return foo ( *b )
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";];
 
   assert_type_errors
     {|
@@ -3044,7 +3069,8 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> None:
         foo('asdf', *b)
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";];
 
   assert_type_errors
     {|
@@ -3093,9 +3119,8 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> int:
         return foo('asdf', *b)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
-    ]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";]
 
 
 let test_check_method_returns _ =
@@ -3135,7 +3160,8 @@ let test_check_method_parameters _ =
         input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3146,7 +3172,8 @@ let test_check_method_parameters _ =
         foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` but got `int`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`.";
     ];
 
   assert_type_errors
@@ -3155,7 +3182,8 @@ let test_check_method_parameters _ =
         return input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3164,7 +3192,8 @@ let test_check_method_parameters _ =
         input.substr('asdf').substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3172,7 +3201,8 @@ let test_check_method_parameters _ =
       def foo(input: str) -> None:
         input + 1
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   assert_type_errors
     {|
@@ -3261,7 +3291,8 @@ let test_check_self _ =
           def two(self: Other) -> None:
               pass
     |}
-    ["Incompatible parameter type [6]: Expected `Other` but got `Some`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `Other` for 1st anonymous parameter to call `Some.two` but got `Some`."]
 
 
 let test_check_static _ =
@@ -3294,7 +3325,8 @@ let test_check_static _ =
       def foo() -> None:
         Foo.foo('asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `Foo.foo` but got `str`."];
 
   assert_type_errors
     {|
@@ -3307,7 +3339,8 @@ let test_check_static _ =
           self.foo('asdf')
 
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `Foo.foo` but got `str`."];
 
   (* Class method calls are properly resolved. *)
   assert_type_errors
@@ -3320,7 +3353,8 @@ let test_check_static _ =
       def foo() -> None:
         Foo.foo('asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.foo` but got `str`."];
 
   assert_type_errors
     {|
@@ -3338,7 +3372,8 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.classmethod('1234')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.classmethod` but got `str`."];
 
   assert_type_errors
     {|
@@ -3350,7 +3385,8 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.staticmethod('1234')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `Foo.staticmethod` but got `str`."];
 
   assert_type_errors
     {|
@@ -3361,7 +3397,8 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.instancemethod(Foo(), '1234')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.instancemethod` but got `str`."];
 
   (* Special classmethods are treated properly without a decorator. *)
   assert_type_errors
@@ -3563,7 +3600,8 @@ let test_check_init _ =
     [
       "Missing global annotation [5]: Globally accessible variable `a` has type `Foo` " ^
       "but no type is specified.";
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`.";
     ];
 
   assert_type_errors
@@ -3579,7 +3617,8 @@ let test_check_init _ =
           pass
       a: Foo = Foo("")
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.__new__` but got `str`."];
 
   (* Prefer init over new if both exist. *)
   assert_type_errors
@@ -3602,7 +3641,8 @@ let test_check_init _ =
         pass
       c: C = C("")
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Super.__new__` but got `str`."];
 
   (* We look at both __init__ and __new__ in the inheritance structure. *)
   assert_type_errors
@@ -3615,7 +3655,8 @@ let test_check_init _ =
         pass
       c: C = C("")
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Super.__new__` but got `str`."];
 
   assert_type_errors
     {|
@@ -3627,7 +3668,8 @@ let test_check_init _ =
         pass
       c: C = C("")
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Super.__init__` but got `str`."]
 
 let test_check_attributes _ =
   assert_type_errors
@@ -4331,7 +4373,8 @@ let test_check_immutables _ =
       "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
       "type `typing.Any`. Redeclare `x` on line 6 if you wish to override the previously " ^
       "declared type.";
-      "Incompatible parameter type [6]: Expected `str` but got `int`."
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`."
     ];
 
   assert_type_errors
@@ -4735,8 +4778,10 @@ let test_check_named_arguments _ =
         return str_float_to_int(f="No",i="Hi")
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` but got `float`.";
-      "Incompatible parameter type [6]: Expected `float` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 1st parameter `i` to call `str_float_to_int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`.";
     ]
 
 
@@ -4904,7 +4949,8 @@ let test_check_missing_return _ =
     {|
       1 + 'asdf'  # report in top-level function
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
 
 
 let test_check_missing_attribute _ =
@@ -5226,7 +5272,8 @@ let test_check_union _ =
     |}
     [
       "Undefined type [11]: Type `Undefined` is not defined.";
-      "Incompatible parameter type [6]: Expected `Union[int, Undefined]` but got `int`."
+      "Incompatible parameter type [6]: " ^
+      "Expected `Union[int, Undefined]` for 1st anonymous parameter to call `foo` but got `int`.";
     ]
 
 
@@ -5284,8 +5331,10 @@ let test_check_nested _ =
         int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `float`.";
-      "Incompatible parameter type [6]: Expected `int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
     ];
 
   assert_type_errors
@@ -5304,7 +5353,8 @@ let test_check_nested _ =
       def shadowing(i: int) -> None: ...
       shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `shadowing.shadowing` but got `str`."];
 
   assert_type_errors
     {|
@@ -5351,7 +5401,8 @@ let test_check_unbounded_variables _ =
         expects_any(input)
         expects_string(input)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T]`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`."];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -5405,7 +5456,9 @@ let test_check_variable_bindings _ =
       def foo(t: T) -> None:
         str_to_int(t)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `Variable[T (bound to int)]`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `str_to_int` but got " ^
+     "`Variable[T (bound to int)]`."];
   assert_type_errors
     {|
       T = typing.TypeVar('T', bound=int)
@@ -5434,7 +5487,8 @@ let test_check_refinement _ =
         l = [1]
         l.append('asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5442,7 +5496,8 @@ let test_check_refinement _ =
         l: typing.List[int] = []
         l.append('a')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5450,7 +5505,8 @@ let test_check_refinement _ =
         l: typing.List[int] = None
         l.append('a')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5570,7 +5626,8 @@ let test_check_refinement _ =
 let test_check_toplevel _ =
   assert_type_errors
     "int_to_int(1.0)"
-    ["Incompatible parameter type [6]: Expected `int` but got `float`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`."];
 
   assert_type_errors
     {|
@@ -5587,7 +5644,8 @@ let test_check_tuple _ =
       def foo(a: typing.Tuple[int, int]) -> None:
         a.tuple_method(1.0)
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `float`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `tuple.tuple_method` but got `float`."];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[int, ...]:
@@ -5847,7 +5905,9 @@ let test_check_assert _ =
         if optional or len(optional) > 0:
           pass
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Sized` but got `typing.Optional[str]`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Sized` for 1st anonymous parameter to call `len` but got " ^
+     "`typing.Optional[str]`."];
   assert_type_errors
     {|
       def foo(optional: typing.Optional[str]) -> None:
@@ -6426,9 +6486,8 @@ let test_check_constructors _ =
       def foo() -> Foo:
         return Foo('asdf')
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
-    ];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -6439,8 +6498,11 @@ let test_check_constructors _ =
         Foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` but got `str`.";
-      "Incompatible parameter type [6]: Expected `typing.Optional[str]` but got `int`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Optional[str]` for 3rd anonymous parameter to call `Foo.__init__` " ^
+      "but got `int`.";
     ];
 
   (* Explicit call. *)
@@ -6452,7 +6514,8 @@ let test_check_constructors _ =
         def foo(self) -> None:
           Foo.__init__(self, 'asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
 
   (* Super calls. *)
   assert_type_errors
@@ -6464,7 +6527,8 @@ let test_check_constructors _ =
         def foo(self, i: int) -> None:
           super().foo('asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Super.foo` but got `str`."];
   assert_type_errors
     {|
       class Super:
@@ -6474,7 +6538,8 @@ let test_check_constructors _ =
         def __init__(self, i: int) -> None:
           super().__init__('asdf')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Super.__init__` but got `str`."];
 
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating
      to the subclass, regardless of order. *)
@@ -6726,7 +6791,8 @@ let test_check_callables _ =
       def foo(call: Call) -> int:
         return call("")
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Call.__call__` but got `str`."];
 
   (* Callable parameter checks. *)
   assert_type_errors
@@ -6734,7 +6800,8 @@ let test_check_callables _ =
       def foo(callable: typing.Callable[[str], None]) -> None:
         callable(1)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to anoynmous call but got `int`."];
 
   (* Type variables & callables. *)
   assert_type_errors
@@ -6771,8 +6838,9 @@ let test_check_callables _ =
       foo(i2s)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[..., int]` but got" ^
-      " `typing.Callable(i2s)[[Named(x, int)], str]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[..., int]` for 1st anonymous parameter to call `foo` but got " ^
+      "`typing.Callable(i2s)[[Named(x, int)], str]`.";
     ];
 
   (* Classes with __call__ are callables. *)
@@ -6806,10 +6874,12 @@ let test_check_callables _ =
         map(y, [])
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[int], str]` but got" ^
-      " `CallMe`.";
-      "Incompatible parameter type [6]: Expected `typing.Callable[[int], str]` but got" ^
-      " `CallMeToo`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got " ^
+      "`CallMe`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got " ^
+      "`CallMeToo`.";
     ];
 
   (* Sanity check: Callables do not subclass classes. *)
@@ -6823,10 +6893,9 @@ let test_check_callables _ =
       def apply(f: typing.Callable[[int], str]) -> None:
         map(f, 1)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `CallMe` but got " ^
-      "`typing.Callable[[int], str]`."
-    ];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `CallMe` for 1st anonymous parameter to call `map` but got " ^
+     "`typing.Callable[[int], str]`."];
 
   (* The annotation for callable gets expanded automatically. *)
   assert_type_errors
@@ -6838,7 +6907,9 @@ let test_check_callables _ =
       hof(i2i)
       hof(1)
     |}
-    ["Incompatible parameter type [6]: Expected `typing.Callable[..., unknown]` but got `int`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Callable[..., unknown]` for 1st anonymous parameter to call `hof` but got " ^
+     "`int`."];
 
   (* Lambdas. *)
   assert_type_errors
@@ -6848,8 +6919,9 @@ let test_check_callables _ =
       takes_callable(lambda y: 0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Named(x, typing.Any)], int]` but"
-      ^ " got `typing.Callable[[Named(y, typing.Any)], int]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
+      "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`.";
     ];
   assert_type_errors
     {|
@@ -6858,8 +6930,9 @@ let test_check_callables _ =
       takes_callable(lambda y: "")
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Named(x, typing.Any)], int]` but"
-      ^ " got `typing.Callable[[Named(y, typing.Any)], str]`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
+      "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
     ];
 
   assert_type_errors
@@ -7029,7 +7102,9 @@ let test_environment _ =
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
     "hashlib.md5(1.0)"
-    ["Incompatible parameter type [6]: Expected `typing.Union[int, str]` but got `float`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Union[int, str]` for 1st anonymous parameter to call `hashlib.md5` " ^
+     "but got `float`."];
 
   (* Type aliases in the class hierarchy are resolved. I.e. we follow the conditional `Collection`
      indirection in typeshed. *)
@@ -7045,7 +7120,8 @@ let test_scheduling _ =
   (* Top-level is scheduled. *)
   assert_type_errors
     "'string' + 1"
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Functions are scheduled. *)
   assert_type_errors
@@ -7054,7 +7130,8 @@ let test_scheduling _ =
       def foo() -> None:
         'string' + 1
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   assert_type_errors
     {|
@@ -7062,7 +7139,8 @@ let test_scheduling _ =
         def foo() -> None:
           'string' + 1
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Class bodies are scheduled. *)
   assert_type_errors
@@ -7070,7 +7148,8 @@ let test_scheduling _ =
       class Foo:
         'string' + 1
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Methods are scheduled. *)
   assert_type_errors
@@ -7079,7 +7158,8 @@ let test_scheduling _ =
         def foo(self) -> None:
           'string' + 1
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Entry states are propagated. *)
   assert_type_errors
@@ -7114,7 +7194,8 @@ let test_scheduling _ =
       def foo() -> None:
         expect_string(1)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."];
   assert_type_errors
     {|
       try:
@@ -7127,7 +7208,8 @@ let test_scheduling _ =
       def foo() -> None:
         expect_string(1)
     |}
-    ["Incompatible parameter type [6]: Expected `str` but got `int`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
 
 
 let test_format_string _ =
@@ -7142,14 +7224,16 @@ let test_format_string _ =
       def foo() -> None:
         f'foo{1 + "x"}'
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
   assert_type_errors
     {|
       global_number: int = 1
       def foo() -> None:
         f'foo{global_number + "x"}'
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
   assert_type_errors
     {|
       global_number: int = 1
@@ -7165,7 +7249,8 @@ let test_format_string _ =
       def foo() -> None:
         f'{boo() + "x"}'
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."]
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
 
 
 let test_check_data_class _ =
@@ -7177,7 +7262,8 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo('a')
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
   assert_type_errors
     {|
       @dataclass
@@ -7274,7 +7360,8 @@ let test_check_typed_dictionaries _ =
         movie: Movie
         a = foo(movie['name'])
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`."];
 
   assert_test_typed_dictionary
     {|
@@ -7326,8 +7413,8 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `TypedDict `Movie` with " ^
-      "fields (name: str, year: int)` but got `TypedDict `Actor` with fields " ^
-      "(name: str, birthyear: int)`."
+      "fields (name: str, year: int)` for 1st anonymous parameter to call `foo` " ^
+      "but got `TypedDict `Actor` with fields (name: str, birthyear: int)`."
     ];
 
   assert_test_typed_dictionary
@@ -7392,7 +7479,8 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `Mapping[str, A]` but got `TypedDict `Baz` with fields (foo: A, bar: B)`."
+      "Expected `Mapping[str, A]` for 1st anonymous parameter to call `foo` but got " ^
+      "`TypedDict `Baz` with fields (foo: A, bar: B)`."
     ];
 
   assert_test_typed_dictionary
@@ -7471,7 +7559,8 @@ let test_check_typed_dictionaries _ =
         movie = Movie(name=1982, year='Blade Runner')
         return movie['year']
     |}
-    ["Incompatible parameter type [6]: Expected `int` but got `str`."];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 3rd parameter `year` to call `__init__` but got `str`."];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})

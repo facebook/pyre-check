@@ -649,7 +649,9 @@ let test_query context =
     |}
     ~query:"type(foo(bar))"
     (Protocol.TypeQuery.Error
-       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.");
+       ("Expression had errors: Incompatible parameter type [6]: " ^
+        "Expected `str` for 1st anonymous parameter to call `foo` but got `int`.")
+    );
 
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
