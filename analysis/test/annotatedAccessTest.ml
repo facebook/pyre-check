@@ -60,7 +60,8 @@ let test_fold _ =
           integer: int = 1
           string: str = 'string'
 
-          class Class:
+          class Super: pass
+          class Class(Super):
             attribute: int = 1
             def method(self) -> int: ...
           instance: Class
@@ -91,7 +92,7 @@ let test_fold _ =
     |> parse_single_expression
     |> Resolution.parse_annotation resolution
   in
-  let assert_fold access expected =
+  let assert_fold ?parent access expected =
     let steps =
       let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
@@ -119,6 +120,7 @@ let test_fold _ =
         in
         step :: steps
       in
+      let resolution = Resolution.with_parent resolution ~parent in
       parse_single_access access ~preprocess:true
       |> Annotated.Access.create
       |> Annotated.Access.fold ~resolution ~initial:[] ~f:steps
@@ -161,6 +163,19 @@ let test_fold _ =
         element = Attribute { name = "method"; defined = true };
       };
       { annotation = Type.integer; element = SignatureFound };
+    ];
+
+  assert_fold
+    ~parent:(Access.create "Class")
+    "super().__init__()"
+    [
+      { annotation = Type.primitive "Super"; element = Value };
+      {
+        annotation =
+          parse_annotation "typing.Callable('object.__init__')[[Named(self, $unknown)], None]";
+        element = Attribute { name = "__init__"; defined = true };
+      };
+      { annotation = Type.none; element = SignatureFound };
     ];
 
   assert_fold
