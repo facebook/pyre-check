@@ -1384,6 +1384,11 @@ let test_join _ =
 
   assert_join ~order:disconnected_order "A" "B" "typing.Any";
 
+  assert_join
+    "typing.Type[int]"
+    "typing.Type[str]"
+    "typing.Type[typing.Union[int, str]]";
+
   (* Callables. *)
   assert_join
     "typing.Callable[..., int]"

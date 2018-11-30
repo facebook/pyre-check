@@ -447,23 +447,22 @@ let greatest ((module Handler: Handler) as order) ~matches =
 
 
 let variables ((module Handler: Handler) as order) annotation =
-  if Type.is_meta annotation then
-    (* Despite what typeshed says, typing.Type is covariant:
-       https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-    Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-  else
-    match Type.split annotation with
-    | left, _ when String.equal (Type.show left) "typing.Callable" ->
-        (* This is not the "real" typing.Callable. We are just
-           proxying to the Callable instance in the type order here. *)
-        Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-    | _ ->
-        let primitive = Type.split annotation |> fst in
-        Handler.find (Handler.indices ()) Type.generic
-        >>= fun generic_index ->
-        Handler.find (Handler.edges ()) (index_of order primitive)
-        >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-        >>| fun { Target.parameters; _ } -> parameters
+  match Type.split annotation with
+  | left, _ when String.equal (Type.show left) "type" ->
+      (* Despite what typeshed says, typing.Type is covariant:
+         https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
+      Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+  | left, _ when String.equal (Type.show left) "typing.Callable" ->
+      (* This is not the "real" typing.Callable. We are just
+         proxying to the Callable instance in the type order here. *)
+      Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+  | _ ->
+      let primitive = Type.split annotation |> fst in
+      Handler.find (Handler.indices ()) Type.generic
+      >>= fun generic_index ->
+      Handler.find (Handler.edges ()) (index_of order primitive)
+      >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
+      >>| fun { Target.parameters; _ } -> parameters
 
 
 let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
