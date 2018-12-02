@@ -113,7 +113,7 @@ class ConfigurationTest(unittest.TestCase):
                         "additional/",
                         "directories/",
                         *[i for i in sys.path if os.path.isdir(i)],
-                        # inhereting the environment path
+                        # inheriting the environment path
                         "command/",
                         "line/",
                         "json/",

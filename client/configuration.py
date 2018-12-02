@@ -99,7 +99,7 @@ class Configuration:
         # Handle search path from multiple sources
         self.search_path = []
         pythonpath = os.getenv("PYTHONPATH", default='')
-        if preserve_pythonpath and pythonpath:
+        if preserve_pythonpath:
             for path in pythonpath.split(":") + sys.path:
                 if os.path.isdir(path):
                     self.search_path.append(path)
