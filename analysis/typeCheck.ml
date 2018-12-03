@@ -1452,7 +1452,7 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
-    (* We weaken type inference of mutable literals for assingments and returns
+    (* We weaken type inference of mutable literals for assignments and returns
        to get around the invariance of containers when we can prove that casting to
        a supertype is safe. *)
     let resolve_mutable_literals resolution ~expression ~resolved ~expected =
@@ -1462,6 +1462,13 @@ module State = struct
         Type.Parametric { name = expected_name; parameters = [expected_parameter] }
         when Identifier.equal actual_name (Identifier.create "list") &&
              Identifier.equal expected_name (Identifier.create "list") &&
+             Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
+          expected
+      | Some { Node.value = Expression.Set _; _ },
+        Type.Parametric { name = actual_name; parameters = [actual] },
+        Type.Parametric { name = expected_name; parameters = [expected_parameter] }
+        when Identifier.equal actual_name (Identifier.create "set") &&
+             Identifier.equal expected_name (Identifier.create "set") &&
              Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
           expected
       | Some { Node.value = Expression.Dictionary _; _ },

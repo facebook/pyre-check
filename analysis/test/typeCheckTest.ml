@@ -7799,6 +7799,22 @@ let test_check_literal_variance _ =
     [
       "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got " ^
       "`typing.Dict[int, int]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> typing.Set[float]:
+        return {1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Set[float]:
+        a = {1}
+        return a
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Set[float]` but got " ^
+      "`typing.Set[int]`.";
     ]
 
 
