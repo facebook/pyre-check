@@ -1406,8 +1406,7 @@ let suppress ~mode error =
     | MissingGlobalAnnotation _
     | MissingTypeParameters _
     | Unpack { unpack_problem = UnacceptableType Type.Object; _ }
-    | Unpack { unpack_problem = UnacceptableType Type.Top; _ }
-    | UndefinedType _ ->
+    | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
     | UndefinedImport _ ->
         false

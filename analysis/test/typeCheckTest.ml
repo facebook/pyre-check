@@ -7022,30 +7022,35 @@ let test_check_assert_functions _ =
 
 let test_check_undefined_type _ =
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: Derp) -> Herp:
         return x
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: int) -> Herp:
         return x
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: typing.Union[Derp, Herp]) -> List[Herp]:
         return x
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: Derp[int]) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
   assert_type_errors
+    ~debug:false
     {|
       def foo(x: Optional) -> None:
         pass
