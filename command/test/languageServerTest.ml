@@ -767,6 +767,7 @@ let test_language_server_hover_response _ =
 
 let test_request_parser context =
   let root, relative, absolute = files context in
+  let configuration = Configuration.Analysis.create ~local_root:root () in
   let open_message =
     {
       DidOpenTextDocument.jsonrpc = "2.0";
@@ -821,7 +822,7 @@ let test_request_parser context =
       ~cmp:(Option.equal Protocol.Request.equal)
       ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
       request
-      (Request.parse_lsp ~root:(PyrePath.create_absolute Filename.temp_dir_name) ~request:message)
+      (Request.parse_lsp ~configuration ~request:message)
   in
 
   assert_parsed_request_equals

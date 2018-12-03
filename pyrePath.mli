@@ -52,4 +52,6 @@ val search_upwards: target: string -> root: t -> t option
 
 val remove: t -> unit
 
+val search_for_path: search_path:t list -> path:t -> t option
+
 module Map: Map.S with type Key.t = t

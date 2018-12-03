@@ -187,6 +187,14 @@ let remove path =
     Log.debug "Unable to remove file at %a" pp path
 
 
+let search_for_path ~search_path ~path =
+  let under_root ~path root =
+    get_relative_to_root ~root ~path
+    |> Option.map ~f:(fun relative -> create_relative ~root ~relative)
+  in
+  List.find_map search_path ~f:(under_root ~path)
+
+
 module Map = Map.Make(struct
     type nonrec t = t
     let compare left right = String.compare (absolute left) (absolute right)

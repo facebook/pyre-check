@@ -1136,7 +1136,7 @@ let test_language_scheduler_definition context =
   let filename =
     let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
     File.write (File.create ~content:"" path);
-    "filename.py"
+    Path.absolute path
   in
   let request =
     Format.sprintf {|

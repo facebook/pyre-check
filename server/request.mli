@@ -5,11 +5,9 @@
 
 open Core
 
-open Pyre
-
 
 val parse_lsp
-  :  root: Path.t
+  :  configuration: Configuration.Analysis.t
   -> request: Yojson.Safe.json
   -> Protocol.Request.t option
 
