@@ -5346,6 +5346,14 @@ let test_check_nested _ =
     |}
     [];
 
+  assert_type_errors
+    {|
+      class Derp:
+          Word = collections.namedtuple("word", ("verb", "noun"))
+      def foo() -> Derp.Word: pass
+    |}
+    ["Incompatible return type [7]: Expected `Derp.Word` but got implicit return value of `None`."];
+
   (* Nesting behaves differently for the toplevel function. *)
   assert_type_errors
     ~qualifier:(Access.create "shadowing")
