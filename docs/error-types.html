@@ -94,4 +94,45 @@ This is usually caused by failing to import the proper module.</p>
 </code></pre>
 <p>Pyre will raise error 21 instead (&quot;Undefined import&quot;) when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the <code>--search-path</code> commandline parameter.</p>
+<h2><a class="anchor" aria-hidden="true" id="list-and-dictionary-mismatches-with-subclassing"></a><a href="#list-and-dictionary-mismatches-with-subclassing" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>List and Dictionary Mismatches With Subclassing</h2>
+<p>Pyre will error when, for instance, a <code>List[int]</code> is passed in when a <code>List[float]</code> is expected, as in the following example:</p>
+<pre><code class="hljs">def to_seconds(milliseconds: <span class="hljs-keyword">List</span>[<span class="hljs-keyword">float</span>]) -&gt; <span class="hljs-keyword">List</span>[<span class="hljs-keyword">int</span>]:
+  <span class="hljs-keyword">return</span> [<span class="hljs-keyword">int</span>(x/<span class="hljs-number">1000.0</span>) <span class="hljs-keyword">for</span> x in milliseconds]
+
+my_list: <span class="hljs-keyword">List</span>[<span class="hljs-keyword">int</span>] = [<span class="hljs-number">1</span>]
+my_list = to_seconds(my_list) <span class="hljs-comment"># Pyre errors here!</span>
+</code></pre>
+<p>This code is fine at runtime, so it might be surprising that Pyre errors here. However, consider the following code:</p>
+<pre><code class="hljs">def halve<span class="hljs-constructor">_first_element(<span class="hljs-params">list</span>: List[<span class="hljs-params">float</span>])</span> -&gt; None:
+  <span class="hljs-built_in">list</span><span class="hljs-literal">[<span class="hljs-number">0</span>]</span> /= <span class="hljs-number">2</span>
+
+my_list: List<span class="hljs-literal">[<span class="hljs-identifier">int</span>]</span> = <span class="hljs-literal">[<span class="hljs-number">1</span>]</span>
+halve<span class="hljs-constructor">_first_element(<span class="hljs-params">my_list</span>)</span>
+<span class="hljs-keyword">function</span><span class="hljs-constructor">_taking_int(<span class="hljs-params">my_list</span>[0])</span> # Oh no, my_list<span class="hljs-literal">[<span class="hljs-number">0</span>]</span> is <span class="hljs-number">0.5</span>!
+</code></pre>
+<p>If we allowed passing in <code>my_list</code> to the <code>halve_first_element</code> function here, the above code would type check. It's perfectly valid from the perspective of the callee to modify the list's element to be a float, as it was annotated as taking a list of floats, but because this list escapes the scope of the callee, we can't allow this in the type checker.</p>
+<p>To work around this, we can signal to the type checker that the parameter can't be modified. Here's how you can tell the type checker that you won't change the container in your function:</p>
+<pre><code class="hljs"><span class="hljs-comment"># I can't modify milliseconds here, so it's safe to pass a Iterable[int].</span>
+def to_seconds(milliseconds: Iterable[float]) -&gt; List[int]:
+  return [int(x/1000.0) <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> milliseconds]
+
+my_list: List[int] = [1]
+my_list = to_seconds(my_list) #<span class="hljs-built_in"> Type </span>checks!
+</code></pre>
+<p><code>typing.Iterable</code> is an immutable variant for lists that allows accessing the list without modifying it. Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
+Here are some immutable variants for commonly used containers:</p>
+<pre><code class="hljs">typing<span class="hljs-selector-class">.List</span> → typing<span class="hljs-selector-class">.Iterable</span>
+typing<span class="hljs-selector-class">.Dict</span> → typing<span class="hljs-selector-class">.Mapping</span>
+typing<span class="hljs-selector-class">.Set</span> → typing<span class="hljs-selector-class">.AbstractSet</span>
+</code></pre>
+<p>Invariance, combined with type inference, comes with a few gotchas. When you write an expression, Pyre infers the most precise type possible. For instance, Pyre infers the <code>List[int]</code> type for <code>[1, 2]</code>, even though <code>List[float]</code> would be a perfectly valid type here. This can cause issues, as in the following example:</p>
+<pre><code class="hljs"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">zeroes</span><span class="hljs-params">(number_of_elements: int)</span> -&gt; List[float]:</span>
+  a = [<span class="hljs-number">0</span>] * number_of_elements
+  <span class="hljs-keyword">return</span> a <span class="hljs-comment"># Pyre errors here!</span>
+</code></pre>
+<p>What happened above is that Pyre inferred a type of <code>List[int]</code> for a, and invariance kicked in. You can work around this by adding an explicit annotation when declaring a:</p>
+<pre><code class="hljs">def zeroes(number_of_elements: int) -&gt; List[float]:
+  a: List[float] = [0] * number_of_elements
+  return a #<span class="hljs-built_in"> Type </span>checks!
+</code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/error-suppression.html"><span class="arrow-prev">← </span><span>Error Suppression</span></a><a class="docs-next button" href="/docs/lsp-integration.html"><span>Editor Integration</span><span class="arrow-next"> →</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
