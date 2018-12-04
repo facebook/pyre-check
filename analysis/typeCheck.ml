@@ -941,6 +941,7 @@ module State = struct
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
           let { state; _ } = forward_expression ~state ~expression in
+          let previous_errors = Map.length state.errors in
           let state, annotations =
             let rec collect_types (state, collected) = function
               | { Node.value = Tuple annotations; _ } ->
@@ -964,8 +965,10 @@ module State = struct
             in
             collect_types (state, []) annotations
           in
-          match List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation)) with
-          | Some (non_meta, location) ->
+          if Map.length state.errors > previous_errors then
+            state
+          else
+            let add_incompatible_non_meta_error state (non_meta, location) =
               Error.create
                 ~location
                 ~kind:(Error.IncompatibleParameterType {
@@ -978,8 +981,10 @@ module State = struct
                     }})
                 ~define
               |> add_error ~state
-          | None ->
-              state
+            in
+            List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation))
+            >>| add_incompatible_non_meta_error state
+            |> Option.value ~default:state
         in
         { state; resolved = Type.bool }
     | Access access ->

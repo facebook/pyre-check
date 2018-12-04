@@ -1581,6 +1581,11 @@ let test_check _ =
     |}
     [];
 
+  assert_type_errors
+    {|
+      isinstance(1, NonexistentClass)
+    |}
+    ["Undefined name [18]: Global name `NonexistentClass` is undefined."];
   assert_type_errors "isinstance(1, (int, str))" [];
   assert_type_errors "isinstance(1, (int, (int, str)))" [];
   assert_type_errors
