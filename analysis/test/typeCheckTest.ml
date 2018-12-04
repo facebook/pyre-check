@@ -3329,7 +3329,10 @@ let test_check_method_resolution _ =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    [];
+    [
+      (* TODO(T37504097): join callables before invocation. *)
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
   assert_type_errors
     {|
       class Foo:

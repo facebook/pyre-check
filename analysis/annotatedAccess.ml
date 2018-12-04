@@ -411,58 +411,55 @@ let fold ~resolution ~initial ~f access =
           resolve_independent_callable ~implicit_annotation ~callable ~arguments ~location
     in
 
-    let local_attribute ~resolved ~lead ~name =
+    let local_attributes ~resolved ~lead ~name =
       let annotation = Annotation.annotation resolved in
-      let find_attribute ~annotation =
-        let instantiated, class_attributes =
-          if Type.is_meta annotation then
-            Type.single_parameter annotation, true
-          else
-            annotation, false
+      let attributes =
+        let find_attribute annotation =
+          let instantiated, class_attributes =
+            if Type.is_meta annotation then
+              Type.single_parameter annotation, true
+            else
+              annotation, false
+          in
+          Resolution.class_definition resolution instantiated
+          >>| Class.create
+          >>| (fun definition ->
+              let attribute =
+                Class.attribute
+                  definition
+                  ~transitive:true
+                  ~class_attributes
+                  ~resolution
+                  ~name
+                  ~instantiated
+              in
+              if not (Attribute.defined attribute) then
+                Class.fallback_attribute definition ~resolution ~access:name
+                |> Option.value ~default:attribute
+              else
+                attribute)
+          |> Option.to_list
         in
-        Resolution.class_definition resolution instantiated
-        >>| Class.create
-        >>| Class.attribute ~transitive:true ~class_attributes ~resolution ~name ~instantiated
-      in
-      let attribute =
         match annotation with
         | Type.Union annotations ->
-            let attributes =
-              List.filter_map ~f:(fun annotation -> find_attribute ~annotation) annotations
-            in
-            let defined =
-              List.find
-                ~f:(fun attribute -> not (Attribute.defined attribute))
-                attributes
-            in
-            if Option.is_some defined then defined else List.hd attributes
+            List.map annotations ~f:find_attribute
+            |> List.concat
         | annotation ->
-            find_attribute ~annotation
+            find_attribute annotation
       in
-      attribute
-      >>| fun attribute ->
-      let resolved = Attribute.annotation attribute in
-      if not (Attribute.defined attribute) then
-        let fallback_attribute =
-          Attribute.parent attribute
-          |> Resolution.class_definition resolution
-          >>| Class.create
-          >>= Class.fallback_attribute ~resolution ~access:name
-        in
-        match fallback_attribute with
-        | Some attribute ->
-            Attribute.annotation attribute,
-            attribute
-        | None ->
+      let resolved =
+        match attributes with
+        | [attribute] ->
             Resolution.get_local resolution ~access:lead
-            |> Option.value ~default:(Annotation.create Type.Top),
-            attribute
-      else
-        let resolved =
-          (* Local definitions can override attributes. *)
-          Resolution.get_local resolution ~access:lead |> Option.value ~default:resolved
-        in
-        resolved, attribute
+            |> Option.value ~default:(Attribute.annotation attribute)
+        | _ ->
+            attributes
+            |> List.map ~f:Attribute.annotation
+            |> List.map ~f:Annotation.annotation
+            |> Type.union
+            |> Annotation.create
+      in
+      resolved, attributes
     in
 
     match tail with
@@ -529,18 +526,20 @@ let fold ~resolution ~initial ~f access =
                   annotation = Annotation.annotation resolved;
                 }
               in
-              local_attribute ~resolved ~lead ~name:[head]
-              >>| (fun (resolved, attribute) ->
-                  let defined = Attribute.defined attribute in
-                  let element =
-                    Attribute {
-                      attribute = [head];
-                      origin = Instance attribute;
-                      defined;
-                    }
-                  in
-                  State.step state ~resolved ~target ~element ~continue:defined ~lead ())
-              |> Option.value ~default:(State.abort state ~lead ())
+              let resolved, attributes = local_attributes ~resolved ~lead ~name:[head] in
+              if List.is_empty attributes then
+                State.abort ~lead state ()
+              else
+                let defined = List.for_all attributes ~f:Attribute.defined in
+                let element =
+                  Attribute {
+                    attribute = [head];
+                    (* TODO(T37504097): pass attributes to client. *)
+                    origin = Instance (List.hd_exn attributes);
+                    defined;
+                  }
+                in
+                State.step state ~resolved ~target ~element ~continue:defined ~lead ()
 
           | None, Access.Expression expression ->
               (* Arbitrary expression. *)

@@ -145,6 +145,51 @@ let test_fold _ =
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
       { annotation = Type.string; element = Attribute { name = "__doc__"; defined = true } };
     ];
+  assert_fold
+    "union.__lt__"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, $unknown)],
+                bool,
+              ],
+              typing.Callable('str.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, $unknown)],
+                float,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__lt__"; defined = true };
+      };
+    ];
+  assert_fold
+    "union.__lt__()"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, $unknown)],
+                bool,
+              ],
+              typing.Callable('str.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, $unknown)],
+                float,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__lt__"; defined = true };
+      };
+      { annotation = Type.Top; element = Value };
+    ];
 
   (* Classes. *)
   assert_fold "Class" [{ annotation = Type.meta (Type.primitive "Class"); element = Value }];
