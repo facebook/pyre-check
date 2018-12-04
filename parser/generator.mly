@@ -124,6 +124,50 @@
     let location = Location.create ~start ~stop in
     Node.create Ellipses ~location
 
+  let subscript_argument ~subscripts ~location =
+    let value =
+      match subscripts with
+      | [subscript] -> subscript
+      | subscripts -> { Node.location; value = Tuple subscripts }
+    in
+    { Argument.name = None; value }
+
+  let subscript_access subscript =
+    let head, subscripts = subscript in
+    let location = Node.location head in
+    let get_item =
+      let arguments = [subscript_argument ~subscripts ~location] in
+      Access.call ~arguments ~location ~name:"__getitem__" ()
+    in
+    { Node.location; value = Access ((Expression.access head) @ get_item) }
+
+  let subscript_mutation ~subscript ~value ~annotation:_ =
+    let head, subscripts = subscript in
+    let location =
+      { head.Node.location with Location.stop = value.Node.location.Location.stop }
+    in
+    let set_item =
+      let arguments =
+        [subscript_argument ~subscripts ~location; { name = None; value }]
+      in
+      Access.call ~arguments ~location ~name:"__setitem__" ()
+    in
+    Access ((Expression.access head) @ set_item)
+    |> Node.create ~location
+    |> (fun expression -> Expression expression)
+    |> Node.create ~location
+
+  let assignment_with_annotation ~target ~value ~annotation =
+      {
+        Node.location = target.Node.location;
+        value = Assign {
+          Assign.target;
+          annotation;
+          value;
+          parent = None;
+        };
+      }
+
 %}
 
 (* The syntactic junkyard. *)
@@ -285,6 +329,15 @@ simple_statement:
   ;
 
 small_statement:
+  | subscript = subscript; compound = compound_operator; value = test {
+      let value =
+        binary_operator
+          ~left:(subscript_access subscript)
+          ~operator:compound
+          ~right:value
+      in
+      [subscript_mutation ~subscript ~value ~annotation:None]
+  }
   | target = test_list;
     compound = compound_operator;
     value = test_list {
@@ -329,45 +382,16 @@ small_statement:
       }]
     }
   | targets = targets; value = value {
-      let assign target =
-      {
-        Node.location = target.Node.location;
-        value = Assign {
-          Assign.target;
-          annotation = None;
-          value;
-          parent = None;
-        };
-      } in
-      List.map ~f:assign targets
+      List.map ~f:(fun target -> target ~value ~annotation:None) targets
   }
   | targets = targets; ellipses = ELLIPSES {
-      let assign target =
-        {
-          Node.location = target.Node.location;
-          value = Assign {
-            Assign.target;
-            annotation = None;
-            value = create_ellipses ellipses;
-            parent = None;
-          };
-        }
-      in
-      List.map ~f:assign targets
+      let value = create_ellipses ellipses in
+      List.map ~f:(fun target -> target ~value ~annotation:None) targets
     }
   | targets = targets; ellipses = STUB; annotation = value {
-      let assign target =
-        {
-          Node.location = target.Node.location;
-          value = Assign {
-            Assign.target;
-            annotation = Some annotation;
-            value = create_ellipses ellipses;
-            parent = None;
-          };
-        }
-      in
-      List.map ~f:assign targets
+      let annotation = Some annotation in
+      let value = create_ellipses ellipses in
+      List.map ~f:(fun target -> target ~value ~annotation) targets
     }
   | target = test_list;
     annotation = annotation;
@@ -902,6 +926,13 @@ simple_access:
   | MINUS; RIGHTANGLE; expression = expression { expression }
   ;
 
+%inline subscript:
+  | head = expression;
+    LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript_key); RIGHTBRACKET {
+      head, subscripts
+    }
+  ;
+
 with_item:
   | resource = test { resource, None }
   | resource = test; AS; target = expression { resource, Some target }
@@ -993,9 +1024,13 @@ import:
     }
   ;
 
+%inline target:
+  | target = test_list { assignment_with_annotation ~target }
+  | subscript = subscript { subscript_mutation ~subscript }
+
 targets:
-  | test = test_list; EQUALS { [test] }
-  | targets = targets; test = test_list; EQUALS { targets @ [test] }
+  | target = target; EQUALS { [target] }
+  | targets = targets; target = target; EQUALS { targets @ [target] }
   ;
 
 value:
@@ -1223,23 +1258,7 @@ expression:
       }
     }
 
-  | head = expression;
-    LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript);
-    RIGHTBRACKET {
-      let location = Node.location head in
-      let get_item =
-        let arguments =
-          let value =
-            match subscripts with
-            | [subscript] -> subscript
-            | subscripts -> { Node.location; value = Tuple subscripts }
-          in
-          [{ Argument.name = None; value }]
-        in
-        Access.call ~arguments ~location ~name:"__getitem__" ()
-      in
-      { Node.location; value = Access ((Expression.access head) @ get_item) }
-    }
+  | subscript = subscript { subscript_access subscript }
 
   | start = AWAIT; expression = expression {
       {
@@ -1464,7 +1483,7 @@ argument:
   | value = test { { Argument.name = None; value } }
   ;
 
-subscript:
+subscript_key:
   | index = test { index }
   | lower = test?; COLON; upper = test? {
       slice ~lower ~upper ~step:None

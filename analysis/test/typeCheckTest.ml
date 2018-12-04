@@ -2220,7 +2220,44 @@ let test_check_assign _ =
         x += 'asdf'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
+     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, int]) -> None:
+        x["foo"] = "bar"
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`."];
+
+  assert_type_errors
+    {|
+      class A:
+        pass
+      def foo(x: typing.Dict[str, int], y: A) -> None:
+        x["foo"] = y["bar"] = "baz"
+    |}
+    [
+      "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, typing.Dict[str, int]]) -> None:
+        x["foo"]["bar"] = "baz"
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, int]) -> None:
+        x[7] = 7
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 2nd anonymous parameter to call `dict.__setitem__` but got `int`."]
 
 
 let test_check_coverage _ =
