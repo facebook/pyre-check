@@ -871,6 +871,7 @@ let constructor definition ~resolution =
     | _ ->
         class_annotation
   in
+  let class_annotation, _ = Type.split class_annotation in
   let definitions =
     definition :: superclasses ~resolution definition
     |> List.map ~f:name

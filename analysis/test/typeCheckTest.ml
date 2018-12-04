@@ -2072,9 +2072,50 @@ let test_check _ =
     {|
       def foo() -> int:
         bar, baz = list(range(2))
+        reveal_type(bar)
         return bar
     |}
-    [];
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(s: typing.Sequence[float]) -> list[float]:
+        l = list(s)
+        bar, baz = l
+        reveal_type(bar)
+        return l
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `float`."];
+
+  assert_type_errors
+    {|
+      def foo() -> dict[str, int]:
+        d = dict(a = 1, b = 2)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(map: typing.Mapping[str, int]) -> dict[str, int]:
+        d = dict(map)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(t: typing.Iterable[Tuple[str, int]]) -> dict[str, int]:
+        d = dict(t)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
 
   assert_type_errors
     {|
