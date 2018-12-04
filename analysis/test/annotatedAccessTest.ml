@@ -206,7 +206,7 @@ let test_fold _ =
         annotation = Type.union [Type.bool; Type.float];
         element = SignatureFound {
             callable =
-              "typing.Callable(int.__lt__)" ^
+              "typing.Callable" ^
               "[[Named(self, unknown), Named(other, int)], typing.Union[bool, float]]";
             callees = ["int.__lt__"; "str.__lt__"];
           };

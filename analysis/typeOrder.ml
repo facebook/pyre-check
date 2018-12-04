@@ -1167,13 +1167,19 @@ and join ((module Handler: Handler) as order) left right =
         if left.Callable.implicit = right.Callable.implicit
         && List.is_empty left.Callable.overloads
         && List.is_empty right.Callable.overloads then
+          let kind =
+            if Type.Callable.equal_kind left.kind right.kind then
+              left.kind
+            else
+              Type.Callable.Anonymous
+          in
           join_implementations
             ~parameter_join:meet
             ~return_join:join
             order
             left.Callable.implementation
             right.Callable.implementation
-          >>| (fun implementation -> Type.Callable { left with Callable.implementation })
+          >>| (fun implementation -> Type.Callable { left with Callable.kind; implementation })
           |> Option.value ~default:Type.Object
         else
           Type.Object
