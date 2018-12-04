@@ -580,6 +580,8 @@ let union parameters =
   in
   if List.mem ~equal parameters Object then
     Object
+  else if List.mem ~equal parameters Top then
+    Top
   else
     let normalize parameters =
       match parameters with
