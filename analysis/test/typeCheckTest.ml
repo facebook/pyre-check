@@ -5817,7 +5817,10 @@ let test_check_meta _ =
       def foo(input) -> typing.List[int]:
         return typing.cast(typing.List[unknown], input)
     |}
-    ["Undefined type [11]: Type `unknown` is not defined."];
+    [
+      "Undefined type [11]: Type `unknown` is not defined.";
+      "Missing parameter annotation [2]: Parameter `input` has no type specified.";
+    ];
   assert_type_errors
     ~debug:false
     {|
@@ -7062,23 +7065,39 @@ let test_check_undefined_type _ =
     ~debug:false
     {|
       def foo(x: Derp) -> Herp:
-        return x
+        pass
     |}
-    ["Undefined type [11]: Type `Derp` is not defined."];
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: Derp, y: Herp) -> None:
+        pass
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_type_errors
     ~debug:false
     {|
       def foo(x: int) -> Herp:
-        return x
+        pass
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
   assert_type_errors
     ~debug:false
     {|
       def foo(x: typing.Union[Derp, Herp]) -> List[Herp]:
-        return x
+        pass
     |}
-    ["Undefined type [11]: Type `Derp` is not defined."];
+    [
+      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
   assert_type_errors
     ~debug:false
     {|
@@ -7116,8 +7135,10 @@ let test_check_undefined_type _ =
     |}
     [
       "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Incompatible return type [7]: Expected `int` but got `None`.";
-      "Undefined type [11]: Type `Herp` is not defined."
+      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
     ]
 
 

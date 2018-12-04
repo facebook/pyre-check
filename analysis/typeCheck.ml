@@ -457,7 +457,7 @@ module State = struct
     let { resolution; errors; _ } as initial =
       create ~configuration ~resolution ~define:define_node ()
     in
-    let check_annotation errors annotation =
+    let check_annotation ~location errors annotation =
       let check_untracked_annotation errors annotation =
         if Resolution.is_tracked resolution annotation then
           errors
@@ -506,25 +506,27 @@ module State = struct
     in
     (* Check return annotation. *)
     let errors =
-      return_annotation
-      >>| Resolution.parse_annotation resolution
-      >>| check_annotation errors
-      |> Option.value ~default:errors
+      match return_annotation with
+      | Some ({ Node.location; _ } as annotation) ->
+          let annotation = Resolution.parse_annotation resolution annotation in
+          check_annotation ~location errors annotation
+      | None ->
+          errors
     in
     (* Check parameters. *)
     let annotations, errors =
-      try
-        let parameter
-            index
-            (annotations, errors)
-            { Node.location; value = { Parameter.name; value; annotation }} =
-          let access =
-            name
-            |> Identifier.show
-            |> String.filter ~f:(fun character -> character <> '*')
-            |> Identifier.create
-            |> fun name -> [Access.Identifier name]
-          in
+      let parameter
+          index
+          (annotations, errors)
+          { Node.location; value = { Parameter.name; value; annotation }} =
+        let access =
+          name
+          |> Identifier.show
+          |> String.filter ~f:(fun character -> character <> '*')
+          |> Identifier.create
+          |> fun name -> [Access.Identifier name]
+        in
+        try
           let { Annotation.annotation; mutability }, errors =
             match index, parent with
             | 0, Some parent
@@ -608,7 +610,7 @@ module State = struct
                       >>| (fun {resolved; _ } -> resolved)
                       >>| add_incompatible_variable_error errors annotation
                       |> Option.value ~default:errors
-                      |> (fun errors -> check_annotation errors annotation)
+                      |> (fun errors -> check_annotation ~location errors annotation)
                     in
                     let annotation =
                       match annotation with
@@ -638,20 +640,19 @@ module State = struct
           in
           Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability },
           errors
-        in
-        List.foldi ~init:((Resolution.annotations resolution), errors) ~f:parameter parameters
-      with
-      | TypeOrder.Untracked annotation ->
-          let untracked_error =
-            Error.create
-              ~location
-              ~kind:(Error.UndefinedType annotation)
-              ~define:define_node
-          in
-          Resolution.annotations resolution,
-          Map.set ~key:location ~data:untracked_error errors
+        with
+        | TypeOrder.Untracked annotation ->
+            let untracked_error =
+              Error.create
+                ~location
+                ~kind:(Error.UndefinedType annotation)
+                ~define:define_node
+            in
+            annotations,
+            Map.set ~key:location ~data:untracked_error errors
+      in
+      List.foldi ~init:((Resolution.annotations resolution), errors) ~f:parameter parameters
     in
-
     (* Check behavioral subtyping. *)
     let errors =
       try
@@ -793,14 +794,8 @@ module State = struct
                errors)
           |> Option.value ~default:errors
       with
-      | TypeOrder.Untracked annotation ->
-          let untracked_error =
-            Error.create
-              ~location
-              ~kind:(Error.UndefinedType annotation)
-              ~define:define_node
-          in
-          Map.set ~key:location ~data:untracked_error errors
+      | TypeOrder.Untracked _ ->
+          errors
     in
 
     let resolution = Resolution.with_annotations resolution ~annotations in
@@ -2597,14 +2592,14 @@ let check
           Log.dump
             "Analysis crashed because of untracked type `%s`."
             (Log.Color.red (Type.show annotation));
+        let undefined_error =
+          Error.create
+            ~location
+            ~kind:(Error.UndefinedType annotation)
+            ~define:define_node;
+        in
         {
-          SingleSourceResult.errors =
-            [
-              Error.create
-                ~location
-                ~kind:(Error.UndefinedType annotation)
-                ~define:define_node;
-            ];
+          SingleSourceResult.errors = undefined_error :: (State.errors initial);
           coverage = Coverage.create ~crashes:1 ();
         }
   in
