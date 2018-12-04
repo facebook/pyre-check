@@ -4284,7 +4284,7 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
-      x: Optional[int]
+      x: typing.Optional[int]
       class Foo:
         @property
         def x(self) -> int: ...
@@ -4307,7 +4307,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       __property__: typing.Any = ...
-      x: Optional[int]
+      x: typing.Optional[int]
       class Foo:
         @__property__
         def x(self) -> int: ...
@@ -5303,14 +5303,14 @@ let test_check_union _ =
 
   assert_type_errors
     {|
-      def foo(x: Union[int, Undefined]) -> None:
+      def foo(x: typing.Union[int, Undefined]) -> None:
         pass
       foo(1)
     |}
     [
       "Undefined type [11]: Type `Undefined` is not defined.";
-      "Incompatible parameter type [6]: " ^
-      "Expected `Union[int, Undefined]` for 1st anonymous parameter to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: Expected `typing.Union[Undefined, int]` " ^
+      "for 1st anonymous parameter to call `foo` but got `int`.";
     ]
 
 
@@ -7091,11 +7091,11 @@ let test_check_undefined_type _ =
   assert_type_errors
     ~debug:false
     {|
-      def foo(x: typing.Union[Derp, Herp]) -> List[Herp]:
+      def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
         pass
     |}
     [
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
   assert_type_errors
@@ -7112,6 +7112,26 @@ let test_check_undefined_type _ =
         pass
     |}
     ["Undefined type [11]: Type `Optional` is not defined."];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo() -> None:
+        x: undefined = 1
+        return
+    |}
+    ["Undefined type [11]: Type `undefined` is not defined."];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: Derp) -> None:
+        y: undefined = 1
+        return
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `undefined` is not defined.";
+    ];
 
   assert_type_errors
     {|

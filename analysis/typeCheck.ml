@@ -440,6 +440,48 @@ module State = struct
     }
 
 
+  let check_annotation ~resolution ~location ~define ~annotation =
+    let check_untracked_annotation errors annotation =
+      if Resolution.is_tracked resolution annotation then
+        errors
+      else
+        Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
+    in
+    let check_missing_type_parameters errors annotation =
+      match annotation with
+      | Type.Primitive _ ->
+          let generics =
+            Resolution.class_definition resolution annotation
+            >>| Annotated.Class.create
+            >>| Annotated.Class.generics ~resolution
+            |> Option.value ~default:[]
+          in
+          if not (List.is_empty generics) then
+            let error =
+              Error.create
+                ~location
+                ~kind:(Error.MissingTypeParameters {
+                    annotation;
+                    number_of_parameters = List.length generics;
+                  })
+                ~define
+            in
+            error :: errors
+          else
+            errors
+      | _ ->
+          errors
+    in
+    let primitives = Type.primitives annotation in
+    let primitives_and_parametric_base =
+      match Type.split annotation with
+      | _, [] -> primitives
+      | primitive, _ -> primitive :: primitives
+    in
+    List.fold ~init:[] ~f:check_untracked_annotation primitives_and_parametric_base
+    |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
+
+
   type resolved = {
     state: t;
     resolved: Type.t;
@@ -457,59 +499,15 @@ module State = struct
     let { resolution; errors; _ } as initial =
       create ~configuration ~resolution ~define:define_node ()
     in
-    let check_annotation ~location errors annotation =
-      let check_untracked_annotation errors annotation =
-        if Resolution.is_tracked resolution annotation then
-          errors
-        else
-          let error =
-            Error.create
-              ~location
-              ~kind:(Error.UndefinedType annotation)
-              ~define:define_node
-          in
-          Map.set ~key:location ~data:error errors
-      in
-      let check_missing_type_parameters errors annotation =
-        match annotation with
-        | Type.Primitive _ ->
-            let generics =
-              Resolution.class_definition resolution annotation
-              >>| Annotated.Class.create
-              >>| Annotated.Class.generics ~resolution
-              |> Option.value ~default:[]
-            in
-            if not (List.is_empty generics) then
-              let error =
-                Error.create
-                  ~location
-                  ~kind:(Error.MissingTypeParameters {
-                      annotation;
-                      number_of_parameters = List.length generics;
-                    })
-                  ~define:define_node
-              in
-              Map.set ~key:location ~data:error errors
-            else
-              errors
-        | _ ->
-            errors
-      in
-      let primitives = Type.primitives annotation in
-      let primitives_and_parametric_base =
-        match Type.split annotation with
-        | _, [] -> primitives
-        | primitive, _ -> primitive :: primitives
-      in
-      List.fold ~init:errors ~f:check_untracked_annotation primitives_and_parametric_base
-      |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
-    in
     (* Check return annotation. *)
     let errors =
       match return_annotation with
       | Some ({ Node.location; _ } as annotation) ->
           let annotation = Resolution.parse_annotation resolution annotation in
-          check_annotation ~location errors annotation
+          check_annotation ~resolution ~location ~define:define_node ~annotation
+          |> List.fold
+            ~init:errors
+            ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
       | None ->
           errors
     in
@@ -605,12 +603,17 @@ module State = struct
                 | Some annotation, value ->
                     let annotation = Resolution.parse_annotation resolution annotation in
                     let errors =
+                      check_annotation ~resolution ~location ~define:define_node ~annotation
+                      |> List.fold
+                        ~init:errors
+                        ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
+                    in
+                    let errors =
                       value
                       >>| (fun value -> forward_expression ~state:initial ~expression:value)
                       >>| (fun {resolved; _ } -> resolved)
                       >>| add_incompatible_variable_error errors annotation
                       |> Option.value ~default:errors
-                      |> (fun errors -> check_annotation ~location errors annotation)
                     in
                     let annotation =
                       match annotation with
@@ -1534,6 +1537,13 @@ module State = struct
     in
     match value with
     | Assign { Assign.target; annotation; value; _ } ->
+        let state =
+          annotation
+          >>| Resolution.parse_annotation resolution
+          >>| (fun annotation -> check_annotation ~resolution ~location ~define ~annotation)
+          >>| List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+          |> Option.value ~default:state
+        in
         let { state = { resolution; _ } as state; resolved } =
           forward_expression ~state ~expression:value
         in
