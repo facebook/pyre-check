@@ -23,7 +23,11 @@ type origin =
 [@@deriving show]
 
 type element =
-  | Signature of { signature: AnnotatedSignature.t; arguments: Argument.t list }
+  | Signature of {
+      signature: AnnotatedSignature.t;
+      callees: Type.Callable.t list;
+      arguments: Argument.t list;
+    }
   | Attribute of { attribute: Access.t; origin: origin; defined: bool }
   | Value
 [@@deriving show]

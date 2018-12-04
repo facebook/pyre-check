@@ -31,7 +31,11 @@ type origin =
 
 
 type element =
-  | Signature of { signature: AnnotatedSignature.t; arguments: Argument.t list }
+  | Signature of {
+      signature: AnnotatedSignature.t;
+      callees: Type.Callable.t list;
+      arguments: Argument.t list;
+    }
   | Attribute of { attribute: Access.t; origin: origin; defined: bool }
   | Value
 [@@deriving show]
@@ -197,194 +201,252 @@ let fold ~resolution ~initial ~f access =
 
   let rec fold ~state ~lead ~tail =
     let { State.accumulator; resolved; target; resolution; _ } = state in
-    let resolve_callable
+    let resolve_callables
         ~implicit_annotation
-        ~callable
+        ~callables
         ~arguments:{ Node.value = arguments; location } =
-      let signature =
-        let resolve_independent_callable () =
-          let implicit, resolution =
-            let { Type.Callable.implicit; _ } = callable in
-            match implicit_annotation with
-            | Some annotation
-              when implicit <> Type.Callable.Function &&
-                   (not (Type.is_meta annotation) || implicit = Type.Callable.Class) ->
-                let self = Access.create "$self" in
-                let annotation = Annotation.create annotation in
-                Some self, (Resolution.set_local resolution ~access:self ~annotation)
-            | _ ->
-                None, resolution
-          in
-          let arguments =
-            implicit >>|
-            (fun implicit ->
-               let argument =
-                 {
-                   Argument.name = None;
-                   value = Node.create ~location (Access implicit);
-                 }
-               in
-               argument :: arguments)
-            |> Option.value ~default:arguments
-          in
-          let signature = Signature.select ~arguments ~resolution ~callable in
-
-          let backup () =
-            let name =
-              match target, List.rev lead with
-              | Some _, (Access.Identifier _ as name) :: _ -> [name]
-              | _ -> []
+      let signatures =
+        let signature callable =
+          let resolve_independent_callable () =
+            let implicit, resolution =
+              let { Type.Callable.implicit; _ } = callable in
+              match implicit_annotation with
+              | Some annotation
+                when implicit <> Type.Callable.Function &&
+                     (not (Type.is_meta annotation) || implicit = Type.Callable.Class) ->
+                  let self = Access.create "$self" in
+                  let annotation = Annotation.create annotation in
+                  Some self, (Resolution.set_local resolution ~access:self ~annotation)
+              | _ ->
+                  None, resolution
             in
-            match Access.backup ~arguments ~name with
-            | Some (([{ Argument.value; _ }; _ ] as arguments), name) ->
-                Resolution.resolve resolution value
-                |> Type.expression
-                |> Expression.access
-                |> (fun access -> access @ name)
-                |> (fun access -> Resolution.get_local_callable resolution ~access)
-                >>| (fun callable -> Signature.select ~arguments ~resolution ~callable)
+            let arguments =
+              implicit >>|
+              (fun implicit ->
+                 let argument =
+                   {
+                     Argument.name = None;
+                     value = Node.create ~location (Access implicit);
+                   }
+                 in
+                 argument :: arguments)
+              |> Option.value ~default:arguments
+            in
+            let signature = Signature.select ~arguments ~resolution ~callable in
+
+            let backup () =
+              let name =
+                match target, List.rev lead with
+                | Some _, (Access.Identifier _ as name) :: _ -> [name]
+                | _ -> []
+              in
+              match Access.backup ~arguments ~name with
+              | Some (([{ Argument.value; _ }; _ ] as arguments), name) ->
+                  Resolution.resolve resolution value
+                  |> Type.expression
+                  |> Expression.access
+                  |> (fun access -> access @ name)
+                  |> (fun access -> Resolution.get_local_callable resolution ~access)
+                  >>| (fun callable -> Signature.select ~arguments ~resolution ~callable)
+              | _ ->
+                  None
+            in
+
+            match signature, target with
+            | Signature.NotFound _, Some _ ->
+                backup ()
+                |> Option.value ~default:signature
+            | _ ->
+                signature
+          in
+          let find_annotation_for_key ~fields ~key =
+            match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+            | Some { annotation; _ } ->
+                Some annotation
             | _ ->
                 None
           in
-
-          match signature, target with
-          | Signature.NotFound _, Some _ ->
-              backup ()
-              |> Option.value ~default:signature
-          | _ ->
-              signature
-        in
-        let find_annotation_for_key ~fields ~key =
-          match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-          | Some { annotation; _ } ->
-              Some annotation
-          | _ ->
-              None
-        in
-        let resolve_typed_dictionary_get_item_callable ~fields ~name =
-          let callable annotation =
-            let implementation =
-              let { Type.Callable.implementation; _ } = callable in
-              { implementation with annotation }
+          let resolve_typed_dictionary_get_item_callable ~fields ~name =
+            let callable annotation =
+              let implementation =
+                let { Type.Callable.implementation; _ } = callable in
+                { implementation with annotation }
+              in
+              { callable with implementation }
             in
-            { callable with implementation }
-          in
-          match arguments with
-          | {
-            Record.Argument.value = {
-              Node.value = Expression.String { value = key; _ };
+            match arguments with
+            | {
+              Record.Argument.value = {
+                Node.value = Expression.String { value = key; _ };
+                _;
+              };
               _;
-            };
-            _;
-          } :: [] ->
-              begin
-                match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-                | Some { annotation; _ } ->
-                    Signature.Found { callable = callable annotation; constraints = Type.Map.empty }
-                | None ->
-                    Signature.NotFound {
-                      callable = callable Type.Top;
-                      reason =
-                        Some (Signature.TypedDictionaryMissingKey {
-                            typed_dictionary_name = name;
-                            missing_key = key;
-                          });
-                    }
-              end
-          | _ ->
-              let keys = List.map fields ~f:(fun { name; _ } -> name) in
-              Signature.NotFound {
-                callable = callable Type.Top;
-                reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
-              }
-        in
-        let resolve_typed_dictionary_set_item_callable ~fields ~name =
-          match arguments with
-          | { Record.Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
-            :: _value :: [] ->
-              begin
-                match find_annotation_for_key ~fields ~key with
-                | Some annotation ->
-                    let callable =
-                      {
-                        callable with
-                        implementation = {
-                          callable.implementation with
-                          parameters = Defined [
-                              Named {
-                                name = Access.create "key";
-                                annotation = Type.string;
-                                default = false;
-                              };
-                              Named {
-                                name = Access.create "value";
-                                annotation;
-                                default = false;
-                              };
-                            ];
-                        };
+            } :: [] ->
+                begin
+                  match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+                  | Some { annotation; _ } ->
+                      Signature.Found {
+                        callable = callable annotation;
+                        constraints = Type.Map.empty;
                       }
-                    in
-                    Signature.select ~arguments ~resolution ~callable
-                | None ->
-                    Signature.NotFound {
-                      callable;
-                      reason =
-                        Some (Signature.TypedDictionaryMissingKey {
-                            typed_dictionary_name = name;
-                            missing_key = key;
-                          });
-                    }
-              end
+                  | None ->
+                      Signature.NotFound {
+                        callable = callable Type.Top;
+                        reason =
+                          Some (Signature.TypedDictionaryMissingKey {
+                              typed_dictionary_name = name;
+                              missing_key = key;
+                            });
+                      }
+                end
+            | _ ->
+                let keys = List.map fields ~f:(fun { name; _ } -> name) in
+                Signature.NotFound {
+                  callable = callable Type.Top;
+                  reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
+                }
+          in
+          let resolve_typed_dictionary_set_item_callable ~fields ~name =
+            match arguments with
+            | { Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
+              :: _value :: [] ->
+                begin
+                  match find_annotation_for_key ~fields ~key with
+                  | Some annotation ->
+                      let callable =
+                        {
+                          callable with
+                          implementation = {
+                            callable.implementation with
+                            parameters = Defined [
+                                Named {
+                                  name = Access.create "key";
+                                  annotation = Type.string;
+                                  default = false;
+                                };
+                                Named {
+                                  name = Access.create "value";
+                                  annotation;
+                                  default = false;
+                                };
+                              ];
+                          };
+                        }
+                      in
+                      Signature.select ~arguments ~resolution ~callable
+                  | None ->
+                      Signature.NotFound {
+                        callable;
+                        reason =
+                          Some (Signature.TypedDictionaryMissingKey {
+                              typed_dictionary_name = name;
+                              missing_key = key;
+                            });
+                      }
+                end
+            | _ ->
+                let keys = List.map fields ~f:(fun { name; _ } -> name) in
+                Signature.NotFound {
+                  callable;
+                  reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
+                }
+          in
+          let tail_is access name =
+            match List.last access with
+            | Some (Access.Identifier get_item) -> Identifier.show get_item = name
+            | _ -> false
+          in
+          match implicit_annotation, callable with
+          | Some (Type.TypedDictionary { fields; name }),
+            { Type.Record.Callable.kind = Named access; _ }
+            when tail_is access "__getitem__" ->
+              resolve_typed_dictionary_get_item_callable ~fields ~name
+          | Some (Type.TypedDictionary { fields; name }),
+            { Type.Record.Callable.kind = Named access; _ }
+            when tail_is access "__setitem__" ->
+              resolve_typed_dictionary_set_item_callable ~fields ~name
           | _ ->
-              let keys = List.map fields ~f:(fun { name; _ } -> name) in
-              Signature.NotFound {
-                callable;
-                reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
-              }
+              resolve_independent_callable ()
         in
-        let tail_is access name =
-          match List.last access with
-          | Some (Access.Identifier get_item) -> Identifier.show get_item = name
-          | _ -> false
-        in
-        match implicit_annotation, callable with
-        | Some (Type.TypedDictionary { fields; name }),
-          { Type.Record.Callable.kind = Named access; _ }
-          when tail_is access "__getitem__" ->
-            resolve_typed_dictionary_get_item_callable ~fields ~name
-        | Some (Type.TypedDictionary { fields; name }),
-          { Type.Record.Callable.kind = Named access; _ }
-          when tail_is access "__setitem__" ->
-            resolve_typed_dictionary_set_item_callable ~fields ~name
-        | _ ->
-            resolve_independent_callable ()
+        List.map callables ~f:signature
       in
 
       (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
       let resolution =
-        target
-        >>= (fun { State.access; annotation } ->
-            Signature.determine signature ~resolution ~annotation
-            >>| (fun determined ->
-                match access with
-                | [Access.Identifier _] ->
-                    Resolution.set_local
-                      resolution
-                      ~access
-                      ~annotation:(Annotation.create determined)
-                | _ ->
-                    resolution))
-        |> Option.value ~default:resolution
+        let update_resolution resolution signature =
+          target
+          >>= (fun { State.access; annotation } ->
+              Signature.determine signature ~resolution ~annotation
+              >>| (fun determined ->
+                  match access with
+                  | [Access.Identifier _] ->
+                      Resolution.set_local
+                        resolution
+                        ~access
+                        ~annotation:(Annotation.create determined)
+                  | _ ->
+                      resolution))
+          |> Option.value ~default:resolution
+        in
+        List.fold signatures ~init:resolution ~f:update_resolution
+      in
+
+      let signature, callees =
+        let not_found = function | Signature.NotFound _ -> true | _ -> false in
+        match List.partition_tf signatures ~f:not_found with
+        | [], [] ->
+            None, []
+        | not_found :: _, _ ->
+            Some not_found, []
+        | [], (Signature.Found { callable; constraints } ) :: found ->
+            let callables, all_constraints =
+              let extract = function
+                | Signature.Found { callable; constraints } -> callable, constraints
+                | _ -> failwith "Not all sigantures were found."
+              in
+              List.map found ~f:extract
+              |> List.unzip
+            in
+            let callees = callable :: callables in
+            let signature =
+              let constraints =
+                let join_constraints left right =
+                  let merge ~key:_ = function
+                    | `Left value -> Some value
+                    | `Right value -> Some value
+                    | `Both (left, right) -> Some (Resolution.join resolution left right)
+                  in
+                  Map.merge left right ~f:merge
+                in
+                List.fold all_constraints ~init:constraints ~f:join_constraints
+              in
+              let joined_callable =
+                List.map callables ~f:(fun callable -> Type.Callable callable)
+                |> List.fold ~init:(Type.Callable callable) ~f:(Resolution.join resolution)
+              in
+              match joined_callable with
+              | Type.Callable callable ->
+                  Signature.Found { callable; constraints }
+              | _ ->
+                  Signature.NotFound { callable; reason = None }
+            in
+            Some signature, callees
+        | _ ->
+            None, []
       in
 
       match signature with
-      | Signature.Found { callable = { implementation = { annotation; _ }; _ }; _ }
-      | Signature.NotFound { callable = { implementation = { annotation; _ }; _ }; _ }
+      | Some
+          (Signature.Found { callable = { implementation = { annotation; _ }; _ }; _ } as signature)
+      | Some
+          (Signature.NotFound {
+              callable = { implementation = { annotation; _ }; _ };
+              _;
+            } as signature)
         when Type.is_resolved annotation ->
           State.step
             { state with State.resolution }
-            ~element:(Signature { signature; arguments })
+            ~element:(Signature { signature; callees; arguments })
             ~resolved:(Annotation.create annotation)
             ~lead
             ()
@@ -460,7 +522,7 @@ let fold ~resolution ~initial ~f access =
                 else
                   target
               in
-              let implicit_annotation, callable =
+              let implicit_annotation, callables =
                 match resolved with
                 | meta when Type.is_meta resolved ->
                     let callable =
@@ -478,19 +540,28 @@ let fold ~resolution ~initial ~f access =
                           | _ -> None
                     in
                     target >>| State.annotation,
-                    callable
+                    Option.to_list callable
                 | Type.Callable callable ->
                     target >>| State.annotation,
-                    Some callable
+                    [callable]
+                | Type.Union annotations when List.for_all annotations ~f:Type.is_callable ->
+                    let extract_callable = function
+                      | Type.Callable callable -> callable
+                      | _ -> failwith "Not a callable"
+                    in
+                    target >>| State.annotation,
+                    List.map annotations ~f:extract_callable
                 | _ ->
                     Some resolved,
                     Type.class_name resolved
                     |> (fun name -> name @ (Access.create "__call__"))
                     |> (fun access -> Resolution.get_local_callable resolution ~access)
+                    |> Option.to_list
               in
-              callable
-              >>| (fun callable -> resolve_callable ~implicit_annotation ~callable ~arguments)
-              |> Option.value ~default:(State.abort state ~lead ())
+              if List.is_empty callables then
+                State.abort state ~lead ()
+              else
+                resolve_callables ~implicit_annotation ~callables ~arguments
 
           | Some resolved, Access.Identifier _
             when Type.is_callable (Annotation.annotation resolved) ->

@@ -189,9 +189,9 @@ module State = struct
           let open Annotated.Access in
           match element with
           | Signature {
-              signature =
-                Annotated.Signature.Found { callable; _ };
+              signature = Annotated.Signature.Found { callable; _ };
               arguments;
+              _;
             }
           | Signature {
               signature =
@@ -201,6 +201,7 @@ module State = struct
                   _;
                 };
               arguments;
+              _;
             } ->
               infer_annotations type_accumulator arguments callable
           | _ ->
