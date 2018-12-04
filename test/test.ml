@@ -438,7 +438,9 @@ let typeshed_stubs = (* Yo dawg... *)
 
         class type:
           __name__: str = ...
+
         class object():
+          __doc__: str
           def __init__(self) -> None: pass
           def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass

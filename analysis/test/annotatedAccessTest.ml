@@ -60,6 +60,8 @@ let test_fold _ =
           integer: int = 1
           string: str = 'string'
 
+          union: typing.Union[str, int] = 1
+
           class Super: pass
           class Class(Super):
             attribute: int = 1
@@ -134,6 +136,15 @@ let test_fold _ =
 
   assert_fold "integer" [{ annotation = Type.integer; element = Value }];
   assert_fold "string" [{ annotation = Type.string; element = Value }];
+
+  (* Unions. *)
+  assert_fold "union" [{ annotation = Type.union [Type.string; Type.integer]; element = Value }];
+  assert_fold
+    "union.__doc__"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      { annotation = Type.string; element = Attribute { name = "__doc__"; defined = true } };
+    ];
 
   (* Classes. *)
   assert_fold "Class" [{ annotation = Type.meta (Type.primitive "Class"); element = Value }];
