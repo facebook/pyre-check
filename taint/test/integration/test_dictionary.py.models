@@ -11,9 +11,10 @@
             "root": {
               "filename": "test_dictionary.py",
               "line": 13,
-              "start": 23,
-              "end": 28
+              "start": 24,
+              "end": 27
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -37,6 +38,7 @@
               "start": 25,
               "end": 27
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -58,6 +60,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
           }
         ]

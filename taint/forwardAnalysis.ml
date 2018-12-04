@@ -11,6 +11,7 @@ open Expression
 open Pyre
 open Statement
 open Domains
+open AccessPath
 
 
 module type FixpointState = sig
@@ -82,7 +83,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       |> ForwardState.Tree.join taint_accumulator
 
 
-    and apply_call_targets ~resolution location arguments state call_targets =
+    and apply_call_targets ~resolution call_location arguments state call_targets =
       let apply_call_target call_target =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         if not taint_model.is_obscure then
@@ -92,7 +93,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let tito_roots = BackwardState.roots backward.taint_in_taint_out in
           let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
           let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
-          let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+          let combine_sink_taint location taint_tree { root; actual_path; formal_path; } =
             BackwardState.read
               ~root
               ~path:[]
@@ -116,10 +117,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let { Node.location; _ } = argument in
             let argument_taint = analyze_unstarred_expression ~resolution argument state in
             let tito =
+              let add_tito_location features =
+                (SimpleFeatures.TitoPosition location) :: features
+              in
               let convert_tito tito {BackwardState.Tree.path; tip=return_taint; _} =
                 let taint_to_propagate =
                   ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.collapse
+                  |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:add_tito_location
                   |> ForwardState.Tree.create_leaf
                 in
                 let return_paths =
@@ -149,7 +154,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let flow_candidate =
               let sink_tree =
-                List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.Tree.empty
+                List.fold
+                  sink_matches
+                  ~f:(combine_sink_taint location)
+                  ~init:BackwardState.Tree.empty
               in
               Flow.generate_source_sink_matches
                 ~location
@@ -165,7 +173,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let result_taint =
             ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
             |> ForwardState.Tree.apply_call
-              location
+              call_location
               ~callees:[call_target]
               ~port:AccessPath.Root.LocalResult
           in

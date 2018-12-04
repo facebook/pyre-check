@@ -118,7 +118,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       analyze_expression ~resolution taint argument state
 
 
-    and apply_call_targets ~resolution location arguments state call_taint call_targets =
+    and apply_call_targets ~resolution arguments state call_taint call_targets =
       let analyze_call_target call_target =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
@@ -129,7 +129,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let tito_roots = BackwardState.roots backward.taint_in_taint_out in
           let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
           let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
-          let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path; } =
+          let combine_sink_taint location taint_tree { root; actual_path; formal_path; } =
             BackwardState.read
               ~transform_non_leaves
               ~root
@@ -140,7 +140,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.prepend actual_path
             |> BackwardState.Tree.join taint_tree
           in
-          let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
+          let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path; } =
+            let add_tito_location features =
+              (SimpleFeatures.TitoPosition location) :: features
+            in
             let translate_tito argument_taint {BackwardState.Tree.path=tito_path; tip=element; _} =
               let gather_paths paths (ComplexFeatures.ReturnAccessPath extra_path) =
                 extra_path :: paths
@@ -172,15 +175,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               BackwardState.Tree.RawPath
               ~f:translate_tito
               ~init:BackwardState.Tree.bottom
+            |> BackwardState.Tree.transform BackwardTaint.simple_feature_set ~f:add_tito_location
             |> BackwardState.Tree.prepend actual_path
             |> BackwardState.Tree.join taint_tree
           in
           let analyze_argument state ((argument, sink_matches), (_dup, tito_matches)) =
+            let location = argument.Node.location in
             let sink_taint =
-              List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.Tree.empty
+              List.fold sink_matches ~f:(combine_sink_taint location) ~init:BackwardState.Tree.empty
             in
             let taint_in_taint_out =
-              List.fold tito_matches ~f:combine_tito ~init:BackwardState.Tree.empty
+              List.fold tito_matches ~f:(combine_tito location) ~init:BackwardState.Tree.empty
             in
             let argument_taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
             analyze_unstarred_expression ~resolution argument_taint argument state
@@ -210,7 +215,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           let call_target = Interprocedural.Callable.create_real access in
           let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution location arguments state taint [call_target]
+          apply_call_targets ~resolution arguments state taint [call_target]
 
       | Access { expression = receiver; member = method_name} ->
           let state =
@@ -225,7 +230,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               receiver_argument_record :: arguments
             in
             Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-            |> apply_call_targets ~resolution location arguments state taint
+            |> apply_call_targets ~resolution arguments state taint
           in
           state
 

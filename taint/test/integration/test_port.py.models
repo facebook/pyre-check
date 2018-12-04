@@ -26,6 +26,7 @@
               "port": "result[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -38,13 +39,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 14,
-                "start": 14,
-                "end": 17
+                "start": 15,
+                "end": 16
               },
               "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -80,6 +82,7 @@
               "port": "result[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -92,13 +95,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 27,
-                "start": 20,
-                "end": 51
+                "start": 31,
+                "end": 43
               },
               "resolves_to": [ "qualifier.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -134,6 +138,7 @@
               "port": "result[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -146,13 +151,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 24,
-                "start": 20,
-                "end": 32
+                "start": 26,
+                "end": 31
               },
               "resolves_to": [ "qualifier.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -188,6 +194,7 @@
               "port": "result[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -200,13 +207,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 43,
-                "start": 25,
-                "end": 55
+                "start": 40,
+                "end": 52
               },
               "resolves_to": [ "qualifier.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -242,6 +250,7 @@
               "port": "result[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -254,13 +263,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 40,
-                "start": 25,
-                "end": 38
+                "start": 31,
+                "end": 37
               },
               "resolves_to": [ "qualifier.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -283,6 +293,7 @@
               "start": 27,
               "end": 29
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -305,9 +316,10 @@
             "root": {
               "filename": "test_port.py",
               "line": 55,
-              "start": 14,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -344,6 +356,7 @@
               "port": "result",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -355,9 +368,10 @@
             "root": {
               "filename": "test_port.py",
               "line": 55,
-              "start": 14,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -378,9 +392,10 @@
             "root": {
               "filename": "test_port.py",
               "line": 10,
-              "start": 14,
-              "end": 21
+              "start": 15,
+              "end": 20
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -404,6 +419,7 @@
               "start": 27,
               "end": 29
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -427,13 +443,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 17,
-                "start": 14,
-                "end": 23
+                "start": 15,
+                "end": 19
               },
               "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -456,13 +473,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 20,
-                "start": 12,
-                "end": 32
+                "start": 16,
+                "end": 21
               },
               "resolves_to": [ "qualifier.star_arg" ],
               "port": "formal(*rest1)[1][a]",
               "length": 2
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -485,13 +503,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 30,
-                "start": 14,
-                "end": 29
+                "start": 15,
+                "end": 21
               },
               "resolves_to": [ "qualifier.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -514,13 +533,14 @@
               "position": {
                 "filename": "test_port.py",
                 "line": 33,
-                "start": 17,
-                "end": 30
+                "start": 21,
+                "end": 29
               },
               "resolves_to": [ "qualifier.star_star_arg" ],
               "port": "formal(**kw)[arg][a]",
               "length": 2
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]

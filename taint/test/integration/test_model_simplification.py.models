@@ -12,13 +12,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 27,
-                "start": 38,
-                "end": 55
+                "start": 39,
+                "end": 40
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
               "port": "formal(obj)",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
@@ -30,9 +31,10 @@
             "root": {
               "filename": "test_model_simplification.py",
               "line": 20,
-              "start": 41,
-              "end": 54
+              "start": 47,
+              "end": 53
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
@@ -40,13 +42,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 20,
-                "start": 33,
-                "end": 69
+                "start": 34,
+                "end": 41
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
               "port": "formal(obj)",
               "length": 1
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
@@ -54,13 +57,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 32,
-                "start": 33,
-                "end": 50
+                "start": 34,
+                "end": 35
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
               "port": "formal(obj)",
               "length": 1
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           },
           {
@@ -68,13 +72,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 42,
-                "start": 33,
-                "end": 50
+                "start": 34,
+                "end": 35
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
               "port": "formal(obj)",
               "length": 1
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
@@ -86,7 +91,18 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 27, "start": 42, "end": 54 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[*]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "tito": [ { "line": 27, "start": 39, "end": 40 } ],
+            "leaves": [ { "kind": "LocalReturn" } ]
           }
         ]
       },
@@ -95,6 +111,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -116,13 +133,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 11,
-                "start": 24,
-                "end": 43
+                "start": 25,
+                "end": 28
               },
               "resolves_to": [ "qualifier._asdict_inner" ],
               "port": "formal(obj)",
               "length": 1
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
@@ -134,6 +152,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 11, "start": 30, "end": 42 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -143,6 +162,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 11, "start": 25, "end": 28 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -164,13 +184,14 @@
               "position": {
                 "filename": "test_model_simplification.py",
                 "line": 53,
-                "start": 17,
-                "end": 22
+                "start": 18,
+                "end": 21
               },
               "resolves_to": [ "qualifier.asdict" ],
               "port": "formal(obj)",
               "length": 2
             },
+            "tito": [ { "line": 20, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ]
           }
         ]
@@ -182,6 +203,7 @@
         "taint": [
           {
             "decl": null,
+            "tito": [ { "line": 53, "start": 18, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]

@@ -259,8 +259,12 @@ let get_callsite_model ~resolution ~call_target ~arguments =
       | None ->
           { is_obscure = true; call_target; model = TaintResult.empty_model }
       | Some model ->
+          let strip_for_call_site model =
+            model
+          in
           let taint_model =
             Interprocedural.Result.get_model TaintResult.kind model
             |> Option.value ~default:TaintResult.empty_model
+            |> strip_for_call_site
           in
           { is_obscure = model.is_obscure; call_target; model = taint_model }
