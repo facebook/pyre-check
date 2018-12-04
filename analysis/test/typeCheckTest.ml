@@ -7464,10 +7464,25 @@ let test_check_typed_dictionaries _ =
            Type[dict]: ..."
       }
     in
+    let typed_dictionary_for_import =
+      {
+        qualifier = Access.create "foo.bar.baz";
+        handle = "foo/bar/baz.py";
+        source =
+          {|
+            from mypy_extensions import TypedDict
+            class ClassBasedTypedDictGreekLetters(TypedDict):
+              alpha: int
+              beta: str
+              gamma: bool
+          |}
+      }
+    in
     assert_type_errors
       ~update_environment_with:[
         typing_stub;
         mypy_extensions_stub;
+        typed_dictionary_for_import;
       ]
       source
   in
@@ -7789,7 +7804,35 @@ let test_check_typed_dictionaries _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got " ^
-     "`str`."]
+     "`str`."];
+
+  assert_test_typed_dictionary
+    {|
+      from foo.bar.baz import ClassBasedTypedDictGreekLetters
+      def f() -> int:
+        baz = ClassBasedTypedDictGreekLetters(alpha = 7, beta = "a", gamma = True)
+        return baz['alpha']
+    |}
+    [];
+
+  (* TODO T37629490 Better error messages for typeddict declaration errors *)
+  assert_test_typed_dictionary
+    {|
+      NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        movie: NamelessTypedDict
+        a = foo(movie['year'])
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` has type " ^
+      "`Type[typing.Dict[typing.Any, typing.Any]]` but no type is specified.";
+      "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
+      "Undefined type [11]: Type `NamelessTypedDict` is not defined.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `unknown`.";
+    ]
 
 
 let test_check_getattr _ =

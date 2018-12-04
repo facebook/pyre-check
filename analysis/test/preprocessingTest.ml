@@ -1471,10 +1471,15 @@ let test_replace_mypy_extensions_stub _ =
 
 
 let test_expand_typed_dictionaries _ =
-  let assert_expand source expected =
+  let assert_expand ?(qualifier = []) source expected =
+    let actual =
+      parse ~qualifier source
+      |> Preprocessing.qualify
+      |> Preprocessing.expand_typed_dictionary_declarations
+    in
     assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_typed_dictionary_declarations (parse source))
+      (Preprocessing.qualify (parse ~qualifier expected))
+      actual
   in
   assert_expand
     {|
@@ -1494,20 +1499,39 @@ let test_expand_typed_dictionaries _ =
     |};
   assert_expand
     {|
-      Movie = mypy_extensions.TypedDict({'name': str, 'year': int})
+      NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
     |}
     {|
-      Movie: typing.Type[mypy_extensions.TypedDict[{'name': str, 'year': int}]] = (
-        mypy_extensions.TypedDict[{'name': str, 'year': int}])
+      NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
     |};
   assert_expand
     {|
-      Movie = mypy_extensions.TypedDict(A, B, C)
+      TypedDictWithWrongArity = mypy_extensions.TypedDict(A, B, C)
     |}
     {|
-      Movie: typing.Type[mypy_extensions.TypedDict.__getitem__(A, B, C)] = (
-        mypy_extensions.TypedDict.__getitem__(A, B, C))
+      TypedDictWithWrongArity = mypy_extensions.TypedDict(A, B, C)
+    |};
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
     |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
+    |};
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
+    |}
+    ~qualifier:(Access.create "foo.bar")
 
 
 let test_try_preprocess _ =
