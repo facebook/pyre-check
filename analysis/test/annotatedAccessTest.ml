@@ -338,6 +338,75 @@ let test_fold _ =
           |> Option.some
           |> signature_not_found;
       };
+    ];
+
+  let set_item =
+    {
+      annotation =
+        parse_annotation (
+          "typing.Callable('TypedDictionary.__setitem__')" ^
+          "[[Named(self, $unknown),  Named(key, $unknown), Named(value, $unknown)], None]");
+      element = Attribute { name = "__setitem__"; defined = true } ;
+    }
+  in
+
+  assert_fold
+    "movie['year'] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      { annotation = Type.none; element = SignatureFound };
+    ];
+
+  assert_fold
+    "movie['year'] = 'string'"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          +{
+            Annotated.Signature.actual = Type.string;
+            expected = Type.integer;
+            name = None;
+            position = 2;
+          }
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+
+  assert_fold
+    "movie['missing'] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          Annotated.Signature.TypedDictionaryMissingKey {
+            typed_dictionary_name = Identifier.create "Movie";
+            missing_key = "missing";
+          }
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+
+  assert_fold
+    "movie[string] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          |> Option.some
+          |> signature_not_found;
+      };
     ]
 
 

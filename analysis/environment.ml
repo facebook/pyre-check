@@ -1094,7 +1094,28 @@ module Builder = struct
               |> Type.expression
           };
         ],
-        []
+        [
+          Define {
+            Define.name = Access.create "TypedDictionary.__setitem__";
+            parameters = [
+              { Parameter.name = Identifier.create "self"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "key"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "value"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+            ];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation =
+              Some (Node.create_with_default_location (Access (Access.create "None")));
+            async = false;
+            generated = false;
+            parent = Some (Access.create "TypedDictionary");
+          }
+          |> Node.create_with_default_location
+        ]
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set

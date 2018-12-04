@@ -296,29 +296,43 @@ let fold ~resolution ~initial ~f access =
             State.abort state ~lead ()
       in
 
-      let resolve_typed_dictionary_get_item_callable ~fields ~name ~callable ~arguments =
-        let fail ~reason =
-          State.step
-            state
-            ~element:(Signature {
-                signature = Signature.NotFound { callable; reason };
-                arguments;
-              })
-            ~resolved:(Annotation.create Type.Top)
-            ~lead
-            ()
-        in
+      let find_annotation_for_key ~fields ~key =
+        match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+        | Some { annotation; _ } ->
+            Some annotation
+        | _ ->
+            None
+      in
+      let fail ~reason ~resolved_type =
+        State.step
+          state
+          ~element:(Signature {
+              signature = Signature.NotFound { callable; reason };
+              arguments;
+            })
+          ~resolved:(Annotation.create resolved_type)
+          ~lead
+          ()
+      in
+      let missing_key_fail ~name ~key ~resolved_type =
+        fail
+          ~reason:(Some (Signature.TypedDictionaryMissingKey {
+              typed_dictionary_name = name;
+              missing_key = key;
+            }))
+          ~resolved_type
+      in
+      let non_literal_access_fail ~fields ~resolved_type =
+        let keys = List.map fields ~f:(fun { Type.name; _ } -> name) in
+        fail ~reason:(Some (Signature.TypedDictionaryAccessWithNonLiteral keys)) ~resolved_type
+      in
+      let resolve_typed_dictionary_get_item_callable ~fields ~name ~arguments =
         match arguments with
-        | {
-          Record.Argument.value = {
-            Node.value = Expression.String { value = key; _ };
-            _;
-          };
-          _;
-        } :: [] ->
+        | { Record.Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
+          :: [] ->
             begin
-              match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-              | Some { annotation; _ } ->
+              match find_annotation_for_key ~fields ~key with
+              | Some annotation ->
                   State.step
                     state
                     ~element:(Signature {
@@ -332,27 +346,67 @@ let fold ~resolution ~initial ~f access =
                     ~lead
                     ()
               | None ->
-                  fail
-                    ~reason:(Some (Signature.TypedDictionaryMissingKey {
-                        typed_dictionary_name = name;
-                        missing_key = key;
-                      }))
+                  missing_key_fail ~name ~key ~resolved_type:Type.Top
             end
         | _ ->
-            let keys = List.map fields ~f:(fun { name; _ } -> name) in
-            fail ~reason:(Some (Signature.TypedDictionaryAccessWithNonLiteral keys))
+            non_literal_access_fail ~fields ~resolved_type:Type.Top
       in
 
-      let tail_is_get_item access =
+      let resolve_typed_dictionary_set_item_callable ~fields ~name ~arguments =
+        match arguments with
+        | { Record.Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
+          :: _value :: [] ->
+            begin
+              match find_annotation_for_key ~fields ~key with
+              | Some annotation ->
+                  let callable =
+                    {
+                      callable with
+                      implementation = {
+                        callable.implementation with
+                        parameters = Defined [
+                            Named {
+                              name = Access.create "key";
+                              annotation = Type.string;
+                              default = false;
+                            };
+                            Named {
+                              name = Access.create "value";
+                              annotation;
+                              default = false;
+                            };
+                          ];
+                      };
+                    }
+                  in
+                  let signature = Signature.select ~arguments ~resolution ~callable in
+                  State.step
+                    state
+                    ~element:(Signature { signature; arguments })
+                    ~resolved:(Annotation.create Type.none)
+                    ~lead
+                    ()
+              | None ->
+                  missing_key_fail ~name ~key ~resolved_type:Type.none
+            end
+        | _ ->
+            non_literal_access_fail ~fields ~resolved_type:Type.none
+      in
+
+      let tail_is access name =
         match List.last access with
-        | Some (Access.Identifier get_item) -> Identifier.show get_item = "__getitem__"
+        | Some (Access.Identifier get_item) -> Identifier.show get_item = name
         | _ -> false
       in
       match implicit_annotation, callable with
       | Some (Type.TypedDictionary { fields; name }),
         { Type.Record.Callable.kind = Named access; _ }
-        when tail_is_get_item access ->
-          resolve_typed_dictionary_get_item_callable ~fields ~name ~callable ~arguments
+        when tail_is access "__getitem__" ->
+          resolve_typed_dictionary_get_item_callable ~fields ~name ~arguments
+      | Some (Type.TypedDictionary { fields; name }),
+        { Type.Record.Callable.kind = Named access; _ }
+        when tail_is access "__setitem__" ->
+          resolve_typed_dictionary_set_item_callable ~fields ~name ~arguments
       | _ ->
           resolve_independent_callable ~implicit_annotation ~callable ~arguments ~location
     in

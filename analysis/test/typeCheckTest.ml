@@ -7586,6 +7586,7 @@ let test_check_typed_dictionaries _ =
       "TypedDict key must be a string literal; expected one of ('foo', 'bar').";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
+
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
@@ -7594,6 +7595,7 @@ let test_check_typed_dictionaries _ =
         return movie['year']
     |}
     [];
+
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
@@ -7602,6 +7604,7 @@ let test_check_typed_dictionaries _ =
         return movie['year']
     |}
     [];
+
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
@@ -7611,6 +7614,7 @@ let test_check_typed_dictionaries _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `int` for 3rd parameter `year` to call `__init__` but got `str`."];
+
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
@@ -7619,6 +7623,7 @@ let test_check_typed_dictionaries _ =
         return movie['year']
     |}
     ["Too many arguments [19]: Call `__init__` expects 4 arguments, 6 were provided."];
+
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
@@ -7626,7 +7631,83 @@ let test_check_typed_dictionaries _ =
         movie = Movie(name='Blade Runner', year=1982, extra=42)
         return movie['year']
     |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `__init__`."]
+    ["Unexpected keyword [28]: Unexpected keyword argument `extra` to call `__init__`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie['name'] = 'new name'
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie['name'] = 7
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got " ^
+     "`int`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie['nme'] = 'new name'
+    |}
+    ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`."];
+
+  assert_test_typed_dictionary
+    {|
+      class A():
+        pass
+      class B(A):
+        pass
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'something': A})
+      def f() -> None:
+        movie: Movie
+        movie['something'] = B()
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      class A():
+        pass
+      class B(A):
+        pass
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'something': B})
+      def f() -> None:
+        movie: Movie
+        movie['something'] = A()
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `B` for 2nd anonymous parameter to call `TypedDictionary.__setitem__` but got `A`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie['year'] += 7
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie['name'] += 7
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got " ^
+     "`str`."]
 
 
 let test_check_getattr _ =
