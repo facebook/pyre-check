@@ -135,6 +135,7 @@ let test_fold _ =
   assert_fold "integer" [{ annotation = Type.integer; element = Value }];
   assert_fold "string" [{ annotation = Type.string; element = Value }];
 
+  (* Classes. *)
   assert_fold "Class" [{ annotation = Type.meta (Type.primitive "Class"); element = Value }];
   assert_fold "instance" [{ annotation = Type.primitive "Class"; element = Value }];
   assert_fold
@@ -174,6 +175,7 @@ let test_fold _ =
       { annotation = Type.none; element = SignatureFound };
     ];
 
+  (* Functions. *)
   assert_fold
     "function()"
     [
@@ -197,6 +199,7 @@ let test_fold _ =
       { annotation = Type.Top; element = Value };
     ];
 
+  (* Modules. *)
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 
   assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }];
@@ -207,6 +210,7 @@ let test_fold _ =
     "has_getattr.any_attribute"
     [{ annotation = parse_annotation "Any"; element = Value }];
 
+  (* Typed dictionaries. *)
   let movie_typed_dictionary = {
     annotation = Type.TypedDictionary {
         name = Identifier.create "Movie";
