@@ -201,11 +201,7 @@ let fold ~resolution ~initial ~f access =
         ~implicit_annotation
         ~callable
         ~arguments:{ Node.value = arguments; location } =
-      let resolve_independent_callable
-          ~implicit_annotation
-          ~callable
-          ~arguments
-          ~location =
+      let resolve_independent_callable () =
         let signature =
           let implicit, resolution =
             let { Type.Callable.implicit; _ } = callable in
@@ -326,7 +322,7 @@ let fold ~resolution ~initial ~f access =
         let keys = List.map fields ~f:(fun { Type.name; _ } -> name) in
         fail ~reason:(Some (Signature.TypedDictionaryAccessWithNonLiteral keys)) ~resolved_type
       in
-      let resolve_typed_dictionary_get_item_callable ~fields ~name ~arguments =
+      let resolve_typed_dictionary_get_item_callable ~fields ~name =
         match arguments with
         | { Record.Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
           :: [] ->
@@ -336,10 +332,7 @@ let fold ~resolution ~initial ~f access =
                   State.step
                     state
                     ~element:(Signature {
-                        signature = Signature.Found {
-                            callable;
-                            constraints = Type.Map.empty;
-                          };
+                        signature = Signature.Found { callable; constraints = Type.Map.empty };
                         arguments;
                       })
                     ~resolved:(Annotation.create annotation)
@@ -352,7 +345,7 @@ let fold ~resolution ~initial ~f access =
             non_literal_access_fail ~fields ~resolved_type:Type.Top
       in
 
-      let resolve_typed_dictionary_set_item_callable ~fields ~name ~arguments =
+      let resolve_typed_dictionary_set_item_callable ~fields ~name =
         match arguments with
         | { Record.Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
           :: _value :: [] ->
@@ -402,13 +395,13 @@ let fold ~resolution ~initial ~f access =
       | Some (Type.TypedDictionary { fields; name }),
         { Type.Record.Callable.kind = Named access; _ }
         when tail_is access "__getitem__" ->
-          resolve_typed_dictionary_get_item_callable ~fields ~name ~arguments
+          resolve_typed_dictionary_get_item_callable ~fields ~name
       | Some (Type.TypedDictionary { fields; name }),
         { Type.Record.Callable.kind = Named access; _ }
         when tail_is access "__setitem__" ->
-          resolve_typed_dictionary_set_item_callable ~fields ~name ~arguments
+          resolve_typed_dictionary_set_item_callable ~fields ~name
       | _ ->
-          resolve_independent_callable ~implicit_annotation ~callable ~arguments ~location
+          resolve_independent_callable ()
     in
 
     let local_attributes ~resolved ~lead ~name =
