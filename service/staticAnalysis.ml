@@ -175,7 +175,7 @@ let analyze
 
   Log.info "Call graph edges: %d" (Callable.Map.length call_graph);
   if dump_call_graph then
-    DependencyGraph.dump call_graph;
+    DependencyGraph.dump call_graph ~configuration;
 
   let caller_map = DependencyGraph.reverse call_graph in
 

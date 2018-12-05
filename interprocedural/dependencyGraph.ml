@@ -148,6 +148,39 @@ let pp formatter edges =
   Callable.Map.iteri ~f:pp_edge edges
 
 
-let dump edges =
-  ignore edges;
-  Log.info "Dumping call graph"
+let dump call_graph ~configuration =
+  let buffer = Buffer.create 1024 in
+  Buffer.add_string buffer "{\n";
+
+  let remove_trailing_comma () =
+    Buffer.truncate buffer (Buffer.length buffer - 2);
+    Buffer.add_string buffer "\n"
+  in
+
+  let add_edges ~key:source ~data:targets =
+    let add_edge target =
+      Format.asprintf
+        "    \"%s\",\n"
+        (Callable.external_target_name target)
+      |> Buffer.add_string buffer
+    in
+    if not (List.is_empty targets) then
+      begin
+        Format.asprintf "  \"%s\": [\n" (Callable.external_target_name source)
+        |> Buffer.add_string buffer;
+        List.iter targets ~f:add_edge;
+        remove_trailing_comma ();
+        Buffer.add_string buffer "  ],\n"
+      end
+  in
+  Map.iteri call_graph ~f:add_edges;
+  remove_trailing_comma ();
+
+  Buffer.add_string buffer "}";
+
+  (* Write to file. *)
+  Path.create_relative
+    ~root:(Configuration.Analysis.pyre_root configuration)
+    ~relative:"call_graph.json"
+  |> File.create ~content:(Buffer.contents buffer)
+  |> File.write

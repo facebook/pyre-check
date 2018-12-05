@@ -25,4 +25,4 @@ val reverse: t -> t
 val pp: Format.formatter -> t -> unit
 val pp_partitions: Format.formatter -> (Callable.t list) list -> unit
 
-val dump: t -> unit
+val dump: t -> configuration: Configuration.Analysis.t -> unit
