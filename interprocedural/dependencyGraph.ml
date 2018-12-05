@@ -146,3 +146,8 @@ let pp formatter edges =
     Format.fprintf formatter "%s -> [%s]\n" (Callable.show callable) targets
   in
   Callable.Map.iteri ~f:pp_edge edges
+
+
+let dump edges =
+  ignore edges;
+  Log.info "Dumping call graph"

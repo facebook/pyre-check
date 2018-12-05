@@ -178,6 +178,7 @@ end
 module StaticAnalysis = struct
   type t = {
     result_json_path: Path.t option;
+    dump_call_graph: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
   }

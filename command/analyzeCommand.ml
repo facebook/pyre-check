@@ -12,6 +12,7 @@ let run_analysis
     _taint
     taint_models_directory
     result_json_path
+    dump_call_graph
     verbose
     expected_version
     sections
@@ -80,7 +81,11 @@ let run_analysis
        Service.StaticAnalysis.analyze
          ?taint_models_directory
          ~scheduler
-         ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path }
+         ~configuration:{
+          Configuration.StaticAnalysis.configuration;
+          result_json_path;
+          dump_call_graph;
+        }
          ~environment
          ~handles
          ()
@@ -122,5 +127,9 @@ let command =
         "-save-results-to"
         (optional file)
         ~doc:"file A JSON file that Pyre Analyze will save its' results to."
+      +> flag
+        "-dump-call-graph"
+        no_arg
+        ~doc:"Store call graph in .pyre/call_graph.json"
       ++ Specification.base_command_line_arguments)
     run_analysis
