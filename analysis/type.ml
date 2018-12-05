@@ -123,6 +123,8 @@ and t =
 
 type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
+
+
 let type_compare = compare
 let type_sexp_of_t = sexp_of_t
 let type_t_of_sexp = t_of_sexp
