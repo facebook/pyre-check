@@ -62,12 +62,16 @@ let map_reduce
     () =
   if is_parallel then
     let number_of_workers =
-      match bucket_size with
-      | Some exact_size when exact_size > 0 ->
-          (List.length inputs / exact_size) + 1
-      | _ ->
-          let bucket_multiplier = Core.Int.min bucket_multiplier (1 + (List.length inputs / 400)) in
-          number_of_workers * bucket_multiplier
+      Core.Int.max
+        number_of_workers
+        (match bucket_size with
+         | Some exact_size when exact_size > 0 ->
+             (List.length inputs / exact_size) + 1
+         | _ ->
+             let bucket_multiplier =
+               Core.Int.min bucket_multiplier (1 + (List.length inputs / 400))
+             in
+             number_of_workers * bucket_multiplier)
     in
     let map accumulator inputs =
       (fun () -> map accumulator inputs)
