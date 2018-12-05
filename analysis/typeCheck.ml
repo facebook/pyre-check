@@ -108,7 +108,6 @@ module State = struct
     Define.equal left.nested right.nested
 
 
-
   and equal left right =
     (* Ignore errors in unit tests. *)
     Map.equal
