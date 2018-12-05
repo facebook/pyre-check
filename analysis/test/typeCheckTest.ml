@@ -6658,7 +6658,29 @@ let test_check_constructors _ =
         Class(1)
         Class('asdf')
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class Class:
+        def __init__(self, i: int) -> None: ...
+      def foo(x: typing.Type[Class]) -> Class:
+        return x(7)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Class:
+        def __init__(self, i: int) -> None: ...
+      def foo(x: typing.Type[Clss]) -> Class:
+        return x(7)
+    |}
+    [
+      "Undefined type [11]: Type `Clss` is not defined.";
+      "Incompatible return type [7]: Expected `Class` but got `unknown`.";
+      "Call on type that is not callable [29]: `typing.Type[Clss]` is not callable";
+    ]
 
 
 let test_check_explicit_method_call _ =
@@ -6849,6 +6871,18 @@ let test_check_callables _ =
         return call()
     |}
     [];
+
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Call on type that is not callable [29]: `Call` is not callable";
+    ];
 
   assert_type_errors
     {|

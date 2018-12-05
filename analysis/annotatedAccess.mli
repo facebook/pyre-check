@@ -29,6 +29,7 @@ type element =
       arguments: Argument.t list;
     }
   | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+  | NotCallable of Type.t
   | Value
 [@@deriving show]
 

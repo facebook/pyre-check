@@ -1113,6 +1113,11 @@ module State = struct
                             Error.UndefinedName attribute
                       in
                       Some (Error.create ~location ~kind ~define)
+                | NotCallable Type.Object ->
+                    None
+                | NotCallable annotation->
+                    let kind = Error.NotCallable annotation in
+                    Some (Error.create ~location ~kind ~define)
                 | _ ->
                     None
               in

@@ -37,6 +37,7 @@ type element =
       arguments: Argument.t list;
     }
   | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+  | NotCallable of Type.t
   | Value
 [@@deriving show]
 
@@ -534,7 +535,7 @@ let fold ~resolution ~initial ~f access =
                     |> Option.to_list
               in
               if List.is_empty callables then
-                State.abort state ~lead ()
+                State.abort state ~element:(NotCallable resolved) ~lead ()
               else
                 resolve_callables ~implicit_annotation ~callables ~arguments
 

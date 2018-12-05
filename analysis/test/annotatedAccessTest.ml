@@ -28,6 +28,7 @@ and stripped =
   | Unknown
   | SignatureFound of { callable: string; callees: string list }
   | SignatureNotFound of Annotated.Signature.reason option
+  | NotCallable of Type.t
   | Value
 
 
@@ -123,6 +124,8 @@ let test_fold _ =
                 _;
               } ->
                 SignatureNotFound reason
+            | Annotated.Access.NotCallable annotation ->
+                NotCallable annotation
             | Annotated.Access.Value ->
                 Value
           in
@@ -308,6 +311,12 @@ let test_fold _ =
             callees = ["Class.method"];
           };
       };
+    ];
+  assert_fold
+    "instance()"
+    [
+      { annotation = Type.primitive "Class"; element = Value };
+      { annotation = Type.Top; element = NotCallable (Type.primitive "Class") };
     ];
 
   assert_fold

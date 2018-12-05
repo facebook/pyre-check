@@ -75,6 +75,7 @@ type kind =
       due_to_any: bool;
     }
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | NotCallable of Type.t
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }

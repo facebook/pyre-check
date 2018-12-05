@@ -86,6 +86,7 @@ type kind =
       due_to_any: bool;
     }
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | NotCallable of Type.t
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
@@ -144,6 +145,7 @@ let code = function
   | TypedDictionaryAccessWithNonLiteral _ -> 26
   | TypedDictionaryKeyNotFound _ -> 27
   | UnexpectedKeyword _ -> 28
+  | NotCallable _ -> 29
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -164,6 +166,7 @@ let name = function
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MissingTypeParameters _ -> "Missing type parameters"
+  | NotCallable _ -> "Call on type that is not callable"
   | RevealedType _ -> "Revealed type"
   | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
@@ -508,6 +511,8 @@ let messages ~detailed:_ ~define location kind =
             "Anonymous call"
       in
       [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
+  | NotCallable annotation ->
+      [ Format.asprintf "`%a` is not callable" Type.pp annotation ]
   | TooManyArguments { callee; expected; provided } ->
       let callee =
         match callee with
@@ -806,6 +811,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingParameterAnnotation { annotation = actual; _ }
   | MissingReturnAnnotation { annotation = actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
+  | NotCallable actual
   | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }->
       Type.is_unknown actual ||
@@ -854,6 +860,7 @@ let due_to_builtin_import { kind; _ } =
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
   | IncompatibleAwaitableType actual
+  | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
       Type.equal actual Type.Object
   | ImpossibleIsinstance { mismatch = { actual; expected }; _ }
@@ -1047,6 +1054,8 @@ let join ~resolution left right =
           annotation = Resolution.join resolution left right;
           number_of_parameters = left_parameters;
         }
+    | NotCallable left, NotCallable right ->
+        NotCallable (Resolution.join resolution left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
     | RevealedType left, RevealedType right
@@ -1357,6 +1366,7 @@ let suppress ~mode error =
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
       | MissingTypeParameters _
+      | NotCallable _
       | TypedDictionaryAccessWithNonLiteral _
       | TypedDictionaryKeyNotFound _
       | UnawaitedAwaitable _
@@ -1492,6 +1502,8 @@ let dequalify
         }
     | MissingTypeParameters { annotation; number_of_parameters } ->
         MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }
+    | NotCallable annotation ->
+        NotCallable (dequalify annotation)
     | RedundantCast annotation ->
         RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
