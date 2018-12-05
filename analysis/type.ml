@@ -1888,59 +1888,6 @@ module Callable = struct
 end
 
 
-module TypedDictionary = struct
-  let anonymous fields =
-    TypedDictionary { name = Identifier.create "$anonymous"; fields }
-
-  let fields_have_colliding_keys left_fields right_fields =
-    let found_collision { name = needle_name; annotation = needle_annotation } =
-      let same_name_different_annotation { name; annotation } =
-        name = needle_name && not (equal annotation needle_annotation)
-      in
-      List.exists left_fields ~f:same_name_different_annotation
-    in
-    List.exists right_fields ~f:found_collision
-
-  let constructor ~name ~fields =
-    let parameters =
-      let self_parameter =
-        Record.Callable.RecordParameter.Named {
-          name = Access.create "self";
-          annotation = Top;
-          default = false;
-        };
-      in
-      let single_star =
-        Record.Callable.RecordParameter.Variable {
-          name = Access.create "";
-          annotation = Top;
-          default = false;
-        };
-      in
-      let field_arguments =
-        let field_to_argument { name; annotation } =
-          Record.Callable.RecordParameter.Named {
-            name = Access.create (Format.asprintf "$parameter$%s" name);
-            annotation;
-            default = false;
-          }
-        in
-        List.map ~f:field_to_argument fields
-      in
-      self_parameter :: single_star :: field_arguments
-    in
-    {
-      Callable.kind = Named (Access.create "__init__");
-      implementation = {
-        annotation = TypedDictionary { name; fields };
-        parameters = Defined parameters;
-      };
-      overloads = [];
-      implicit = Class;
-    }
-end
-
-
 let rec mismatch_with_any left right =
   let compatible left right =
     let symmetric left right =
@@ -2072,6 +2019,61 @@ let rec mismatch_with_any left right =
 
   | _ ->
       false
+
+
+module TypedDictionary = struct
+  let anonymous fields =
+    TypedDictionary { name = Identifier.create "$anonymous"; fields }
+
+
+  let fields_have_colliding_keys left_fields right_fields =
+    let found_collision { name = needle_name; annotation = needle_annotation } =
+      let same_name_different_annotation { name; annotation } =
+        name = needle_name && not (equal annotation needle_annotation)
+      in
+      List.exists left_fields ~f:same_name_different_annotation
+    in
+    List.exists right_fields ~f:found_collision
+
+
+  let constructor ~name ~fields =
+    let parameters =
+      let self_parameter =
+        Record.Callable.RecordParameter.Named {
+          name = Access.create "self";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let single_star =
+        Record.Callable.RecordParameter.Variable {
+          name = Access.create "";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let field_arguments =
+        let field_to_argument { name; annotation } =
+          Record.Callable.RecordParameter.Named {
+            name = Access.create (Format.asprintf "$parameter$%s" name);
+            annotation;
+            default = false;
+          }
+        in
+        List.map ~f:field_to_argument fields
+      in
+      self_parameter :: single_star :: field_arguments
+    in
+    {
+      Callable.kind = Named (Access.create "__init__");
+      implementation = {
+        annotation = TypedDictionary { name; fields };
+        parameters = Defined parameters;
+      };
+      overloads = [];
+      implicit = Class;
+    }
+end
 
 
 let to_yojson annotation =
