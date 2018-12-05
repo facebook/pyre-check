@@ -259,13 +259,6 @@ let fold ~resolution ~initial ~f access =
             | _ ->
                 signature
           in
-          let find_annotation_for_key ~fields ~key =
-            match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-            | Some { annotation; _ } ->
-                Some annotation
-            | _ ->
-                None
-          in
           let resolve_typed_dictionary_get_item_callable ~fields ~name =
             let callable annotation =
               let implementation =
@@ -311,7 +304,12 @@ let fold ~resolution ~initial ~f access =
             | { Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
               :: _value :: [] ->
                 begin
-                  match find_annotation_for_key ~fields ~key with
+                  let annotation =
+                    match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+                    | Some { annotation; _ } -> Some annotation
+                    | _ -> None
+                  in
+                  match annotation with
                   | Some annotation ->
                       let callable =
                         {
