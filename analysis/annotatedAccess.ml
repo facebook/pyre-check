@@ -260,13 +260,6 @@ let fold ~resolution ~initial ~f access =
                 signature
           in
           let resolve_typed_dictionary_get_item_callable ~fields ~name =
-            let callable annotation =
-              let implementation =
-                let { Type.Callable.implementation; _ } = callable in
-                { implementation with annotation }
-              in
-              { callable with implementation }
-            in
             match arguments with
             | {
               Record.Argument.value = {
@@ -279,12 +272,18 @@ let fold ~resolution ~initial ~f access =
                   match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
                   | Some { annotation; _ } ->
                       Signature.Found {
-                        callable = callable annotation;
+                        callable =
+                          Type.Callable.with_return_annotation
+                            callable
+                            ~return_annotation:annotation;
                         constraints = Type.Map.empty;
                       }
                   | None ->
                       Signature.NotFound {
-                        callable = callable Type.Top;
+                        callable =
+                          Type.Callable.with_return_annotation
+                            callable
+                            ~return_annotation:Type.Top;
                         reason =
                           Some (Signature.TypedDictionaryMissingKey {
                               typed_dictionary_name = name;
@@ -295,7 +294,10 @@ let fold ~resolution ~initial ~f access =
             | _ ->
                 let keys = List.map fields ~f:(fun { name; _ } -> name) in
                 Signature.NotFound {
-                  callable = callable Type.Top;
+                  callable =
+                    Type.Callable.with_return_annotation
+                      callable
+                      ~return_annotation:Type.Top;
                   reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
                 }
           in
@@ -311,27 +313,8 @@ let fold ~resolution ~initial ~f access =
                   in
                   match annotation with
                   | Some annotation ->
-                      let callable =
-                        {
-                          callable with
-                          implementation = {
-                            callable.implementation with
-                            parameters = Defined [
-                                Named {
-                                  name = Access.create "key";
-                                  annotation = Type.string;
-                                  default = false;
-                                };
-                                Named {
-                                  name = Access.create "value";
-                                  annotation;
-                                  default = false;
-                                };
-                              ];
-                          };
-                        }
-                      in
-                      Signature.select ~arguments ~resolution ~callable
+                      Type.TypedDictionary.setter ~callable ~annotation
+                      |> fun callable -> Signature.select ~arguments ~resolution ~callable
                   | None ->
                       Signature.NotFound {
                         callable;

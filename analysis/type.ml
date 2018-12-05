@@ -2073,6 +2073,27 @@ module TypedDictionary = struct
       overloads = [];
       implicit = Class;
     }
+
+
+  let setter ~callable:({ implementation; _ } as callable) ~annotation =
+    {
+      callable with
+      implementation = {
+        implementation with
+        parameters = Defined [
+            Named {
+              name = Access.create "key";
+              annotation = string;
+              default = false;
+            };
+            Named {
+              name = Access.create "value";
+              annotation;
+              default = false;
+            };
+          ];
+      };
+    }
 end
 
 

@@ -246,6 +246,7 @@ module TypedDictionary : sig
     -> bool
 
   val constructor: name: Identifier.t -> fields: typed_dictionary_field list -> Callable.t
+  val setter: callable: Callable.t -> annotation: t -> Callable.t
 end
 
 val to_yojson: t -> Yojson.Safe.json
