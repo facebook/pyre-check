@@ -35,7 +35,6 @@ let test_return_annotation _ =
         docstring = None;
         return_annotation;
         async;
-        generated = false;
         parent = None;
       }
       |> (fun define ->
@@ -82,7 +81,6 @@ let test_apply_decorators _ =
       docstring = None;
       return_annotation;
       async = false;
-      generated = false;
       parent = None;
     }
   in

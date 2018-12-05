@@ -654,7 +654,6 @@ compound_statement:
           decorators = [];
           return_annotation = annotation;
           async = false;
-          generated = false;
           parent = None;
           docstring = docstring;
         };

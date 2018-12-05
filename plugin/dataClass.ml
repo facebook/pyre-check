@@ -72,7 +72,6 @@ let transform_environment (module Handler: Handler) resolution { Source.statemen
               return_annotation =
                 Some (Node.create ~location (Access (Access.create return_annotation)));
               async = false;
-              generated = false;
               parent = Some parent;
             }
           in

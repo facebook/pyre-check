@@ -22,7 +22,6 @@ let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo")
     docstring = None;
     return_annotation;
     async = false;
-    generated = false;
     parent = None;
   }
 

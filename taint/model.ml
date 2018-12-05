@@ -127,7 +127,6 @@ let create ~resolution ?(verify = true) ~model_source () =
             docstring = None;
             return_annotation = Some annotation;
             async = false;
-            generated = false;
             parent = None;
           }
       | _ ->

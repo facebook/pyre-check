@@ -26,7 +26,6 @@ let test_is_method _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = parent >>| Access.create;
     }
   in
@@ -44,7 +43,6 @@ let test_is_classmethod _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some (Access.create "bar");
     } in
 
@@ -66,7 +64,6 @@ let test_is_class_property _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some (Access.create "bar");
     }
   in
@@ -86,7 +83,6 @@ let test_decorator _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     } in
 
@@ -127,7 +123,6 @@ let test_is_constructor _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent;
       }
     in
@@ -399,7 +394,6 @@ let test_attributes _ =
               docstring = None;
               return_annotation = Some !"int";
               async = false;
-              generated = false;
               parent = None;
             }
             in

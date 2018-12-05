@@ -1080,7 +1080,6 @@ module Builder = struct
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = true;
             parent = Some (Access.create "typing.Generic");
           }
           |> Node.create_with_default_location
@@ -1111,7 +1110,6 @@ module Builder = struct
             return_annotation =
               Some (Node.create_with_default_location (Access (Access.create "None")));
             async = false;
-            generated = false;
             parent = Some (Access.create "TypedDictionary");
           }
           |> Node.create_with_default_location

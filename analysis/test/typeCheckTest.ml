@@ -91,7 +91,6 @@ let test_initial _ =
       docstring = None;
       return_annotation;
       async = false;
-      generated = false;
       parent = parent >>| Access.create;
     }
     in

@@ -503,7 +503,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -529,7 +528,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -550,7 +548,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -565,7 +562,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = true;
-        generated = false;
         parent = None;
       };
     ];
@@ -580,7 +576,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = true;
-        generated = false;
         parent = None;
       }
     ];
@@ -595,7 +590,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = true;
-        generated = false;
         parent = None;
       };
     ];
@@ -616,7 +610,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -646,7 +639,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -667,7 +659,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -693,7 +684,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -719,7 +709,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -740,7 +729,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -755,7 +743,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -770,7 +757,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
       +Expression (+Integer 3)
@@ -790,7 +776,6 @@ let test_define _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = false;
             parent = None;
           };
         ];
@@ -798,7 +783,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
       +Expression (+Integer 3)
@@ -821,7 +805,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -842,7 +825,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -868,7 +850,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -904,7 +885,6 @@ let test_define _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -930,7 +910,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some !"c";
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -945,7 +924,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some !"str";
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -968,7 +946,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -991,7 +968,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1015,7 +991,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1045,7 +1020,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1074,7 +1048,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1104,7 +1077,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1139,7 +1111,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1174,7 +1145,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "str"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1198,7 +1168,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "List[str]"));
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -1241,7 +1210,6 @@ let test_define _ =
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "int"));
         async = false;
-        generated = false;
         parent = None;
       };
     ]
@@ -2427,7 +2395,6 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = false;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2455,7 +2422,6 @@ let test_class _ =
                 docstring = None;
                 return_annotation = None;
                 async = false;
-                generated = false;
                 parent = None;
               };
             ];
@@ -2463,7 +2429,6 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = false;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2568,7 +2533,6 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = false;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2605,7 +2569,6 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = false;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2638,7 +2601,6 @@ let test_class _ =
                 docstring = None;
                 return_annotation = None;
                 async = false;
-                generated = false;
                 parent = Some (Access.create "foo");
               };
             ];
@@ -3925,7 +3887,6 @@ let test_stubs _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -3946,7 +3907,6 @@ let test_stubs _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -3967,7 +3927,6 @@ let test_stubs _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -3989,7 +3948,6 @@ let test_stubs _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       };
     ];
@@ -4054,7 +4012,6 @@ let test_ellipsis _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       }
     ];

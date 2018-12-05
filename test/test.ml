@@ -668,7 +668,6 @@ let mock_define = {
   docstring = None;
   return_annotation = None;
   async = false;
-  generated = false;
   parent = None;
 }
 

@@ -105,7 +105,6 @@ let transform_ast ({ Source.statements; _ } as source) =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some parent;
     }
     |> Node.create ~location

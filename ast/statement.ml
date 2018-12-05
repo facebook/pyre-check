@@ -21,7 +21,6 @@ module Record = struct
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
-      generated: bool;
       parent: Access.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash]
@@ -249,7 +248,6 @@ module Define = struct
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     }
 
@@ -263,22 +261,7 @@ module Define = struct
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
-    }
-
-
-  let create_generated_constructor { Record.Class.name; docstring; _ } =
-    {
-      name = name @ (Access.create "__init__");
-      parameters = [Parameter.create ~name:(Identifier.create "self") ()];
-      body = [Node.create_with_default_location Pass];
-      decorators = [];
-      return_annotation = None;
-      async = false;
-      generated = true;
-      parent = Some name;
-      docstring;
     }
 
 
@@ -369,9 +352,6 @@ module Define = struct
          ~equal:String.equal
          ["async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
          name)
-
-
-  let is_generated_constructor { generated; _ } = generated
 
 
   let is_property_setter ({ name; _ } as define) =

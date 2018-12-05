@@ -28,7 +28,6 @@ let test_parent_definition _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = parent >>| Access.create;
     }
     |> Define.create
