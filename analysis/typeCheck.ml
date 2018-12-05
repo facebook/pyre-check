@@ -169,11 +169,11 @@ module State = struct
         end
     in
     let class_initialization_errors errors =
-      let open Annotated in
       (* Ensure non-nullable typed attributes are instantiated in init. *)
-      if not (Statement.Define.is_constructor define) then
+      if not (Define.is_constructor define) then
         errors
       else
+        let open Annotated in
         let check_class_attributes class_definition =
           let propagate_initialization_errors errors attribute =
             let expected = Annotation.annotation (Attribute.annotation attribute) in
