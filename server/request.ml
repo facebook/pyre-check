@@ -977,9 +977,12 @@ let rec process
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
           LookupCache.evict ~state ~configuration file;
-          LookupCache.get ~state ~configuration file
-          |> ignore;
-          { state; response = None }
+          (* Make sure the IDE flushes its state about this file, by sending back all the
+             errors for this file. *)
+          process_type_check_request
+            ~state
+            ~configuration
+            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
 
       | CloseDocument file ->
           LookupCache.evict ~state ~configuration file;
