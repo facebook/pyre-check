@@ -21,7 +21,7 @@ module Analysis = struct
     sections: string list;
     debug: bool;
     project_root: Path.t;
-    search_path: Path.t list;
+    search_path: Path.SearchPath.t list;
     typeshed: Path.t option;
     verbose: bool;
     expected_version: string option;
@@ -124,12 +124,12 @@ module Analysis = struct
     let roots =
       match typeshed with
       | None ->
-          [local_root]
+          [Path.SearchPath.Root local_root]
       | Some typeshed ->
           [
-            Path.create_relative ~root:typeshed ~relative:"stdlib";
-            Path.create_relative ~root:typeshed ~relative:"third_party";
-            local_root;
+            Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"stdlib");
+            Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"third_party");
+            Path.SearchPath.Root local_root;
           ]
     in
     search_path @ roots

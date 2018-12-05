@@ -18,7 +18,7 @@ module Analysis: sig
     sections: string list;
     debug: bool;
     project_root: Path.t;
-    search_path: Path.t list;
+    search_path: Path.SearchPath.t list;
     typeshed: Path.t option;
     verbose: bool;
     expected_version: string option;
@@ -42,7 +42,7 @@ module Analysis: sig
     -> ?local_root: Path.t
     -> ?sections: string list
     -> ?project_root: Path.t
-    -> ?search_path: Path.t list
+    -> ?search_path: Path.SearchPath.t list
     -> ?typeshed: Path.t
     -> ?verbose: bool
     -> ?expected_version: string
@@ -63,7 +63,7 @@ module Analysis: sig
 
   val pyre_root: t -> Path.t
 
-  val search_path: t -> Path.t list
+  val search_path: t -> Path.SearchPath.t list
 end
 
 module Server: sig

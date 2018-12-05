@@ -27,6 +27,9 @@ type t =
 [@@deriving sexp, hash]
 
 
+type path_t = t
+
+
 let absolute = function
   | Absolute path -> path
   | Relative { root; relative } -> root ^/ relative
@@ -39,6 +42,7 @@ let relative = function
 
 let uri path =
   "file://" ^ (absolute path)
+
 
 let show =
   absolute
@@ -187,17 +191,68 @@ let remove path =
     Log.debug "Unable to remove file at %a" pp path
 
 
-let search_for_path ~search_path ~path =
-  let under_root ~path root =
-    get_relative_to_root ~root ~path
-    |> Option.map ~f:(fun relative -> create_relative ~root ~relative)
-  in
-  List.find_map search_path ~f:(under_root ~path)
-
-
 module Map = Map.Make(struct
     type nonrec t = t
     let compare left right = String.compare (absolute left) (absolute right)
     let sexp_of_t = sexp_of_t
     let t_of_sexp = t_of_sexp
   end)
+
+module SearchPath = struct
+  type t =
+    | Root of path_t
+    | Subdirectory of { root: path_t; subdirectory: string }
+
+
+  let equal left right =
+    match left, right with
+    | Root left, Root right ->
+        equal left right
+    | Subdirectory { root = left; subdirectory = left_subdirectory },
+      Subdirectory { root = right; subdirectory = right_subdirectory } ->
+        equal left right &&
+        String.equal left_subdirectory right_subdirectory
+    | _ ->
+        false
+
+
+  let get_root path =
+    match path with
+    | Root root -> root
+    | Subdirectory { root; _ } -> root
+
+
+  let to_path path =
+    match path with
+    | Root root ->
+        root
+    | Subdirectory { root; subdirectory } ->
+        create_relative ~root ~relative:subdirectory
+
+
+  let pp formatter path =
+    pp formatter (to_path path)
+
+
+  let show path = Format.asprintf "%a" pp path
+
+
+  let create serialized =
+    match String.split serialized ~on:'$' with
+    | [root] ->
+        Root (create_absolute root)
+    | [root; subdirectory] ->
+        Subdirectory { root = create_absolute root; subdirectory  }
+    | _ ->
+        failwith (Format.asprintf "Unable to create search path from %s" serialized)
+end
+
+
+let search_for_path ~search_path ~path =
+  let under_root ~path root =
+    get_relative_to_root ~root ~path
+    |> Option.map ~f:(fun relative -> create_relative ~root ~relative)
+  in
+  search_path
+  |> List.map ~f:SearchPath.get_root
+  |> List.find_map ~f:(under_root ~path)

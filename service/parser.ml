@@ -164,7 +164,8 @@ let log_parse_errors ~count ~description =
 
 
 let find_stubs
-    ~configuration:{ Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } =
+    ~configuration:(
+    { Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration) =
   let paths =
     let stubs =
       let typeshed_directories =
@@ -210,6 +211,7 @@ let find_stubs
         in
         Path.list ~file_filter ~directory_filter ~root ()
       in
+      let search_path = List.map search_path ~f:Path.SearchPath.to_path in
       List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))
     in
     let modules =
@@ -224,7 +226,9 @@ let find_stubs
         in
         Path.list ~file_filter ~directory_filter ~root ()
       in
-      List.map ~f:modules search_path
+      search_path
+      |> List.map ~f:Path.SearchPath.to_path
+      |> List.map ~f:modules
     in
 
     stubs @ modules
@@ -234,16 +238,15 @@ let find_stubs
        appears earlier in the search path. *)
     let filter_interfering_stubs (qualifiers, all_paths) paths =
       let add (qualifiers, all_paths) path =
-        match Path.relative path with
-        | Some relative ->
-            (* TODO(T33409564): We should consider using File.handle here. *)
-            let qualifier = Ast.Source.qualifier ~handle:(File.Handle.create relative) in
-            if Set.mem qualifiers qualifier then
-              qualifiers, all_paths
-            else
-              Set.add qualifiers qualifier, path :: all_paths
-        | None ->
-            qualifiers, all_paths
+        let handle =
+          File.create path
+          |> File.handle ~configuration
+        in
+        let qualifier = Ast.Source.qualifier ~handle in
+        if Set.mem qualifiers qualifier then
+          qualifiers, all_paths
+        else
+          Set.add qualifiers qualifier, path :: all_paths
       in
       List.fold ~f:add ~init:(qualifiers, all_paths) paths
     in

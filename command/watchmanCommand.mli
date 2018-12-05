@@ -23,7 +23,7 @@ val run_command
   -> verbose: bool
   -> sections: string list
   -> local_root: string
-  -> search_path: Path.t list
+  -> search_path: Path.SearchPath.t list
   -> project_root: string option
   -> Pid.t
 

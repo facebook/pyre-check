@@ -19,6 +19,8 @@ type t =
   | Relative of relative
 [@@deriving compare, eq, show, sexp, hash]
 
+type path_t = t
+
 val absolute: t -> path
 val relative: t -> path option
 val uri: t -> path
@@ -52,6 +54,18 @@ val search_upwards: target: string -> root: t -> t option
 
 val remove: t -> unit
 
-val search_for_path: search_path:t list -> path:t -> t option
-
 module Map: Map.S with type Key.t = t
+
+module SearchPath: sig
+  type t =
+    | Root of path_t
+    | Subdirectory of { root: path_t; subdirectory: string }
+
+  [@@deriving eq, show]
+
+  val get_root: t -> path_t
+  val to_path: t -> path_t
+  val create: path -> t
+end
+
+val search_for_path: search_path: SearchPath.t list -> path:t -> t option
