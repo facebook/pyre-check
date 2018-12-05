@@ -272,10 +272,7 @@ let fold ~resolution ~initial ~f access =
                   match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
                   | Some { annotation; _ } ->
                       Signature.Found {
-                        callable =
-                          Type.Callable.with_return_annotation
-                            callable
-                            ~return_annotation:annotation;
+                        callable = Type.Callable.with_return_annotation callable ~annotation;
                         constraints = Type.Map.empty;
                       }
                   | None ->
@@ -283,7 +280,7 @@ let fold ~resolution ~initial ~f access =
                         callable =
                           Type.Callable.with_return_annotation
                             callable
-                            ~return_annotation:Type.Top;
+                            ~annotation:Type.Top;
                         reason =
                           Some (Signature.TypedDictionaryMissingKey {
                               typed_dictionary_name = name;
@@ -294,10 +291,7 @@ let fold ~resolution ~initial ~f access =
             | _ ->
                 let keys = List.map fields ~f:(fun { name; _ } -> name) in
                 Signature.NotFound {
-                  callable =
-                    Type.Callable.with_return_annotation
-                      callable
-                      ~return_annotation:Type.Top;
+                  callable = Type.Callable.with_return_annotation callable ~annotation:Type.Top;
                   reason = Some (Signature.TypedDictionaryAccessWithNonLiteral keys);
                 }
           in

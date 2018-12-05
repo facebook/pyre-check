@@ -943,7 +943,7 @@ let constructor definition ~resolution =
   in
   match signature with
   | Type.Callable callable ->
-      Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
+      Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
   | _ ->
       signature
 

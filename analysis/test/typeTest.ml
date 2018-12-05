@@ -1027,7 +1027,7 @@ let test_from_overloads _ =
     "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
 
 let test_with_return_annotation _ =
-  let assert_with_return_annotation return_annotation callable expected =
+  let assert_with_return_annotation annotation callable expected =
     let callable =
       match Type.create ~aliases:(fun _ -> None) (parse_single_expression callable) with
       | Type.Callable callable -> callable
@@ -1037,7 +1037,7 @@ let test_with_return_annotation _ =
       ~cmp:Type.equal
       ~printer:Type.show
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
-      (Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable))
+      (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
 
   assert_with_return_annotation

@@ -1879,12 +1879,13 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ implementation; overloads; _ } as initial) =
-    let re_annotate implementation = { implementation with annotation = return_annotation } in
+  let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
+    let re_annotate implementation = { implementation with annotation } in
     {
       initial with
       implementation = re_annotate implementation;
-      overloads = List.map ~f:re_annotate overloads }
+      overloads = List.map ~f:re_annotate overloads
+    }
 end
 
 
