@@ -2226,8 +2226,7 @@ let test_check_assign _ =
         x = 'string'
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type " ^
-      "`str`. Redeclare `x` on line 4 if you wish to override the previously declared type."
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."
     ];
 
   assert_type_errors
@@ -4437,8 +4436,7 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: constant is declared to have type `int` but is used as " ^
-      "type `str`. Redeclare `constant` on line 5 if you wish to override the previously " ^
-      "declared type.";
+      "type `str`.";
     ];
 
   assert_type_errors
@@ -4453,8 +4451,7 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
-      "type `typing.Any`. Redeclare `x` on line 6 if you wish to override the previously " ^
-      "declared type.";
+      "type `typing.Any`.";
       "Incompatible parameter type [6]: " ^
       "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`."
     ];
@@ -4466,7 +4463,7 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `str` but is used as " ^
-      "type `int`. Redeclare `x` on line 2 if you wish to override the previously declared type."
+      "type `int`."
     ];
 
   assert_type_errors
@@ -4591,7 +4588,7 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
-      "type `str`. Redeclare `x` on line 3 if you wish to override the previously declared type."
+      "type `str`."
     ];
 
   assert_type_errors
@@ -4619,7 +4616,7 @@ let test_check_immutables _ =
     |}
     [
       "Incompatible variable type [9]: y is declared to have type `str` but is used as " ^
-      "type `int`. Redeclare `y` on line 5 if you wish to override the previously declared type."
+      "type `int`."
     ];
 
   assert_type_errors
@@ -5707,8 +5704,7 @@ let test_check_refinement _ =
     |}
     [
       "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` " ^
-      "but is used as type `unknown`. Redeclare `input` on line 4 if you wish to override " ^
-      "the previously declared type.";
+      "but is used as type `unknown`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
@@ -8009,8 +8005,7 @@ let test_check_literal_variance _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
-      "used as type `typing.List[int]`. Redeclare `x` on line 2 if you wish to override the " ^
-      "previously declared type.";
+      "used as type `typing.List[int]`.";
     ];
   assert_type_errors
     {|
@@ -8020,8 +8015,7 @@ let test_check_literal_variance _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
-      "used as type `typing.List[int]`. Redeclare `x` on line 4 if you wish to override the " ^
-      "previously declared type.";
+      "used as type `typing.List[int]`.";
     ];
   assert_type_errors
     {|
@@ -8036,8 +8030,7 @@ let test_check_literal_variance _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but " ^
-      "is used as type `typing.Dict[str, str]`. Redeclare `x` on line 3 if you wish to " ^
-      "override the previously declared type.";
+      "is used as type `typing.Dict[str, str]`.";
     ];
   assert_type_errors
     {|
@@ -8047,8 +8040,7 @@ let test_check_literal_variance _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but " ^
-      "is used as type `typing.Dict[str, int]`. Redeclare `x` on line 4 if you wish to " ^
-      "override the previously declared type.";
+      "is used as type `typing.Dict[str, int]`.";
     ];
 
   (* Returns. *)

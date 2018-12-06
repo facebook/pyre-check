@@ -463,15 +463,18 @@ let messages ~detailed:_ ~define location kind =
           Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
         else
           Format.asprintf
-            "%s is declared to have type `%a` but is used as type `%a`. \
-             Redeclare `%s` on line %d if you wish to override the previously declared type."
+            "%s is declared to have type `%a` but is used as type `%a`."
             (Access.show_sanitized name)
             Type.pp expected
             Type.pp actual
-            (Access.show_sanitized name)
-            start_line
       in
-      [message]
+      let detail =
+        Format.asprintf
+          "Redeclare `%s` on line %d if you wish to override the previously declared type."
+          (Access.show_sanitized name)
+          start_line
+      in
+      [message; detail]
   | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
