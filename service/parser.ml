@@ -14,6 +14,9 @@ open PyreParser
 let parse_source ~configuration ?(show_parser_errors = true) file =
   File.handle ~configuration file
   |> fun handle ->
+  Path.readlink (File.path file)
+  >>| (fun target -> Ast.SharedMemory.SymlinksToPaths.add target (File.path file))
+  |> ignore;
   File.lines file
   >>= fun lines ->
   let metadata = Source.Metadata.parse (File.Handle.show handle) lines in

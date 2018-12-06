@@ -191,6 +191,14 @@ let remove path =
     Log.debug "Unable to remove file at %a" pp path
 
 
+let readlink path =
+  try
+    Unix.readlink (absolute path)
+    |> Option.some
+  with Unix.Unix_error _ ->
+    None
+
+
 module Map = Map.Make(struct
     type nonrec t = t
     let compare left right = String.compare (absolute left) (absolute right)

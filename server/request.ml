@@ -29,7 +29,13 @@ let parse_lsp ~configuration ~request =
   let uri_to_path ~uri =
     let search_path = Configuration.Analysis.search_path configuration in
     Path.from_uri uri
-    >>= fun path -> Path.search_for_path ~search_path ~path
+    >>= fun path ->
+    match Path.search_for_path ~search_path ~path with
+    | Some path ->
+        Some path
+    | None ->
+        Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
+        >>= fun path -> Path.search_for_path ~search_path ~path
   in
   let process_request request_method =
     match request_method with
@@ -689,6 +695,11 @@ let process_type_check_request
           if not (List.is_empty newly_introduced_handles) then
             Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
           Ast.SharedMemory.Sources.remove ~handles;
+          let targets =
+            let find_target file = Path.readlink (File.path file) in
+            List.filter_map update_environment_with ~f:find_target
+          in
+          Ast.SharedMemory.SymlinksToPaths.remove ~targets;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
 
@@ -754,6 +765,11 @@ let process_type_check_request
     in
     let handles = List.filter_map update_environment_with ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles;
+    let targets =
+      let find_target file = Path.readlink (File.path file) in
+      List.filter_map update_environment_with ~f:find_target
+    in
+    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Handler.purge ~debug handles;
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
