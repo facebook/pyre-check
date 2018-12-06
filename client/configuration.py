@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 from . import (
     BINARY_NAME,
@@ -24,6 +24,41 @@ LOG = logging.getLogger(__name__)
 
 class InvalidConfiguration(Exception):
     pass
+
+
+class SearchPathElement:
+    def __init__(self, element: Union[Dict[str, str], str]) -> None:
+        if isinstance(element, str):
+            self.root = os.path.abspath(element)
+            self.subdirectory = None
+        else:
+            if "root" not in element or "subdirectory" not in element:
+                raise InvalidConfiguration(
+                    "Search path elements must have `root` and `subdirectory` specified."
+                )
+            self.root = os.path.abspath(element["root"])
+            self.subdirectory = element["subdirectory"]
+
+    def path(self) -> str:
+        subdirectory = self.subdirectory
+        if subdirectory is not None:
+            return os.path.join(self.root, subdirectory)
+        else:
+            return self.root
+
+    def command_line_argument(self) -> str:
+        subdirectory = self.subdirectory
+        if subdirectory is not None:
+            return self.root + "$" + subdirectory
+        else:
+            return self.root
+
+    def __eq__(self, other) -> bool:
+        # We support this for testing.
+        if isinstance(other, str):
+            return self.path() == other
+        else:
+            return self.root == other.root and self.subdirectory == other.subdirectory
 
 
 class _ConfigurationFile:
@@ -77,7 +112,7 @@ class Configuration:
         self,
         local_configuration_directory=None,
         local_configuration: Optional[str] = None,
-        search_path: Optional[List[str]] = None,
+        search_path: Optional[List[SearchPathElement]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
@@ -96,19 +131,19 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
-        self.search_path = []
+        self._search_path = []
         pythonpath = os.getenv("PYTHONPATH")
         if preserve_pythonpath and pythonpath:
             for path in pythonpath.split(":"):
                 if os.path.isdir(path):
-                    self.search_path.append(path)
+                    self._search_path.append(SearchPathElement(path))
                 else:
                     LOG.warning(
                         "`{}` is not a valid directory, dropping it "
                         "from PYTHONPATH".format(path)
                     )
         if search_path:
-            self.search_path.extend(search_path)
+            self._search_path.extend(search_path)
         # We will extend the search path further, with the config file
         # items, inside _read().
 
@@ -226,8 +261,8 @@ class Configuration:
                     assert_readable_directory(typeshed_version_directory)
 
             # Validate elements of the search path.
-            for path in self.search_path:
-                assert_readable_directory(path)
+            for element in self._search_path:
+                assert_readable_directory(element.path())
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
@@ -246,6 +281,12 @@ class Configuration:
         if not self._typeshed:
             raise InvalidConfiguration("Configuration invalid: no typeshed specified")
         return self._typeshed
+
+    @property
+    def search_path(self) -> List[str]:
+        if not self._search_path:
+            return []
+        return [element.command_line_argument() for element in self._search_path]
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
@@ -336,10 +377,16 @@ class Configuration:
                 additional_search_path = configuration.consume(
                     "search_path", default=[]
                 )
+
                 if isinstance(additional_search_path, list):
-                    self.search_path.extend(additional_search_path)
+                    self._search_path.extend(
+                        [
+                            SearchPathElement(element)
+                            for element in additional_search_path
+                        ]
+                    )
                 else:
-                    self.search_path.append(additional_search_path)
+                    self._search_path.append(SearchPathElement(additional_search_path))
 
                 version_hash = configuration.consume(
                     "version", current=self._version_hash

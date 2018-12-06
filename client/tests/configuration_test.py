@@ -9,10 +9,15 @@ import unittest
 from unittest.mock import call, patch
 
 from .. import CONFIGURATION_FILE, EnvironmentException, number_of_workers
-from ..configuration import Configuration  # noqa
+from ..configuration import (  # noqa
+    Configuration,
+    InvalidConfiguration,
+    SearchPathElement,
+)
 
 
 class ConfigurationTest(unittest.TestCase):
+    @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.access", return_value=True)
     @patch("builtins.open")
@@ -27,6 +32,7 @@ class ConfigurationTest(unittest.TestCase):
         builtins_open,
         access,
         isdir,
+        _abspath,
     ) -> None:
         json_load.side_effect = [
             {
@@ -40,9 +46,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(
-            configuration.ignore_all_errors, ["%s/buck-out/dev/gen" % os.getcwd()]
-        )
+        self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
 
         json_load.side_effect = [
             {"source_directories": ["a"]},
@@ -77,9 +81,41 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, ["additional/"])
+        self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+
+        json_load.side_effect = [
+            {
+                "search_path": [
+                    "additional/",
+                    {"root": "root/", "subdirectory": "subdirectory"},
+                ],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(
+            configuration.search_path, ["additional/", "root/$subdirectory"]
+        )
+        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.taint_models_path, None)
+
+        json_load.side_effect = [
+            {
+                "search_path": [{"woot": "root/", "subdirectory": "subdirectory"}],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+            },
+            {},
+        ]
+        with self.assertRaises(InvalidConfiguration):
+            Configuration()
 
         json_load.side_effect = [
             {
@@ -104,18 +140,22 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=True
+                    search_path=[
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                    ],
+                    preserve_pythonpath=True,
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
                     configuration.search_path,
                     [
-                        "additional/",
-                        "directories/",
-                        "command/",
-                        "line/",
-                        "json/",
-                        "file/",
+                        SearchPathElement("additional/"),
+                        SearchPathElement("directories/"),
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                        SearchPathElement("json/"),
+                        SearchPathElement("file/"),
                     ],
                 )
 
@@ -127,7 +167,11 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=False
+                    search_path=[
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                    ],
+                    preserve_pythonpath=False,
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
@@ -173,8 +217,7 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.ignore_all_errors,
-            ["%s/buck-out/dev/gen" % os.getcwd(), "%s/buck-out/dev/gen2" % os.getcwd()],
+            configuration.ignore_all_errors, ["buck-out/dev/gen", "buck-out/dev/gen2"]
         )
 
         # Normalize number of workers if zero.
