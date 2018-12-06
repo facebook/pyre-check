@@ -1209,8 +1209,11 @@ let defines
         | _ -> true
 
       let predicate = function
-        | { Node.location; value = Define define } when Define.is_stub define && include_stubs ->
-            Some ({ Node.location; Node.value = define })
+        | { Node.location; value = Define define } when Define.is_stub define ->
+            if include_stubs then
+              Some ({ Node.location; Node.value = define })
+            else
+              None
         | { Node.location; value = Define define } ->
             Some ({ Node.location; Node.value = define })
         | _ ->
