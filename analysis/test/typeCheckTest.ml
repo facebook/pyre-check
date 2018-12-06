@@ -1397,7 +1397,7 @@ let test_coverage _ =
         x = returns_undefined()
         return x
     |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 }
+    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
 
 
 let test_check _ =
@@ -5863,8 +5863,8 @@ let test_check_meta _ =
         return typing.cast(typing.List[unknown], input)
     |}
     [
-      "Undefined type [11]: Type `unknown` is not defined.";
       "Missing parameter annotation [2]: Parameter `input` has no type specified.";
+      "Undefined type [11]: Type `unknown` is not defined.";
     ];
   assert_type_errors
     ~debug:false
@@ -7164,7 +7164,7 @@ let test_check_undefined_type _ =
     ~debug:false
     {|
       def foo(x: int) -> Herp:
-        pass
+        return x
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
   assert_type_errors
