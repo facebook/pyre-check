@@ -194,6 +194,15 @@ module ExpressionVisitor = struct
     | Define { parameters; _ } ->
         let extract_parameters { Node.value = { Parameter.annotation; _ }; location } =
           let store_parameter_annotation annotation =
+            let annotation =
+              if Type.is_meta annotation then
+                (* Pick up the actual type annotation. *)
+                Type.split annotation
+                |> snd
+                |> List.hd_exn
+              else
+                annotation
+            in
             store_lookup
               ~table:annotations_lookup
               ~location

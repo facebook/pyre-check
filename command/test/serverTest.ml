@@ -471,7 +471,7 @@ let test_query context =
             };
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 2 21 2 22;
-              annotation = parse_annotation "typing.Type[str]"
+              annotation = Type.string
             };
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 2 40 2 44;
@@ -491,7 +491,7 @@ let test_query context =
             };
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 2 8 2 9;
-              annotation = parse_annotation "typing.Type[int]"
+              annotation = Type.integer
             };
           ]
        ));
