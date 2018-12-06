@@ -401,6 +401,16 @@ let test_join _ =
          }));
 
   assert_join
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "derp")));
+
+  assert_join
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "herp")))
+    (error (Error.Top));
+
+  assert_join
     (error (revealed_type "a" Type.integer))
     (error (revealed_type "a" Type.float))
     (error (revealed_type "a" Type.float));

@@ -983,7 +983,7 @@ let less_or_equal ~resolution left right =
     | UndefinedName left, UndefinedName right when Access.equal left right ->
         true
     | UndefinedType left, UndefinedType right ->
-        Resolution.less_or_equal resolution ~left ~right
+        Type.equal left right
     | UnexpectedKeyword left, UnexpectedKeyword right ->
         Option.equal Access.equal left.callee right.callee &&
         Identifier.equal left.name right.name
@@ -1145,8 +1145,8 @@ let join ~resolution left right =
         |> Option.value ~default:Top
     | UndefinedName left, UndefinedName right when Access.equal left right ->
         UndefinedName left
-    | UndefinedType left, UndefinedType right ->
-        UndefinedType (Resolution.join resolution left right)
+    | UndefinedType left, UndefinedType right when Type.equal left right ->
+        UndefinedType left
     | UnexpectedKeyword left, UnexpectedKeyword right ->
         if Option.equal Access.equal left.callee right.callee &&
            Identifier.equal left.name right.name then
