@@ -910,7 +910,7 @@ module State = struct
             { Expression.Argument.value = cast_annotation; _ };
             { Expression.Argument.value; _ };
           ];
-          _;
+          location;
         }
       ] when Identifier.equal typing (Identifier.create "typing") &&
              Identifier.equal cast (Identifier.create "cast") ->
