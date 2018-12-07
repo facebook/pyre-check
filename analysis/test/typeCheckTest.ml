@@ -2886,7 +2886,7 @@ let test_check_function_parameters _ =
   assert_type_errors
     {|
       class C:
-       attribute: int
+       attribute: int = 1
       try:
         x = C()
       except:
@@ -3042,7 +3042,7 @@ let test_check_function_parameter_errors _ =
   assert_type_errors
     {|
       class Foo:
-        attribute: str
+        attribute: str = ""
       def foo(input: Foo) -> None:
         str_float_to_int(input.attribute, input.undefined)
     |}
@@ -3050,7 +3050,7 @@ let test_check_function_parameter_errors _ =
   assert_type_errors
     {|
       class Foo:
-        attribute: str
+        attribute: str = ""
       def foo(input: Foo) -> None:
         str_float_to_int(input.undefined, input.undefined)
     |}
@@ -3062,7 +3062,7 @@ let test_check_function_parameter_errors _ =
   assert_type_errors
     {|
       class Foo:
-        attribute: int
+        attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.attribute)
     |}
@@ -3074,7 +3074,7 @@ let test_check_function_parameter_errors _ =
   assert_type_errors
     {|
       class Foo:
-        attribute: int
+        attribute: int = 1
       def foo(input: typing.Optional[Foo]) -> None:
         optional_str_to_int(input and input.undefined)
     |}
@@ -3089,7 +3089,7 @@ let test_check_function_parameter_errors _ =
       class attribute:
         ...
       class other:
-        attribute: int = ...
+        attribute: int = 1
       def foo(o: other) -> str:
         return o.attribute
     |}
@@ -3507,6 +3507,15 @@ let test_check_init _ =
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
       "non-optional type `int` but is never initialized.";
     ];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "non-optional type `int` but is never initialized.";
+    ];
 
   assert_type_errors
     {|
@@ -3766,7 +3775,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar: int
+        bar: int = 1
         def foo(self) -> int:
           return self.bar
     |}
@@ -3782,7 +3791,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Bar:
-        bar: int
+        bar: int = 1
       class Foo(Bar):
         def foo(self) -> int:
           return self.bar
@@ -3791,11 +3800,14 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar = ... # type: int
+        bar = 1 # type: int
         def foo(self) -> int:
           return self.bar
     |}
-    [];
+    [
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `int` but no " ^
+      "type is specified.";
+    ];
 
   assert_type_errors
     {|
@@ -3861,7 +3873,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Bar:
-        bar: int
+        bar: int = 1
       class Foo:
         def foo(self, other: Bar) -> int:
           return other.bar
@@ -3893,13 +3905,15 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type " ^
       "`Any` is specified.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
+      "non-optional type `typing.Any` but is never initialized.";
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
   assert_type_errors
     {|
       class Foo:
-        bar: int
+        bar: int = 1
         def foo(self) -> int:
           self.bar = 'foo'
           return self.bar
@@ -3912,7 +3926,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar: int
+        bar: int = 1
       def foo(param: Foo) -> int:
         param.bar = 'foo'
         return param.bar
@@ -3924,7 +3938,7 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
-      bar: int
+      bar: int = 1
       def foo() -> int:
         bar = 'foo'
         return bar
@@ -3948,7 +3962,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar: int
+        bar: int = 1
       def foo() -> int:
         foo_obj = Foo()
         foo_obj.bar = "foo"
@@ -3962,7 +3976,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar: int
+        bar: int = 1
       class Bar(Foo):
         def foo(self) -> int:
           self.bar = "foo"
@@ -4056,11 +4070,11 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-          def foo(self, bar: typing.Optional[int]) -> int:
-              self.baz = bar
-              if self.baz is None:
-                  self.baz = 5
-              return self.baz
+        def foo(self, bar: typing.Optional[int]) -> int:
+          self.baz = bar
+          if self.baz is None:
+            self.baz = 5
+          return self.baz
     |}
     [
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
@@ -4074,7 +4088,7 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
-        bar: typing.ClassVar[int]
+        bar: typing.ClassVar[int] = 1
       def foo() -> int:
         Foo.bar = "foo"
         return Foo.bar
@@ -4093,6 +4107,8 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
+      "non-optional type `typing.Generic[Variable[_T]]` but is never initialized.";
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
       "`typing.Generic[Variable[_T]]` but is used as type `int`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`.";
@@ -4243,7 +4259,10 @@ let test_check_attributes _ =
       def bar(wrapper: Wrapper[int]) -> int:
         return wrapper.value
     |}
-    [];
+    [
+      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
+      "non-optional type `Variable[_VALUE]` but is never initialized.";
+    ];
   assert_type_errors
     {|
       _VALUE = typing.TypeVar('_VALUE')
@@ -4256,7 +4275,10 @@ let test_check_attributes _ =
       def bar(wrapper: WrapperSubclass) -> int:
         return wrapper.value
     |}
-    [];
+    [
+      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
+      "non-optional type `Variable[_VALUE]` but is never initialized.";
+    ];
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -6827,7 +6849,7 @@ let test_check_unbound_variables _ =
   assert_type_errors
     {|
       class Foo:
-        attribute: bool
+        attribute: bool = False
         def foo(self) -> int:
           if not self.attribute:
             self.attribute = True
@@ -7234,7 +7256,7 @@ let test_check_assert_functions _ =
   assert_type_errors
     {|
       class One:
-          a: int
+          a: int = 1
 
       def f(o: typing.Optional[One]) -> int:
           assert o

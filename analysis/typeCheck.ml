@@ -142,7 +142,7 @@ module State = struct
         errors;
         define = ({
             Node.location;
-            value = { Statement.Define.return_annotation; _ } as define;
+            value = { Define.name; return_annotation; _ } as define;
           } as define_node);
         _;
       } =
@@ -170,51 +170,73 @@ module State = struct
     in
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init. *)
-      if not (Define.is_constructor define) then
-        errors
-      else
+      let check_attributes_initialized define =
         let open Annotated in
-        let check_class_attributes class_definition =
-          let propagate_initialization_errors errors attribute =
-            let expected = Annotation.annotation (Attribute.annotation attribute) in
-            match Attribute.name attribute with
-            | Access name
-              when not (Type.equal expected Type.Top ||
-                        Type.is_optional expected ||
-                        Attribute.initialized attribute) ->
-                let access =
-                  (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
-                in
-                if Map.mem (Resolution.annotations resolution) access then
-                  errors
-                else
-                  let error =
-                    Error.create
-                      ~location:(Attribute.location attribute)
-                      ~kind:(
-                        Error.UninitializedAttribute {
-                          name;
-                          parent = Annotated.Class.annotation class_definition ~resolution;
-                          mismatch = {
-                            Error.expected;
-                            actual = (Type.optional expected)
-                          };
-                        })
-                      ~define:define_node
-                  in
-                  error :: errors
-            | _ -> errors
-          in
-          Class.attribute_fold
-            ~include_generated_attributes:false
-            ~initial:errors
-            ~resolution
-            ~f:propagate_initialization_errors
-            class_definition
-        in
-        Define.parent_definition ~resolution (Define.create define)
-        >>| check_class_attributes
+        (Define.parent_definition ~resolution (Define.create define)
+         >>| fun definition ->
+         let propagate_initialization_errors errors attribute =
+           let expected = Annotation.annotation (Attribute.annotation attribute) in
+           match Attribute.name attribute with
+           | Access name
+             when not (Type.equal expected Type.Top ||
+                       Type.is_optional expected ||
+                       Attribute.initialized attribute) ->
+               let access =
+                 (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
+               in
+               if Map.mem (Resolution.annotations resolution) access &&
+                  not (Statement.Define.is_class_toplevel define) then
+                 errors
+               else
+                 let error =
+                   Error.create
+                     ~location:(Attribute.location attribute)
+                     ~kind:(
+                       Error.UninitializedAttribute {
+                         name;
+                         parent = Annotated.Class.annotation definition ~resolution;
+                         mismatch = {
+                           Error.expected;
+                           actual = (Type.optional expected)
+                         };
+                       })
+                     ~define:define_node
+                 in
+                 error :: errors
+           | _ -> errors
+         in
+         Class.attribute_fold
+           ~include_generated_attributes:false
+           ~initial:errors
+           ~resolution
+           ~f:propagate_initialization_errors
+           definition)
         |> Option.value ~default:errors
+      in
+      if Define.is_constructor define then
+        check_attributes_initialized define
+      else if Define.is_class_toplevel define then
+        begin
+          let no_explicit_class_constructor =
+            let name =
+              List.rev name
+              |> List.tl
+              |> Option.value ~default:[]
+              |> List.rev
+              |> Access.show
+            in
+            Resolution.class_definition resolution (Type.primitive name)
+            >>| (fun { Node.value = definition; _ } -> Class.constructors definition)
+            >>| List.is_empty
+            |> Option.value ~default:false
+          in
+          if no_explicit_class_constructor then
+            check_attributes_initialized define
+          else
+            errors
+        end
+      else
+        errors
     in
     Map.data errors
     |> Error.join_at_define

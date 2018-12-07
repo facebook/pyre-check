@@ -261,7 +261,7 @@ module Define = struct
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = None;
+      parent = Some qualifier;
     }
 
 
