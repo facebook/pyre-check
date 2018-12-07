@@ -376,6 +376,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Starred (Starred.Twice expression) ->
           analyze_expression ~resolution expression state
           |> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
+      | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
+          expressions
+          |> List.map ~f:(fun expression -> analyze_expression ~resolution expression state)
+          |> List.fold ~f:(ForwardState.Tree.join) ~init:ForwardState.Tree.empty
       | String _ ->
           ForwardState.Tree.empty
       | Ternary { target; test; alternative } ->
