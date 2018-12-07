@@ -544,7 +544,7 @@ let infer
         | ({
             Error.kind = Error.MissingAttributeAnnotation {
                 parent;
-                missing_annotation = { Error.name; annotation; _ };
+                missing_annotation = { Error.name; annotation = Some annotation; _ };
               };
             _;
           } as error) ->
@@ -554,7 +554,11 @@ let infer
               ~location:(Error.location error |> Location.reference)
               ~annotation
         | ({
-            Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
+            Error.kind = Error.MissingGlobalAnnotation {
+                Error.name;
+                annotation = Some annotation;
+                _;
+              };
             _;
           } as error) ->
             add_missing_annotation_error

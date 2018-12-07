@@ -142,7 +142,7 @@ module State = struct
         errors;
         define = ({
             Node.location;
-            value = { Define.name; return_annotation; _ } as define;
+            value = { Define.name; return_annotation; body; _ } as define;
           } as define_node);
         _;
       } =
@@ -151,7 +151,8 @@ module State = struct
          String.is_suffix (Access.show name) ~suffix:"__enter__" then  (* Yikes... *)
         errors
       else
-        begin
+        (* Return errors. *)
+        let errors =
           match return_annotation with
           | Some ({ Node.location; _ } as annotation) ->
               let annotation = Resolution.parse_annotation resolution annotation in
@@ -167,7 +168,52 @@ module State = struct
                 error :: errors
           | _ ->
               errors
-        end
+        in
+        (* Create missing attribute errors. *)
+        match Annotated.Define.parent_definition ~resolution (Annotated.Define.create define) with
+        | Some class_definition ->
+            let annotation = AnnotatedClass.annotation ~resolution class_definition in
+            let untyped_assignment_error errors { Node.location; value } =
+              match value with
+              | Assign {
+                    Assign.annotation = None;
+                    target = {
+                      Node.value = Access ((Expression.Access.Identifier self) :: ([_] as access));
+                      _;
+                    };
+                    _;
+                  } when Identifier.equal self (Statement.Define.self_identifier define) ->
+                    let attribute_annotation =
+                      Annotated.Class.attribute
+                        class_definition
+                        ~resolution
+                        ~name:access
+                        ~instantiated:annotation
+                      |> Annotated.Attribute.annotation
+                      |> Annotation.annotation
+                    in
+                    if Type.equal attribute_annotation Type.Object then
+                      Error.create
+                        ~location
+                        ~kind:(Error.MissingAttributeAnnotation {
+                            parent = annotation;
+                            missing_annotation = {
+                              Error.name = access;
+                              annotation = None;
+                              evidence_locations = [];
+                              due_to_any = false;
+                            };
+                          })
+                        ~define:define_node
+                      :: errors
+                    else
+                      errors
+              | _ ->
+                    errors
+            in
+            List.fold body ~f:untyped_assignment_error ~init:errors
+        | None ->
+            errors
     in
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init. *)
@@ -1795,7 +1841,7 @@ module State = struct
                             ~location
                             ~kind:(Error.MissingGlobalAnnotation {
                                 Error.name = access;
-                                annotation = resolved;
+                                annotation = Some resolved;
                                 evidence_locations = [instantiate location];
                                 due_to_any = Type.equal expected Type.Object;
                               })
@@ -1812,7 +1858,7 @@ module State = struct
                                 parent = Attribute.parent attribute;
                                 missing_annotation = {
                                   Error.name = access;
-                                  annotation = resolved;
+                                  annotation = Some resolved;
                                   evidence_locations = [instantiate location];
                                   due_to_any = Type.equal expected Type.Object;
                                 };
@@ -1834,7 +1880,7 @@ module State = struct
                             ~location:global_location
                             ~kind:(Error.MissingGlobalAnnotation {
                                 Error.name = access;
-                                annotation = resolved;
+                                annotation = Some resolved;
                                 evidence_locations = [instantiate location];
                                 due_to_any = Type.equal expected Type.Object;
                               })

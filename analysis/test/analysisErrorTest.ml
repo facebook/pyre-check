@@ -205,7 +205,7 @@ let test_due_to_analysis_limitations _ =
               parent = mock_parent;
               missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
-                annotation = Type.Top;
+                annotation = Some Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
               };
@@ -217,7 +217,19 @@ let test_due_to_analysis_limitations _ =
               parent = mock_parent;
               missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
-                annotation = Type.string;
+                annotation = Some Type.string;
+                due_to_any = false;
+                evidence_locations = [];
+              };
+            })));
+  assert_false
+    (Error.due_to_analysis_limitations
+       (error
+          (Error.MissingAttributeAnnotation {
+              parent = mock_parent;
+              missing_annotation = {
+                Error.name = [Access.Identifier ~~""];
+                annotation = None;
                 due_to_any = false;
                 evidence_locations = [];
               };
@@ -394,26 +406,70 @@ let test_join _ =
       stop = { Location.line = 1; column = 1 };
     }
   in
-  assert_join
+ assert_join
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.integer;
+           annotation = Some Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.float;
+           annotation = Some Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.float;
+           annotation = Some Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
+           due_to_any = false;
+         }));
+ assert_join
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.integer;
+           evidence_locations = [create_mock_location "derp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = None;
+           evidence_locations = [];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.integer;
+           evidence_locations = [create_mock_location "derp.py"];
+           due_to_any = false;
+         }));
+ assert_join
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = None;
+           evidence_locations = [];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.float;
+           evidence_locations = [create_mock_location "durp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.float;
+           evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }));
 

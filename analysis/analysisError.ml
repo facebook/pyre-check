@@ -27,7 +27,7 @@ type mismatch = {
 
 type missing_annotation = {
   name: Access.t;
-  annotation: Type.t;
+  annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
@@ -225,62 +225,70 @@ let messages ~detailed:_ ~define location kind =
         );
       ]
   | Top -> [ "Problem with analysis." ]
-  | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; due_to_any; _ } }
-    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
+  | MissingAttributeAnnotation { parent; missing_annotation } ->
       begin
-        if due_to_any then
-          [
-            Format.asprintf
-              "Attribute `%a` of class `%a` must have a type other than `Any`."
-              Access.pp name
-              Type.pp parent;
-          ]
-        else
-          [
-            Format.asprintf
-              "Attribute `%a` of class `%a` has no type specified."
-              Access.pp name
-              Type.pp parent;
-          ]
+        match missing_annotation with
+        | { name; annotation = Some annotation; due_to_any; _ }
+          when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
+            begin
+              if due_to_any then
+                [
+                  Format.asprintf
+                    "Attribute `%a` of class `%a` must have a type other than `Any`."
+                    Access.pp name
+                    Type.pp parent;
+                ]
+              else
+                [
+                  Format.asprintf
+                    "Attribute `%a` of class `%a` has no type specified."
+                    Access.pp name
+                    Type.pp parent;
+                ]
+            end
+        | { name; annotation = Some annotation; evidence_locations; due_to_any } ->
+            let detail =
+              let evidence_string =
+                evidence_locations
+                |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+                |> String.concat ~sep:", "
+              in
+              Format.asprintf
+                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
+                Access.pp name
+                start_line
+                Type.pp annotation
+              evidence_string
+            in
+            begin
+              if due_to_any then
+                [
+                  Format.asprintf
+                    "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+                    Access.pp name
+                    Type.pp parent
+                    Type.pp annotation;
+                  detail;
+                ]
+              else
+                [
+                  Format.asprintf
+                    "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+                    Access.pp name
+                    Type.pp parent
+                    Type.pp annotation;
+                  detail;
+                ]
+            end
+        | { name; annotation = None; _ } ->
+            [
+              Format.asprintf "Attribute `%a` of class `%a` has no type specified."
+                Access.pp name
+                Type.pp parent;
+            ]
       end
-  | MissingAttributeAnnotation {
-      parent;
-      missing_annotation = { name; annotation; evidence_locations; due_to_any };
-    } ->
-      let detail =
-        let evidence_string =
-          evidence_locations
-          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-          |> String.concat ~sep:", "
-        in
-        Format.asprintf
-          "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-          Access.pp name
-          start_line
-          Type.pp annotation
-          evidence_string
-      in
-      begin
-        if due_to_any then
-          [
-            Format.asprintf
-              "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-              Access.pp name
-              Type.pp parent
-              Type.pp annotation;
-            detail;
-          ]
-        else
-          [
-            Format.asprintf
-              "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-              Access.pp name
-              Type.pp parent
-              Type.pp annotation;
-            detail;
-          ]
-      end
-  | MissingParameterAnnotation { name; annotation; due_to_any = false }
+
+      | MissingParameterAnnotation { name; annotation; due_to_any = false }
     when Type.equal annotation Type.Bottom ->
       [
         Format.asprintf
@@ -346,7 +354,7 @@ let messages ~detailed:_ ~define location kind =
       end
   | MissingGlobalAnnotation {
       name;
-      annotation;
+      annotation = Some annotation;
       evidence_locations;
       due_to_any;
     } ->
@@ -383,6 +391,16 @@ let messages ~detailed:_ ~define location kind =
               evidence_string
           ]
       end
+  | MissingGlobalAnnotation {
+      name;
+      annotation = None;
+      _;
+    } ->
+      [
+        Format.asprintf
+          "Globally accessible variable `%s` has no type specified."
+          (Access.show name);
+      ]
   | MissingTypeParameters { annotation; number_of_parameters } ->
       [
         Format.asprintf
@@ -800,17 +818,33 @@ let inference_information
         "async", `Bool async;
       ]
   | MissingAttributeAnnotation { parent; missing_annotation = { name; annotation; _ } } ->
-      `Assoc [
-        "annotation", `String (print_annotation annotation);
-        "parent", `String (Type.show parent);
-        "attribute_name", `String (Access.show_sanitized name);
-      ]
+      let attributes =
+        [
+          "parent", `String (Type.show parent);
+          "attribute_name", `String (Access.show_sanitized name);
+        ]
+      in
+      begin
+        match annotation with
+        | Some annotation ->
+            `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
+        | None ->
+            `Assoc attributes
+      end
   | MissingGlobalAnnotation { name; annotation; _ } ->
-      `Assoc [
-        "annotation", `String (print_annotation annotation);
-        "parent", `Null;
-        "attribute_name", `String (Access.show_sanitized name);
-      ]
+      let attributes =
+        [
+          "parent", `Null;
+          "attribute_name", `String (Access.show_sanitized name);
+        ]
+      in
+      begin
+        match annotation with
+        | Some annotation ->
+            `Assoc (("annotation", `String (print_annotation annotation)) :: attributes)
+        | None ->
+            `Assoc attributes
+      end
   | _ -> `Assoc []
 
 
@@ -842,8 +876,8 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
-  | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
-  | MissingGlobalAnnotation { annotation = actual; _ }
+  | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
+  | MissingGlobalAnnotation { annotation = Some actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
   | MissingReturnAnnotation { annotation = actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
@@ -858,6 +892,8 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
+  | MissingAttributeAnnotation _
+  | MissingGlobalAnnotation _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
@@ -962,7 +998,15 @@ let less_or_equal ~resolution left right =
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when (Access.equal left.name right.name) && left.due_to_any = right.due_to_any ->
-        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+        begin
+          match left.annotation, right.annotation with
+          | Some left, Some right ->
+              Resolution.less_or_equal resolution ~left ~right
+          | None, None ->
+              true
+          | _ ->
+              false
+        end
     | NotCallable left, NotCallable right ->
         Resolution.less_or_equal resolution ~left ~right
     | RedundantCast left, RedundantCast right ->
@@ -1043,9 +1087,19 @@ let join ~resolution left right =
   let join_missing_annotation
       (left: missing_annotation)  (* Ohcaml... *)
       (right: missing_annotation): missing_annotation =
+    let annotation =
+      match left.annotation, right.annotation with
+      | Some left, Some right ->
+          Some (Resolution.join resolution left right)
+      | None, Some annotation
+      | Some annotation, None ->
+          Some annotation
+      | None, None ->
+          None
+    in
     {
       left with
-      annotation = Resolution.join resolution left.annotation right.annotation;
+      annotation;
       evidence_locations =
         List.dedup_and_sort
           ~compare:Location.Instantiated.compare
@@ -1474,8 +1528,8 @@ let suppress ~mode error =
     match kind with
     | MissingReturnAnnotation { annotation = actual; _ }
     | MissingParameterAnnotation { annotation = actual; _ }
-    | MissingAttributeAnnotation { missing_annotation = { annotation = actual; _ }; _ }
-    | MissingGlobalAnnotation { annotation = actual; _ } ->
+    | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
+    | MissingGlobalAnnotation { annotation = Some actual; _ } ->
         due_to_analysis_limitations error ||
         Type.equal actual Type.Object ||
         Type.equal actual Type.Bottom
@@ -1540,11 +1594,11 @@ let dequalify
       } ->
         MissingAttributeAnnotation {
           parent;
-          missing_annotation = { missing_annotation with annotation = dequalify annotation };
+          missing_annotation = { missing_annotation with annotation = annotation >>| dequalify };
         }
     | MissingGlobalAnnotation ({ annotation; _ } as immutable_type) ->
         MissingGlobalAnnotation {
-          immutable_type with  annotation = dequalify annotation;
+          immutable_type with  annotation = annotation >>| dequalify;
         }
     | MissingTypeParameters { annotation; number_of_parameters } ->
         MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }

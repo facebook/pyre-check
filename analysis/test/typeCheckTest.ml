@@ -3554,6 +3554,17 @@ let test_check_init _ =
   assert_type_errors
     {|
       class Foo:
+        def __init__(renamed_self) -> None:
+          renamed_self.attribute = 0
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
+       no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
         def __init__(self) -> None:
           self.attribute: bool = False
     |}

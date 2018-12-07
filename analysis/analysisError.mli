@@ -21,7 +21,7 @@ type mismatch = {
 
 type missing_annotation = {
   name: Access.t;
-  annotation: Type.t;
+  annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
