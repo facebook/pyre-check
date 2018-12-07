@@ -272,9 +272,6 @@ and read_without_indent state = parse
   | whitespace* '#' whitespace* "type" whitespace* ':' {
       ANNOTATION_COMMENT
     }
-  | "..." whitespace* '#' whitespace* "type" whitespace* ':' {
-      STUB (lexbuf.lex_start_p, lexbuf.lex_curr_p)
-    }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
 
   | '.' { DOT lexbuf.lex_start_p }

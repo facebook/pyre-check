@@ -178,7 +178,6 @@
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
 
-%token <Lexing.position * Lexing.position> STUB
 %token <string list * string> SIGNATURE_COMMENT
 %token ANNOTATION_COMMENT
 
@@ -380,11 +379,6 @@ small_statement:
   | targets = targets; ellipses = ELLIPSES {
       let value = create_ellipses ellipses in
       List.map ~f:(fun target -> target ~value ~annotation:None) targets
-    }
-  | targets = targets; ellipses = STUB; annotation = value {
-      let annotation = Some annotation in
-      let value = create_ellipses ellipses in
-      List.map ~f:(fun target -> target ~value ~annotation) targets
     }
   | target = test_list;
     annotation = annotation;
@@ -763,7 +757,6 @@ async_statement:
 
 block_or_stub_body:
   | ellipses = ELLIPSES; NEWLINE
-  | ellipses = STUB; value; NEWLINE
   | NEWLINE+; INDENT; ellipses = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
     let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
     let body = [Node.create (Expression (Node.create Ellipses ~location)) ~location] in
