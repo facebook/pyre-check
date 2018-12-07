@@ -519,7 +519,7 @@ module State = struct
         value = ({ Define.parent; parameters; return_annotation; _ } as define);
       } as define_node) =
     let resolution = Resolution.with_parent resolution ~parent in
-    let { resolution; errors; _ } as initial =
+    let { errors; resolution; resolution_fixpoint; _ } as initial =
       create ~configuration ~resolution ~define:define_node ()
     in
     (* Check return annotation. *)
@@ -841,7 +841,16 @@ module State = struct
     in
 
     let resolution = Resolution.with_annotations resolution ~annotations in
-    { initial with resolution; errors; }
+    let resolution_fixpoint =
+      let precondition = Access.Map.Tree.empty in
+      let postcondition =
+        Resolution.annotations resolution
+        |> Access.Map.to_tree
+      in
+      let key = ([%hash: int * int] (Cfg.entry_index, 0)) in
+      Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
+    in
+    { initial with errors; resolution; resolution_fixpoint }
 
 
   and forward_expression
