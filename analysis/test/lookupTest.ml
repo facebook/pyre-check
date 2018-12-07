@@ -86,6 +86,7 @@ let test_lookup_call_arguments _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -97,73 +98,45 @@ let test_lookup_call_arguments _ =
       "test.py:5:4-5:14/str";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 2; column = 4 }
     ~annotation:(Some "test.py:2:4-2:6/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 2; column = 6 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 3 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 4 }
     ~annotation:(Some "test.py:3:4-3:20/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 11 }
     ~annotation:(Some "test.py:3:4-3:20/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 19 }
     ~annotation:(Some "test.py:3:12-3:20/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 20 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 3 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 4 }
     ~annotation:(Some "test.py:4:4-5:14/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 13 }
     ~annotation:(Some "test.py:4:4-5:14/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 14 }
     ~annotation:(Some "test.py:4:4-5:14/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 3 }
     ~annotation:(Some "test.py:4:4-5:14/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 13 }
     ~annotation:(Some "test.py:5:4-5:14/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 14 }
     ~annotation:None
 
@@ -225,6 +198,7 @@ let test_lookup_class_attributes _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -234,18 +208,12 @@ let test_lookup_class_attributes _ =
       "test.py:3:7-3:11/typing.Type[bool]";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 3 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 4 }
     ~annotation:(Some "test.py:3:4-3:5/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 5 }
     ~annotation:None
 
@@ -264,6 +232,7 @@ let test_lookup_identifier_accesses _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -291,38 +260,24 @@ let test_lookup_identifier_accesses _ =
       "test.py:9:11-9:14/test.A";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 8 }
     ~annotation:(Some "test.py:5:8-5:12/test.A");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 13 }
     ~annotation:(Some "test.py:5:8-5:14/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 14 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 17 }
     ~annotation:(Some "test.py:5:17-5:18/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 9; column = 11 }
     ~annotation:(Some "test.py:9:11-9:12/test.A");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 9; column = 12 }
     ~annotation:(Some "test.py:9:11-9:14/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 9; column = 13 }
     ~annotation:(Some "test.py:9:11-9:14/int")
 
@@ -335,6 +290,7 @@ let test_lookup_unknown_accesses _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -343,13 +299,9 @@ let test_lookup_unknown_accesses _ =
       "test.py:3:14-3:19/str";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 4 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 23 }
     ~annotation:None
 
@@ -378,6 +330,7 @@ let test_lookup_multiline_accesses _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -400,58 +353,36 @@ let test_lookup_multiline_accesses _ =
       "test.py:9:7-9:10/typing.Type[int]";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 7 }
     ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 14 }
     ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 15 }
     ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 8 }
     ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 5; column = 8 }
     ~annotation:(Some "test.py:3:7-5:14/bool");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 13; column = 12 }
     ~annotation:(Some "test.py:13:12-13:13/test.A");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 13; column = 13 }
     ~annotation:(Some "test.py:13:12-13:13/test.A");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 14; column = 4 }
     ~annotation:(Some "test.py:13:12-14:13/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 14; column = 12 }
     ~annotation:(Some "test.py:13:12-14:13/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 14; column = 13 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 18; column = 0 }
     ~annotation:(Some "test.py:17:12-19:13/int")
 
@@ -499,6 +430,7 @@ let test_lookup_string_annotations _ =
     |}
   in
   let (lookup, source) = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -510,53 +442,33 @@ let test_lookup_string_annotations _ =
       "test.py:5:5-5:9/None";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 3 }
     ~annotation:(Some "test.py:3:3-3:4/int");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 6 }
     ~annotation:(Some "test.py:3:6-3:11/typing.Type[int]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 7 }
     ~annotation:(Some "test.py:3:6-3:10/typing.Type[int]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 10 }
     ~annotation:(Some "test.py:3:6-3:11/typing.Type[int]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 11 }
     ~annotation:None;
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 3 }
     ~annotation:(Some "test.py:4:3-4:4/str");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 6 }
     ~annotation:(Some "test.py:4:6-4:11/typing.Type[str]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 7 }
     ~annotation:(Some "test.py:4:6-4:10/typing.Type[str]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 10 }
     ~annotation:(Some "test.py:4:6-4:11/typing.Type[str]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 11 }
     ~annotation:None
 
@@ -603,6 +515,7 @@ let test_lookup_unbound _ =
     |}
   in
   let lookup, source = generate_lookup source in
+  let assert_annotation = assert_annotation ~lookup ~source in
 
   assert_annotation_list
     ~lookup
@@ -623,23 +536,15 @@ let test_lookup_unbound _ =
       "test.py:6:6-6:10/List[Variable[_T]]";
     ];
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 6 }
     ~annotation:(Some "test.py:3:6-3:21/typing.List[]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 3; column = 18 }
     ~annotation:(Some "test.py:3:18-3:20/typing.List[]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 7 }
     ~annotation:(Some "test.py:4:7-4:8/typing.List[]");
   assert_annotation
-    ~lookup
-    ~source
     ~position:{ Location.line = 4; column = 22 }
     ~annotation:(Some "test.py:4:22-4:23/typing.List[]")
 
@@ -718,6 +623,7 @@ let test_lookup_definitions _ =
     |}
   in
   let lookup, source = generate_lookup source in
+  let assert_definition = assert_definition ~lookup ~source in
 
   assert_definition_list
     ~lookup
@@ -732,18 +638,12 @@ let test_lookup_definitions _ =
       "test.py:8:17-8:20 -> builtins.pyi:75:0-90:49";
     ];
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 12; column = 0 }
     ~definition:None;
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 12; column = 4 }
     ~definition:(Some "test.py:8:0-9:8");
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 12; column = 7 }
     ~definition:None
 
@@ -772,6 +672,7 @@ let test_lookup_definitions_instances _ =
     |}
   in
   let lookup, source = generate_lookup source in
+  let assert_definition = assert_definition ~lookup ~source in
 
   assert_definition_list
     ~lookup
@@ -796,48 +697,30 @@ let test_lookup_definitions_instances _ =
       "test.py:9:15-9:16 -> test.py:2:0-4:12";
     ];
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 4 }
     ~definition:None;
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 5 }
     ~definition:None;
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 6 }
     ~definition:(Some "test.py:8:4-9:16");
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 8 }
     ~definition:(Some "test.py:8:4-9:16");
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 9 }
     ~definition:None;
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 11 }
     ~definition:None;
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 12 }
     ~definition:(Some "test.py:3:4-4:12");
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 14 }
     ~definition:(Some "test.py:3:4-4:12");
   assert_definition
-    ~lookup
-    ~source
     ~position:{ Location.line = 16; column = 15 }
     ~definition:None
 
