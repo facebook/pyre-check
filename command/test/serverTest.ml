@@ -485,13 +485,13 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (3, 6, 3, 8, Type.integer);
-            (2, 24, 2, 27, parse_annotation "typing.Type[str]");
+            (2, 24, 2, 27, Type.meta Type.string);
             (2, 21, 2, 22, Type.string);
             (2, 40, 2, 44, Type.none);
             (2, 17, 2, 19, Type.integer);
             (3, 2, 3, 3, Type.integer);
             (2, 30, 2, 35, Type.string);
-            (2, 11, 2, 14, parse_annotation "typing.Type[int]");
+            (2, 11, 2, 14, Type.meta Type.integer);
             (2, 8, 2, 9, Type.integer);
           ] |> create_types_at_locations)
        ));
@@ -507,13 +507,13 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (2, 19, 2, 22, parse_annotation "typing.Type[str]");
+            (2, 19, 2, 22, Type.meta Type.string);
             (5, 8, 5, 9, Type.integer);
-            (2, 27, 2, 30, parse_annotation "typing.Type[str]");
+            (2, 27, 2, 30, Type.meta Type.string);
             (4, 1, 4, 2, Type.string);
             (4, 5, 4, 6, Type.integer);
             (3, 1, 3, 2, Type.integer);
-            (2, 11, 2, 14, parse_annotation "typing.Type[int]");
+            (2, 11, 2, 14, Type.meta Type.integer);
             (3, 5, 3, 6, Type.integer);
             (2, 8, 2, 9, Type.integer);
             (2, 16, 2, 17, Type.string);
@@ -617,6 +617,67 @@ let test_query context =
             (3, 6, 3, 7, Type.integer);
           ] |> create_types_at_locations)
        ));
+
+  (* ==== Documenting known bad behavior below (T37772879) ==== *)
+
+  (* Annotation type is Type[int] rather than Type[List[int]]. *)
+  assert_type_query_response
+    ~source:{|
+       def foo(x: typing.List[int]) -> None:
+        pass
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 32, 2, 36, Type.none);
+            (2, 23, 2, 26, Type.meta Type.integer);
+            (2, 8, 2, 9, Type.list Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
+  assert_type_query_response
+    ~source:{|
+       class Foo:
+         x = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = parse_annotation "typing.Type[Foo]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  (* `x` is typed as List[int] rather than int. *)
+  assert_type_query_response
+    ~source:{|
+        for x in [1, 2]:
+          pass
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 4, 2, 5, Type.list Type.integer);
+            (2, 13, 2, 14, Type.integer);
+            (2, 10, 2, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* ==== Documenting known bad behavior above (T37772879) ==== *)
 
   assert_type_query_response
     ~source:{|
