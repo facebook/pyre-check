@@ -6978,6 +6978,20 @@ let test_check_callables _ =
       "Call on type that is not callable [29]: `Call` is not callable";
     ];
 
+  (* Test for terminating fixpoint *)
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(x: int, call: Call) -> int:
+        for x in range(0, 7):
+          call()
+        return 7
+    |}
+    [
+      "Call on type that is not callable [29]: `Call` is not callable";
+    ];
+
   assert_type_errors
     {|
       class patch:

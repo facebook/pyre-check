@@ -930,6 +930,8 @@ let less_or_equal ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when (Access.equal left.name right.name) && left.due_to_any = right.due_to_any ->
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+    | NotCallable left, NotCallable right ->
+        Resolution.less_or_equal resolution ~left ~right
     | RedundantCast left, RedundantCast right ->
         Resolution.less_or_equal resolution ~left ~right
     | RevealedType left, RevealedType right ->
