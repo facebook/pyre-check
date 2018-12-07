@@ -1270,11 +1270,11 @@ module PrettyPrinter = struct
   and pp_assign formatter { Assign.target; annotation; value; parent } =
     Format.fprintf
       formatter
-      "%a%a = %a%a"
+      "%a%a%a = %a"
       pp_access_list_option parent
       Expression.pp target
+      pp_expression_option (": ", annotation)
       Expression.pp value
-      pp_expression_option (" # ", annotation)
 
 
   and pp_class formatter { Record.Class.name; bases; body; decorators; _ } =
