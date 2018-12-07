@@ -23,7 +23,7 @@ type test_files = {
 
 
 let files context =
-  let root = bracket_tmpdir context in
+  let root = bracket_tmpdir context |> Filename.realpath in
   let root_path = Path.create_absolute root in
   let relative =
     Filename.temp_file ~in_dir:root "filename" ".py"
@@ -37,7 +37,7 @@ let files context =
   in
 
   let symlink_target =
-    let symlink_root = bracket_tmpdir context in
+    let symlink_root = bracket_tmpdir context |> Filename.realpath in
     Filename.temp_file ~in_dir:symlink_root "target" ".py"
     |> Path.create_absolute
     |> Path.show
