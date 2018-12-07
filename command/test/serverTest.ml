@@ -226,7 +226,7 @@ let assert_response
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle source in
+  let parsed = parse ~handle source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -454,6 +454,19 @@ let test_query context =
 
   assert_type_query_response
     ~source:{|
+      a: int = 1
+      a = 2
+    |}
+    ~query:"type_at_position('test.py', 3, 0)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypeAtLocation
+          {
+            Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
+            annotation = Type.integer;
+          }));
+
+  assert_type_query_response
+    ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
@@ -498,10 +511,64 @@ let test_query context =
 
   assert_type_query_response
     ~source:{|
+       def foo(x: int, y: str) -> str:
+        x = 4
+        y = 5
+        return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 19 2 22;
+              annotation = parse_annotation "typing.Type[str]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 5 8 5 9;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 27 2 30;
+              annotation = parse_annotation "typing.Type[str]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 1 4 2;
+              annotation = Type.string
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 5 4 6;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 1 3 2;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 11 2 14;
+              annotation = parse_annotation "typing.Type[int]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 5 3 6;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 8 2 9;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 16 2 17;
+              annotation = Type.string
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
       class C:
-        C.x = 1
-        C.y = ""
-        def C.foo() -> int: ...
+        x = 1
+        y = ""
+        def foo() -> int: ...
     |}
     ~query:"attributes(C)"
     (Protocol.TypeQuery.Response
