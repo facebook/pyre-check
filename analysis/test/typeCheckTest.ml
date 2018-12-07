@@ -3812,10 +3812,7 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.bar
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `int` but no " ^
-      "type is specified.";
-    ];
+    [];
 
   assert_type_errors
     {|

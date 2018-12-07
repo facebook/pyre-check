@@ -1193,12 +1193,12 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = None;
+            annotation = Some !"bool";
           };
           +{
             Parameter.name = ~~"b";
             value = None;
-            annotation = None;
+            annotation = Some !"bool";
           };
         ];
         body = [
@@ -2498,7 +2498,24 @@ let test_class _ =
         docstring = None;
       };
     ];
-
+  assert_parsed_equal
+    "class foo:\n\tattribute = 1 # type: int"
+    [
+      +Class {
+        Class.name = Access.create "foo";
+        bases = [];
+        body = [
+          +Assign {
+            Assign.target = !"attribute";
+            annotation = Some !"int";
+            value = +Integer 1;
+            parent = Some (Access.create "foo");
+          };
+        ];
+        decorators = [];
+        docstring = None;
+      };
+    ];
   assert_parsed_equal
     "class foo:\n\tattribute: int"
     [
@@ -2663,6 +2680,26 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
+        value = +Integer 1;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "a = 1  # type: int"
+    [
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some !"int";
+        value = +Integer 1;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "a = 1  # type: ignore"
+    [
+      +Assign {
+        Assign.target = !"a";
+        annotation = None;
         value = +Integer 1;
         parent = None;
       };

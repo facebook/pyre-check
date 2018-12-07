@@ -266,10 +266,17 @@ and read_without_indent state = parse
       COMPLEX ((lexbuf.lex_start_p, lexbuf.lex_curr_p), value)
     }
 
+  | whitespace* '#' whitespace* "type" whitespace* ':' whitespace* "ignore" [^ '\n' '\r']* {
+      read_without_indent state lexbuf
+    }
+  | whitespace* '#' whitespace* "type" whitespace* ':' {
+      ANNOTATION_COMMENT
+    }
   | "..." whitespace* '#' whitespace* "type" whitespace* ':' {
       STUB (lexbuf.lex_start_p, lexbuf.lex_curr_p)
     }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
+
   | '.' { DOT lexbuf.lex_start_p }
   | '!' { EXCLAMATIONMARK }
   | "%=" { PERCENTEQUALS }

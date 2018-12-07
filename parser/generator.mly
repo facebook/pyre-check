@@ -188,8 +188,11 @@
 %token <Lexing.position> RIGHTCURLY
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
+
 %token <Lexing.position * Lexing.position> STUB
 %token <string list * string> SIGNATURE_COMMENT
+%token ANNOTATION_COMMENT
+
 %token AMPERSAND
 %token AMPERSANDEQUALS
 %token AND
@@ -272,6 +275,7 @@
 
 %right OR
 %right AND
+%left ANNOTATION_COMMENT
 %left NOT
 %left IS
 %left BAR
@@ -381,8 +385,8 @@ small_statement:
         };
       }]
     }
-  | targets = targets; value = value {
-      List.map ~f:(fun target -> target ~value ~annotation:None) targets
+  | targets = targets; value = value; annotation = comment_annotation? {
+      List.map ~f:(fun target -> target ~value ~annotation) targets
   }
   | targets = targets; ellipses = ELLIPSES {
       let value = create_ellipses ellipses in
@@ -594,7 +598,7 @@ compound_statement:
 
   | definition = DEFINE; name = simple_access;
     LEFTPARENS;
-    parameters = separated_list(COMMA, define_parameter);
+    parameters = define_parameters;
     RIGHTPARENS;
     return_annotation = return_annotation?;
     COLON;
@@ -854,6 +858,25 @@ simple_access:
     }
   ;
 
+define_parameters:
+  | parameter = define_parameter;
+    COMMA;
+    annotation = comment_annotation?;
+    parameters = define_parameters {
+      let value =
+        let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
+        let annotation =
+          match existing, annotation with
+          | None, Some annotation -> Some annotation
+          | _ -> existing
+        in
+        { value with Parameter.annotation }
+      in
+      { parameter with Node.value } :: parameters
+    }
+  | parameter = define_parameter { [parameter] }
+  | { [] }
+
 %inline define_parameter:
   (* `*` itself is a valid parameter... *)
   | asteriks = ASTERIKS {
@@ -920,6 +943,9 @@ simple_access:
 %inline annotation:
   | COLON; expression = expression { expression }
   ;
+
+%inline comment_annotation:
+  | ANNOTATION_COMMENT; expression = expression { expression }
 
 %inline return_annotation:
   | MINUS; RIGHTANGLE; expression = expression { expression }
