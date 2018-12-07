@@ -51,29 +51,29 @@ module ExpressionVisitor = struct
     definitions_lookup: definition_lookup;
   }
 
-  let resolve ~resolution ~expression =
-    try
-      let annotation = Resolution.resolve resolution expression in
-      if (Type.is_unknown annotation) or (Type.is_unbound annotation) then
-        None
-      else
-        Some annotation
-    with TypeOrder.Untracked _ ->
-      None
-
-  let store_lookup ~table ~location ~data =
-    if not (Location.equal location Location.Reference.any) &&
-       not (Location.equal location Location.Reference.synthetic) then
-      Hashtbl.set
-        table
-        ~key:location
-        ~data
-
   let expression_base
       ~postcondition
       ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
     let resolution = if postcondition then post_resolution else pre_resolution in
+    let resolve ~expression =
+      try
+        let annotation = Resolution.resolve resolution expression in
+        if (Type.is_unknown annotation) or (Type.is_unbound annotation) then
+          None
+        else
+          Some annotation
+      with TypeOrder.Untracked _ ->
+        None
+    in
+    let store_lookup ~table ~location ~data =
+      if not (Location.equal location Location.Reference.any) &&
+         not (Location.equal location Location.Reference.synthetic) then
+        Hashtbl.set
+          table
+          ~key:location
+          ~data
+    in
     let annotate_argument_names = function
       | { Node.value = Expression.Access access; _ } ->
           let check_single_access = function
@@ -83,7 +83,7 @@ module ExpressionVisitor = struct
                       Argument.value = { Node.location = value_location; _ } as value;
                       name;
                     } =
-                  match name, resolve ~resolution ~expression:value with
+                  match name, resolve ~expression:value with
                   | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->
                       let location = { value_location with Location.start } in
                       store_lookup ~table:annotations_lookup ~location ~data:(Precise annotation)
@@ -141,7 +141,7 @@ module ExpressionVisitor = struct
                 Some definition
             | None ->
                 (* Resolve prefix to check if this is a method. *)
-                resolve ~resolution ~expression:(Access.expression prefix)
+                resolve ~expression:(Access.expression prefix)
                 >>| Type.class_name
                 >>| (fun resolved_prefix -> resolved_prefix @ [element])
                 >>= find_definition
@@ -152,7 +152,6 @@ module ExpressionVisitor = struct
           let filter_annotation ~prefix ~element =
             let access = prefix @ [element] in
             resolve
-              ~resolution
               ~expression:(Node.create ~location:expression_location (Expression.Access access))
           in
           collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
@@ -164,7 +163,7 @@ module ExpressionVisitor = struct
               ~location:expression_location
               ~data:(Precise annotation)
           in
-          resolve ~resolution ~expression
+          resolve ~expression
           >>| store_annotation
           |> ignore
     in
