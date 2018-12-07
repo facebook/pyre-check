@@ -61,6 +61,7 @@ type unpack_problem =
 
 
 type kind =
+  | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {
@@ -147,12 +148,14 @@ let code = function
   | TypedDictionaryKeyNotFound _ -> 27
   | UnexpectedKeyword _ -> 28
   | NotCallable _ -> 29
+  | AnalysisFailure _ -> 30
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
 
 
 let name = function
+  | AnalysisFailure _ -> "Analysis failure"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
   | IncompatibleParameterType _ -> "Incompatible parameter type"
@@ -207,6 +210,12 @@ let messages ~detailed:_ ~define location kind =
     "-with-subclassing for mutable container errors."
   in
   match kind with
+  | AnalysisFailure annotation ->
+      [
+        Format.asprintf
+          "Terminating analysis because type `%a` is not defined."
+          Type.pp annotation
+      ]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
       [
@@ -889,6 +898,7 @@ let due_to_analysis_limitations { kind; _ } =
   | Top -> true
   | UndefinedAttribute { origin = Class { annotation; _ }; _ } ->
       Type.is_unknown annotation
+  | AnalysisFailure _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
@@ -944,6 +954,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
   | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
       Type.mismatch_with_any actual expected
+  | AnalysisFailure _
   | TooManyArguments _
   | Unpack _
   | MissingAttributeAnnotation _
@@ -977,6 +988,8 @@ let less_or_equal ~resolution left right =
   Location.Instantiated.equal left.location right.location &&
   begin
     match left.kind, right.kind with
+    | AnalysisFailure left, AnalysisFailure right ->
+        Type.equal left right
     | ImpossibleIsinstance left, ImpossibleIsinstance right
       when Expression.equal left.expression right.expression ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -1109,6 +1122,8 @@ let join ~resolution left right =
   in
   let kind =
     match left.kind, right.kind with
+    | AnalysisFailure left, AnalysisFailure right ->
+        AnalysisFailure (Type.union [left; right])
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
@@ -1451,6 +1466,7 @@ let suppress ~mode error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       match kind with
+      | AnalysisFailure _
       | TooManyArguments _
       | Unpack _
       | IncompatibleParameterType _
@@ -1564,6 +1580,8 @@ let dequalify
   let dequalify = Type.dequalify dequalify_map in
   let kind =
     match kind with
+    | AnalysisFailure annotation ->
+        AnalysisFailure (dequalify annotation)
     | ImpossibleIsinstance ({
         mismatch = { actual; expected; due_to_invariance };
         _;

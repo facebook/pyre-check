@@ -7422,6 +7422,18 @@ let test_check_undefined_type _ =
     ]
 
 
+let test_check_analysis_failure _ =
+  assert_type_errors
+    {|
+      def foo() -> Derp:
+        pass
+
+      def bar(x: int = foo()) -> int:
+        return x
+    |}
+    ["Analysis failure [30]: Terminating analysis because type `Derp` is not defined."]
+
+
 let test_check_missing_type_parameters _ =
   assert_type_errors
     {|
@@ -8357,6 +8369,7 @@ let () =
     "check_callables">::test_check_callables;
     "check_assert_functions">::test_check_assert_functions;
     "check_undefined_type">::test_check_undefined_type;
+    "check_analysis_failure">::test_check_analysis_failure;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "environment">::test_environment;
     "scheduling">::test_scheduling;

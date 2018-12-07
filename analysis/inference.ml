@@ -438,7 +438,7 @@ let infer
               [
                 Error.create
                   ~location
-                  ~kind:(Error.UndefinedType annotation)
+                  ~kind:(Error.AnalysisFailure annotation)
                   ~define:define_node
               ]
             else

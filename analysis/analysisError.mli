@@ -50,6 +50,7 @@ type unpack_problem =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
+  | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {

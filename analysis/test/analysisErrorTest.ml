@@ -484,6 +484,16 @@ let test_join _ =
     (error (Error.Top));
 
   assert_join
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "derp")));
+
+  assert_join
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "herp")))
+    (error (Error.AnalysisFailure (Type.union [Type.primitive "derp"; Type.primitive "herp"])));
+
+  assert_join
     (error (revealed_type "a" Type.integer))
     (error (revealed_type "a" Type.float))
     (error (revealed_type "a" Type.float));
@@ -527,7 +537,9 @@ let test_filter _ =
   (* Suppress stub errors. *)
   let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
   assert_filtered ~location:stub (undefined_attribute (Type.primitive "Foo"));
-  assert_unfiltered ~location:Location.Instantiated.any (undefined_attribute (Type.primitive "Foo"));
+  assert_unfiltered
+    ~location:Location.Instantiated.any
+    (undefined_attribute (Type.primitive "Foo"));
 
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
@@ -603,10 +615,12 @@ let test_suppress _ =
   assert_suppressed Source.Infer (missing_return Type.Object);
   assert_not_suppressed Source.Infer (missing_return Type.integer);
   assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
+  assert_suppressed Source.Infer (Error.AnalysisFailure Type.integer);
 
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Object);
+  assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
 
   assert_suppressed Source.Default (missing_return Type.integer);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
@@ -614,6 +628,7 @@ let test_suppress _ =
   assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
   assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
   assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"));
+  assert_not_suppressed Source.Default (Error.AnalysisFailure Type.integer);
 
   assert_suppressed
     Source.Default

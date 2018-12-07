@@ -593,140 +593,129 @@ module State = struct
           |> Identifier.create
           |> fun name -> [Access.Identifier name]
         in
-        try
-          let { Annotation.annotation; mutability }, errors =
-            match index, parent with
-            | 0, Some parent
-              when Define.is_method define &&
-                   not (Define.is_static_method define) ->
+        let { Annotation.annotation; mutability }, errors =
+          match index, parent with
+          | 0, Some parent
+            when Define.is_method define &&
+                 not (Define.is_static_method define) ->
+              let annotation =
                 let annotation =
-                  let annotation =
-                    Access.expression parent
-                    |> Resolution.parse_annotation resolution
-                  in
-                  if Define.is_class_method define || Define.is_class_property define then
-                    (* First parameter of a method is a class object. *)
-                    Type.meta annotation
-                  else
-                    (* First parameter of a method is the callee object. *)
-                    annotation
+                  Access.expression parent
+                  |> Resolution.parse_annotation resolution
                 in
-                Annotation.create annotation, errors
-            | _ ->
-                let add_missing_parameter_error ~annotation ~due_to_any errors =
+                if Define.is_class_method define || Define.is_class_property define then
+                  (* First parameter of a method is a class object. *)
+                  Type.meta annotation
+                else
+                  (* First parameter of a method is the callee object. *)
+                  annotation
+              in
+              Annotation.create annotation, errors
+          | _ ->
+              let add_missing_parameter_error ~annotation ~due_to_any errors =
+                let error =
+                  let sanitized_access =
+                    name
+                    |> Identifier.sanitized
+                    |> fun name -> [Access.Identifier name]
+                  in
+                  Error.create
+                    ~location
+                    ~kind:(Error.MissingParameterAnnotation {
+                        name = sanitized_access;
+                        annotation;
+                        due_to_any;
+                      })
+                    ~define:define_node
+                in
+                Map.set ~key:location ~data:error errors
+              in
+              let add_incompatible_variable_error errors annotation default =
+                if Type.equal default Type.Object ||
+                   Resolution.less_or_equal resolution ~left:default ~right:annotation then
+                  errors
+                else
                   let error =
-                    let sanitized_access =
-                      name
-                      |> Identifier.sanitized
-                      |> fun name -> [Access.Identifier name]
+                    let instantiate location =
+                      Location.instantiate
+                        ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
+                        location
                     in
                     Error.create
                       ~location
-                      ~kind:(Error.MissingParameterAnnotation {
-                          name = sanitized_access;
-                          annotation;
-                          due_to_any;
+                      ~kind:(Error.IncompatibleVariableType {
+                          name = [Expression.Access.Identifier name];
+                          mismatch =
+                            Error.create_mismatch
+                              ~resolution
+                              ~expected:annotation
+                              ~actual:default
+                              ~covariant:true;
+                          declare_location = instantiate location;
                         })
                       ~define:define_node
                   in
                   Map.set ~key:location ~data:error errors
-                in
-                let add_incompatible_variable_error errors annotation default =
-                  if Type.equal default Type.Object ||
-                     Resolution.less_or_equal resolution ~left:default ~right:annotation then
-                    errors
-                  else
-                    let error =
-                      let instantiate location =
-                        Location.instantiate
-                          ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
-                          location
-                      in
-                      Error.create
-                        ~location
-                        ~kind:(Error.IncompatibleVariableType {
-                            name = [Expression.Access.Identifier name];
-                            mismatch =
-                              Error.create_mismatch
-                                ~resolution
-                                ~expected:annotation
-                                ~actual:default
-                                ~covariant:true;
-                            declare_location = instantiate location;
-                          })
-                        ~define:define_node
-                    in
-                    Map.set ~key:location ~data:error errors
-                in
-                match annotation, value with
-                | Some annotation, Some value
-                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    let { resolved = annotation; _ } =
-                      forward_expression ~state:initial ~expression:value
-                    in
-                    Annotation.create annotation,
-                    add_missing_parameter_error ~annotation ~due_to_any:true errors
-                | Some annotation, None
-                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    let annotation =
-                      Resolution.parse_annotation resolution annotation
-                      |> Annotation.create_immutable ~global:false
-                    in
-                    annotation,
-                    add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:true errors
-                | Some annotation, value ->
-                    let annotation = Resolution.parse_annotation resolution annotation in
-                    let errors =
-                      check_annotation ~resolution ~location ~define:define_node ~annotation
-                      |> List.fold
-                        ~init:errors
-                        ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
-                    in
-                    let errors =
-                      value
-                      >>| (fun value -> forward_expression ~state:initial ~expression:value)
-                      >>| (fun {resolved; _ } -> resolved)
-                      >>| add_incompatible_variable_error errors annotation
-                      |> Option.value ~default:errors
-                    in
-                    let annotation =
-                      match annotation with
-                      | Type.Variable { constraints = Type.Explicit constraints; _ } ->
-                          Type.union constraints
-                      | _ ->
-                          annotation
-                    in
-                    Annotation.create_immutable ~global:false annotation, errors
-                | None, Some value ->
-                    let { resolved = annotation; _ } =
-                      forward_expression ~state:initial ~expression:value
-                    in
-                    Annotation.create annotation,
-                    add_missing_parameter_error ~annotation ~due_to_any:false errors
-                | None, None ->
-                    Annotation.create Type.Bottom,
-                    add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:false errors
-          in
-          let annotation =
-            if String.is_prefix ~prefix:"**" (Identifier.show name) then
-              Type.dictionary ~key:Type.string ~value:annotation
-            else if String.is_prefix ~prefix:"*" (Identifier.show name) then
-              Type.Tuple (Type.Unbounded annotation)
-            else
-              annotation
-          in
-          Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability },
-          errors
-        with
-        | TypeOrder.Untracked annotation ->
-            let untracked_error =
-              Error.create
-                ~location
-                ~kind:(Error.UndefinedType annotation)
-                ~define:define_node
-            in
-            annotations,
-            Map.set ~key:location ~data:untracked_error errors
+              in
+              match annotation, value with
+              | Some annotation, Some value
+                when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                  let { resolved = annotation; _ } =
+                    forward_expression ~state:initial ~expression:value
+                  in
+                  Annotation.create annotation,
+                  add_missing_parameter_error ~annotation ~due_to_any:true errors
+              | Some annotation, None
+                when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                  let annotation =
+                    Resolution.parse_annotation resolution annotation
+                    |> Annotation.create_immutable ~global:false
+                  in
+                  annotation,
+                  add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:true errors
+              | Some annotation, value ->
+                  let annotation = Resolution.parse_annotation resolution annotation in
+                  let errors =
+                    check_annotation ~resolution ~location ~define:define_node ~annotation
+                    |> List.fold
+                      ~init:errors
+                      ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
+                  in
+                  let errors =
+                    value
+                    >>| (fun value -> forward_expression ~state:initial ~expression:value)
+                    >>| (fun {resolved; _ } -> resolved)
+                    >>| add_incompatible_variable_error errors annotation
+                    |> Option.value ~default:errors
+                  in
+                  let annotation =
+                    match annotation with
+                    | Type.Variable { constraints = Type.Explicit constraints; _ } ->
+                        Type.union constraints
+                    | _ ->
+                        annotation
+                  in
+                  Annotation.create_immutable ~global:false annotation, errors
+              | None, Some value ->
+                  let { resolved = annotation; _ } =
+                    forward_expression ~state:initial ~expression:value
+                  in
+                  Annotation.create annotation,
+                  add_missing_parameter_error ~annotation ~due_to_any:false errors
+              | None, None ->
+                  Annotation.create Type.Bottom,
+                  add_missing_parameter_error ~annotation:Type.Bottom ~due_to_any:false errors
+        in
+        let annotation =
+          if String.is_prefix ~prefix:"**" (Identifier.show name) then
+            Type.dictionary ~key:Type.string ~value:annotation
+          else if String.is_prefix ~prefix:"*" (Identifier.show name) then
+            Type.Tuple (Type.Unbounded annotation)
+          else
+            annotation
+        in
+        Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability },
+        errors
       in
       List.foldi ~init:((Resolution.annotations resolution), errors) ~f:parameter parameters
     in
@@ -2665,7 +2654,7 @@ let check
   let resolution = resolution environment () in
 
   let check
-      ~define:({ Node.location; value = { Define.name; parent; _ } as define } as define_node)
+      ~define:{ Node.value = ({ Define.name; parent; _ } as define); _ }
       ~initial
       ~queue =
     Log.log ~section:`Check "Checking %a" Access.pp name;
@@ -2707,69 +2696,43 @@ let check
           |> File.write
         end
     in
-    try
-      let exit =
-        let cfg = Cfg.create define in
-        let fixpoint = Fixpoint.forward ~cfg ~initial in
-        dump_cfg cfg fixpoint;
-        Fixpoint.exit fixpoint
-      in
-      if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+    let exit =
+      let cfg = Cfg.create define in
+      let fixpoint = Fixpoint.forward ~cfg ~initial in
+      dump_cfg cfg fixpoint;
+      Fixpoint.exit fixpoint
+    in
+    if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
-      let () =
-        (* Write fixpoint type resolutions to shared memory *)
-        let dump_resolutions { State.resolution_fixpoint; _ } =
-          ResolutionSharedMemory.add name resolution_fixpoint
-        in
-        exit
-        >>| dump_resolutions
-        |> ignore
+    let () =
+      (* Write fixpoint type resolutions to shared memory *)
+      let dump_resolutions { State.resolution_fixpoint; _ } =
+        ResolutionSharedMemory.add name resolution_fixpoint
       in
+      exit
+      >>| dump_resolutions
+      |> ignore
+    in
 
-      let () =
-        (* Schedule nested functions for analysis. *)
-        exit
-        >>| State.nested_defines
-        >>| List.iter ~f:(Queue.enqueue queue)
-        |> ignore
-      in
+    let () =
+      (* Schedule nested functions for analysis. *)
+      exit
+      >>| State.nested_defines
+      >>| List.iter ~f:(Queue.enqueue queue)
+      |> ignore
+    in
 
-      let errors =
-        exit
-        >>| State.errors
-        |> Option.value ~default:[]
-      in
-      let coverage =
-        exit
-        >>| State.coverage
-        |> Option.value ~default:(Coverage.create ())
-      in
-      { SingleSourceResult.errors; coverage }
-    with
-    | TypeOrder.Untracked annotation ->
-        Statistics.event
-          ~name:"undefined type"
-          ~integers:[]
-          ~normals:[
-            "handle", (File.Handle.show handle);
-            "define", Access.show name;
-            "type", Type.show annotation;
-          ]
-          ();
-        if dump then
-          Log.dump
-            "Analysis crashed because of untracked type `%s`."
-            (Log.Color.red (Type.show annotation));
-        let undefined_error =
-          Error.create
-            ~location
-            ~kind:(Error.UndefinedType annotation)
-            ~define:define_node;
-        in
-        {
-          SingleSourceResult.errors = [undefined_error];
-          coverage = Coverage.create ~crashes:1 ();
-        }
+    let errors =
+      exit
+      >>| State.errors
+      |> Option.value ~default:[]
+    in
+    let coverage =
+      exit
+      >>| State.coverage
+      |> Option.value ~default:(Coverage.create ())
+    in
+    { SingleSourceResult.errors; coverage }
   in
 
   let results =
@@ -2792,14 +2755,45 @@ let check
     in
     let rec results ~queue =
       match Queue.dequeue queue with
-      | Some (define, resolution) ->
-          let initial =
-            State.initial
-              ~configuration
-              ~resolution
-              define
+      | Some (
+          ({ Node.location; value = ({ Define.name; _ } as define) } as define_node),
+          resolution
+        ) ->
+          let result =
+            try
+              let initial =
+                State.initial
+                  ~configuration
+                  ~resolution
+                  define_node
+              in
+              check ~define:define_node ~initial ~queue
+            with
+            | TypeOrder.Untracked annotation ->
+                Statistics.event
+                  ~name:"undefined type"
+                  ~integers:[]
+                  ~normals:[
+                    "handle", (File.Handle.show handle);
+                    "define", Access.show name;
+                    "type", Type.show annotation;
+                  ]
+                  ();
+                if Define.dump define then
+                  Log.dump
+                    "Analysis crashed because of untracked type `%s`."
+                    (Log.Color.red (Type.show annotation));
+                let undefined_error =
+                  Error.create
+                    ~location
+                    ~kind:(Error.AnalysisFailure annotation)
+                    ~define:define_node;
+                in
+                {
+                  SingleSourceResult.errors = [undefined_error];
+                  coverage = Coverage.create ~crashes:1 ();
+                }
           in
-          let result = check ~define ~initial ~queue in
           result :: results ~queue
       | _ ->
           []
