@@ -5604,7 +5604,17 @@ let test_check_variable_bindings _ =
       def foo() -> T:
         return 1.0
     |}
-    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."]
+    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo(t: T) -> None:
+        int_to_str(t)
+      def bar(x: str) -> None:
+        foo(x)
+    |}
+    ["Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st anonymous " ^
+     "parameter to call `foo` but got `str`."]
 
 
 let test_check_refinement _ =
