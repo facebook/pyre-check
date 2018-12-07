@@ -157,17 +157,6 @@
     |> (fun expression -> Expression expression)
     |> Node.create ~location
 
-  let assignment_with_annotation ~target ~value ~annotation =
-      {
-        Node.location = target.Node.location;
-        value = Assign {
-          Assign.target;
-          annotation;
-          value;
-          parent = None;
-        };
-      }
-
 %}
 
 (* The syntactic junkyard. *)
@@ -1050,7 +1039,20 @@ import:
   ;
 
 %inline target:
-  | target = test_list { assignment_with_annotation ~target }
+  | target = test_list {
+      let assignment_with_annotation ~value ~annotation =
+        {
+          Node.location = target.Node.location;
+          value = Assign {
+            Assign.target;
+            annotation;
+            value;
+            parent = None;
+          };
+        }
+      in
+      assignment_with_annotation
+    }
   | subscript = subscript { subscript_mutation ~subscript }
 
 targets:
