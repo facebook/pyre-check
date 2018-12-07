@@ -45,7 +45,8 @@ type t = {
 module ExpressionVisitor = struct
 
   type t = {
-    resolution: Resolution.t;
+    pre_resolution: Resolution.t;
+    post_resolution: Resolution.t;
     annotations_lookup: annotation_lookup;
     definitions_lookup: definition_lookup;
   }
@@ -69,9 +70,11 @@ module ExpressionVisitor = struct
         ~key:location
         ~data
 
-  let expression
-      ({ resolution; annotations_lookup; definitions_lookup } as state)
+  let expression_base
+      ~postcondition
+      ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
+    let resolution = if postcondition then post_resolution else pre_resolution in
     let lookup_of_arguments = function
       | { Node.value = Expression.Access access; _ } ->
           let check_single_access = function
@@ -187,8 +190,14 @@ module ExpressionVisitor = struct
     in
     state
 
+  let expression state expression =
+    expression_base ~postcondition:false state expression
+
+  let expression_postcondition state expression =
+    expression_base ~postcondition:true state expression
+
   let statement
-      ({ resolution; annotations_lookup; _ } as state)
+      ({ pre_resolution = resolution; annotations_lookup; _ } as state)
       { Node.value = statement_value; _ } =
     match statement_value with
     | Define { parameters; _ } ->
@@ -220,8 +229,26 @@ module ExpressionVisitor = struct
 end
 
 
-module Visit = Visit.Make(ExpressionVisitor)
+module Visit = struct
+  include Visit.Make(ExpressionVisitor)
+  let visit state source =
+    let state = ref state in
 
+    let visit_statement_override ~state ~visitor statement =
+      match Node.value statement with
+      | Assign { Assign.target; annotation; value; _ } ->
+          visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition target;
+          Option.iter ~f:(visit_expression ~state ~visitor:ExpressionVisitor.expression) annotation;
+          visit_expression ~state ~visitor:ExpressionVisitor.expression value
+      | _ ->
+          visit_statement ~state ~visitor statement
+    in
+
+    List.iter
+      ~f:(visit_statement_override ~state ~visitor:ExpressionVisitor.statement)
+      source.Source.statements;
+    !state
+end
 
 let create_of_source environment source =
   let annotations_lookup = Location.Reference.Table.create () in
@@ -236,15 +263,21 @@ let create_of_source environment source =
     let walk_cfg ~key:node_id ~data:cfg_node =
       let statements = Cfg.Node.statements cfg_node in
       let walk_statements statement_index statement =
-        let annotations =
+        let pre_annotations, post_annotations =
           Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { ResolutionSharedMemory.precondition; _ } ->
-              Access.Map.of_tree precondition)
-          |> Option.value ~default:Access.Map.empty
+          >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
+              Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
+          |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
         in
-        let resolution = TypeCheck.resolution environment ~annotations () in
+        let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
+        let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
         Visit.visit
-          { ExpressionVisitor.resolution; annotations_lookup; definitions_lookup }
+          {
+            ExpressionVisitor.pre_resolution;
+            post_resolution;
+            annotations_lookup;
+            definitions_lookup
+          }
           (Source.create [statement])
         |> ignore
       in

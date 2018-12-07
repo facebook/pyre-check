@@ -495,6 +495,10 @@ let test_query context =
               annotation = Type.integer
             };
             {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 2 30 2 35;
               annotation = Type.string
             };
@@ -559,6 +563,174 @@ let test_query context =
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 2 16 2 17;
               annotation = Type.string
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        x = 4
+        y = 3
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 4 2 5;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 0 2 1;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 4 3 5;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      def foo():
+        if True:
+         x = 1
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 5 3 9;
+              annotation = Type.bool
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 3 4 4;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 7 4 8;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       def foo():
+         for x in [1, 2]:
+          y = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 12 3 13;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 15 3 16;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 11 3 17;
+              annotation = Type.list Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.list Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 3 4 4;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 4 7 4 8;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        try:
+          x = 1
+        except Exception:
+          y = 2
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 5 2 5 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 5 6 5 7;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       with open() as x:
+        y = 2
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 1 3 2;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 5 3 6;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      while x is True:
+        y = 1
+   |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 11 2 15;
+              annotation = Type.bool
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 6 2 7;
+              annotation = Type.bool
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.integer
             };
           ]
        ));

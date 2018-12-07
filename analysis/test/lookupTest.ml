@@ -280,6 +280,7 @@ let test_lookup_identifier_accesses _ =
       "test.py:5:8-5:14/test.A";
       "test.py:7:13-7:16/typing.Type[int]";
       "test.py:8:10-8:13/int";
+      "test.py:8:4-8:5/test.A";
       "test.py:8:8-8:9/test.A";
       (* This is the annotation for `A()` (the function call). *)
       "test.py:8:8-8:9/typing.Type[test.A]";
@@ -379,6 +380,7 @@ let test_lookup_multiline_accesses _ =
     ~lookup
     [
       "test.py:11:13-11:16/typing.Type[int]";
+      "test.py:12:4-12:5/test.A";
       "test.py:12:8-12:9/test.A";
       "test.py:12:8-12:9/typing.Type[test.A]";
       "test.py:13:12-14:13/int";
@@ -604,13 +606,16 @@ let test_lookup_unbound _ =
     [
       "test.py:2:27-2:31/None";
       "test.py:3:18-3:20/typing.List[]";
+      "test.py:3:2-3:3/typing.List[]";
       "test.py:3:6-3:21/typing.List[]";
       "test.py:4:15-4:16/typing.List[]";
       "test.py:4:22-4:23/typing.List[]";
       "test.py:4:24-4:25/int";
       "test.py:4:7-4:8/typing.List[]";
       "test.py:4:9-4:10/int";
+      "test.py:5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "test.py:5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
+      "test.py:6:2-6:3/List[Variable[_T]]";
       "test.py:6:6-6:10/List[Variable[_T]]";
     ];
   assert_annotation
