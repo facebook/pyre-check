@@ -27,6 +27,7 @@ let test_expand_relative_imports _ =
     ~handle:"module/submodule/test.py"
     {|
       from builtins import str
+      from future.builtins import str
       from . import a
       from .relative import b
       from .. import c
@@ -34,6 +35,7 @@ let test_expand_relative_imports _ =
     |}
     {|
       from builtins import str
+      from future.builtins import str
       from module.submodule import a
       from module.submodule.relative import b
       from module import c

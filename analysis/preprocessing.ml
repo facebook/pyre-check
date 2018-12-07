@@ -23,7 +23,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
-            when Access.show from <> "builtins" ->
+            when Access.show from <> "builtins" && Access.show from <> "future.builtins" ->
               Import {
                 Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;

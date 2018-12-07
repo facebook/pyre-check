@@ -327,6 +327,19 @@ let test_register_aliases _ =
       "collections.int", "int";
       "collections.CDict", "typing.Dict[typing.Any, typing.Any]";
     ];
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "collections")
+        {|
+          from future.builtins import int
+          from future.builtins import dict as CDict
+        |};
+    ]
+    [
+      "collections.int", "int";
+      "collections.CDict", "typing.Dict[typing.Any, typing.Any]";
+    ];
 
   assert_resolved
     [

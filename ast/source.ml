@@ -321,6 +321,7 @@ let qualifier ~handle =
       | _ ->
           last in
     let strip = function
+      | "future" :: "builtins" :: tail
       | "builtins" :: tail ->
           tail
       | "__init__" :: tail ->
