@@ -8136,6 +8136,12 @@ let test_check_literal_variance _ =
       x = [1]
     |}
     [];
+  assert_type_errors
+    {|
+      x: typing.List[float] = []
+      x = [y for y in [1,2,3,4]]
+    |}
+    [];
   (* Mutable default arguments may escape scope, and we shouldn't allow subtyping. *)
   assert_type_errors
     {|
@@ -8156,10 +8162,16 @@ let test_check_literal_variance _ =
       "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
       "used as type `typing.List[int]`.";
     ];
-  assert_type_errors
+ assert_type_errors
     {|
       x: typing.Dict[str, float] = {}
       x = { "s": 1 }
+    |}
+    [];
+  assert_type_errors
+    {|
+      x: typing.Dict[str, float] = {}
+      x = { "s": value for value in [1,2,3] }
     |}
     [];
   assert_type_errors
@@ -8216,6 +8228,12 @@ let test_check_literal_variance _ =
     {|
       def foo() -> typing.Set[float]:
         return {1}
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Set[float]:
+        return {x for x in [1,2,3]}
     |}
     [];
   assert_type_errors
