@@ -639,10 +639,6 @@ let test_query context =
               annotation = Type.integer
             };
             {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 11 3 17;
-              annotation = Type.list Type.integer
-            };
-            {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
               annotation = Type.list Type.integer
             };

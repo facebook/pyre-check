@@ -196,36 +196,7 @@ module ExpressionVisitor = struct
   let expression_postcondition state expression =
     expression_base ~postcondition:true state expression
 
-  let statement
-      ({ pre_resolution = resolution; annotations_lookup; _ } as state)
-      { Node.value = statement_value; _ } =
-    match statement_value with
-    | Define { parameters; _ } ->
-        let extract_parameters { Node.value = { Parameter.annotation; _ }; location } =
-          let store_parameter_annotation annotation =
-            let annotation =
-              if Type.is_meta annotation then
-                (* Pick up the actual type annotation. *)
-                Type.split annotation
-                |> snd
-                |> List.hd_exn
-              else
-                annotation
-            in
-            store_lookup
-              ~table:annotations_lookup
-              ~location
-              ~data:(Precise annotation)
-          in
-          annotation
-          >>= (fun expression -> resolve ~resolution ~expression)
-          >>| store_parameter_annotation
-          |> ignore
-        in
-        List.iter ~f:extract_parameters parameters;
-        state
-    | _ ->
-        state
+  let statement state _ = state
 end
 
 
@@ -235,11 +206,32 @@ module Visit = struct
     let state = ref state in
 
     let visit_statement_override ~state ~visitor statement =
+      let precondition_visit = visit_expression ~state ~visitor:ExpressionVisitor.expression in
+      let postcondition_visit =
+        visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition
+      in
       match Node.value statement with
       | Assign { Assign.target; annotation; value; _ } ->
-          visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition target;
-          Option.iter ~f:(visit_expression ~state ~visitor:ExpressionVisitor.expression) annotation;
-          visit_expression ~state ~visitor:ExpressionVisitor.expression value
+          postcondition_visit target;
+          Option.iter ~f:precondition_visit annotation;
+          precondition_visit value
+      | Define { Define.body; _ } when not (List.is_empty body) ->
+          (* No type info available for nested defines; they are analyzed on their own. *)
+          ()
+      | Define { Define.parameters; decorators; return_annotation; _ } ->
+          let visit_parameter
+              { Node.value = { Parameter.annotation; value; name }; location }
+              ~visit_expression =
+            Expression.Access.create_from_identifiers [name]
+            |> (fun access -> Expression.Access access)
+            |> Node.create ~location
+            |> visit_expression;
+            Option.iter ~f:visit_expression value;
+            Option.iter ~f:visit_expression annotation
+          in
+          List.iter parameters ~f:(visit_parameter ~visit_expression:postcondition_visit);
+          List.iter decorators ~f:postcondition_visit;
+          Option.iter ~f:postcondition_visit return_annotation
       | _ ->
           visit_statement ~state ~visitor statement
     in
@@ -253,41 +245,44 @@ end
 let create_of_source environment source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
-  let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
+  let walk_define ({ Node.value = ({ Define.name = caller; _ } as define); _ } as define_node) =
     let cfg = Cfg.create define in
     let annotation_lookup =
       ResolutionSharedMemory.get caller
       >>| Int.Map.of_tree
       |> Option.value ~default:Int.Map.empty
     in
-    let walk_cfg ~key:node_id ~data:cfg_node =
-      let statements = Cfg.Node.statements cfg_node in
-      let walk_statements statement_index statement =
-        let pre_annotations, post_annotations =
-          Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
-              Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
-          |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
-        in
-        let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
-        let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
-        Visit.visit
-          {
-            ExpressionVisitor.pre_resolution;
-            post_resolution;
-            annotations_lookup;
-            definitions_lookup
-          }
-          (Source.create [statement])
-        |> ignore
+    let walk_statement node_id statement_index statement =
+      let pre_annotations, post_annotations =
+        Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
+        >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
+            Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
+        |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
       in
-      List.iteri statements ~f:walk_statements
+      let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
+      let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
+      Visit.visit
+        {
+          ExpressionVisitor.pre_resolution;
+          post_resolution;
+          annotations_lookup;
+          definitions_lookup
+        }
+        (Source.create [statement])
+      |> ignore
     in
-    Hashtbl.iteri cfg ~f:walk_cfg
+    let walk_cfg_node ~key:node_id ~data:cfg_node =
+      let statements = Cfg.Node.statements cfg_node in
+      List.iteri statements ~f:(walk_statement node_id)
+    in
+    Hashtbl.iteri cfg ~f:walk_cfg_node;
+    (* Special-case define signature processing, since this is not included in the define's cfg. *)
+    let define_signature = { define_node with value = Define { define with Define.body = [] } } in
+    walk_statement Cfg.entry_index 0 define_signature;
   in
   (* TODO(T31738631): remove extract_into_toplevel *)
   Preprocessing.defines ~extract_into_toplevel:true source
-  |> List.iter ~f:walk_defines;
+  |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 
 

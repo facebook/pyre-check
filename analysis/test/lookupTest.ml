@@ -171,7 +171,7 @@ let test_lookup_call_arguments _ =
 let test_lookup_pick_narrowest _ =
   let source =
     {|
-      def foo(flag: bool, testme: Optional[int]) -> None:
+      def foo(flag: bool, testme: typing.Optional[bool]) -> None:
           if flag and (not testme):
               pass
     |}
@@ -182,10 +182,12 @@ let test_lookup_pick_narrowest _ =
     ~lookup
     [
       "test.py:2:14-2:18/typing.Type[bool]";
-      "test.py:2:37-2:40/typing.Type[int]";
-      "test.py:2:46-2:50/None";
+      "test.py:2:20-2:26/typing.Optional[bool]";
+      "test.py:2:44-2:48/typing.Type[bool]";
+      "test.py:2:54-2:58/None";
       "test.py:2:8-2:12/bool";
       "test.py:3:17-3:27/bool";
+      "test.py:3:21-3:27/typing.Optional[bool]";
       "test.py:3:7-3:11/bool";
     ];
   assert_annotation
@@ -207,7 +209,7 @@ let test_lookup_pick_narrowest _ =
     ~lookup
     ~source
     ~position:{ Location.line = 3; column = 21 }
-    ~annotation:(Some "test.py:3:17-3:27/bool");
+    ~annotation:(Some "test.py:3:21-3:27/typing.Optional[bool]");
   assert_annotation
     ~lookup
     ~source
@@ -272,6 +274,7 @@ let test_lookup_identifier_accesses _ =
          for the `test.A` prefix. *)
       "test.py:3:4-3:5/typing.Type[test.A]";
       "test.py:3:7-3:10/typing.Type[int]";
+      "test.py:4:17-4:21/test.A";
       "test.py:4:23-4:24/int";
       "test.py:4:26-4:29/typing.Type[int]";
       "test.py:4:34-4:38/None";
@@ -605,6 +608,7 @@ let test_lookup_unbound _ =
     ~lookup
     [
       "test.py:2:27-2:31/None";
+      "test.py:2:8-2:12/List[Variable[_T]]";
       "test.py:3:18-3:20/typing.List[]";
       "test.py:3:2-3:3/typing.List[]";
       "test.py:3:6-3:21/typing.List[]";
@@ -659,6 +663,7 @@ let test_lookup_if_statements _ =
     ~lookup
     [
       "test.py:2:14-2:18/typing.Type[bool]";
+      "test.py:2:20-2:24/List[int]";
       "test.py:2:31-2:34/typing.Type[int]";
       "test.py:2:40-2:44/None";
       "test.py:2:8-2:12/bool";
