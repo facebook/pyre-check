@@ -347,6 +347,7 @@ module Define = struct
       false
     else
       name = "__init__" ||
+      name = "__enter__" ||
       (in_test &&
        List.mem
          ~equal:String.equal

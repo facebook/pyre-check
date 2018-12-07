@@ -3566,6 +3566,14 @@ let test_check_init _ =
           self.attribute = 0
     |}
     [];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: int
+        def __enter__(self) -> None:
+          self.attribute = 0
+    |}
+    [];
 
   assert_type_errors
     {|
