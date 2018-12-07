@@ -33,6 +33,7 @@ val expand_typed_dictionary_declarations: Source.t -> Source.t
    toplevel definition. *)
 val defines
   :  ?include_stubs: bool
+  -> ?include_nested: bool
   -> ?extract_into_toplevel: bool
   -> Source.t
   -> Statement.Define.t Node.t list

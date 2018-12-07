@@ -1198,6 +1198,7 @@ let expand_implicit_returns source =
 
 let defines
     ?(include_stubs = false)
+    ?(include_nested = false)
     ?(extract_into_toplevel = false)
     ({ Source.qualifier; statements; _ } as source) =
 
@@ -1205,7 +1206,7 @@ let defines
       type t = Define.t Node.t
 
       let visit_children = function
-        | { Node.value = Define _; _ } -> false
+        | { Node.value = Define _; _ } -> include_nested
         | _ -> true
 
       let predicate = function

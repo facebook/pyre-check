@@ -261,7 +261,7 @@ let create_of_source environment source =
     walk_statement Cfg.entry_index 0 define_signature;
   in
   (* TODO(T31738631): remove extract_into_toplevel *)
-  Preprocessing.defines ~extract_into_toplevel:true source
+  Preprocessing.defines ~include_nested:true ~extract_into_toplevel:true source
   |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 

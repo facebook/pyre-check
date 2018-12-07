@@ -618,6 +618,28 @@ let test_query context =
           ] |> create_types_at_locations)
        ));
 
+  assert_type_query_response
+    ~source:{|
+       def foo(x: int) -> str:
+         def bar(y: int) -> str:
+           return y
+         return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 19, 2, 22, parse_annotation "typing.Type[str]");
+            (5, 9, 5, 10, Type.integer);
+            (3, 21, 3, 24, parse_annotation "typing.Type[str]");
+            (3, 13, 3, 16, parse_annotation "typing.Type[int]");
+            (4, 11, 4, 12, Type.integer);
+            (2, 11, 2, 14, parse_annotation "typing.Type[int]");
+            (2, 8, 2, 9, Type.integer);
+            (3, 10, 3, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
   (* ==== Documenting known bad behavior below (T37772879) ==== *)
 
   (* Annotation type is Type[int] rather than Type[List[int]]. *)
