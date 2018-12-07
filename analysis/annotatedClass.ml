@@ -984,32 +984,35 @@ let has_method ?transitive definition ~resolution ~name =
 
 
 let inferred_callable_type definition ~resolution =
-  let callable_type =
-    attribute
-      ~transitive:false
-      definition
-      ~resolution
-      ~name:(Access.create "__call__")
-      ~instantiated:(annotation definition ~resolution)
-    |> Attribute.annotation
-    |> Annotation.annotation
+  let explicit_callables =
+    let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
+      match List.last name with
+      | Some (Access.Identifier call) when Identifier.equal call (Identifier.create "__call__") ->
+          Some define
+      | _ ->
+          None
+    in
+    methods definition ~resolution
+    |> List.filter_map ~f:extract_callable
   in
-  match callable_type with
-  | Type.Callable ({
+  if List.is_empty explicit_callables then
+    None
+  else
+    let callable_type = Callable.create explicit_callables ~resolution in
+    match callable_type with
+    | ({
       Type.Callable.implementation = {
         Type.Callable.parameters = Type.Callable.Defined parameters;
         _;
       } as implementation;
       _;
     } as callable) ->
-      Some (Type.Callable {
-          callable with
-          Type.Callable.implementation = {
-            implementation with
-            Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
-          };
-        })
-  | Type.Callable _ ->
-      Some callable_type
-  | _ ->
-      None
+        Some (Type.Callable {
+            callable with
+            Type.Callable.implementation = {
+              implementation with
+              Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
+            };
+          })
+    | _ ->
+        Some (Type.Callable callable_type)
