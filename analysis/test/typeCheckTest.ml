@@ -1120,6 +1120,31 @@ let test_show_error_traces _ =
       "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
       "test.py:7:2."
+    ];
+
+  assert_type_errors ~show_error_traces:true
+    {|
+      a: typing.List[float] = [1]
+      b: typing.List[int] = [2]
+      a = b
+    |}
+    [
+      "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is \
+       used as type `typing.List[int]`. Redeclare `a` on line 4 if you wish to override the \
+       previously declared type.  See https://pyre-check.org/docs/error-types.html#list-and-\
+       dictionary-mismatches-with-subclassing for mutable container errors.";
+    ];
+  assert_type_errors ~show_error_traces:true
+    {|
+      def foo() -> typing.List[float]:
+        l = [1]
+        return l
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
+       Type `typing.List[float]` expected on line 4, specified on line 2.  \
+       See https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches-with-\
+       subclassing for mutable container errors.";
     ]
 
 
@@ -2606,8 +2631,8 @@ let test_check_comprehensions _ =
         return { x: y for (x, y) in a.items() }
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got" ^
-      " `typing.Dict[str, typing.Optional[int]]`.";
+      "Incompatible return type [7]: Expected `typing.Dict[str, int]` but got \
+       `typing.Dict[str, typing.Optional[int]]`.";
     ];
 
   assert_type_errors
@@ -7821,8 +7846,7 @@ let test_check_typed_dictionaries _ =
         return q
     |}
     [
-      "Incompatible return type [7]: " ^
-      "Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`.";
+      "Incompatible return type [7]: Expected `Mapping[str, A]` but got `Mapping[str, typing.Any]`."
     ];
 
   assert_test_typed_dictionary
@@ -8221,8 +8245,8 @@ let test_check_literal_variance _ =
         return a
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got " ^
-      "`typing.Dict[int, int]`.";
+      "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got \
+       `typing.Dict[int, int]`.";
     ];
   assert_type_errors
     {|
@@ -8242,10 +8266,7 @@ let test_check_literal_variance _ =
         a = {1}
         return a
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Set[float]` but got " ^
-      "`typing.Set[int]`.";
-    ]
+    ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."]
 
 
 

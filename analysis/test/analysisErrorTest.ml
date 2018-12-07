@@ -60,9 +60,9 @@ let missing_return annotation =
   }
 
 
-let incompatible_return_type actual expected =
+let incompatible_return_type ?(due_to_invariance = false) actual expected =
   Error.IncompatibleReturnType {
-    mismatch = { Error.actual; expected };
+    mismatch = { Error.actual; expected; due_to_invariance };
     is_implicit = false;
   }
 
@@ -98,6 +98,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.Top;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -112,6 +113,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.string;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -126,6 +128,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.string;
                   expected = Type.Top;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -141,6 +144,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Optional Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -153,6 +157,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Optional Type.string;
+                due_to_invariance = false;
               };
             })));
 
@@ -229,6 +234,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
   assert_true
@@ -241,6 +247,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
+                due_to_invariance = false;
               };
             })));
   assert_false
@@ -253,6 +260,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -266,6 +274,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.primitive "typing.TypeAlias";
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -277,6 +286,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -287,6 +297,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -297,6 +308,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -326,6 +338,7 @@ let test_join _ =
              mismatch = {
                Error.actual = Type.Top;
                expected = Type.Top;
+               due_to_invariance = false;
              };
              declare_location = Location.Instantiated.any;
            };
@@ -335,6 +348,7 @@ let test_join _ =
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;
+           due_to_invariance = false;
          };
          declare_location = Location.Instantiated.any;
        }))
@@ -348,6 +362,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.integer;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }))
     (error
@@ -358,6 +373,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }))
     (error
@@ -368,6 +384,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }));
   let create_mock_location path =
@@ -494,11 +511,19 @@ let test_filter _ =
   assert_unfiltered
     (inconsistent_override
        "__foo__"
-       (WeakenedPostcondition { actual = Type.Top; expected = Type.integer }));
+       (WeakenedPostcondition {
+           actual = Type.Top;
+           expected = Type.integer;
+           due_to_invariance = false;
+         }));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
-       (StrengthenedPrecondition (Found { actual = Type.none; expected = Type.integer })));
+       (StrengthenedPrecondition (Found {
+            actual = Type.none;
+            expected = Type.integer;
+            due_to_invariance = false;
+          })));
   assert_filtered
     (inconsistent_override
        "__foo__"

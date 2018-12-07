@@ -198,7 +198,8 @@ module State = struct
                          parent = Annotated.Class.annotation definition ~resolution;
                          mismatch = {
                            Error.expected;
-                           actual = (Type.optional expected)
+                           actual = (Type.optional expected);
+                           due_to_invariance = false;
                          };
                        })
                      ~define:define_node
@@ -599,7 +600,12 @@ module State = struct
                         ~location
                         ~kind:(Error.IncompatibleVariableType {
                             name = [Expression.Access.Identifier name];
-                            mismatch = { Error.expected = annotation; actual = default };
+                            mismatch =
+                              Error.create_mismatch
+                                ~resolution
+                                ~expected:annotation
+                                ~actual:default
+                                ~covariant:true;
                             declare_location = instantiate location;
                           })
                         ~define:define_node
@@ -716,7 +722,13 @@ module State = struct
                              Attribute.parent overridden_attribute
                              |> Type.show
                              |> Expression.Access.create;
-                           override = Error.WeakenedPostcondition { Error.actual; expected };
+                           override =
+                             Error.WeakenedPostcondition
+                               (Error.create_mismatch
+                                  ~resolution
+                                  ~actual
+                                  ~expected
+                                  ~covariant:false)
                          })
                        ~define:define_node
                    in
@@ -758,7 +770,12 @@ module State = struct
                                      |> Expression.Access.create;
                                    override =
                                      Error.StrengthenedPrecondition
-                                       (Error.Found { Error.actual; expected });
+                                       (Error.Found
+                                          (Error.create_mismatch
+                                             ~resolution
+                                             ~actual
+                                             ~expected
+                                             ~covariant:false));
                                  })
                                ~define:define_node
                            in
@@ -1004,6 +1021,7 @@ module State = struct
                     mismatch = {
                       Error.actual = non_meta;
                       expected = Type.meta Type.Object;
+                      due_to_invariance = false;
                     }})
                 ~define
               |> add_error ~state
@@ -1059,7 +1077,10 @@ module State = struct
                             let { Annotated.Signature.actual; expected; name; position } =
                               Node.value mismatch
                             in
-                            { Error.actual; expected }, name, position, (Node.location mismatch)
+                            Error.create_mismatch ~resolution ~actual ~expected ~covariant:true,
+                            name,
+                            position,
+                            (Node.location mismatch)
                           in
                           Error.create
                             ~location
@@ -1567,10 +1588,16 @@ module State = struct
           let error =
             Error.create
               ~location
-              ~kind:(Error.IncompatibleReturnType {
-                  mismatch = { Error.expected = return_annotation; actual };
-                  is_implicit;
-                })
+              ~kind:(Error.IncompatibleReturnType
+                       {
+                         mismatch =
+                           (Error.create_mismatch
+                              ~resolution
+                              ~actual
+                              ~expected:return_annotation
+                              ~covariant:true);
+                         is_implicit;
+                       })
               ~define
           in
           add_error ~state error
@@ -1589,9 +1616,8 @@ module State = struct
           add_error ~state error
         else
           state
-      with
-      | TypeOrder.Untracked _ ->
-          state
+      with TypeOrder.Untracked _ ->
+        state
     in
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
@@ -1708,14 +1734,24 @@ module State = struct
                             parent = Attribute.parent attribute;
                             incompatible_type = {
                               Error.name = access;
-                              mismatch = { Error.expected; actual = resolved };
+                              mismatch =
+                                (Error.create_mismatch
+                                   ~resolution
+                                   ~actual:resolved
+                                   ~expected
+                                   ~covariant:true);
                               declare_location = instantiate (Attribute.location attribute);
                             };
                           }
                       | _ ->
                           Error.IncompatibleVariableType {
                             Error.name = access;
-                            mismatch = { Error.expected; actual = resolved };
+                            mismatch =
+                              (Error.create_mismatch
+                                 ~resolution
+                                 ~actual:resolved
+                                 ~expected
+                                 ~covariant:true);
                             declare_location = instantiate location;
                           }
                     in
@@ -1988,7 +2024,12 @@ module State = struct
                         (Error.create
                            ~location:(Node.location test)
                            ~kind:(Error.ImpossibleIsinstance {
-                               mismatch = { Error.expected; actual = resolved };
+                               mismatch =
+                                 (Error.create_mismatch
+                                    ~resolution
+                                    ~expected
+                                    ~actual:resolved
+                                    ~covariant:true);
                                expression = value;
                              })
                            ~define)
@@ -2004,6 +2045,7 @@ module State = struct
                              mismatch = {
                                Error.expected = Type.meta (Type.variable "T");
                                actual = resolved;
+                               due_to_invariance = false;
                              }
                            })
                          ~define)

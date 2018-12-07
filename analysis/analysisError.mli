@@ -15,6 +15,7 @@ type origin =
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
+  due_to_invariance: bool;
 }
 [@@deriving compare, eq, show, hash]
 
@@ -117,3 +118,10 @@ val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t 
 val suppress: mode: Source.mode -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> resolution: Resolution.t -> t -> t
+
+val create_mismatch
+  :  resolution: Resolution.t
+  -> actual: Type.t
+  -> expected: Type.t
+  -> covariant: bool
+  -> mismatch

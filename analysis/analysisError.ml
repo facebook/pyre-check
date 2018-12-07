@@ -20,6 +20,7 @@ type origin =
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
+  due_to_invariance: bool;
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -201,8 +202,12 @@ let messages ~detailed:_ ~define location kind =
     in
     (string_of_int number) ^ suffix
   in
+  let invariance_message =
+    " See https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches" ^
+    "-with-subclassing for mutable container errors."
+  in
   match kind with
-  | ImpossibleIsinstance { expression; mismatch = { actual; expected } } ->
+  | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
       [
         Format.asprintf
@@ -385,7 +390,12 @@ let messages ~detailed:_ ~define location kind =
           Type.pp annotation
           number_of_parameters;
       ]
-  | IncompatibleParameterType { name; position; callee; mismatch = { actual; expected } } ->
+  | IncompatibleParameterType {
+      name;
+      position;
+      callee;
+      mismatch = { actual; expected; due_to_invariance };
+    } ->
       let target =
         let parameter =
           match name with
@@ -404,7 +414,15 @@ let messages ~detailed:_ ~define location kind =
         in
         Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      [Format.asprintf "Expected `%a` for %s but got `%a`." Type.pp expected target Type.pp actual]
+      let invariance_message = if due_to_invariance then [invariance_message] else [] in
+      Format.asprintf
+        "Expected `%a` for %s but got `%a`."
+        Type.pp expected
+        target
+        Type.pp actual
+      :: invariance_message;
+
+
   | IncompatibleConstructorAnnotation annotation ->
       [
         Format.asprintf
@@ -412,7 +430,15 @@ let messages ~detailed:_ ~define location kind =
           Type.pp
           annotation;
       ]
-  | IncompatibleReturnType { mismatch = { actual; expected}; is_implicit } ->
+  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit } ->
+      let detail =
+          (Format.asprintf
+             "Type `%a` expected on line %d, specified on line %d.%s"
+             Type.pp expected
+             stop_line
+             define.Node.location.Location.start.Location.line
+             (if due_to_invariance then " " ^ invariance_message else ""))
+      in
       let message =
         if is_implicit then
           Format.asprintf
@@ -424,22 +450,25 @@ let messages ~detailed:_ ~define location kind =
             Type.pp expected
             Type.pp actual
       in
-      [
-        message;
-        (Format.asprintf
-           "Type `%a` expected on line %d, specified on line %d."
-           Type.pp expected
-           stop_line
-           define.Node.location.Location.start.Location.line)
-      ]
+      [message; detail]
   | IncompatibleAttributeType {
       parent;
       incompatible_type = {
         name;
-        mismatch = { actual; expected };
+        mismatch = { actual; expected; due_to_invariance };
         declare_location;
       };
     } ->
+      let detail =
+        if due_to_invariance then
+          invariance_message
+        else
+          Format.asprintf
+             "Attribute `%a` declared on line %d, incorrectly used on line %d."
+             Access.pp name
+             declare_location.Location.start.Location.line
+             start_line
+      in
       [
         (Format.asprintf
            "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
@@ -447,15 +476,11 @@ let messages ~detailed:_ ~define location kind =
            Type.pp parent
            Type.pp expected
            Type.pp actual);
-        (Format.asprintf
-           "Attribute `%a` declared on line %d, incorrectly used on line %d."
-           Access.pp name
-           declare_location.Location.start.Location.line
-           start_line)
+        detail;
       ]
   | IncompatibleVariableType {
       name;
-      mismatch = { actual; expected };
+      mismatch = { actual; expected; due_to_invariance };
       _;
     } ->
       let message =
@@ -469,30 +494,38 @@ let messages ~detailed:_ ~define location kind =
             Type.pp actual
       in
       let detail =
-        Format.asprintf
-          "Redeclare `%s` on line %d if you wish to override the previously declared type."
-          (Access.show_sanitized name)
-          start_line
+          Format.asprintf
+            "Redeclare `%s` on line %d if you wish to override the previously declared type.%s"
+            (Access.show_sanitized name)
+            start_line
+            (if due_to_invariance then " " ^ invariance_message else "")
       in
       [message; detail]
   | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
-        | WeakenedPostcondition { actual; expected } ->
+        | WeakenedPostcondition { actual; expected; due_to_invariance } ->
             if Type.equal actual Type.Top then
               Format.asprintf
                 "The overriding method is not annotated but should return a subtype of `%a`."
                 Type.pp expected
             else
+            if due_to_invariance then
+              invariance_message
+            else
               Format.asprintf
                 "Returned type `%a` is not a subtype of the overridden return `%a`."
                 Type.pp actual
                 Type.pp expected
-        | StrengthenedPrecondition (Found { actual; expected }) ->
+        | StrengthenedPrecondition (Found { actual; expected; due_to_invariance }) ->
+            let extra_detail =
+              if due_to_invariance then " " ^ invariance_message else ""
+            in
             Format.asprintf
-              "Parameter of type `%a` is not a supertype of the overridden parameter `%a`."
+              "Parameter of type `%a` is not a supertype of the overridden parameter `%a`.%s"
               Type.pp actual
               Type.pp expected
+              extra_detail
         | StrengthenedPrecondition (NotFound name) ->
             Format.asprintf
               "Could not find parameter `%s` in overriding signature."
@@ -649,7 +682,7 @@ let messages ~detailed:_ ~define location kind =
   | UninitializedAttribute {
       name;
       parent;
-      mismatch = { actual; expected };
+      mismatch = { actual; expected; _ };
     } ->
       [
         (Format.asprintf
@@ -866,14 +899,14 @@ let due_to_mismatch_with_any { kind; _ } =
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
       Type.equal actual Type.Object
-  | ImpossibleIsinstance { mismatch = { actual; expected }; _ }
-  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected }); _ }
-  | InconsistentOverride { override = WeakenedPostcondition { actual; expected }; _ }
-  | IncompatibleParameterType { mismatch = { actual; expected }; _ }
-  | IncompatibleReturnType { mismatch = { actual; expected }; _ }
-  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; expected }; _ }
-  | UninitializedAttribute { mismatch = { actual; expected }; _ } ->
+  | ImpossibleIsinstance { mismatch = { actual; expected; _ }; _ }
+  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected; _ }); _ }
+  | InconsistentOverride { override = WeakenedPostcondition { actual; expected; _ }; _ }
+  | IncompatibleParameterType { mismatch = { actual; expected; _ }; _ }
+  | IncompatibleReturnType { mismatch = { actual; expected; _ }; _ }
+  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
+  | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
+  | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
       Type.mismatch_with_any actual expected
   | TooManyArguments _
   | Unpack _
@@ -1004,6 +1037,7 @@ let join ~resolution left right =
     {
       expected = Resolution.join resolution left.expected right.expected;
       actual = Resolution.join resolution left.actual right.actual;
+      due_to_invariance = left.due_to_invariance || right.due_to_invariance;
     }
   in
   let join_missing_annotation
@@ -1476,10 +1510,17 @@ let dequalify
   let dequalify = Type.dequalify dequalify_map in
   let kind =
     match kind with
-    | ImpossibleIsinstance ({ mismatch = { actual; expected }; _ } as isinstance) ->
+    | ImpossibleIsinstance ({
+        mismatch = { actual; expected; due_to_invariance };
+        _;
+      } as isinstance) ->
         ImpossibleIsinstance {
           isinstance with
-          mismatch = { actual = dequalify actual; expected = dequalify expected };
+          mismatch = {
+            actual = dequalify actual;
+            expected = dequalify expected;
+            due_to_invariance;
+          };
         }
     | IncompatibleAwaitableType actual  ->
         IncompatibleAwaitableType (dequalify actual)
@@ -1513,35 +1554,59 @@ let dequalify
         RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify annotation }
-    | IncompatibleParameterType ({ mismatch = { actual; expected }; _ } as parameter) ->
+    | IncompatibleParameterType ({
+        mismatch = { actual; expected; due_to_invariance };
+        _;
+      } as parameter) ->
         IncompatibleParameterType {
           parameter with
-          mismatch = { actual = dequalify actual; expected = dequalify expected };
+          mismatch = {
+            actual = dequalify actual;
+            expected = dequalify expected;
+            due_to_invariance;
+          };
         }
-    | IncompatibleReturnType ({ mismatch = { actual; expected }; _ } as return)  ->
+    | IncompatibleReturnType ({
+        mismatch = { actual; expected; due_to_invariance };
+        _;
+      } as return) ->
         IncompatibleReturnType {
           return with
-          mismatch = { actual = dequalify actual; expected = dequalify expected }
+          mismatch = { actual = dequalify actual; expected = dequalify expected; due_to_invariance }
         }
     | IncompatibleAttributeType {
         parent;
-        incompatible_type = { mismatch = { actual; expected }; _ } as incompatible_type;
+        incompatible_type = {
+          mismatch = { actual; expected; due_to_invariance };
+          _;
+        } as incompatible_type;
       } ->
         IncompatibleAttributeType {
           parent;
           incompatible_type = {
             incompatible_type with
-            mismatch = { actual = dequalify actual; expected = dequalify expected };
+            mismatch = {
+              actual = dequalify actual;
+              expected = dequalify expected;
+              due_to_invariance;
+            };
           };
         }
-    | IncompatibleVariableType ({ mismatch = { actual; expected }; _ } as incompatible_type) ->
+    | IncompatibleVariableType ({
+        mismatch = { actual; expected; due_to_invariance };
+        _;
+      } as incompatible_type) ->
         IncompatibleVariableType {
           incompatible_type with
-          mismatch = { actual = dequalify actual; expected = dequalify expected };
+          mismatch = {
+            actual = dequalify actual;
+            expected = dequalify expected;
+            due_to_invariance;
+          };
         }
     | InconsistentOverride
         ({
-          override = StrengthenedPrecondition (Found { actual; expected });
+          override = StrengthenedPrecondition (Found { actual; expected; due_to_invariance });
           _;
         } as inconsistent_override) ->
         InconsistentOverride {
@@ -1549,6 +1614,7 @@ let dequalify
           override = StrengthenedPrecondition (Found {
               actual = dequalify actual;
               expected = dequalify expected;
+              due_to_invariance;
             });
         }
     | InconsistentOverride (
@@ -1559,24 +1625,32 @@ let dequalify
         }
     | InconsistentOverride
         ({
-          override = WeakenedPostcondition { actual; expected };
+          override = WeakenedPostcondition { actual; expected; due_to_invariance };
           _;
         } as inconsistent_override) ->
         InconsistentOverride {
           inconsistent_override with
           override = WeakenedPostcondition {
               actual = dequalify actual;
-              expected = dequalify expected
+              expected = dequalify expected;
+              due_to_invariance;
             };
         }
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound key ->
         TypedDictionaryKeyNotFound key
-    | UninitializedAttribute ({ mismatch = { actual; expected }; _ } as inconsistent_usage) ->
+    | UninitializedAttribute ({
+        mismatch = { actual; expected; due_to_invariance };
+        _;
+      } as inconsistent_usage) ->
         UninitializedAttribute {
           inconsistent_usage with
-          mismatch = { actual = dequalify actual; expected = dequalify expected };
+          mismatch = {
+            actual = dequalify actual;
+            expected = dequalify expected;
+            due_to_invariance;
+          };
         }
     | UnawaitedAwaitable left ->
         UnawaitedAwaitable left
@@ -1630,3 +1704,17 @@ let dequalify
     { define with Define.parameters; return_annotation }
   in
   { error with kind; define = { Node.location; value = define} }
+
+
+let create_mismatch ~resolution ~actual ~expected ~covariant =
+  let left, right =
+    if covariant then
+      actual, expected
+    else
+      expected, actual
+  in
+  {
+    expected;
+    actual;
+    due_to_invariance = Resolution.is_invariance_mismatch resolution ~left ~right;
+  }
