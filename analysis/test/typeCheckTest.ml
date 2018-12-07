@@ -6199,6 +6199,50 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Returned type `None` is not a subtype of the overridden return `int`."
     ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def foo() -> _T: ...
+      class Bar(Foo[float]):
+        def foo() -> str: return ""
+    |}
+    [
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
+      "Returned type `str` is not a subtype of the overridden return `float`."
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def foo() -> _T: ...
+      class Bar(Foo[float]):
+        def foo() -> int: return 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def foo() -> _T: ...
+      class Passthrough(Foo[_T]): ...
+      class Bar(Passthrough[float]):
+        def foo() -> str: return ""
+    |}
+    [
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
+      "Returned type `str` is not a subtype of the overridden return `float`."
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def foo() -> _T: ...
+      class Passthrough(Foo[_T]): ...
+      class Bar(Passthrough[float]):
+        def foo() -> int: return 1
+    |}
+    [];
 
   (* Missing annotations. *)
   assert_type_errors
@@ -6270,7 +6314,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo[int]):
         def foo(self) -> int:
           return 1
-      class Bar(Foo[None]):
+      class BarTwo(Foo[None]):
         def foo(self) -> None:
           pass
     |}
@@ -6371,6 +6415,60 @@ let test_check_behavioral_subtyping _ =
       "inconsistently. Parameter of type `int` is not a " ^
       "supertype of the overridden parameter `typing.Union[int, str]`."
     ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def bar(x: typing.Union[str, _T]) -> None:
+          pass
+      class Bar(Foo[float]):
+        def bar(x: typing.Union[str, int]) -> None:
+          pass
+    |}
+    [
+      "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` inconsistently. " ^
+      "Parameter of type `typing.Union[int, str]` is not a supertype " ^
+      "of the overridden parameter `typing.Union[float, str]`."
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def bar(x: typing.Union[str, _T]) -> None:
+          pass
+      class Bar(Foo[int]):
+        def bar(x: typing.Union[str, float]) -> None:
+          pass
+    |}
+    [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def bar(x: typing.Union[str, _T]) -> None:
+          pass
+      class Passthrough(Foo[_T]): ...
+      class Bar(Passthrough[float]):
+        def bar(x: typing.Union[str, int]) -> None:
+          pass
+    |}
+    [
+      "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` inconsistently. " ^
+      "Parameter of type `typing.Union[int, str]` is not a supertype " ^
+      "of the overridden parameter `typing.Union[float, str]`."
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]):
+        def bar(x: typing.Union[str, _T]) -> None:
+          pass
+      class Passthrough(Foo[_T]): ...
+      class Bar(Passthrough[int]):
+        def bar(x: typing.Union[str, float]) -> None:
+          pass
+    |}
+    [];
 
   (* A leading underscore indicates parameters are unused; they should still be recognized *)
   assert_type_errors

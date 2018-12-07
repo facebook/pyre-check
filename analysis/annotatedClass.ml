@@ -960,7 +960,10 @@ let overrides definition ~resolution ~name =
         ~instantiated:(annotation parent ~resolution)
     in
     if Attribute.defined potential_override then
-      Some potential_override
+      annotation ~resolution definition
+      |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
+      |> (fun constraints -> Attribute.instantiate ~constraints potential_override)
+      |> Option.some
     else
       None
   in
