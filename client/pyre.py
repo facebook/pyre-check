@@ -152,7 +152,7 @@ def main() -> int:
         action="store_true",
         default=False,
         help="Preserve the value of the PYTHONPATH environment variable and"
-        "inheret the current python environment's search path",
+        "inherit the current python environment's search path",
     )
 
     parser.add_argument(
