@@ -98,16 +98,20 @@ class Configuration:
 
         # Handle search path from multiple sources
         self.search_path = []
-        pythonpath = os.getenv("PYTHONPATH", default='')
         if preserve_pythonpath:
-            for path in pythonpath.split(":") + sys.path:
-                if os.path.isdir(path):
-                    self.search_path.append(path)
-                else:
-                    LOG.warning(
-                        "`{}` is not a valid directory, dropping it "
-                        "from PYTHONPATH".format(path)
-                    )
+            for path in os.getenv("PYTHONPATH", default='').split(':'):
+                if path != '':
+                    if os.path.isdir(path):
+                        self.search_path.append(path)
+                    else:
+                        LOG.warning(
+                            "'{}' is not a valid directory, dropping it "
+                            "from PYTHONPATH".format(path)
+                        )
+            sys_path = [path for path in sys.path if os.path.isdir(path)]
+            self.search_path.extend(sys_path)
+            # sys.path often includes '' and a zipped python version, so
+            # we don't log warnings for non-dir entries
         if search_path:
             self.search_path.extend(search_path)
         # We will extend the search path further, with the config file
