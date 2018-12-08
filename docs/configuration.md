@@ -102,7 +102,8 @@ optional arguments:
                         include in the type environment
   --preserve-pythonpath
                         Preserve the value of the PYTHONPATH environment
-                        variable
+                        variable and inheret the current python environment's
+                        search path
   --binary BINARY       Location of the pyre binary
   --exclude EXCLUDE     Exclude files and directories matching this regexp from parsing
   --typeshed TYPESHED   Location of the typeshed stubs
@@ -159,7 +160,8 @@ Non-interactive mode ensures all terminal output remains visible.
 `--output {text, json}`: Formatting for error return values. Defaults to text.
 
 `--preserve-pythonpath`: Use the `$PYTHONPATH` environment variable to search for external
-sources. This environment variable is ignored otherwise.
+sources, along with the current environment's search path. This environment variable is
+ignored otherwise.
 
 `--search-path SEARCH_PATH`: Provide additional stubs or modules external to the project
 being type-checked. Can also be set in `.pyre_configuration` or often lives in the
