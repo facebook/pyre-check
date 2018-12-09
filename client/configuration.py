@@ -108,10 +108,10 @@ class Configuration:
                             "'{}' is not a valid directory, dropping it "
                             "from PYTHONPATH".format(path)
                         )
-            sys_path = [path for path in sys.path if os.path.isdir(path)]
-            self.search_path.extend(sys_path)
             # sys.path often includes '' and a zipped python version, so
             # we don't log warnings for non-dir entries
+            sys_path = [path for path in sys.path if os.path.isdir(path)]
+            self.search_path.extend(sys_path)
         if search_path:
             self.search_path.extend(search_path)
         # We will extend the search path further, with the config file
