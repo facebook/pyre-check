@@ -445,6 +445,19 @@ let test_qualify _ =
         $local_qualifier?foo$x = 'arg'
         return {'arg': $local_qualifier?foo$x}
     |};
+  assert_qualify
+    {|
+      from typing import TypeVar as TV
+      class C:
+        T = 'C'
+        TSelf = TV("TSelf", bound="C")
+    |}
+    {|
+      from typing import TypeVar as TV
+      class qualifier.C():
+        qualifier.C.T = "C"
+        qualifier.C.TSelf = typing.TypeVar("TSelf",$parameter$bound = "qualifier.C")
+    |};
 
   (* Qualify functions. *)
   assert_qualify

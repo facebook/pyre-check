@@ -736,27 +736,41 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           | _ ->
               [head]
         in
-        let qualify_element = function
-          | Access.Call ({ Node.value = arguments ; _ } as call) ->
-              let qualify_argument { Argument.name; value } =
-                let name =
-                  let rename identifier =
-                    Identifier.show identifier
-                    |> Format.asprintf "$parameter$%s"
-                    |> Identifier.create
-                  in
-                  name
-                  >>| Node.map ~f:rename
+        let qualify_element reversed_lead element =
+          let element =
+            match element with
+            | Access.Call ({ Node.value = arguments ; _ } as call) ->
+                let qualify_strings =
+                  match reversed_lead with
+                  | [ Access.Identifier type_var; Access.Identifier typing ]
+                    when Identifier.show type_var = "TypeVar" && Identifier.show typing = "typing"
+                    ->
+                      true
+                  | _ ->
+                      qualify_strings
                 in
-                { Argument.name; value = qualify_expression ~qualify_strings ~scope value }
-              in
-              Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
-          | Access.Expression expression ->
-              Access.Expression (qualify_expression ~qualify_strings ~scope expression)
-          | element ->
-              element
+                let qualify_argument { Argument.name; value } =
+                  let name =
+                    let rename identifier =
+                      Identifier.show identifier
+                      |> Format.asprintf "$parameter$%s"
+                      |> Identifier.create
+                    in
+                    name
+                    >>| Node.map ~f:rename
+                  in
+                  { Argument.name; value = qualify_expression ~qualify_strings ~scope value }
+                in
+                Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
+            | Access.Expression expression ->
+                Access.Expression (qualify_expression ~qualify_strings ~scope expression)
+            | element ->
+                element
+          in
+          element :: reversed_lead
         in
-        List.map (head @ tail) ~f:qualify_element
+        List.fold (head @ tail) ~f:qualify_element ~init:[]
+        |> List.rev
     | _ ->
         access
 
