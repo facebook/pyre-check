@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 module AccessPath = AccessPath
-module AccessPathTree = AccessPathTree
 module Analysis = TaintAnalysis
 module BackwardAnalysis = BackwardAnalysis
 module Domains = Domains

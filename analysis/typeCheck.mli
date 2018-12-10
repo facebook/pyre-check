@@ -91,3 +91,16 @@ val check
   -> environment: (module Environment.Handler)
   -> source: Source.t
   -> Result.t
+
+val resolution
+  :  (module Environment.Handler)
+  -> ?annotations: Annotation.t Access.Map.t
+  -> unit
+  -> Resolution.t
+
+val resolution_with_key
+  :  environment: (module Environment.Handler)
+  -> parent: Expression.Access.t option
+  -> access: Expression.Access.t
+  -> key: int option
+  -> Resolution.t

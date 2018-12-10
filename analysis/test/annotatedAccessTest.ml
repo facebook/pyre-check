@@ -26,7 +26,9 @@ type attribute = {
 and stripped =
   | Attribute of attribute
   | Unknown
-  | Signature
+  | SignatureFound of { callable: string; callees: string list }
+  | SignatureNotFound of Annotated.Signature.reason option
+  | NotCallable of Type.t
   | Value
 
 
@@ -39,7 +41,7 @@ and step = {
 
 let test_fold _ =
   let resolution =
-    populate_with_sources [
+    let sources = [
       parse
         ~qualifier:(Access.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
@@ -55,12 +57,14 @@ let test_fold _ =
         "def __getattr__(name: str) -> Any: ..."
       |> Preprocessing.preprocess;
       parse
-        ~qualifier:[]
         {|
           integer: int = 1
           string: str = 'string'
 
-          class Class:
+          union: typing.Union[str, int] = 1
+
+          class Super: pass
+          class Class(Super):
             attribute: int = 1
             def method(self) -> int: ...
           instance: Class
@@ -76,35 +80,61 @@ let test_fold _ =
         {|
           sep: str = '/'
         |};
-    ]
-    |> fun environment -> Environment.resolution environment ()
+      parse
+        {|
+          Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+          movie: Movie
+        |}
+      |> Preprocessing.preprocess;
+    ] in
+    populate_with_sources (sources @ Test.typeshed_stubs)
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let parse_annotation annotation =
     annotation
     |> parse_single_expression
     |> Resolution.parse_annotation resolution
   in
-  let assert_fold access expected =
+  let assert_fold ?parent access expected =
     let steps =
-      let steps steps ~resolution:_ ~resolved ~element =
+      let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
-          let module Element = Annotated.Access.Element in
           let stripped element: stripped =
             match element with
-            | Element.Attribute { Element.origin = Element.Module []; _ } ->
+            | Annotated.Access.Attribute { origin = Annotated.Access.Module []; _ } ->
                 Unknown
-            | Element.Attribute { Element.attribute; defined; _ } ->
+            | Annotated.Access.Attribute { attribute; defined; _ } ->
                 Attribute { name = Access.show attribute; defined }
-            | Element.Signature _ ->
-                Signature
-            | Element.Value ->
+            | Annotated.Access.Signature {
+                signature = Annotated.Signature.Found { callable; _ };
+                callees;
+                _;
+              } ->
+                let callees =
+                  let show_callee { Type.Callable.kind; _ } =
+                    match kind with
+                    | Type.Callable.Named name -> Access.show name
+                    | _ -> "Anonymous"
+                  in
+                  List.map callees ~f:show_callee
+                in
+                SignatureFound { callable = Type.show (Type.Callable callable); callees }
+            | Annotated.Access.Signature {
+                signature = Annotated.Signature.NotFound { reason; _; };
+                _;
+              } ->
+                SignatureNotFound reason
+            | Annotated.Access.NotCallable annotation ->
+                NotCallable annotation
+            | Annotated.Access.Value ->
                 Value
           in
           { annotation = Annotation.annotation resolved; element = stripped element }
         in
         step :: steps
       in
-      parse_single_access access
+      let resolution = Resolution.with_parent resolution ~parent in
+      parse_single_access access ~preprocess:true
       |> Annotated.Access.create
       |> Annotated.Access.fold ~resolution ~initial:[] ~f:steps
       |> List.rev
@@ -116,12 +146,141 @@ let test_fold _ =
       steps
   in
 
+  let signature_not_found signature = SignatureNotFound signature in
+
   assert_fold "unknown" [{ annotation = Type.Top; element = Unknown }];
   assert_fold "unknown.unknown" [{ annotation = Type.Top; element = Unknown }];
 
   assert_fold "integer" [{ annotation = Type.integer; element = Value }];
   assert_fold "string" [{ annotation = Type.string; element = Value }];
 
+  (* Unions. *)
+  assert_fold "union" [{ annotation = Type.union [Type.string; Type.integer]; element = Value }];
+  assert_fold
+    "union.__doc__"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      { annotation = Type.string; element = Attribute { name = "__doc__"; defined = true } };
+    ];
+  assert_fold
+    "union.__lt__"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, int)],
+                bool,
+              ],
+              typing.Callable('str.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, int)],
+                float,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__lt__"; defined = true };
+      };
+    ];
+  assert_fold
+    "union.__lt__(1)"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, int)],
+                bool,
+              ],
+              typing.Callable('str.__lt__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, int)],
+                float,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__lt__"; defined = true };
+      };
+      {
+        annotation = Type.union [Type.bool; Type.float];
+        element = SignatureFound {
+            callable =
+              "typing.Callable" ^
+              "[[Named(self, unknown), Named(other, int)], typing.Union[bool, float]]";
+            callees = ["int.__lt__"; "str.__lt__"];
+          };
+      };
+    ];
+  (* Passing the wrong type. *)
+  assert_fold
+    "union.__add__('string')"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__add__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, int)],
+                int,
+              ],
+              typing.Callable('str.__add__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, str)],
+                str,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__add__"; defined = true };
+      };
+      {
+        annotation = Type.integer;
+        element =
+          {
+            Annotated.Signature.actual = Type.string;
+            expected = Type.integer;
+            name = None;
+            position = 2;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  (* Names don't match up. *)
+  assert_fold
+    "union.__ne__(unknown)"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__ne__')[
+                [Named($parameter$self, $unknown), Named($parameter$other_integer, $unknown)],
+                bool,
+              ],
+              typing.Callable('str.__ne__')[
+                [Named($parameter$self, $unknown), Named($parameter$other, $unknown)],
+                int,
+              ],
+            ]
+          |}
+          |> parse_annotation;
+        element = Attribute { name = "__ne__"; defined = true };
+      };
+      {
+        annotation = Type.bool;
+        element = SignatureNotFound None;
+      };
+    ];
+
+  (* Classes. *)
   assert_fold "Class" [{ annotation = Type.meta (Type.primitive "Class"); element = Value }];
   assert_fold "instance" [{ annotation = Type.primitive "Class"; element = Value }];
   assert_fold
@@ -145,14 +304,52 @@ let test_fold _ =
           parse_annotation "typing.Callable('Class.method')[[Named(self, $unknown)], int]";
         element = Attribute { name = "method"; defined = true };
       };
-      { annotation = Type.integer; element = Signature };
+      {
+        annotation = Type.integer;
+        element = SignatureFound {
+            callable = "typing.Callable(Class.method)[[Named(self, unknown)], int]";
+            callees = ["Class.method"];
+          };
+      };
+    ];
+  assert_fold
+    "instance()"
+    [
+      { annotation = Type.primitive "Class"; element = Value };
+      { annotation = Type.Top; element = NotCallable (Type.primitive "Class") };
     ];
 
+  assert_fold
+    ~parent:(Access.create "Class")
+    "super().__init__()"
+    [
+      { annotation = Type.primitive "Super"; element = Value };
+      {
+        annotation =
+          parse_annotation "typing.Callable('object.__init__')[[Named(self, $unknown)], None]";
+        element = Attribute { name = "__init__"; defined = true };
+      };
+      {
+        annotation = Type.none;
+        element = SignatureFound {
+            callable = "typing.Callable(object.__init__)[[Named(self, unknown)], None]";
+            callees = ["object.__init__"];
+          };
+      };
+    ];
+
+  (* Functions. *)
   assert_fold
     "function()"
     [
       { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
-      { annotation = Type.string; element = Signature };
+      {
+        annotation = Type.string;
+        element = SignatureFound {
+            callable = "typing.Callable(function)[[], str]";
+            callees = ["function"];
+          };
+      };
     ];
   assert_fold
     "function.nested()"
@@ -162,7 +359,13 @@ let test_fold _ =
         annotation = parse_annotation "typing.Callable('function.nested')[[], str]";
         element = Value;
       };
-      { annotation = Type.string; element = Signature };
+      {
+        annotation = Type.string;
+        element = SignatureFound {
+            callable = "typing.Callable(function.nested)[[], str]";
+            callees = ["function.nested"];
+          };
+      };
     ];
   assert_fold
     "function.unknown_nested()"
@@ -171,19 +374,260 @@ let test_fold _ =
       { annotation = Type.Top; element = Value };
     ];
 
+  (* Modules. *)
   assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
 
   assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }];
   assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }];
 
   assert_fold "empty.stub.any_attribute" [{ annotation = Type.Top; element = Value }];
-  assert_fold "has_getattr.any_attribute" [{ annotation = parse_annotation "Any"; element = Value }]
+  assert_fold
+    "has_getattr.any_attribute"
+    [{ annotation = parse_annotation "Any"; element = Value }];
+
+  (* Typed dictionaries. *)
+  let movie_typed_dictionary = {
+    annotation = Type.TypedDictionary {
+        name = Identifier.create "Movie";
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "title"; annotation = Type.string };
+        ];
+      };
+    element = Value;
+  } in
+
+  assert_fold
+    "movie.title"
+    [
+      movie_typed_dictionary;
+      { annotation = Type.Top; element = Attribute { name = "title"; defined = false } };
+    ];
+
+  let get_item = {
+    annotation =
+      parse_annotation (
+        "typing.Callable('typing.Mapping.__getitem__')" ^
+        "[[Named(self, $unknown),  Named(k, typing._KT)], typing._VT_co]");
+    element = Attribute { name = "__getitem__"; defined = true } ;
+  } in
+
+  assert_fold
+    "movie['title']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      {
+        annotation = parse_annotation "str";
+        element = SignatureFound {
+            callable =
+              "typing.Callable(typing.Mapping.__getitem__)" ^
+              "[[Named(self, unknown), Named(k, Variable[typing._KT])], str]";
+            callees = ["typing.Mapping.__getitem__"];
+          };
+      };
+    ];
+  assert_fold
+    "movie['year']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      {
+        annotation = parse_annotation "int";
+        element = SignatureFound {
+            callable =
+              "typing.Callable(typing.Mapping.__getitem__)" ^
+              "[[Named(self, unknown), Named(k, Variable[typing._KT])], int]";
+            callees = ["typing.Mapping.__getitem__"];
+          };
+      };
+    ];
+
+  assert_fold
+    "movie['missing']"
+    [
+      movie_typed_dictionary;
+      get_item;
+      {
+        annotation = parse_annotation "$unknown";
+        element =
+          Annotated.Signature.TypedDictionaryMissingKey {
+            typed_dictionary_name = Identifier.create "Movie";
+            missing_key = "missing";
+          }
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "movie[string]"
+    [
+      movie_typed_dictionary;
+      get_item;
+      {
+        annotation = parse_annotation "$unknown";
+        element =
+          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "Movie(title='Blade Runner', year=1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element = SignatureFound {
+            callable =
+              "typing.Callable(__init__)" ^
+              "[[Named(self, unknown), Variable(, unknown), Named(year, int), Named(title, str)]," ^
+              " TypedDict `Movie` with fields (year: int, title: str)]";
+            callees = ["__init__"];
+          };
+      };
+    ];
+  assert_fold
+    "Movie(year=1982, title='Blade Runner')"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element = SignatureFound {
+            callable =
+              "typing.Callable(__init__)" ^
+              "[[Named(self, unknown), Variable(, unknown), Named(year, int), Named(title, str)]," ^
+              " TypedDict `Movie` with fields (year: int, title: str)]";
+            callees = ["__init__"];
+          };
+      };
+    ];
+  assert_fold
+    "Movie(year='Blade Runner', title=1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element =
+          {
+            Annotated.Signature.actual = parse_annotation "str";
+            expected = parse_annotation "int";
+            name = (Some (Identifier.create "$parameter$year"));
+            position = 2;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    "Movie('Blade Runner', 1982)"
+    [
+      {
+        annotation = parse_annotation ("typing.Type[Movie]");
+        element = Value;
+      };
+      {
+        annotation = parse_annotation "Movie";
+        element =
+          Annotated.Signature.TooManyArguments { expected = 4; provided = 6 }
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+
+  let set_item =
+    {
+      annotation =
+        parse_annotation (
+          "typing.Callable('TypedDictionary.__setitem__')" ^
+          "[[Named(self, $unknown),  Named(key, $unknown), Named(value, $unknown)], None]");
+      element = Attribute { name = "__setitem__"; defined = true } ;
+    }
+  in
+
+  assert_fold
+    "movie['year'] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element = SignatureFound {
+            callable =
+              "typing.Callable(TypedDictionary.__setitem__)" ^
+              "[[Named(key, str), Named(value, int)], None]";
+            callees = ["TypedDictionary.__setitem__"];
+          };
+      };
+    ];
+
+  assert_fold
+    "movie['year'] = 'string'"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          +{
+            Annotated.Signature.actual = Type.string;
+            expected = Type.integer;
+            name = None;
+            position = 2;
+          }
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+
+  assert_fold
+    "movie['missing'] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          Annotated.Signature.TypedDictionaryMissingKey {
+            typed_dictionary_name = Identifier.create "Movie";
+            missing_key = "missing";
+          }
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+
+  assert_fold
+    "movie[string] = 7"
+    [
+      movie_typed_dictionary;
+      set_item;
+      {
+        annotation = Type.none;
+        element =
+          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          |> Option.some
+          |> signature_not_found;
+      };
+    ]
 
 
 let assert_resolved sources access expected =
   let resolution =
     populate_with_sources (sources @ typeshed_stubs)
-    |> fun environment -> Environment.resolution environment ()
+    |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =
     parse_single_access access
@@ -191,7 +635,7 @@ let assert_resolved sources access expected =
     |> Annotated.Access.fold
       ~resolution
       ~initial:Type.Top
-      ~f:(fun _ ~resolution:_ ~resolved ~element:_ -> Annotation.annotation resolved)
+      ~f:(fun _ ~resolution:_ ~resolved ~element:_ ~lead:_ -> Annotation.annotation resolved)
   in
   assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 

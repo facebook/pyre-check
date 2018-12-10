@@ -9,12 +9,13 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_dictionary.py",
               "line": 13,
-              "start": 23,
-              "end": 28
+              "start": 24,
+              "end": 27
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -32,12 +33,13 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_dictionary.py",
               "line": 6,
               "start": 25,
               "end": 27
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }
@@ -56,7 +58,11 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "LocalReturn" } ] }
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+          }
         ]
       }
     ]

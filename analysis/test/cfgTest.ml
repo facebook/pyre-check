@@ -24,7 +24,6 @@ let test_to_dot _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent = None;
       }
     in
@@ -109,7 +108,6 @@ let assert_cfg body expected =
     docstring = None;
     return_annotation = None;
     async = false;
-    generated = false;
     parent = None;
   } in
   assert_equal

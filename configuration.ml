@@ -21,7 +21,7 @@ module Analysis = struct
     sections: string list;
     debug: bool;
     project_root: Path.t;
-    search_path: Path.t list;
+    search_path: Path.SearchPath.t list;
     typeshed: Path.t option;
     verbose: bool;
     expected_version: string option;
@@ -30,6 +30,7 @@ module Analysis = struct
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
+    excludes: Str.regexp list [@opaque];
   }
   [@@deriving show]
 
@@ -65,6 +66,7 @@ module Analysis = struct
       ?(show_error_traces = false)
       ?(log_identifier = "")
       ?logger
+      ?(excludes = [])
       () =
     {
       start_time;
@@ -87,6 +89,7 @@ module Analysis = struct
       show_error_traces;
       log_identifier;
       logger;
+      excludes = List.map excludes ~f:Str.regexp;
     }
 
 
@@ -121,12 +124,12 @@ module Analysis = struct
     let roots =
       match typeshed with
       | None ->
-          [local_root]
+          [Path.SearchPath.Root local_root]
       | Some typeshed ->
           [
-            Path.create_relative ~root:typeshed ~relative:"stdlib";
-            Path.create_relative ~root:typeshed ~relative:"third_party";
-            local_root;
+            Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"stdlib");
+            Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"third_party");
+            Path.SearchPath.Root local_root;
           ]
     in
     search_path @ roots
@@ -175,6 +178,7 @@ end
 module StaticAnalysis = struct
   type t = {
     result_json_path: Path.t option;
+    dump_call_graph: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
   }

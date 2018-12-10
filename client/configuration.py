@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 from . import (
     BINARY_NAME,
@@ -26,8 +26,44 @@ class InvalidConfiguration(Exception):
     pass
 
 
+class SearchPathElement:
+    def __init__(self, element: Union[Dict[str, str], str]) -> None:
+        if isinstance(element, str):
+            self.root = os.path.abspath(element)
+            self.subdirectory = None
+        else:
+            if "root" not in element or "subdirectory" not in element:
+                raise InvalidConfiguration(
+                    "Search path elements must have `root` and `subdirectory` specified."
+                )
+            self.root = os.path.abspath(element["root"])
+            self.subdirectory = element["subdirectory"]
+
+    def path(self) -> str:
+        subdirectory = self.subdirectory
+        if subdirectory is not None:
+            return os.path.join(self.root, subdirectory)
+        else:
+            return self.root
+
+    def command_line_argument(self) -> str:
+        subdirectory = self.subdirectory
+        if subdirectory is not None:
+            return self.root + "$" + subdirectory
+        else:
+            return self.root
+
+    def __eq__(self, other) -> bool:
+        # We support this for testing.
+        if isinstance(other, str):
+            return self.path() == other
+        else:
+            return self.root == other.root and self.subdirectory == other.subdirectory
+
+
 class _ConfigurationFile:
     def __init__(self, file):
+        self._deprecated = {"do_not_check": "ignore_all_errors"}
         self._configuration = json.load(file)
 
     def consume(self, key, default=None, current=None, print_on_success=False):
@@ -45,6 +81,13 @@ class _ConfigurationFile:
             return current
         if value and print_on_success:
             LOG.debug("Found %s: `%s`", key, ", ".join(value))
+        if value and key in self._deprecated:
+            LOG.warning(
+                "Configuration file uses deprecated item `%s`: "
+                "please migrate to its replacement `%s`",
+                key,
+                self._deprecated[key],
+            )
         return value
 
     def unused_keys(self):
@@ -69,15 +112,16 @@ class Configuration:
         self,
         local_configuration_directory=None,
         local_configuration: Optional[str] = None,
-        search_path: Optional[List[str]] = None,
+        search_path: Optional[List[SearchPathElement]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
+        excludes: Optional[List[str]] = None,
     ) -> None:
         self.analysis_directories = []
         self.targets = []
         self.logger = None
-        self.do_not_check = []
+        self.ignore_all_errors = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = None
@@ -87,19 +131,19 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
-        self.search_path = []
+        self._search_path = []
         pythonpath = os.getenv("PYTHONPATH")
         if preserve_pythonpath and pythonpath:
             for path in pythonpath.split(":"):
                 if os.path.isdir(path):
-                    self.search_path.append(path)
+                    self._search_path.append(SearchPathElement(path))
                 else:
                     LOG.warning(
                         "`{}` is not a valid directory, dropping it "
                         "from PYTHONPATH".format(path)
                     )
         if search_path:
-            self.search_path.extend(search_path)
+            self._search_path.extend(search_path)
         # We will extend the search path further, with the config file
         # items, inside _read().
 
@@ -108,6 +152,10 @@ class Configuration:
 
         if typeshed:
             self._typeshed = typeshed
+
+        self.excludes = []  # type: List[str]
+        if excludes:
+            self.excludes.extend(excludes)
 
         if local_configuration:
             # Handle local configuration explicitly configured on the
@@ -155,9 +203,9 @@ class Configuration:
                     "strings."
                 )
 
-            if not is_list_of_strings(self.do_not_check):
+            if not is_list_of_strings(self.ignore_all_errors):
                 raise InvalidConfiguration(
-                    "`do_not_check` field must be a list of strings."
+                    "`ignore_all_errors` field must be a list of strings."
                 )
 
             if not os.path.exists(self.binary):
@@ -213,8 +261,8 @@ class Configuration:
                     assert_readable_directory(typeshed_version_directory)
 
             # Validate elements of the search path.
-            for path in self.search_path:
-                assert_readable_directory(path)
+            for element in self._search_path:
+                assert_readable_directory(element.path())
         except InvalidConfiguration as error:
             raise EnvironmentException("Invalid configuration: {}".format(str(error)))
 
@@ -233,6 +281,12 @@ class Configuration:
         if not self._typeshed:
             raise InvalidConfiguration("Configuration invalid: no typeshed specified")
         return self._typeshed
+
+    @property
+    def search_path(self) -> List[str]:
+        if not self._search_path:
+            return []
+        return [element.command_line_argument() for element in self._search_path]
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):
@@ -268,12 +322,20 @@ class Configuration:
 
                 configuration = _ConfigurationFile(file)
 
-                self.analysis_directories = configuration.consume(
+                source_directories = configuration.consume(
                     "source_directories",
                     default=[],
                     current=self.analysis_directories,
                     print_on_success=True,
                 )
+                configuration_directory = os.path.dirname(path)
+                if configuration_directory:
+                    self.analysis_directories = [
+                        os.path.join(configuration_directory, directory)
+                        for directory in source_directories
+                    ]
+                else:
+                    self.analysis_directories = source_directories
 
                 self.targets = configuration.consume(
                     "targets", default=[], current=self.targets, print_on_success=True
@@ -284,9 +346,13 @@ class Configuration:
 
                 self.logger = configuration.consume("logger", current=self.logger)
 
-                do_not_check = configuration.consume("do_not_check", default=[])
+                ignore_all_errors = configuration.consume(
+                    "ignore_all_errors", default=[]
+                )
+                # Deprecated.
+                ignore_all_errors += configuration.consume("do_not_check", default=[])
                 configuration_path = os.path.dirname(os.path.realpath(path))
-                self.do_not_check.extend(
+                self.ignore_all_errors.extend(
                     map(
                         lambda do_not_check_relative_to_configuration: os.path.realpath(
                             os.path.join(
@@ -294,7 +360,7 @@ class Configuration:
                                 do_not_check_relative_to_configuration,
                             )
                         ),
-                        do_not_check,
+                        ignore_all_errors,
                     )
                 )
 
@@ -311,10 +377,16 @@ class Configuration:
                 additional_search_path = configuration.consume(
                     "search_path", default=[]
                 )
+
                 if isinstance(additional_search_path, list):
-                    self.search_path.extend(additional_search_path)
+                    self._search_path.extend(
+                        [
+                            SearchPathElement(element)
+                            for element in additional_search_path
+                        ]
+                    )
                 else:
-                    self.search_path.append(additional_search_path)
+                    self._search_path.append(SearchPathElement(additional_search_path))
 
                 version_hash = configuration.consume(
                     "version", current=self._version_hash
@@ -332,6 +404,13 @@ class Configuration:
                 assert taint_models_path is None or isinstance(taint_models_path, str)
                 self.taint_models_path = taint_models_path
 
+                excludes = configuration.consume("exclude", default=[])
+                if isinstance(excludes, list):
+                    self.excludes.extend(excludes)
+                else:
+                    self.excludes.append(excludes)
+
+                # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
                 if unused_keys:
                     LOG.warning(

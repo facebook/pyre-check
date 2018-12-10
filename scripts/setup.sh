@@ -141,11 +141,19 @@ if [ ${OPAM_REPOSITORY: -7} == ".tar.gz" ]; then
   OPAM_REPOSITORY=$temporary_repository
 fi
 
+opam_version=$(opam --version)
 # Setting up OCaml environment.
-opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
-  && eval "$(opam config --root "$OPAM_ROOT" env)" \
-  && opam update \
-  && ocaml_succeeded=1
+if [[ ${opam_version:0:1} == "2" ]] ; then
+  opam init --yes --reinit --disable-sandboxing --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
+    && eval "$(opam env --yes --switch "$COMPILER" --root "$OPAM_ROOT" --set-root --set-switch)" \
+    && opam update \
+    && ocaml_succeeded=1
+else
+  opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
+    && eval "$(opam config --root "$OPAM_ROOT" env)" \
+    && opam update \
+    && ocaml_succeeded=1
+fi
 test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
 

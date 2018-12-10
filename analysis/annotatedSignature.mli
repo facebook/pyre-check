@@ -7,26 +7,22 @@ open Ast
 open Expression
 
 
-type too_many_arguments = {
-  expected: int;
-  provided: int;
-}
-[@@deriving eq, show]
-
-
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
   name: Identifier.t option;
   position: int;
 }
-[@@deriving eq, show]
+[@@deriving eq, show, compare]
 
 type reason =
   | Mismatch of mismatch Node.t
   | MissingArgument of Access.t
-  | TooManyArguments of too_many_arguments
-[@@deriving eq, show]
+  | TooManyArguments of { expected: int; provided: int }
+  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryMissingKey of { typed_dictionary_name: Identifier.t; missing_key: string }
+  | UnexpectedKeyword of Identifier.t
+[@@deriving eq, show, compare]
 
 type found = {
   callable: Type.Callable.t;

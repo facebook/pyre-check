@@ -23,7 +23,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
-            when Access.show from <> "builtins" ->
+            when Access.show from <> "builtins" && Access.show from <> "future.builtins" ->
               Import {
                 Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;
@@ -214,8 +214,19 @@ type scope = {
   immutables: Access.Set.t;
   locals: Access.Set.t;
   use_forward_references: bool;
+  is_top_level: bool;
   skip: Location.Reference.Set.t;
 }
+
+let qualify_local_identifier name ~qualifier =
+  let qualifier =
+    Access.show qualifier
+    |> String.substr_replace_all ~pattern:"." ~with_:"?"
+  in
+  Identifier.show name
+  |> Format.asprintf "$local_%s$%s" qualifier
+  |> Identifier.create
+  |> fun identifier -> [Access.Identifier identifier]
 
 
 let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
@@ -259,7 +270,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           Node.location;
           value = {
             parameter with
-            Parameter.annotation = annotation >>| qualify_expression ~scope;
+            Parameter.annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope;
           };
         }
       in
@@ -274,7 +285,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         parameter with
         Node.value = {
           Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
-          value = value >>| qualify_expression ~scope;
+          value = value >>| qualify_expression ~qualify_strings:false ~scope;
           annotation;
         };
       } :: reversed_parameters
@@ -366,12 +377,23 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
 
   and qualify_statement
       ~qualify_assign
-      ~scope:({ qualifier; aliases; skip; _ } as scope)
+      ~scope:({ qualifier; aliases; skip; is_top_level; _ } as scope)
       ({ Node.location; value } as statement) =
     let scope, value =
       let local_alias ~qualifier ~access = { access; qualifier; is_forward_reference = false } in
 
       let qualify_assign { Assign.target; annotation; value; parent } =
+        let value =
+          match value with
+          | { Node.value = String _; _ } ->
+              (* String literal assignments might be type aliases. *)
+              qualify_expression ~qualify_strings:is_top_level value ~scope
+          | { Node.value = Access (Access.Identifier _ :: Access.Identifier getitem :: _); _ }
+            when Identifier.show getitem = "__getitem__" ->
+              qualify_expression ~qualify_strings:is_top_level value ~scope
+          | _ ->
+              qualify_expression ~qualify_strings:false value ~scope
+        in
         let target_scope, target =
           if not (Set.mem skip location) then
             let rec qualify_target ~scope:({ aliases; immutables; locals; _ } as scope) target =
@@ -395,32 +417,24 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     scope, List elements
                 | Access ([_] as access) when qualify_assign ->
                     (* Qualify field assignments in class body. *)
-                    let alias =
-                      match qualify_access ~scope access with
+                    let sanitized =
+                      match access with
                       | [Access.Identifier name] ->
                           [Access.Identifier (Identifier.sanitized name)]
-                      | qualified ->
-                          qualified
+                      | access ->
+                          access
                     in
                     let scope =
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None -> local_alias ~qualifier ~access:(qualifier @ alias)
+                          | None -> local_alias ~qualifier ~access:(qualifier @ sanitized)
                         in
                         Map.update aliases access ~f:update
                       in
                       { scope with aliases }
                     in
-                    let qualified =
-                      let is_qualified =
-                        List.is_prefix
-                          alias
-                          ~prefix:qualifier
-                          ~equal:(Access.equal_access Expression.equal)
-                      in
-                      if is_qualified then alias else qualifier @ alias
-                    in
+                    let qualified = qualifier @ sanitized in
                     scope, Access qualified
                 | Starred (Starred.Once access) ->
                     let scope, access = qualify_target ~scope access in
@@ -435,16 +449,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       if not qualified &&
                          not (Set.mem locals access) &&
                          not (Set.mem immutables access) then
-                        let alias =
-                          let qualifier =
-                            Access.show qualifier
-                            |> String.substr_replace_all ~pattern:"." ~with_:"?"
-                          in
-                          Identifier.show name
-                          |> Format.asprintf "$local_%s$%s" qualifier
-                          |> Identifier.create
-                          |> fun identifier -> [Access.Identifier identifier]
-                        in
+                        let alias = qualify_local_identifier name ~qualifier in
                         {
                           scope with
                           aliases =
@@ -457,11 +462,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       else
                         scope
                     in
-                    scope, Access (qualify_access ~scope access)
+                    scope, Access (qualify_access ~qualify_strings:false ~scope access)
                 | Access access ->
                     let access =
                       let qualified =
-                        match qualify_access ~scope access with
+                        match qualify_access ~qualify_strings:false ~scope access with
                         | [Access.Identifier name] ->
                             [Access.Identifier (Identifier.sanitized name)]
                         | qualified ->
@@ -485,18 +490,20 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         target_scope,
         {
           Assign.target;
-          annotation = annotation >>| qualify_expression ~scope;
-          value = qualify_expression value ~scope;
-          parent = parent >>| fun access -> qualify_access ~scope access;
+          annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope;
+          (* Assignments can be type aliases. *)
+          value;
+          parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;
         }
       in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
+        let scope = { scope with is_top_level = false } in
         let qualify_base ({ Argument.value; _ } as argument) =
-          { argument with Argument.value = qualify_expression ~scope value }
+          { argument with Argument.value = qualify_expression ~qualify_strings:false ~scope value }
         in
         {
           definition with
-          Class.name = qualify_access ~scope name;
+          Class.name = qualify_access ~qualify_strings:false ~scope name;
           bases = List.map bases ~f:qualify_base;
           body =
             qualify_statements
@@ -504,7 +511,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               ~scope:{ scope with qualifier = qualifier @ name }
               body
             |> snd;
-          decorators = List.map decorators ~f:(qualify_expression ~scope);
+          decorators = List.map decorators ~f:(qualify_expression ~qualify_strings:false ~scope);
         }
       in
       let qualify_define
@@ -517,10 +524,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             parent;
             _;
           } as define) =
+        let scope = { scope with is_top_level = false } in
         let renamed_scope, parameters = qualify_parameters ~scope parameters in
         {
           define with
-          Define.name = qualify_access ~scope name;
+          Define.name = qualify_access ~qualify_strings:false ~scope name;
           parameters;
           body =
             qualify_statements
@@ -531,9 +539,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             List.map
               decorators
               ~f:(qualify_expression
+                    ~qualify_strings:false
                     ~scope:{ scope with use_forward_references = Option.is_none parent });
-          return_annotation = return_annotation >>| qualify_expression ~scope;
-          parent = parent >>| fun access -> qualify_access ~scope access;
+          return_annotation = return_annotation >>| qualify_expression ~qualify_strings:true ~scope;
+          parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;
         }
       in
 
@@ -557,7 +566,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | Assert { Assert.test; message } ->
           scope,
           Assert {
-            Assert.test = qualify_expression ~scope test;
+            Assert.test = qualify_expression ~qualify_strings:false ~scope test;
             message;
           }
       | Class definition ->
@@ -568,10 +577,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           Define (qualify_define define)
       | Delete expression ->
           scope,
-          Delete (qualify_expression ~scope expression)
+          Delete (qualify_expression ~qualify_strings:false ~scope expression)
       | Expression expression ->
           scope,
-          Expression (qualify_expression ~scope expression)
+          Expression (qualify_expression ~qualify_strings:false ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
           let renamed_scope, target = qualify_target ~scope target in
           let body_scope, body = qualify_statements ~scope:renamed_scope body in
@@ -580,7 +589,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           For {
             block with
             For.target;
-            iterator = qualify_expression ~scope iterator;
+            iterator = qualify_expression ~qualify_strings:false ~scope iterator;
             body;
             orelse;
           }
@@ -591,7 +600,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           let body_scope, body = qualify_statements ~scope body in
           let orelse_scope, orelse = qualify_statements ~scope orelse in
           join_scopes body_scope orelse_scope,
-          If { If.test = qualify_expression ~scope test; body; orelse }
+          If { If.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse }
       | Import { Import.from = Some from; imports }
         when Access.show from <> "builtins" ->
           let import aliases { Import.name; alias } =
@@ -621,10 +630,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           Nonlocal identifiers
       | Raise expression ->
           scope,
-          Raise (expression >>| qualify_expression ~scope)
+          Raise (expression >>| qualify_expression ~qualify_strings:false ~scope)
       | Return ({ Return.expression; _ } as return) ->
           scope,
-          Return { return with Return.expression = expression >>| qualify_expression ~scope }
+          Return {
+            return with
+            Return.expression = expression >>| qualify_expression ~qualify_strings:false ~scope;
+          }
       | Try { Try.body; handlers; orelse; finally } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
@@ -637,7 +649,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 | _ ->
                     scope, name
               in
-              let kind = kind >>| qualify_expression ~scope in
+              let kind = kind >>| qualify_expression ~qualify_strings:false ~scope in
               let scope, handler_body = qualify_statements ~scope:renamed_scope handler_body in
               scope, { Try.kind; name; handler_body }
             in
@@ -666,7 +678,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       scope, alias
                 in
                 renamed_scope,
-                (qualify_expression ~scope name, alias)
+                (qualify_expression ~qualify_strings:false ~scope name, alias)
               in
               scope, item :: reversed_items
             in
@@ -680,13 +692,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           let body_scope, body = qualify_statements ~scope body in
           let orelse_scope, orelse = qualify_statements ~scope orelse in
           join_scopes body_scope orelse_scope,
-          While { While.test = qualify_expression ~scope test; body; orelse }
+          While { While.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse }
       | Statement.Yield expression ->
           scope,
-          Statement.Yield (qualify_expression ~scope expression)
+          Statement.Yield (qualify_expression ~qualify_strings:false ~scope expression)
       | Statement.YieldFrom expression ->
           scope,
-          Statement.YieldFrom (qualify_expression ~scope expression)
+          Statement.YieldFrom (qualify_expression ~qualify_strings:false ~scope expression)
       | Break | Continue | Import _ | Pass ->
           scope,
           value
@@ -708,9 +720,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           scope
     in
     let scope = renamed_scope scope target in
-    scope, qualify_expression ~scope target
+    scope, qualify_expression ~qualify_strings:false ~scope target
 
-  and qualify_access ~scope:({ aliases; use_forward_references; _ } as scope) access =
+  and qualify_access
+      ~qualify_strings
+      ~scope:({ aliases; use_forward_references; _ } as scope)
+      access =
     match access with
     | head :: tail ->
         let head =
@@ -733,11 +748,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   name
                   >>| Node.map ~f:rename
                 in
-                { Argument.name; value = qualify_expression ~scope value }
+                { Argument.name; value = qualify_expression ~qualify_strings ~scope value }
               in
               Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
           | Access.Expression expression ->
-              Access.Expression (qualify_expression ~scope expression)
+              Access.Expression (qualify_expression ~qualify_strings ~scope expression)
           | element ->
               element
         in
@@ -745,15 +760,18 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     | _ ->
         access
 
-  and qualify_expression ~scope ({ Node.location; value } as expression) =
+  and qualify_expression
+      ~qualify_strings
+      ~scope
+      ({ Node.location; value } as expression) =
     let value =
-      let qualify_entry ~scope { Dictionary.key; value } =
+      let qualify_entry ~qualify_strings ~scope { Dictionary.key; value } =
         {
-          Dictionary.key = qualify_expression ~scope key;
-          value = qualify_expression ~scope value;
+          Dictionary.key = qualify_expression ~qualify_strings ~scope key;
+          value = qualify_expression ~qualify_strings ~scope value;
         }
       in
-      let qualify_generators ~scope generators =
+      let qualify_generators ~qualify_strings ~scope generators =
         let qualify_generator
             (scope, reversed_generators)
             ({ Comprehension.target; iterator; conditions; _ } as generator) =
@@ -762,8 +780,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           {
             generator with
             Comprehension.target;
-            iterator = qualify_expression ~scope iterator;
-            conditions = List.map conditions ~f:(qualify_expression ~scope:renamed_scope);
+            iterator = qualify_expression ~qualify_strings ~scope iterator;
+            conditions =
+              List.map
+                conditions
+                ~f:(qualify_expression ~qualify_strings ~scope:renamed_scope);
           } :: reversed_generators
         in
         let scope, reversed_generators =
@@ -776,108 +797,112 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       in
       match value with
       | Access access ->
-          Access (qualify_access ~scope access)
+          Access (qualify_access ~qualify_strings ~scope access)
       | Await expression ->
-          Await (qualify_expression ~scope expression)
+          Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           BooleanOperator {
-            BooleanOperator.left = qualify_expression ~scope left;
+            BooleanOperator.left = qualify_expression ~qualify_strings ~scope left;
             operator;
-            right = qualify_expression ~scope right;
+            right = qualify_expression ~qualify_strings ~scope right;
           }
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           ComparisonOperator {
-            ComparisonOperator.left = qualify_expression ~scope left;
+            ComparisonOperator.left = qualify_expression ~qualify_strings ~scope left;
             operator;
-            right = qualify_expression ~scope right;
+            right = qualify_expression ~qualify_strings ~scope right;
           }
       | Dictionary { Dictionary.entries; keywords } ->
           Dictionary {
-            Dictionary.entries = List.map entries ~f:(qualify_entry ~scope);
-            keywords = List.map keywords ~f:(qualify_expression ~scope);
+            Dictionary.entries = List.map entries ~f:(qualify_entry ~qualify_strings ~scope);
+            keywords = List.map keywords ~f:(qualify_expression ~qualify_strings ~scope);
           }
       | DictionaryComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
           DictionaryComprehension {
-            Comprehension.element = qualify_entry ~scope element;
+            Comprehension.element = qualify_entry ~qualify_strings ~scope element;
             generators;
           }
       | Generator { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
           Generator {
-            Comprehension.element = qualify_expression ~scope element;
+            Comprehension.element = qualify_expression ~qualify_strings ~scope element;
             generators;
           }
       | Lambda { Lambda.parameters; body } ->
           let scope, parameters = qualify_parameters ~scope parameters in
           Lambda {
             Lambda.parameters;
-            body = qualify_expression ~scope body;
+            body = qualify_expression ~qualify_strings ~scope body;
           }
       | List elements ->
-          List (List.map elements ~f:(qualify_expression ~scope))
+          List (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | ListComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
           ListComprehension {
-            Comprehension.element = qualify_expression ~scope element;
+            Comprehension.element = qualify_expression ~qualify_strings ~scope element;
             generators;
           }
       | Set elements ->
-          Set (List.map elements ~f:(qualify_expression ~scope))
+          Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | SetComprehension { Comprehension.element; generators } ->
-          let scope, generators = qualify_generators ~scope generators in
+          let scope, generators = qualify_generators ~qualify_strings ~scope generators in
           SetComprehension {
-            Comprehension.element = qualify_expression ~scope element;
+            Comprehension.element = qualify_expression ~qualify_strings ~scope element;
             generators;
           }
       | Starred (Starred.Once expression) ->
-          Starred (Starred.Once (qualify_expression ~scope expression))
+          Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
       | Starred (Starred.Twice expression) ->
-          Starred (Starred.Twice (qualify_expression ~scope expression))
+          Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
       | String { StringLiteral.value; kind } ->
           begin
             let kind =
               match kind with
               | StringLiteral.Format expressions ->
-                  StringLiteral.Format (List.map expressions ~f:(qualify_expression ~scope))
+                  StringLiteral.Format
+                    (List.map expressions ~f:(qualify_expression ~qualify_strings ~scope))
               | _ ->
                   kind
             in
-            try
-              match Parser.parse [value ^ "\n"] ~handle with
-              | [{ Node.value = Expression expression; _ }] ->
-                  qualify_expression ~scope expression
-                  |> Expression.show
-                  |> fun value -> String { StringLiteral.value; kind }
-              | _ ->
-                  failwith "Not an expression"
-            with
-            | Parser.Error _
-            | Failure _ ->
-                begin
-                  Log.debug
-                    "Invalid string annotation `%s` at %a"
-                    value
-                    Location.Reference.pp
-                    location;
-                  String { StringLiteral.value; kind }
-                end
+            if qualify_strings then
+              try
+                match Parser.parse [value ^ "\n"] ~handle with
+                | [{ Node.value = Expression expression; _ }] ->
+                    qualify_expression ~qualify_strings ~scope expression
+                    |> Expression.show
+                    |> fun value -> String { StringLiteral.value; kind }
+                | _ ->
+                    failwith "Not an expression"
+              with
+              | Parser.Error _
+              | Failure _ ->
+                  begin
+                    Log.debug
+                      "Invalid string annotation `%s` at %a"
+                      value
+                      Location.Reference.pp
+                      location;
+                    String { StringLiteral.value; kind }
+                  end
+            else
+              String { StringLiteral.value; kind }
           end
       | Ternary { Ternary.target; test; alternative } ->
           Ternary {
-            Ternary.target = qualify_expression ~scope target;
-            test = qualify_expression ~scope test;
-            alternative = qualify_expression ~scope alternative;
+            Ternary.target = qualify_expression ~qualify_strings ~scope target;
+            test = qualify_expression ~qualify_strings ~scope test;
+            alternative = qualify_expression ~qualify_strings ~scope alternative;
           }
       | Tuple elements ->
-          Tuple (List.map elements ~f:(qualify_expression ~scope))
+          Tuple (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | UnaryOperator { UnaryOperator.operator; operand } ->
           UnaryOperator {
             UnaryOperator.operator;
-            operand = qualify_expression ~scope operand;
+            operand = qualify_expression ~qualify_strings ~scope operand;
           }
       | Yield (Some expression) ->
-          Yield (Some (qualify_expression ~scope expression))
+          Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None ->
           Yield None
       | Complex _ | Ellipses | False | Float _ | Integer _ | True ->
@@ -893,6 +918,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       locals = Access.Set.empty;
       immutables = Access.Set.empty;
       use_forward_references = true;
+      is_top_level = true;
       skip = Location.Reference.Set.empty;
     }
   in
@@ -1098,29 +1124,13 @@ let expand_wildcard_imports ~force source =
   |> snd
 
 
-let return_access = Access.create "$return"
-
-
-let expand_returns source =
+let expand_implicit_returns source =
   let module ExpandingTransform = Transform.MakeStatementTransformer(struct
       include Transform.Identity
       type t = unit
 
       let statement state statement =
         match statement with
-        (* Expand returns to make them more amenable for analyses. E.g:
-           `return x` -> `$return = x; return $return` *)
-        | { Node.location; value = Return ({ Return.expression = Some value; _ } as return) } ->
-            let target = { Node.location; value = Access return_access } in
-            state,
-            [
-              {
-                Node.location;
-                value = Assign { Assign.target; annotation = None; value; parent = None };
-              };
-              { Node.location; value = Return { return with Return.expression = Some target } };
-            ]
-
         (* Insert implicit return statements at the end of function bodies. *)
         | { Node.location; value = Define define } ->
             let define =
@@ -1188,6 +1198,7 @@ let expand_returns source =
 
 let defines
     ?(include_stubs = false)
+    ?(include_nested = false)
     ?(extract_into_toplevel = false)
     ({ Source.qualifier; statements; _ } as source) =
 
@@ -1195,12 +1206,15 @@ let defines
       type t = Define.t Node.t
 
       let visit_children = function
-        | { Node.value = Define _; _ } -> false
+        | { Node.value = Define _; _ } -> include_nested
         | _ -> true
 
       let predicate = function
-        | { Node.location; value = Define define } when Define.is_stub define && include_stubs ->
-            Some ({ Node.location; Node.value = define })
+        | { Node.location; value = Define define } when Define.is_stub define ->
+            if include_stubs then
+              Some ({ Node.location; Node.value = define })
+            else
+              None
         | { Node.location; value = Define define } ->
             Some ({ Node.location; Node.value = define })
         | _ ->
@@ -1274,6 +1288,174 @@ let dequalify_map source =
   |> fst
 
 
+let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
+  if String.is_suffix (File.Handle.show handle) ~suffix:"mypy_extensions.pyi" then
+    let typed_dictionary_stub ~location =
+      let node value = Node.create ~location value in
+      Assign {
+        target = node (Access (Access.create "TypedDict"));
+        annotation = Some (node (Access (Access.create "typing._SpecialForm")));
+        value = node Ellipses;
+        parent = None;
+      } |> node
+    in
+    let replace_typed_dictionary_define = function
+      | { Node.location; value = Define { name; _ } } when Access.show name = "TypedDict" ->
+          typed_dictionary_stub ~location
+      | statement ->
+          statement
+    in
+    { source with statements = List.map ~f:replace_typed_dictionary_define statements }
+  else
+    source
+
+
+let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as source) =
+  let expand_typed_dictionaries ({ Node.location; value } as statement) =
+    let expanded_declaration =
+      let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent =
+        let arguments =
+          let fields =
+            let tuple (key, value) = Node.create (Expression.Tuple [key; value]) ~location in
+            List.map fields ~f:tuple
+          in
+          [{
+            Argument.name = None;
+            value = Node.create (Expression.Tuple (name :: fields)) ~location;
+          }]
+        in
+        let access =
+          Access [
+            Access.Identifier (Identifier.create "mypy_extensions");
+            Access.Identifier (Identifier.create "TypedDict");
+            Access.Identifier (Identifier.create "__getitem__");
+            Access.Call (Node.create arguments ~location);
+          ];
+        in
+        let annotation =
+          let node value = Node.create value ~location in
+          Access [
+            Access.Identifier (Identifier.create "typing");
+            Access.Identifier (Identifier.create "Type");
+            Access.Identifier (Identifier.create "__getitem__");
+            Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
+          ]
+          |> node
+          |> Option.some
+        in
+        let access = Node.create access ~location in
+        Assign {
+          target;
+          annotation;
+          value = access;
+          parent;
+        };
+      in
+      let is_typed_dictionary ~module_name ~typed_dictionary =
+        Identifier.show module_name = "mypy_extensions" &&
+        Identifier.show typed_dictionary = "TypedDict"
+      in
+      match value with
+      | Assign {
+          target;
+          value = {
+            Node.value =
+              Access [
+                Access.Identifier module_name;
+                Access.Identifier typed_dictionary;
+                Access.Call {
+                  Node.value =
+                    [
+                      { Argument.name = None; value = name };
+                      {
+                        Argument.name = None;
+                        value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+                        _;
+                      };
+                    ];
+                  _;
+                };
+              ];
+            _;
+          };
+          parent;
+          _;
+        }
+        when is_typed_dictionary ~module_name ~typed_dictionary ->
+          let fields = List.map entries ~f:(fun { Dictionary.key; value } -> key, value) in
+          typed_dictionary_declaration_assignment ~name ~fields ~target ~parent
+      | Class {
+          name = class_name;
+          bases =
+            [
+              {
+                Argument.name = None;
+                value = {
+                  Node.value = Access [
+                      Access.Identifier module_name;
+                      Access.Identifier typed_dictionary;
+                    ];
+                  _;
+                };
+              }
+            ];
+          body;
+          decorators = [];
+          docstring = _;
+        }
+        when is_typed_dictionary ~module_name ~typed_dictionary ->
+          let single_identifier access =
+            match access with
+            | [ Access.Identifier identifier ] -> Some identifier
+            | _ -> None
+          in
+          let string_literal identifier =
+            Expression.String { value = Identifier.show identifier; kind = StringLiteral.String }
+            |> Node.create ~location
+          in
+          let fields =
+            let extract = function
+              | {
+                Node.value =
+                  Assign {
+                    target = { Node.value = Access name; _ };
+                    annotation = Some annotation;
+                    value = { Node.value = Ellipses; _ };
+                    parent = _;
+                  };
+                _;
+              } ->
+                  Access.drop_prefix name ~prefix:class_name
+                  |> single_identifier
+                  >>| (fun name -> string_literal name, annotation)
+              | _ ->
+                  None
+            in
+            List.filter_map body ~f:extract
+          in
+          if List.length fields = List.length body then
+            let declaration class_name =
+              let qualified = qualify_local_identifier class_name ~qualifier in
+              typed_dictionary_declaration_assignment
+                ~name:(string_literal class_name)
+                ~fields
+                ~target:(Node.create (Access qualified) ~location)
+                ~parent:None
+            in
+            Access.drop_prefix class_name ~prefix:qualifier
+            |> single_identifier
+            >>| declaration
+            |> Option.value ~default:value
+          else
+            value
+      | _ ->
+          value
+    in
+    { statement with Node.value = expanded_declaration }
+  in
+  { source with Source.statements = List.map ~f:expand_typed_dictionaries statements }
+
+
 let preprocess_steps ~force source =
   source
   |> expand_relative_imports
@@ -1284,7 +1466,9 @@ let preprocess_steps ~force source =
   |> expand_type_checking_imports
   |> expand_wildcard_imports ~force
   |> qualify
-  |> expand_returns
+  |> expand_implicit_returns
+  |> replace_mypy_extensions_stub
+  |> expand_typed_dictionary_declarations
 
 
 let preprocess source =

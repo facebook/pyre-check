@@ -28,11 +28,10 @@ let test_parent_definition _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = parent >>| Access.create;
     }
     |> Define.create
-    |> Define.parent_definition ~resolution:(Environment.resolution environment ())
+    |> Define.parent_definition ~resolution:(TypeCheck.resolution environment ())
   in
 
   let environment =
@@ -68,7 +67,7 @@ let test_parent_definition _ =
   let base_type =
     match (List.hd (Class.bases parent)) with
     | Some {Argument.value; _ } ->
-        Environment.resolution environment ()
+        TypeCheck.resolution environment ()
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top
   in

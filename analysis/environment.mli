@@ -62,7 +62,7 @@ module type Handler = sig
   val globals: Access.t -> Resolution.global option
   val dependencies: Access.t -> File.Handle.t list option
 
-  val mode: File.Handle.t -> Source.mode option
+  val local_mode: File.Handle.t -> Source.mode option
 
   module DependencyHandler: Dependencies.Handler
   module TypeOrderHandler: TypeOrder.Handler
@@ -72,12 +72,6 @@ end
     [Environment.t]. Use [Environment_service.handler] if interfacing from outside
     [Analysis]. *)
 val handler: t -> configuration: Configuration.Analysis.t -> (module Handler)
-
-val resolution
-  :  (module Handler)
-  -> ?annotations: Annotation.t Access.Map.t
-  -> unit
-  -> Resolution.t
 
 val dependencies: (module Handler) -> Access.t -> File.Handle.t list option
 
@@ -101,10 +95,11 @@ val register_aliases
   -> Source.t list
   -> unit
 
-val register_globals: (module Handler) -> Source.t -> unit
+val register_globals: (module Handler) -> Resolution.t -> Source.t -> unit
 
 val connect_type_order
   :  (module Handler)
+  -> Resolution.t
   -> Source.t
   -> unit
 
@@ -115,22 +110,30 @@ val register_dependencies
 
 val register_functions
   :  (module Handler)
+  -> Resolution.t
   -> Source.t
   -> unit
 
 (* Exposed for testing. *)
 val infer_implementations
   :  (module Handler)
+  -> Resolution.t
   -> implementing_classes: (method_name: Access.t -> (Ast.Statement.Access.t list) option)
   -> protocol: Type.t
   -> TypeOrder.Edge.Set.t
 (* Exposed for testing. *)
 val infer_protocol_edges
   :  handler: (module Handler)
+  -> Resolution.t
   -> classes_to_infer: int list
   -> TypeOrder.Edge.Set.t
 (* If classes_to_infer is not None, only infers protocols for the specified classes. *)
-val infer_protocols: ?classes_to_infer: Type.t list -> handler: (module Handler) -> unit -> unit
+val infer_protocols
+  :  ?classes_to_infer: Type.t list
+  -> handler: (module Handler)
+  -> Resolution.t
+  -> unit
+  -> unit
 
 module Builder : sig
   val create: unit -> t

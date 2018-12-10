@@ -30,7 +30,6 @@ type t = {
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
-  resolve_literal: resolution: t -> Expression.t -> Type.t;
   parse_annotation: Expression.t -> Type.t;
 
   global: Access.t -> global option;
@@ -46,7 +45,6 @@ let create
     ~annotations
     ~order
     ~resolve
-    ~resolve_literal
     ~parse_annotation
     ~global
     ~module_definition
@@ -58,7 +56,6 @@ let create
     annotations;
     order;
     resolve;
-    resolve_literal;
     parse_annotation;
     global;
     module_definition;
@@ -129,10 +126,6 @@ let order { order; _ } =
 
 let resolve ({ resolve; _  } as resolution) =
   resolve ~resolution
-
-
-let resolve_literal ({ resolve_literal; _  } as resolution) =
-  resolve_literal ~resolution
 
 
 let parse_annotation { parse_annotation; module_definition; _ } expression =
@@ -211,3 +204,99 @@ let widen { order; _ } =
 
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order
+
+
+let is_tracked { order; _ } annotation =
+  TypeOrder.contains order annotation
+
+
+let is_invariance_mismatch { order; _ } ~left ~right =
+  match left, right with
+  | Type.Parametric { name = left_name; parameters = left_parameters },
+    Type.Parametric { name = right_name; parameters = right_parameters }
+    when Identifier.equal left_name right_name ->
+      let zipped =
+        TypeOrder.variables order left
+        >>= fun variables ->
+        (List.map3
+           variables
+           left_parameters
+           right_parameters
+           ~f:(fun variable left right -> (variable, left, right))
+         |> function
+         | List.Or_unequal_lengths.Ok list -> Some list
+         | _ -> None)
+      in
+      let due_to_invariant_variable (variable, left, right) =
+        match variable with
+        | Type.Variable { variance = Type.Invariant; _ } ->
+            TypeOrder.less_or_equal order ~left ~right
+        | _ ->
+            false
+      in
+      zipped
+      >>| List.exists ~f:due_to_invariant_variable
+      |> Option.value ~default:false
+  | _ ->
+      false
+
+
+(* In general, python expressions can be self-referential. This non-recursive resolution only checks
+   literals and annotations found in the resolution map, without any resolutions/joins. *)
+let rec resolve_literal resolution expression =
+  let open Ast.Expression in
+  match Node.value expression with
+  | Access access ->
+      begin
+        match Expression.Access.name_and_arguments ~call:access with
+        | Some { Expression.Access.callee; _ } ->
+            let class_name =
+              Expression.Access.create callee
+              |> Expression.Access.expression
+              |> parse_annotation resolution
+            in
+            let is_defined =
+              class_definition resolution class_name
+              |> Option.is_some
+            in
+            if is_defined then
+              class_name
+            else
+              Type.Top
+        | None ->
+            Type.Top
+      end
+  | Await expression ->
+      resolve_literal resolution expression
+      |> Type.awaitable_value
+
+  | Complex _ ->
+      Type.complex
+
+  | False ->
+      Type.bool
+
+  | Float _ ->
+      Type.float
+
+  | Integer _ ->
+      Type.integer
+
+  | String { StringLiteral.kind; _ } ->
+      begin
+        match kind with
+        | StringLiteral.Bytes -> Type.bytes
+        | _ -> Type.string
+      end
+
+  | True ->
+      Type.bool
+
+  | Tuple elements ->
+      Type.tuple (List.map elements ~f:(resolve_literal resolution))
+
+  | Expression.Yield _ ->
+      Type.yield Type.Top
+
+  | _ ->
+      Type.Top

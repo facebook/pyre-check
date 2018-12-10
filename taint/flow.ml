@@ -44,18 +44,22 @@ type issue = {
    taint T, we match T with the join of taint in the upward and downward closure
    from node at path p in F. *)
 let generate_source_sink_matches ~location ~source_tree ~sink_tree =
-  let make_source_sink_matches ~path ~path_element:_ ~element:sink_taint matches =
-    let source_taint = ForwardState.collapse (ForwardState.read_tree path source_tree) in
+  let make_source_sink_matches matches {BackwardState.Tree.path; tip=sink_taint; _} =
+    let source_taint = ForwardState.Tree.collapse (ForwardState.Tree.read path source_tree) in
     if ForwardTaint.is_bottom source_taint then
       matches
     else
       { source_taint; sink_taint; } :: matches
   in
   let flows =
-    if ForwardState.is_empty_tree source_tree then
+    if ForwardState.Tree.is_empty source_tree then
       []
     else
-      BackwardState.fold_tree_paths ~init:[] ~f:make_source_sink_matches sink_tree
+      BackwardState.Tree.fold
+        BackwardState.Tree.RawPath
+        ~init:[]
+        ~f:make_source_sink_matches
+        sink_tree
   in
   { location; flows; }
 
@@ -70,15 +74,25 @@ type flow_state = {
 (* partition taint flow t according to sources/sinks filters into matching and
    rest flows. *)
 let partition_flow ?sources ?sinks flow =
+  let split ~default partition =
+    Map.Poly.find partition true |> Option.value ~default,
+    Map.Poly.find partition false |> Option.value ~default
+  in
   let included_source_taint, excluded_source_taint =
     match sources with
-    | None -> flow.source_taint, ForwardTaint.bottom
-    | Some f -> ForwardTaint.partition_tf ~f flow.source_taint
+    | None ->
+        flow.source_taint, ForwardTaint.bottom
+    | Some f ->
+        ForwardTaint.partition ForwardTaint.leaf ~f flow.source_taint
+        |> split ~default:ForwardTaint.bottom
   in
   let included_sink_taint, excluded_sink_taint =
     match sinks with
-    | None -> flow.sink_taint, BackwardTaint.bottom
-    | Some f -> BackwardTaint.partition_tf ~f flow.sink_taint
+    | None ->
+        flow.sink_taint, BackwardTaint.bottom
+    | Some f ->
+        BackwardTaint.partition BackwardTaint.leaf ~f flow.sink_taint
+        |> split ~default:BackwardTaint.bottom
   in
   if ForwardTaint.is_bottom included_source_taint
   || BackwardTaint.is_bottom included_sink_taint then

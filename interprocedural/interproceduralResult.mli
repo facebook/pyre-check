@@ -65,16 +65,22 @@ type 'part pkg = Pkg: {
     kind: ('part, 'value) partial_kind;
     value: 'value;
   } -> 'part pkg
+[@@deriving show]
 
 type result_pkg = result pkg
+[@@deriving show]
+
 type model_pkg = model pkg
+[@@deriving show]
 
 type model_t = {
   models: model_pkg Kind.Map.t;
   is_obscure: bool;
 }
+[@@deriving show]
 
 type result_t = result_pkg Kind.Map.t
+[@@deriving show]
 
 module type ANALYZER = sig
   type result

@@ -62,6 +62,11 @@ and constraints =
   | Explicit of t list
   | Unconstrained
 
+and variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
 and typed_dictionary_field = {
   name: string;
   annotation: t;
@@ -79,7 +84,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
@@ -98,7 +103,7 @@ val serialize: t -> string
 
 val primitive: string -> t
 val parametric: string -> t list -> t
-val variable: ?constraints: constraints -> string -> t
+val variable: ?constraints: constraints -> ?variance: variance -> string -> t
 
 val awaitable: t -> t
 val bool: t
@@ -150,6 +155,7 @@ val is_deleted: t -> bool
 val is_ellipses: t -> bool
 val is_generator: t -> bool
 val is_generic: t -> bool
+val is_iterable: t -> bool
 val is_iterator: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool
@@ -159,6 +165,7 @@ val is_optional_primitive: t -> bool
 val is_primitive: t -> bool
 val is_protocol: t -> bool
 val is_tuple: t -> bool
+val is_typed_dictionary: t -> bool
 val is_unbound: t -> bool
 val is_unknown: t -> bool
 val is_type_alias: t -> bool
@@ -190,7 +197,7 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
-val instantiate_variables: t -> t
+val instantiate_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
@@ -206,6 +213,7 @@ module Callable : sig
 
     val name: parameter -> Identifier.t
     val annotation: parameter -> type_t
+    val default: parameter -> bool
 
     val names_compatible: parameter -> parameter -> bool
   end
@@ -226,7 +234,19 @@ module Callable : sig
 
   val map: t -> f:(type_t -> type_t) -> t option
 
-  val with_return_annotation: return_annotation: type_t -> t -> t
+  val with_return_annotation: t -> annotation: type_t -> t
+end
+
+module TypedDictionary : sig
+  val anonymous: typed_dictionary_field list -> t
+
+  val fields_have_colliding_keys
+    : typed_dictionary_field list
+    -> typed_dictionary_field list
+    -> bool
+
+  val constructor: name: Identifier.t -> fields: typed_dictionary_field list -> Callable.t
+  val setter: callable: Callable.t -> annotation: t -> Callable.t
 end
 
 val to_yojson: t -> Yojson.Safe.json

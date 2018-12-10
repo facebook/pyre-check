@@ -29,7 +29,7 @@ let create_call_graph ?(update_environment_with = []) source =
       update_environment_with
       ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle source)
   in
-  Service.Environment.populate environment sources;
+  Service.Environment.populate ~configuration environment sources;
   TypeCheck.check ~configuration ~environment ~source |> ignore;
   DependencyGraph.create ~environment ~source
 
@@ -199,7 +199,7 @@ let test_type_collection _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines source ~extract_into_toplevel:true
@@ -219,14 +219,14 @@ let test_type_collection _ =
         |> (fun { ResolutionSharedMemory.precondition; _ } ->
             Access.Map.of_tree precondition)
       in
-      let resolution = Environment.resolution environment ~annotations () in
+      let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_accesses_with_location statement
       |> List.hd_exn
       |> fun { Node.value = access; _ } ->
       if String.equal (Access.show access) (Access.show test_access) then
         let open Annotated in
-        let open Access.Element in
+        let open Access in
         let last_element =
           Annotated.Access.create access
           |> Annotated.Access.last_element ~resolution
@@ -235,10 +235,7 @@ let test_type_collection _ =
         | Signature {
             signature =
               Signature.Found {
-                Signature.callable = {
-                  Type.Callable.kind = Type.Callable.Named callable_type;
-                  _;
-                };
+                callable = { Type.Callable.kind = Type.Callable.Named callable_type; _ };
                 _;
               };
             _;
@@ -303,7 +300,7 @@ let test_method_overrides _ =
     let source = parse_source source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
     let expected_overrides = Callable.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Callable.equal in
@@ -344,7 +341,7 @@ let test_strongly_connected_components _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges = DependencyGraph.create ~environment ~source in

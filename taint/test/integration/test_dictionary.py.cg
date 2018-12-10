@@ -1,0 +1,3 @@
+qualifier.dictionary_entry_sink (real) -> [__testSink (real)]
+qualifier.dictionary_source (real) -> [__testSource (real)]
+qualifier.dictionary_tito (real) -> []

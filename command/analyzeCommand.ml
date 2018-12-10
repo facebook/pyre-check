@@ -12,6 +12,7 @@ let run_analysis
     _taint
     taint_models_directory
     result_json_path
+    dump_call_graph
     verbose
     expected_version
     sections
@@ -30,6 +31,7 @@ let run_analysis
     project_root
     search_path
     typeshed
+    excludes
     local_root
     () =
   let filter_directories =
@@ -56,8 +58,9 @@ let run_analysis
       ~parallel:(not sequential)
       ?filter_directories
       ~number_of_workers
-      ~search_path:(List.map ~f:Path.create_absolute search_path)
+      ~search_path:(List.map search_path ~f:Path.SearchPath.create)
       ?typeshed:(typeshed >>| Path.create_absolute)
+      ~excludes
       ~local_root:(Path.create_absolute local_root)
       ()
   in
@@ -78,7 +81,11 @@ let run_analysis
        Service.StaticAnalysis.analyze
          ?taint_models_directory
          ~scheduler
-         ~configuration:{ Configuration.StaticAnalysis.configuration; result_json_path }
+         ~configuration:{
+          Configuration.StaticAnalysis.configuration;
+          result_json_path;
+          dump_call_graph;
+        }
          ~environment
          ~handles
          ()
@@ -120,5 +127,9 @@ let command =
         "-save-results-to"
         (optional file)
         ~doc:"file A JSON file that Pyre Analyze will save its' results to."
+      +> flag
+        "-dump-call-graph"
+        no_arg
+        ~doc:"Store call graph in .pyre/call_graph.json"
       ++ Specification.base_command_line_arguments)
     run_analysis

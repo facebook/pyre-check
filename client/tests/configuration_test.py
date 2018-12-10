@@ -9,22 +9,36 @@ import unittest
 from unittest.mock import call, patch
 
 from .. import CONFIGURATION_FILE, EnvironmentException, number_of_workers
-from ..configuration import Configuration  # noqa
+from ..configuration import (  # noqa
+    Configuration,
+    InvalidConfiguration,
+    SearchPathElement,
+)
 
 
 class ConfigurationTest(unittest.TestCase):
+    @patch("os.path.abspath", side_effect=lambda path: path)
+    @patch("os.path.isdir", return_value=True)
+    @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("json.load")
     @patch.object(os, "getenv", return_value=None)
     @patch.object(Configuration, "_validate")
     def test_init(
-        self, configuration_validate, os_environ, json_load, builtins_open
+        self,
+        configuration_validate,
+        os_environ,
+        json_load,
+        builtins_open,
+        access,
+        isdir,
+        _abspath,
     ) -> None:
         json_load.side_effect = [
             {
                 "source_directories": ["a"],
                 "logger": "/usr/logger",
-                "do_not_check": ["buck-out/dev/gen"],
+                "ignore_all_errors": ["buck-out/dev/gen"],
             },
             {},
         ]
@@ -32,9 +46,15 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
-        self.assertEqual(
-            configuration.do_not_check, ["%s/buck-out/dev/gen" % os.getcwd()]
-        )
+        self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
+
+        json_load.side_effect = [
+            {"source_directories": ["a"]},
+            {"source_directories": ["a"]},
+            {},
+        ]
+        configuration = Configuration("local/path")
+        self.assertEqual(configuration.analysis_directories, ["local/path/a"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
@@ -42,7 +62,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.analysis_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
-        self.assertEqual(configuration.do_not_check, [])
+        self.assertEqual(configuration.ignore_all_errors, [])
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
@@ -61,9 +81,41 @@ class ConfigurationTest(unittest.TestCase):
         ]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
-        self.assertEqual(configuration.search_path, ["additional/"])
+        self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+
+        json_load.side_effect = [
+            {
+                "search_path": [
+                    "additional/",
+                    {"root": "root/", "subdirectory": "subdirectory"},
+                ],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(
+            configuration.search_path, ["additional/", "root/$subdirectory"]
+        )
+        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.taint_models_path, None)
+
+        json_load.side_effect = [
+            {
+                "search_path": [{"woot": "root/", "subdirectory": "subdirectory"}],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+            },
+            {},
+        ]
+        with self.assertRaises(InvalidConfiguration):
+            Configuration()
 
         json_load.side_effect = [
             {
@@ -88,18 +140,22 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=True
+                    search_path=[
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                    ],
+                    preserve_pythonpath=True,
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
                     configuration.search_path,
                     [
-                        "additional/",
-                        "directories/",
-                        "command/",
-                        "line/",
-                        "json/",
-                        "file/",
+                        SearchPathElement("additional/"),
+                        SearchPathElement("directories/"),
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                        SearchPathElement("json/"),
+                        SearchPathElement("file/"),
                     ],
                 )
 
@@ -111,7 +167,11 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=["command/", "line/"], preserve_pythonpath=False
+                    search_path=[
+                        SearchPathElement("command/"),
+                        SearchPathElement("line/"),
+                    ],
+                    preserve_pythonpath=False,
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
@@ -150,15 +210,14 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration()
             self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
 
-        # Test multiple definitions of the do_not_check files.
+        # Test multiple definitions of the ignore_all_errors files.
         json_load.side_effect = [
-            {"do_not_check": ["buck-out/dev/gen"]},
-            {"do_not_check": ["buck-out/dev/gen2"]},
+            {"ignore_all_errors": ["buck-out/dev/gen"]},
+            {"ignore_all_errors": ["buck-out/dev/gen2"]},
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.do_not_check,
-            ["%s/buck-out/dev/gen" % os.getcwd(), "%s/buck-out/dev/gen2" % os.getcwd()],
+            configuration.ignore_all_errors, ["buck-out/dev/gen", "buck-out/dev/gen2"]
         )
 
         # Normalize number of workers if zero.
@@ -166,6 +225,20 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
+
+        json_load.side_effect = [{"exclude": "regexp"}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.excludes, ["regexp"])
+
+        json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.excludes, ["regexp1", "regexp2"])
+
+        json_load.side_effect = [{"exclude": ["regexp1", "regexp2"]}, {}]
+        configuration = Configuration(excludes=["regexp3", "regexp4"])
+        self.assertEqual(
+            configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
+        )
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")
@@ -339,6 +412,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.targets, [])
             self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
-            self.assertEqual(configuration.do_not_check, [])
+            self.assertEqual(configuration.ignore_all_errors, [])
             self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
+            self.assertEqual(configuration.excludes, [])

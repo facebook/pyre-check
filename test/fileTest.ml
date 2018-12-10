@@ -47,7 +47,14 @@ let test_handle _ =
     let configuration =
       Configuration.Analysis.create
         ~local_root:(path "/root")
-        ~search_path:[path "/root/stubs"; path "/external"]
+        ~search_path:[
+          Path.SearchPath.Root (path "/root/stubs");
+          Path.SearchPath.Root (path "/external");
+          Path.SearchPath.Subdirectory {
+            root = path "/virtualenv";
+            subdirectory = "importMe";
+          };
+        ]
         ~typeshed:(path "/typeshed")
         ()
     in
@@ -56,7 +63,14 @@ let test_handle _ =
         let message =
           let roots =
             List.to_string
-              ["/root/stubs"; "/external"; "/typeshed/stdlib"; "/typeshed/third_party"; "/root"]
+              [
+                "/root/stubs";
+                "/external";
+                "/virtualenv/importMe";
+                "/typeshed/stdlib";
+                "/typeshed/third_party";
+                "/root";
+              ]
               ~f:ident
           in
           Format.sprintf "Unable to construct handle for %s. Possible roots: %s" absolute roots
@@ -79,7 +93,8 @@ let test_handle _ =
   assert_handle ~absolute:"/typeshed/third_party/3/django.pyi" ~handle:(Some "3/django.pyi");
   assert_handle ~absolute:"/typeshed/3/whoops.pyi" ~handle:None;
 
-  assert_handle ~absolute:"/untracked/a.py" ~handle:None
+  assert_handle ~absolute:"/untracked/a.py" ~handle:None;
+  assert_handle ~absolute:"/virtualenv/importMe/a.py" ~handle:(Some "importMe/a.py")
 
 
 let test_handle_to_path context =
@@ -88,6 +103,7 @@ let test_handle_to_path context =
      /local/matching.py
      /other/b.py
      /other/matching.py
+     /virtualEnv/importMe/a.py
   *)
   let local_root =
     bracket_tmpdir context
@@ -97,7 +113,26 @@ let test_handle_to_path context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  let configuration = Configuration.Analysis.create ~local_root ~search_path:[other_root] () in
+  let virtualenv =
+    bracket_tmpdir context
+  in
+  Sys_utils.mkdir_no_fail (virtualenv ^ "/importMe");
+  let import_me =
+    virtualenv ^ "/importMe"
+    |> Path.create_absolute
+  in
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~search_path:[
+        Path.SearchPath.Root other_root;
+        Path.SearchPath.Subdirectory {
+          root = Path.create_absolute virtualenv;
+          subdirectory = "importMe";
+        };
+      ]
+      ()
+  in
   let touch root relative =
     Path.create_relative ~root ~relative
     |> File.create ~content:""
@@ -107,6 +142,7 @@ let test_handle_to_path context =
   touch local_root "matching.py";
   touch other_root "b.py";
   touch other_root "matching.py";
+  touch import_me "a.py";
   (* Check that we can recover paths from handles. *)
   let assert_path ~handle ~path =
     match File.Handle.to_path ~configuration (File.Handle.create handle) with
@@ -123,7 +159,8 @@ let test_handle_to_path context =
   assert_path
     ~handle:"matching.py"
     ~path:(Path.create_relative ~root:other_root ~relative:"matching.py");
-  assert_not_path ~handle:"nonexistent.py"
+  assert_not_path ~handle:"nonexistent.py";
+  assert_path ~handle:"importMe/a.py" ~path:(Path.create_relative ~root:import_me ~relative:"a.py")
 
 
 let () =

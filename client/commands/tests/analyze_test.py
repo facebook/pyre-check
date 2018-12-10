@@ -40,6 +40,7 @@ class AnalyzeTest(unittest.TestCase):
                     "stub",
                     "-search-path",
                     "path1,path2",
+                    "-dump-call-graph",
                 ],
             )
             command.run()
@@ -63,6 +64,7 @@ class AnalyzeTest(unittest.TestCase):
                     "path1,path2",
                     "-taint-models",
                     "taint_models",
+                    "-dump-call-graph",
                 ],
             )
             command.run()
@@ -87,6 +89,7 @@ class AnalyzeTest(unittest.TestCase):
                     "path1,path2",
                     "-taint-models",
                     "overriding_models",
+                    "-dump-call-graph",
                 ],
             )
             command.run()
@@ -113,6 +116,7 @@ class AnalyzeTest(unittest.TestCase):
                     "taint_models",
                     "-save-results-to",
                     "/tmp/results.json",
+                    "-dump-call-graph",
                 ],
             )
             command.run()

@@ -89,8 +89,8 @@ end
 
 type argument_match = {
   root: Root.t;
-  actual_path: AccessPathTree.Label.path;
-  formal_path: AccessPathTree.Label.path;
+  actual_path: AbstractTreeDomain.Label.path;
+  formal_path: AbstractTreeDomain.Label.path;
 }
 [@@deriving show]
 
@@ -127,12 +127,12 @@ let match_actuals_to_formals arguments roots =
         Some {
           root = formal;
           actual_path = [];
-          formal_path = [ AccessPathTree.Label.create_name_field field_name ];
+          formal_path = [ AbstractTreeDomain.Label.create_name_field field_name ];
         }
     | `StarStar, NamedParameter { name } ->
         Some {
           root = formal;
-          actual_path = [ AccessPathTree.Label.Field name ];
+          actual_path = [ AbstractTreeDomain.Label.Field (Identifier.show name) ];
           formal_path = [];
         }
     | `StarStar, StarStarParameter _ ->
@@ -172,14 +172,14 @@ let match_actuals_to_formals arguments roots =
       when actual_position <= position ->
         Some {
           root = formal;
-          actual_path = [AccessPathTree.Label.create_int_field (position - actual_position)];
+          actual_path = [AbstractTreeDomain.Label.create_int_field (position - actual_position)];
           formal_path = [];
         }
     | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
       when minimal_position <= position ->
         Some {
           root = formal;
-          actual_path = [AccessPathTree.Label.Any];
+          actual_path = [AbstractTreeDomain.Label.Any];
           formal_path = [];
         }
     | `Precise actual_position, StarParameter { position }
@@ -187,7 +187,7 @@ let match_actuals_to_formals arguments roots =
         Some {
           root = formal;
           actual_path = [];
-          formal_path = [AccessPathTree.Label.create_int_field (actual_position - position)];
+          formal_path = [AbstractTreeDomain.Label.create_int_field (actual_position - position)];
         }
     | `Approximate minimal_position, StarParameter { position; _ }
       when minimal_position <= position ->
@@ -195,7 +195,7 @@ let match_actuals_to_formals arguments roots =
         Some {
           root = formal;
           actual_path = [];
-          formal_path = [AccessPathTree.Label.Any];
+          formal_path = [AbstractTreeDomain.Label.Any];
         }
     | `Star _, StarParameter _ ->
         (* Approximate: can't match up ranges, so pass entire structure *)
@@ -229,7 +229,7 @@ let match_actuals_to_formals arguments roots =
 
 type t = {
   root: Root.t;
-  path: AccessPathTree.Label.path;
+  path: AbstractTreeDomain.Label.path;
 }
 [@@deriving eq]
 
@@ -240,7 +240,7 @@ let create root path = { root; path; }
 let of_access path access_element =
   match path, access_element with
   | Some path, Access.Identifier id ->
-      Some (AccessPathTree.Label.Field id :: path)
+      Some (AbstractTreeDomain.Label.Field (Identifier.show id) :: path)
   | _ -> None
 
 
@@ -264,7 +264,7 @@ type normalized_expression =
     }
   | Index of {
       expression: normalized_expression;
-      index: AccessPathTree.Label.t;
+      index: AbstractTreeDomain.Label.t;
       original: Identifier.t;
       arguments: ((Expression.t Argument.record) list) Node.t;
     }
@@ -281,11 +281,11 @@ let is_get_item member =
 let get_index { Node.value = expression; _ } =
   match expression with
   | String literal ->
-      AccessPathTree.Label.Field (Identifier.create literal.value)
+      AbstractTreeDomain.Label.Field literal.value
   | Integer i ->
-      AccessPathTree.Label.Field (Identifier.create (string_of_int i))
+      AbstractTreeDomain.Label.Field (string_of_int i)
   | _ ->
-      AccessPathTree.Label.Any
+      AbstractTreeDomain.Label.Any
 
 let normalize_access_list left = function
   | Access.Identifier member ->
@@ -380,4 +380,4 @@ let to_json { root; path; } =
     | Variable name ->
         Format.sprintf "local(%s)" (Identifier.show name)
   in
-  `String (root_name root ^ AccessPathTree.Label.show_path path)
+  `String (root_name root ^ AbstractTreeDomain.Label.show_path path)

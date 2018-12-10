@@ -8,4 +8,4 @@ open Analysis
 open Environment
 
 
-val transform_environment: (module Handler) -> Source.t -> unit
+val transform_environment: (module Handler) -> Resolution.t -> Source.t -> unit

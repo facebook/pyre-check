@@ -51,7 +51,7 @@ but more likely than not this will just put us in the same situation over and ov
 
 Pyre solves this problem with a per-file declarative mode:
 ```
-  # pyre-do-not-check
+  # pyre-ignore-all-errors
   def unannotated_library_function() -> int:
     return sometimes_returns_a_string(return_string=False)  # this is fine
 ```
@@ -66,7 +66,7 @@ If we have a file with several of these above kind of incompatible return type e
 suppress all of them, but no other kinds of errors with:
 
 ```
-  # pyre-do-not-check[7]
+  # pyre-ignore-all-errors[7]
 
   def unannotated_library_function_A() -> int:
     return sometimes_returns_a_string(return_string=False)  # this is fine
@@ -97,7 +97,7 @@ the annotations for classes & functions, and omit the implementations.
   def fetch(self, id):
     return get_from_network(id)
 
-  C.cached_fetch = memoize(function)
+  C.cached_fetch = memoize(fetch)
 
   # file.pyi
   class C:

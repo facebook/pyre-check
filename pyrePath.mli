@@ -19,6 +19,8 @@ type t =
   | Relative of relative
 [@@deriving compare, eq, show, sexp, hash]
 
+type path_t = t
+
 val absolute: t -> path
 val relative: t -> path option
 val uri: t -> path
@@ -41,10 +43,31 @@ val real_path: t -> t
 
 val is_directory: t -> bool
 val file_exists: t -> bool
-val list: ?filter:(string -> bool) -> root: t -> t list
+val list
+  :  ?file_filter:(string -> bool)
+  -> ?directory_filter:(string -> bool)
+  -> root: t
+  -> unit
+  -> t list
 val directory_contains: ?follow_symlinks: bool -> directory: t -> t -> bool
 val search_upwards: target: string -> root: t -> t option
 
 val remove: t -> unit
 
+val readlink: t -> path option
+
 module Map: Map.S with type Key.t = t
+
+module SearchPath: sig
+  type t =
+    | Root of path_t
+    | Subdirectory of { root: path_t; subdirectory: string }
+
+  [@@deriving eq, show]
+
+  val get_root: t -> path_t
+  val to_path: t -> path_t
+  val create: path -> t
+end
+
+val search_for_path: search_path: SearchPath.t list -> path:t -> t option

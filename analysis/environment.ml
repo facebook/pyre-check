@@ -61,7 +61,7 @@ module type Handler = sig
   val globals: Access.t -> Resolution.global option
   val dependencies: Access.t -> File.Handle.t list option
 
-  val mode: File.Handle.t -> Source.mode option
+  val local_mode: File.Handle.t -> Source.mode option
 
   module DependencyHandler: Dependencies.Handler
 
@@ -99,6 +99,16 @@ let connect_definition
     |> Type.split
   in
   connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
+  begin
+    match Annotated.Class.inferred_callable_type annotated ~resolution with
+    | Some callable ->
+        connect
+          ~predecessor:primitive
+          ~successor:(Type.primitive "typing.Callable")
+          ~parameters:[callable]
+    | None ->
+        ()
+  end;
   if not (Type.equal primitive Type.Object) or Access.show name = "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =
@@ -347,43 +357,9 @@ let handler
     let dependencies =
       DependencyHandler.dependents
 
-    let mode _ =
+    let local_mode _ =
       None
   end: Handler)
-
-
-let resolution (module Handler: Handler) ?(annotations = Access.Map.empty) () =
-  let parse_annotation = Type.create ~aliases:Handler.aliases in
-
-  let class_representation annotation =
-    let primitive, _ = Type.split annotation in
-    Handler.class_definition primitive
-  in
-
-  let class_definition annotation =
-    match class_representation annotation with
-    | Some { class_definition; _ } ->
-        Some class_definition
-    | None ->
-        None
-  in
-
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  Resolution.create
-    ~annotations
-    ~order
-    ~resolve:
-      (fun ~resolution expression ->
-         Annotated.resolve
-           ~resolution
-           expression)
-    ~resolve_literal:Annotated.resolve_literal
-    ~parse_annotation
-    ~global:Handler.globals
-    ~module_definition:Handler.module_definition
-    ~class_definition
-    ~class_representation
-    ()
 
 
 let dependencies (module Handler: Handler) =
@@ -462,8 +438,27 @@ let register_aliases (module Handler: Handler) sources =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.handle; statements; qualifier; _ } =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
+      let is_allowable_alias_annotation = function
+        | Some {
+            Node.value = Access [
+                Access.Identifier typing;
+                Access.Identifier typ;
+                Access.Identifier getitem;
+                Access.Call _;
+              ];
+            _;
+          } when Identifier.show typing = "typing"
+              && Identifier.show typ = "Type"
+              && Identifier.show getitem = "__getitem__" ->
+            true
+        | None ->
+            true
+        | _ ->
+            false
+      in
       match value with
-      | Assign { Assign.target; annotation = None; value; _ } ->
+      | Assign { Assign.target; annotation; value; _ }
+        when is_allowable_alias_annotation annotation ->
           let target =
             let access =
               let access =
@@ -497,6 +492,7 @@ let register_aliases (module Handler: Handler) sources =
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with
+            | "future.builtins"
             | "builtins" -> []
             | _ -> from
           in
@@ -614,8 +610,8 @@ let register_aliases (module Handler: Handler) sources =
 
 let register_globals
     (module Handler: Handler)
+    resolution
     ({ Source.handle; qualifier; statements; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
 
   let qualified_access access =
     let access =
@@ -722,9 +718,7 @@ let register_globals
   List.iter ~f:visit statements
 
 
-let connect_type_order (module Handler: Handler) source =
-  let resolution = resolution (module Handler) () in
-
+let connect_type_order (module Handler: Handler) resolution source =
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
 
@@ -770,8 +764,7 @@ let register_dependencies (module Handler: Handler) source =
   Visit.visit () source
 
 
-let register_functions (module Handler: Handler) ({ Source.handle; _ } as source) =
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
+let register_functions (module Handler: Handler) resolution ({ Source.handle; _ } as source) =
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 
@@ -836,9 +829,8 @@ let register_functions (module Handler: Handler) ({ Source.handle; _ } as source
   |> Map.iteri ~f:(register_callables handle)
 
 
-let infer_implementations (module Handler: Handler) ~implementing_classes ~protocol =
+let infer_implementations (module Handler: Handler) resolution ~implementing_classes ~protocol =
   let module Edge = TypeOrder.Edge in
-  let resolution = resolution (module Handler: Handler) ~annotations:Access.Map.empty () in
   let open Annotated in
 
   Resolution.class_definition resolution protocol
@@ -848,7 +840,7 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
         let classes_to_analyze =
           (* Get all implementing classes. *)
           let names =
-            Class.methods protocol_definition
+            Class.methods protocol_definition ~resolution
             |> List.map ~f:Class.Method.name
             |> List.map ~f:(fun access -> [List.last_exn access])
           in
@@ -871,7 +863,7 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
           >>| Class.create
           >>| (fun definition ->
               not (Class.is_protocol definition) &&
-              Class.implements ~protocol:protocol_definition definition)
+              Class.implements ~resolution ~protocol:protocol_definition definition)
           |> Option.value ~default:false
         in
         List.filter ~f:implements classes_to_analyze
@@ -897,7 +889,10 @@ let infer_implementations (module Handler: Handler) ~implementing_classes ~proto
   |> Option.value ~default:Edge.Set.empty
 
 
-let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classes_to_infer =
+let infer_protocol_edges
+    ~handler:((module Handler: Handler) as handler)
+    resolution
+    ~classes_to_infer =
   let module Edge = TypeOrder.Edge in
   Log.info "Inferring protocol implementations...";
   let protocols =
@@ -908,7 +903,7 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classe
           let protocol_definition = Annotated.Class.create protocol_definition in
           let whitelisted = ["typing.Hashable"] in
           let name = Annotated.Class.name protocol_definition |> Expression.Access.show in
-          List.is_empty (Annotated.Class.methods protocol_definition) ||
+          List.is_empty (Annotated.Class.methods protocol_definition ~resolution) ||
           List.mem ~equal:String.equal whitelisted name
       | _ ->
           true
@@ -923,7 +918,7 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classe
           Handler.class_definition protocol
           >>| (fun { class_definition; _ } -> class_definition)
           >>| Annotated.Class.create
-          >>| Annotated.Class.methods
+          >>| Annotated.Class.methods ~resolution
           >>| List.map ~f:Annotated.Class.Method.name
           >>| List.map ~f:(fun name -> [List.last_exn name])
           |> Option.value ~default:[]
@@ -965,13 +960,17 @@ let infer_protocol_edges ~handler:((module Handler: Handler) as handler) ~classe
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in
   let add_protocol_edges edges protocol =
-    infer_implementations handler ~implementing_classes ~protocol
+    infer_implementations handler resolution ~implementing_classes ~protocol
     |> Set.union edges
   in
   List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
 
 
-let infer_protocols ?classes_to_infer ~handler:((module Handler: Handler) as handler) () =
+let infer_protocols
+    ?classes_to_infer
+    ~handler:((module Handler: Handler) as handler)
+    resolution
+    () =
   let timer = Timer.start () in
   let classes_to_infer =
     match classes_to_infer with
@@ -982,7 +981,7 @@ let infer_protocols ?classes_to_infer ~handler:((module Handler: Handler) as han
     | None ->
         Handler.TypeOrderHandler.keys ()
   in
-  infer_protocol_edges ~handler ~classes_to_infer
+  infer_protocol_edges ~handler resolution ~classes_to_infer
   |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)
@@ -1003,7 +1002,7 @@ module Builder = struct
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
 
-    (* Register dummy module for `builtins`. *)
+    (* Register dummy module for `builtins` and `future.builtins`. *)
     let builtins = Access.create "builtins" in
     Hashtbl.set
       modules
@@ -1011,6 +1010,16 @@ module Builder = struct
       ~data:(
         Ast.Module.create
           ~qualifier:builtins
+          ~local_mode:Ast.Source.PlaceholderStub
+          ~stub:true
+          []);
+    let future_builtins = Access.create "future.builtins" in
+    Hashtbl.set
+      modules
+      ~key:future_builtins
+      ~data:(
+        Ast.Module.create
+          ~qualifier:future_builtins
           ~local_mode:Ast.Source.PlaceholderStub
           ~stub:true
           []);
@@ -1082,11 +1091,40 @@ module Builder = struct
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = true;
             parent = Some (Access.create "typing.Generic");
           }
           |> Node.create_with_default_location
         ];
+        "TypedDictionary",
+        [
+          {
+            Argument.name = None;
+            value =
+              Type.primitive "typing.Mapping"
+              |> Type.expression
+          };
+        ],
+        [
+          Define {
+            Define.name = Access.create "TypedDictionary.__setitem__";
+            parameters = [
+              { Parameter.name = Identifier.create "self"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "key"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "value"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+            ];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation =
+              Some (Node.create_with_default_location (Access (Access.create "None")));
+            async = false;
+            parent = Some (Access.create "TypedDictionary");
+          }
+          |> Node.create_with_default_location
+        ]
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set
@@ -1103,6 +1141,10 @@ module Builder = struct
       aliases
       ~key:(Type.primitive "PathLike")
       ~data:(Type.primitive "_PathLike");
+
+    TypeOrder.insert
+      (TypeOrder.handler order)
+      (Type.primitive "TypedDictionary");
 
 
     {

@@ -16,7 +16,7 @@ let resolution =
   let configuration = Configuration.Analysis.create () in
   Environment.Builder.create ()
   |> Environment.handler ~configuration
-  |> fun handler -> Environment.resolution handler ()
+  |> fun handler -> TypeCheck.resolution handler ()
 
 
 let test_refine _ =

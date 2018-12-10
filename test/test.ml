@@ -171,8 +171,9 @@ let parse_list named_sources =
     ~files:(List.map ~f:create_file named_sources)
 
 
-let parse_single_statement source =
-  match parse source with
+let parse_single_statement ?(preprocess = false) source =
+  let preprocess = if preprocess then Preprocessing.preprocess else Fn.id in
+  match preprocess (parse source)  with
   | { Source.statements = [statement]; _ } -> statement
   | _ -> failwith "Could not parse single statement"
 
@@ -202,21 +203,21 @@ let parse_single_class source =
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression source =
-  match parse_single_statement source with
+let parse_single_expression ?(preprocess = false) source =
+  match parse_single_statement ~preprocess source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
 
-let parse_single_access source =
-  match parse_single_expression source with
+let parse_single_access ?(preprocess = false) source =
+  match parse_single_expression ~preprocess source with
   | { Node.value = Expression.Access access; _ } -> access
   | _ -> failwith "Could not parse single access"
 
 
-let parse_callable callable =
+let parse_callable ?(aliases = fun _ -> None) callable =
   parse_single_expression callable
-  |> Type.create ~aliases:(fun _ -> None)
+  |> Type.create ~aliases
 
 
 let diff ~print format (left, right) =
@@ -243,7 +244,7 @@ let assert_source_equal =
     ~pp_diff:(diff ~print:Source.pp)
 
 
-let add_defaults_to_environment environment_handler =
+let add_defaults_to_environment ~configuration environment_handler =
   let source =
     parse {|
       class unittest.mock.Base: ...
@@ -251,7 +252,7 @@ let add_defaults_to_environment environment_handler =
       class unittest.mock.NonCallableMock: ...
     |};
   in
-  Service.Environment.populate environment_handler [source]
+  Service.Environment.populate ~configuration environment_handler [source]
 
 
 (* Expression helpers. *)
@@ -348,18 +349,21 @@ let typeshed_stubs = (* Yo dawg... *)
         class Sized: ...
 
         _T = TypeVar('_T')
-        _T_co = TypeVar('_T_co')
         _S = TypeVar('_S')
-        _V = TypeVar('_V')
         _KT = TypeVar('_KT')
-        _VT_co = TypeVar('_VT_co')
+        _VT = TypeVar('_VT')
+        _T_co = TypeVar('_T_co', covariant=True)
+        _V_co = TypeVar('_V_co', covariant=True)
+        _KT_co = TypeVar('_KT_co', covariant=True)
+        _VT_co = TypeVar('_VT_co', covariant=True)
+        _T_contra = TypeVar('_T_contra', contravariant=True)
 
         class Generic(): pass
 
-        class Iterable(Generic[_T]):
-          def __iter__(self) -> Iterator[_T]: pass
-        class Iterator(Iterable[_T], Generic[_T]):
-          def __next__(self) -> _T: ...
+        class Iterable(Protocol[_T_co]):
+          def __iter__(self) -> Iterator[_T_co]: pass
+        class Iterator(Iterable[_T_co], Protocol[_T_co]):
+          def __next__(self) -> _T_co: ...
 
         class AsyncIterable(Protocol[_T_co]):
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
@@ -373,17 +377,47 @@ let typeshed_stubs = (* Yo dawg... *)
           _Collection = Collection
         else:
           class _Collection(Iterable[_T_co]): ...
-        class Sequence(_Collection[_T], Iterable[_T]): pass
+        class Sequence(_Collection[_T_co], Generic[_T_co]): pass
 
-        class Generator(Generic[_T, _S, _V], Iterator[_T]):
+        class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
           pass
+
+        class AbstractSet(_Collection[_T_co], Generic[_T_co]):
+            @abstractmethod
+            def __contains__(self, x: object) -> bool: ...
+            # Mixin methods
+            def __le__(self, s: AbstractSet[Any]) -> bool: ...
+            def __lt__(self, s: AbstractSet[Any]) -> bool: ...
+            def __gt__(self, s: AbstractSet[Any]) -> bool: ...
+            def __ge__(self, s: AbstractSet[Any]) -> bool: ...
+            def __and__(self, s: AbstractSet[Any]) -> AbstractSet[_T_co]: ...
+            def __or__(self, s: AbstractSet[_T]) -> AbstractSet[Union[_T_co, _T]]: ...
+            def __sub__(self, s: AbstractSet[Any]) -> AbstractSet[_T_co]: ...
+            def __xor__(self, s: AbstractSet[_T]) -> AbstractSet[Union[_T_co, _T]]: ...
+            def isdisjoint(self, s: AbstractSet[Any]) -> bool: ...
+
+        class ValuesView(MappingView, Iterable[_VT_co], Generic[_VT_co]):
+            def __contains__(self, o: object) -> bool: ...
+            def __iter__(self) -> Iterator[_VT_co]: ...
+
         class Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
-          pass
+          @abstractmethod
+          def __getitem__(self, k: _KT) -> _VT_co:
+              ...
+          # Mixin methods
+          @overload
+          def get(self, k: _KT) -> Optional[_VT_co]: ...
+          @overload
+          def get(self, k: _KT, default: Union[_VT_co, _T]) -> Union[_VT_co, _T]: ...
+          def items(self) -> AbstractSet[Tuple[_KT, _VT_co]]: ...
+          def keys(self) -> AbstractSet[_KT]: ...
+          def values(self) -> ValuesView[_VT_co]: ...
+          def __contains__(self, o: object) -> bool: ...
 
-        class Awaitable: pass
-        class AsyncGenerator(Generic[_T, _S]):
-          def __aiter__(self) -> 'AsyncGenerator[_T, _S]': ...
-          def __anext__(self) -> Awaitable[_T]: ...
+        class Awaitable(Protocol[_T_co]): pass
+        class AsyncGenerator(Generic[_T_co, _T_contra]):
+          def __aiter__(self) -> 'AsyncGenerator[_T_co, _T_contra]': ...
+          def __anext__(self) -> Awaitable[_T_co]: ...
 
         def cast(tp: Type[_T], o: Any) -> _T: ...
       |}
@@ -404,7 +438,9 @@ let typeshed_stubs = (* Yo dawg... *)
 
         class type:
           __name__: str = ...
+
         class object():
+          __doc__: str
           def __init__(self) -> None: pass
           def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass
@@ -448,11 +484,11 @@ let typeshed_stubs = (* Yo dawg... *)
         class int(float):
           def __init__(self, value) -> None: ...
           def __le__(self, other) -> bool: ...
-          def __lt__(self, other) -> bool: ...
+          def __lt__(self, other: int) -> bool: ...
           def __ge__(self, other) -> bool: ...
           def __gt__(self, other) -> bool: ...
           def __eq__(self, other) -> bool: ...
-          def __ne__(self, other) -> bool: ...
+          def __ne__(self, other_integer) -> bool: ...
           def __add__(self, other: int) -> int: ...
           def __mod__(self, other) -> int: ...
           def __radd__(self, other: int) -> int: ...
@@ -472,7 +508,7 @@ let typeshed_stubs = (* Yo dawg... *)
           def lower(self) -> str: pass
           def upper(self) -> str: ...
           def substr(self, index: int) -> str: pass
-          def __lt__(self, other) -> float: ...
+          def __lt__(self, other: int) -> float: ...
           def __ne__(self, other) -> int: ...
           def __add__(self, other: str) -> str: ...
           def __pos__(self) -> float: ...
@@ -485,12 +521,19 @@ let typeshed_stubs = (* Yo dawg... *)
           def __init__(self, a: typing.List[_T]): ...
           def tuple_method(self, a: int): ...
 
-        class dict(typing.Generic[_T, _S], typing.Iterable[_T]):
+        class dict(typing.Iterable[_T], typing.Generic[_T, _S]):
+          @overload
+          def __init__(self, **kwargs: _S) -> None: ...
+          @overload
+          def __init__(self, map: typing.Mapping[_T, _S], **kwargs: _S) -> None: ...
+          @overload
+          def __init__(self, iterable: typing.Iterable[Tuple[_T, _S]], **kwargs: _S) -> None: ...
           def add_key(self, key: _T) -> None: pass
           def add_value(self, value: _S) -> None: pass
           def add_both(self, key: _T, value: _S) -> None: pass
           def items(self) -> typing.Iterable[typing.Tuple[_T, _S]]: pass
           def __getitem__(self, k: _T) -> _S: ...
+          def __setitem__(self, k: _T, v: _S) -> None: ...
           @overload
           def get(self, k: _T) -> typing.Optional[_S]: ...
           @overload
@@ -550,6 +593,7 @@ let typeshed_stubs = (* Yo dawg... *)
         def star_int_to_int( *args, x: int) -> int: ...
         def takes_iterable(x: typing.Iterable[_T]) -> None: ...
         def awaitable_int() -> typing.Awaitable[int]: ...
+        def condition() -> bool: ...
 
         class A: ...
         class B(A): ...
@@ -604,9 +648,15 @@ let typeshed_stubs = (* Yo dawg... *)
   ]
 
 
-let environment ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
+let environment
+    ?(sources = typeshed_stubs)
+    ?(configuration = mock_configuration)
+    () =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate (Environment.handler ~configuration environment) sources;
+  Service.Environment.populate
+    ~configuration
+    (Environment.handler ~configuration environment)
+    sources;
   Environment.handler ~configuration environment
 
 
@@ -618,15 +668,14 @@ let mock_define = {
   docstring = None;
   return_annotation = None;
   async = false;
-  generated = false;
   parent = None;
 }
 
 
-let resolution ?(sources = typeshed_stubs) () =
+let resolution ?(sources = typeshed_stubs) ?(configuration = mock_configuration) () =
   let environment = environment ~sources () in
-  add_defaults_to_environment environment;
-  Environment.resolution environment ()
+  add_defaults_to_environment ~configuration environment;
+  TypeCheck.resolution environment ()
 
 
 type test_update_environment_with_t = {
@@ -652,19 +701,7 @@ let assert_errors
     errors =
   Annotated.Class.Attribute.Cache.clear ();
   let descriptions =
-    let mode_override =
-      if infer then
-        Some Source.Infer
-      else if strict then
-        Some Source.Strict
-      else if declare then
-        Some Source.Declare
-      else if debug then
-        None
-      else
-        Some Source.Default
-    in
-    let check ?mode_override source =
+    let check source =
       let parse ~qualifier ~handle ~source =
         let metadata =
           Source.Metadata.create
@@ -691,16 +728,16 @@ let assert_errors
             ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle ~source)
         in
         let environment = environment ~configuration:mock_configuration () in
-        Service.Environment.populate environment sources;
+        Service.Environment.populate ~configuration:mock_configuration environment sources;
         environment
       in
       let configuration =
         Configuration.Analysis.create ~debug ~strict ~declare ~infer ()
       in
-      check ~configuration ~environment ?mode_override ~source
+      check ~configuration ~environment ~source
     in
     List.map
-      (check ?mode_override source)
+      (check source)
       ~f:(fun error -> Error.description error ~detailed:show_error_traces)
   in
   assert_equal

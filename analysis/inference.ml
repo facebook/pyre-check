@@ -18,6 +18,9 @@ module State = struct
   include TypeCheck.State
 
 
+  let return_access = Access.create "$return"
+
+
   let initial_backward
       ?(configuration = Configuration.Analysis.create ())
       define
@@ -30,7 +33,7 @@ module State = struct
       let resolution =
         Resolution.with_annotations
           resolution
-          ~annotations:(Access.Map.of_alist_exn [Preprocessing.return_access, expected_return])
+          ~annotations:(Access.Map.of_alist_exn [return_access, expected_return])
       in
       create ~configuration ~resolution ~define ()
     in
@@ -38,7 +41,7 @@ module State = struct
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
            Type.is_not_instantiated data.Annotation.annotation ||
-           Access.equal key Preprocessing.return_access then
+           Access.equal key return_access then
           map
         else
           Map.set ~key ~data map
@@ -96,7 +99,7 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation { name; annotation; due_to_any })
                 ~define:define_node
             in
-            Map.set ~key:(Error.location error |> Location.reference) ~data:error errors)
+            Map.set errors ~key:location ~data:error)
         |> Option.value ~default:errors
       in
       match annotation with
@@ -182,22 +185,23 @@ module State = struct
           | _ ->
               resolution
         in
-        let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element =
-          let open Annotated.Access.Element in
+        let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
+          let open Annotated.Access in
           match element with
           | Signature {
-              signature =
-                Annotated.Signature.Found { Annotated.Signature.callable; _ };
+              signature = Annotated.Signature.Found { callable; _ };
               arguments;
+              _;
             }
           | Signature {
               signature =
                 Annotated.Signature.NotFound {
-                  Annotated.Signature.callable;
+                  callable;
                   reason = Some (Annotated.Signature.Mismatch _);
                   _;
                 };
               arguments;
+              _;
             } ->
               infer_annotations type_accumulator arguments callable
           | _ ->
@@ -286,6 +290,17 @@ module State = struct
                   ~expression:target
               in
               propagate_assign resolution resolved value)
+
+      | Return { Return.expression = Some { Node.value = Access access; _ }; _ } ->
+          let return_annotation =
+            Option.value_exn (Resolution.get_local resolution ~access:return_access)
+            |> Annotation.annotation
+          in
+          Resolution.set_local
+            resolution
+            ~access:access
+            ~annotation:(Annotation.create return_annotation)
+
       | _ ->
           annotate_call_accesses statement resolution
     in
@@ -340,10 +355,9 @@ end
 let infer
     ~configuration
     ~environment
-    ~mode_override
     ~source:({ Source.handle; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
-  let resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution environment () in
 
   let dequalify_map = Preprocessing.dequalify_map source in
 
@@ -394,12 +408,8 @@ let infer
         else
           let keep_error error =
             let mode =
-              match mode_override with
-              | Some mode ->
-                  mode
-              | None ->
-                  Handler.mode (Error.path error |> File.Handle.create)
-                  |> Option.value ~default:Source.Default
+              Handler.local_mode (Error.path error |> File.Handle.create)
+              |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
             in
             not (Error.suppress ~mode error)
           in
@@ -428,7 +438,7 @@ let infer
               [
                 Error.create
                   ~location
-                  ~kind:(Error.UndefinedType annotation)
+                  ~kind:(Error.AnalysisFailure annotation)
                   ~define:define_node
               ]
             else
@@ -534,17 +544,21 @@ let infer
         | ({
             Error.kind = Error.MissingAttributeAnnotation {
                 parent;
-                missing_annotation = { Error.name; annotation; _ };
+                missing_annotation = { Error.name; annotation = Some annotation; _ };
               };
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:((Annotated.Class.name parent) @ name)
+              ~access:((Type.show parent |> Access.create) @ name)
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation
         | ({
-            Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
+            Error.kind = Error.MissingGlobalAnnotation {
+                Error.name;
+                annotation = Some annotation;
+                _;
+              };
             _;
           } as error) ->
             add_missing_annotation_error
@@ -570,7 +584,7 @@ let infer
       recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
     else
       errors @ added_global_errors
-      |> List.map ~f:(Error.dequalify dequalify_map environment)
+      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
       |> fun errors -> {
         TypeCheck.Result.errors;
@@ -587,7 +601,7 @@ let infer
       List.map results ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
-      |> List.map ~f:(Error.dequalify dequalify_map environment)
+      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
     in
 

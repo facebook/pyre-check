@@ -32,7 +32,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
       |> Option.value ~default:[]
     in
     let environment = Test.environment ~sources:(Test.typeshed_stubs @ models) ~configuration () in
-    Service.Environment.populate environment [source];
+    Service.Environment.populate ~configuration environment [source];
     environment
   in
 
@@ -57,8 +57,9 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     let () =
       Log.log
         ~section:`Taint
-        "Analyzing %s"
-        (Interprocedural.Callable.show call_target)
+        "Analyzing %a"
+        Interprocedural.Callable.pp
+        call_target
     in
     let forward, _errors = ForwardAnalysis.run ~environment ~define in
     let model = { Taint.Result.empty_model with forward } in
@@ -67,11 +68,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
     |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target;
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  let get_model callable =
-    Fixpoint.get_model callable
-    >>= Result.get_model Taint.Result.kind
-  in
-  List.iter ~f:(check_expectation ~get_model) expect
+  List.iter ~f:check_expectation expect
 
 
 
@@ -94,7 +91,7 @@ let test_no_model _ =
       ]
   in
   assert_raises
-    (OUnitTest.OUnit_failure "model not found for does_not_exist")
+    (OUnitTest.OUnit_failure "model not found for `RealTarget (\"does_not_exist\")")
     assert_no_model
 
 
@@ -941,6 +938,44 @@ let test_starred _ =
     ]
 
 
+let test_string _ =
+  assert_taint
+    {|
+      def normal_string() -> str:
+        return ""
+
+      def untainted_format_string() -> str:
+        return f"{1} {2}"
+
+      def tainted_format_string() -> str:
+        input = __testSource()
+        return f"{input}"
+    |}
+    [
+      {
+        define_name = "qualifier.normal_string";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.untainted_format_string";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+      {
+        define_name = "qualifier.tainted_format_string";
+        returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+    ]
+
+
 let test_ternary _ =
   assert_taint
     {|
@@ -1094,6 +1129,7 @@ let () =
     "test_lambda">::test_lambda;
     "test_set">::test_set;
     "test_starred">::test_starred;
+    "test_string">::test_string;
     "test_ternary">::test_ternary;
     "test_tuple">::test_tuple;
     "test_unary">::test_unary;

@@ -11,6 +11,7 @@ open Ast
 open Expression
 
 open Pyre
+open Path.AppendOperator
 
 
 let test_parse_stubs_modules_list _ =
@@ -90,6 +91,8 @@ let test_find_stubs context =
   let handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
+    let virtual_root = Path.create_absolute (bracket_tmpdir context) in
+    Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
@@ -99,18 +102,37 @@ let test_find_stubs context =
     write_file module_root "a.pyi";
     write_file module_root "b.pyi";
     write_file module_root "c.py";
+
     write_file local_root "ttypes.py";
     write_file local_root "ttypes.pyi";
+    write_file local_root "dir/legit.pyi";
+    write_file local_root "excluded.pyi";
+    write_file local_root "nested/excluded.pyi";
 
+    write_file (virtual_root ^| "package") "virtual.py";
+    write_file (virtual_root ^| "external") "other.py";
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
+        ~search_path:[
+          Path.SearchPath.Root module_root;
+          Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" };
+        ]
+        ()
+    in
     Service.Parser.find_stubs
-      ~configuration:(Configuration.Analysis.create ~local_root ~search_path:[module_root] ())
-    |> List.filter_map ~f:Path.relative
+      ~configuration
+    |> List.map ~f:File.create
+    |> List.map ~f:(File.handle ~configuration)
+    |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.py"; "ttypes.pyi"]
+    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.py"; "ttypes.pyi"]
     handles
 
 
@@ -122,9 +144,9 @@ let test_parse_typeshed context =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
     in
-    write_file typeshed_root "folder/a.pyi";
-    write_file typeshed_root "valid/b.pyi";
-    write_file typeshed_root "test/c.pyi";
+    write_file typeshed_root "stdlib/a.pyi";
+    write_file typeshed_root "stdlib/b.pyi";
+    write_file typeshed_root "third_party/c.pyi";
     write_file typeshed_root "tests/d.pyi";
     write_file typeshed_root ".skipme/e.pyi";
 
@@ -209,7 +231,12 @@ let test_parse_sources context =
       ~src:((Path.absolute link_root) ^/ "seemingly_unrelated.pyi")
       ~dst:((Path.absolute local_root) ^/ "d.pyi");
 
-    let configuration = Configuration.Analysis.create ~local_root ~search_path:[module_root] () in
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[Path.SearchPath.Root module_root]
+        ()
+    in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
     let stubs =
       stubs
@@ -236,8 +263,12 @@ let test_parse_sources context =
   let local_root = Path.create_absolute (bracket_tmpdir context) in
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let stub_handles, source_handles =
-    let configuration = Configuration.Analysis.create ~local_root ~search_path:[stub_root] () in
-
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[Path.SearchPath.Root stub_root]
+        ()
+    in
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
       |> File.write
@@ -252,8 +283,9 @@ let test_parse_sources context =
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
   assert_equal
+    ~printer:(List.to_string ~f:File.Handle.show)
     stub_handles
-    [File.Handle.create "stub.pyi"; File.Handle.create "stub.pyi"];
+    [File.Handle.create "stub.pyi"];
   assert_equal source_handles [File.Handle.create "a.py"];
   begin
     match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with

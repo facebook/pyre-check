@@ -74,11 +74,21 @@ module Metadata = struct
     let is_strict = is_pyre_comment "pyre-strict" in
     (* We do not fall back to declarative mode on a typo when attempting to only
        suppress certain errors. *)
-    let is_declare line = Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0 in
-    let default_with_suppress_regex =
-      Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+    let is_declare line =
+      Str.string_match (Str.regexp "^[ \t]*# *pyre-ignore-all-errors *$") line 0 or
+      (* Deprecated. *)
+      Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0
     in
-    let is_default_with_suppress line = Str.string_match default_with_suppress_regex line 0 in
+    let is_default_with_suppress line =
+      let default_with_suppress_regex =
+        Str.regexp "^[ \t]*# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+      in
+      let deprecated_default_with_suppress_regex =
+        Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
+      in
+      Str.string_match default_with_suppress_regex line 0 or
+      Str.string_match deprecated_default_with_suppress_regex line 0
+    in
     let is_placeholder_stub = is_pyre_comment "pyre-placeholder-stub" in
     let parse_ignore index line ignored_lines =
       let create_ignore ~index ~line ~kind =
@@ -112,13 +122,15 @@ module Metadata = struct
         Ignore.create ~ignored_line ~codes ~location ~kind
       in
       let contains_outside_quotes ~substring line =
-        let find_substring index found characters =
-          found || (String.is_substring ~substring characters && index mod 2 = 0)
+        let find_substring index characters =
+          String.is_substring ~substring characters && index mod 2 = 0
         in
         String.split_on_chars ~on:['\"'; '\''] line
-        |> List.foldi ~init:false ~f:find_substring
+        |> List.existsi ~f:find_substring
       in
-      if contains_outside_quotes ~substring:"pyre-ignore" line then
+      if (contains_outside_quotes ~substring:"pyre-ignore" line) &&
+         not (contains_outside_quotes ~substring:"pyre-ignore-all-errors" line)
+      then
         (create_ignore ~index ~line ~kind:Ignore.PyreIgnore) :: ignored_lines
       else if contains_outside_quotes ~substring:"pyre-fixme" line then
         (create_ignore ~index ~line ~kind:Ignore.PyreFixme) :: ignored_lines
@@ -197,20 +209,20 @@ type t = {
 [@@deriving compare, eq, show]
 
 
-let mode source ~configuration =
-  match configuration, source with
+let mode ~configuration ~local_mode =
+  match configuration, local_mode with
   | { Configuration.Analysis.infer = true; _ }, _ ->
       Infer
 
   | { Configuration.Analysis.strict = true; _ }, _
-  | _, { metadata = { Metadata.local_mode = Strict; _ }; _ } ->
+  | _, Some Strict ->
       Strict
 
   | { Configuration.Analysis.declare = true; _ }, _
-  | _, { metadata = { Metadata.local_mode = Declare; _ }; _ } ->
+  | _, Some Declare ->
       Declare
 
-  | _, { metadata = { Metadata.local_mode = DefaultButDontCheck suppressed_codes; _ }; _ } ->
+  | _, Some (DefaultButDontCheck suppressed_codes) ->
       DefaultButDontCheck suppressed_codes
 
   | _ ->
@@ -309,6 +321,7 @@ let qualifier ~handle =
       | _ ->
           last in
     let strip = function
+      | "future" :: "builtins" :: tail
       | "builtins" :: tail ->
           tail
       | "__init__" :: tail ->

@@ -20,8 +20,7 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
   in
   if async then
     Type.awaitable annotation
-  else
-  if Define.is_coroutine define then
+  else if Define.is_coroutine define then
     begin
       match annotation with
       | Type.Parametric { name; parameters = [_; _; return_annotation] }

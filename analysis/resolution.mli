@@ -26,7 +26,6 @@ val create
   :  annotations: Annotation.t Access.Map.t
   -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
-  -> resolve_literal: (resolution: t -> Expression.t -> Type.t)
   -> parse_annotation: (Expression.t -> Type.t)
   -> global: (Access.t -> global option)
   -> module_definition: (Access.t -> Module.t option)
@@ -70,3 +69,5 @@ val widen
   -> iteration: int
   -> Type.t
 val is_instantiated: t -> Type.t -> bool
+val is_tracked: t -> Type.t -> bool
+val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool

@@ -17,31 +17,21 @@ type t
 
 val create: Access.t -> t
 
-module Element: sig
-  type origin =
-    | Instance of Attribute.t
-    | Module of Access.t
-  [@@deriving show]
+type origin =
+  | Instance of Attribute.t
+  | Module of Access.t
+[@@deriving show]
 
-  type attribute = {
-    attribute: Access.t;
-    origin: origin;
-    defined: bool;
-  }
-  [@@deriving show]
-
-  type signature = {
-    signature: AnnotatedSignature.t;
-    arguments: Argument.t list;
-  }
-  [@@deriving show]
-
-  type t =
-    | Signature of signature
-    | Attribute of attribute
-    | Value
-  [@@deriving show]
-end
+type element =
+  | Signature of {
+      signature: AnnotatedSignature.t;
+      callees: Type.Callable.t list;
+      arguments: Argument.t list;
+    }
+  | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+  | NotCallable of Type.t
+  | Value
+[@@deriving show]
 
 val fold
   :  resolution: Resolution.t
@@ -50,9 +40,10 @@ val fold
        ('accumulator
         -> resolution: Resolution.t
         -> resolved: Annotation.t
-        -> element: Element.t
+        -> element: element
+        -> lead: Access.t
         -> 'accumulator)
   -> t
   -> 'accumulator
 
-val last_element: resolution: Resolution.t -> t -> Element.t
+val last_element: resolution: Resolution.t -> t -> element

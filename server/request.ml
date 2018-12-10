@@ -18,7 +18,7 @@ open Request
 open Pyre
 
 
-let parse_lsp ~root ~request =
+let parse_lsp ~configuration ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -26,18 +26,16 @@ let parse_lsp ~root ~request =
       method_name
       (Yojson.Safe.pretty_to_string request)
   in
-  let uri_to_contained_relative_path ~root ~uri =
-    let to_relative_path ~root ~path =
-      String.chop_prefix ~prefix:(root ^ "/") path
-      |> Option.value ~default:path
-    in
-    String.chop_prefix ~prefix:"file://" uri
-    >>= (fun path ->
-        if String.is_prefix ~prefix:root path then
-          Some (to_relative_path ~root ~path)
-        else
-          None)
-    |> Option.value ~default:uri
+  let uri_to_path ~uri =
+    let search_path = Configuration.Analysis.search_path configuration in
+    Path.from_uri uri
+    >>= fun path ->
+    match Path.search_for_path ~search_path ~path with
+    | Some path ->
+        Some path
+    | None ->
+        Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
+        >>= fun path -> Path.search_for_path ~search_path ~path
   in
   let process_request request_method =
     match request_method with
@@ -55,21 +53,16 @@ let parse_lsp ~root ~request =
               id;
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
-              Some (GetDefinitionRequest {
-                  DefinitionRequest.id;
-                  file;
-                  (* The LSP protocol starts a file at line 0, column 0.
-                     Pyre starts a file at line 1, column 0. *)
-                  position = { Ast.Location.line = line + 1; column = character };
-                })
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              GetDefinitionRequest {
+                DefinitionRequest.id;
+                file;
+                (* The LSP protocol starts a file at line 0, column 0.
+                   Pyre starts a file at line 1, column 0. *)
+                position = { Ast.Location.line = line + 1; column = character };
+              }
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -89,16 +82,11 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
               Log.log ~section:`Server "Closed file %a" File.pp file;
-              Some (CloseDocument file)
+              CloseDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -120,16 +108,11 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
               Log.log ~section:`Server "Opened file %a" File.pp file;
-              Some (OpenDocument file)
+              OpenDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -151,15 +134,10 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create ?content:text
-              in
-              Some (SaveDocument file)
+              uri_to_path ~uri
+              >>| File.create ?content:text
+              >>| fun file ->
+              SaveDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -182,21 +160,16 @@ let parse_lsp ~root ~request =
               id;
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
-              Some (HoverRequest {
-                  DefinitionRequest.id;
-                  file;
-                  (* The LSP protocol starts a file at line 0, column 0.
-                     Pyre starts a file at line 1, column 0. *)
-                  position = { Ast.Location.line = line + 1; column = character };
-                })
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              HoverRequest {
+                DefinitionRequest.id;
+                file;
+                (* The LSP protocol starts a file at line 0, column 0.
+                   Pyre starts a file at line 1, column 0. *)
+                position = { Ast.Location.line = line + 1; column = character };
+              }
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -386,7 +359,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   let (module Handler: Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-    let resolution = Environment.resolution environment () in
+    let resolution = TypeCheck.resolution environment () in
     let parse_and_validate access =
       let annotation =
         Expression.Access.expression access
@@ -466,7 +439,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> Handler.class_definition
         >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
-        >>| Annotated.Class.methods
+        >>| Annotated.Class.methods ~resolution
         >>| List.map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
@@ -644,9 +617,15 @@ let process_display_type_errors_request
         Hashtbl.data errors
         |> List.concat
     | _ ->
-        List.map ~f:(File.handle ~configuration) files
-        |> List.filter_map ~f:(Hashtbl.find errors)
-        |> List.concat
+        let errors file =
+          try
+            File.handle ~configuration file
+            |> Hashtbl.find errors
+            |> Option.value ~default:[]
+          with (File.NonexistentHandle _) ->
+            []
+        in
+        List.concat_map ~f:errors files
   in
   { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
 
@@ -689,13 +668,16 @@ let process_type_check_request
           let signature_hashes ~default =
             let table = File.Handle.Table.create () in
             let add_signature_hash file =
-              let handle = File.handle file ~configuration in
-              let signature_hash =
-                Ast.SharedMemory.Sources.get handle
-                >>| Source.signature_hash
-                |> Option.value ~default
-              in
-              Hashtbl.set table ~key:handle ~data:signature_hash
+              try
+                let handle = File.handle file ~configuration in
+                let signature_hash =
+                  Ast.SharedMemory.Sources.get handle
+                  >>| Source.signature_hash
+                  |> Option.value ~default
+                in
+                Hashtbl.set table ~key:handle ~data:signature_hash
+              with (File.NonexistentHandle _) ->
+                Log.log ~section:`Server "Unable to get handle for %a" File.pp file
             in
             List.iter update_environment_with ~f:add_signature_hash;
             table
@@ -713,6 +695,11 @@ let process_type_check_request
           if not (List.is_empty newly_introduced_handles) then
             Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
           Ast.SharedMemory.Sources.remove ~handles;
+          let targets =
+            let find_target file = Path.readlink (File.path file) in
+            List.filter_map update_environment_with ~f:find_target
+          in
+          Ast.SharedMemory.SymlinksToPaths.remove ~targets;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
 
@@ -770,8 +757,19 @@ let process_type_check_request
   (* Repopulate the environment. *)
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
-    let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
+    let handle file =
+      try
+        Some (File.handle ~configuration file)
+      with File.NonexistentHandle _ ->
+        None
+    in
+    let handles = List.filter_map update_environment_with ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles;
+    let targets =
+      let find_target file = Path.readlink (File.path file) in
+      List.filter_map update_environment_with ~f:find_target
+    in
+    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Handler.purge ~debug handles;
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
@@ -788,8 +786,8 @@ let process_type_check_request
     let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
     let sources =
       let keep file =
-        (File.handle ~configuration file
-         |> fun handle -> Some (Source.qualifier ~handle)
+        (handle file
+         >>= fun handle -> Some (Source.qualifier ~handle)
          >>= Handler.module_definition
          >>= Module.handle
          >>| (fun existing_handle -> File.Handle.equal handle existing_handle))
@@ -805,14 +803,15 @@ let process_type_check_request
     "Repopulating the environment with %a"
     Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
-  |> Service.Environment.populate environment;
+  |> Service.Environment.populate ~configuration environment;
   let classes_to_infer =
     let get_class_keys handle =
       Handler.DependencyHandler.get_class_keys ~handle
     in
     List.concat_map repopulate_handles ~f:get_class_keys
   in
-  Analysis.Environment.infer_protocols ~handler:environment ~classes_to_infer ();
+  let resolution = TypeCheck.resolution environment () in
+  Analysis.Environment.infer_protocols ~handler:environment resolution ~classes_to_infer ();
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
@@ -821,7 +820,13 @@ let process_type_check_request
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 
   (* Compute new set of errors. *)
-  let new_source_handles = List.map ~f:(File.handle ~configuration) check in
+  let handle file =
+    try
+      Some (File.handle ~configuration file)
+    with File.NonexistentHandle _ ->
+      None
+  in
+  let new_source_handles = List.filter_map ~f:handle check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
   List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
@@ -940,7 +945,7 @@ let rec process
 
       | LanguageServerProtocolRequest request ->
           parse_lsp
-            ~root:configuration.local_root
+            ~configuration
             ~request:(Yojson.Safe.from_string request)
           >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
           |> Option.value ~default:{ state; response = None }
@@ -988,9 +993,12 @@ let rec process
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
           LookupCache.evict ~state ~configuration file;
-          LookupCache.get ~state ~configuration file
-          |> ignore;
-          { state; response = None }
+          (* Make sure the IDE flushes its state about this file, by sending back all the
+             errors for this file. *)
+          process_type_check_request
+            ~state
+            ~configuration
+            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
 
       | CloseDocument file ->
           LookupCache.evict ~state ~configuration file;

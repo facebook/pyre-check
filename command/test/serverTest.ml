@@ -159,8 +159,10 @@ let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer
 
 let environment ~local_root =
   let environment = Environment.Builder.create () in
+  let configuration = configuration ~local_root in
   Service.Environment.populate
-    (Environment.handler ~configuration:(configuration ~local_root) environment)
+    ~configuration
+    (Environment.handler ~configuration environment)
     [
       parse {|
         class int(float): pass
@@ -177,8 +179,8 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment = Environment.handler ~configuration (environment ~local_root) in
-  add_defaults_to_environment environment;
-  Service.Environment.populate environment [source];
+  add_defaults_to_environment ~configuration environment;
+  Service.Environment.populate ~configuration environment [source];
   let { TypeCheck.Result.errors; _ } =
     TypeCheck.check
       ~configuration
@@ -191,10 +193,11 @@ let mock_server_state
     ~local_root
     ?(initial_environment = environment ~local_root)
     errors =
+  let configuration = configuration ~local_root in
   let environment =
-    Environment.handler ~configuration:(configuration ~local_root) initial_environment
+    Environment.handler ~configuration initial_environment
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   {
     State.deferred_requests = [];
     environment;
@@ -223,7 +226,7 @@ let assert_response
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle source in
+  let parsed = parse ~handle source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -235,8 +238,10 @@ let assert_response
   in
   let initial_environment =
     let environment = environment ~local_root in
+    let configuration = configuration ~local_root in
     Service.Environment.populate
-      (Environment.handler ~configuration:(configuration ~local_root) environment)
+      ~configuration
+      (Environment.handler ~configuration environment)
       [parsed];
     environment
   in
@@ -355,6 +360,16 @@ let test_query context =
     let stop = { Location.line = stop_line; column = stop_column } in
     { Location.path; start; stop }
   in
+  let create_types_at_locations =
+    let convert (start_line, start_column, end_line, end_column, annotation) =
+      {
+        Protocol.TypeQuery.location =
+          create_location ~path:"test.py" start_line start_column end_line end_column;
+        annotation;
+      }
+    in
+    List.map ~f:convert
+  in
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
@@ -376,15 +391,16 @@ let test_query context =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"join(list[C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (parse_annotation "typing.List[int]")));
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.Type (parse_annotation "typing.List[typing.Any]")));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"meet(list[C], list[int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (parse_annotation "typing.List[C]")));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.list Type.Bottom)));
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"
@@ -448,54 +464,249 @@ let test_query context =
 
   assert_type_query_response
     ~source:{|
+      a: int = 1
+      a = 2
+    |}
+    ~query:"type_at_position('test.py', 3, 0)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypeAtLocation
+          {
+            Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
+            annotation = Type.integer;
+          }));
+
+  assert_type_query_response
+    ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          [
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 8;
-              annotation = Type.integer
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 24 2 27;
-              annotation = parse_annotation "typing.Type[str]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 21 2 22;
-              annotation = parse_annotation "typing.Type[str]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 40 2 44;
-              annotation = Type.none
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 17 2 19;
-              annotation = Type.integer
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 30 2 35;
-              annotation = Type.string
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 11 2 14;
-              annotation = parse_annotation "typing.Type[int]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 8 2 9;
-              annotation = parse_annotation "typing.Type[int]"
-            };
-          ]
+          ([
+            (3, 6, 3, 8, Type.integer);
+            (2, 24, 2, 27, Type.meta Type.string);
+            (2, 21, 2, 22, Type.string);
+            (2, 40, 2, 44, Type.none);
+            (2, 17, 2, 19, Type.integer);
+            (3, 2, 3, 3, Type.integer);
+            (2, 30, 2, 35, Type.string);
+            (2, 11, 2, 14, Type.meta Type.integer);
+            (2, 8, 2, 9, Type.integer);
+          ] |> create_types_at_locations)
        ));
 
   assert_type_query_response
     ~source:{|
+       def foo(x: int, y: str) -> str:
+        x = 4
+        y = 5
+        return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 19, 2, 22, Type.meta Type.string);
+            (5, 8, 5, 9, Type.integer);
+            (2, 27, 2, 30, Type.meta Type.string);
+            (4, 1, 4, 2, Type.string);
+            (4, 5, 4, 6, Type.integer);
+            (3, 1, 3, 2, Type.integer);
+            (2, 11, 2, 14, Type.meta Type.integer);
+            (3, 5, 3, 6, Type.integer);
+            (2, 8, 2, 9, Type.integer);
+            (2, 16, 2, 17, Type.string);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        x = 4
+        y = 3
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 4, 2, 5, Type.integer);
+            (2, 0, 2, 1, Type.integer);
+            (3, 0, 3, 1, Type.integer);
+            (3, 4, 3, 5, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      def foo():
+        if True:
+         x = 1
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 5, 3, 9, Type.bool);
+            (4, 3, 4, 4, Type.integer);
+            (4, 7, 4, 8, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       def foo():
+         for x in [1, 2]:
+          y = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 12, 3, 13, Type.integer);
+            (3, 15, 3, 16, Type.integer);
+            (3, 6, 3, 7, Type.list Type.integer);
+            (4, 3, 4, 4, Type.integer);
+            (4, 7, 4, 8, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        try:
+          x = 1
+        except Exception:
+          y = 2
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (5, 2, 5, 3, Type.integer);
+            (3, 2, 3, 3, Type.integer);
+            (3, 6, 3, 7, Type.integer);
+            (5, 6, 5, 7, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       with open() as x:
+        y = 2
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 1, 3, 2, Type.integer);
+            (3, 5, 3, 6, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      while x is True:
+        y = 1
+   |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 11, 2, 15, Type.bool);
+            (2, 6, 2, 7, Type.bool);
+            (3, 2, 3, 3, Type.integer);
+            (3, 6, 3, 7, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       def foo(x: int) -> str:
+         def bar(y: int) -> str:
+           return y
+         return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 19, 2, 22, parse_annotation "typing.Type[str]");
+            (5, 9, 5, 10, Type.integer);
+            (3, 21, 3, 24, parse_annotation "typing.Type[str]");
+            (3, 13, 3, 16, parse_annotation "typing.Type[int]");
+            (4, 11, 4, 12, Type.integer);
+            (2, 11, 2, 14, parse_annotation "typing.Type[int]");
+            (2, 8, 2, 9, Type.integer);
+            (3, 10, 3, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* ==== Documenting known bad behavior below (T37772879) ==== *)
+
+  (* Annotation type is Type[int] rather than Type[List[int]]. *)
+  assert_type_query_response
+    ~source:{|
+       def foo(x: typing.List[int]) -> None:
+        pass
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 32, 2, 36, Type.none);
+            (2, 23, 2, 26, Type.meta Type.integer);
+            (2, 8, 2, 9, Type.list Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
+  assert_type_query_response
+    ~source:{|
+       class Foo:
+         x = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = parse_annotation "typing.Type[Foo]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  (* `x` is typed as List[int] rather than int. *)
+  assert_type_query_response
+    ~source:{|
+        for x in [1, 2]:
+          pass
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 4, 2, 5, Type.list Type.integer);
+            (2, 13, 2, 14, Type.integer);
+            (2, 10, 2, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* ==== Documenting known bad behavior above (T37772879) ==== *)
+
+  assert_type_query_response
+    ~source:{|
       class C:
-        C.x = 1
-        C.y = ""
-        def C.foo() -> int: ...
+        x = 1
+        y = ""
+        def foo() -> int: ...
     |}
     ~query:"attributes(C)"
     (Protocol.TypeQuery.Response
@@ -643,7 +854,9 @@ let test_query context =
     |}
     ~query:"type(foo(bar))"
     (Protocol.TypeQuery.Error
-       "Expression had errors: Incompatible parameter type [6]: Expected `str` but got `int`.");
+       ("Expression had errors: Incompatible parameter type [6]: " ^
+        "Expected `str` for 1st anonymous parameter to call `foo` but got `int`.")
+    );
 
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
@@ -895,12 +1108,13 @@ let test_incremental_dependencies context =
     List.zip_exn handles sources
     |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
 
-    let environment = Environment.Builder.create () in
+    let environment = environment ~local_root in
+    let configuration = configuration ~local_root in
     let environment_handler =
-      Environment.handler ~configuration:(configuration ~local_root) environment
+      Environment.handler ~configuration environment
     in
-    add_defaults_to_environment environment_handler;
-    Service.Environment.populate environment_handler sources;
+    add_defaults_to_environment ~configuration environment_handler;
+    Service.Environment.populate ~configuration environment_handler sources;
     let expected_errors = [
       File.Handle.create "b.py", [];
     ]
@@ -995,8 +1209,8 @@ let test_incremental_lookups _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
   let environment_handler = Environment.handler ~configuration environment in
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate environment_handler [parse source];
+  add_defaults_to_environment ~configuration environment_handler;
+  Service.Environment.populate ~configuration environment_handler [parse source];
 
   let request =
     Protocol.Request.TypeCheckRequest
@@ -1041,9 +1255,7 @@ let test_incremental_lookups _ =
     ~printer:(String.concat ~sep:", ")
     [
       ":3:11-3:12/int";
-      ":3:4-3:12/int";
       ":6:11-6:12/int";
-      ":6:4-6:12/int";
     ]
     annotations
 
@@ -1070,12 +1282,13 @@ let test_incremental_repopulate context =
     |> trim_extra_indentation
   in
   let environment = Environment.Builder.create () in
+  let configuration = configuration ~local_root in
   let ((module Handler: Environment.Handler) as environment_handler) =
-    Environment.handler ~configuration:(configuration ~local_root) environment
+    Environment.handler ~configuration environment
   in
   Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
-  add_defaults_to_environment environment_handler;
-  Service.Environment.populate environment_handler [parse source];
+  add_defaults_to_environment ~configuration environment_handler;
+  Service.Environment.populate ~configuration environment_handler [parse source];
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -1128,7 +1341,7 @@ let test_language_scheduler_definition context =
   let filename =
     let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
     File.write (File.create ~content:"" path);
-    "filename.py"
+    Path.absolute path
   in
   let request =
     Format.sprintf {|
@@ -1177,7 +1390,7 @@ let test_incremental_attribute_caching context =
     Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler ~configuration
   in
-  add_defaults_to_environment environment;
+  add_defaults_to_environment ~configuration environment;
   let ({ State.connections; lock = server_lock; _ } as old_state) =
     mock_server_state ~local_root (File.Handle.Table.create ())
   in

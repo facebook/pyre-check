@@ -99,6 +99,8 @@ val successors: (module Handler) -> Type.t -> Type.t list
 val predecessors: (module Handler) -> Type.t -> Type.t list
 val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
+val variables: (module Handler) -> Type.t -> Type.t list option
+
 val less_or_equal: (module Handler) -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
@@ -112,7 +114,7 @@ val widen
   -> iteration: int
   -> Type.t
 
-val instantiate_parameters
+val instantiate_successors_parameters
   :  (module Handler)
   -> source: Type.t
   -> target: Type.t

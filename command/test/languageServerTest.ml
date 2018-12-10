@@ -13,20 +13,45 @@ open Pyre
 open Server
 
 
+type test_files = {
+  root: PyrePath.t;
+  relative: string;
+  absolute: string;
+  symlink_source: string;
+  symlink_target: string;
+}
+
+
 let files context =
-  let root = Path.create_absolute Filename.temp_dir_name in
+  let root = bracket_tmpdir context |> Filename.realpath in
+  let root_path = Path.create_absolute root in
   let relative =
-    bracket_tmpfile ~suffix:".py" context
-    |> fst
+    Filename.temp_file ~in_dir:root "filename" ".py"
     |> Path.create_absolute
-    |> (fun path -> Path.get_relative_to_root ~root ~path)
+    |> (fun path -> Path.get_relative_to_root ~root:root_path ~path)
     |> (fun relative -> Option.value_exn relative)
   in
   let absolute =
-    Path.create_relative ~root ~relative
+    Path.create_relative ~root:root_path ~relative
     |> Path.show
   in
-  root, relative, absolute
+
+  let symlink_target =
+    let symlink_root = bracket_tmpdir context |> Filename.realpath in
+    Filename.temp_file ~in_dir:symlink_root "target" ".py"
+    |> Path.create_absolute
+    |> Path.show
+  in
+  let symlink_source =
+    let source = Filename.temp_file ~in_dir:root "symlink" ".py" in
+    Unix.unlink source;
+    Unix.symlink ~src:symlink_target ~dst:source;
+    source
+  in
+  Ast.SharedMemory.SymlinksToPaths.add
+    symlink_target
+    (Path.create_absolute ~follow_symbolic_links:false symlink_source);
+  { root = root_path; relative; absolute; symlink_source; symlink_target; }
 
 
 let test_language_server_protocol_message_format _ =
@@ -553,7 +578,7 @@ let test_show_message_notification _ =
 
 
 let test_did_save_notification context =
-  let root, relative, absolute = files context in
+  let { root; relative; absolute; _ }= files context in
   let linkname = relative ^ "link" in
   Unix.symlink ~src:absolute ~dst:((Path.absolute root) ^/ linkname);
   let message =
@@ -766,8 +791,9 @@ let test_language_server_hover_response _ =
 
 
 let test_request_parser context =
-  let root, relative, absolute = files context in
-  let open_message =
+  let { root; relative; absolute; symlink_source; symlink_target } = files context in
+  let configuration = Configuration.Analysis.create ~local_root:root () in
+  let open_message absolute =
     {
       DidOpenTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didOpen";
@@ -821,14 +847,24 @@ let test_request_parser context =
       ~cmp:(Option.equal Protocol.Request.equal)
       ~printer:(function | Some request -> Protocol.Request.show request | _ -> "None")
       request
-      (Request.parse_lsp ~root:(PyrePath.create_absolute Filename.temp_dir_name) ~request:message)
+      (Request.parse_lsp ~configuration ~request:message)
   in
 
   assert_parsed_request_equals
-    open_message
+    (open_message absolute)
     (Some
        (Protocol.Request.OpenDocument
           (Path.create_absolute absolute |> File.create)));
+  assert_parsed_request_equals
+    (open_message symlink_source)
+    (Some
+       (Protocol.Request.OpenDocument
+          (Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create)));
+  assert_parsed_request_equals
+    (open_message symlink_target)
+    (Some
+       (Protocol.Request.OpenDocument
+          (Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create)));
   assert_parsed_request_equals
     close_message
     (Some

@@ -23,14 +23,17 @@ val replace_platform_specific_code: Source.t -> Source.t
 
 val expand_type_checking_imports: Source.t -> Source.t
 
-(* Transform returns to make them more amenable for analysis. *)
-val return_access: Access.t
-val expand_returns: Source.t -> Source.t
+(* Add implicit returns when a function doesn't have one. *)
+val expand_implicit_returns: Source.t -> Source.t
+
+val replace_mypy_extensions_stub: Source.t -> Source.t
+val expand_typed_dictionary_declarations: Source.t -> Source.t
 
 (* List of function definitions in a source. extract_into_toplevel copies all definitions into a
    toplevel definition. *)
 val defines
   :  ?include_stubs: bool
+  -> ?include_nested: bool
   -> ?extract_into_toplevel: bool
   -> Source.t
   -> Statement.Define.t Node.t list

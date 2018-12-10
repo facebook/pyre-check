@@ -141,10 +141,21 @@ if __name__ == "__main__":
         def error_path(error):
             return error["path"]
 
-        result = itertools.groupby(
-            sorted(json.load(sys.stdin), key=error_path), error_path
-        )
+        input_string = sys.stdin.read()
+        errors = json.loads(input_string) if input_string else json.loads("{}")
+        result = itertools.groupby(sorted(errors, key=error_path), error_path)
         arguments.function(arguments, result)
+    except json.decoder.JSONDecodeError:
+        if not input_string:
+            LOG.error(
+                "Recevied no input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+        else:
+            LOG.error(
+                "Recevied invalid JSON as input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())

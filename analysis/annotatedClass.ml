@@ -86,7 +86,7 @@ let successors_fold class_node ~resolution ~f ~initial =
 module Method = struct
   type t = {
     define: Define.t;
-    parent: class_t
+    parent: Type.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -156,20 +156,6 @@ module Method = struct
       end
     else
       annotation
-
-
-  let implements
-      { define; _ }
-      ~protocol_method:{ define = protocol; _ } =
-    let open Define in
-    let parameter_equal
-        { Node.value = { Parameter.annotation; _ }; _ }
-        { Node.value = { Parameter.annotation = protocol_annotation; _ }; _ } =
-      Option.equal Expression.equal annotation protocol_annotation
-    in
-    Access.equal (Define.unqualified_name define) (Define.unqualified_name protocol) &&
-    Option.equal Expression.equal define.return_annotation protocol.return_annotation &&
-    List.equal ~equal:parameter_equal define.parameters protocol.parameters
 end
 
 
@@ -250,7 +236,10 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
       |> Type.split
       |> fst
     in
-    TypeOrder.instantiate_parameters (Resolution.order resolution) ~source:instantiated ~target
+    TypeOrder.instantiate_successors_parameters
+      (Resolution.order resolution)
+      ~source:instantiated
+      ~target
     |> Option.value ~default:[]
   in
   if List.length parameters = List.length resolved_parameters then
@@ -332,10 +321,12 @@ let metaclass definition ~resolution =
   |> Option.value ~default:(Type.primitive "type")
 
 
-let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
+let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
   let extract_define = function
-    | { Node.value = Define define; _ } -> Some (Method.create ~define ~parent:definition)
-    | _ -> None
+    | { Node.value = Define define; _ } ->
+        Some (Method.create ~define ~parent:(annotation definition ~resolution))
+    | _ ->
+        None
   in
   List.filter_map ~f:extract_define body
 
@@ -352,27 +343,10 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
   List.exists ~f:is_protocol bases
 
 
-let implements definition ~protocol =
-  let rec implements instance_methods protocol_methods =
-    match instance_methods, protocol_methods with
-    | _, [] ->
-        true
-    | [], _ :: _ ->
-        false
-    | instance_method :: instance_methods,
-      ((protocol_method :: protocol_methods) as old_protocol_methods) ->
-        if Method.implements ~protocol_method instance_method then
-          implements instance_methods protocol_methods
-        else
-          implements instance_methods old_protocol_methods
-  in
-  implements (methods definition) (methods protocol)
-
-
 module Attribute = struct
   type attribute = {
     name: Expression.expression;
-    parent: class_t;
+    parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
     defined: bool;
@@ -403,7 +377,7 @@ module Attribute = struct
           primitive;
         };
       } =
-    let class_annotation = annotation in
+    let class_annotation = annotation parent ~resolution in
 
     (* Account for class attributes. *)
     let annotation, class_attribute =
@@ -425,7 +399,7 @@ module Attribute = struct
       in
       if not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
          primitive then
-        Some (class_annotation ~resolution parent), None, true  (* Enums override values. *)
+        Some class_annotation, None, true  (* Enums override values. *)
       else
         annotation, value, class_attribute
     in
@@ -482,11 +456,10 @@ module Attribute = struct
       in
       if property && not (List.is_empty free_variables) then
         let constraints =
-          let parent_annotation = class_annotation parent ~resolution in
           List.fold
             free_variables
             ~init:Type.Map.empty
-            ~f:(fun map variable -> Map.set map ~key:variable ~data:parent_annotation)
+            ~f:(fun map variable -> Map.set map ~key:variable ~data:class_annotation)
           |> Map.find
         in
         Annotation.annotation annotation
@@ -500,7 +473,16 @@ module Attribute = struct
 
     {
       Node.location;
-      value = { name = target; parent; annotation; value; defined; class_attribute; async };
+      value = {
+        name = target;
+        parent = class_annotation;
+        annotation;
+        value;
+        defined;
+        class_attribute;
+        async;
+      };
+
     }
 
 
@@ -681,14 +663,14 @@ let attributes
         in
         List.exists ~f:is_unit_test (definition :: superclass_definitions)
       in
-      let definitions =
-        if transitive then
-          definition :: superclass_definitions
-        else
-          [definition]
-      in
       (* Pass over normal class hierarchy. *)
       let accumulator =
+        let definitions =
+          if transitive then
+            definition :: superclass_definitions
+          else
+            [definition]
+        in
         List.fold
           ~f:(definition_attributes ~in_test)
           ~init:[]
@@ -714,6 +696,51 @@ let attributes
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
+let implements ~resolution definition ~protocol =
+  let overload_implements (name, overload) (protocol_name, protocol_overload) =
+    let open Type.Callable in
+    Access.equal name protocol_name &&
+    Type.equal overload.annotation protocol_overload.annotation &&
+    equal_parameters Type.equal overload.parameters protocol_overload.parameters
+  in
+  let rec implements instance_methods protocol_methods =
+    match instance_methods, protocol_methods with
+    | _, [] ->
+        true
+    | [], _ :: _ ->
+        false
+    | instance_method :: instance_methods,
+      ((protocol_method :: protocol_methods) as old_protocol_methods) ->
+        if overload_implements instance_method protocol_method then
+          implements instance_methods protocol_methods
+        else
+          implements instance_methods old_protocol_methods
+  in
+  let callables_of_attribute =
+    function
+    | { Node.value =
+          { Attribute.annotation = {
+                Annotation.annotation = Type.Callable {
+                    kind = Type.Record.Callable.Named callable_name;
+                    implementation;
+                    overloads;
+                    _ };
+                _ };
+            parent;
+            _ }; _ } ->
+        let local_name =
+          Access.drop_prefix
+            callable_name
+            ~prefix:(Expression.Access.create (Type.show parent))
+        in
+        List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
+    | _ -> []
+  in
+  let definition_attributes = attributes ~resolution definition in
+  let protocol_attributes = attributes ~resolution protocol in
+  implements
+    (List.concat_map ~f:callables_of_attribute definition_attributes)
+    (List.concat_map ~f:callables_of_attribute protocol_attributes)
 
 let attribute_fold
     ?(transitive = false)
@@ -764,14 +791,18 @@ let attribute
     ~f:(fun attribute -> Expression.equal_expression (Access name) (Attribute.name attribute))
   |> Option.value ~default:undefined
   |> (fun attribute ->
-      let constraints =
-        constraints
-          ~target:(Attribute.parent attribute)
-          ~instantiated
-          ~resolution
-          definition
-      in
-      Attribute.instantiate ~constraints attribute)
+      Attribute.parent attribute
+      |> Resolution.class_definition resolution
+      >>| (fun target ->
+          let constraints =
+            constraints
+              ~target
+              ~instantiated
+              ~resolution
+              definition
+          in
+          Attribute.instantiate ~constraints attribute)
+      |> Option.value ~default:undefined)
 
 
 let fallback_attribute ~resolution ~access definition =
@@ -840,6 +871,7 @@ let constructor definition ~resolution =
     | _ ->
         class_annotation
   in
+  let class_annotation, _ = Type.split class_annotation in
   let definitions =
     definition :: superclasses ~resolution definition
     |> List.map ~f:name
@@ -847,7 +879,8 @@ let constructor definition ~resolution =
   let definition_index attribute =
     attribute
     |> Attribute.parent
-    |> name
+    |> Type.show
+    |> Access.create
     |> (fun class_name -> List.findi definitions ~f:(fun _ name -> Access.equal name class_name))
     >>| fst
     |> Option.value ~default:Int.max_value
@@ -910,7 +943,7 @@ let constructor definition ~resolution =
   in
   match signature with
   | Type.Callable callable ->
-      Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
+      Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
   | _ ->
       signature
 
@@ -927,7 +960,10 @@ let overrides definition ~resolution ~name =
         ~instantiated:(annotation parent ~resolution)
     in
     if Attribute.defined potential_override then
-      Some potential_override
+      annotation ~resolution definition
+      |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
+      |> (fun constraints -> Attribute.instantiate ~constraints potential_override)
+      |> Option.some
     else
       None
   in
@@ -945,3 +981,38 @@ let has_method ?transitive definition ~resolution ~name =
   |> Attribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
+
+
+let inferred_callable_type definition ~resolution =
+  let explicit_callables =
+    let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
+      match List.last name with
+      | Some (Access.Identifier call) when Identifier.equal call (Identifier.create "__call__") ->
+          Some define
+      | _ ->
+          None
+    in
+    methods definition ~resolution
+    |> List.filter_map ~f:extract_callable
+  in
+  if List.is_empty explicit_callables then
+    None
+  else
+    let callable_type = Callable.create explicit_callables ~resolution in
+    match callable_type with
+    | ({
+      Type.Callable.implementation = {
+        Type.Callable.parameters = Type.Callable.Defined parameters;
+        _;
+      } as implementation;
+      _;
+    } as callable) ->
+        Some (Type.Callable {
+            callable with
+            Type.Callable.implementation = {
+              implementation with
+              Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
+            };
+          })
+    | _ ->
+        Some (Type.Callable callable_type)

@@ -28,6 +28,7 @@ let run
     project_root
     search_path
     typeshed
+    excludes
     local_root
     () =
   try
@@ -54,9 +55,10 @@ let run
         ~parallel:(not sequential)
         ?filter_directories
         ~number_of_workers
-        ~search_path:(List.map ~f:Path.create_absolute search_path)
+        ~search_path:(List.map search_path ~f:Path.SearchPath.create)
         ?typeshed:(typeshed >>| Path.create_absolute)
         ~project_root:(Path.create_absolute project_root)
+        ~excludes
         ~local_root:(Path.create_absolute local_root)
         ()
     in

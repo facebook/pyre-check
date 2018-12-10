@@ -13,4 +13,4 @@ module Filter = Filter
 
 val apply_to_ast: Source.t -> Source.t
 
-val apply_to_environment: (module Handler) -> Source.t -> unit
+val apply_to_environment: (module Handler) -> Resolution.t -> Source.t -> unit

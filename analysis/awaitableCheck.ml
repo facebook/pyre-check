@@ -89,9 +89,9 @@ module State = struct
 
   let forward
       ?key
-      ({ define = { Node.value = { Define.name; _ }; _ }; environment; unawaited } as state)
+      ({ define = { Node.value = { Define.name; parent; _ }; _ }; environment; unawaited } as state)
       ~statement:{ Node.value; _ } =
-    let resolution = ResolutionSharedMemory.resolution ~environment ~access:name ~key in
+    let resolution = TypeCheck.resolution_with_key ~environment ~parent ~access:name ~key in
 
     let unawaited =
       let is_awaitable value =

@@ -21,7 +21,7 @@ let property_decorators =
 
 
 let classproperty_decorators =
-  String.Set.of_list []
+  String.Set.of_list ["pyre_extensions.classproperty"]
 
 
 let enumeration_classes =

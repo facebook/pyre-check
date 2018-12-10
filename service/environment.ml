@@ -15,7 +15,9 @@ open PostprocessSharedMemory
 
 let populate
     (module Handler: Environment.Handler)
+    ~configuration:{ Configuration.Analysis.debug; _ }
     sources =
+  let resolution = TypeCheck.resolution (module Handler) () in
   List.iter ~f:(Environment.register_module (module Handler)) sources;
 
   let all_annotations =
@@ -32,8 +34,13 @@ let populate
     ~f:(Environment.register_dependencies (module Handler))
     sources;
   (* Build type order. *)
-  List.iter ~f:(Environment.connect_type_order (module Handler)) sources;
+  List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+
+  if debug then
+    (* Validate integrity of the type order built so far before moving forward.
+       Further transformations might be incorrect or not terminate otherwise. *)
+    TypeOrder.check_integrity (module Handler.TypeOrderHandler);
 
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
@@ -45,12 +52,14 @@ let populate
     ~top:Type.Object
     all_annotations;
 
-  List.iter ~f:(Environment.register_functions (module Handler)) sources;
-  List.iter ~f:(Environment.register_globals (module Handler)) sources;
+  List.iter ~f:(Environment.register_functions (module Handler) resolution) sources;
+  List.iter ~f:(Environment.register_globals (module Handler) resolution) sources;
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations;
 
-  List.iter ~f:(Plugin.apply_to_environment (module Handler)) sources
+  List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
+  (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
+  Annotated.Class.Attribute.Cache.clear ()
 
 
 let build
@@ -84,7 +93,7 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate handler (stubs @ sources);
+  populate ~configuration handler (stubs @ sources);
   Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then
@@ -434,7 +443,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       (* If in debug mode, make sure the TypeOrder is still consistent. *)
       TypeOrder.check_integrity (module TypeOrderHandler)
 
-  let mode path = ErrorModes.get path
+  let local_mode path = ErrorModes.get path
 end
 
 
@@ -508,7 +517,8 @@ let populate_shared_memory
   in
   build handler ~configuration ~stubs ~sources;
 
-  Environment.infer_protocols ~handler:(module InProcessHandler) ();
+  let resolution = TypeCheck.resolution (module InProcessHandler) () in
+  Environment.infer_protocols ~handler:(module InProcessHandler) resolution ();
 
   TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
   add_to_shared_memory environment;

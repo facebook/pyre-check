@@ -37,12 +37,12 @@ module Method : sig
   type t
   [@@deriving compare, eq, sexp, show, hash]
 
-  val create: define: Define.t -> parent: class_t -> t
+  val create: define: Define.t -> parent: Type.t -> t
 
   val name: t -> Access.t
 
   val define: t -> Define.t
-  val parent: t -> class_t
+  val parent: t -> Type.t
 
   val parameter_annotations
     :  t
@@ -54,7 +54,6 @@ module Method : sig
     -> Type.t Int.Map.t
   val return_annotation: t -> resolution: Resolution.t -> Type.t
 
-  val implements: t -> protocol_method: t -> bool
 end
 
 val generics: t -> resolution: Resolution.t -> Type.t list
@@ -85,15 +84,15 @@ val immediate_superclasses
   -> t option
 
 
-val methods: t -> Method.t list
+val methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
-val implements: t -> protocol: t -> bool
+val implements: resolution: Resolution.t -> t -> protocol: t -> bool
 
 module Attribute : sig
   type attribute = {
     name: Expression.expression;
-    parent: class_t;
+    parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
     defined: bool;
@@ -118,7 +117,7 @@ module Attribute : sig
   val async: t -> bool
 
   val annotation: t -> Annotation.t
-  val parent: t -> class_t
+  val parent: t -> Type.t
   val value: t -> Expression.t
   val initialized: t -> bool
   val location: t -> Location.t
@@ -165,3 +164,5 @@ val constructor: t -> resolution: Resolution.t -> Type.t
 val overrides: t -> resolution: Resolution.t -> name: Access.t -> Attribute.t option
 
 val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Access.t -> bool
+
+val inferred_callable_type: t -> resolution: Resolution.t -> Type.t option

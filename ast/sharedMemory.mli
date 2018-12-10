@@ -4,6 +4,12 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+module SymlinksToPaths: sig
+  val get: string -> PyrePath.t option
+  val add: string -> PyrePath.t -> unit
+  val remove: targets: string list -> unit
+end
+
 module Sources: sig
   val get: File.Handle.t -> Source.t option
 

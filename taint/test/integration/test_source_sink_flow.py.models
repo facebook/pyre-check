@@ -7,7 +7,7 @@
     "line": 22,
     "start": 11,
     "end": 12,
-    "filename": "test.py",
+    "filename": "test_source_sink_flow.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -17,15 +17,17 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_source_sink_flow.py",
                 "line": 21,
                 "start": 19,
                 "end": 21
               },
               "resolves_to": [ "qualifier.some_source" ],
-              "port": "result"
+              "port": "result",
+              "length": 2
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       },
@@ -35,15 +37,17 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_source_sink_flow.py",
                 "line": 22,
-                "start": 7,
-                "end": 13
+                "start": 11,
+                "end": 12
               },
               "resolves_to": [ "qualifier.bad" ],
-              "port": "formal(arg)"
+              "port": "formal(arg)",
+              "length": 2
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -62,15 +66,17 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_source_sink_flow.py",
                 "line": 13,
-                "start": 7,
-                "end": 12
+                "start": 8,
+                "end": 11
               },
               "resolves_to": [ "qualifier.qux" ],
-              "port": "formal(arg)"
+              "port": "formal(arg)",
+              "length": 1
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -88,12 +94,13 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_source_sink_flow.py",
               "line": 5,
               "start": 23,
               "end": 25
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }
@@ -113,12 +120,13 @@
         "taint": [
           {
             "root": {
-              "filename": "test.py",
+              "filename": "test_source_sink_flow.py",
               "line": 9,
-              "start": 14,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
       }
@@ -137,15 +145,17 @@
           {
             "call": {
               "position": {
-                "filename": "test.py",
+                "filename": "test_source_sink_flow.py",
                 "line": 17,
                 "start": 14,
                 "end": 16
               },
               "resolves_to": [ "qualifier.bar" ],
-              "port": "result"
+              "port": "result",
+              "length": 1
             },
-            "leaves": [ { "kind": "Test" } ]
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
       }

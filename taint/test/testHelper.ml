@@ -35,16 +35,28 @@ type expectation = {
 }
 
 
+let get_model callable =
+  let error =
+    Base.Error.of_exn (
+      OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable)
+    )
+  in
+  Fixpoint.get_model callable
+  |> Option.value_exn ?here:None ~error ?message:None
+  |> Result.get_model Taint.Result.kind
+  |> Option.value ~default:Taint.Result.empty_model
+
+
 let check_expectation
-    ~get_model
+    ?(get_model = get_model)
     { define_name; sink_parameters; tito_parameters; returns; errors }
   =
   let open Taint.Result in
-  let extract_sinks_by_parameter_name root sink_tree sink_map =
+  let extract_sinks_by_parameter_name sink_map (root, sink_tree) =
     match AccessPath.Root.parameter_name root with
     | Some name ->
         let sinks =
-          Domains.BackwardState.collapse sink_tree
+          Domains.BackwardState.Tree.collapse sink_tree
           |> Domains.BackwardTaint.leaves
         in
         let sinks =
@@ -58,24 +70,24 @@ let check_expectation
         sink_map
   in
   let backward, forward =
-    let model = get_model (Callable.create_real (Access.create define_name)) in
-    match model with
-    | None -> Format.sprintf "model not found for %s" define_name |> assert_failure
-    | Some { backward; forward } -> backward, forward
+    let { backward; forward } = get_model (Callable.create_real (Access.create define_name)) in
+    backward, forward
   in
   let taint_map =
     Domains.BackwardState.fold
+      Domains.BackwardState.KeyValue
       backward.sink_taint
       ~f:extract_sinks_by_parameter_name
       ~init:String.Map.empty
   in
-  let extract_tito_parameter_name root _ positions =
+  let extract_tito_parameter_name positions root =
     match AccessPath.Root.parameter_name root with
     | Some name -> String.Set.add positions name
     | _ -> positions
   in
   let taint_in_taint_out_names =
     Domains.BackwardState.fold
+      Domains.BackwardState.Key
       backward.taint_in_taint_out
       ~f:extract_tito_parameter_name
       ~init:String.Set.empty
@@ -106,8 +118,8 @@ let check_expectation
   in
   (* Check sources. *)
   let returned_sources =
-    Domains.ForwardState.read AccessPath.Root.LocalResult forward.source_taint
-    |> Domains.ForwardState.collapse
+    Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
+    |> Domains.ForwardState.Tree.collapse
     |> Domains.ForwardTaint.leaves
     |> List.map ~f:Sources.show
     |> String.Set.of_list
@@ -153,7 +165,12 @@ let check_expectation
   assert_equal
     (Map.length expected_sinks)
     (Map.length taint_map)
-    ~msg:(Format.sprintf "Define %s: List of tainted parameters differ in length." define_name);
+    ~printer:Int.to_string
+    ~msg:(
+      Format.sprintf
+        "Define %s: List of tainted parameters differ in length."
+        define_name
+    );
   String.Map.iter2 ~f:check_each_sink expected_sinks taint_map;
 
   let expected_tito = tito_parameters |> String.Set.of_list in
@@ -184,7 +201,12 @@ let run_with_taint_models tests =
       def __no_tito(x): ...
       def __eval(arg: TaintSink[RemoteCodeExecution]): ...
       def __userControlled() -> TaintSource[UserControlled]: ...
-      def getattr(obj: TaintSink[GetAttr], field: TaintSink[GetAttr]): ...
+      def getattr(
+          o: TaintInTaintOut[LocalReturn],
+          name: TaintSink[GetAttr],
+          default: TaintInTaintOut[LocalReturn] = ...,
+      ): ...
+      def copy(obj: TaintInTaintOut[LocalReturn]): ...
     |}
     |> Test.trim_extra_indentation
   in

@@ -1,0 +1,142 @@
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.Data.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.get_data",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[name]" },
+              { "kind": "LocalReturn", "name": "[id]" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.product_data",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)[parent]",
+        "taint": [
+          {
+            "decl": "MISSING",
+            "tito": [ { "line": 18, "start": 30, "end": 38 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 15, "start": 20, "end": 21 } ],
+            "leaves": [
+              { "kind": "LocalReturn", "name": "[report]" },
+              { "kind": "LocalReturn", "name": "[name]" },
+              { "kind": "LocalReturn", "name": "[id]" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.product_data_wrapper",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 37, "start": 24, "end": 25 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.test_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_taint_in_taint_out.py",
+              "line": 40,
+              "start": 44,
+              "end": 46
+            },
+            "tito": [ { "line": 40, "start": 32, "end": 44 } ],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

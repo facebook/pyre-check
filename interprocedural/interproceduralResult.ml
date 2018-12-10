@@ -54,7 +54,9 @@ type 'a kind = 'a Kind.kind
    from the analysis data without having to write new code to package and access the new
    parts. *)
 type model = MK
+[@@deriving show]
 type result = RK
+[@@deriving show]
 
 
 (* Abstract a full kind to just the part necessary. The model and result markers
@@ -72,18 +74,6 @@ type 'part pkg = Pkg: {
     kind: ('part, 'value) partial_kind;
     value: 'value;
   } -> 'part pkg
-
-
-type result_pkg = result pkg
-type model_pkg = model pkg
-
-
-type model_t = {
-  models: model_pkg Kind.Map.t;
-  is_obscure: bool;
-}
-
-type result_t = result_pkg Kind.Map.t
 
 
 module type ANALYZER = sig
@@ -254,6 +244,63 @@ let get (type part a)
       end
   in
   apply_to_partial_kind partial_kind { f = get }
+
+
+let pp_pkg _pp_part formatter pkg =
+  let show_value (type a b) (kind: (a, b) partial_kind) (value: b) =
+    match kind with
+    | ModelPart kind ->
+        let module Analysis = (val get_analysis kind) in
+        Format.fprintf formatter "%s" (Analysis.show_call_model value)
+    | ResultPart _kind ->
+        Format.fprintf formatter "<no show for result>"
+
+  in
+  match pkg with
+  | Pkg { kind; value } ->
+      show_value kind value
+
+
+let show_pkg _part pkg =
+  Format.asprintf "%a" (pp_pkg ()) pkg
+
+
+type result_pkg = result pkg
+[@@deriving show]
+type model_pkg = model pkg
+[@@deriving show]
+
+
+type model_t = {
+  models: model_pkg Kind.Map.t;
+  is_obscure: bool;
+}
+
+
+let pp_model_t formatter { models; is_obscure } =
+  Format.fprintf formatter "is_obscure: %b\n" is_obscure;
+  Kind.Map.bindings models
+  |> Core.List.unzip
+  |> snd
+  |> Format.pp_print_list pp_model_pkg formatter
+
+
+let show_model_t model =
+  Format.asprintf "%a" pp_model_t model
+
+
+type result_t = result_pkg Kind.Map.t
+
+
+let pp_result_t formatter results =
+  Kind.Map.bindings results
+  |> Core.List.unzip
+  |> snd
+  |> Format.pp_print_list pp_result_pkg formatter
+
+
+let show_result_t result =
+  Format.asprintf "%a" pp_result_t result
 
 
 let get_model kind model =

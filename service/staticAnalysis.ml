@@ -14,18 +14,23 @@ open Pyre
 
 let overrides_of_source ~environment ~source =
   let open Annotated in
-  let resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution environment () in
   let filter_overrides child_method =
-    Class.overrides
-      (Method.parent child_method)
-      ~name:(Statement.Define.unqualified_name (Method.define child_method))
-      ~resolution
+    Method.parent child_method
+    |> Resolution.class_definition resolution
+    >>| Annotated.Class.create
+    >>= (fun definition ->
+        Class.overrides
+          definition
+          ~name:(Statement.Define.unqualified_name (Method.define child_method))
+          ~resolution)
     >>| fun ancestor ->
     let ancestor_parent =
       Attribute.parent ancestor
-      |> Class.name
+      |> Type.show
+      |> Expression.Access.create
     in
-    ( ancestor_parent @ Attribute.access ancestor, Method.name child_method)
+    (ancestor_parent @ Attribute.access ancestor, Method.name child_method)
   in
   let record_overrides map (ancestor_method, child_method) =
     let ancestor_callable = Interprocedural.Callable.create_real ancestor_method in
@@ -37,7 +42,7 @@ let overrides_of_source ~environment ~source =
     Interprocedural.Callable.Map.update map ancestor_callable ~f:update_children
   in
   Preprocessing.classes source
-  |> List.concat_map ~f:(Fn.compose Class.methods Class.create)
+  |> List.concat_map ~f:(Fn.compose (Class.methods ~resolution) Class.create)
   |> List.filter_map ~f:filter_overrides
   |> List.fold ~init:Interprocedural.Callable.Map.empty ~f:record_overrides
 
@@ -79,7 +84,7 @@ let record_path_of_definitions ~path ~source =
 let add_models ~environment ~model_source =
   let open Taint in
   let open Interprocedural in
-  let add_model_to_memory Model.{ call_target; model } =
+  let add_model_to_memory Model.{ call_target; model; _ } =
     Log.info "Adding taint model %S to shared memory" (Callable.external_target_name call_target);
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
@@ -87,7 +92,7 @@ let add_models ~environment ~model_source =
   in
   let models =
     Model.create
-      ~resolution:(Environment.resolution environment ())
+      ~resolution:(TypeCheck.resolution environment ())
       ~model_source
       ()
     |> Or_error.ok_exn
@@ -98,7 +103,11 @@ let add_models ~environment ~model_source =
 let analyze
     ?taint_models_directory
     ~scheduler
-    ~configuration:({ Configuration.StaticAnalysis.configuration; _ } as analysis_configuration)
+    ~configuration:({
+        Configuration.StaticAnalysis.configuration;
+        dump_call_graph;
+        _;
+      } as analysis_configuration)
     ~environment
     ~handles:paths
     () =
@@ -163,7 +172,10 @@ let analyze
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
+
   Log.info "Call graph edges: %d" (Callable.Map.length call_graph);
+  if dump_call_graph then
+    DependencyGraph.dump call_graph ~configuration;
 
   let caller_map = DependencyGraph.reverse call_graph in
 
@@ -221,17 +233,24 @@ let analyze
 
   Log.info "Analysis fixpoint started...";
   let timer = Timer.start () in
-  let iterations =
-    Interprocedural.Analysis.compute_fixpoint
-      ~configuration
-      ~scheduler
-      ~environment
-      ~analyses
-      ~caller_map
-      ~all_callables
-      Interprocedural.Fixpoint.Epoch.initial
+  let () =
+    try
+      let iterations =
+        Interprocedural.Analysis.compute_fixpoint
+          ~configuration
+          ~scheduler
+          ~environment
+          ~analyses
+          ~caller_map
+          ~all_callables
+          Interprocedural.Fixpoint.Epoch.initial
+      in
+      Log.info "Fixpoint iterations: %d" iterations;
+    with
+      exn ->
+        Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables;
+        raise exn
   in
-  Log.info "Fixpoint iterations: %d" iterations;
   let () =
     Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables
   in

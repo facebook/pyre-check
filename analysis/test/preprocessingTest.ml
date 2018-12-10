@@ -27,6 +27,7 @@ let test_expand_relative_imports _ =
     ~handle:"module/submodule/test.py"
     {|
       from builtins import str
+      from future.builtins import str
       from . import a
       from .relative import b
       from .. import c
@@ -34,6 +35,7 @@ let test_expand_relative_imports _ =
     |}
     {|
       from builtins import str
+      from future.builtins import str
       from module.submodule import a
       from module.submodule.relative import b
       from module import c
@@ -395,17 +397,53 @@ let test_qualify _ =
     |};
 
 
-  (* Qualify strings. *)
+  (* Only qualify strings for annotations and potential type aliases. *)
   assert_qualify
     {|
       from typing import List
       T = 'List'
       def foo() -> 'List[int]': ...
+      a = ['List']
+      d = {'List': 'List'}
+      f = MayBeType['List']
     |}
     {|
       from typing import List
       $local_qualifier$T = 'typing.List'
       def qualifier.foo() -> 'typing.List[int]': ...
+      $local_qualifier$a = ['List']
+      $local_qualifier$d = {'List': 'List'}
+      $local_qualifier$f = MayBeType['typing.List']
+    |};
+  assert_qualify
+    {|
+      from typing import List
+      def f():
+        T = 'List'
+        def foo() -> 'List[int]': ...
+        a = ['List']
+        d = {'List': 'List'}
+        f = MayBeType['List']
+    |}
+    {|
+      from typing import List
+      def qualifier.f():
+        $local_qualifier?f$T = 'List'
+        def qualifier.f.foo() -> 'typing.List[int]': ...
+        $local_qualifier?f$a = ['List']
+        $local_qualifier?f$d = {'List': 'List'}
+        $local_qualifier?f$f = MayBeType['List']
+    |};
+  assert_qualify
+    {|
+      def foo(arg):
+        x = 'arg'
+        return {'arg': x}
+    |}
+    {|
+      def qualifier.foo($parameter$arg):
+        $local_qualifier?foo$x = 'arg'
+        return {'arg': $local_qualifier?foo$x}
     |};
 
   (* Qualify functions. *)
@@ -666,6 +704,20 @@ let test_qualify _ =
           ...
         def qualifier.C.x():
           ...
+    |};
+
+  assert_qualify
+    {|
+      class slice:
+        pass
+      class C:
+        slice: int = ...
+    |}
+    {|
+      class qualifier.slice:
+        pass
+      class qualifier.C:
+        qualifier.C.slice: int = ...
     |}
 
 
@@ -1123,15 +1175,15 @@ let test_expand_wildcard_imports _ =
     |}
 
 
-let test_expand_returns _ =
+let test_expand_implicit_returns _ =
   let assert_expand source expected =
     assert_source_equal
       (parse expected)
-      (Preprocessing.expand_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
-      (Preprocessing.expand_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse source))
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
@@ -1142,34 +1194,10 @@ let test_expand_returns _ =
              docstring = None;
              return_annotation = None;
              async = false;
-             generated = false;
              parent = None;
            };
          ])
   in
-  assert_expand
-    "return None"
-    {|
-      $return = None
-      return $return
-    |};
-  assert_expand
-    "return foo"
-    {|
-      $return = foo
-      return $return
-    |};
-
-  assert_expand
-    {|
-      def foo():
-        return None
-    |}
-    {|
-      def foo():
-        $return = None
-        return $return
-    |};
   assert_expand_implicit_returns
     {|
       def foo():
@@ -1213,22 +1241,6 @@ let test_expand_returns _ =
         is_implicit = true
       }
     ];
-  assert_expand
-    {|
-      def foo():
-        try:
-          pass
-        finally:
-          return 1
-    |}
-    {|
-      def foo():
-        try:
-          pass
-        finally:
-          $return = 1
-          return $return
-    |};
 
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
@@ -1286,7 +1298,6 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     }
   in
@@ -1299,7 +1310,6 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     }
   in
@@ -1324,7 +1334,6 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     }
   in
@@ -1343,7 +1352,6 @@ let test_defines _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     }
   in
@@ -1389,7 +1397,6 @@ let test_classes _ =
           docstring = None;
           return_annotation = None;
           async = false;
-          generated = false;
           parent = Some (Access.create "foo");
         };
       ];
@@ -1424,6 +1431,103 @@ let test_classes _ =
   assert_classes
     [+Class class_define]
     [class_define; inner]
+
+
+let test_replace_mypy_extensions_stub _ =
+  let given = parse
+      ~handle:"mypy_extensions.pyi"
+      {|
+      from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
+
+      _T = TypeVar('_T')
+      _U = TypeVar('_U')
+
+      def TypedDict(typename: str, fields: Dict[str, Type[_T]], total: bool = ...) -> Type[dict]:
+        ...
+
+      def Arg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+      def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+    |}
+  in
+  let expected = parse
+      ~handle:"mypy_extensions.pyi"
+      {|
+      from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
+
+      _T = TypeVar('_T')
+      _U = TypeVar('_U')
+
+      TypedDict: typing._SpecialForm = ...
+
+      def Arg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+      def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
+    |}
+  in
+  assert_source_equal expected (Preprocessing.replace_mypy_extensions_stub given)
+
+
+let test_expand_typed_dictionaries _ =
+  let assert_expand ?(qualifier = []) source expected =
+    let actual =
+      parse ~qualifier source
+      |> Preprocessing.qualify
+      |> Preprocessing.expand_typed_dictionary_declarations
+    in
+    assert_source_equal
+      (Preprocessing.qualify (parse ~qualifier expected))
+      actual
+  in
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+    |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
+    |};
+  assert_expand
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {})
+    |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie',)]] = (
+        mypy_extensions.TypedDict[('Movie',)])
+    |};
+  assert_expand
+    {|
+      NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
+    |}
+    {|
+      NamelessTypedDict = mypy_extensions.TypedDict({'name': str, 'year': int})
+    |};
+  assert_expand
+    {|
+      TypedDictWithWrongArity = mypy_extensions.TypedDict(A, B, C)
+    |}
+    {|
+      TypedDictWithWrongArity = mypy_extensions.TypedDict(A, B, C)
+    |};
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
+    |};
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict):
+        name: str
+        year: int
+    |}
+    {|
+      Movie: typing.Type[mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))]] = (
+        mypy_extensions.TypedDict[('Movie', ('name', str), ('year', int))])
+    |}
+    ~qualifier:(Access.create "foo.bar")
 
 
 let test_try_preprocess _ =
@@ -1462,9 +1566,11 @@ let () =
     "replace_platform_specific_code">::test_replace_platform_specific_code;
     "expand_type_checking_imports">::test_expand_type_checking_imports;
     "expand_wildcard_imports">::test_expand_wildcard_imports;
-    "expand_returns">::test_expand_returns;
+    "expand_implicit_returns">::test_expand_implicit_returns;
     "defines">::test_defines;
     "classes">::test_classes;
+    "typed_dictionary_stub_fix">::test_replace_mypy_extensions_stub;
+    "typed_dictionaries">::test_expand_typed_dictionaries;
     "try_preprocess">::test_try_preprocess;
   ]
   |> Test.run

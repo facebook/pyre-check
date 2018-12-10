@@ -41,6 +41,31 @@ let test_create context =
   assert_equal (Path.current_working_directory () |> Path.show) (Sys.getcwd ())
 
 
+let test_create_search_path context =
+  let _, root = root context in
+  (* Create root/subdirectory. *)
+  let subdirectory = Path.create_relative ~root ~relative:"subdirectory" in
+  subdirectory
+  |> Path.show
+  |> Sys_utils.mkdir_no_fail;
+
+  assert_equal
+    ~cmp:Path.SearchPath.equal
+    (Path.SearchPath.Root root)
+    (Path.SearchPath.create (Path.show root));
+  assert_equal
+    ~cmp:Path.SearchPath.equal
+    (Path.SearchPath.Root subdirectory)
+    (Path.SearchPath.create (Path.show subdirectory));
+  assert_equal
+    ~cmp:Path.SearchPath.equal
+    (Path.SearchPath.Subdirectory { root; subdirectory = "subdirectory" })
+    (Path.SearchPath.create (Path.show root ^ "$subdirectory"));
+
+  assert_raises
+    (Failure "Unable to create search path from too$many$levels")
+    (fun () -> Path.SearchPath.create "too$many$levels")
+
 let test_relative context =
   let _, root = root context in
   assert_is_none (root |> Path.relative);
@@ -212,5 +237,6 @@ let () =
     "last">::test_last;
     "link">::test_link;
     "remove">::test_remove;
+    "create_search_path">::test_create_search_path;
   ]
   |> Test.run

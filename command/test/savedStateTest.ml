@@ -37,6 +37,16 @@ let test_saved_state context =
     |> Test.trim_extra_indentation
   in
   write_content ~root:local_root ~filename:"a.py" content;
+  let object_definition_content =
+    {|
+      class object():
+        def __init__(self) -> None: pass
+        def __new__(self) -> typing.Any: pass
+        def __sizeof__(self) -> int: pass
+    |}
+    |> Test.trim_extra_indentation
+  in
+  write_content ~root:local_root ~filename:"builtins.pyi" object_definition_content;
   let configuration = Configuration.Analysis.create ~local_root () in
   let saved_state_path =
     Path.create_relative ~root:local_root ~relative:"saved_state"

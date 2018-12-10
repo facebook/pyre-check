@@ -18,6 +18,7 @@ class Analyze(Check):
             arguments.taint_models_path or configuration.taint_models_path
         )
         self._save_results_to = arguments.save_results_to
+        self._dump_call_graph = arguments.dump_call_graph
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
@@ -25,6 +26,8 @@ class Analyze(Check):
             flags.extend(["-taint-models", self._taint_models_path])
         if self._save_results_to:
             flags.extend(["-save-results-to", self._save_results_to])
+        if self._dump_call_graph:
+            flags.extend(["-dump-call-graph"])
         return flags
 
     def _run(self, retries: int = 1) -> None:

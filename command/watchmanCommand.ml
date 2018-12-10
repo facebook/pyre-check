@@ -90,13 +90,13 @@ let build_symlink_map files =
   List.fold ~init:Path.Map.empty ~f:add_symlink files
 
 
-let set_symlink ({ configuration = { local_root; search_path; _ }; symlinks; _ } as state) ~path =
+let set_symlink ({ configuration; symlinks; _ } as state) ~path =
   let symlinks =
     try
       let tracked path =
-        List.exists
-          (local_root :: search_path)
-          ~f:(fun directory -> Path.directory_contains ~directory path)
+        Configuration.Analysis.search_path configuration
+        |> List.map ~f:Path.SearchPath.to_path
+        |> List.exists ~f:(fun directory -> Path.directory_contains ~directory path)
       in
       if not (Path.Map.mem symlinks path) && tracked path then
         Map.set symlinks ~key:(Path.real_path path) ~data:path
@@ -180,7 +180,7 @@ let listen_for_changed_files
   try
     (fun () ->
        let symlinks =
-         Path.list ~filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root
+         Path.list ~file_filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root ()
          |> build_symlink_map
        in
        let socket_path =
@@ -393,7 +393,7 @@ let run daemonize verbose sections search_path project_root local_root () =
     ~sections
     ~local_root
     ~project_root
-    ~search_path:(List.map ~f:Path.create_absolute search_path)
+    ~search_path:(List.map search_path ~f:Path.SearchPath.create)
   |> ignore
 
 

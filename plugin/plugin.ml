@@ -16,5 +16,5 @@ let apply_to_ast source =
   |> NewType.transform_ast
 
 
-let apply_to_environment (module Handler: Handler) source =
-  DataClass.transform_environment (module Handler: Handler) source
+let apply_to_environment (module Handler: Handler) resolution source =
+  DataClass.transform_environment (module Handler: Handler) resolution source

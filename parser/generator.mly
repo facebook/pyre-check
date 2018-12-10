@@ -124,6 +124,39 @@
     let location = Location.create ~start ~stop in
     Node.create Ellipses ~location
 
+  let subscript_argument ~subscripts ~location =
+    let value =
+      match subscripts with
+      | [subscript] -> subscript
+      | subscripts -> { Node.location; value = Tuple subscripts }
+    in
+    { Argument.name = None; value }
+
+  let subscript_access subscript =
+    let head, subscripts = subscript in
+    let location = Node.location head in
+    let get_item =
+      let arguments = [subscript_argument ~subscripts ~location] in
+      Access.call ~arguments ~location ~name:"__getitem__" ()
+    in
+    { Node.location; value = Access ((Expression.access head) @ get_item) }
+
+  let subscript_mutation ~subscript ~value ~annotation:_ =
+    let head, subscripts = subscript in
+    let location =
+      { head.Node.location with Location.stop = value.Node.location.Location.stop }
+    in
+    let set_item =
+      let arguments =
+        [subscript_argument ~subscripts ~location; { name = None; value }]
+      in
+      Access.call ~arguments ~location ~name:"__setitem__" ()
+    in
+    Access ((Expression.access head) @ set_item)
+    |> Node.create ~location
+    |> (fun expression -> Expression expression)
+    |> Node.create ~location
+
 %}
 
 (* The syntactic junkyard. *)
@@ -144,8 +177,10 @@
 %token <Lexing.position> RIGHTCURLY
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
-%token <Lexing.position * Lexing.position> STUB
+
 %token <string list * string> SIGNATURE_COMMENT
+%token ANNOTATION_COMMENT
+
 %token AMPERSAND
 %token AMPERSANDEQUALS
 %token AND
@@ -228,6 +263,7 @@
 
 %right OR
 %right AND
+%left ANNOTATION_COMMENT
 %left NOT
 %left IS
 %left BAR
@@ -285,6 +321,15 @@ simple_statement:
   ;
 
 small_statement:
+  | subscript = subscript; compound = compound_operator; value = test {
+      let value =
+        binary_operator
+          ~left:(subscript_access subscript)
+          ~operator:compound
+          ~right:value
+      in
+      [subscript_mutation ~subscript ~value ~annotation:None]
+  }
   | target = test_list;
     compound = compound_operator;
     value = test_list {
@@ -328,46 +373,12 @@ small_statement:
         };
       }]
     }
-  | targets = targets; value = value {
-      let assign target =
-      {
-        Node.location = target.Node.location;
-        value = Assign {
-          Assign.target;
-          annotation = None;
-          value;
-          parent = None;
-        };
-      } in
-      List.map ~f:assign targets
+  | targets = targets; value = value; annotation = comment_annotation? {
+      List.map ~f:(fun target -> target ~value ~annotation) targets
   }
   | targets = targets; ellipses = ELLIPSES {
-      let assign target =
-        {
-          Node.location = target.Node.location;
-          value = Assign {
-            Assign.target;
-            annotation = None;
-            value = create_ellipses ellipses;
-            parent = None;
-          };
-        }
-      in
-      List.map ~f:assign targets
-    }
-  | targets = targets; ellipses = STUB; annotation = value {
-      let assign target =
-        {
-          Node.location = target.Node.location;
-          value = Assign {
-            Assign.target;
-            annotation = Some annotation;
-            value = create_ellipses ellipses;
-            parent = None;
-          };
-        }
-      in
-      List.map ~f:assign targets
+      let value = create_ellipses ellipses in
+      List.map ~f:(fun target -> target ~value ~annotation:None) targets
     }
   | target = test_list;
     annotation = annotation;
@@ -570,7 +581,7 @@ compound_statement:
 
   | definition = DEFINE; name = simple_access;
     LEFTPARENS;
-    parameters = separated_list(COMMA, define_parameter);
+    parameters = define_parameters;
     RIGHTPARENS;
     return_annotation = return_annotation?;
     COLON;
@@ -630,7 +641,6 @@ compound_statement:
           decorators = [];
           return_annotation = annotation;
           async = false;
-          generated = false;
           parent = None;
           docstring = docstring;
         };
@@ -747,7 +757,6 @@ async_statement:
 
 block_or_stub_body:
   | ellipses = ELLIPSES; NEWLINE
-  | ellipses = STUB; value; NEWLINE
   | NEWLINE+; INDENT; ellipses = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
     let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
     let body = [Node.create (Expression (Node.create Ellipses ~location)) ~location] in
@@ -831,6 +840,25 @@ simple_access:
     }
   ;
 
+define_parameters:
+  | parameter = define_parameter;
+    COMMA;
+    annotation = comment_annotation?;
+    parameters = define_parameters {
+      let value =
+        let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
+        let annotation =
+          match existing, annotation with
+          | None, Some annotation -> Some annotation
+          | _ -> existing
+        in
+        { value with Parameter.annotation }
+      in
+      { parameter with Node.value } :: parameters
+    }
+  | parameter = define_parameter { [parameter] }
+  | { [] }
+
 %inline define_parameter:
   (* `*` itself is a valid parameter... *)
   | asteriks = ASTERIKS {
@@ -898,8 +926,18 @@ simple_access:
   | COLON; expression = expression { expression }
   ;
 
+%inline comment_annotation:
+  | ANNOTATION_COMMENT; expression = expression { expression }
+
 %inline return_annotation:
   | MINUS; RIGHTANGLE; expression = expression { expression }
+  ;
+
+%inline subscript:
+  | head = expression;
+    LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript_key); RIGHTBRACKET {
+      head, subscripts
+    }
   ;
 
 with_item:
@@ -993,9 +1031,26 @@ import:
     }
   ;
 
+%inline target:
+  | target = test_list {
+      let assignment_with_annotation ~value ~annotation =
+        {
+          Node.location = target.Node.location;
+          value = Assign {
+            Assign.target;
+            annotation;
+            value;
+            parent = None;
+          };
+        }
+      in
+      assignment_with_annotation
+    }
+  | subscript = subscript { subscript_mutation ~subscript }
+
 targets:
-  | test = test_list; EQUALS { [test] }
-  | targets = targets; test = test_list; EQUALS { targets @ [test] }
+  | target = target; EQUALS { [target] }
+  | targets = targets; target = target; EQUALS { targets @ [target] }
   ;
 
 value:
@@ -1223,23 +1278,7 @@ expression:
       }
     }
 
-  | head = expression;
-    LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript);
-    RIGHTBRACKET {
-      let location = Node.location head in
-      let get_item =
-        let arguments =
-          let value =
-            match subscripts with
-            | [subscript] -> subscript
-            | subscripts -> { Node.location; value = Tuple subscripts }
-          in
-          [{ Argument.name = None; value }]
-        in
-        Access.call ~arguments ~location ~name:"__getitem__" ()
-      in
-      { Node.location; value = Access ((Expression.access head) @ get_item) }
-    }
+  | subscript = subscript { subscript_access subscript }
 
   | start = AWAIT; expression = expression {
       {
@@ -1464,7 +1503,7 @@ argument:
   | value = test { { Argument.name = None; value } }
   ;
 
-subscript:
+subscript_key:
   | index = test { index }
   | lower = test?; COLON; upper = test? {
       slice ~lower ~upper ~step:None

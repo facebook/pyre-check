@@ -15,12 +15,13 @@ type origin =
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
+  due_to_invariance: bool;
 }
 [@@deriving compare, eq, show, hash]
 
 type missing_annotation = {
   name: Access.t;
-  annotation: Type.t;
+  annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
@@ -49,6 +50,7 @@ type unpack_problem =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
+  | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {
@@ -59,12 +61,12 @@ type kind =
     }
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
-  | IncompatibleAttributeType of { parent: Annotated.Class.t; incompatible_type: incompatible_type }
+  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
-      parent: Annotated.Class.t;
+      parent: Type.t;
       missing_annotation: missing_annotation;
     }
   | MissingGlobalAnnotation of missing_annotation
@@ -75,6 +77,7 @@ type kind =
       due_to_any: bool;
     }
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | NotCallable of Type.t
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
@@ -84,11 +87,14 @@ type kind =
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
-  | UninitializedAttribute of { name: Access.t; parent: Annotated.Class.t; mismatch: mismatch }
+  | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
+  | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
   | UnusedIgnore of int list
 
   (* Additionals errors. *)
   | UnawaitedAwaitable of Access.t
+  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
 [@@deriving compare, eq, show, hash]
 
 include BaseError.ERROR with type kind := kind
@@ -112,4 +118,11 @@ val join_at_source: resolution: Resolution.t -> t list -> t list
 val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t -> t list -> t list
 val suppress: mode: Source.mode -> t -> bool
 
-val dequalify: Access.t Access.Map.t -> (module Environment.Handler) -> t -> t
+val dequalify: Access.t Access.Map.t -> resolution: Resolution.t -> t -> t
+
+val create_mismatch
+  :  resolution: Resolution.t
+  -> actual: Type.t
+  -> expected: Type.t
+  -> covariant: bool
+  -> mismatch

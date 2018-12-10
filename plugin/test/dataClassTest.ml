@@ -29,6 +29,27 @@ let test_transform_environment _ =
 
   PluginTest.assert_environment_contains
     {|
+      if 1 > 2:
+        @dataclass
+        class Foo:
+          ...
+    |}
+    [
+      {|
+        @dataclass
+        class Foo:
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |}
+    ];
+
+
+  PluginTest.assert_environment_contains
+    {|
       @dataclass
       class Foo:
         def foo() -> None:
@@ -378,6 +399,7 @@ let test_transform_environment _ =
       class C(Base):
         z: int = 10
         x: int = 15
+      @dataclass
       class Base:
         x: typing.Any = 15.0
         y: int = 0
@@ -397,10 +419,17 @@ let test_transform_environment _ =
             pass
       |};
       {|
+        @dataclass
         class Base:
           x: typing.Any = 15.0
           y: int = 0
           z: str = "a"
+          def __init__(self, x: object = 15.0, y: int = 0, z: str = "a") -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
       |};
     ];
 
@@ -500,7 +529,7 @@ let test_transform_environment _ =
         class C(B):
           z: int = 10
           x: int = 15
-          def __init__(self, x: int = 15, y: int = 20, z: int = 10) -> None:
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
             pass
           def __repr__(self) -> str:
             pass
@@ -566,6 +595,32 @@ let test_transform_environment _ =
         class A:
           x: int = 15
           def __init__(self, x: int = 15) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      class NotDataClass:
+        x: int = 15
+      @dataclass
+      class DataClass(NotDataClass):
+        y: int = 5
+    |}
+    [
+      {|
+        class NotDataClass:
+          x: int = 15
+      |};
+      {|
+        @dataclass
+        class DataClass(NotDataClass):
+          y: int = 5
+          def __init__(self, y: int = 5) -> None:
             pass
           def __repr__(self) -> str:
             pass

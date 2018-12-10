@@ -93,6 +93,12 @@ and constraints =
   | Unconstrained
 
 
+and variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
+
 and typed_dictionary_field = {
   name: string;
   annotation: t;
@@ -111,12 +117,14 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show, hash]
 
 
 type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
+
+
 let type_compare = compare
 let type_sexp_of_t = sexp_of_t
 let type_t_of_sexp = t_of_sexp
@@ -218,11 +226,18 @@ let rec pp format annotation =
           | Defined parameters ->
               let parameter = function
                 | Parameter.Named { Parameter.name; annotation; default } ->
-                    Format.asprintf
-                      "Named(%a, %a%s)"
-                      Access.pp_sanitized name
-                      pp annotation
-                      (if default then ", default" else "")
+                    let name = Access.show_sanitized name in
+                    if String.is_prefix ~prefix:"$" name then
+                      Format.asprintf
+                        "%a%s"
+                        pp annotation
+                        (if default then ", default" else "")
+                    else
+                      Format.asprintf
+                        "Named(%s, %a%s)"
+                        name
+                        pp annotation
+                        (if default then ", default" else "")
                 | Parameter.Variable { Parameter.name; annotation; _ } ->
                     Format.asprintf
                       "Variable(%a, %a)"
@@ -294,17 +309,20 @@ let rec pp format annotation =
         |> List.map ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp annotation)
         |> String.concat ~sep:", "
       in
-      Format.fprintf format
-        "TypedDict `%a` with fields (%s)"
-        Identifier.pp
-        name
-        fields
+      if Identifier.show name = "$anonymous" then
+        Format.fprintf format "TypedDict with fields (%s)" fields
+      else
+        Format.fprintf format
+          "TypedDict `%a` with fields (%s)"
+          Identifier.pp
+          name
+          fields
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
         (List.map parameters ~f:show
          |> String.concat ~sep:", ")
-  | Variable { variable; constraints } ->
+  | Variable { variable; constraints; variance } ->
       let constraints =
         match constraints with
         | Bound bound ->
@@ -317,11 +335,18 @@ let rec pp format annotation =
         | Unconstrained ->
             ""
       in
+      let variance =
+        match variance with
+        | Covariant -> "(covariant)"
+        | Contravariant -> "(contravariant)"
+        | Invariant -> ""
+      in
       Format.fprintf
         format
-        "Variable[%s%s]"
+        "Variable[%s%s]%s"
         (Identifier.show variable)
         constraints
+        variance
 
 
 and show annotation =
@@ -343,8 +368,8 @@ let parametric name parameters =
   Parametric { name = Identifier.create name; parameters }
 
 
-let variable ?(constraints = Unconstrained) name =
-  Variable { variable = Identifier.create name; constraints }
+let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
+  Variable { variable = Identifier.create name; constraints; variance }
 
 
 let awaitable parameter =
@@ -441,7 +466,22 @@ let lambda ~parameters ~return_annotation =
         Defined
           (List.map
              ~f:(fun (name, parameter) ->
-                 Parameter.Named { Parameter.name; annotation = parameter; default = false })
+                 let name = Access.show name in
+                 if String.is_prefix ~prefix:"**" name then
+                   let name =
+                     String.drop_prefix name 2
+                     |> Access.create
+                   in
+                   Parameter.Keywords { Parameter.name; annotation = parameter; default = false }
+                 else if String.is_prefix ~prefix:"*" name then
+                   let name =
+                     String.drop_prefix name 1
+                     |> Access.create
+                   in
+                   Parameter.Variable { Parameter.name; annotation = parameter; default = false }
+                 else
+                   let name = Access.create name in
+                   Parameter.Named { Parameter.name; annotation = parameter; default = false })
              parameters);
     };
     overloads = [];
@@ -542,6 +582,8 @@ let union parameters =
   in
   if List.mem ~equal parameters Object then
     Object
+  else if List.mem ~equal parameters Top then
+    Top
   else
     let normalize parameters =
       match parameters with
@@ -580,6 +622,7 @@ let primitive_substitution_map =
     "$deleted", Deleted;
     "$unknown", Top;
     "None", none;
+    "function", callable ~annotation:Object ();
     "dict", parametric_anys "dict" 2;
     "list", list Object;
     "object", Object;
@@ -589,6 +632,7 @@ let primitive_substitution_map =
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
+    "typing.Callable", callable ~annotation:Object ();
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
@@ -964,9 +1008,28 @@ let rec create ~aliases { Node.value = expression; _ } =
               else
                 Unconstrained
             in
+            let variance =
+              let variance_definition = function
+                | {
+                  Argument.name = Some { Node.value = name; _ };
+                  Argument.value = { Node.value = True; _ };
+                } when Identifier.show_sanitized name = "covariant" ->
+                    Some Covariant
+                | {
+                  Argument.name = Some { Node.value = name; _ };
+                  Argument.value = { Node.value = True; _ };
+                } when Identifier.show_sanitized name = "contravariant" ->
+                    Some Contravariant
+                | _ ->
+                    None
+              in
+              List.find_map arguments ~f:variance_definition
+              |> Option.value ~default:Invariant
+            in
             Variable {
               variable = Identifier.create value;
               constraints;
+              variance;
             }
 
         | Access
@@ -1267,9 +1330,8 @@ let rec exists annotation ~predicate =
     | Union parameters ->
         List.exists ~f:(exists ~predicate) parameters
 
-    | TypedDictionary { name; fields } ->
+    | TypedDictionary { fields; _ } ->
         let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-        exists (Primitive name) ~predicate ||
         List.exists annotations ~f:(exists ~predicate)
 
     | Bottom
@@ -1312,6 +1374,13 @@ let is_generator = function
 let is_generic = function
   | Parametric { name; _ } ->
       Identifier.show name = "typing.Generic"
+  | _ ->
+      false
+
+
+let is_iterable = function
+  | Parametric { name; _ } ->
+      String.equal (Identifier.show name) "typing.Iterable"
   | _ ->
       false
 
@@ -1363,6 +1432,11 @@ let is_protocol = function
 let is_tuple (annotation: t) =
   match annotation with
   | Tuple _ -> true
+  | _ -> false
+
+
+let is_typed_dictionary = function
+  | TypedDictionary _ -> true
   | _ -> false
 
 
@@ -1465,9 +1539,9 @@ let rec primitives annotation =
             []
       end
 
-  | TypedDictionary { name; fields } ->
-      let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-      Primitive name :: (List.concat_map annotations ~f:primitives)
+  | TypedDictionary { fields; _ } ->
+      List.map fields ~f:(fun { annotation; _ } -> annotation)
+      |> List.concat_map ~f:primitives
   | Parametric { parameters; _ }
   | Tuple (Bounded parameters)
   | Union parameters ->
@@ -1492,100 +1566,6 @@ let is_untyped = function
   | Bottom
   | Top -> true
   | _ -> false
-
-
-let rec mismatch_with_any left right =
-  let compatible left right =
-    let symmetric left right =
-      (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
-      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
-    in
-    Identifier.equal left right ||
-    symmetric left right ||
-    symmetric right left
-  in
-
-  match left, right with
-  | Object, Bottom
-  | Bottom, Object
-  | Object, Optional _
-  | Optional _, Object
-  | Object, Parametric _
-  | Parametric _, Object
-  | Object, Primitive _
-  | Primitive _, Object
-  | Object, Top
-  | Top, Object
-  | Object, Tuple _
-  | Tuple _, Object
-  | Object, Union _
-  | Union _, Object
-  | Object, Variable _
-  | Variable _, Object ->
-      true
-  | Parametric { name; parameters = [left] }, right
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
-      mismatch_with_any left right
-  | left, Parametric { name; parameters = [right] }
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
-      mismatch_with_any left right
-  | Optional left, Optional right
-  | Optional left, right
-  | left, Optional right ->
-      mismatch_with_any left right
-
-  | Parametric left, Parametric right
-    when compatible left.name right.name &&
-         List.length left.parameters = List.length right.parameters ->
-      List.exists2_exn ~f:mismatch_with_any left.parameters right.parameters
-
-  | Parametric { name = iterator; parameters = [iterator_parameter] },
-    Parametric { name = generator; parameters = generator_parameter :: _ }
-  | Parametric { name = generator; parameters = generator_parameter :: _ },
-    Parametric { name = iterator; parameters = [iterator_parameter] }
-    when (Identifier.show iterator = "typing.Iterator" ||
-          Identifier.show iterator = "typing.Iterable") &&
-         Identifier.show generator = "typing.Generator" ->
-      mismatch_with_any iterator_parameter generator_parameter
-
-  | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
-      List.exists2_exn ~f:mismatch_with_any left right
-  | Tuple (Unbounded left), Tuple (Unbounded right) ->
-      mismatch_with_any left right
-  | Tuple (Bounded bounded), Tuple (Unbounded unbounded)
-  | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
-      begin
-        match unbounded, bounded with
-        | Object, _ ->
-            true
-        | unbounded, head :: tail ->
-            mismatch_with_any unbounded head ||
-            List.for_all ~f:(equal Object) tail
-        | _ ->
-            false
-      end
-
-  | Union left, Union right ->
-      let left = Set.of_list left in
-      let right = Set.of_list right in
-      let mismatched left right =
-        Set.length left = Set.length right &&
-        Set.mem left Object &&
-        not (Set.mem right Object) &&
-        Set.length (Set.diff left right) = 1
-      in
-      mismatched left right || mismatched right left
-  | Union union, other
-  | other, Union union ->
-      List.exists ~f:(mismatch_with_any other) union
-
-  | _ ->
-      false
 
 
 let optional_value = function
@@ -1630,6 +1610,8 @@ let split = function
         | Unbounded parameter -> [parameter]
       in
       Primitive (Identifier.create "tuple"), parameters
+  | (TypedDictionary _) as typed_dictionary ->
+      primitive "TypedDictionary", [typed_dictionary]
   | annotation ->
       annotation, []
 
@@ -1730,12 +1712,12 @@ let instantiate ?(widen = false) annotation ~constraints =
   instantiate annotation
 
 
-let instantiate_variables annotation =
+let instantiate_variables ~replacement annotation =
   let constraints =
     variables annotation
     |> List.fold
       ~init:Map.empty
-      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:Bottom)
+      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
   in
   instantiate annotation ~constraints:(Map.find constraints)
 
@@ -1776,14 +1758,14 @@ let rec dequalify map annotation =
         parameters = List.map parameters ~f:(dequalify map);
       }
   | Primitive name -> Primitive (dequalify_identifier name)
-  | Variable { variable = name; constraints } ->
+  | Variable { variable = name; constraints; variance } ->
       let constraints =
         match constraints with
         | Bound bound -> Bound (dequalify map bound)
         | Explicit constraints -> Explicit (List.map constraints ~f:(dequalify map))
         | Unconstrained -> Unconstrained
       in
-      Variable { variable = dequalify_identifier name; constraints }
+      Variable { variable = dequalify_identifier name; constraints; variance }
   | _ -> annotation
 
 
@@ -1813,22 +1795,32 @@ module Callable = struct
       | Keywords { annotation; _ } ->
           annotation
 
+
+    let default = function
+      | Named { default; _ }
+      | Variable { default; _ }
+      | Keywords { default; _ } ->
+          default
+
+
     let names_compatible left right =
       match left, right with
       | Named { name = left; _ }, Named { name = right; _ }
       | Variable { name = left; _ }, Variable { name = right; _ }
       | Keywords { name = left; _ }, Keywords { name = right; _ } ->
-          if String.is_prefix ~prefix:"$" (Access.show left) ||
-             String.is_prefix ~prefix:"$" (Access.show right) then
+          let left = Access.show_sanitized left in
+          let right = Access.show_sanitized right in
+          if String.is_prefix ~prefix:"$" left ||
+             String.is_prefix ~prefix:"$" right then
             true
           else
             let left =
-              Access.show left
+              left
               |> Identifier.create
               |> Identifier.remove_leading_underscores
             in
             let right =
-              Access.show right
+              right
               |> Identifier.create
               |> Identifier.remove_leading_underscores
             in
@@ -1889,12 +1881,222 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ implementation; overloads; _ } as initial) =
-    let re_annotate implementation = { implementation with annotation = return_annotation } in
+  let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
+    let re_annotate implementation = { implementation with annotation } in
     {
       initial with
       implementation = re_annotate implementation;
-      overloads = List.map ~f:re_annotate overloads }
+      overloads = List.map ~f:re_annotate overloads
+    }
+end
+
+
+let rec mismatch_with_any left right =
+  let compatible left right =
+    let symmetric left right =
+      (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
+      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
+      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
+      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
+    in
+    Identifier.equal left right ||
+    symmetric left right ||
+    symmetric right left
+  in
+
+  match left, right with
+  | Object, Bottom
+  | Bottom, Object
+  | Object, Optional _
+  | Optional _, Object
+  | Object, Parametric _
+  | Parametric _, Object
+  | Object, Primitive _
+  | Primitive _, Object
+  | Object, Callable _
+  | Callable _, Object
+  | Object, Top
+  | Top, Object
+  | Object, Tuple _
+  | Tuple _, Object
+  | Object, Union _
+  | Union _, Object
+  | Object, Variable _
+  | Variable _, Object ->
+      true
+  | Callable {
+      Callable.implementation = {
+        Callable.annotation = left_annotation;
+        parameters = left_parameters;
+      };
+      _;
+    },
+    Callable {
+      Callable.implementation = {
+        Callable.annotation = right_annotation;
+        parameters = right_parameters;
+      };
+      _;
+    } ->
+      let parameters_mismatch_with_any left right =
+        match left, right with
+        | Defined left, Defined right when List.length left = List.length right ->
+            let left = List.map ~f:Callable.Parameter.annotation left in
+            let right = List.map ~f:Callable.Parameter.annotation right in
+            List.exists2_exn left right ~f:mismatch_with_any
+        | _ ->
+            false
+      in
+      let parameters_compatible =
+        match left_parameters, right_parameters with
+        | Defined left, Defined right when List.length left = List.length right ->
+            true
+        | Defined _, Defined _ ->
+            false
+        | _ ->
+            true
+      in
+      if parameters_compatible then
+        mismatch_with_any left_annotation right_annotation
+        || parameters_mismatch_with_any left_parameters right_parameters
+      else
+        false
+  | Parametric { name; parameters = [left] }, right
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
+  | left, Parametric { name; parameters = [right] }
+    when Identifier.equal name (Identifier.create "typing.Optional") ->
+      mismatch_with_any left right
+  | Optional left, Optional right
+  | Optional left, right
+  | left, Optional right ->
+      mismatch_with_any left right
+
+  | Parametric left, Parametric right
+    when compatible left.name right.name &&
+         List.length left.parameters = List.length right.parameters ->
+      List.exists2_exn ~f:mismatch_with_any left.parameters right.parameters
+
+  | Parametric { name = iterator; parameters = [iterator_parameter] },
+    Parametric { name = generator; parameters = generator_parameter :: _ }
+  | Parametric { name = generator; parameters = generator_parameter :: _ },
+    Parametric { name = iterator; parameters = [iterator_parameter] }
+    when (Identifier.show iterator = "typing.Iterator" ||
+          Identifier.show iterator = "typing.Iterable") &&
+         Identifier.show generator = "typing.Generator" ->
+      mismatch_with_any iterator_parameter generator_parameter
+
+  | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
+      List.exists2_exn ~f:mismatch_with_any left right
+  | Tuple (Unbounded left), Tuple (Unbounded right) ->
+      mismatch_with_any left right
+  | Tuple (Bounded bounded), Tuple (Unbounded unbounded)
+  | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
+      begin
+        match unbounded, bounded with
+        | Object, _ ->
+            true
+        | unbounded, head :: tail ->
+            mismatch_with_any unbounded head ||
+            List.for_all ~f:(equal Object) tail
+        | _ ->
+            false
+      end
+
+  | Union left, Union right ->
+      let left = Set.of_list left in
+      let right = Set.of_list right in
+      let mismatched left right =
+        Set.length left = Set.length right &&
+        Set.mem left Object &&
+        not (Set.mem right Object) &&
+        Set.length (Set.diff left right) = 1
+      in
+      mismatched left right || mismatched right left
+  | Union union, other
+  | other, Union union ->
+      List.exists ~f:(mismatch_with_any other) union
+
+  | _ ->
+      false
+
+
+module TypedDictionary = struct
+  let anonymous fields =
+    TypedDictionary { name = Identifier.create "$anonymous"; fields }
+
+
+  let fields_have_colliding_keys left_fields right_fields =
+    let found_collision { name = needle_name; annotation = needle_annotation } =
+      let same_name_different_annotation { name; annotation } =
+        name = needle_name && not (equal annotation needle_annotation)
+      in
+      List.exists left_fields ~f:same_name_different_annotation
+    in
+    List.exists right_fields ~f:found_collision
+
+
+  let constructor ~name ~fields =
+    let parameters =
+      let self_parameter =
+        Record.Callable.RecordParameter.Named {
+          name = Access.create "self";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let single_star =
+        Record.Callable.RecordParameter.Variable {
+          name = Access.create "";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let field_arguments =
+        let field_to_argument { name; annotation } =
+          Record.Callable.RecordParameter.Named {
+            name = Access.create (Format.asprintf "$parameter$%s" name);
+            annotation;
+            default = false;
+          }
+        in
+        List.map ~f:field_to_argument fields
+      in
+      self_parameter :: single_star :: field_arguments
+    in
+    {
+      Callable.kind = Named (Access.create "__init__");
+      implementation = {
+        annotation = TypedDictionary { name; fields };
+        parameters = Defined parameters;
+      };
+      overloads = [];
+      implicit = Class;
+    }
+
+
+  let setter ~callable:({ implementation; _ } as callable) ~annotation =
+    {
+      callable with
+      implementation = {
+        implementation with
+        parameters = Defined [
+            Named {
+              name = Access.create "key";
+              annotation = string;
+              default = false;
+            };
+            Named {
+              name = Access.create "value";
+              annotation;
+              default = false;
+            };
+          ];
+      };
+    }
 end
 
 

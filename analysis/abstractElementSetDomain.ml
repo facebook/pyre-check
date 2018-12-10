@@ -5,102 +5,147 @@
 
 open Core
 
+open AbstractDomain
+
 
 module type ELEMENT_DOMAIN = sig
   type t
-  [@@deriving show, sexp]
+  [@@deriving show, compare, sexp]
 
   val less_or_equal: left: t -> right: t -> bool
-  val join: t -> t -> t
 
-  type group
-  [@@deriving compare, sexp]
-
-  val group: t -> group
+  val widen: t list -> t list
 end
 
 
-(* A set of abstract elements where set adding will join elements by group *)
-module Make(Element : ELEMENT_DOMAIN) : sig
-  include AbstractDomain.S
-
-  val add: t -> Element.t -> t
-  val elements: t -> Element.t list
-  val partition_tf: t -> f: (Element.t -> bool) -> t * t
-  val singleton: Element.t -> t
-end
-= struct
-  module Key = struct
-    type t = Element.group
-    [@@deriving compare, sexp]
+(* A set of abstract elements where elements can be related *)
+module Make(Element : ELEMENT_DOMAIN) = struct
+  module Set = struct
+    module ElementSet = Set.Make(Element)
+    include ElementSet.Tree
   end
 
-  module Map = struct
-    module ElementMap = Map.Make(Key)
-    include ElementMap.Tree
-  end
+  include Set
 
-  include (Map : module type of Map with type 'a t := 'a Map.t)
-  type t = Element.t Map.t
+  let bottom =
+    Set.empty
 
-  let bottom = Map.empty
+  let is_bottom =
+    Set.is_empty
 
-  let is_bottom = Map.is_empty
+  let is_subsumed left set =
+    Set.exists ~f:(fun right -> Element.less_or_equal ~left ~right) set
 
-  let join x y =
-    let merge ~key:_ = function
-      | `Both (a, b) -> Some (Element.join a b)
-      | `Left e | `Right e -> Some e
-    in
-    Map.merge ~f:merge x y
+  let add set to_add =
+    if is_subsumed to_add set then
+      set
+    else
+      let try_remove set existing =
+        if Element.less_or_equal ~left:existing ~right:to_add then
+          Set.remove set existing
+        else
+          set
+      in
+      Set.add
+        (Set.fold ~init:set set ~f:try_remove)
+        to_add
+
+  let join left right =
+    let join1 = Set.fold ~f:add ~init:left right in
+    let join2 = Set.fold ~f:add ~init:right left in
+    Set.inter join1 join2
 
   let widen ~iteration:_ ~previous ~next =
     join previous next
+    |> Set.to_list
+    |> Element.widen
+    |> of_list
 
   let less_or_equal ~left ~right =
-    let find_witness ~key:_ ~data =
-      match data with
-      | `Both (left, right) ->
-          if not (Element.less_or_equal ~left ~right) then raise Exit
-      | `Left _ ->
-          raise Exit
-      | `Right _ -> ()
+    Set.for_all left ~f:(fun element -> is_subsumed element right)
+
+  let subtract to_remove ~from =
+    let keep_non_subsumed element =
+      not (is_subsumed element to_remove)
     in
-    try
-      Map.iter2 ~f:find_witness left right;
-      true
-    with
-    | Exit -> false
+    Set.filter ~f:keep_non_subsumed from
 
-  let sexp_of_t = Map.sexp_of_t Element.sexp_of_t
-
-  let t_of_sexp = Map.t_of_sexp Element.t_of_sexp
+  let of_list elements =
+    List.fold elements ~f:add ~init:bottom
 
   let show set =
-    Map.data set
+    Set.elements set
     |> List.map ~f:Element.show
     |> String.concat ~sep:", "
     |> Format.sprintf "[%s]"
 
-  let add set element =
-    let optionally_join = function
-      | None -> element
-      | Some existing -> Element.join existing element
+  let pp formatter map =
+    Format.fprintf
+      formatter
+      "%s"
+      (show map)
+
+  type _ AbstractDomain.part +=
+    | Element: Element.t AbstractDomain.part
+    | Set: Element.t list part
+
+  let fold (type a b) (part: a part) ~(f: b -> a -> b) ~(init: b) set : b =
+    match part with
+    | Element ->
+        fold ~f ~init set
+    | Set ->
+        f init (Set.elements set)
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> Format.sprintf "Unknown part %s in fold"
+        |> failwith
+
+  let transform (type a) (part: a part) ~(f: a -> a) set =
+    match part with
+    | Element ->
+        elements set
+        |> List.fold ~f:(fun result element -> add result (f element)) ~init:empty
+    | Set ->
+        f (Set.elements set) |> of_list
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> Format.sprintf "Unknown part %s in transform"
+        |> failwith
+
+  let partition (type a b) (part: a part) ~(f: a -> b) set =
+    let update element = function
+      | None -> singleton element
+      | Some set -> add set element
     in
-    let key = Element.group element in
-    Map.update set key ~f:optionally_join
+    match part with
+    | Element ->
+        let f result element =
+          let key = f element in
+          Map.Poly.update result key ~f:(update element)
+        in
+        Set.fold set ~f ~init:Map.Poly.empty
+    | Set ->
+        Map.Poly.singleton (f (Set.elements set)) set
+    | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> Format.sprintf "Unknown part %s in partition"
+        |> failwith
 
-  let singleton element =
-    add bottom element
-
-  let elements = Map.data
-
-  let partition_tf map ~f =
-    let partition_target ~key ~data (true_result, false_result) =
-      if f data then
-        (Map.set true_result ~key ~data, false_result)
-      else
-        (true_result, Map.set false_result ~key ~data)
+  let create parts =
+    let create_part so_far (Part (part, value)) =
+      match part with
+      | Set ->
+          join so_far (of_list value)
+      | Element ->
+          add so_far value
+      | _ ->
+        Obj.extension_constructor part
+        |> Obj.extension_name
+        |> Format.sprintf "Unknown part %s in transform"
+        |> failwith
     in
-    Map.fold map ~init:(empty, empty) ~f:partition_target
+    List.fold parts ~f:create_part ~init:bottom
 end

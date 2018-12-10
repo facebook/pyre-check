@@ -67,6 +67,10 @@ class Incremental(Reporting):
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 
+        excludes = self._configuration.excludes
+        for exclude in excludes:
+            flags.extend(["-exclude", exclude])
+
         return flags
 
     # pyre-ignore: T31696900

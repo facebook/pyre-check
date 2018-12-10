@@ -21,15 +21,16 @@ let empty = Callable.Map.empty
 let create ~environment ~source =
   let fold_defines
       dependencies
-      { Node.value = ({ Define.name = caller; _ } as define); _ } =
+      { Node.value = ({ Define.name = caller; parent; _ } as define); _ } =
     let cfg = Cfg.create define in
     let caller_callable = Callable.create_real caller in
     let fold_cfg ~key:node_id ~data:node callees =
       let statements = Cfg.Node.statements node in
       let fold_statements index callees statement =
         let resolution =
-          ResolutionSharedMemory.resolution
+          TypeCheck.resolution_with_key
             ~environment
+            ~parent
             ~access:caller
             ~key:(Some ([%hash: int * int](node_id, index)))
         in
@@ -145,3 +146,41 @@ let pp formatter edges =
     Format.fprintf formatter "%s -> [%s]\n" (Callable.show callable) targets
   in
   Callable.Map.iteri ~f:pp_edge edges
+
+
+let dump call_graph ~configuration =
+  let buffer = Buffer.create 1024 in
+  Buffer.add_string buffer "{\n";
+
+  let remove_trailing_comma () =
+    Buffer.truncate buffer (Buffer.length buffer - 2);
+    Buffer.add_string buffer "\n"
+  in
+
+  let add_edges ~key:source ~data:targets =
+    let add_edge target =
+      Format.asprintf
+        "    \"%s\",\n"
+        (Callable.external_target_name target)
+      |> Buffer.add_string buffer
+    in
+    if not (List.is_empty targets) then
+      begin
+        Format.asprintf "  \"%s\": [\n" (Callable.external_target_name source)
+        |> Buffer.add_string buffer;
+        List.iter targets ~f:add_edge;
+        remove_trailing_comma ();
+        Buffer.add_string buffer "  ],\n"
+      end
+  in
+  Map.iteri call_graph ~f:add_edges;
+  remove_trailing_comma ();
+
+  Buffer.add_string buffer "}";
+
+  (* Write to file. *)
+  Path.create_relative
+    ~root:(Configuration.Analysis.pyre_root configuration)
+    ~relative:"call_graph.json"
+  |> File.create ~content:(Buffer.contents buffer)
+  |> File.write

@@ -86,6 +86,7 @@ module Handle = struct
 
   let to_path ~configuration handle =
     let construct_relative_to_root root =
+      let root = Path.SearchPath.get_root root in
       let path = Path.create_relative ~root ~relative:handle in
       if Path.file_exists path then
         Some path
@@ -134,8 +135,12 @@ exception NonexistentHandle of string
 
 
 let handle ~configuration { path; _ } =
-  let possible_roots = Configuration.Analysis.search_path configuration in
-  match List.find_map possible_roots ~f:(fun root -> Path.get_relative_to_root ~root ~path) with
+  let search_path = Configuration.Analysis.search_path configuration in
+  let handle =
+    Path.search_for_path ~search_path ~path
+    >>= Path.relative
+  in
+  match handle with
   | Some handle ->
       Handle.create handle
   | None ->
@@ -143,6 +148,8 @@ let handle ~configuration { path; _ } =
         Format.sprintf
           "Unable to construct handle for %s. Possible roots: %s"
           (Path.absolute path)
-          (List.to_string possible_roots ~f:Path.absolute)
+          (search_path
+           |> List.map ~f:Path.SearchPath.to_path
+           |> List.to_string ~f:Path.absolute)
       in
       raise (NonexistentHandle message)

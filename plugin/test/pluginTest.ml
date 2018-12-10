@@ -15,14 +15,18 @@ open Test
 
 let assert_environment_contains source expected =
   Annotated.Class.Attribute.Cache.clear ();
+  let configuration = Configuration.Analysis.create ~infer:true () in
   let (module Handler: Environment.Handler) =
-    Environment.handler
-      ~configuration:(Configuration.Analysis.create ~infer:true ())
-      (Environment.Builder.create ())
+    Environment.handler ~configuration (Environment.Builder.create ())
   in
   let source = Analysis.Preprocessing.preprocess (parse source) in
-  Service.Environment.populate (module Handler) [source];
+  Service.Environment.populate ~configuration (module Handler) [source];
 
+  let expected =
+    List.map
+      expected
+      ~f:(fun definition -> (Analysis.Preprocessing.preprocess (parse definition)))
+  in
   let class_types =
     let get_name_if_class { Node.value; _ } =
       match value with
@@ -35,7 +39,8 @@ let assert_environment_contains source expected =
       Access.expression name
       |> Type.create ~aliases:Handler.aliases
     in
-    Source.statements source
+    List.map ~f:Source.statements expected
+    |> List.filter_map ~f:List.hd
     |> List.filter_map ~f:get_name_if_class
     |> List.map ~f:get_type
   in
@@ -44,7 +49,7 @@ let assert_environment_contains source expected =
       Option.value_exn (Handler.class_definition class_type)
     in
     assert_source_equal
-      (Analysis.Preprocessing.preprocess (parse expected))
+      expected
       (Source.create
          ~handle:(File.Handle.create "test.py")
          [+Statement.Class (Node.value class_definition)]

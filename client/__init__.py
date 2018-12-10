@@ -8,16 +8,15 @@ import logging
 import multiprocessing
 import os
 import platform
-import shlex
 import subprocess
 import sys
 import traceback
 from argparse import Namespace
-from typing import Any, Dict, Optional, Sized
+from typing import Any, Dict, Optional
 
 from . import buck
 from .exceptions import EnvironmentException as EnvironmentException
-from .filesystem import SharedAnalysisDirectory
+from .filesystem import SharedAnalysisDirectory  # noqa
 
 
 LOG = logging.getLogger(__name__)
@@ -127,23 +126,17 @@ def resolve_analysis_directories(arguments, configuration, prompt: bool = True):
         analysis_directories = set(configuration.analysis_directories)
         targets = set(configuration.targets)
     else:
-        LOG.warning("Setting up a .pyre_configuration file may reduce overhead.")
+        LOG.warning(
+            "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead "
+        )
 
     analysis_directories.update(
         buck.generate_analysis_directories(
             targets, build=arguments.build, prompt=prompt
         )
     )
-    if os.path.isfile(CONFIGURATION_FILE):
-        initialization_command = "pyre init --local"
-    else:
-        initialization_command = "pyre init"
     if len(analysis_directories) == 0:
-        raise EnvironmentException(
-            "No targets or link trees to analyze.\n"
-            "You can run `{}` to set up a local configuration, "
-            "or `pyre --help` to check valid flags.".format(initialization_command)
-        )
+        raise EnvironmentException("No targets or source directories to analyze.")
 
     # Translate link trees if we switched directories earlier.
     current_directory = os.getcwd()

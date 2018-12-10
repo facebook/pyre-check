@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import resource
+import signal
 import subprocess
 import threading
 from abc import abstractmethod
@@ -33,6 +34,8 @@ class ExitCode(enum.IntEnum):
     SUCCESS = 0
     FOUND_ERRORS = 1
     FAILURE = 2
+    # If the process exited due to a signal, this will be the negative signal number.
+    SIGSEGV = -signal.SIGSEGV
 
 
 class Result:
@@ -43,6 +46,11 @@ class Result:
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
             description = ":\n{}".format(self.output) if self.output else ""
+            if self.code == ExitCode.SIGSEGV:
+                description += (
+                    "\nThis is a Pyre bug. Please re-run Pyre with --debug "
+                    "and provide the output to the developers."
+                )
             raise ClientException(
                 "Client exited with error code {}{}".format(self.code, description)
             )

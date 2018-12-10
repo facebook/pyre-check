@@ -144,14 +144,14 @@ def main() -> int:
         action="append",
         default=[],
         type=readable_directory,
-        help="adds an additional directory of modules and stubs to include in type"
-        " environment each time it is passed",
+        help="Add an additional directory of modules and stubs to include"
+        " in the type environment",
     )
     parser.add_argument(
         "--preserve-pythonpath",
         action="store_true",
         default=False,
-        help="Preserves the value of the PYTHONPATH environment variable",
+        help="Preserve the value of the PYTHONPATH environment variable",
     )
 
     parser.add_argument(
@@ -159,6 +159,13 @@ def main() -> int:
         default=None,
         type=executable_file,
         help="Location of the pyre binary",
+    )
+
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Exclude files and directories matching this regexp from parsing",
     )
 
     # Typeshed stubs location
@@ -212,6 +219,7 @@ def main() -> int:
         type=writable_path,
         help="JSON file to write analysis results to.",
     )
+    analyze.add_argument("--dump-call-graph", action="store_true")
 
     persistent = parsed_commands.add_parser(commands.Persistent.NAME)
     persistent.add_argument(
@@ -316,6 +324,7 @@ def main() -> int:
                 binary=arguments.binary,
                 typeshed=arguments.typeshed,
                 preserve_pythonpath=arguments.preserve_pythonpath,
+                excludes=arguments.exclude,
             )
             if configuration.disabled:
                 LOG.log(
@@ -366,7 +375,7 @@ def main() -> int:
     except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
-            commands.Persistent.run_null_server(timeout=3600)
+            commands.Persistent.run_null_server(timeout=3600 * 12)
         exit_code = ExitCode.FAILURE
     except commands.ClientException as error:
         LOG.error(str(error))

@@ -1,0 +1,5 @@
+qualifier.bad (real) -> [qualifier.qux (real)]
+qualifier.bar (real) -> [__testSource (real)]
+qualifier.match_flows (real) -> [qualifier.bad (real) qualifier.some_source (real)]
+qualifier.qux (real) -> [__testSink (real)]
+qualifier.some_source (real) -> [qualifier.bar (real)]

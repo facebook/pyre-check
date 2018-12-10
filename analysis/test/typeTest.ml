@@ -79,7 +79,14 @@ let test_create _ =
 
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
-  assert_create "typing.TypeVar('_T', covariant=True)" (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', $parameter$covariant=True)"
+    (Type.variable ~variance:Covariant "_T");
+  assert_create "typing.TypeVar('_T', $parameter$covariant=False)" (Type.variable "_T");
+  assert_create
+    "typing.TypeVar('_T', $parameter$contravariant=True)"
+    (Type.variable ~variance:Contravariant "_T");
+  assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
     (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
@@ -304,6 +311,10 @@ let test_create _ =
         implicit = Type.Callable.Function;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
+  assert_create "function" (Type.callable ~annotation:Type.Object ());
+  assert_create
+    "typing.Callable[..., function]"
+    (Type.callable ~annotation:(Type.callable ~annotation:Type.Object ()) ());
 
   assert_create
     "mypy_extensions.TypedDict[('Movie', ('year', int), ('name', str))]"
@@ -485,6 +496,9 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.optional Type.float])
     (Type.Union [Type.optional Type.float; Type.string]);
 
+  assert_true (Type.equal (Type.union [Type.float; Type.Object]) Type.Object);
+  assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);
+
   assert_true
     (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));
   assert_true
@@ -539,10 +553,6 @@ let test_primitives _ =
   assert_equal
     [Type.integer; Type.string]
     (Type.primitives (Type.tuple [Type.integer; Type.string]));
-
-  assert_equal
-    [Type.integer]
-    (Type.primitives (Type.union [Type.integer; Type.Top]));
   assert_equal
     [Type.integer; Type.string]
     (Type.primitives (Type.union [Type.integer; Type.string]));
@@ -558,7 +568,17 @@ let test_primitives _ =
     (Type.primitives Type.integer);
   assert_equal
     []
-    (Type.primitives Type.Object)
+    (Type.primitives Type.Object);
+
+  assert_equal
+    [Type.integer; Type.string]
+    (Type.TypedDictionary {
+        name = (Identifier.create "Movie");
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+      } |> Type.primitives)
 
 
 let test_exists _ =
@@ -834,7 +854,37 @@ let test_mismatch_with_any _ =
   assert_false
     (Type.mismatch_with_any
        (Type.Union [Type.list Type.integer; Type.string])
-       (Type.parametric "unknown" [Type.Object]))
+       (Type.parametric "unknown" [Type.Object]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (Type.callable ~annotation:Type.integer ())
+       Type.Object);
+  assert_true
+    (Type.mismatch_with_any
+       Type.Object
+       (Type.callable ~annotation:Type.integer ()));
+  assert_true
+    (Type.mismatch_with_any
+       Type.Object
+       (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]));
+
+  assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any], int]")
+       (parse_callable "typing.Callable[[str], int]"));
+  assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[int], int]"));
+  assert_true
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[str], int]"));
+  assert_false
+    (Type.mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
+       (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
 
 
 let test_class_name _ =
@@ -977,7 +1027,7 @@ let test_from_overloads _ =
     "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
 
 let test_with_return_annotation _ =
-  let assert_with_return_annotation return_annotation callable expected =
+  let assert_with_return_annotation annotation callable expected =
     let callable =
       match Type.create ~aliases:(fun _ -> None) (parse_single_expression callable) with
       | Type.Callable callable -> callable
@@ -987,7 +1037,7 @@ let test_with_return_annotation _ =
       ~cmp:Type.equal
       ~printer:Type.show
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
-      (Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable))
+      (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
 
   assert_with_return_annotation
@@ -1100,6 +1150,28 @@ let test_parameter_name_compatibility _ =
        (parameter "other"))
 
 
+let test_lambda _ =
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Named(x, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "x", Type.string]
+          ~return_annotation:Type.integer));
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "**kwargs", Type.string]
+          ~return_annotation:Type.integer));
+  assert_true
+    (Type.equal
+       (parse_callable "typing.Callable[[Variable(args, str)], int]")
+       (Type.lambda
+          ~parameters:[Access.create "*args", Type.string]
+          ~return_annotation:Type.integer))
+
+
+
 let () =
   "type">:::[
     "create">::test_create;
@@ -1123,6 +1195,7 @@ let () =
     "async_generator_value">::test_async_generator_value;
     "dequalify">::test_dequalify;
     "variables">::test_variables;
+    "lambda">::test_lambda;
   ]
   |> Test.run;
   "callable">:::[

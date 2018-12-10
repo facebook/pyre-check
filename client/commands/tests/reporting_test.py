@@ -51,7 +51,7 @@ class ReportingTest(unittest.TestCase):
             create_error.reset_mock()
 
         arguments.target = []
-        configuration.do_not_check = ["/test/auto/gen"]
+        configuration.ignore_all_errors = ["/test/auto/gen"]
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
@@ -89,7 +89,7 @@ class ReportingTest(unittest.TestCase):
         arguments.local_configuration = None
         error_dictionary = {"path": "b/c"}
         error.__getitem__.side_effect = error_dictionary.__getitem__
-        configuration.do_not_check = ["*/b"]
+        configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
         with patch.object(json, "loads", return_value=[error]):
             handler._get_errors(result)
@@ -100,7 +100,7 @@ class ReportingTest(unittest.TestCase):
     def test_get_directories_to_analyze(self, run) -> None:
         arguments = mock_arguments()
         arguments.current_directory = "base"
-        arguments.original_directory = "base"
+        arguments.analysis_directory = "base"
         configuration = mock_configuration()
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("base")
@@ -136,3 +136,11 @@ class ReportingTest(unittest.TestCase):
             arguments, configuration, AnalysisDirectory("base")
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a"})
+
+        arguments.local_configuration_directory = None
+        arguments.local_configuration = None
+        arguments.original_directory = "base/subdirectory"
+        handler = commands.Reporting(
+            arguments, configuration, AnalysisDirectory("base")
+        )
+        self.assertEqual(handler._get_directories_to_analyze(), {"base"})
