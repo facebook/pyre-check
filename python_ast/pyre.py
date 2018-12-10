@@ -135,9 +135,10 @@ class PyreAst:
         process = subprocess.Popen(
             query_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        annotations = process.stdout.read().decode().strip()
+        stdout, stderr = process.communicate()
+        annotations = stdout.decode().strip()
         if not annotations:
-            error_message = process.stderr.read().decode().strip().split(" ")[2:]
+            error_message = stderr.read().decode().strip().split(" ")[2:]
             raise PyreServerException(
                 "Failed to query types for {}.\n{}".format(
                     filename, " ".join(error_message)
