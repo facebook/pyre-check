@@ -423,6 +423,8 @@ let select
                                 Resolution.less_or_equal resolution ~left:resolved ~right:bound
                               in
                               List.exists ~f:in_constraint constraints
+                          | Type.Variable { constraints = Type.Bound bound; _ } ->
+                              Resolution.less_or_equal resolution ~left:resolved ~right:bound
                           | _ ->
                               true
                         in

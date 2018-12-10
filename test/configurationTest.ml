@@ -47,7 +47,7 @@ let test_equal _ =
   assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~search_path:[] ())
-       (Configuration.Analysis.create ~search_path:[root] ()));
+       (Configuration.Analysis.create ~search_path:[Path.SearchPath.Root root] ()));
 
   assert_true
     (Configuration.Analysis.equal
@@ -89,13 +89,13 @@ let test_search_path _ =
     in
     let search_path =
       List.map search_path ~f:(Path.create_absolute ~follow_symbolic_links:false)
+      |> List.map ~f:(fun root -> Path.SearchPath.Root root)
     in
     let local_root = Path.create_absolute ~follow_symbolic_links:false local_root in
     let search_path =
       Configuration.Analysis.search_path
         (Configuration.Analysis.create ?typeshed ~search_path ~local_root ())
-
-      |> List.map ~f:Path.show
+      |> List.map ~f:Path.SearchPath.show
     in
     assert_equal ~printer:(List.to_string ~f:ident) expected search_path
   in

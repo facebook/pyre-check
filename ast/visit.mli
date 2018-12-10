@@ -20,6 +20,16 @@ module type StatementVisitor = sig
 end
 
 module Make (Visitor: Visitor) : sig
+  val visit_expression
+    :  state:Visitor.t ref
+    -> visitor:(Visitor.t -> Expression.t -> Visitor.t)
+    -> Expression.t
+    -> unit
+  val visit_statement
+    :  state:Visitor.t ref
+    -> visitor:(Visitor.t -> Statement.t -> Visitor.t)
+    -> Statement.t
+    -> unit
   val visit: Visitor.t -> Source.t -> Visitor.t
 end
 

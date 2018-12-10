@@ -210,6 +210,37 @@ let is_tracked { order; _ } annotation =
   TypeOrder.contains order annotation
 
 
+let is_invariance_mismatch { order; _ } ~left ~right =
+  match left, right with
+  | Type.Parametric { name = left_name; parameters = left_parameters },
+    Type.Parametric { name = right_name; parameters = right_parameters }
+    when Identifier.equal left_name right_name ->
+      let zipped =
+        TypeOrder.variables order left
+        >>= fun variables ->
+        (List.map3
+           variables
+           left_parameters
+           right_parameters
+           ~f:(fun variable left right -> (variable, left, right))
+         |> function
+         | List.Or_unequal_lengths.Ok list -> Some list
+         | _ -> None)
+      in
+      let due_to_invariant_variable (variable, left, right) =
+        match variable with
+        | Type.Variable { variance = Type.Invariant; _ } ->
+            TypeOrder.less_or_equal order ~left ~right
+        | _ ->
+            false
+      in
+      zipped
+      >>| List.exists ~f:due_to_invariant_variable
+      |> Option.value ~default:false
+  | _ ->
+      false
+
+
 (* In general, python expressions can be self-referential. This non-recursive resolution only checks
    literals and annotations found in the resolution map, without any resolutions/joins. *)
 let rec resolve_literal resolution expression =

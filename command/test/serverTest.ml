@@ -226,7 +226,7 @@ let assert_response
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle source in
+  let parsed = parse ~handle source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -360,6 +360,16 @@ let test_query context =
     let stop = { Location.line = stop_line; column = stop_column } in
     { Location.path; start; stop }
   in
+  let create_types_at_locations =
+    let convert (start_line, start_column, end_line, end_column, annotation) =
+      {
+        Protocol.TypeQuery.location =
+          create_location ~path:"test.py" start_line start_column end_line end_column;
+        annotation;
+      }
+    in
+    List.map ~f:convert
+  in
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
@@ -454,54 +464,249 @@ let test_query context =
 
   assert_type_query_response
     ~source:{|
+      a: int = 1
+      a = 2
+    |}
+    ~query:"type_at_position('test.py', 3, 0)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypeAtLocation
+          {
+            Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
+            annotation = Type.integer;
+          }));
+
+  assert_type_query_response
+    ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          [
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 8;
-              annotation = Type.integer
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 24 2 27;
-              annotation = parse_annotation "typing.Type[str]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 21 2 22;
-              annotation = parse_annotation "typing.Type[str]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 40 2 44;
-              annotation = Type.none
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 17 2 19;
-              annotation = Type.integer
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 30 2 35;
-              annotation = Type.string
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 11 2 14;
-              annotation = parse_annotation "typing.Type[int]"
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 2 8 2 9;
-              annotation = parse_annotation "typing.Type[int]"
-            };
-          ]
+          ([
+            (3, 6, 3, 8, Type.integer);
+            (2, 24, 2, 27, Type.meta Type.string);
+            (2, 21, 2, 22, Type.string);
+            (2, 40, 2, 44, Type.none);
+            (2, 17, 2, 19, Type.integer);
+            (3, 2, 3, 3, Type.integer);
+            (2, 30, 2, 35, Type.string);
+            (2, 11, 2, 14, Type.meta Type.integer);
+            (2, 8, 2, 9, Type.integer);
+          ] |> create_types_at_locations)
        ));
 
   assert_type_query_response
     ~source:{|
+       def foo(x: int, y: str) -> str:
+        x = 4
+        y = 5
+        return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 19, 2, 22, Type.meta Type.string);
+            (5, 8, 5, 9, Type.integer);
+            (2, 27, 2, 30, Type.meta Type.string);
+            (4, 1, 4, 2, Type.string);
+            (4, 5, 4, 6, Type.integer);
+            (3, 1, 3, 2, Type.integer);
+            (2, 11, 2, 14, Type.meta Type.integer);
+            (3, 5, 3, 6, Type.integer);
+            (2, 8, 2, 9, Type.integer);
+            (2, 16, 2, 17, Type.string);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        x = 4
+        y = 3
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 4, 2, 5, Type.integer);
+            (2, 0, 2, 1, Type.integer);
+            (3, 0, 3, 1, Type.integer);
+            (3, 4, 3, 5, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      def foo():
+        if True:
+         x = 1
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 5, 3, 9, Type.bool);
+            (4, 3, 4, 4, Type.integer);
+            (4, 7, 4, 8, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       def foo():
+         for x in [1, 2]:
+          y = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 12, 3, 13, Type.integer);
+            (3, 15, 3, 16, Type.integer);
+            (3, 6, 3, 7, Type.list Type.integer);
+            (4, 3, 4, 4, Type.integer);
+            (4, 7, 4, 8, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+        try:
+          x = 1
+        except Exception:
+          y = 2
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (5, 2, 5, 3, Type.integer);
+            (3, 2, 3, 3, Type.integer);
+            (3, 6, 3, 7, Type.integer);
+            (5, 6, 5, 7, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       with open() as x:
+        y = 2
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (3, 1, 3, 2, Type.integer);
+            (3, 5, 3, 6, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+      while x is True:
+        y = 1
+   |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 11, 2, 15, Type.bool);
+            (2, 6, 2, 7, Type.bool);
+            (3, 2, 3, 3, Type.integer);
+            (3, 6, 3, 7, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  assert_type_query_response
+    ~source:{|
+       def foo(x: int) -> str:
+         def bar(y: int) -> str:
+           return y
+         return x
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 19, 2, 22, parse_annotation "typing.Type[str]");
+            (5, 9, 5, 10, Type.integer);
+            (3, 21, 3, 24, parse_annotation "typing.Type[str]");
+            (3, 13, 3, 16, parse_annotation "typing.Type[int]");
+            (4, 11, 4, 12, Type.integer);
+            (2, 11, 2, 14, parse_annotation "typing.Type[int]");
+            (2, 8, 2, 9, Type.integer);
+            (3, 10, 3, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* ==== Documenting known bad behavior below (T37772879) ==== *)
+
+  (* Annotation type is Type[int] rather than Type[List[int]]. *)
+  assert_type_query_response
+    ~source:{|
+       def foo(x: typing.List[int]) -> None:
+        pass
+    |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 32, 2, 36, Type.none);
+            (2, 23, 2, 26, Type.meta Type.integer);
+            (2, 8, 2, 9, Type.list Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
+  assert_type_query_response
+    ~source:{|
+       class Foo:
+         x = 1
+     |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          [
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = Type.integer
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+              annotation = parse_annotation "typing.Type[Foo]"
+            };
+            {
+              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+              annotation = Type.integer
+            };
+          ]
+       ));
+
+  (* `x` is typed as List[int] rather than int. *)
+  assert_type_query_response
+    ~source:{|
+        for x in [1, 2]:
+          pass
+      |}
+    ~query:"types_in_file('test.py')"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.TypesAtLocations
+          ([
+            (2, 4, 2, 5, Type.list Type.integer);
+            (2, 13, 2, 14, Type.integer);
+            (2, 10, 2, 11, Type.integer);
+          ] |> create_types_at_locations)
+       ));
+
+  (* ==== Documenting known bad behavior above (T37772879) ==== *)
+
+  assert_type_query_response
+    ~source:{|
       class C:
-        C.x = 1
-        C.y = ""
-        def C.foo() -> int: ...
+        x = 1
+        y = ""
+        def foo() -> int: ...
     |}
     ~query:"attributes(C)"
     (Protocol.TypeQuery.Response
@@ -1136,7 +1341,7 @@ let test_language_scheduler_definition context =
   let filename =
     let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
     File.write (File.create ~content:"" path);
-    "filename.py"
+    Path.absolute path
   in
   let request =
     Format.sprintf {|

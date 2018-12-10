@@ -29,6 +29,27 @@ let test_transform_environment _ =
 
   PluginTest.assert_environment_contains
     {|
+      if 1 > 2:
+        @dataclass
+        class Foo:
+          ...
+    |}
+    [
+      {|
+        @dataclass
+        class Foo:
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |}
+    ];
+
+
+  PluginTest.assert_environment_contains
+    {|
       @dataclass
       class Foo:
         def foo() -> None:

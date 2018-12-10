@@ -22,7 +22,6 @@ let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo")
     docstring = None;
     return_annotation;
     async = false;
-    generated = false;
     parent = None;
   }
 
@@ -61,9 +60,9 @@ let missing_return annotation =
   }
 
 
-let incompatible_return_type actual expected =
+let incompatible_return_type ?(due_to_invariance = false) actual expected =
   Error.IncompatibleReturnType {
-    mismatch = { Error.actual; expected };
+    mismatch = { Error.actual; expected; due_to_invariance };
     is_implicit = false;
   }
 
@@ -99,6 +98,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.Top;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -113,6 +113,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.string;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -127,6 +128,7 @@ let test_due_to_analysis_limitations _ =
                 mismatch = {
                   Error.actual = Type.string;
                   expected = Type.Top;
+                  due_to_invariance = false;
                 };
                 declare_location = Location.Instantiated.any;
               };
@@ -142,6 +144,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Optional Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -154,6 +157,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Optional Type.string;
+                due_to_invariance = false;
               };
             })));
 
@@ -201,7 +205,7 @@ let test_due_to_analysis_limitations _ =
               parent = mock_parent;
               missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
-                annotation = Type.Top;
+                annotation = Some Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
               };
@@ -213,7 +217,19 @@ let test_due_to_analysis_limitations _ =
               parent = mock_parent;
               missing_annotation = {
                 Error.name = [Access.Identifier ~~""];
-                annotation = Type.string;
+                annotation = Some Type.string;
+                due_to_any = false;
+                evidence_locations = [];
+              };
+            })));
+  assert_false
+    (Error.due_to_analysis_limitations
+       (error
+          (Error.MissingAttributeAnnotation {
+              parent = mock_parent;
+              missing_annotation = {
+                Error.name = [Access.Identifier ~~""];
+                annotation = None;
                 due_to_any = false;
                 evidence_locations = [];
               };
@@ -230,6 +246,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
   assert_true
@@ -242,6 +259,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
+                due_to_invariance = false;
               };
             })));
   assert_false
@@ -254,6 +272,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -267,6 +286,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.primitive "typing.TypeAlias";
                 expected = Type.Top;
+                due_to_invariance = false;
               };
             })));
 
@@ -278,6 +298,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -288,6 +309,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.Top;
                 expected = Type.string;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -298,6 +320,7 @@ let test_due_to_analysis_limitations _ =
               mismatch = {
                 Error.actual = Type.string;
                 expected = Type.Top;
+                due_to_invariance = false;
               };
               is_implicit = false;
             })));
@@ -327,6 +350,7 @@ let test_join _ =
              mismatch = {
                Error.actual = Type.Top;
                expected = Type.Top;
+               due_to_invariance = false;
              };
              declare_location = Location.Instantiated.any;
            };
@@ -336,6 +360,7 @@ let test_join _ =
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;
+           due_to_invariance = false;
          };
          declare_location = Location.Instantiated.any;
        }))
@@ -349,6 +374,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.integer;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }))
     (error
@@ -359,6 +385,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }))
     (error
@@ -369,6 +396,7 @@ let test_join _ =
            mismatch = {
              Error.actual = Type.float;
              expected = Type.string;
+             due_to_invariance = false;
            };
          }));
   let create_mock_location path =
@@ -378,28 +406,92 @@ let test_join _ =
       stop = { Location.line = 1; column = 1 };
     }
   in
-  assert_join
+ assert_join
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.integer;
+           annotation = Some Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.float;
+           annotation = Some Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
-           annotation = Type.float;
+           annotation = Some Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
          }));
+ assert_join
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.integer;
+           evidence_locations = [create_mock_location "derp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = None;
+           evidence_locations = [];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.integer;
+           evidence_locations = [create_mock_location "derp.py"];
+           due_to_any = false;
+         }));
+ assert_join
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = None;
+           evidence_locations = [];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.float;
+           evidence_locations = [create_mock_location "durp.py"];
+           due_to_any = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier (~~"")];
+           annotation = Some Type.float;
+           evidence_locations = [create_mock_location "durp.py"];
+           due_to_any = false;
+         }));
+
+  assert_join
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "derp")));
+
+  assert_join
+    (error (Error.UndefinedType (Type.primitive "derp")))
+    (error (Error.UndefinedType (Type.primitive "herp")))
+    (error (Error.Top));
+
+  assert_join
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "derp")));
+
+  assert_join
+    (error (Error.AnalysisFailure (Type.primitive "derp")))
+    (error (Error.AnalysisFailure (Type.primitive "herp")))
+    (error (Error.AnalysisFailure (Type.union [Type.primitive "derp"; Type.primitive "herp"])));
 
   assert_join
     (error (revealed_type "a" Type.integer))
@@ -445,7 +537,9 @@ let test_filter _ =
   (* Suppress stub errors. *)
   let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
   assert_filtered ~location:stub (undefined_attribute (Type.primitive "Foo"));
-  assert_unfiltered ~location:Location.Instantiated.any (undefined_attribute (Type.primitive "Foo"));
+  assert_unfiltered
+    ~location:Location.Instantiated.any
+    (undefined_attribute (Type.primitive "Foo"));
 
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
@@ -485,11 +579,19 @@ let test_filter _ =
   assert_unfiltered
     (inconsistent_override
        "__foo__"
-       (WeakenedPostcondition { actual = Type.Top; expected = Type.integer }));
+       (WeakenedPostcondition {
+           actual = Type.Top;
+           expected = Type.integer;
+           due_to_invariance = false;
+         }));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
-       (StrengthenedPrecondition (Found { actual = Type.none; expected = Type.integer })));
+       (StrengthenedPrecondition (Found {
+            actual = Type.none;
+            expected = Type.integer;
+            due_to_invariance = false;
+          })));
   assert_filtered
     (inconsistent_override
        "__foo__"
@@ -513,10 +615,12 @@ let test_suppress _ =
   assert_suppressed Source.Infer (missing_return Type.Object);
   assert_not_suppressed Source.Infer (missing_return Type.integer);
   assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
+  assert_suppressed Source.Infer (Error.AnalysisFailure Type.integer);
 
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
   assert_not_suppressed Source.Strict (missing_return Type.Object);
+  assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
 
   assert_suppressed Source.Default (missing_return Type.integer);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
@@ -524,6 +628,7 @@ let test_suppress _ =
   assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
   assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
   assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"));
+  assert_not_suppressed Source.Default (Error.AnalysisFailure Type.integer);
 
   assert_suppressed
     Source.Default

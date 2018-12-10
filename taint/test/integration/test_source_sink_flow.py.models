@@ -26,6 +26,7 @@
               "port": "result",
               "length": 2
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -38,13 +39,14 @@
               "position": {
                 "filename": "test_source_sink_flow.py",
                 "line": 22,
-                "start": 7,
-                "end": 13
+                "start": 11,
+                "end": 12
               },
               "resolves_to": [ "qualifier.bad" ],
               "port": "formal(arg)",
               "length": 2
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -66,13 +68,14 @@
               "position": {
                 "filename": "test_source_sink_flow.py",
                 "line": 13,
-                "start": 7,
-                "end": 12
+                "start": 8,
+                "end": 11
               },
               "resolves_to": [ "qualifier.qux" ],
               "port": "formal(arg)",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -96,6 +99,7 @@
               "start": 23,
               "end": 25
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -118,9 +122,10 @@
             "root": {
               "filename": "test_source_sink_flow.py",
               "line": 9,
-              "start": 14,
-              "end": 19
+              "start": 15,
+              "end": 18
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -149,6 +154,7 @@
               "port": "result",
               "length": 1
             },
+            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]

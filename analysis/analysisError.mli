@@ -15,12 +15,13 @@ type origin =
 type mismatch = {
   actual: Type.t;
   expected: Type.t;
+  due_to_invariance: bool;
 }
 [@@deriving compare, eq, show, hash]
 
 type missing_annotation = {
   name: Access.t;
-  annotation: Type.t;
+  annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
   due_to_any: bool;
 }
@@ -49,6 +50,7 @@ type unpack_problem =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
+  | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleParameterType of {
@@ -75,6 +77,7 @@ type kind =
       due_to_any: bool;
     }
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | NotCallable of Type.t
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
@@ -116,3 +119,10 @@ val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t 
 val suppress: mode: Source.mode -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> resolution: Resolution.t -> t -> t
+
+val create_mismatch
+  :  resolution: Resolution.t
+  -> actual: Type.t
+  -> expected: Type.t
+  -> covariant: bool
+  -> mismatch

@@ -189,9 +189,9 @@ module State = struct
           let open Annotated.Access in
           match element with
           | Signature {
-              signature =
-                Annotated.Signature.Found { callable; _ };
+              signature = Annotated.Signature.Found { callable; _ };
               arguments;
+              _;
             }
           | Signature {
               signature =
@@ -201,6 +201,7 @@ module State = struct
                   _;
                 };
               arguments;
+              _;
             } ->
               infer_annotations type_accumulator arguments callable
           | _ ->
@@ -437,7 +438,7 @@ let infer
               [
                 Error.create
                   ~location
-                  ~kind:(Error.UndefinedType annotation)
+                  ~kind:(Error.AnalysisFailure annotation)
                   ~define:define_node
               ]
             else
@@ -543,7 +544,7 @@ let infer
         | ({
             Error.kind = Error.MissingAttributeAnnotation {
                 parent;
-                missing_annotation = { Error.name; annotation; _ };
+                missing_annotation = { Error.name; annotation = Some annotation; _ };
               };
             _;
           } as error) ->
@@ -553,7 +554,11 @@ let infer
               ~location:(Error.location error |> Location.reference)
               ~annotation
         | ({
-            Error.kind = Error.MissingGlobalAnnotation { Error.name; annotation; _ };
+            Error.kind = Error.MissingGlobalAnnotation {
+                Error.name;
+                annotation = Some annotation;
+                _;
+              };
             _;
           } as error) ->
             add_missing_annotation_error

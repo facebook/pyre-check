@@ -105,7 +105,6 @@ let transform_ast ({ Source.statements; _ } as source) =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some parent;
     }
     |> Node.create ~location
@@ -116,7 +115,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       value = Node.create ~location (Access (Access.create "typing.NamedTuple"));
     }
   in
-  let expand_named_tuples ({ Node.location; value } as statement) =
+  let rec expand_named_tuples ({ Node.location; value } as statement) =
     let value =
       match value with
       | Assign {
@@ -190,7 +189,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             Class {
               original with
               Class.bases = List.rev reversed_bases;
-              body = attributes @ body;
+              body = attributes @ (List.map ~f:expand_named_tuples body);
             }
       | _ ->
           value

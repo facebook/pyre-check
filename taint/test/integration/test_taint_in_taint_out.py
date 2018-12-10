@@ -35,3 +35,6 @@ def product_data(x):
 
 def product_data_wrapper(x):
     return product_data(x)
+
+def test_tito():
+    return product_data_wrapper(__testSource())

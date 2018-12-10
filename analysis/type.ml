@@ -123,6 +123,8 @@ and t =
 
 type type_t = t
 [@@deriving compare, eq, sexp, show, hash]
+
+
 let type_compare = compare
 let type_sexp_of_t = sexp_of_t
 let type_t_of_sexp = t_of_sexp
@@ -580,6 +582,8 @@ let union parameters =
   in
   if List.mem ~equal parameters Object then
     Object
+  else if List.mem ~equal parameters Top then
+    Top
   else
     let normalize parameters =
       match parameters with
@@ -1877,64 +1881,12 @@ module Callable = struct
     |> (function | Callable callable -> Some callable | _ -> None)
 
 
-  let with_return_annotation ~return_annotation ({ implementation; overloads; _ } as initial) =
-    let re_annotate implementation = { implementation with annotation = return_annotation } in
+  let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
+    let re_annotate implementation = { implementation with annotation } in
     {
       initial with
       implementation = re_annotate implementation;
-      overloads = List.map ~f:re_annotate overloads }
-end
-
-
-module TypedDictionary = struct
-  let anonymous fields =
-    TypedDictionary { name = Identifier.create "$anonymous"; fields }
-
-  let fields_have_colliding_keys left_fields right_fields =
-    let found_collision { name = needle_name; annotation = needle_annotation } =
-      let same_name_different_annotation { name; annotation } =
-        name = needle_name && not (equal annotation needle_annotation)
-      in
-      List.exists left_fields ~f:same_name_different_annotation
-    in
-    List.exists right_fields ~f:found_collision
-
-  let constructor ~name ~fields =
-    let parameters =
-      let self_parameter =
-        Record.Callable.RecordParameter.Named {
-          name = Access.create "self";
-          annotation = Top;
-          default = false;
-        };
-      in
-      let single_star =
-        Record.Callable.RecordParameter.Variable {
-          name = Access.create "";
-          annotation = Top;
-          default = false;
-        };
-      in
-      let field_arguments =
-        let field_to_argument { name; annotation } =
-          Record.Callable.RecordParameter.Named {
-            name = Access.create (Format.asprintf "$parameter$%s" name);
-            annotation;
-            default = false;
-          }
-        in
-        List.map ~f:field_to_argument fields
-      in
-      self_parameter :: single_star :: field_arguments
-    in
-    {
-      Callable.kind = Named (Access.create "__init__");
-      implementation = {
-        annotation = TypedDictionary { name; fields };
-        parameters = Defined parameters;
-      };
-      overloads = [];
-      implicit = Class;
+      overloads = List.map ~f:re_annotate overloads
     }
 end
 
@@ -2070,6 +2022,82 @@ let rec mismatch_with_any left right =
 
   | _ ->
       false
+
+
+module TypedDictionary = struct
+  let anonymous fields =
+    TypedDictionary { name = Identifier.create "$anonymous"; fields }
+
+
+  let fields_have_colliding_keys left_fields right_fields =
+    let found_collision { name = needle_name; annotation = needle_annotation } =
+      let same_name_different_annotation { name; annotation } =
+        name = needle_name && not (equal annotation needle_annotation)
+      in
+      List.exists left_fields ~f:same_name_different_annotation
+    in
+    List.exists right_fields ~f:found_collision
+
+
+  let constructor ~name ~fields =
+    let parameters =
+      let self_parameter =
+        Record.Callable.RecordParameter.Named {
+          name = Access.create "self";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let single_star =
+        Record.Callable.RecordParameter.Variable {
+          name = Access.create "";
+          annotation = Top;
+          default = false;
+        };
+      in
+      let field_arguments =
+        let field_to_argument { name; annotation } =
+          Record.Callable.RecordParameter.Named {
+            name = Access.create (Format.asprintf "$parameter$%s" name);
+            annotation;
+            default = false;
+          }
+        in
+        List.map ~f:field_to_argument fields
+      in
+      self_parameter :: single_star :: field_arguments
+    in
+    {
+      Callable.kind = Named (Access.create "__init__");
+      implementation = {
+        annotation = TypedDictionary { name; fields };
+        parameters = Defined parameters;
+      };
+      overloads = [];
+      implicit = Class;
+    }
+
+
+  let setter ~callable:({ implementation; _ } as callable) ~annotation =
+    {
+      callable with
+      implementation = {
+        implementation with
+        parameters = Defined [
+            Named {
+              name = Access.create "key";
+              annotation = string;
+              default = false;
+            };
+            Named {
+              name = Access.create "value";
+              annotation;
+              default = false;
+            };
+          ];
+      };
+    }
+end
 
 
 let to_yojson annotation =

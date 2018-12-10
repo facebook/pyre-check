@@ -737,6 +737,7 @@ let test_class_attributes _ =
       "second";
       "third";
       "__name__";
+      "__doc__";
       "__getitem__";
       "__init__";
       "__new__";
@@ -758,6 +759,7 @@ let test_class_attributes _ =
       "__static__";
       "__meta__";
       "__name__";
+      "__doc__";
       "__type__";
       "__getitem__";
       "__init__";

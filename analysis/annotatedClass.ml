@@ -871,6 +871,7 @@ let constructor definition ~resolution =
     | _ ->
         class_annotation
   in
+  let class_annotation, _ = Type.split class_annotation in
   let definitions =
     definition :: superclasses ~resolution definition
     |> List.map ~f:name
@@ -942,7 +943,7 @@ let constructor definition ~resolution =
   in
   match signature with
   | Type.Callable callable ->
-      Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable)
+      Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
   | _ ->
       signature
 
@@ -959,7 +960,10 @@ let overrides definition ~resolution ~name =
         ~instantiated:(annotation parent ~resolution)
     in
     if Attribute.defined potential_override then
-      Some potential_override
+      annotation ~resolution definition
+      |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
+      |> (fun constraints -> Attribute.instantiate ~constraints potential_override)
+      |> Option.some
     else
       None
   in
@@ -980,32 +984,35 @@ let has_method ?transitive definition ~resolution ~name =
 
 
 let inferred_callable_type definition ~resolution =
-  let callable_type =
-    attribute
-      ~transitive:false
-      definition
-      ~resolution
-      ~name:(Access.create "__call__")
-      ~instantiated:(annotation definition ~resolution)
-    |> Attribute.annotation
-    |> Annotation.annotation
+  let explicit_callables =
+    let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
+      match List.last name with
+      | Some (Access.Identifier call) when Identifier.equal call (Identifier.create "__call__") ->
+          Some define
+      | _ ->
+          None
+    in
+    methods definition ~resolution
+    |> List.filter_map ~f:extract_callable
   in
-  match callable_type with
-  | Type.Callable ({
+  if List.is_empty explicit_callables then
+    None
+  else
+    let callable_type = Callable.create explicit_callables ~resolution in
+    match callable_type with
+    | ({
       Type.Callable.implementation = {
         Type.Callable.parameters = Type.Callable.Defined parameters;
         _;
       } as implementation;
       _;
     } as callable) ->
-      Some (Type.Callable {
-          callable with
-          Type.Callable.implementation = {
-            implementation with
-            Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
-          };
-        })
-  | Type.Callable _ ->
-      Some callable_type
-  | _ ->
-      None
+        Some (Type.Callable {
+            callable with
+            Type.Callable.implementation = {
+              implementation with
+              Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
+            };
+          })
+    | _ ->
+        Some (Type.Callable callable_type)

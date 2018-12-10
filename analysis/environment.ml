@@ -492,6 +492,7 @@ let register_aliases (module Handler: Handler) sources =
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with
+            | "future.builtins"
             | "builtins" -> []
             | _ -> from
           in
@@ -1001,7 +1002,7 @@ module Builder = struct
     let globals = Access.Table.create () in
     let dependencies = Dependencies.create () in
 
-    (* Register dummy module for `builtins`. *)
+    (* Register dummy module for `builtins` and `future.builtins`. *)
     let builtins = Access.create "builtins" in
     Hashtbl.set
       modules
@@ -1009,6 +1010,16 @@ module Builder = struct
       ~data:(
         Ast.Module.create
           ~qualifier:builtins
+          ~local_mode:Ast.Source.PlaceholderStub
+          ~stub:true
+          []);
+    let future_builtins = Access.create "future.builtins" in
+    Hashtbl.set
+      modules
+      ~key:future_builtins
+      ~data:(
+        Ast.Module.create
+          ~qualifier:future_builtins
           ~local_mode:Ast.Source.PlaceholderStub
           ~stub:true
           []);
@@ -1080,7 +1091,6 @@ module Builder = struct
             docstring = None;
             return_annotation = None;
             async = false;
-            generated = true;
             parent = Some (Access.create "typing.Generic");
           }
           |> Node.create_with_default_location
@@ -1094,7 +1104,27 @@ module Builder = struct
               |> Type.expression
           };
         ],
-        []
+        [
+          Define {
+            Define.name = Access.create "TypedDictionary.__setitem__";
+            parameters = [
+              { Parameter.name = Identifier.create "self"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "key"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = Identifier.create "value"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+            ];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation =
+              Some (Node.create_with_default_location (Access (Access.create "None")));
+            async = false;
+            parent = Some (Access.create "TypedDictionary");
+          }
+          |> Node.create_with_default_location
+        ]
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set

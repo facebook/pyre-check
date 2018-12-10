@@ -26,7 +26,6 @@ let test_is_method _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = parent >>| Access.create;
     }
   in
@@ -44,7 +43,6 @@ let test_is_classmethod _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some (Access.create "bar");
     } in
 
@@ -66,7 +64,6 @@ let test_is_class_property _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = Some (Access.create "bar");
     }
   in
@@ -86,7 +83,6 @@ let test_decorator _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      generated = false;
       parent = None;
     } in
 
@@ -127,7 +123,6 @@ let test_is_constructor _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        generated = false;
         parent;
       }
     in
@@ -399,7 +394,6 @@ let test_attributes _ =
               docstring = None;
               return_annotation = Some !"int";
               async = false;
-              generated = false;
               parent = None;
             }
             in
@@ -949,6 +943,8 @@ let test_pp _ =
           i = 2
         j = 2
       i[j] = 3
+      i[j] += 3
+      i[j][7] = 8
       i[j::1] = i[:j]
     |}
     ~expected:{|
@@ -959,8 +955,42 @@ let test_pp _ =
         else:
           i = 2
         j = 2
-      i[j] = 3
-      i[slice(j,None,1)] = i[slice(None,j,None)]
+      i.__setitem__(j,3)
+      i.__setitem__(j,i[j].__add__(3))
+      i[j].__setitem__(7,8)
+      i.__setitem__(slice(j,None,1),i[slice(None,j,None)])
+    |};
+
+  assert_pretty_print
+    "i[j] = 5 if 1 else 1"
+    ~expected:"i.__setitem__(j,5 if 1 else 1)";
+
+  assert_pretty_print
+    "x = i[j] = y"
+    ~expected:{|
+      x = y
+      i.__setitem__(j,y)
+    |};
+
+  assert_pretty_print
+    "j[i] = x = i[j] = y"
+    ~expected:{|
+      j.__setitem__(i,y)
+      x = y
+      i.__setitem__(j,y)
+    |};
+
+  assert_pretty_print
+    "x, i[j] = y"
+    ~expected:{|
+      (x, i[j]) = y
+    |};
+
+  assert_pretty_print
+    " i[j] = x =  ... # type: Something"
+    ~expected:{|
+      i.__setitem__(j,...)
+      x: Something = ...
     |};
 
   assert_pretty_print

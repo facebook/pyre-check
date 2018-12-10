@@ -122,13 +122,15 @@ module Metadata = struct
         Ignore.create ~ignored_line ~codes ~location ~kind
       in
       let contains_outside_quotes ~substring line =
-        let find_substring index found characters =
-          found || (String.is_substring ~substring characters && index mod 2 = 0)
+        let find_substring index characters =
+          String.is_substring ~substring characters && index mod 2 = 0
         in
         String.split_on_chars ~on:['\"'; '\''] line
-        |> List.foldi ~init:false ~f:find_substring
+        |> List.existsi ~f:find_substring
       in
-      if contains_outside_quotes ~substring:"pyre-ignore" line then
+      if (contains_outside_quotes ~substring:"pyre-ignore" line) &&
+         not (contains_outside_quotes ~substring:"pyre-ignore-all-errors" line)
+      then
         (create_ignore ~index ~line ~kind:Ignore.PyreIgnore) :: ignored_lines
       else if contains_outside_quotes ~substring:"pyre-fixme" line then
         (create_ignore ~index ~line ~kind:Ignore.PyreFixme) :: ignored_lines
@@ -319,6 +321,7 @@ let qualifier ~handle =
       | _ ->
           last in
     let strip = function
+      | "future" :: "builtins" :: tail
       | "builtins" :: tail ->
           tail
       | "__init__" :: tail ->

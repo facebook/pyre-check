@@ -220,6 +220,7 @@ def main() -> int:
         type=writable_path,
         help="JSON file to write analysis results to.",
     )
+    analyze.add_argument("--dump-call-graph", action="store_true")
 
     persistent = parsed_commands.add_parser(commands.Persistent.NAME)
     persistent.add_argument(

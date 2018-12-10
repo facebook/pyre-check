@@ -55,7 +55,7 @@ let run
         ~parallel:(not sequential)
         ?filter_directories
         ~number_of_workers
-        ~search_path:(List.map ~f:Path.create_absolute search_path)
+        ~search_path:(List.map search_path ~f:Path.SearchPath.create)
         ?typeshed:(typeshed >>| Path.create_absolute)
         ~project_root:(Path.create_absolute project_root)
         ~excludes

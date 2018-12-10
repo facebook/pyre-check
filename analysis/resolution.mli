@@ -70,3 +70,4 @@ val widen
   -> Type.t
 val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool
+val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool

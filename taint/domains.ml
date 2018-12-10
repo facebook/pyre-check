@@ -56,6 +56,28 @@ module Set(Element: SET_ARG) : TAINT_SET with type element = Element.t = struct
 end
 
 
+let location_to_json ?(include_filename = true) location : Yojson.Safe.json =
+  let line = Location.line location in
+  let column = Location.column location in
+  let end_column =
+    Location.stop_column location  (* Note: not correct for multiple line span *)
+  in
+  let optionally_add_filename fields =
+    if include_filename then
+      let path = Location.path location in
+      ("filename", `String path) :: fields
+    else
+      fields
+  in
+  let fields = [
+    "line", `Int line;
+    "start", `Int column;
+    "end", `Int end_column;
+  ] |> optionally_add_filename
+  in
+  `Assoc fields
+
+
 module TraceInfo = struct
   type t =
     | Declaration
@@ -89,19 +111,14 @@ module TraceInfo = struct
              ~sep:" "
              (List.map ~f:Interprocedural.Callable.external_target_name callees))
 
-  let location_to_json location : Yojson.Safe.json =
-    let path = Location.path location in
-    let line = Location.line location in
-    let column = Location.column location in
-    let end_column =
-      Location.stop_column location  (* Note: not correct for multiple line span *)
-    in
-    `Assoc [
-      "filename", `String path;
-      "line", `Int line;
-      "start", `Int column;
-      "end", `Int end_column;
-    ]
+  (* Breaks recursion among trace info and overall taint domain. *)
+  let has_significant_summary =
+    ref (fun
+          (_: AccessPath.Root.t)
+          (_: AbstractTreeDomain.Label.path)
+          (_: Interprocedural.Callable.t)
+          -> true
+        )
 
   (* Returns the (dictionary key * json) to emit *)
   let to_json trace : string * Yojson.Safe.json =
@@ -168,6 +185,7 @@ module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 module SimpleFeatures = struct
   type t =
     | LeafName of string
+    | TitoPosition of Location.Reference.t
   [@@deriving show, sexp, compare]
 end
 module SimpleFeatureSet = AbstractSetDomain.Make(SimpleFeatures)
@@ -229,6 +247,8 @@ module FlowDetails = struct
   let gather_leaf_names accumulator = function
     | SimpleFeatures.LeafName name ->
         name :: accumulator
+    | TitoPosition _ ->
+        accumulator
 
   let complex_feature = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Element)
   let complex_feature_set = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Set)
@@ -305,23 +325,26 @@ end = struct
         |> List.dedup_and_sort ~compare:TraceInfo.compare
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
-      let leaf_json =
-        let make_leaf_json name =
-          `Assoc ["kind", leaf_kind_json; "name", `String name]
+      let tito_positions, leaf_json =
+        let gather_json (tito, leaves) = function
+          | SimpleFeatures.LeafName name ->
+              (tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves)
+          | TitoPosition location ->
+              let tito_location_json =
+                Location.instantiate ~lookup:(fun _ -> Some "") location
+                |> location_to_json ~include_filename:false
+              in
+              (tito_location_json :: tito, leaves)
         in
         let gather_return_access_path leaves = function
           | ComplexFeatures.ReturnAccessPath path ->
               let path_name = AbstractTreeDomain.Label.show_path path in
               `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
         in
-        let leaves =
-          FlowDetails.fold
-            FlowDetails.simple_feature
-            features
-            ~f:FlowDetails.gather_leaf_names
-            ~init:[]
-          |> List.map ~f:make_leaf_json
+        let tito_positions, leaves =
+          FlowDetails.(fold simple_feature ~f:gather_json ~init:([], []) features)
         in
+        tito_positions,
         FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features)
       in
       let trace_json = List.map ~f:TraceInfo.to_json trace_info in
@@ -332,13 +355,19 @@ end = struct
           leaf_json
       in
       if List.is_empty trace_json then
-        [`Assoc [ "decl", `String "MISSING"; "leaves", `List leaf_json]]
+        [`Assoc [
+            "decl", `String "MISSING";
+            "tito", `List tito_positions;
+            "leaves", `List leaf_json;
+          ]
+        ]
       else
         List.map
           trace_json
           ~f:(fun trace_pair ->
               `Assoc [
                 trace_pair;
+                "tito", `List tito_positions;
                 "leaves", `List leaf_json;
               ])
     in

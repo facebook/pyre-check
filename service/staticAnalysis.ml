@@ -103,7 +103,11 @@ let add_models ~environment ~model_source =
 let analyze
     ?taint_models_directory
     ~scheduler
-    ~configuration:({ Configuration.StaticAnalysis.configuration; _ } as analysis_configuration)
+    ~configuration:({
+        Configuration.StaticAnalysis.configuration;
+        dump_call_graph;
+        _;
+      } as analysis_configuration)
     ~environment
     ~handles:paths
     () =
@@ -168,7 +172,10 @@ let analyze
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
+
   Log.info "Call graph edges: %d" (Callable.Map.length call_graph);
+  if dump_call_graph then
+    DependencyGraph.dump call_graph ~configuration;
 
   let caller_map = DependencyGraph.reverse call_graph in
 

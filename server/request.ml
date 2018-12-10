@@ -18,7 +18,7 @@ open Request
 open Pyre
 
 
-let parse_lsp ~root ~request =
+let parse_lsp ~configuration ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -26,18 +26,16 @@ let parse_lsp ~root ~request =
       method_name
       (Yojson.Safe.pretty_to_string request)
   in
-  let uri_to_contained_relative_path ~root ~uri =
-    let to_relative_path ~root ~path =
-      String.chop_prefix ~prefix:(root ^ "/") path
-      |> Option.value ~default:path
-    in
-    String.chop_prefix ~prefix:"file://" uri
-    >>= (fun path ->
-        if String.is_prefix ~prefix:root path then
-          Some (to_relative_path ~root ~path)
-        else
-          None)
-    |> Option.value ~default:uri
+  let uri_to_path ~uri =
+    let search_path = Configuration.Analysis.search_path configuration in
+    Path.from_uri uri
+    >>= fun path ->
+    match Path.search_for_path ~search_path ~path with
+    | Some path ->
+        Some path
+    | None ->
+        Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
+        >>= fun path -> Path.search_for_path ~search_path ~path
   in
   let process_request request_method =
     match request_method with
@@ -55,21 +53,16 @@ let parse_lsp ~root ~request =
               id;
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
-              Some (GetDefinitionRequest {
-                  DefinitionRequest.id;
-                  file;
-                  (* The LSP protocol starts a file at line 0, column 0.
-                     Pyre starts a file at line 1, column 0. *)
-                  position = { Ast.Location.line = line + 1; column = character };
-                })
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              GetDefinitionRequest {
+                DefinitionRequest.id;
+                file;
+                (* The LSP protocol starts a file at line 0, column 0.
+                   Pyre starts a file at line 1, column 0. *)
+                position = { Ast.Location.line = line + 1; column = character };
+              }
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -89,16 +82,11 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
               Log.log ~section:`Server "Closed file %a" File.pp file;
-              Some (CloseDocument file)
+              CloseDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -120,16 +108,11 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
               Log.log ~section:`Server "Opened file %a" File.pp file;
-              Some (OpenDocument file)
+              OpenDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -151,15 +134,10 @@ let parse_lsp ~root ~request =
                 };
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create ?content:text
-              in
-              Some (SaveDocument file)
+              uri_to_path ~uri
+              >>| File.create ?content:text
+              >>| fun file ->
+              SaveDocument file
           | Ok _ ->
               log_method_error request_method;
               None
@@ -182,21 +160,16 @@ let parse_lsp ~root ~request =
               id;
               _;
             } ->
-              let file =
-                uri_to_contained_relative_path
-                  ~root:(Path.absolute root)
-                  ~uri
-                |> fun relative ->
-                Path.create_relative ~root ~relative
-                |> File.create
-              in
-              Some (HoverRequest {
-                  DefinitionRequest.id;
-                  file;
-                  (* The LSP protocol starts a file at line 0, column 0.
-                     Pyre starts a file at line 1, column 0. *)
-                  position = { Ast.Location.line = line + 1; column = character };
-                })
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              HoverRequest {
+                DefinitionRequest.id;
+                file;
+                (* The LSP protocol starts a file at line 0, column 0.
+                   Pyre starts a file at line 1, column 0. *)
+                position = { Ast.Location.line = line + 1; column = character };
+              }
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -722,6 +695,11 @@ let process_type_check_request
           if not (List.is_empty newly_introduced_handles) then
             Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
           Ast.SharedMemory.Sources.remove ~handles;
+          let targets =
+            let find_target file = Path.readlink (File.path file) in
+            List.filter_map update_environment_with ~f:find_target
+          in
+          Ast.SharedMemory.SymlinksToPaths.remove ~targets;
           Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
           |> ignore;
 
@@ -787,6 +765,11 @@ let process_type_check_request
     in
     let handles = List.filter_map update_environment_with ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles;
+    let targets =
+      let find_target file = Path.readlink (File.path file) in
+      List.filter_map update_environment_with ~f:find_target
+    in
+    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Handler.purge ~debug handles;
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
@@ -962,7 +945,7 @@ let rec process
 
       | LanguageServerProtocolRequest request ->
           parse_lsp
-            ~root:configuration.local_root
+            ~configuration
             ~request:(Yojson.Safe.from_string request)
           >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
           |> Option.value ~default:{ state; response = None }
@@ -1010,9 +993,12 @@ let rec process
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
           LookupCache.evict ~state ~configuration file;
-          LookupCache.get ~state ~configuration file
-          |> ignore;
-          { state; response = None }
+          (* Make sure the IDE flushes its state about this file, by sending back all the
+             errors for this file. *)
+          process_type_check_request
+            ~state
+            ~configuration
+            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
 
       | CloseDocument file ->
           LookupCache.evict ~state ~configuration file;

@@ -23,7 +23,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
-            when Access.show from <> "builtins" ->
+            when Access.show from <> "builtins" && Access.show from <> "future.builtins" ->
               Import {
                 Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;
@@ -217,6 +217,16 @@ type scope = {
   is_top_level: bool;
   skip: Location.Reference.Set.t;
 }
+
+let qualify_local_identifier name ~qualifier =
+  let qualifier =
+    Access.show qualifier
+    |> String.substr_replace_all ~pattern:"." ~with_:"?"
+  in
+  Identifier.show name
+  |> Format.asprintf "$local_%s$%s" qualifier
+  |> Identifier.create
+  |> fun identifier -> [Access.Identifier identifier]
 
 
 let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
@@ -439,16 +449,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       if not qualified &&
                          not (Set.mem locals access) &&
                          not (Set.mem immutables access) then
-                        let alias =
-                          let qualifier =
-                            Access.show qualifier
-                            |> String.substr_replace_all ~pattern:"." ~with_:"?"
-                          in
-                          Identifier.show name
-                          |> Format.asprintf "$local_%s$%s" qualifier
-                          |> Identifier.create
-                          |> fun identifier -> [Access.Identifier identifier]
-                        in
+                        let alias = qualify_local_identifier name ~qualifier in
                         {
                           scope with
                           aliases =
@@ -1197,6 +1198,7 @@ let expand_implicit_returns source =
 
 let defines
     ?(include_stubs = false)
+    ?(include_nested = false)
     ?(extract_into_toplevel = false)
     ({ Source.qualifier; statements; _ } as source) =
 
@@ -1204,12 +1206,15 @@ let defines
       type t = Define.t Node.t
 
       let visit_children = function
-        | { Node.value = Define _; _ } -> false
+        | { Node.value = Define _; _ } -> include_nested
         | _ -> true
 
       let predicate = function
-        | { Node.location; value = Define define } when Define.is_stub define && include_stubs ->
-            Some ({ Node.location; Node.value = define })
+        | { Node.location; value = Define define } when Define.is_stub define ->
+            if include_stubs then
+              Some ({ Node.location; Node.value = define })
+            else
+              None
         | { Node.location; value = Define define } ->
             Some ({ Node.location; Node.value = define })
         | _ ->
@@ -1305,68 +1310,144 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
     source
 
 
-let expand_typed_dictionary_declarations ({ Source.statements; _ } as source) =
-  let expand_typed_dictionaries ({ Node.value; _ } as statement) =
+let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as source) =
+  let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
+      let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent =
+        let arguments =
+          let fields =
+            let tuple (key, value) = Node.create (Expression.Tuple [key; value]) ~location in
+            List.map fields ~f:tuple
+          in
+          [{
+            Argument.name = None;
+            value = Node.create (Expression.Tuple (name :: fields)) ~location;
+          }]
+        in
+        let access =
+          Access [
+            Access.Identifier (Identifier.create "mypy_extensions");
+            Access.Identifier (Identifier.create "TypedDict");
+            Access.Identifier (Identifier.create "__getitem__");
+            Access.Call (Node.create arguments ~location);
+          ];
+        in
+        let annotation =
+          let node value = Node.create value ~location in
+          Access [
+            Access.Identifier (Identifier.create "typing");
+            Access.Identifier (Identifier.create "Type");
+            Access.Identifier (Identifier.create "__getitem__");
+            Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
+          ]
+          |> node
+          |> Option.some
+        in
+        let access = Node.create access ~location in
+        Assign {
+          target;
+          annotation;
+          value = access;
+          parent;
+        };
+      in
+      let is_typed_dictionary ~module_name ~typed_dictionary =
+        Identifier.show module_name = "mypy_extensions" &&
+        Identifier.show typed_dictionary = "TypedDict"
+      in
       match value with
-      | Assign ({
-          value = ({
-              Node.value =
-                Access [
-                  Access.Identifier module_name;
-                  Access.Identifier typed_dictionary;
-                  Access.Call ({ Node.value = arguments; _ } as call);
-                ];
-              _;
-            } as assign_value);
-          target = { Node.location = target_location; _ };
+      | Assign {
+          target;
+          value = {
+            Node.value =
+              Access [
+                Access.Identifier module_name;
+                Access.Identifier typed_dictionary;
+                Access.Call {
+                  Node.value =
+                    [
+                      { Argument.name = None; value = name };
+                      {
+                        Argument.name = None;
+                        value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+                        _;
+                      };
+                    ];
+                  _;
+                };
+              ];
+            _;
+          };
+          parent;
           _;
-        } as assignment)
-        when Identifier.show module_name = "mypy_extensions" &&
-             Identifier.show typed_dictionary = "TypedDict" ->
-          let arguments =
-            match arguments with
-            | [
-              { Argument.name = None; value = name };
+        }
+        when is_typed_dictionary ~module_name ~typed_dictionary ->
+          let fields = List.map entries ~f:(fun { Dictionary.key; value } -> key, value) in
+          typed_dictionary_declaration_assignment ~name ~fields ~target ~parent
+      | Class {
+          name = class_name;
+          bases =
+            [
               {
                 Argument.name = None;
-                value = { Node.value = Dictionary { Dictionary.entries; _ }; location };
-                _;
-              };
-            ] ->
-                let fields =
-                  let entry_to_tuple { Dictionary.key; value } =
-                    Node.create (Expression.Tuple [key; value]) ~location
-                  in
-                  List.map entries ~f:entry_to_tuple
-                in
-                [{
-                  Argument.name = None;
-                  value = Node.create (Expression.Tuple (name :: fields)) ~location;
-                }]
-            | _ ->
-                arguments
-          in
-          let access =
-            Access [
-              Access.Identifier module_name;
-              Access.Identifier typed_dictionary;
-              Access.Identifier (Identifier.create "__getitem__");
-              Access.Call { call with value = arguments };
+                value = {
+                  Node.value = Access [
+                      Access.Identifier module_name;
+                      Access.Identifier typed_dictionary;
+                    ];
+                  _;
+                };
+              }
             ];
+          body;
+          decorators = [];
+          docstring = _;
+        }
+        when is_typed_dictionary ~module_name ~typed_dictionary ->
+          let single_identifier access =
+            match access with
+            | [ Access.Identifier identifier ] -> Some identifier
+            | _ -> None
           in
-          let annotation =
-            let node value = Node.create ~location:target_location value in
-            Access [
-              Access.Identifier (Identifier.create "typing");
-              Access.Identifier (Identifier.create "Type");
-              Access.Identifier (Identifier.create "__getitem__");
-              Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
-            ]
-            |> node
-            |> Option.some
+          let string_literal identifier =
+            Expression.String { value = Identifier.show identifier; kind = StringLiteral.String }
+            |> Node.create ~location
           in
-          Assign { assignment with annotation; value = { assign_value with value = access } }
+          let fields =
+            let extract = function
+              | {
+                Node.value =
+                  Assign {
+                    target = { Node.value = Access name; _ };
+                    annotation = Some annotation;
+                    value = { Node.value = Ellipses; _ };
+                    parent = _;
+                  };
+                _;
+              } ->
+                  Access.drop_prefix name ~prefix:class_name
+                  |> single_identifier
+                  >>| (fun name -> string_literal name, annotation)
+              | _ ->
+                  None
+            in
+            List.filter_map body ~f:extract
+          in
+          if List.length fields = List.length body then
+            let declaration class_name =
+              let qualified = qualify_local_identifier class_name ~qualifier in
+              typed_dictionary_declaration_assignment
+                ~name:(string_literal class_name)
+                ~fields
+                ~target:(Node.create (Access qualified) ~location)
+                ~parent:None
+            in
+            Access.drop_prefix class_name ~prefix:qualifier
+            |> single_identifier
+            >>| declaration
+            |> Option.value ~default:value
+          else
+            value
       | _ ->
           value
     in

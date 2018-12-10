@@ -496,6 +496,9 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.optional Type.float])
     (Type.Union [Type.optional Type.float; Type.string]);
 
+  assert_true (Type.equal (Type.union [Type.float; Type.Object]) Type.Object);
+  assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);
+
   assert_true
     (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));
   assert_true
@@ -550,10 +553,6 @@ let test_primitives _ =
   assert_equal
     [Type.integer; Type.string]
     (Type.primitives (Type.tuple [Type.integer; Type.string]));
-
-  assert_equal
-    [Type.integer]
-    (Type.primitives (Type.union [Type.integer; Type.Top]));
   assert_equal
     [Type.integer; Type.string]
     (Type.primitives (Type.union [Type.integer; Type.string]));
@@ -1028,7 +1027,7 @@ let test_from_overloads _ =
     "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
 
 let test_with_return_annotation _ =
-  let assert_with_return_annotation return_annotation callable expected =
+  let assert_with_return_annotation annotation callable expected =
     let callable =
       match Type.create ~aliases:(fun _ -> None) (parse_single_expression callable) with
       | Type.Callable callable -> callable
@@ -1038,7 +1037,7 @@ let test_with_return_annotation _ =
       ~cmp:Type.equal
       ~printer:Type.show
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression expected))
-      (Type.Callable (Type.Callable.with_return_annotation ~return_annotation callable))
+      (Type.Callable (Type.Callable.with_return_annotation ~annotation callable))
   in
 
   assert_with_return_annotation

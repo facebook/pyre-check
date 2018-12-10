@@ -45,59 +45,50 @@ type t = {
 module ExpressionVisitor = struct
 
   type t = {
-    resolution: Resolution.t;
+    pre_resolution: Resolution.t;
+    post_resolution: Resolution.t;
     annotations_lookup: annotation_lookup;
     definitions_lookup: definition_lookup;
   }
 
-  let resolve ~resolution ~expression =
-    try
-      let annotation = Resolution.resolve resolution expression in
-      if (Type.is_unknown annotation) or (Type.is_unbound annotation) then
-        None
-      else
-        Some annotation
-    with TypeOrder.Untracked _ ->
-      None
-
-  let store_lookup ~table ~location ~data =
-    if not (
-        Location.equal location Location.Reference.any
-        || Location.equal location Location.Reference.synthetic) then
-      Hashtbl.set
-        table
-        ~key:location
-        ~data
-
-  let expression
-      ({ resolution; annotations_lookup; definitions_lookup } as state)
+  let expression_base
+      ~postcondition
+      ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup } as state)
       ({ Node.location = expression_location; value = expression_value} as expression) =
-    let lookup_of_arguments = function
+    let resolution = if postcondition then post_resolution else pre_resolution in
+    let resolve ~expression =
+      try
+        let annotation = Resolution.resolve resolution expression in
+        if (Type.is_unknown annotation) or (Type.is_unbound annotation) then
+          None
+        else
+          Some annotation
+      with TypeOrder.Untracked _ ->
+        None
+    in
+    let store_lookup ~table ~location ~data =
+      if not (Location.equal location Location.Reference.any) &&
+         not (Location.equal location Location.Reference.synthetic) then
+        Hashtbl.set
+          table
+          ~key:location
+          ~data
+    in
+    let annotate_argument_names = function
       | { Node.value = Expression.Access access; _ } ->
           let check_single_access = function
             | Access.Call { Node.value = arguments; _ }  ->
                 let check_argument
                     {
-                      Argument.value = {
-                        Node.location = value_location; _ } as value;
-                      name
+                      Argument.value = { Node.location = value_location; _ } as value;
+                      name;
                     } =
-                  let location =
-                    match name with
-                    | Some { Node.location = { Location.start; _ }; _ } ->
-                        { value_location with Location.start }
-                    | None ->
-                        value_location
-                  in
-                  let store_annotation annotation =
-                    store_lookup
-                      ~table:annotations_lookup
-                      ~location
-                      ~data:(Precise annotation)
-                  in
-                  resolve ~resolution ~expression:value
-                  >>| store_annotation
-                  |> ignore
+                  match name, resolve ~expression:value with
+                  | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->
+                      let location = { value_location with Location.start } in
+                      store_lookup ~table:annotations_lookup ~location ~data:(Precise annotation)
+                  | _ ->
+                      ()
                 in
                 List.iter ~f:check_argument arguments
             | _ ->
@@ -107,9 +98,8 @@ module ExpressionVisitor = struct
       | _ ->
           ()
     in
+    annotate_argument_names expression;
 
-    (* T30816068: we need a better visitor interface that exposes Argument.name *)
-    lookup_of_arguments expression;
     let () =
       match expression_value with
       | Expression.Access access ->
@@ -144,21 +134,14 @@ module ExpressionVisitor = struct
               Resolution.global resolution access
               >>| Node.location
               >>= fun location ->
-              if Location.equal location Location.Reference.any then
-                None
-              else
-                Some location
+              if Location.equal location Location.Reference.any then None else Some location
             in
-
             match find_definition (prefix @ [element]) with
             | Some definition ->
                 Some definition
             | None ->
-                (* Try and resolve the type of the prefix separately,
-                   to see if this is a method in an access chain. *)
-                resolve
-                  ~resolution
-                  ~expression:(Access.expression prefix)
+                (* Resolve prefix to check if this is a method. *)
+                resolve ~expression:(Access.expression prefix)
                 >>| Type.class_name
                 >>| (fun resolved_prefix -> resolved_prefix @ [element])
                 >>= find_definition
@@ -169,7 +152,6 @@ module ExpressionVisitor = struct
           let filter_annotation ~prefix ~element =
             let access = prefix @ [element] in
             resolve
-              ~resolution
               ~expression:(Node.create ~location:expression_location (Expression.Access access))
           in
           collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
@@ -181,71 +163,105 @@ module ExpressionVisitor = struct
               ~location:expression_location
               ~data:(Precise annotation)
           in
-          resolve ~resolution ~expression
+          resolve ~expression
           >>| store_annotation
           |> ignore
     in
     state
 
-  let statement
-      ({ resolution; annotations_lookup; _ } as state)
-      { Node.value = statement_value; _ } =
-    match statement_value with
-    | Define { parameters; _ } ->
-        let extract_parameters { Node.value = { Parameter.annotation; _ }; location } =
-          let store_parameter_annotation annotation =
-            store_lookup
-              ~table:annotations_lookup
-              ~location
-              ~data:(Precise annotation)
-          in
-          annotation
-          >>= (fun expression -> resolve ~resolution ~expression)
-          >>| store_parameter_annotation
-          |> ignore
-        in
-        List.iter ~f:extract_parameters parameters;
-        state
-    | _ ->
-        state
+  let expression state expression =
+    expression_base ~postcondition:false state expression
+
+  let expression_postcondition state expression =
+    expression_base ~postcondition:true state expression
+
+  let statement state _ = state
 end
 
 
-module Visit = Visit.Make(ExpressionVisitor)
+module Visit = struct
+  include Visit.Make(ExpressionVisitor)
+  let visit state source =
+    let state = ref state in
 
+    let visit_statement_override ~state ~visitor statement =
+      let precondition_visit = visit_expression ~state ~visitor:ExpressionVisitor.expression in
+      let postcondition_visit =
+        visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition
+      in
+      match Node.value statement with
+      | Assign { Assign.target; annotation; value; _ } ->
+          postcondition_visit target;
+          Option.iter ~f:precondition_visit annotation;
+          precondition_visit value
+      | Define { Define.body; _ } when not (List.is_empty body) ->
+          (* No type info available for nested defines; they are analyzed on their own. *)
+          ()
+      | Define { Define.parameters; decorators; return_annotation; _ } ->
+          let visit_parameter
+              { Node.value = { Parameter.annotation; value; name }; location }
+              ~visit_expression =
+            Expression.Access.create_from_identifiers [name]
+            |> (fun access -> Expression.Access access)
+            |> Node.create ~location
+            |> visit_expression;
+            Option.iter ~f:visit_expression value;
+            Option.iter ~f:visit_expression annotation
+          in
+          List.iter parameters ~f:(visit_parameter ~visit_expression:postcondition_visit);
+          List.iter decorators ~f:postcondition_visit;
+          Option.iter ~f:postcondition_visit return_annotation
+      | _ ->
+          visit_statement ~state ~visitor statement
+    in
+
+    List.iter
+      ~f:(visit_statement_override ~state ~visitor:ExpressionVisitor.statement)
+      source.Source.statements;
+    !state
+end
 
 let create_of_source environment source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
-  let walk_defines { Node.value = ({ Define.name = caller; _ } as define); _ } =
+  let walk_define ({ Node.value = ({ Define.name = caller; _ } as define); _ } as define_node) =
     let cfg = Cfg.create define in
     let annotation_lookup =
       ResolutionSharedMemory.get caller
       >>| Int.Map.of_tree
       |> Option.value ~default:Int.Map.empty
     in
-    let walk_cfg ~key:node_id ~data:cfg_node =
-      let statements = Cfg.Node.statements cfg_node in
-      let walk_statements statement_index statement =
-        let annotations =
-          Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
-          >>| (fun { ResolutionSharedMemory.precondition; _ } ->
-              Access.Map.of_tree precondition)
-          |> Option.value ~default:Access.Map.empty
-        in
-        let resolution = TypeCheck.resolution environment ~annotations () in
-        Visit.visit
-          { ExpressionVisitor.resolution; annotations_lookup; definitions_lookup }
-          (Source.create [statement])
-        |> ignore
+    let walk_statement node_id statement_index statement =
+      let pre_annotations, post_annotations =
+        Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
+        >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
+            Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
+        |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
       in
-      List.iteri statements ~f:walk_statements
+      let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
+      let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
+      Visit.visit
+        {
+          ExpressionVisitor.pre_resolution;
+          post_resolution;
+          annotations_lookup;
+          definitions_lookup
+        }
+        (Source.create [statement])
+      |> ignore
     in
-    Hashtbl.iteri cfg ~f:walk_cfg
+    let walk_cfg_node ~key:node_id ~data:cfg_node =
+      let statements = Cfg.Node.statements cfg_node in
+      List.iteri statements ~f:(walk_statement node_id)
+    in
+    Hashtbl.iteri cfg ~f:walk_cfg_node;
+    (* Special-case define signature processing, since this is not included in the define's cfg. *)
+    let define_signature = { define_node with value = Define { define with Define.body = [] } } in
+    walk_statement Cfg.entry_index 0 define_signature;
   in
   (* TODO(T31738631): remove extract_into_toplevel *)
-  Preprocessing.defines ~extract_into_toplevel:true source
-  |> List.iter ~f:walk_defines;
+  Preprocessing.defines ~include_nested:true ~extract_into_toplevel:true source
+  |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 
 

@@ -168,7 +168,7 @@ let test_different_root context =
   let configuration =
     Configuration.Analysis.create
       ~local_root
-      ~search_path:[Path.create_absolute (root ^ "/search")]
+      ~search_path:[Path.SearchPath.Root (Path.create_absolute (root ^ "/search"))]
       ()
   in
 

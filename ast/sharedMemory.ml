@@ -30,6 +30,32 @@ module AccessKey = struct
 end
 
 
+module SymlinksToPaths = struct
+  module SymlinkTarget = struct
+    type t = string
+    let to_string = ident
+    let compare = String.compare
+  end
+  module SymlinkSource = struct
+    type t = PyrePath.t
+    let prefix = Prefix.make ()
+    let description = "SymlinkSource"
+  end
+  module SymlinksToPaths = SharedMemory.NoCache (SymlinkTarget) (SymlinkSource)
+
+  let get target =
+    SymlinksToPaths.get target
+
+  let add target =
+    SymlinksToPaths.add target
+
+  let remove ~targets =
+    List.filter ~f:SymlinksToPaths.mem targets
+    |> SymlinksToPaths.KeySet.of_list
+    |> SymlinksToPaths.remove_batch
+end
+
+
 module Sources = struct
   module SourceValue = struct
     type t = Source.t
