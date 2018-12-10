@@ -992,10 +992,11 @@ let rec create ~aliases { Node.value = expression; _ } =
               let bound =
                 let bound = function
                   | {
-                    Argument.value = { Node.value = Access access; _ };
+                    Argument.value;
                     Argument.name = Some { Node.value = bound; _ };
                   } when Identifier.show bound = "$parameter$bound" ->
-                      Some (parse [] access)
+                      create value ~aliases
+                      |> Option.some
                   | _ ->
                       None
                 in

@@ -95,6 +95,9 @@ let test_create _ =
     "typing.TypeVar('_T', $parameter$bound=int)"
     (Type.variable ~constraints:(Type.Bound Type.integer) "_T");
   assert_create
+    "typing.TypeVar('_T', $parameter$bound='C')"
+    (Type.variable ~constraints:(Type.Bound (Type.primitive "C")) "_T");
+  assert_create
     "typing.TypeVar('_T', int, name=float)"
     (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
 
