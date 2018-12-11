@@ -267,7 +267,7 @@ let messages ~detailed:_ ~define location kind =
                 Access.pp name
                 start_line
                 Type.pp annotation
-              evidence_string
+                evidence_string
             in
             begin
               if due_to_any then
@@ -297,7 +297,7 @@ let messages ~detailed:_ ~define location kind =
             ]
       end
 
-      | MissingParameterAnnotation { name; annotation; due_to_any = false }
+  | MissingParameterAnnotation { name; annotation; due_to_any = false }
     when Type.equal annotation Type.Bottom ->
       [
         Format.asprintf
@@ -326,7 +326,9 @@ let messages ~detailed:_ ~define location kind =
           Type.pp annotation
       ]
   | MissingReturnAnnotation { annotation; due_to_any; _ }
-    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
+    when Type.equal annotation Type.Bottom ||
+         Type.equal annotation Type.Object ||
+         Type.is_unknown annotation ->
       begin
         if due_to_any then
           ["Return type must be specified as type other than `Any`."]
@@ -459,12 +461,12 @@ let messages ~detailed:_ ~define location kind =
       ]
   | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit } ->
       let detail =
-          (Format.asprintf
-             "Type `%a` expected on line %d, specified on line %d.%s"
-             Type.pp expected
-             stop_line
-             define.Node.location.Location.start.Location.line
-             (if due_to_invariance then " " ^ invariance_message else ""))
+        (Format.asprintf
+           "Type `%a` expected on line %d, specified on line %d.%s"
+           Type.pp expected
+           stop_line
+           define.Node.location.Location.start.Location.line
+           (if due_to_invariance then " " ^ invariance_message else ""))
       in
       let message =
         if is_implicit then
@@ -491,10 +493,10 @@ let messages ~detailed:_ ~define location kind =
           invariance_message
         else
           Format.asprintf
-             "Attribute `%a` declared on line %d, incorrectly used on line %d."
-             Access.pp name
-             declare_location.Location.start.Location.line
-             start_line
+            "Attribute `%a` declared on line %d, incorrectly used on line %d."
+            Access.pp name
+            declare_location.Location.start.Location.line
+            start_line
       in
       [
         (Format.asprintf
@@ -521,11 +523,11 @@ let messages ~detailed:_ ~define location kind =
             Type.pp actual
       in
       let detail =
-          Format.asprintf
-            "Redeclare `%s` on line %d if you wish to override the previously declared type.%s"
-            (Access.show_sanitized name)
-            start_line
-            (if due_to_invariance then " " ^ invariance_message else "")
+        Format.asprintf
+          "Redeclare `%s` on line %d if you wish to override the previously declared type.%s"
+          (Access.show_sanitized name)
+          start_line
+          (if due_to_invariance then " " ^ invariance_message else "")
       in
       [message; detail]
   | InconsistentOverride { parent; override; _ } ->

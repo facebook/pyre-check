@@ -5064,6 +5064,16 @@ let test_check_missing_return _ =
       "Missing return annotation [3]: Return type is not specified.";
     ];
 
+  assert_type_errors
+    {|
+       def foo(x: typing.Any) -> typing.Any:
+         return x
+     |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_type_errors
     ~debug:false
@@ -8219,7 +8229,7 @@ let test_check_literal_variance _ =
       "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is " ^
       "used as type `typing.List[int]`.";
     ];
- assert_type_errors
+  assert_type_errors
     {|
       x: typing.Dict[str, float] = {}
       x = { "s": 1 }
