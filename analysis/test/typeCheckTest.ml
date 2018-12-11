@@ -5138,6 +5138,26 @@ let test_check_missing_attribute _ =
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
     ];
 
+  assert_type_errors
+    {|
+      class Foo:
+        a = unknown
+    |}
+    [
+      "Undefined name [18]: Global name `unknown` is undefined.";
+    ];
+
+  assert_type_errors
+    {|
+        class Foo:
+          def __init__(self, a: typing.Any) -> None:
+            self.a = a
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_type_errors
     ~debug:false

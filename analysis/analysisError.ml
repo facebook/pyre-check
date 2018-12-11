@@ -238,7 +238,9 @@ let messages ~detailed:_ ~define location kind =
       begin
         match missing_annotation with
         | { name; annotation = Some annotation; due_to_any; _ }
-          when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
+          when Type.equal annotation Type.Bottom ||
+               Type.equal annotation Type.Object ||
+               Type.is_unknown annotation ->
             begin
               if due_to_any then
                 [

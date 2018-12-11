@@ -176,40 +176,40 @@ module State = struct
             let untyped_assignment_error errors { Node.location; value } =
               match value with
               | Assign {
-                    Assign.annotation = None;
-                    target = {
-                      Node.value = Access ((Expression.Access.Identifier self) :: ([_] as access));
-                      _;
-                    };
+                  Assign.annotation = None;
+                  target = {
+                    Node.value = Access ((Expression.Access.Identifier self) :: ([_] as access));
                     _;
-                  } when Identifier.equal self (Statement.Define.self_identifier define) ->
-                    let attribute_annotation =
-                      Annotated.Class.attribute
-                        class_definition
-                        ~resolution
-                        ~name:access
-                        ~instantiated:annotation
-                      |> Annotated.Attribute.annotation
-                      |> Annotation.annotation
-                    in
-                    if Type.equal attribute_annotation Type.Object then
-                      Error.create
-                        ~location
-                        ~kind:(Error.MissingAttributeAnnotation {
-                            parent = annotation;
-                            missing_annotation = {
-                              Error.name = access;
-                              annotation = None;
-                              evidence_locations = [];
-                              due_to_any = false;
-                            };
-                          })
-                        ~define:define_node
-                      :: errors
-                    else
-                      errors
-              | _ ->
+                  };
+                  _;
+                } when Identifier.equal self (Statement.Define.self_identifier define) ->
+                  let attribute_annotation =
+                    Annotated.Class.attribute
+                      class_definition
+                      ~resolution
+                      ~name:access
+                      ~instantiated:annotation
+                    |> Annotated.Attribute.annotation
+                    |> Annotation.annotation
+                  in
+                  if Type.equal attribute_annotation Type.Object then
+                    Error.create
+                      ~location
+                      ~kind:(Error.MissingAttributeAnnotation {
+                          parent = annotation;
+                          missing_annotation = {
+                            Error.name = access;
+                            annotation = None;
+                            evidence_locations = [];
+                            due_to_any = false;
+                          };
+                        })
+                      ~define:define_node
+                    :: errors
+                  else
                     errors
+              | _ ->
+                  errors
             in
             List.fold body ~f:untyped_assignment_error ~init:errors
         | None ->
