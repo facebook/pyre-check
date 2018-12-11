@@ -214,6 +214,7 @@ module Callable : sig
     val name: parameter -> Identifier.t
     val annotation: parameter -> type_t
     val default: parameter -> bool
+    val is_anonymous: parameter -> bool
 
     val names_compatible: parameter -> parameter -> bool
   end

@@ -1016,6 +1016,26 @@ let test_less_or_equal _ =
        order
        ~left:"ParametricCallableToStr[int]"
        ~right:"typing.Callable[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~right:"typing.Callable[[int], str]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~right:"typing.Callable[[int, int], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, str)], str]"
+       ~right:"typing.Callable[[int], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~right:"typing.Callable[[Named(arg, int)], str]");
 
   (* TypedDictionaries *)
   assert_true

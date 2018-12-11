@@ -709,6 +709,14 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                       less_or_equal order ~left:right_annotation ~right:left_annotation &&
                       parameters_less_or_equal left_parameters right_parameters
 
+
+                  | Parameter.Variable { Parameter.annotation = left_annotation; _ }
+                    :: _,
+                    (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
+                    :: right_parameters
+                    when Parameter.is_anonymous right ->
+                      less_or_equal order ~left:right_annotation ~right:left_annotation &&
+                      parameters_less_or_equal left right_parameters
                   | Parameter.Variable _ :: left_parameters, []
                   | Parameter.Keywords _ :: left_parameters, [] ->
                       parameters_less_or_equal left_parameters []

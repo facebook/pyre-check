@@ -1803,6 +1803,13 @@ module Callable = struct
           default
 
 
+    let is_anonymous = function
+      | Named { name; _ } when String.is_prefix ~prefix:"$" (Access.show name) ->
+          true
+      | _ ->
+          false
+
+
     let names_compatible left right =
       match left, right with
       | Named { name = left; _ }, Named { name = right; _ }
