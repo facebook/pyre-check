@@ -6884,7 +6884,7 @@ let test_check_constructors _ =
     [
       "Undefined type [11]: Type `Clss` is not defined.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`.";
-      "Call on type that is not callable [29]: `typing.Type[Clss]` is not callable";
+      "Call error [29]: `typing.Type[Clss]` is not a function.";
     ]
 
 
@@ -7086,7 +7086,7 @@ let test_check_callables _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Call on type that is not callable [29]: `Call` is not callable";
+      "Call error [29]: `Call` is not a function.";
     ];
 
   (* Test for terminating fixpoint *)
@@ -7100,7 +7100,7 @@ let test_check_callables _ =
         return 7
     |}
     [
-      "Call on type that is not callable [29]: `Call` is not callable";
+      "Call error [29]: `Call` is not a function.";
     ];
 
   assert_type_errors

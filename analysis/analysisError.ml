@@ -170,7 +170,7 @@ let name = function
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MissingTypeParameters _ -> "Missing type parameters"
-  | NotCallable _ -> "Call on type that is not callable"
+  | NotCallable _ -> "Call error"
   | RevealedType _ -> "Revealed type"
   | RedundantCast _ -> "Redundant cast"
   | TooManyArguments _ -> "Too many arguments"
@@ -585,7 +585,7 @@ let messages ~detailed:_ ~define location kind =
       in
       [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
   | NotCallable annotation ->
-      [ Format.asprintf "`%a` is not callable" Type.pp annotation ]
+      [ Format.asprintf "`%a` is not a function." Type.pp annotation ]
   | TooManyArguments { callee; expected; provided } ->
       let callee =
         match callee with
