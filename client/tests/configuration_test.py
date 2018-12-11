@@ -132,7 +132,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
 
         # Test loading of additional directories in the search path
-        # via environment.
+        # via environment $PYTHONPATH.
         json_load.side_effect = [
             {"search_path": ["json/", "file/"], "typeshed": "TYPESHED/"},
             {},
@@ -152,6 +152,7 @@ class ConfigurationTest(unittest.TestCase):
                     [
                         SearchPathElement("additional/"),
                         SearchPathElement("directories/"),
+                        *[SearchPathElement(i) for i in sys.path if os.path.isdir(i)],
                         SearchPathElement("command/"),
                         SearchPathElement("line/"),
                         SearchPathElement("json/"),

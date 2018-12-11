@@ -6,6 +6,7 @@
 import json
 import logging
 import os
+import sys
 import shutil
 from typing import Dict, List, Optional, Union
 
@@ -132,16 +133,22 @@ class Configuration:
 
         # Handle search path from multiple sources
         self._search_path = []
-        pythonpath = os.getenv("PYTHONPATH")
-        if preserve_pythonpath and pythonpath:
-            for path in pythonpath.split(":"):
-                if os.path.isdir(path):
-                    self._search_path.append(SearchPathElement(path))
-                else:
-                    LOG.warning(
-                        "`{}` is not a valid directory, dropping it "
-                        "from PYTHONPATH".format(path)
-                    )
+        if preserve_pythonpath:
+            for path in os.getenv("PYTHONPATH", default="").split(":"):
+                if path != "":
+                    if os.path.isdir(path):
+                        self._search_path.append(SearchPathElement(path))
+                    else:
+                        LOG.warning(
+                            "`{}` is not a valid directory, dropping it "
+                            "from PYTHONPATH".format(path)
+                        )
+            # sys.path often includes '' and a zipped python version, so
+            # we don't log warnings for non-dir entries
+            sys_path = [
+                SearchPathElement(path) for path in sys.path if os.path.isdir(path)
+            ]
+            self._search_path.extend(sys_path)
         if search_path:
             self._search_path.extend(search_path)
         # We will extend the search path further, with the config file
