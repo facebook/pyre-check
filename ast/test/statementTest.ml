@@ -990,7 +990,7 @@ let test_pp _ =
     " i[j] = x =  ... # type: Something"
     ~expected:{|
       i.__setitem__(j,...)
-      x: Something = ...
+      x: "Something" = ...
     |};
 
   assert_pretty_print

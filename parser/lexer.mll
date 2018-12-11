@@ -269,8 +269,16 @@ and read_without_indent state = parse
   | whitespace* '#' whitespace* "type" whitespace* ':' whitespace* "ignore" [^ '\n' '\r']* {
       read_without_indent state lexbuf
     }
-  | whitespace* '#' whitespace* "type" whitespace* ':' {
-      ANNOTATION_COMMENT
+  | whitespace* '#' whitespace* "type" whitespace* ':' whitespace* [^ '\n' '\r']* {
+      let annotation =
+        lexeme lexbuf
+        |> String.split ~on:':'
+        |> List.tl
+        >>| String.concat ~sep:":"
+        >>| (fun string -> String.strip string)
+        |> Option.value ~default:"$unknown"
+      in
+      ANNOTATION_COMMENT ((lexbuf.lex_start_p, lexbuf.lex_curr_p), annotation)
     }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
 

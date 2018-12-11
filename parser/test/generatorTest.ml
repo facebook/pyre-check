@@ -1193,12 +1193,12 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some !"bool";
+            annotation = Some (+String (StringLiteral.create "bool"));
           };
           +{
             Parameter.name = ~~"b";
             value = None;
-            annotation = Some !"bool";
+            annotation = Some (+String (StringLiteral.create "bool"));
           };
         ];
         body = [+Pass];
@@ -1224,12 +1224,43 @@ let test_define _ =
           +{
             Parameter.name = ~~"a";
             value = None;
-            annotation = Some !"bool";
+            annotation = Some (+String (StringLiteral.create "bool"));
           };
           +{
             Parameter.name = ~~"b";
             value = None;
-            annotation = Some !"bool";
+            annotation = Some (+String (StringLiteral.create "bool"));
+          };
+        ];
+        body = [+Pass];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(
+        a,  # type: bool
+        **kwargs
+      ):
+        pass
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = Some (+String (StringLiteral.create "bool"));
+          };
+          +{
+            Parameter.name = ~~"**kwargs";
+            value = None;
+            annotation = None;
           };
         ];
         body = [+Pass];
@@ -2534,7 +2565,7 @@ let test_class _ =
         body = [
           +Assign {
             Assign.target = !"attribute";
-            annotation = Some !"int";
+            annotation = Some (+String (StringLiteral.create "int"));
             value = +Integer 1;
             parent = Some (Access.create "foo");
           };
@@ -2716,7 +2747,7 @@ let test_assign _ =
     [
       +Assign {
         Assign.target = !"a";
-        annotation = Some !"int";
+        annotation = Some (+String (StringLiteral.create "int"));
         value = +Integer 1;
         parent = None;
       };
@@ -3797,7 +3828,7 @@ let test_stubs _ =
     [
       +Assign {
         Assign.target = !"a";
-        annotation = Some !"int";
+        annotation = Some (+String (StringLiteral.create "int"));
         value = +Ellipses;
         parent = None;
       };
@@ -3808,13 +3839,7 @@ let test_stubs _ =
     [
       +Assign {
         Assign.target = !"a";
-        annotation = Some
-            (+Access [
-               Access.Identifier ~~"Tuple";
-               Access.Identifier ~~"__getitem__";
-               Access.Call
-                 (+[{ Argument.name = None; value = +Access [Access.Identifier ~~"str"] }]);
-             ]);
+        annotation = Some (+String (StringLiteral.create "Tuple[str]"));
         value = +Ellipses;
         parent = None;
       };
@@ -3825,74 +3850,7 @@ let test_stubs _ =
     [
       +Assign {
         Assign.target = !"a";
-        annotation = Some
-            (+Access [
-               Access.Identifier ~~"Tuple";
-               Access.Identifier ~~"__getitem__";
-               Access.Call
-                 (+[
-                    {
-                      Argument.name = None;
-                      value =
-                        +Tuple [
-                          +Access [Access.Identifier ~~"str"];
-                          +Ellipses;
-                        ];
-                    };
-                  ]);
-             ]);
-        value = +Ellipses;
-        parent = None;
-      };
-    ];
-
-  assert_parsed_equal
-    "a = ... # type: Callable[..., int][[..., int][..., int]]"
-    [
-      +Assign {
-        Assign.target = !"a";
-        annotation = Some
-            (+Access [
-               Access.Identifier ~~"Callable";
-               Access.Identifier ~~"__getitem__";
-               Access.Call
-                 (+[
-                    {
-                      Argument.name = None;
-                      value =
-                        +Tuple [
-                          +Ellipses;
-                          +Access [Access.Identifier ~~"int"];
-                        ];
-                    };
-                  ]);
-               Access.Identifier ~~"__getitem__";
-               Access.Call
-                 (+[
-                    {
-                      Argument.name = None;
-                      value =
-                        +Access [
-                          Access.Expression (+List [
-                              +Ellipses;
-                              +Access [Access.Identifier ~~"int"];
-                            ]);
-                          Access.Identifier ~~"__getitem__";
-                          Access.Call
-                            (+[
-                               {
-                                 Argument.name = None;
-                                 value =
-                                   +Tuple [
-                                     +Ellipses;
-                                     +Access [Access.Identifier ~~"int"];
-                                   ];
-                               };
-                             ]);
-                        ];
-                    };
-                  ]);
-             ]);
+        annotation = Some (+String (StringLiteral.create "Tuple[str, ...]"));
         value = +Ellipses;
         parent = None;
       };
@@ -3924,7 +3882,7 @@ let test_stubs _ =
         body = [
           +Assign {
             Assign.target = !"a";
-            annotation = Some !"int";
+            annotation = Some (+String (StringLiteral.create "int"));
             value = +Ellipses;
             parent = Some (Access.create "A");
           };

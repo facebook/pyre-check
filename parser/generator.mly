@@ -190,7 +190,7 @@
 %token <Lexing.position> TILDE
 
 %token <string list * string> SIGNATURE_COMMENT
-%token ANNOTATION_COMMENT
+%token <(Lexing.position * Lexing.position) * string> ANNOTATION_COMMENT
 
 %token AMPERSAND
 %token AMPERSANDEQUALS
@@ -274,7 +274,6 @@
 
 %right OR
 %right AND
-%left ANNOTATION_COMMENT
 %left NOT
 %left IS
 %left BAR
@@ -928,7 +927,11 @@ define_parameters:
   ;
 
 %inline comment_annotation:
-  | ANNOTATION_COMMENT; expression = expression { expression }
+  | annotation = ANNOTATION_COMMENT {
+      let (start, stop), annotation = annotation in
+      String (StringLiteral.create annotation)
+      |> Node.create ~location:(Location.create ~start ~stop)
+    }
 
 %inline return_annotation:
   | MINUS; RIGHTANGLE; expression = expression { expression }
