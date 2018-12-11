@@ -298,35 +298,41 @@ let messages ~detailed:_ ~define location kind =
                 Type.pp parent;
             ]
       end
-
-  | MissingParameterAnnotation { name; annotation; due_to_any = false }
-    when Type.equal annotation Type.Bottom ->
-      [
-        Format.asprintf
-          "Parameter `%s` has no type specified."
-          (Access.show_sanitized name)
-      ]
-  | MissingParameterAnnotation { name; annotation; due_to_any = false } ->
-      [
-        Format.asprintf
-          "Parameter `%s` has type `%a` but no type is specified."
-          (Access.show_sanitized name)
-          Type.pp annotation
-      ]
-  | MissingParameterAnnotation { name; annotation; due_to_any = true }
-    when Type.equal annotation Type.Bottom || Type.is_unknown annotation ->
-      [
-        Format.asprintf
-          "Parameter `%s` must have a type other than `Any`."
-          (Access.show_sanitized name)
-      ]
-  | MissingParameterAnnotation { name; annotation; due_to_any = true } ->
-      [
-        Format.asprintf
-          "Parameter `%s` has type `%a` but type `Any` is specified."
-          (Access.show_sanitized name)
-          Type.pp annotation
-      ]
+  | MissingParameterAnnotation { name; annotation; due_to_any }
+    when Type.equal annotation Type.Bottom ||
+         Type.equal annotation Type.Object ||
+         Type.is_unknown annotation ->
+      begin
+        if due_to_any then
+          [
+            Format.asprintf
+              "Parameter `%s` must have a type other than `Any`."
+              (Access.show_sanitized name)
+          ]
+        else
+          [
+            Format.asprintf
+              "Parameter `%s` has no type specified."
+              (Access.show_sanitized name)
+          ]
+      end
+  | MissingParameterAnnotation { name; annotation; due_to_any } ->
+      begin
+        if due_to_any then
+          [
+            Format.asprintf
+              "Parameter `%s` has type `%a` but type `Any` is specified."
+              (Access.show_sanitized name)
+              Type.pp annotation
+          ]
+        else
+          [
+            Format.asprintf
+              "Parameter `%s` has type `%a` but no type is specified."
+              (Access.show_sanitized name)
+              Type.pp annotation
+          ]
+      end
   | MissingReturnAnnotation { annotation; due_to_any; _ }
     when Type.equal annotation Type.Bottom ||
          Type.equal annotation Type.Object ||
