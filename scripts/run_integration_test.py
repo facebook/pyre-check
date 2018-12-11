@@ -205,7 +205,13 @@ class Repository:
         pyre_client = os.getenv("PYRE_TEST_CLIENT_LOCATION", "pyre")
         try:
             output = subprocess.check_output(
-                [pyre_client, "--noninteractive", "--output=json", command]
+                [
+                    pyre_client,
+                    "--noninteractive",
+                    "--show-parse-errors",
+                    "--output=json",
+                    command,
+                ]
             )
         except subprocess.CalledProcessError as error:
             if error.returncode not in [0, 1]:
