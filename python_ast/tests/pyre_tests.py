@@ -105,10 +105,8 @@ class TypedAstTestCase(unittest.TestCase):
             pyre_ast._local_configuration = "/config_root"
             # Configure process stdout file
             process_mock = Mock()
-            mock_stdout = NamedTemporaryFile()
-            mock_stdout.write(json_response.encode("utf-8"))
-            mock_stdout.seek(0)
-            process_mock.configure_mock(stdout=mock_stdout, stderr=NamedTemporaryFile())
+            mock_stdout = json_response.encode("utf-8")
+            process_mock.communicate.return_value = (mock_stdout, "")
             subprocess_popen.return_value = process_mock
             # Check query output
             file_types = pyre_ast._query_file_types("/config_root/file.py")

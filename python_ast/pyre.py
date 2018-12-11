@@ -138,7 +138,7 @@ class PyreAst:
         stdout, stderr = process.communicate()
         annotations = stdout.decode().strip()
         if not annotations:
-            error_message = stderr.read().decode().strip().split(" ")[2:]
+            error_message = stderr.decode().strip().split(" ")[2:]
             raise PyreServerException(
                 "Failed to query types for {}.\n{}".format(
                     filename, " ".join(error_message)
