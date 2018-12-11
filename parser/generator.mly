@@ -157,6 +157,17 @@
     |> (fun expression -> Expression expression)
     |> Node.create ~location
 
+  let with_annotation ~parameter ~annotation =
+    let value =
+      let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
+      let annotation =
+        match existing, annotation with
+        | None, Some annotation -> Some annotation
+        | _ -> existing
+      in
+      { value with Parameter.annotation }
+    in
+    { parameter with Node.value }
 %}
 
 (* The syntactic junkyard. *)
@@ -844,19 +855,9 @@ define_parameters:
   | parameter = define_parameter;
     COMMA;
     annotation = comment_annotation?;
-    parameters = define_parameters {
-      let value =
-        let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
-        let annotation =
-          match existing, annotation with
-          | None, Some annotation -> Some annotation
-          | _ -> existing
-        in
-        { value with Parameter.annotation }
-      in
-      { parameter with Node.value } :: parameters
-    }
-  | parameter = define_parameter { [parameter] }
+    parameters = define_parameters { (with_annotation ~parameter ~annotation) :: parameters }
+  | parameter = define_parameter;
+    annotation = comment_annotation? { [with_annotation ~parameter ~annotation] }
   | { [] }
 
 %inline define_parameter:

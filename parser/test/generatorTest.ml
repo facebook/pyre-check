@@ -1179,7 +1179,7 @@ let test_define _ =
         a,  # type: bool
         b,  # type: bool
       ):  # type: (...) -> int
-        return 4
+        pass
     |})
     [
       +Define {
@@ -1201,14 +1201,41 @@ let test_define _ =
             annotation = Some !"bool";
           };
         ];
-        body = [
-          +Return {
-            Return.expression = Some (+Integer 4);
-            is_implicit = false;
-          }];
+        body = [+Pass];
         decorators = [];
         docstring = None;
         return_annotation = Some (+String (StringLiteral.create "int"));
+        async = false;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(
+        a,  # type: bool
+        b  # type: bool
+      ):
+        pass
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = Some !"bool";
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = Some !"bool";
+          };
+        ];
+        body = [+Pass];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
         async = false;
         parent = None;
       };
