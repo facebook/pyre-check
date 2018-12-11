@@ -262,6 +262,70 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     stars,
     renamed
   in
+  let rec explore_scope ~scope statements =
+    let global_alias ~qualifier ~name =
+      {
+        access = qualifier @ name;
+        qualifier;
+        is_forward_reference = true;
+      }
+    in
+    let explore_scope
+        ({ qualifier; aliases; immutables; skip; _ } as scope)
+        { Node.location; value } =
+      match value with
+      | Assign { Assign.target; annotation = Some annotation; _ }
+        when Expression.show annotation = "_SpecialForm" ->
+          let name = Expression.access target in
+          {
+            scope with
+            aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
+            skip = Set.add skip location;
+          }
+      | Class { Class.name; _ } ->
+          {
+            scope with
+            aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
+          }
+      | Define { Define.name; _ } ->
+          {
+            scope with
+            aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
+          }
+      | If { If.body; orelse; _ } ->
+          let scope = explore_scope ~scope body in
+          explore_scope ~scope orelse
+      | For { For.body; orelse; _ } ->
+          let scope = explore_scope ~scope body in
+          explore_scope ~scope orelse
+      | Global identifiers ->
+          let immutables =
+            let register_global immutables identifier =
+              Set.add immutables [Access.Identifier identifier]
+            in
+            List.fold identifiers ~init:immutables ~f:register_global
+          in
+          { scope with immutables }
+      | Try { Try.body; handlers; orelse; finally } ->
+          let scope = explore_scope ~scope body in
+          let scope =
+            let explore_handler scope { Try.handler_body; _ } =
+              explore_scope ~scope handler_body
+            in
+            List.fold handlers ~init:scope ~f:explore_handler
+          in
+          let scope = explore_scope ~scope orelse in
+          explore_scope ~scope finally
+      | With { With.body; _ } ->
+          explore_scope ~scope body
+      | While { While.body; orelse; _ } ->
+          let scope = explore_scope ~scope body in
+          explore_scope ~scope orelse
+      | _ ->
+          scope
+    in
+    List.fold statements ~init:scope ~f:explore_scope
+  in
   let rec qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let parameters =
@@ -299,73 +363,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     scope, List.rev parameters
 
   and qualify_statements ?(qualify_assigns = false) ~scope statements =
-    let scope =
-      let rec explore_scope ~scope statements =
-        let global_alias ~qualifier ~name =
-          {
-            access = qualifier @ name;
-            qualifier;
-            is_forward_reference = true;
-          }
-        in
-        let explore_scope
-            ({ qualifier; aliases; immutables; skip; _ } as scope)
-            { Node.location; value } =
-          match value with
-          | Assign { Assign.target; annotation = Some annotation; _ }
-            when Expression.show annotation = "_SpecialForm" ->
-              let name = Expression.access target in
-              {
-                scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
-                skip = Set.add skip location;
-              }
-          | Class { Class.name; _ } ->
-              {
-                scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
-              }
-          | Define { Define.name; _ } ->
-              {
-                scope with
-                aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
-              }
-          | If { If.body; orelse; _ } ->
-              let scope = explore_scope ~scope body in
-              explore_scope ~scope orelse
-          | For { For.body; orelse; _ } ->
-              let scope = explore_scope ~scope body in
-              explore_scope ~scope orelse
-          | Global identifiers ->
-              let immutables =
-                let register_global immutables identifier =
-                  Set.add immutables [Access.Identifier identifier]
-                in
-                List.fold identifiers ~init:immutables ~f:register_global
-              in
-              { scope with immutables }
-          | Try { Try.body; handlers; orelse; finally } ->
-              let scope = explore_scope ~scope body in
-              let scope =
-                let explore_handler scope { Try.handler_body; _ } =
-                  explore_scope ~scope handler_body
-                in
-                List.fold handlers ~init:scope ~f:explore_handler
-              in
-              let scope = explore_scope ~scope orelse in
-              explore_scope ~scope finally
-          | With { With.body; _ } ->
-              explore_scope ~scope body
-          | While { While.body; orelse; _ } ->
-              let scope = explore_scope ~scope body in
-              explore_scope ~scope orelse
-          | _ ->
-              scope
-        in
-        List.fold statements ~init:scope ~f:explore_scope
-      in
-      explore_scope ~scope statements
-    in
+    let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
       let qualify (scope, statements) statement =
         let scope, statement = qualify_statement ~qualify_assign:qualify_assigns ~scope statement in
@@ -496,53 +494,92 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;
         }
       in
+      let qualify_define
+        ({ qualifier; _ } as scope)
+        ({
+          Define.name;
+          parameters;
+          body;
+          decorators;
+          return_annotation;
+          parent;
+          _;
+        } as define) =
+        let scope = { scope with is_top_level = false } in
+        let return_annotation =
+          return_annotation
+          >>| qualify_expression ~qualify_strings:true ~scope
+        in
+        let parent =
+          parent
+          >>| fun access -> qualify_access ~qualify_strings:false ~scope access
+        in
+        let decorators =
+          List.map
+            decorators
+            ~f:(qualify_expression
+                  ~qualify_strings:false
+                  ~scope:{ scope with use_forward_references = Option.is_none parent })
+        in
+        let scope, parameters = qualify_parameters ~scope parameters in
+        let _, body = qualify_statements ~scope:{ scope with qualifier = qualifier @ name } body in
+        {
+          define with
+          Define.name = qualify_access ~qualify_strings:false ~scope name;
+          parameters;
+          body;
+          decorators;
+          return_annotation;
+          parent;
+        }
+      in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
         let qualify_base ({ Argument.value; _ } as argument) =
           { argument with Argument.value = qualify_expression ~qualify_strings:false ~scope value }
         in
+        let decorators =
+          List.map
+            decorators
+            ~f:(qualify_expression ~qualify_strings:false ~scope)
+        in
+        let body =
+          let original_scope = { scope with qualifier = qualifier @ name } in
+          let scope = explore_scope body ~scope:original_scope in
+          let qualify (scope, statements) ({ Node.location; value } as statement) =
+            let scope, statement =
+              match value with
+              | Define ({ Define.name; parameters; return_annotation; _ } as define) ->
+                let define = qualify_define original_scope define in
+                let _, parameters = qualify_parameters ~scope parameters in
+                let return_annotation =
+                  return_annotation
+                  >>| qualify_expression ~scope ~qualify_strings:true
+                in
+                scope, {
+                  Node.location;
+                  value = Define {
+                    define with
+                    Define.name = qualify_access name ~scope ~qualify_strings:false;
+                    parameters;
+                    return_annotation;
+                  };
+                }
+              | _ ->
+                  qualify_statement statement ~qualify_assign:true ~scope
+            in
+            scope, statement :: statements
+          in
+          List.fold body ~init:(scope, []) ~f:qualify
+          |> snd
+          |> List.rev
+        in
         {
           definition with
           Class.name = qualify_access ~qualify_strings:false ~scope name;
           bases = List.map bases ~f:qualify_base;
-          body =
-            qualify_statements
-              ~qualify_assigns:true
-              ~scope:{ scope with qualifier = qualifier @ name }
-              body
-            |> snd;
-          decorators = List.map decorators ~f:(qualify_expression ~qualify_strings:false ~scope);
-        }
-      in
-      let qualify_define
-          ({
-            Define.name;
-            parameters;
-            body;
-            decorators;
-            return_annotation;
-            parent;
-            _;
-          } as define) =
-        let scope = { scope with is_top_level = false } in
-        let renamed_scope, parameters = qualify_parameters ~scope parameters in
-        {
-          define with
-          Define.name = qualify_access ~qualify_strings:false ~scope name;
-          parameters;
-          body =
-            qualify_statements
-              ~scope:{ renamed_scope with qualifier = qualifier @ name }
-              body
-            |> snd;
-          decorators =
-            List.map
-              decorators
-              ~f:(qualify_expression
-                    ~qualify_strings:false
-                    ~scope:{ scope with use_forward_references = Option.is_none parent });
-          return_annotation = return_annotation >>| qualify_expression ~qualify_strings:true ~scope;
-          parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;
+          body;
+          decorators;
         }
       in
 
@@ -574,7 +611,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           Class (qualify_class definition)
       | Define define ->
           scope,
-          Define (qualify_define define)
+          Define (qualify_define scope define)
       | Delete expression ->
           scope,
           Delete (qualify_expression ~qualify_strings:false ~scope expression)

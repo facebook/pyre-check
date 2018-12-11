@@ -748,6 +748,45 @@ let test_qualify _ =
         pass
       class qualifier.C:
         qualifier.C.slice: int = ...
+    |};
+
+  assert_qualify
+    {|
+      def f():
+        pass
+      class C:
+        def f():
+          return f()
+        a = f
+        def g():
+          return f()
+    |}
+    {|
+      def qualifier.f():
+        pass
+      class qualifier.C:
+        def qualifier.C.f():
+          return qualifier.f()
+        qualifier.C.a = qualifier.C.f
+        def qualifier.C.g():
+          return qualifier.f()
+    |};
+  assert_qualify
+    {|
+      class C:
+        alias = int
+        def f() -> alias:
+          return alias
+        def g(x: alias):
+          pass
+    |}
+    {|
+      class qualifier.C:
+        qualifier.C.alias = int
+        def qualifier.C.f() -> qualifier.C.alias:
+          return alias
+        def qualifier.C.g($parameter$x: qualifier.C.alias):
+          pass
     |}
 
 

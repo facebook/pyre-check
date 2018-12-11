@@ -4427,8 +4427,10 @@ let test_check_attributes _ =
         foo.x = "string"
     |}
     [
-      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` " ^
-      "has type `typing.Optional[int]` but is used as type `str`.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type `int` but \
+       is used as type `None`.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type `int` but \
+       is used as type `str`.";
     ];
 
   assert_type_errors
