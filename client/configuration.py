@@ -132,12 +132,12 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
 
         # Handle search path from multiple sources
-        self.search_path = []
+        self._search_path = []
         if preserve_pythonpath:
             for path in os.getenv("PYTHONPATH", default='').split(':'):
                 if path != '':
                     if os.path.isdir(path):
-                        self.search_path.append(SearchPathElement(path))
+                        self._search_path.append(SearchPathElement(path))
                     else:
                         LOG.warning(
                             "`{}` is not a valid directory, dropping it "
@@ -149,7 +149,7 @@ class Configuration:
                 SearchPathElement(path)
                 for path in sys.path if os.path.isdir(path)
             ]
-            self.search_path.extend(sys_path)
+            self._search_path.extend(sys_path)
         if search_path:
             self._search_path.extend(search_path)
         # We will extend the search path further, with the config file
