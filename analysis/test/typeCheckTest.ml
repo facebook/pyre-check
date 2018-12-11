@@ -4323,6 +4323,26 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
+      class ReturnSelf(typing.Generic[_T]):
+        def f(self) -> ReturnSelf[_T]:
+          return self
+    |}
+    [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class ReturnClass(typing.Generic[_T]):
+        @classmethod
+        def f(cls) -> ReturnClass[_T]:
+          return cls
+    |}
+    [
+      "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
+       `typing.Type[ReturnClass[Variable[_T]]]`.";
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
       class Class:
         @property
         def property(self: _T) -> typing.Sequence[_T]: ...

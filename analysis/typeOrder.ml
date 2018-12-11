@@ -446,7 +446,7 @@ let greatest ((module Handler: Handler) as order) ~matches =
     Type.Top
 
 
-let variables ((module Handler: Handler) as order) annotation =
+let variables (module Handler: Handler) annotation =
   match Type.split annotation with
   | left, _ when String.equal (Type.show left) "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
@@ -460,7 +460,9 @@ let variables ((module Handler: Handler) as order) annotation =
       let primitive = Type.split annotation |> fst in
       Handler.find (Handler.indices ()) Type.generic
       >>= fun generic_index ->
-      Handler.find (Handler.edges ()) (index_of order primitive)
+      Handler.find (Handler.indices ()) primitive
+      >>= fun primitive_index ->
+      Handler.find (Handler.edges ()) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
       >>| fun { Target.parameters; _ } -> parameters
 

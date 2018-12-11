@@ -2057,6 +2057,35 @@ let test_to_dot _ =
     ("\n" ^ TypeOrder.to_dot order)
 
 
+let test_variables _ =
+  let order =
+    let order = Builder.create () |> TypeOrder.handler in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order Type.generic;
+    insert order !"A";
+    insert order !"B";
+    connect ~parameters:[Type.variable "T"] order ~predecessor:!"A" ~successor:Type.generic;
+    connect order ~predecessor:Type.Bottom ~successor:!"A";
+    connect order ~predecessor:Type.Bottom ~successor:!"B";
+    connect order ~predecessor:!"B" ~successor:Type.Top;
+    connect order ~predecessor:Type.generic ~successor:Type.Top;
+    order
+  in
+  let assert_variables ~expected source =
+    let aliases = fun _ -> None in
+    let annotation =
+      parse_single_expression source
+      |> Type.create ~aliases
+    in
+    assert_equal expected (TypeOrder.variables order annotation)
+  in
+  assert_variables ~expected:None "B";
+  assert_variables ~expected:(Some [Type.variable "T"]) "A";
+  assert_variables ~expected:(Some [Type.variable "T"]) "A[int]";
+  assert_variables ~expected:None "Nonexistent"
+
+
 let () =
   "order">:::[
     "default">::test_default;
@@ -2077,5 +2106,6 @@ let () =
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "check_integrity">::test_check_integrity;
     "to_dot">::test_to_dot;
+    "variables">::test_variables;
   ]
   |> Test.run

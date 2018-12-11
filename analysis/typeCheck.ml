@@ -602,6 +602,24 @@ module State = struct
                 let annotation =
                   Access.expression parent
                   |> Resolution.parse_annotation resolution
+                  |> function
+                  | Type.Primitive name ->
+                      let variables =
+                        TypeOrder.variables (Resolution.order resolution) (Type.Primitive name)
+                      in
+                      begin
+                        match variables with
+                        | None
+                        | Some [] ->
+                            Type.Primitive name
+                        | Some variables ->
+                            Type.Parametric { name; parameters = variables }
+                        | exception _ ->
+                            Type.Primitive name
+
+                      end
+                  | annotation ->
+                      annotation
                 in
                 if Define.is_class_method define || Define.is_class_property define then
                   (* First parameter of a method is a class object. *)
