@@ -134,8 +134,8 @@ class Configuration:
         # Handle search path from multiple sources
         self._search_path = []
         if preserve_pythonpath:
-            for path in os.getenv("PYTHONPATH", default='').split(':'):
-                if path != '':
+            for path in os.getenv("PYTHONPATH", default="").split(":"):
+                if path != "":
                     if os.path.isdir(path):
                         self._search_path.append(SearchPathElement(path))
                     else:
@@ -146,8 +146,7 @@ class Configuration:
             # sys.path often includes '' and a zipped python version, so
             # we don't log warnings for non-dir entries
             sys_path = [
-                SearchPathElement(path)
-                for path in sys.path if os.path.isdir(path)
+                SearchPathElement(path) for path in sys.path if os.path.isdir(path)
             ]
             self._search_path.extend(sys_path)
         if search_path:

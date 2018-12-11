@@ -152,10 +152,7 @@ class ConfigurationTest(unittest.TestCase):
                     [
                         SearchPathElement("additional/"),
                         SearchPathElement("directories/"),
-                        *[
-                            SearchPathElement(i)
-                            for i in sys.path if os.path.isdir(i)
-                        ],
+                        *[SearchPathElement(i) for i in sys.path if os.path.isdir(i)],
                         SearchPathElement("command/"),
                         SearchPathElement("line/"),
                         SearchPathElement("json/"),
