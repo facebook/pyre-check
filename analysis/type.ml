@@ -982,8 +982,9 @@ let rec create ~aliases { Node.value = expression; _ } =
             let constraints =
               let explicits =
                 let explicit = function
-                  | { Argument.value = { Node.value = Access access; _ }; Argument.name = None } ->
-                      Some (parse [] access)
+                  | { Argument.value; Argument.name = None } ->
+                      create value ~aliases
+                      |> Option.some
                   | _ ->
                       None
                 in
@@ -991,10 +992,8 @@ let rec create ~aliases { Node.value = expression; _ } =
               in
               let bound =
                 let bound = function
-                  | {
-                    Argument.value;
-                    Argument.name = Some { Node.value = bound; _ };
-                  } when Identifier.show bound = "$parameter$bound" ->
+                  | { Argument.value; Argument.name = Some { Node.value = bound; _ }; }
+                    when Identifier.show_sanitized bound = "bound" ->
                       create value ~aliases
                       |> Option.some
                   | _ ->

@@ -458,6 +458,23 @@ let test_qualify _ =
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf",$parameter$bound = "qualifier.C")
     |};
+  assert_qualify
+    {|
+      from typing import TypeVar as TV
+      class X: pass
+      class A: pass
+      class C:
+        T = 'C'
+        TSelf = TV("TSelf", "C", X, "A")
+    |}
+    {|
+      from typing import TypeVar as TV
+      class qualifier.X(): pass
+      class qualifier.A(): pass
+      class qualifier.C():
+        qualifier.C.T = "C"
+        qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
+    |};
 
   (* Qualify functions. *)
   assert_qualify
