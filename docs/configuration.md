@@ -102,7 +102,7 @@ optional arguments:
                         include in the type environment
   --preserve-pythonpath
                         Preserve the value of the PYTHONPATH environment
-                        variable and inheret the current python environment's
+                        variable and inherit the current python environment's
                         search path
   --binary BINARY       Location of the pyre binary
   --exclude EXCLUDE     Exclude files and directories matching this regexp from parsing
