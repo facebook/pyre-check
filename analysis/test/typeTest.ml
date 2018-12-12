@@ -40,6 +40,7 @@ let test_create _ =
   assert_create
     "typing.Dict.__getitem__((int, str))"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
+  assert_create "typing.Counter" (Type.primitive "collections.Counter");
 
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
