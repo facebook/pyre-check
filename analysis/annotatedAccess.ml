@@ -469,8 +469,19 @@ let fold ~resolution ~initial ~f access =
       let resolved =
         match attributes with
         | [attribute] ->
-            Resolution.get_local resolution ~access:lead
-            |> Option.value ~default:(Attribute.annotation attribute)
+            begin
+              match Resolution.get_local resolution ~access:lead with
+              | Some ({
+                  Annotation.mutability = Immutable { Annotation.scope = Global; original };
+                  _;
+                } as local) when Type.is_unknown original ->
+                  let original = Annotation.original (Attribute.annotation attribute) in
+                  { local with mutability = Immutable { Annotation.scope = Global; original } }
+              | Some local ->
+                  local
+              | None ->
+                  Attribute.annotation attribute
+            end
         | _ ->
             attributes
             |> List.map ~f:Attribute.annotation

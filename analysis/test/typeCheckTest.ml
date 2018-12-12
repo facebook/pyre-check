@@ -3966,6 +3966,17 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
+          class Foo:
+            a: str = ""
+          Foo.a = 1
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` " ^
+      "but is used as type `int`."
+    ];
+
+  assert_type_errors
+    {|
       class Foo:
         bar: int = 1
       def foo(param: Foo) -> int:
@@ -5175,6 +5186,19 @@ let test_check_missing_attribute _ =
     |}
     [
       "Undefined name [18]: Global name `unknown` is undefined.";
+    ];
+
+  assert_type_errors
+    {|
+        class Foo:
+          a: typing.Any
+        Foo.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but type `Any` is specified.";
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have " ^
+      "non-optional type `typing.Any` but is never initialized."
     ];
 
   assert_type_errors
