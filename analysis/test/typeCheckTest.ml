@@ -6988,6 +6988,35 @@ let test_check_unbound_variables _ =
     ];
   assert_type_errors
     {|
+      def foo(flag: bool) -> int:
+        if flag:
+          result = narnia()
+        return result
+    |}
+    [
+      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[typing.Undeclared, unknown]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
+    ];
+  assert_type_errors
+    {|
+      def foo(flag: bool) -> int:
+        if flag:
+          result = narnia()
+        else:
+          other = 1
+        return result
+    |}
+    [
+      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[typing.Undeclared, unknown]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
+    ];
+
+  assert_type_errors
+    {|
       def foo() -> int:
         assert unknown is None or 1
         return unknown

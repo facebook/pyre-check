@@ -705,6 +705,10 @@ let test_less_or_equal _ =
        ~left:(Type.Optional Type.string)
        ~right:(Type.Union [Type.integer; Type.Optional Type.string]));
 
+  (* Undeclared. *)
+  assert_false (less_or_equal default ~left:(Type.undeclared) ~right:(Type.Top));
+  assert_false (less_or_equal default ~left:(Type.Top) ~right:(Type.undeclared));
+
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
@@ -1315,6 +1319,35 @@ let test_join _ =
     "typing.Optional[float]"
     "typing.Union[float, int]"
     "typing.Optional[typing.Union[float, int]]";
+
+  (* Undeclared. *)
+  assert_join "typing.Undeclared" "int" "typing.Union[typing.Undeclared, int]";
+  assert_join "int" "typing.Undeclared" "typing.Union[typing.Undeclared, int]";
+  let assert_join_types ?(order = default) left right expected =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      expected
+      (join order left right)
+  in
+  assert_join_types
+    Type.undeclared
+    Type.Top
+    (Type.Union [Type.undeclared; Type.Top]);
+  assert_join_types
+    Type.Top
+    Type.undeclared
+    (Type.Union [Type.undeclared; Type.Top]);
+  assert_join_types
+    ~order
+    !"0"
+    Type.undeclared
+    (Type.Union [!"0"; Type.undeclared]);
+  assert_join_types
+    ~order
+    Type.undeclared
+    !"0"
+    (Type.Union [!"0"; Type.undeclared]);
 
   let order =
     let order = Builder.create () |> TypeOrder.handler in

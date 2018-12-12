@@ -580,7 +580,9 @@ let union parameters =
     Set.fold ~init:[] ~f:filter_redundant_annotations parameters
     |> List.sort ~compare
   in
-  if List.mem ~equal parameters Object then
+  if List.mem ~equal parameters undeclared then
+    Union parameters
+  else if List.mem ~equal parameters Object then
     Object
   else if List.mem ~equal parameters Top then
     Top

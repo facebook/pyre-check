@@ -470,8 +470,8 @@ let variables (module Handler: Handler) annotation =
 let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   Type.equal left right ||
   match left, right with
-  | _, Type.Top ->
-      true
+  | other, Type.Top ->
+      not (Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared))
   | Type.Top, _ ->
       false
 
@@ -991,6 +991,11 @@ and join ((module Handler: Handler) as order) left right =
     left
   else
     match left, right with
+    | undeclared, _ when Type.equal undeclared Type.undeclared ->
+        Type.union [left; right]
+    | _, undeclared when Type.equal undeclared Type.undeclared ->
+        Type.union [left; right]
+
     | Type.Top, _
     | _, Type.Top ->
         Type.Top
