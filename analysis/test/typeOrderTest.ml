@@ -1037,6 +1037,24 @@ let test_less_or_equal _ =
        ~left:"typing.Callable[[Variable(args, int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
 
+  (* Callables with keyword arguments. *)
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Keywords(kwargs, int)], str]"
+       ~right:"typing.Callable[[Named(arg, int)], str]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, int), Keywords(kwargs, int)], str]"
+       ~right:"typing.Callable[[Named(arg, int)], str]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[Variable(args, str), Keywords(kwargs, int)], str]"
+       ~right:"typing.Callable[[Named(arg, int)], str]");
+
+
   (* TypedDictionaries *)
   assert_true
     (less_or_equal

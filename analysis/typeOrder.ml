@@ -721,6 +721,20 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                   | Parameter.Keywords _ :: left_parameters, [] ->
                       parameters_less_or_equal left_parameters []
 
+                  | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
+                    (Parameter.Named _ as named) :: right ->
+                      let is_compatible =
+                        Type.equal (Parameter.annotation variable) (Parameter.annotation keywords) &&
+                        less_or_equal
+                          order
+                          ~left:(Parameter.annotation named)
+                          ~right:(Parameter.annotation keywords)
+                      in
+                      if is_compatible then
+                        parameters_less_or_equal left right
+                      else
+                        false
+
                   | left :: left_parameters, [] ->
                       if Parameter.default left then
                         parameters_less_or_equal left_parameters []
