@@ -277,10 +277,11 @@ let test_process_type_check_request context =
       ?(sources = [])
       ~check
       ~expected_errors
-      ?(expected_deferred_requests = [])
+      ?(expected_deferred_check_requests = [])
+      ?(expected_deferred_environment_requests = [])
       () =
     let assert_response _ =
-      let actual_errors, actual_deferred_requests =
+      let actual_errors, actual_deferred_check_requests, actual_deferred_environment_requests =
         let configuration, state = initialize sources in
         let check = List.map check ~f:write_file in
         let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
@@ -290,26 +291,27 @@ let test_process_type_check_request context =
           Request.response = Some (Protocol.TypeCheckResponse response);
           state = { State.deferred_requests; _ };
         } ->
-            let actual_deferred_requests =
+            let deferred_check_requests, deferred_environment_requests =
               let deferred_request request =
                 let open Protocol in
                 match request with
                 | Request.TypeCheckRequest {
                     TypeCheckRequest.check;
-                    update_environment_with = [];
+                    update_environment_with;
                   } ->
                     let path file =
                       File.handle file ~configuration
                       |> File.Handle.show
                     in
-                    List.map check ~f:path
+                    List.map check ~f:path, List.map update_environment_with ~f:path
                 | _ ->
                     failwith "Unable to extract deferred type-check request"
               in
               List.map deferred_requests ~f:deferred_request
-              |> List.concat
+              |> List.unzip
+              |> fun (check, environment) -> List.concat check, List.concat environment
             in
-            response, actual_deferred_requests
+            response, deferred_check_requests, deferred_environment_requests
         | _ ->
             failwith "Unexpected response."
       in
@@ -317,8 +319,13 @@ let test_process_type_check_request context =
       assert_equal
         ~cmp:(List.equal ~equal:String.equal)
         ~printer:(String.concat ~sep:"\n")
-        expected_deferred_requests
-        actual_deferred_requests
+        expected_deferred_check_requests
+        actual_deferred_check_requests;
+      assert_equal
+        ~cmp:(List.equal ~equal:String.equal)
+        ~printer:(String.concat ~sep:"\n")
+        expected_deferred_environment_requests
+        actual_deferred_environment_requests
     in
     OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response
   in
@@ -343,7 +350,8 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> int: ..."]  (* Unchanged. *)
     ~expected_errors:["library.py", []]
-    ~expected_deferred_requests:[]
+    ~expected_deferred_check_requests:[]
+    ~expected_deferred_environment_requests:[]
     ();
   (* Single dependency. *)
   assert_response
@@ -353,7 +361,8 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_requests:["client.py"]
+    ~expected_deferred_check_requests:["client.py"]
+    ~expected_deferred_environment_requests:["client.py"]
     ();
   (* Multiple depedencies. *)
   assert_response
@@ -364,7 +373,8 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_requests:["client.py"; "other.py"]
+    ~expected_deferred_check_requests:["client.py"; "other.py"]
+    ~expected_deferred_environment_requests:["client.py"; "other.py"]
     ();
   (* Indirect dependency. *)
   assert_response
@@ -379,14 +389,37 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_requests:["client.py"]
+    ~expected_deferred_check_requests:["client.py"]
+    ~expected_deferred_environment_requests:["client.py"]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
     ~sources:["first.pyi", "def function() -> str: ..."]
     ~check:["first.py", "def function() -> int: ..."]
     ~expected_errors:[]
-    ~expected_deferred_requests:[]
+    ();
+  (* Starred imports. *)
+  assert_response
+    ~sources:[
+      "a.py", "var = 42";
+      "b.py", "from a import *";
+      "c.py", "from b import *";
+    ]
+    ~check:["a.py", "var = 1337"]
+    ~expected_errors:["a.py", []]
+    ~expected_deferred_check_requests:["b.py"]
+    ~expected_deferred_environment_requests:["b.py"]
+    ();
+  assert_response
+    ~sources:[
+      "a.py", "var = 42";
+      "b.py", "from a import *";
+      "c.py", "from b import *";
+    ]
+    ~check:["b.py", "from a import *"]
+    ~expected_errors:["b.py", []]
+    ~expected_deferred_check_requests:["c.py"]
+    ~expected_deferred_environment_requests:["c.py"]
     ();
 
   (* Check nonexistent handles. *)

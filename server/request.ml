@@ -721,7 +721,33 @@ let process_type_check_request
               let new_signature_hash = Hashtbl.find_exn new_signature_hashes handle in
               new_signature_hash <> old_signature_hash
             in
-            if signature_hash_changed then
+            let has_starred_import () =
+              let was_starred_import { Node.value; _ } =
+                (* Heuristic: if the list of exports for a module we import matches exactly
+                   what that module exports, this was a starred import before preprocessing. *)
+                let open Statement in
+                match value with
+                | Import { Import.from = Some from; imports } ->
+                    begin
+                      match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
+                      | Some exports ->
+                          let import_names =
+                            List.map imports ~f:(fun { Import.name; _ } -> name )
+                          in
+                          List.equal ~equal:Access.equal import_names exports
+                      | _ ->
+                          false
+                    end
+                | _ ->
+                    false
+              in
+
+              Ast.SharedMemory.Sources.get handle
+              >>| Source.statements
+              |> Option.value ~default:[]
+              |> List.exists ~f:was_starred_import
+            in
+            if signature_hash_changed or has_starred_import () then
               let qualifier = Ast.Source.qualifier ~handle in
               Handler.dependencies qualifier
             else
@@ -749,7 +775,12 @@ let process_type_check_request
       if List.is_empty files then
         deferred_requests
       else
-        (TypeCheckRequest (TypeCheckRequest.create ~check:files ())) :: deferred_requests
+        (TypeCheckRequest
+           (TypeCheckRequest.create
+              ~update_environment_with:files
+              ~check:files
+              ())) ::
+        deferred_requests
     else
       deferred_requests
   in

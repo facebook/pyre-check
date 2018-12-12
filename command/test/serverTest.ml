@@ -1145,7 +1145,10 @@ let test_incremental_dependencies context =
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal
       ~printer:(List.to_string ~f:Server.Protocol.Request.show)
-      [check_request ~check:[file ~local_root "a.py"] ()]
+      [check_request
+         ~check:[file ~local_root "a.py"]
+         ~update:[file ~local_root "a.py"]
+         ()]
       state.State.deferred_requests;
     let { Request.state; response } =
       process
