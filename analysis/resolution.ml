@@ -86,14 +86,16 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
   { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
 
 
-let get_local { annotations; global; _ } ~access =
+let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
   match Map.find annotations access with
   | Some ({ Annotation.annotation; _ } as result) when not (Type.equal annotation Type.Deleted) ->
       Some result
-  | _ ->
+  | _ when global_fallback ->
       Access.delocalize access
       |> global
       >>| Node.value
+  | _ ->
+      None
 
 
 let get_local_callable resolution ~access =

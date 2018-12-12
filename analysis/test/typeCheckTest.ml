@@ -5212,6 +5212,21 @@ let test_check_missing_attribute _ =
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
     ];
 
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.a: typing.Any
+      Foo().a = 1
+      def foo() -> bool:
+        return Foo().a
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but type `Any` is specified.";
+      "Incompatible return type [7]: Expected `bool` but got `int`."
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_type_errors
     ~debug:false

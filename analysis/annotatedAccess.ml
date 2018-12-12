@@ -470,7 +470,8 @@ let fold ~resolution ~initial ~f access =
         match attributes with
         | [attribute] ->
             begin
-              match Resolution.get_local resolution ~access:lead with
+              let is_class = Type.is_meta annotation in
+              match Resolution.get_local resolution ~access:lead ~global_fallback:is_class with
               | Some ({
                   Annotation.mutability = Immutable { Annotation.scope = Global; original };
                   _;
