@@ -633,10 +633,12 @@ let primitive_substitution_map =
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
     "typing.Callable", callable ~annotation:Object ();
+    "typing.ChainMap", parametric_anys "collections.ChainMap" 1;
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
-    "typing.Counter", primitive "collections.Counter";
+    "typing.Counter", parametric_anys "collections.Counter" 1;
     "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
     "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
+    "typing.Deque", parametric_anys "collections.deque" 1;
     "typing.Dict", parametric_anys "dict" 2;
     "typing.Generator", parametric_anys "typing.Generator" 3;
     "typing.Iterable", parametric_anys "typing.Iterable" 1;
@@ -655,7 +657,10 @@ let primitive_substitution_map =
 
 let parametric_substitution_map =
   [
+    "typing.ChainMap", "collections.ChainMap";
+    "typing.Counter", "collections.Counter";
     "typing.DefaultDict", "collections.defaultdict";
+    "typing.Deque", "collections.deque";
     "typing.Dict", "dict";
     "typing.FrozenSet", "frozenset";
     "typing.List", "list";

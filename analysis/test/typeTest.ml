@@ -40,7 +40,13 @@ let test_create _ =
   assert_create
     "typing.Dict.__getitem__((int, str))"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
-  assert_create "typing.Counter" (Type.primitive "collections.Counter");
+  (* Type aliases in typeshed. *)
+  assert_create "typing.Counter" (Type.parametric "collections.Counter" [Type.Object]);
+  assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" [Type.integer]);
+  assert_create "typing.ChainMap" (Type.parametric "collections.ChainMap" [Type.Object]);
+  assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
+  assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Object]);
+  assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
 
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
