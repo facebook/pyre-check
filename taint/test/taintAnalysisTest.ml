@@ -72,7 +72,7 @@ let create_call_graph ?(path = "test.py") source =
   let call_graph =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
-      ~call_graph:DependencyGraph.empty
+      ~call_graph:DependencyGraph.empty_callgraph
       ~path:handle
       ~source
   in
@@ -87,8 +87,11 @@ let create_call_graph ?(path = "test.py") source =
 
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
-  let call_graph, all_callables, environment = create_call_graph source in
-  let caller_map = DependencyGraph.reverse call_graph in
+  let callgraph, all_callables, environment = create_call_graph source in
+  let dependencies =
+    DependencyGraph.from_callgraph callgraph
+    |> DependencyGraph.reverse
+  in
   let analyses = [Taint.Analysis.abstract_kind] in
   let configuration = Configuration.Analysis.create () in
   let iterations =
@@ -97,7 +100,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       ~scheduler
       ~environment
       ~analyses
-      ~caller_map
+      ~dependencies
       ~all_callables
       Fixpoint.Epoch.initial
   in
@@ -142,7 +145,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
     let create_result_patterns { define_name; errors; _ } = define_name, errors in
     List.map expect ~f:create_result_patterns
   in
-  assert_bool "Callgraph is empty!" (Callable.Map.length call_graph > 0);
+  assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);
   assert_equal expect_iterations iterations ~printer:Int.to_string;
   List.iter ~f:check_expectation expect;
   List.iter2_exn expect_results results ~f:assert_errors
@@ -491,17 +494,22 @@ let test_integration _ =
         |> List.last_exn
       in
       let check_call_graph_expectation call_graph =
-        let actual = Format.asprintf "%a" DependencyGraph.pp call_graph in
+        let dependencies = DependencyGraph.from_callgraph call_graph in
+        let actual = Format.asprintf "Call dependencies\n%a" DependencyGraph.pp dependencies in
         check_expectation ~suffix:".cg" actual
       in
-      let call_graph, all_callables, environment = create_call_graph ~path:handle source in
-      check_call_graph_expectation call_graph;
+      let callgraph, all_callables, environment = create_call_graph ~path:handle source in
+      let dependencies =
+        DependencyGraph.from_callgraph callgraph
+        |> DependencyGraph.reverse
+      in
+      check_call_graph_expectation callgraph;
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())
         ~environment
         ~analyses:[Taint.Analysis.abstract_kind]
-        ~caller_map:(DependencyGraph.reverse call_graph)
+        ~dependencies
         ~all_callables
         Fixpoint.Epoch.initial
       |> ignore;

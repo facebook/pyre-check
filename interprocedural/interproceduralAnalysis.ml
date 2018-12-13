@@ -369,16 +369,16 @@ let one_analysis_pass ~analyses step ~environment ~callables =
   List.length callables
 
 
-let get_callable_dependents ~caller_map = function
+let get_callable_dependents ~dependencies = function
   | #Callable.real_target as real ->
-      Callable.Map.find caller_map real
+      Callable.Map.find dependencies real
       |> Option.value ~default:[]
   | #Callable.override_target as _override ->
       (* TODO(T32010422) *)
       []
 
 
-let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callables =
+let compute_callables_to_reanalyze step previous_batch ~dependencies ~all_callables =
   let open Fixpoint in
   let reanalyze_caller caller accumulator =
     Callable.Set.add caller accumulator
@@ -391,7 +391,7 @@ let compute_callables_to_reanalyze step previous_batch ~caller_map ~all_callable
           else
             (* c must be re-analyzed next iteration because its result has
                changed, and therefore its callers must also be reanalyzed. *)
-            let callers = get_callable_dependents ~caller_map callable in
+            let callers = get_callable_dependents ~dependencies callable in
             List.fold callers ~init:(Callable.Set.add callable accumulator)
               ~f:(fun accumulator caller -> reanalyze_caller caller accumulator))
   in
@@ -433,7 +433,7 @@ let compute_fixpoint
     ~scheduler
     ~environment
     ~analyses
-    ~caller_map
+    ~dependencies
     ~all_callables
     epoch =
   (* Start iteration > 0 is to avoid a useless special 0 iteration for mega
@@ -508,7 +508,7 @@ let compute_fixpoint
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =
-        compute_callables_to_reanalyze step callables_to_analyze ~caller_map ~all_callables
+        compute_callables_to_reanalyze step callables_to_analyze ~dependencies ~all_callables
       in
       let hs = SharedMem.heap_size () in
       let time_f = Unix.gettimeofday () in

@@ -19,26 +19,31 @@ let parse_source ?(qualifier=[]) ?handle source =
   |> Preprocessing.preprocess
 
 
-let create_call_graph ?(update_environment_with = []) source =
-  let source = parse_source source in
+let create_call_graph ?(update_environment_with = []) source_text =
+  let source = parse_source source_text in
   let configuration = Test.mock_configuration in
   let environment = Test.environment ~configuration () in
   let sources =
     source
     :: List.map
       update_environment_with
-      ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle source)
+      ~f:(fun { qualifier; handle; source } -> parse_source ~qualifier ~handle source)
   in
   Service.Environment.populate ~configuration environment sources;
-  TypeCheck.check ~configuration ~environment ~source |> ignore;
-  DependencyGraph.create ~environment ~source
+  let type_errors = TypeCheck.check ~configuration ~environment ~source in
+  if not (List.is_empty type_errors.errors) then
+    Log.dump "Type errors in %s\n%a"
+      source_text
+      (Format.pp_print_list TypeCheck.Error.pp)
+      type_errors.errors;
+  DependencyGraph.create_callgraph ~environment ~source
 
 
 let create_callable name =
   Callable.create_real (Access.create name)
 
 
-let compare_call_graph call_graph ~expected =
+let compare_dependency_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
       create_callable callee, List.map callers ~f:create_callable in
@@ -51,20 +56,22 @@ let compare_call_graph call_graph ~expected =
 
 
 let assert_call_graph ?update_environment_with source ~expected =
-  let call_graph =
+  let graph =
     create_call_graph ?update_environment_with source
+    |> DependencyGraph.from_callgraph
     |> Callable.Map.to_alist
   in
-  compare_call_graph call_graph ~expected
+  compare_dependency_graph graph ~expected
 
 
 let assert_reverse_call_graph source ~expected =
-  let call_graph =
+  let graph =
     create_call_graph source
+    |> DependencyGraph.from_callgraph
     |> DependencyGraph.reverse
     |> Callable.Map.to_alist
   in
-  compare_call_graph call_graph ~expected
+  compare_dependency_graph graph ~expected
 
 
 let test_construction _ =
@@ -108,12 +115,12 @@ let test_construction _ =
   assert_call_graph
     {|
      class A:
-       def __init__(self) -> A:
-         return self
+       def __init__(self) -> None:
+         pass
 
      class B:
-       def __init__(self) -> A:
-         return A()
+       def __init__(self) -> None:
+         A()
     |}
     ~expected:[
       "A.__init__", [];
@@ -344,7 +351,10 @@ let test_strongly_connected_components _ =
     Service.Environment.populate ~configuration environment [source];
     TypeCheck.check ~configuration ~environment ~source |> ignore;
     let partitions =
-      let edges = DependencyGraph.create ~environment ~source in
+      let edges =
+        DependencyGraph.create_callgraph ~environment ~source
+        |> DependencyGraph.from_callgraph
+      in
       DependencyGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in

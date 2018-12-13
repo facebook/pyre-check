@@ -8,21 +8,25 @@ open Analysis
 
 
 type t = (Callable.t list) Callable.Map.t
+type callgraph = (Callable.t list) Callable.RealMap.t
 
 val empty: t
+val empty_callgraph: callgraph
 
-val create:
-  environment: (module Environment.Handler)
-  -> source: Source.t
-  -> t
-
-(** Returns a partition of nodes for strongly connected components in the call graph *)
+(** Returns a partition of nodes for strongly connected components in the dependency graph *)
 val partition: edges: t -> (Callable.t list) list
 
-(** Reverse edges in the call graph *)
+(** Reverse edges in the dependency graph *)
 val reverse: t -> t
 
 val pp: Format.formatter -> t -> unit
 val pp_partitions: Format.formatter -> (Callable.t list) list -> unit
 
 val dump: t -> configuration: Configuration.Analysis.t -> unit
+
+val from_callgraph: callgraph -> t
+
+val create_callgraph:
+  environment: (module Environment.Handler)
+  -> source: Source.t
+  -> callgraph

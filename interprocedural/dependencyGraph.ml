@@ -13,17 +13,19 @@ open Analysis
 
 
 type t = (Callable.t list) Callable.Map.t
+type callgraph = (Callable.t list) Callable.RealMap.t
 
 
 let empty = Callable.Map.empty
+let empty_callgraph = Callable.RealMap.empty
 
 
-let create ~environment ~source =
+let create_callgraph ~environment ~source =
   let fold_defines
       dependencies
-      { Node.value = ({ Define.name = caller; parent; _ } as define); _ } =
-    let cfg = Cfg.create define in
-    let caller_callable = Callable.create_real caller in
+      ({ Node.value = { Define.name = caller; parent; _ }; _ } as define) =
+    let cfg = Cfg.create define.value in
+    let caller_callable = Callable.create define in
     let fold_cfg ~key:node_id ~data:node callees =
       let statements = Cfg.Node.statements node in
       let fold_statements index callees statement =
@@ -55,10 +57,10 @@ let create ~environment ~source =
       Hashtbl.fold cfg ~init:[] ~f:fold_cfg
       |> List.dedup_and_sort ~compare:Callable.compare
     in
-    Callable.Map.set dependencies ~key:caller_callable ~data:callees
+    Callable.RealMap.set dependencies ~key:caller_callable ~data:callees
   in
   Preprocessing.defines source
-  |> List.fold ~init:Callable.Map.empty ~f:fold_defines
+  |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 
 
 (* Returns forest of nodes in reverse finish time order. *)
@@ -138,14 +140,20 @@ let partition ~edges =
 
 
 let pp formatter edges =
-  let pp_edge ~key:callable ~data =
+  let pp_edge (callable, data) =
     let targets =
       List.map data ~f:Callable.show
+      |> List.sort ~compare:String.compare
       |> String.concat ~sep:" "
     in
     Format.fprintf formatter "%s -> [%s]\n" (Callable.show callable) targets
   in
-  Callable.Map.iteri ~f:pp_edge edges
+  let compare (left, _) (right, _) =
+    String.compare (Callable.show left) (Callable.show right)
+  in
+  Callable.Map.to_alist edges
+  |> List.sort ~compare
+  |> List.iter ~f:pp_edge
 
 
 let dump call_graph ~configuration =
@@ -184,3 +192,11 @@ let dump call_graph ~configuration =
     ~relative:"call_graph.json"
   |> File.create ~content:(Buffer.contents buffer)
   |> File.write
+
+
+let from_callgraph callgraph =
+  let add ~key ~data result =
+    let key = (key :> Callable.t ) in
+    Callable.Map.set result ~key ~data
+  in
+  Callable.RealMap.fold callgraph ~f:add ~init:Callable.Map.empty

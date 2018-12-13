@@ -15,11 +15,11 @@ val overrides_of_source
   -> (Callable.t list) Callable.Map.t
 
 val record_and_merge_call_graph
-  :  environment: (module Environment.Handler)
-  -> call_graph: DependencyGraph.t
+  : environment: (module Environment.Handler)
+  -> call_graph: DependencyGraph.callgraph
   -> path: File.Handle.t
   -> source: Source.t
-  -> DependencyGraph.t
+  -> DependencyGraph.callgraph
 
 val record_overrides: environment: (module Environment.Handler) -> source: Source.t -> unit
 

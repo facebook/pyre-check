@@ -40,6 +40,12 @@ module Key : sig
   val compare: t -> t -> int
 end
 
+module RealKey : sig
+  type t = real_target
+  val to_string: t -> string
+  val compare: t -> t -> int
+end
+
 module Set : Caml.Set.S with type elt = t
 
 (* Shared heap access to top-level definitions. *)
@@ -49,3 +55,4 @@ val get_definition: [< real_target ] -> Define.t Node.t option
 
 module Map : Core.Map.S with type Key.t = t
 module Hashable : Core.Hashable.S with type t := t
+module RealMap : Core.Map.S with type Key.t = real_target

@@ -63,6 +63,7 @@ end
 
 module RealKey = struct
   type t = real_target
+  [@@deriving sexp, hash]
   let to_string = show_real_target
   let compare = compare_real_target
 end
@@ -114,5 +115,6 @@ let compare target1 target2 =
   compare target1 target2
 
 
+module RealMap = Map.Make(RealKey)
 module Map = Map.Make(Key)
 module Hashable = Hashable.Make(Key)

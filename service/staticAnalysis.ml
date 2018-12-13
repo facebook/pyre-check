@@ -51,7 +51,7 @@ let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  DependencyGraph.create ~environment ~source
+  DependencyGraph.create_callgraph ~environment ~source
   |> record_and_merge_call_graph call_graph
 
 
@@ -145,34 +145,33 @@ let analyze
 
   Log.info "Building call graph...";
   let timer = Timer.start () in
-  let call_graph =
-    let build_call_graph map path =
+  let callgraph =
+    let build_call_graph call_graph path =
       try
         Ast.SharedMemory.Sources.get path
-        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph:map ~path ~source)
-        |> Option.value ~default:map
+        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~path ~source)
+        |> Option.value ~default:call_graph
       with TypeOrder.Untracked untracked_type ->
         Log.info "Error building call graph in path %a for untracked type %a"
           File.Handle.pp path
           Type.pp untracked_type;
-        map
+        call_graph
     in
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~initial:Callable.Map.empty
-      ~map:(fun _ paths -> List.fold paths ~init:Callable.Map.empty ~f:build_call_graph)
+      ~initial:Callable.RealMap.empty
+      ~map:(fun _ paths -> List.fold paths ~init:Callable.RealMap.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
       ~inputs:paths
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
 
-  Log.info "Call graph edges: %d" (Callable.Map.length call_graph);
+  Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
   if dump_call_graph then
-    DependencyGraph.dump call_graph ~configuration;
-
-  let caller_map = DependencyGraph.reverse call_graph in
+    DependencyGraph.from_callgraph callgraph
+    |> DependencyGraph.dump ~configuration;
 
   let callables, stubs =
     let classify_source (callables, stubs) define =
@@ -226,6 +225,10 @@ let analyze
   in
   let analyses = [Taint.Analysis.abstract_kind] in
 
+  let dependencies =
+    DependencyGraph.from_callgraph callgraph
+    |> DependencyGraph.reverse
+  in
   Log.info "Analysis fixpoint started...";
   let timer = Timer.start () in
   let () =
@@ -236,7 +239,7 @@ let analyze
           ~scheduler
           ~environment
           ~analyses
-          ~caller_map
+          ~dependencies
           ~all_callables
           Interprocedural.Fixpoint.Epoch.initial
       in
