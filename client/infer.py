@@ -528,6 +528,7 @@ def main():
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
             arguments.noninteractive = True
+        arguments.command = None
 
         log.initialize(arguments)
         switch_root(arguments)
@@ -539,7 +540,7 @@ def main():
             return ExitCode.SUCCESS
 
         analysis_directory = resolve_analysis_directory(
-            arguments, configuration, prompt=False
+            arguments, commands, configuration, prompt=False
         )
         Infer(arguments, configuration, analysis_directory).run()
     except (

@@ -115,7 +115,9 @@ def main() -> int:
     # Link tree determination.
     buck_arguments = parser.add_argument_group("buck")
     buck_arguments.add_argument(
-        "--build", action="store_true", help="Build all the necessary artifacts."
+        "--build",
+        action="store_true",
+        help="Freshly build all the necessary artifacts.",
     )
     buck_arguments.add_argument(
         "--target", action="append", dest="targets", help="The buck target to check"
@@ -338,7 +340,7 @@ def main() -> int:
                     and not arguments.use_global_shared_analysis_directory
                 )
                 analysis_directory = resolve_analysis_directory(
-                    arguments, configuration, isolate=isolate, prompt=prompt
+                    arguments, commands, configuration, isolate=isolate, prompt=prompt
                 )
 
         exit_code = (

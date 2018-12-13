@@ -12,6 +12,7 @@ from .. import (
     _resolve_filter_paths,
     _resolve_source_directories,
     buck,
+    commands,
     find_configuration_root,
     switch_root,
 )
@@ -67,11 +68,12 @@ class InitTest(unittest.TestCase):
         arguments.source_directories = []
         arguments.original_directory = "/root"
         arguments.build = False
+        arguments.command = commands.Check
         configuration = MagicMock()
         configuration.source_directories = []
 
         with self.assertRaises(EnvironmentException):
-            _resolve_source_directories(arguments, configuration, prompt=True)
+            _resolve_source_directories(arguments, commands, configuration, prompt=True)
 
         # Arguments override configuration.
         with patch.object(
@@ -81,7 +83,7 @@ class InitTest(unittest.TestCase):
             configuration.source_directories = ["configuration_source_directory"]
 
             source_directories = _resolve_source_directories(
-                arguments, configuration, prompt=True
+                arguments, commands, configuration, prompt=True
             )
             buck_source_directories.assert_called_with(set(), build=False, prompt=True)
             self.assertEqual(
@@ -96,12 +98,31 @@ class InitTest(unittest.TestCase):
             configuration.source_directories = ["configuration_source_directory"]
 
             source_directories = _resolve_source_directories(
-                arguments, configuration, prompt=True
+                arguments, commands, configuration, prompt=True
             )
             buck_source_directories.assert_called_with(
                 {"arguments_target"}, build=False, prompt=True
             )
             self.assertEqual(source_directories, {"realpath(root/arguments_target)"})
+
+        # Restart and start always rebuild buck targets
+        with patch.object(
+            buck, "generate_source_directories", return_value=["arguments_target"]
+        ) as buck_source_directories:
+            arguments.command = commands.Start
+            source_directories = _resolve_source_directories(
+                arguments, commands, configuration, prompt=True
+            )
+            buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=True, prompt=True
+            )
+            arguments.command = commands.Restart
+            source_directories = _resolve_source_directories(
+                arguments, commands, configuration, prompt=True
+            )
+            buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=True, prompt=True
+            )
 
         # Configuration is picked up when no arguments provided.
         with patch.object(
@@ -109,12 +130,13 @@ class InitTest(unittest.TestCase):
         ) as buck_source_directories:
             arguments.source_directories = []
             arguments.targets = []
+            arguments.command = commands.Check
             arguments.build = True
             configuration.targets = ["configuration_target"]
             configuration.source_directories = ["configuration_source_directory"]
 
             source_directories = _resolve_source_directories(
-                arguments, configuration, prompt=True
+                arguments, commands, configuration, prompt=True
             )
             buck_source_directories.assert_called_with(
                 {"configuration_target"}, build=True, prompt=True
@@ -131,7 +153,7 @@ class InitTest(unittest.TestCase):
             arguments.targets = []
             configuration.source_directories = ["."]
             source_directories = _resolve_source_directories(
-                arguments, configuration, prompt=True
+                arguments, commands, configuration, prompt=True
             )
             self.assertEqual(source_directories, {"realpath(root/.)"})
 

@@ -122,7 +122,7 @@ def translate_paths(paths, original_directory):
     return {translate_path(translation, path) for path in paths}
 
 
-def _resolve_source_directories(arguments, configuration, prompt):
+def _resolve_source_directories(arguments, commands, configuration, prompt):
     source_directories = set(arguments.source_directories or [])
     targets = set(arguments.targets or [])
 
@@ -135,8 +135,12 @@ def _resolve_source_directories(arguments, configuration, prompt):
             "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead "
         )
 
+    always_build = arguments.build or arguments.command in [
+        commands.Restart,
+        commands.Start,
+    ]
     source_directories.update(
-        buck.generate_source_directories(targets, build=arguments.build, prompt=prompt)
+        buck.generate_source_directories(targets, build=always_build, prompt=prompt)
     )
     if len(source_directories) == 0:
         raise EnvironmentException("No targets or source directories to analyze.")
@@ -162,9 +166,11 @@ def _resolve_filter_paths(arguments, configuration):
 
 
 def resolve_analysis_directory(
-    arguments, configuration, isolate: bool = False, prompt: bool = True
+    arguments, commands, configuration, isolate: bool = False, prompt: bool = True
 ):
-    source_directories = _resolve_source_directories(arguments, configuration, prompt)
+    source_directories = _resolve_source_directories(
+        arguments, commands, configuration, prompt
+    )
     filter_paths = _resolve_filter_paths(arguments, configuration)
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
