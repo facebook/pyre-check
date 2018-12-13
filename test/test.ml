@@ -617,6 +617,17 @@ let typeshed_stubs = (* Yo dawg... *)
         class OtherAttributes:
           int_attribute: int
           str_attribute: str
+
+        def getattr(
+          o: object,
+          name: str,
+          default: typing.Any,
+        ) -> typing.Any: ...
+
+        def __testSink(arg: typing.Any) -> None: ...
+        def __testSource() -> typing.Any: ...
+        def __userControlled() -> typing.Any: ...
+
       |}
     |> Preprocessing.qualify;
     parse

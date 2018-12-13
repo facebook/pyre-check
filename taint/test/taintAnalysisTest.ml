@@ -177,7 +177,7 @@ let test_fixpoint _ =
 
       def rce_problem():
         x = __userControlled()
-        __eval(x)
+        eval(x)
 
       class TestMethods:
         def method_source(self):

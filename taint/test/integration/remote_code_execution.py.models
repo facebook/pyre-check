@@ -5,8 +5,8 @@
     "callable_line": 4,
     "code": 5001,
     "line": 6,
-    "start": 11,
-    "end": 12,
+    "start": 9,
+    "end": 10,
     "filename": "remote_code_execution.py",
     "message":
       "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
@@ -35,11 +35,11 @@
             "root": {
               "filename": "remote_code_execution.py",
               "line": 6,
-              "start": 11,
-              "end": 12
+              "start": 9,
+              "end": 10
             },
             "tito": [],
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "__eval" } ]
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
       }

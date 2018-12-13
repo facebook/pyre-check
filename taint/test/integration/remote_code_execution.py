@@ -3,7 +3,7 @@
 
 def rce_problem():
     x = __userControlled()
-    __eval(x)
+    eval(x)
 
 
 def subprocess_problem():

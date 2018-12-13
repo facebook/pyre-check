@@ -527,6 +527,9 @@ let test_taint_in_taint_out_application _ =
       def simple_source():
         return __testSource()
 
+      def __no_tito(y):
+        pass
+
       def no_tito_taint():
         y = simple_source()
         x = __no_tito(y)

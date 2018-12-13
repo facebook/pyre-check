@@ -150,7 +150,7 @@ let test_rce_sink _ =
       def test_rce_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
-        __eval(command_unsafe)
+        eval(command_unsafe)
     |}
     [
       {
@@ -240,11 +240,11 @@ let test_rce_and_test_sink _ =
     {|
       def test_rce_and_test_sink(test_only, rce_only, both):
         __testSink(test_only)
-        __eval(rce_only)
+        eval(rce_only)
         if True:
           __testSink(both)
         else:
-          __eval(both)
+          eval(both)
     |}
     [
       {

@@ -155,11 +155,14 @@ let create ~resolution ?(verify = true) ~model_source () =
             _;
           } as callable) ->
           if List.length parameters <> List.length implementation_parameters then
-            Format.asprintf
-              "Model signature parameters for `%a` do not match implementation `%a`"
-              Access.pp name
-              Type.pp callable
-            |> failwith
+            let message =
+              Format.asprintf
+                "Model signature parameters for `%a` do not match implementation `%a`"
+                Access.pp name
+                Type.pp callable
+            in
+            Log.error "%s" message;
+            failwith message
       | _ ->
           ()
     end;
