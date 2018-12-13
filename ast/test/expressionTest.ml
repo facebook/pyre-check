@@ -259,6 +259,18 @@ let test_drop_prefix _ =
     (Access.create "a.b.c")
 
 
+let test_prefix _ =
+  let assert_access_equal = assert_equal ~printer:(Access.show) ~pp_diff:(diff ~print:Access.pp) in
+
+  assert_access_equal
+    (Access.prefix (Access.create "a.b.c"))
+    (Access.create "a.b");
+
+  assert_access_equal
+    (Access.prefix [])
+    []
+
+
 let test_equality _ =
   let compare_two_locations left right =
     let full_printer ({ Node.location; _ } as expression) =

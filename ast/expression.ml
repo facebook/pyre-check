@@ -463,6 +463,14 @@ module Access = struct
     |> Option.value ~default:access
 
 
+  let prefix access =
+    match List.rev access with
+    | _head :: prefix_reversed ->
+        List.rev prefix_reversed
+    | _ ->
+        []
+
+
   let call ?(arguments = []) ~location ~name () =
     [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
 

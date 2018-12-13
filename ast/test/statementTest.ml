@@ -184,6 +184,68 @@ let test_constructor _ =
     ~exists:false
 
 
+let test_defines _ =
+  let assert_define source ~method_name ~exists ~total =
+    let definition =
+      match parse_single_statement source with
+      | { Node.value = Class definition; _ } -> definition
+      | _ -> failwith "Could not parse class"
+    in
+    assert_equal
+      total
+      (List.length (Class.defines definition))
+      ~msg:"Wrong number of defines"
+      ~printer:Int.to_string;
+    let method_id = Identifier.create method_name in
+    match Class.find_define definition ~method_name:method_id with
+    | Some define when exists ->
+        assert_equal
+          define.Node.value.Define.name
+          [Access.Identifier method_id]
+          ~printer:Access.show
+    | None when not exists ->
+        ()
+    | Some { Node.value = { Define.name; _ }; _ } ->
+        Format.asprintf
+          "method %a found when not expected (looking for %s)"
+          Access.pp name
+          method_name
+        |> assert_failure
+    | None ->
+        Format.sprintf "method %s not found when expected" method_name
+        |> assert_failure
+  in
+
+  assert_define
+    {|
+      class Foo:
+        def method(self):
+          pass
+
+        def other(self):
+          pass
+    |}
+    ~total:2
+    ~method_name:"method"
+    ~exists:true;
+
+  assert_define
+    {|
+      class Foo:
+        def method(self):
+          pass
+
+        def other(self):
+          pass
+
+        def third(self):
+          pass
+    |}
+    ~total:3
+    ~method_name:"non_existant"
+    ~exists:false
+
+
 let test_attributes _ =
   let create_attribute
       ?(primitive = false)
@@ -1018,6 +1080,7 @@ let () =
   |> Test.run;
   "class">:::[
     "constructor">::test_constructor;
+    "defines">::test_defines;
     "attributes">::test_attributes;
     "update">::test_update;
   ]

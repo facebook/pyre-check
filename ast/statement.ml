@@ -645,6 +645,33 @@ module Class = struct
     List.filter_map ~f:constructor body
 
 
+  let defines { Record.Class.body; _ } =
+    let define = function
+      | { Node.value = Define define; _ } ->
+          Some define
+      | _ ->
+          None
+    in
+    List.filter_map ~f:define body
+
+
+  let find_define { Record.Class.body; _ } ~method_name =
+    let is_define = function
+      | { Node.value = Define ({ name; _ } as define); location} ->
+          begin
+            match List.last name with
+            | Some (Access.Identifier name)
+              when Identifier.equal name method_name ->
+                Some { Node.value = define; location }
+            | _ ->
+                None
+          end
+      | _ ->
+          None
+    in
+    List.filter_map ~f:is_define body |> List.hd
+
+
   let explicitly_assigned_attributes { Record.Class.name; body; _ } =
     let assigned_attributes map { Node.location; value } =
       let open Expression in

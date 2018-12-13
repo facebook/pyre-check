@@ -212,6 +212,8 @@ module Access : sig
 
   val is_strict_prefix: prefix: t -> t -> bool
   val drop_prefix: t -> prefix: t -> t
+  (* Returns all but the last component in the access. *)
+  val prefix: t -> t
 
   val call
     :  ?arguments: Argument.t list
