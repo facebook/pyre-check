@@ -6518,6 +6518,18 @@ let test_check_behavioral_subtyping _ =
       "of the overridden return `int`."
     ];
 
+  (* Decorators are applied. *)
+  assert_type_errors
+    {|
+      class Foo():
+        @contextlib.contextmanager
+        def foo() -> typing.Generator[int, None, None]: ...
+      class Bar():
+        @contextlib.contextmanager
+        def foo() -> typing.Generator[int, None, None]: ...
+    |}
+    [];
+
   (* Weakened precondition. *)
   assert_type_errors
     {|

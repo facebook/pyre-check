@@ -562,7 +562,7 @@ module State = struct
       ~resolution
       ({
         Node.location;
-        value = ({ Define.parent; parameters; return_annotation; _ } as define);
+        value = ({ Define.name; parent; parameters; return_annotation; _ } as define);
       } as define_node) =
     let resolution = Resolution.with_parent resolution ~parent in
     let { errors; resolution; resolution_fixpoint; _ } as initial =
@@ -758,12 +758,19 @@ module State = struct
            (* Check strengthening of postcondition. *)
            match Annotation.annotation (Attribute.annotation overridden_attribute) with
            | Type.Callable { Type.Callable.implementation; _ } ->
-               let original_method =
-                 Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+               let original_implementation =
+                 name
+                 |> Statement.Access.expression
+                 |> Resolution.resolve resolution
+                 |> function
+                 | Type.Callable { Type.Callable.implementation = original_implementation; _ } ->
+                     original_implementation;
+                 | annotation ->
+                     raise (TypeOrder.Untracked annotation)
                in
                let errors =
                  let expected = Type.Callable.Overload.return_annotation implementation in
-                 let actual = Method.return_annotation original_method ~resolution in
+                 let actual = Type.Callable.Overload.return_annotation original_implementation in
                  if Type.is_resolved expected &&
                     not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
                    let error =
@@ -794,7 +801,8 @@ module State = struct
                  let remove_unused_parameter_denotation ~key ~data map =
                    Identifier.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                  in
-                 Method.parameter_annotations original_method ~resolution
+                 Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+                 |> Method.parameter_annotations ~resolution
                  |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
                in
                let check_parameter errors overridden_parameter =
