@@ -92,7 +92,7 @@ class InitTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=["arguments_target"]
         ) as buck_source_directories:
             arguments.source_directories = []
-            arguments.target = ["arguments_target"]
+            arguments.targets = ["arguments_target"]
             configuration.source_directories = ["configuration_source_directory"]
 
             source_directories = _resolve_source_directories(
@@ -108,7 +108,7 @@ class InitTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=[]
         ) as buck_source_directories:
             arguments.source_directories = []
-            arguments.target = []
+            arguments.targets = []
             arguments.build = True
             configuration.targets = ["configuration_target"]
             configuration.source_directories = ["configuration_source_directory"]
@@ -128,7 +128,7 @@ class InitTest(unittest.TestCase):
             buck, "generate_source_directories", return_value=[]
         ) as buck_source_directories:
             arguments.source_directories = []
-            arguments.target = []
+            arguments.targets = []
             configuration.source_directories = ["."]
             source_directories = _resolve_source_directories(
                 arguments, configuration, prompt=True
@@ -139,7 +139,7 @@ class InitTest(unittest.TestCase):
         arguments = MagicMock()
         configuration = MagicMock()
         arguments.source_directories = []
-        arguments.target = []
+        arguments.targets = []
         arguments.original_directory = "/project"
         configuration.local_configuration_root = None
 
@@ -151,18 +151,18 @@ class InitTest(unittest.TestCase):
         self.assertEqual(filter_paths, ["/project/a"])
 
         arguments.source_directories = ["/project/a"]
-        arguments.target = ["//x/y/..."]
+        arguments.targets = ["//x/y/..."]
         filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/a", "x/y"])
 
         arguments.source_directories = ["/project/local/a"]
-        arguments.target = ["//x/y:z"]
+        arguments.targets = ["//x/y:z"]
         configuration.local_configuration_root = "project/local"
         filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/local/a", "x/y"])
 
         arguments.source_directories = []
-        arguments.target = []
+        arguments.targets = []
         configuration.local_configuration_root = "/project/local"
         filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/local"])

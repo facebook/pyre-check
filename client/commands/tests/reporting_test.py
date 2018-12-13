@@ -40,7 +40,7 @@ class ReportingTest(unittest.TestCase):
             create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
-        arguments.target = ["//f/g:target"]
+        arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/f/g")
@@ -50,7 +50,7 @@ class ReportingTest(unittest.TestCase):
             create_error.assert_has_calls([call(False, False)])
             create_error.reset_mock()
 
-        arguments.target = []
+        arguments.targets = []
         configuration.ignore_all_errors = ["/test/auto/gen"]
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
@@ -61,7 +61,7 @@ class ReportingTest(unittest.TestCase):
             create_error.reset_mock()
 
         arguments.original_directory = "/f/g/target"
-        arguments.target = ["//f/g:target"]
+        arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/h/i")

@@ -515,6 +515,8 @@ def main():
 
     arguments.source_directories = arguments.source_directory
     del arguments.source_directory
+    arguments.targets = arguments.target
+    del arguments.target
 
     start = time.time()
     stubs = []

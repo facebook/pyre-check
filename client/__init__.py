@@ -124,7 +124,7 @@ def translate_paths(paths, original_directory):
 
 def _resolve_source_directories(arguments, configuration, prompt):
     source_directories = set(arguments.source_directories or [])
-    targets = set(arguments.target or [])
+    targets = set(arguments.targets or [])
 
     # Only read configuration if no arguments were provided.
     if not source_directories and not targets:
@@ -147,12 +147,12 @@ def _resolve_source_directories(arguments, configuration, prompt):
 
 def _resolve_filter_paths(arguments, configuration):
     filter_paths = []
-    if arguments.source_directories or arguments.target:
+    if arguments.source_directories or arguments.targets:
         if arguments.source_directories:
             filter_paths += arguments.source_directories
-        if arguments.target:
+        if arguments.targets:
             filter_paths += [
-                buck.presumed_target_root(target) for target in arguments.target
+                buck.presumed_target_root(target) for target in arguments.targets
             ]
     else:
         local_configuration_root = configuration.local_configuration_root
@@ -211,7 +211,7 @@ def log_statistics(
             **normals,
             "source_directories": str(arguments.source_directories or []),
             "arguments": str(arguments),
-            "target": str(arguments.target or []),
+            "target": str(arguments.targets or []),
         }
     try:
         statistics = {
