@@ -26,7 +26,7 @@ type t = [ real_target | override_target ]
 [@@deriving show, sexp, compare, hash, eq]
 
 
-type target_with_stored_result = real_target
+type target_with_result = real_target
 
 
 let create_real access =

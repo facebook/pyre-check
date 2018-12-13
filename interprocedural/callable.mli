@@ -25,7 +25,7 @@ val show: [< t ] -> string
 val external_target_name: [< t ] -> string
 val compare: ([< t ] as 'a) -> 'a -> int
 
-type target_with_stored_result = real_target
+type target_with_result = real_target
 
 val create_real: Access.t -> [> real_target ]
 val create_override: Access.t -> [> override_target ]

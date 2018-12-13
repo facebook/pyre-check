@@ -113,6 +113,11 @@ let get_meta_data callable =
   | None -> SharedFixpoint.get_old callable
 
 
+let has_model callable =
+  let key = (callable :> Callable.t) in
+  SharedModels.mem key
+
+
 let meta_data_to_string {
     is_partial;
     step = { epoch; iteration; }
@@ -130,7 +135,7 @@ let add_state step callable state =
   (* Skip result writing unless necessary (e.g. overrides don't have results) *)
   let () =
     match callable with
-    #Callable.target_with_stored_result -> SharedResults.add callable state.result
+    #Callable.target_with_result -> SharedResults.add callable state.result
     | _ -> ()
   in
   SharedFixpoint.add callable { is_partial = state.is_partial; step; }
