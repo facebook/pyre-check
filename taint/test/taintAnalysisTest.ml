@@ -25,6 +25,13 @@ type expect_fixpoint = {
 }
 
 
+type test_environment = {
+  callgraph: DependencyGraph.callgraph;
+  overrides: DependencyGraph.t;
+  all_callables: Callable.t list;
+  environment: (module Environment.Handler);
+}
+
 let create_call_graph ?(path = "test.py") source =
   let handle = File.Handle.create path in
   let source =
@@ -68,8 +75,13 @@ let create_call_graph ?(path = "test.py") source =
         errors
         ()
     end;
-
-  let call_graph =
+  (* Overrides must be done first, as they influence the call targets. *)
+  let overrides =
+    let overrides = DependencyGraph.create_overrides ~environment ~source in
+    Service.StaticAnalysis.record_overrides overrides;
+    DependencyGraph.from_overrides overrides
+  in
+  let callgraph =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
       ~call_graph:DependencyGraph.empty_callgraph
@@ -77,19 +89,20 @@ let create_call_graph ?(path = "test.py") source =
       ~source
   in
   let () =
-    Service.StaticAnalysis.record_overrides ~environment ~source in
-  let callables =
+    Service.StaticAnalysis.record_overrides DependencyGraph.empty_overrides in
+  let all_callables =
     Service.StaticAnalysis.record_path_of_definitions ~path:handle ~source
     |> List.map ~f:Callable.create
   in
-  call_graph, callables, environment
+  { callgraph; overrides; all_callables; environment }
 
 
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
-  let callgraph, all_callables, environment = create_call_graph source in
+  let { all_callables; callgraph; environment; overrides } = create_call_graph source in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
+    |> DependencyGraph.union overrides
     |> DependencyGraph.reverse
   in
   let analyses = [Taint.Analysis.abstract_kind] in
@@ -498,12 +511,20 @@ let test_integration _ =
         let actual = Format.asprintf "Call dependencies\n%a" DependencyGraph.pp dependencies in
         check_expectation ~suffix:".cg" actual
       in
-      let callgraph, all_callables, environment = create_call_graph ~path:handle source in
+      let check_overrides_expectation overrides =
+        let actual = Format.asprintf "Overrides\n%a" DependencyGraph.pp overrides in
+        check_expectation ~suffix:".overrides" actual
+      in
+      let { callgraph; all_callables; environment; overrides } =
+        create_call_graph ~path:handle source
+      in
       let dependencies =
         DependencyGraph.from_callgraph callgraph
+        |> DependencyGraph.union overrides
         |> DependencyGraph.reverse
       in
       check_call_graph_expectation callgraph;
+      check_overrides_expectation overrides;
       Analysis.compute_fixpoint
         ~configuration:Test.mock_configuration
         ~scheduler:(Scheduler.mock ())

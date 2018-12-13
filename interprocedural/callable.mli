@@ -29,6 +29,10 @@ type target_with_result = real_target
 
 val create_real: Access.t -> [> real_target ]
 val create_override: Access.t -> [> override_target ]
+val create_derived_override:
+  [< override_target ]
+  -> at_type:Access.t
+  -> [> override_target ]
 val create: Define.t Node.t -> [> real_target ]
 
 val get_real_access: [< real_target ] -> Access.t

@@ -1,0 +1,6 @@
+Overrides
+object.__init__ (override) -> [qualifier.Base.__init__ (override)]
+qualifier.B.__init__ (override) -> [qualifier.C.__init__ (override)]
+qualifier.Base.__init__ (override) -> [qualifier.A.__init__ (override) qualifier.B.__init__ (override)]
+qualifier.Base.methodA (override) -> [qualifier.A.methodA (override) qualifier.C.methodA (override)]
+qualifier.Base.methodB (override) -> [qualifier.B.methodB (override)]

@@ -12,41 +12,6 @@ open Statement
 open Pyre
 
 
-let overrides_of_source ~environment ~source =
-  let open Annotated in
-  let resolution = TypeCheck.resolution environment () in
-  let filter_overrides child_method =
-    Method.parent child_method
-    |> Resolution.class_definition resolution
-    >>| Annotated.Class.create
-    >>= (fun definition ->
-        Class.overrides
-          definition
-          ~name:(Statement.Define.unqualified_name (Method.define child_method))
-          ~resolution)
-    >>| fun ancestor ->
-    let ancestor_parent =
-      Attribute.parent ancestor
-      |> Type.show
-      |> Expression.Access.create
-    in
-    (ancestor_parent @ Attribute.access ancestor, Method.name child_method)
-  in
-  let record_overrides map (ancestor_method, child_method) =
-    let ancestor_callable = Interprocedural.Callable.create_real ancestor_method in
-    let child_callable = Interprocedural.Callable.create_real child_method in
-    let update_children = function
-      | Some children -> child_callable :: children
-      | None -> [child_callable]
-    in
-    Interprocedural.Callable.Map.update map ancestor_callable ~f:update_children
-  in
-  Preprocessing.classes source
-  |> List.concat_map ~f:(Fn.compose (Class.methods ~resolution) Class.create)
-  |> List.filter_map ~f:filter_overrides
-  |> List.fold ~init:Interprocedural.Callable.Map.empty ~f:record_overrides
-
-
 let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
@@ -55,15 +20,14 @@ let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
   |> record_and_merge_call_graph call_graph
 
 
-let record_overrides ~environment ~source =
+let record_overrides overrides =
   let record_overrides overrides_map =
-    let record_override_edge ~key:ancestor ~data:children =
-      DependencyGraphSharedMemory.add_overrides ~ancestor ~children
+    let record_override_edge ~key:member ~data:subtypes =
+      DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
     in
-    Callable.Map.iteri overrides_map ~f:record_override_edge
+    Access.Map.iteri overrides_map ~f:record_override_edge
   in
-  overrides_of_source ~environment ~source
-  |> record_overrides
+  record_overrides overrides
 
 
 let record_path_of_definitions ~path ~source =
@@ -135,12 +99,34 @@ let analyze
 
   Log.info "Recording overrides...";
   let timer = Timer.start () in
-  let record_overrides path =
-    Ast.SharedMemory.Sources.get path
-    >>| (fun source -> record_overrides ~environment ~source)
-    |> ignore
+  let _overrides =
+    let combine ~key:_ left right =
+      List.rev_append left right
+    in
+    let build_overrides overrides path =
+      try
+        match Ast.SharedMemory.Sources.get path with
+        | None -> overrides
+        | Some source ->
+            let new_overrides = DependencyGraph.create_overrides ~environment ~source in
+            record_overrides new_overrides;
+            Map.merge_skewed overrides new_overrides ~combine
+      with TypeOrder.Untracked untracked_type ->
+        Log.info
+          "Error building overrides in path %a for untracked type %a"
+          File.Handle.pp path
+          Type.pp untracked_type;
+        overrides
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~initial:DependencyGraph.empty_overrides
+      ~map:(fun _ paths -> List.fold paths ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+      ~reduce:(Map.merge_skewed ~combine)
+      ~inputs:paths
+      ()
   in
-  List.iter paths ~f:record_overrides;
   Statistics.performance ~name:"Overrides recorded" ~timer ();
 
   Log.info "Building call graph...";

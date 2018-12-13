@@ -37,6 +37,11 @@ let create_override access =
   `OverrideTarget (Access.show access)
 
 
+let create_derived_override (`OverrideTarget name) ~at_type =
+  at_type @ [(Access.create name |> List.last_exn)]
+  |> create_override
+
+
 let create { Node.value = Define.{ name; _ }; _ } =
   create_real name
 

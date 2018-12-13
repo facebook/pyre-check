@@ -299,8 +299,8 @@ let test_type_collection _ =
 let test_method_overrides _ =
   let assert_method_overrides source ~expected =
     let expected =
-      let create_callables (access, accesses) =
-        create_callable access, List.map accesses ~f:create_callable
+      let create_callables (member, overriding_types) =
+        Access.create member, List.map overriding_types ~f:Access.create
       in
       List.map expected ~f:create_callables
     in
@@ -308,16 +308,16 @@ let test_method_overrides _ =
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate ~configuration environment [source];
-    let overrides_map = Service.StaticAnalysis.overrides_of_source ~environment ~source in
-    let expected_overrides = Callable.Map.of_alist_exn expected in
-    let equal_elements = List.equal ~equal:Callable.equal in
+    let overrides_map = DependencyGraph.create_overrides ~environment ~source in
+    let expected_overrides = Access.Map.of_alist_exn expected in
+    let equal_elements = List.equal ~equal:Access.equal in
     let printer map =
       map
-      |> Callable.Map.sexp_of_t (List.sexp_of_t Callable.sexp_of_t)
+      |> Access.Map.sexp_of_t (List.sexp_of_t Access.sexp_of_t)
       |> Sexp.to_string
     in
     assert_equal
-      ~cmp:(Callable.Map.equal equal_elements)
+      ~cmp:(Access.Map.equal equal_elements)
       ~printer
       expected_overrides
       overrides_map
@@ -336,8 +336,8 @@ let test_method_overrides _ =
     |}
     ~expected:
       [
-        "Bar.foo", ["Baz.foo"];
-        "Foo.foo", ["Bar.foo"; "Qux.foo"]
+        "Bar.foo", ["Baz"];
+        "Foo.foo", ["Bar"; "Qux"];
       ]
 
 

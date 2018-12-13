@@ -9,11 +9,6 @@ open Statement
 open Interprocedural
 
 
-val overrides_of_source
-  :  environment: (module Environment.Handler)
-  -> source: Source.t
-  -> (Callable.t list) Callable.Map.t
-
 val record_and_merge_call_graph
   : environment: (module Environment.Handler)
   -> call_graph: DependencyGraph.callgraph
@@ -21,7 +16,7 @@ val record_and_merge_call_graph
   -> source: Source.t
   -> DependencyGraph.callgraph
 
-val record_overrides: environment: (module Environment.Handler) -> source: Source.t -> unit
+val record_overrides: DependencyGraph.overrides -> unit
 
 val record_path_of_definitions: path: File.Handle.t -> source: Source.t -> Define.t Node.t list
 

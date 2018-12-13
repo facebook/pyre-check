@@ -14,10 +14,12 @@ open Analysis
 
 type t = (Callable.t list) Callable.Map.t
 type callgraph = (Callable.t list) Callable.RealMap.t
+type overrides = (Access.t list) Access.Map.t
 
 
 let empty = Callable.Map.empty
 let empty_callgraph = Callable.RealMap.empty
+let empty_overrides = Access.Map.empty
 
 
 let create_callgraph ~environment ~source =
@@ -200,3 +202,60 @@ let from_callgraph callgraph =
     Callable.Map.set result ~key ~data
   in
   Callable.RealMap.fold callgraph ~f:add ~init:Callable.Map.empty
+
+
+let from_overrides overrides =
+  let add ~key:method_name ~data:subtypes result =
+    let key = Callable.create_override method_name in
+    let data =
+      List.map
+        subtypes
+        ~f:(fun at_type -> Callable.create_derived_override key ~at_type)
+    in
+    Callable.Map.set result ~key ~data
+  in
+  Access.Map.fold overrides ~f:add ~init:Callable.Map.empty
+
+
+let create_overrides ~environment ~source =
+  let resolution = TypeCheck.resolution environment () in
+  let class_method_overrides class_node =
+    let get_method_overrides class_ child_method =
+      let method_name =
+        Statement.Define.unqualified_name (Annotated.Method.define child_method)
+      in
+      Annotated.Class.overrides
+        class_
+        ~name:method_name
+        ~resolution
+      >>| fun ancestor ->
+      let ancestor_parent =
+        Annotated.Attribute.parent ancestor
+        |> Type.access
+      in
+      ancestor_parent @ method_name, Annotated.Class.name class_
+    in
+    let annotated_class = Annotated.Class.create class_node in
+    let methods = Annotated.Class.methods ~resolution annotated_class in
+    List.filter_map methods ~f:(get_method_overrides annotated_class)
+  in
+  let record_overrides map (ancestor_method, overriding_type) =
+    let update_types = function
+      | Some types -> overriding_type :: types
+      | None -> [overriding_type]
+    in
+    Access.Map.update map ancestor_method ~f:update_types
+  in
+  let record_overrides_list map relations =
+    List.fold relations ~init:map ~f:record_overrides
+  in
+  Preprocessing.classes source
+  |> List.map ~f:class_method_overrides
+  |> List.fold ~init:Access.Map.empty ~f:record_overrides_list
+
+
+let union left right =
+  let combine ~key:_ left right =
+    List.rev_append left right
+  in
+  Map.merge_skewed ~combine left right
