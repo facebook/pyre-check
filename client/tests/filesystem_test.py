@@ -69,7 +69,7 @@ class FilesystemTest(unittest.TestCase):
             ],
         )
 
-    def test_merge_analysis_directory(self) -> None:
+    def test_merge_into_paths(self) -> None:
         root = os.path.realpath(tempfile.mkdtemp())
 
         def create_file(name: str) -> None:
@@ -96,7 +96,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         shared_analysis_directory = SharedAnalysisDirectory([root])
         all_paths = {}  # type: Dict[str, str]
-        shared_analysis_directory._merge_analysis_directory(root, all_paths)
+        shared_analysis_directory._merge_into_paths(root, all_paths)
         self.assertEqual(
             all_paths,
             {

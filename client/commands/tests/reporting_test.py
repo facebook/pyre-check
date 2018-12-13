@@ -100,7 +100,7 @@ class ReportingTest(unittest.TestCase):
     def test_get_directories_to_analyze(self, run) -> None:
         arguments = mock_arguments()
         arguments.current_directory = "base"
-        arguments.analysis_directory = "base"
+        arguments.source_directories = ["base"]
         configuration = mock_configuration()
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("base")
@@ -131,7 +131,7 @@ class ReportingTest(unittest.TestCase):
         self.assertEqual(handler._get_directories_to_analyze(), {"base"})
 
         configuration.local_configuration = "a/b/.pyre_configuration.local"
-        arguments.analysis_directory = None
+        arguments.source_directories = None
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("base", ["a/b"])
         )

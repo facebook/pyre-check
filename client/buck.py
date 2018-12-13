@@ -14,7 +14,7 @@ from . import log
 LOG = logging.getLogger(__name__)
 CACHE_PATH = ".pyre/buckcache.json"
 
-BuckOut = namedtuple("BuckOut", "analysis_directories targets_not_found")
+BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 
 class BuckException(Exception):
@@ -30,10 +30,10 @@ def presumed_target_root(target):
     return target
 
 
-def _find_analysis_directories(targets_map) -> BuckOut:
+def _find_source_directories(targets_map) -> BuckOut:
     targets = list(targets_map.keys())
     targets_not_found = []
-    analysis_directories = []
+    source_directories = []
     for target in targets:
         target_path = target
         target_prefix_index = target_path.find("//")
@@ -41,19 +41,19 @@ def _find_analysis_directories(targets_map) -> BuckOut:
             target_path = target_path[target_prefix_index + 2 :]
         target_path = target_path.replace(":", "/")
 
-        discovered_analysis_directories = glob.glob(
+        discovered_source_directories = glob.glob(
             os.path.join("buck-out/gen/", target_path + "#*link-tree")
         )
         target_destination = targets_map[target]
         built = target_destination is not None and (
             target_destination == "" or len(glob.glob(target_destination)) > 0
         )
-        if not built and len(discovered_analysis_directories) == 0:
+        if not built and len(discovered_source_directories) == 0:
             targets_not_found.append(target)
-        analysis_directories.extend(
+        source_directories.extend(
             [
                 tree
-                for tree in discovered_analysis_directories
+                for tree in discovered_source_directories
                 if not tree.endswith(
                     (
                         "-vs_debugger#link-tree",
@@ -63,7 +63,7 @@ def _find_analysis_directories(targets_map) -> BuckOut:
                 )
             ]
         )
-    return BuckOut(analysis_directories, targets_not_found)
+    return BuckOut(source_directories, targets_not_found)
 
 
 def _normalize(targets: List[str]) -> List[str]:
@@ -130,9 +130,9 @@ def _build_targets(targets: List[str]) -> None:
         )
 
 
-def generate_analysis_directories(original_targets, build, prompt: bool = True):
-    buck_out = _find_analysis_directories({target: None for target in original_targets})
-    analysis_directories = buck_out.analysis_directories
+def generate_source_directories(original_targets, build, prompt: bool = True):
+    buck_out = _find_source_directories({target: None for target in original_targets})
+    source_directories = buck_out.source_directories
 
     full_targets_map = {}
     if buck_out.targets_not_found:
@@ -156,11 +156,11 @@ def generate_analysis_directories(original_targets, build, prompt: bool = True):
 
     unbuilt_targets = []
     for target_name, normalized_targets_map in full_targets_map.items():
-        buck_out = _find_analysis_directories(normalized_targets_map)
+        buck_out = _find_source_directories(normalized_targets_map)
         # Add anything that is unbuilt or only partially built
         if len(buck_out.targets_not_found) > 0:
             unbuilt_targets.append(target_name)
-        analysis_directories.extend(buck_out.analysis_directories)
+        source_directories.extend(buck_out.source_directories)
 
     if len(unbuilt_targets) > 0:
         if build:
@@ -177,7 +177,7 @@ def generate_analysis_directories(original_targets, build, prompt: bool = True):
                 "    \n".join(unbuilt_targets),
             )
             if not prompt or log.get_yes_no_input("Build target?"):
-                return generate_analysis_directories(
+                return generate_source_directories(
                     original_targets, build=True, prompt=False
                 )
             raise BuckException(
@@ -186,4 +186,4 @@ def generate_analysis_directories(original_targets, build, prompt: bool = True):
                     "    \n".join(unbuilt_targets), sys.argv[0]
                 )
             )
-    return analysis_directories
+    return source_directories

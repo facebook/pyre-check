@@ -504,14 +504,17 @@ def main():
         "--target", action="append", help="The buck target to check"
     )
 
-    analysis_directory = parser.add_argument_group("analysis-directory")
-    analysis_directory.add_argument(
-        "--analysis-directory",
+    source_directories = parser.add_argument_group("source-directories")
+    source_directories.add_argument(
+        "--source-directory",
         action="append",
-        help="The analysis directory to run the inference on.",
+        help="The source directory to run the inference on.",
     )
 
     arguments = parser.parse_args()
+
+    arguments.source_directories = arguments.source_directory
+    del arguments.source_directory
 
     start = time.time()
     stubs = []

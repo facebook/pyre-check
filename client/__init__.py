@@ -122,36 +122,34 @@ def translate_paths(paths, original_directory):
     return {translate_path(translation, path) for path in paths}
 
 
-def _resolve_analysis_paths(arguments, configuration, prompt):
-    analysis_directories = set(arguments.analysis_directory or [])
+def _resolve_source_directories(arguments, configuration, prompt):
+    source_directories = set(arguments.source_directories or [])
     targets = set(arguments.target or [])
 
     # Only read configuration if no arguments were provided.
-    if not analysis_directories and not targets:
-        analysis_directories = set(configuration.analysis_directories)
+    if not source_directories and not targets:
+        source_directories = set(configuration.source_directories)
         targets = set(configuration.targets)
     else:
         LOG.warning(
             "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead "
         )
 
-    analysis_directories.update(
-        buck.generate_analysis_directories(
-            targets, build=arguments.build, prompt=prompt
-        )
+    source_directories.update(
+        buck.generate_source_directories(targets, build=arguments.build, prompt=prompt)
     )
-    if len(analysis_directories) == 0:
+    if len(source_directories) == 0:
         raise EnvironmentException("No targets or source directories to analyze.")
 
     # Translate link trees if we switched directories earlier.
-    return translate_paths(analysis_directories, arguments.original_directory)
+    return translate_paths(source_directories, arguments.original_directory)
 
 
 def _resolve_filter_paths(arguments, configuration):
     filter_paths = []
-    if arguments.analysis_directory or arguments.target:
-        if arguments.analysis_directory:
-            filter_paths += arguments.analysis_directory
+    if arguments.source_directories or arguments.target:
+        if arguments.source_directories:
+            filter_paths += arguments.source_directories
         if arguments.target:
             filter_paths += [
                 buck.presumed_target_root(target) for target in arguments.target
@@ -166,7 +164,7 @@ def _resolve_filter_paths(arguments, configuration):
 def resolve_analysis_directory(
     arguments, configuration, isolate: bool = False, prompt: bool = True
 ):
-    analysis_paths = _resolve_analysis_paths(arguments, configuration, prompt)
+    source_directories = _resolve_source_directories(arguments, configuration, prompt)
     filter_paths = _resolve_filter_paths(arguments, configuration)
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
@@ -174,11 +172,11 @@ def resolve_analysis_directory(
             local_configuration_root, arguments.current_directory
         )
 
-    if len(analysis_paths) == 1:
-        analysis_directory = AnalysisDirectory(analysis_paths.pop(), filter_paths)
+    if len(source_directories) == 1:
+        analysis_directory = AnalysisDirectory(source_directories.pop(), filter_paths)
     else:
         shared_analysis_directory = SharedAnalysisDirectory(
-            analysis_paths, filter_paths, local_configuration_root, isolate
+            source_directories, filter_paths, local_configuration_root, isolate
         )
         analysis_directory = shared_analysis_directory
     return analysis_directory
@@ -211,7 +209,7 @@ def log_statistics(
     if arguments:
         normals = {
             **normals,
-            "analysis_directory": str(arguments.analysis_directory or []),
+            "source_directories": str(arguments.source_directories or []),
             "arguments": str(arguments),
             "target": str(arguments.target or []),
         }

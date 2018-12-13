@@ -118,7 +118,7 @@ class Configuration:
         preserve_pythonpath=False,
         excludes: Optional[List[str]] = None,
     ) -> None:
-        self.analysis_directories = []
+        self.source_directories = []
         self.targets = []
         self.logger = None
         self.ignore_all_errors = []
@@ -189,7 +189,7 @@ class Configuration:
                 )
 
             if not is_list_of_strings(
-                self.analysis_directories
+                self.source_directories
             ) or not is_list_of_strings(self.targets):
                 raise InvalidConfiguration(
                     "`target` and `source_directories` fields must be lists of "
@@ -326,17 +326,17 @@ class Configuration:
                 source_directories = configuration.consume(
                     "source_directories",
                     default=[],
-                    current=self.analysis_directories,
+                    current=self.source_directories,
                     print_on_success=True,
                 )
                 configuration_directory = os.path.dirname(path)
                 if configuration_directory:
-                    self.analysis_directories = [
+                    self.source_directories = [
                         os.path.join(configuration_directory, directory)
                         for directory in source_directories
                     ]
                 else:
-                    self.analysis_directories = source_directories
+                    self.source_directories = source_directories
 
                 self.targets = configuration.consume(
                     "targets", default=[], current=self.targets, print_on_success=True

@@ -121,14 +121,9 @@ def main() -> int:
         "--target", action="append", help="The buck target to check"
     )
 
-    analysis_directory = parser.add_argument_group("analysis-directory")
-    analysis_directory.add_argument(
-        "--analysis-directory", action="append", help="The analysis directory to check"
-    )
-
-    source_directory = parser.add_argument_group("source-directory")
-    source_directory.add_argument(
-        "--source-directory", action="append", help="The analysis directory to check"
+    source_directories = parser.add_argument_group("source-directories")
+    source_directories.add_argument(
+        "--source-directory", action="append", help="The source directory to check"
     )
 
     parser.add_argument(
@@ -283,8 +278,8 @@ def main() -> int:
 
     arguments = parser.parse_args()
 
-    if arguments.source_directory:
-        arguments.analysis_directory = arguments.source_directory
+    arguments.source_directories = arguments.source_directory
+    del arguments.source_directory
 
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
@@ -347,6 +342,7 @@ def main() -> int:
                 )
 
         exit_code = (
+            # pyre-fixme: commands.Initialize doesn't take an analysis_directory
             arguments.command(arguments, configuration, analysis_directory)
             .run()
             .exit_code()

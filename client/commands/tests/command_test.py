@@ -49,7 +49,7 @@ def mock_arguments(
 
 def mock_configuration(version_hash=None) -> MagicMock:
     configuration = MagicMock()
-    configuration.analysis_directories = ["."]
+    configuration.source_directories = ["."]
     configuration.logger = None
     configuration.number_of_workers = 5
     configuration.search_path = ["path1", "path2"]

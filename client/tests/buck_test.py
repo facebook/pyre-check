@@ -9,7 +9,7 @@ from unittest.mock import call, mock_open, patch
 from .. import buck, log
 
 
-BuckOut = namedtuple("BuckOut", "analysis_directories targets_not_found")
+BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 
 class BuckTest(unittest.TestCase):
@@ -27,7 +27,7 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
-    def test_find_analysis_directories(self) -> None:
+    def test_find_source_directories(self) -> None:
         trees = [
             "blah-vs_debugger#link-tree",
             "blah-blah#link-tree",
@@ -36,11 +36,11 @@ class BuckTest(unittest.TestCase):
         ]
         with patch.object(glob, "glob", return_value=trees) as glob_glob:
             self.assertEqual(
-                buck._find_analysis_directories({"target": None}),
+                buck._find_source_directories({"target": None}),
                 BuckOut(["blah-blah#link-tree"], []),
             )
         with patch.object(glob, "glob") as glob_glob:
-            buck._find_analysis_directories(
+            buck._find_source_directories(
                 {
                     "//path/targets:name": None,
                     "//path/targets:namelibrary": None,
@@ -59,7 +59,7 @@ class BuckTest(unittest.TestCase):
             )
 
         with patch.object(glob, "glob", return_value=["new_tree"]) as glob_glob:
-            found_trees = buck._find_analysis_directories(
+            found_trees = buck._find_source_directories(
                 OrderedDict(
                     [
                         ("//path/targets:name", None),
@@ -75,7 +75,7 @@ class BuckTest(unittest.TestCase):
             )
 
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
-            found_trees = buck._find_analysis_directories(
+            found_trees = buck._find_source_directories(
                 OrderedDict(
                     [
                         ("//path/targets:name", None),
@@ -99,7 +99,7 @@ class BuckTest(unittest.TestCase):
             )
 
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
-            found_trees = buck._find_analysis_directories(
+            found_trees = buck._find_source_directories(
                 OrderedDict(
                     [
                         ("//path/targets:name", None),
@@ -154,26 +154,26 @@ class BuckTest(unittest.TestCase):
 
     @patch.object(log, "get_yes_no_input", return_value=False)
     @patch.object(buck, "_normalize")
-    @patch.object(buck, "_find_analysis_directories")
-    def test_generate_analysis_directories(
-        self, mock_find_analysis_directories, mock_normalize, mock_input
+    @patch.object(buck, "_find_source_directories")
+    def test_generate_source_directories(
+        self, mock_find_source_directories, mock_normalize, mock_input
     ) -> None:
-        mock_find_analysis_directories.return_value = BuckOut(  # noqa
+        mock_find_source_directories.return_value = BuckOut(  # noqa
             ["new_tree"], ["empty_target"]
         )
 
         with patch.object(buck, "_normalize") as mock_normalize:
             with self.assertRaises(buck.BuckException):
-                buck.generate_analysis_directories(["target"], build=False, prompt=True)
-                buck.generate_analysis_directories(
+                buck.generate_source_directories(["target"], build=False, prompt=True)
+                buck.generate_source_directories(
                     ["target1", "target2"], build=False, prompt=True
                 )
                 mock_normalize.assert_has_calls(
                     [call("target"), call("target1"), call("target2")]
                 )
 
-        mock_find_analysis_directories.return_value = BuckOut(["new_tree"], [])  # noqa
+        mock_find_source_directories.return_value = BuckOut(["new_tree"], [])  # noqa
         with patch.object(buck, "_normalize") as mock_normalize:
             with patch.object(buck, "_build_targets") as mock_build:
-                buck.generate_analysis_directories(["target"], build=True, prompt=True)
+                buck.generate_source_directories(["target"], build=True, prompt=True)
                 mock_build.assert_not_called()

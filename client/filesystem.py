@@ -39,12 +39,12 @@ class AnalysisDirectory:
 class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
         self,
-        analysis_directories,
+        source_directories,
         filter_paths: Optional[List[str]] = None,
         local_configuration_root: Optional[str] = None,
         isolate: bool = False,
     ):
-        self._analysis_directories = set(analysis_directories)
+        self._source_directories = set(source_directories)
         self._filter_paths = filter_paths
         self._local_configuration_root = local_configuration_root
         self._isolate = isolate
@@ -105,8 +105,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         root = self.get_root()
 
         all_paths = {}
-        for analysis_directory in self._analysis_directories:
-            self._merge_analysis_directory(analysis_directory, all_paths)
+        for source_directory in self._source_directories:
+            self._merge_into_paths(source_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
             directory = os.path.dirname(merged)
@@ -124,12 +124,12 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                     LOG.error(str(error))
 
     # Exposed for testing.
-    def _merge_analysis_directory(
-        self, analysis_directory: str, all_paths: Dict[str, str]
+    def _merge_into_paths(
+        self, source_directory: str, all_paths: Dict[str, str]
     ) -> None:
-        paths = _find_python_paths(root=analysis_directory)
+        paths = _find_python_paths(root=source_directory)
         for path in paths:
-            relative = os.path.relpath(path, analysis_directory)
+            relative = os.path.relpath(path, source_directory)
             if not path:
                 continue
             # don't bother stat'ing paths that are already in the analysis directory.

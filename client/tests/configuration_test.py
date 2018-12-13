@@ -46,7 +46,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration()
-        self.assertEqual(configuration.analysis_directories, ["a"])
+        self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
@@ -57,12 +57,12 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("local/path")
-        self.assertEqual(configuration.analysis_directories, ["local/path/a"])
+        self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.targets, ["//a/b/c"])
-        self.assertEqual(configuration.analysis_directories, [])
+        self.assertEqual(configuration.source_directories, [])
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.ignore_all_errors, [])
@@ -400,7 +400,7 @@ class ConfigurationTest(unittest.TestCase):
 
             configuration = Configuration()
             os_path_isdir.assert_has_calls(calls)
-            self.assertEqual(configuration.analysis_directories, [])
+            self.assertEqual(configuration.source_directories, [])
             self.assertEqual(configuration.targets, [])
             self.assertEqual(configuration.version_hash, "unversioned")
             self.assertEqual(configuration.logger, None)
