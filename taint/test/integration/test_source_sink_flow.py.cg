@@ -1,6 +1,6 @@
 Call dependencies
-qualifier.bad (real) -> [qualifier.qux (real)]
-qualifier.bar (real) -> [__testSource (real)]
-qualifier.match_flows (real) -> [qualifier.bad (real) qualifier.some_source (real)]
-qualifier.qux (real) -> [__testSink (real)]
-qualifier.some_source (real) -> [qualifier.bar (real)]
+qualifier.bad (fun) -> [qualifier.qux (fun)]
+qualifier.bar (fun) -> [__testSource (fun)]
+qualifier.match_flows (fun) -> [qualifier.bad (fun) qualifier.some_source (fun)]
+qualifier.qux (fun) -> [__testSink (fun)]
+qualifier.some_source (fun) -> [qualifier.bar (fun)]

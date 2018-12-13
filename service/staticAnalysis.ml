@@ -21,23 +21,29 @@ let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
 
 
 let record_overrides overrides =
-  let record_overrides overrides_map =
-    let record_override_edge ~key:member ~data:subtypes =
-      DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
-    in
-    Access.Map.iteri overrides_map ~f:record_override_edge
+  let record_override_edge ~key:member ~data:subtypes =
+    DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
   in
-  record_overrides overrides
+  Access.Map.iteri overrides ~f:record_override_edge
 
 
 let record_path_of_definitions ~path ~source =
   let defines = Preprocessing.defines ~include_stubs:true source in
-  let record_definition definition =
-    let open Interprocedural.Callable in
-    add_definition (create definition) path
+  let record_classes { Node.value = class_node; _ } =
+    Callable.add_class_definition class_node.Class.name path
   in
-  List.iter ~f:record_definition defines;
-  defines
+  let record_toplevel_definition definition =
+    let name = definition.Node.value.Define.name in
+    match definition.Node.value.Define.parent with
+    | None ->
+        (* Only record top-level definitions. *)
+        let () = Callable.add_function_definition name path in
+        Callable.create_function name, definition
+    | Some _ ->
+        Callable.create_method name, definition
+  in
+  List.iter ~f:record_classes (Preprocessing.classes source);
+  List.map ~f:record_toplevel_definition defines
 
 
 let add_models ~environment ~model_source =
@@ -99,7 +105,7 @@ let analyze
 
   Log.info "Recording overrides...";
   let timer = Timer.start () in
-  let _overrides =
+  let overrides =
     let combine ~key:_ left right =
       List.rev_append left right
     in
@@ -160,8 +166,7 @@ let analyze
     |> DependencyGraph.dump ~configuration;
 
   let callables, stubs =
-    let classify_source (callables, stubs) define =
-      let callable = Interprocedural.Callable.create define in
+    let classify_source (callables, stubs) (callable, define) =
       if Define.is_stub define.Node.value then
         callables, callable :: stubs
       else
@@ -177,7 +182,7 @@ let analyze
     in
     List.fold paths ~f:make_callables ~init:([], [])
   in
-  let all_callables =
+  let real_callables =
     let skipped_definitions = ref 0 in
     let record_initial_inferred_model callable =
       let open Interprocedural in
@@ -210,12 +215,24 @@ let analyze
       !obscure_stubs
   in
   let analyses = [Taint.Analysis.abstract_kind] in
-
+  let override_dependencies = DependencyGraph.from_overrides overrides in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
+    |> DependencyGraph.union override_dependencies
     |> DependencyGraph.reverse
   in
-  Log.info "Analysis fixpoint started...";
+  let override_targets = (Callable.Map.keys override_dependencies :> Callable.t list) in
+  let () =
+    let add_predefined callable =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
+    in
+    List.iter override_targets ~f:add_predefined
+  in
+  let all_callables = List.rev_append override_targets real_callables in
+  Log.info
+    "Analysis fixpoint started for %d overrides %d functions..."
+    (List.length override_targets)
+    (List.length real_callables);
   let timer = Timer.start () in
   let () =
     try

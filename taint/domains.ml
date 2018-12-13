@@ -113,44 +113,49 @@ module TraceInfo = struct
 
   (* Breaks recursion among trace info and overall taint domain. *)
   let has_significant_summary =
-    ref (fun
-          (_: AccessPath.Root.t)
-          (_: AbstractTreeDomain.Label.path)
-          (_: Interprocedural.Callable.t)
-          -> true
-        )
+    ref (
+      fun
+        (_: AccessPath.Root.t)
+        (_: AbstractTreeDomain.Label.path)
+        (_: Interprocedural.Callable.non_override_target)
+        -> true
+    )
 
   (* Returns the (dictionary key * json) to emit *)
-  let to_json trace : string * Yojson.Safe.json =
+  let to_json trace : (string * Yojson.Safe.json) option =
     match trace with
     | Declaration ->
-        "decl", `Null
+        Some ("decl", `Null)
     | Origin location ->
         let location_json =
           Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
           |> location_to_json
         in
-        "root", location_json
+        Some ("root", location_json)
     | CallSite { location; callees; port; path; trace_length; } ->
-        let location_json =
-          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-          |> location_to_json
-        in
         let callee_json =
-          List.map
+          Interprocedural.DependencyGraph.expand_callees callees
+          |> List.filter ~f:(!has_significant_summary port path)
+          |> List.map
             ~f:(fun callable -> `String (Interprocedural.Callable.external_target_name callable))
-            callees
         in
-        let port_json = AccessPath.create port path |> AccessPath.to_json in
-        let call_json =
-          `Assoc [
-            "position", location_json;
-            "resolves_to", `List callee_json;
-            "port", port_json;
-            "length", `Int trace_length;
-          ]
-        in
-        "call", call_json
+        if callee_json <> [] then
+          let location_json =
+            Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
+            |> location_to_json
+          in
+          let port_json = AccessPath.create port path |> AccessPath.to_json in
+          let call_json =
+            `Assoc [
+              "position", location_json;
+              "resolves_to", `List callee_json;
+              "port", port_json;
+              "length", `Int trace_length;
+            ]
+          in
+          Some ("call", call_json)
+        else
+          None
 
   let less_or_equal ~left ~right =
     match left, right with
@@ -347,7 +352,7 @@ end = struct
         tito_positions,
         FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features)
       in
-      let trace_json = List.map ~f:TraceInfo.to_json trace_info in
+      let trace_json = List.filter_map ~f:TraceInfo.to_json trace_info in
       let leaf_json =
         if leaf_json = [] then
           [`Assoc ["kind", leaf_kind_json]]

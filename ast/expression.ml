@@ -471,6 +471,10 @@ module Access = struct
         []
 
 
+  let last access =
+    List.last access
+
+
   let call ?(arguments = []) ~location ~name () =
     [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
 

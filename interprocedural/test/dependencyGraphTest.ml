@@ -39,8 +39,13 @@ let create_call_graph ?(update_environment_with = []) source_text =
   DependencyGraph.create_callgraph ~environment ~source
 
 
-let create_callable name =
-  Callable.create_real (Access.create name)
+let create_callable = function
+  | `Function name ->
+      Access.create name
+      |> Callable.create_function
+  | `Method name ->
+      Access.create name
+      |> Callable.create_method
 
 
 let compare_dependency_graph call_graph ~expected =
@@ -88,9 +93,9 @@ let test_construction _ =
         return self.bar()
     |}
     ~expected:[
-      "Foo.__init__", [];
-      "Foo.bar", [];
-      "Foo.qux", ["Foo.bar"];
+      `Method "Foo.__init__", [];
+      `Method "Foo.bar", [];
+      `Method "Foo.qux", [`Method "Foo.bar"];
     ];
 
   assert_call_graph
@@ -107,9 +112,9 @@ let test_construction _ =
     |}
     ~expected:
       [
-        "Foo.__init__", [];
-        "Foo.bar", ["Foo.qux"];
-        "Foo.qux", ["Foo.bar"]
+        `Method "Foo.__init__", [];
+        `Method "Foo.bar", [`Method "Foo.qux"];
+        `Method "Foo.qux", [`Method "Foo.bar"]
       ];
 
   assert_call_graph
@@ -120,11 +125,11 @@ let test_construction _ =
 
      class B:
        def __init__(self) -> None:
-         A()
+         a = A()
     |}
     ~expected:[
-      "A.__init__", [];
-      "B.__init__", ["A.__init__"];
+      `Method "A.__init__", [];
+      `Method "B.__init__", [`Method "A.__init__"];
     ];
 
   assert_call_graph
@@ -142,7 +147,7 @@ let test_construction _ =
      def foo():
        foobar.bar("foo")
     |}
-    ~expected:["foo", ["foobar.bar"]];
+    ~expected:[`Function "foo", [`Function "foobar.bar"]];
 
   assert_call_graph
     ~update_environment_with: [
@@ -160,7 +165,7 @@ let test_construction _ =
      def foo():
        qux.derp()
     |}
-    ~expected:["foo", ["bar.baz.qux.derp"]]
+    ~expected:[`Function "foo", [`Function "bar.baz.qux.derp"]]
 
 
 
@@ -177,7 +182,7 @@ let test_construction_reverse _ =
       def qux(self):
         return self.bar()
     |}
-    ~expected:["Foo.bar", ["Foo.qux"]];
+    ~expected:[`Method "Foo.bar", [`Method "Foo.qux"]];
 
   assert_reverse_call_graph
     {|
@@ -196,8 +201,8 @@ let test_construction_reverse _ =
     |}
     ~expected:
       [
-        "Foo.bar", ["Foo.qux"; "Foo.baz"];
-        "Foo.qux", ["Foo.bar"];
+        `Method "Foo.bar", [`Method "Foo.qux"; `Method "Foo.baz"];
+        `Method "Foo.qux", [`Method "Foo.bar"];
       ]
 
 
@@ -376,9 +381,9 @@ let test_strongly_connected_components _ =
     ~qualifier:"s0"
     ~expected:
       [
-        ["s0.Foo.__init__"];
-        ["s0.Foo.c1"];
-        ["s0.Foo.c2"];
+        [`Method "s0.Foo.__init__"];
+        [`Method "s0.Foo.c1"];
+        [`Method "s0.Foo.c2"];
       ];
 
   assert_strongly_connected_components
@@ -405,10 +410,10 @@ let test_strongly_connected_components _ =
     ~qualifier:"s1"
     ~expected:
       [
-        ["s1.Foo.__init__"];
-        ["s1.Foo.c1"; "s1.Foo.c2"];
-        ["s1.Foo.c3"; "s1.Foo.c4"];
-        ["s1.Foo.c5"];
+        [`Method "s1.Foo.__init__"];
+        [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
+        [`Method "s1.Foo.c3"; `Method "s1.Foo.c4"];
+        [`Method "s1.Foo.c5"];
       ];
 
   assert_strongly_connected_components
@@ -442,11 +447,11 @@ let test_strongly_connected_components _ =
     ~qualifier:"s2"
     ~expected:
       [
-        ["s2.Foo.__init__"];
-        ["s2.Bar.__init__"];
-        ["s2.Foo.c1"; "s2.Foo.c2"];
-        ["s2.Bar.c1"];
-        ["s2.Bar.c2"; "s2.Foo.c3"];
+        [`Method "s2.Foo.__init__"];
+        [`Method "s2.Bar.__init__"];
+        [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
+        [`Method "s2.Bar.c1"];
+        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"];
       ]
 
 

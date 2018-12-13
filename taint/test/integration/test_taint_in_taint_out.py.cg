@@ -1,6 +1,6 @@
 Call dependencies
-qualifier.Data.__init__ (real) -> []
-qualifier.get_data (real) -> []
-qualifier.product_data (real) -> [DataRecord (real) _unpack (real) qualifier.get_data (real) qualifier.product_data (real) some_service (real)]
-qualifier.product_data_wrapper (real) -> [qualifier.product_data (real)]
-qualifier.test_tito (real) -> [__testSource (real) qualifier.product_data_wrapper (real)]
+qualifier.Data::__init__ (method) -> []
+qualifier.get_data (fun) -> []
+qualifier.product_data (fun) -> [qualifier.get_data (fun) qualifier.product_data (fun)]
+qualifier.product_data_wrapper (fun) -> [qualifier.product_data (fun)]
+qualifier.test_tito (fun) -> [__testSource (fun) qualifier.product_data_wrapper (fun)]

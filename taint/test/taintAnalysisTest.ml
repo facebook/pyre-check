@@ -38,21 +38,6 @@ let create_call_graph ?(path = "test.py") source =
     Test.parse ~qualifier:(Access.create "qualifier") ~handle:path source
     |> Preprocessing.preprocess
   in
-  let () =
-    let callables =
-      Preprocessing.defines source
-      |> List.map ~f:Callable.create
-    in
-    let () =
-      let keys = Fixpoint.KeySet.of_list callables in
-      Fixpoint.remove_new keys;
-      Fixpoint.remove_old keys
-    in
-    let add_initial_model callable =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
-    in
-    List.iter callables ~f:add_initial_model
-  in
   let () = Ast.SharedMemory.Sources.remove ~handles:[handle] in
   let () = Ast.SharedMemory.Sources.add handle source in
   let environment = Test.environment () in
@@ -88,11 +73,19 @@ let create_call_graph ?(path = "test.py") source =
       ~path:handle
       ~source
   in
-  let () =
-    Service.StaticAnalysis.record_overrides DependencyGraph.empty_overrides in
   let all_callables =
     Service.StaticAnalysis.record_path_of_definitions ~path:handle ~source
-    |> List.map ~f:Callable.create
+    |> List.map ~f:(fun (callable, _define) -> (callable :> Callable.t))
+    |> List.rev_append (Callable.Map.keys overrides)
+  in
+  let () =
+    let add_initial_model callable =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
+    in
+    let keys = Fixpoint.KeySet.of_list all_callables in
+    Fixpoint.remove_new keys;
+    Fixpoint.remove_old keys;
+    List.iter all_callables ~f:add_initial_model
   in
   { callgraph; overrides; all_callables; environment }
 
@@ -117,8 +110,8 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  let read_analysis_result { define_name; _ } =
-    let call_target = Callable.create_real (Access.create define_name) in
+  let read_analysis_result { define_name; kind; _ } =
+    let call_target = TestHelper.create_callable kind define_name in
     Fixpoint.get_result call_target
     |> Result.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
@@ -258,6 +251,7 @@ let test_fixpoint _ =
       iterations = 4;
       expect = [
         {
+          kind = `Function;
           define_name = "qualifier.rce_problem";
           returns = [];
           sink_parameters = [];
@@ -270,6 +264,7 @@ let test_fixpoint _ =
           ]
         };
         {
+          kind = `Function;
           define_name = "qualifier.match_flows";
           returns = [];
           sink_parameters = [];
@@ -282,6 +277,7 @@ let test_fixpoint _ =
           ];
         };
         {
+          kind = `Function;
           define_name = "qualifier.match_flows_multiple";
           returns = [];
           sink_parameters = [];
@@ -294,6 +290,7 @@ let test_fixpoint _ =
           ];
         };
         {
+          kind = `Function;
           define_name = "qualifier.match_via_methods";
           returns = [];
           sink_parameters = [];
@@ -306,6 +303,7 @@ let test_fixpoint _ =
           ]
         };
         {
+          kind = `Function;
           define_name = "qualifier.no_match_via_methods";
           returns = [];
           sink_parameters = [];
@@ -313,6 +311,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.match_via_receiver";
           returns = [];
           sink_parameters = [];
@@ -325,6 +324,7 @@ let test_fixpoint _ =
           ]
         };
         {
+          kind = `Function;
           define_name = "qualifier.qux";
           returns = [];
           sink_parameters = [
@@ -334,6 +334,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.bad";
           returns = [];
           sink_parameters = [
@@ -343,6 +344,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.bar";
           returns = [Sources.Test];
           sink_parameters = [];
@@ -350,6 +352,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.some_source";
           returns = [Sources.Test];
           sink_parameters = [];
@@ -357,6 +360,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.list_sink";
           returns = [];
           sink_parameters = [
@@ -366,6 +370,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.no_list_match";
           returns = [];
           sink_parameters = [];
@@ -373,6 +378,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.list_match";
           returns = [];
           sink_parameters = [];
@@ -385,6 +391,7 @@ let test_fixpoint _ =
           ]
         };
         {
+          kind = `Function;
           define_name = "qualifier.test_getattr_obj_no_match";
           returns = [];
           sink_parameters = [];
@@ -392,6 +399,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.test_getattr_field_match";
           returns = [];
           sink_parameters = [];
@@ -404,6 +412,7 @@ let test_fixpoint _ =
           ]
         };
         {
+          kind = `Function;
           define_name = "qualifier.deep_tito";
           returns = [];
           sink_parameters = [];
@@ -411,6 +420,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.test_deep_tito_no_match";
           returns = [];
           sink_parameters = [];
@@ -418,6 +428,7 @@ let test_fixpoint _ =
           errors = [];
         };
         {
+          kind = `Function;
           define_name = "qualifier.test_deep_tito_match";
           returns = [];
           sink_parameters = [];

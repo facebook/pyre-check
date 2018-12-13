@@ -1,6 +1,6 @@
 (rule
  (targets files.ml)
- (deps (glob_files "*.py") (glob_files "*.models") (glob_files "*.cg"))
+ (deps (glob_files "*.py") (glob_files "*.models") (glob_files "*.cg") (glob_files "*.overrides"))
  (action (bash "echo \"let dummy_dependency = {|`date`|}\" > files.ml")))
 
 

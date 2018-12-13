@@ -18,7 +18,10 @@ val record_and_merge_call_graph
 
 val record_overrides: DependencyGraph.overrides -> unit
 
-val record_path_of_definitions: path: File.Handle.t -> source: Source.t -> Define.t Node.t list
+val record_path_of_definitions
+  : path: File.Handle.t
+  -> source: Source.t
+  -> (Callable.real_target * Define.t Node.t) list
 
 (** Populates shared memory with preexisting models. *)
 val add_models: environment: (module Environment.Handler) -> model_source: string -> unit

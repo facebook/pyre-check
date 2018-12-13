@@ -27,8 +27,9 @@ let assert_model ~model_source ~expect =
     callable = call_target
   in
   let get_model callable =
+    let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
     List.find ~f:(is_model callable) models
-    |> Option.value_exn ?here:None ?error:None ~message:"No model"
+    |> Option.value_exn ?here:None ?error:None ~message
     |> (fun { model; _ } -> model)
   in
   List.iter ~f:(check_expectation ~get_model) expect
@@ -39,6 +40,7 @@ let test_source_models _ =
     ~model_source:"def taint() -> TaintSource[Test]: ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "taint";
         returns = [Sources.Test];
         sink_parameters = [];
@@ -50,6 +52,7 @@ let test_source_models _ =
     ~model_source:"os.environ: TaintSource[Test] = ..."
     ~expect:[
       {
+        kind = `Object;
         define_name = "os.environ";
         returns = [Sources.Test];
         sink_parameters = [];
@@ -61,6 +64,7 @@ let test_source_models _ =
     ~model_source:"django.http.Request.GET: TaintSource[Test] = ..."
     ~expect:[
       {
+        kind = `Object;
         define_name = "django.http.Request.GET";
         returns = [Sources.Test];
         sink_parameters = [];
@@ -79,6 +83,7 @@ let test_sink_models _ =
       |}
     ~expect:[
       {
+        kind = `Function;
         define_name = "sink";
         returns = [];
         errors = [];
@@ -93,6 +98,7 @@ let test_sink_models _ =
     ~model_source:"def sink(parameter0, parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "sink";
         returns = [];
         errors = [];
@@ -107,6 +113,7 @@ let test_sink_models _ =
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "sink";
         returns = [];
         errors = [];
@@ -122,6 +129,7 @@ let test_sink_models _ =
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "sink";
         returns = [];
         errors = [];
@@ -137,6 +145,7 @@ let test_sink_models _ =
     ~model_source:"def thrift(parameter0: TaintSink[Thrift]) -> TaintSource[Thrift]: ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "thrift";
         returns = [Taint.Sources.Thrift];
         sink_parameters = [
@@ -151,6 +160,7 @@ let test_sink_models _ =
     ~model_source:"def xss(parameter: TaintSink[XSS]): ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "xss";
         returns = [];
         sink_parameters = [
@@ -167,6 +177,7 @@ let test_taint_in_taint_out_models _ =
     ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
     ~expect:[
       {
+        kind = `Function;
         define_name = "tito";
         returns = [];
         errors = [];

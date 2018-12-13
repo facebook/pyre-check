@@ -39,7 +39,7 @@ let create_callgraph ~environment ~source =
             ~key:(Some ([%hash: int * int](node_id, index)))
         in
         let process_access callees access =
-          let add_call_edge callees callee =
+          let add_call_edge callees (callee, _implicit) =
             Log.log
               ~section:`DependencyGraph
               "Adding call edge %a -> %a"
@@ -259,3 +259,24 @@ let union left right =
     List.rev_append left right
   in
   Map.merge_skewed ~combine left right
+
+
+let expand_callees callees =
+  let rec expand_and_gather expanded = function
+    | (#Callable.real_target | #Callable.object_target) as real ->
+        real :: expanded
+    | #Callable.override_target as override ->
+        let make_override at_type =
+          Callable.create_derived_override override ~at_type
+        in
+        let overrides =
+          let member = Callable.get_override_access override in
+          DependencyGraphSharedMemory.get_overriding_types ~member
+          |> Option.value ~default:[]
+          |> List.map ~f:make_override
+        in
+        Callable.get_corresponding_method override
+        :: List.fold overrides ~f:expand_and_gather ~init:expanded
+
+  in
+  List.fold callees ~init:[] ~f:expand_and_gather

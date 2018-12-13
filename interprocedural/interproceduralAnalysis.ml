@@ -92,6 +92,24 @@ let reached_fixpoint ~iteration ~previous ~next =
   |> Kind.Map.is_empty
 
 
+let join_models ~iteration left right =
+  let open Result in
+  let widen_pkg _
+      (Pkg { kind = ModelPart left_kind; value = left; })
+      (Pkg { kind = ModelPart right_kind; value = right; }) =
+    match Kind.are_equal left_kind right_kind with
+    | Kind.Equal ->
+        let module Analysis = (val (Result.get_analysis left_kind)) in
+        Some (Pkg { kind = ModelPart left_kind; value = Analysis.join ~iteration left right; })
+    | Kind.Distinct ->
+        failwith "Wrong kind matched up in widen."
+  in
+  if phys_equal left right then
+    left
+  else
+    Kind.Map.union widen_pkg left right
+
+
 let widen_models ~iteration ~previous ~next =
   let open Result in
   let widen_pkg _
@@ -153,11 +171,12 @@ let widen ~iteration ~previous ~next =
     verify_widen ~iteration ~previous ~next
 
 
-let widen_if_necessary step callable new_model result =
+let widen_if_necessary step callable { Result.models = new_model; is_obscure } result =
+  let callable = (callable :> Callable.t) in
   (* Check if we've reached a fixed point *)
   match Fixpoint.get_old_model callable with
   | None ->
-      Format.asprintf "No initial model found for %a" Callable.pp_real_target callable
+      Format.asprintf "No initial model found for %a" Callable.pp callable
       |> failwith
   | Some old_model ->
       if reached_fixpoint ~iteration:step.Fixpoint.iteration
@@ -165,7 +184,7 @@ let widen_if_necessary step callable new_model result =
         Log.log
           ~section:`Interprocedural
           "Reached fixpoint for %a\n%a"
-          Callable.pp_real_target callable
+          Callable.pp callable
           Result.pp_model_t old_model;
         Fixpoint.{ is_partial = false; model = old_model; result }
       end
@@ -176,15 +195,15 @@ let widen_if_necessary step callable new_model result =
                 ~iteration:step.Fixpoint.iteration
                 ~previous:old_model.models
                 ~next:new_model;
-            is_obscure = false;
+            is_obscure;
           }
         in
         Log.log
           ~section:`Interprocedural
           "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
-          Callable.pp_real_target callable
+          Callable.pp callable
           Result.pp_model_t old_model
-          Result.pp_model_t {models=new_model; is_obscure=false}
+          Result.pp_model_t {models=new_model; is_obscure}
           Result.pp_model_t model;
         Fixpoint.{
           is_partial = true;
@@ -241,15 +260,40 @@ let analyze_define
     | _ as exn ->
         analysis_failed step ~exn ~message:"Analysis failed" callable
   in
-  widen_if_necessary step callable new_model results
+  widen_if_necessary step callable { Result.models=new_model; is_obscure=false } results
 
 
-let analyze_overrides _step _callable =
-  Fixpoint.{
-    is_partial = false;
-    model = Result.empty_model;
-    result = Result.empty_result;
-  }
+let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
+  let overrides =
+    DependencyGraphSharedMemory.get_overriding_types ~member:(Callable.get_override_access callable)
+    |> Option.value ~default:[]
+    |> List.map ~f:(fun at_type -> Callable.create_derived_override callable ~at_type)
+  in
+  let model =
+    let get_override_model override =
+      match Fixpoint.get_model override with
+      | None ->  (* inidicates this is the leaf and not explicitly represented *)
+          Fixpoint.get_model (Callable.get_corresponding_method override)
+      | model ->
+          model
+    in
+    let lookup_and_join ({ Result.is_obscure; models } as result) override =
+      match get_override_model override with
+      | None ->
+          result
+      | Some model ->
+          {
+            is_obscure = is_obscure || model.is_obscure;
+            models = join_models ~iteration models model.models;
+          }
+    in
+    let direct_model =
+      Fixpoint.get_model (Callable.get_corresponding_method callable)
+      |> Option.value ~default:Result.empty_model
+    in
+    List.fold overrides ~f:lookup_and_join ~init:direct_model
+  in
+  widen_if_necessary step callable model Result.empty_result
 
 
 let analyze_callable analyses step callable environment =
@@ -300,6 +344,11 @@ let analyze_callable analyses step callable environment =
       end
   | #Callable.override_target as callable ->
       analyze_overrides step callable
+  | #Callable.object_target as path ->
+      Format.asprintf
+        "Found object %a in fixpoint analysis"
+        Callable.pp path
+      |> failwith
 
 
 let get_errors results =
@@ -369,13 +418,27 @@ let one_analysis_pass ~analyses step ~environment ~callables =
   List.length callables
 
 
-let get_callable_dependents ~dependencies = function
-  | #Callable.real_target as real ->
-      Callable.Map.find dependencies real
-      |> Option.value ~default:[]
-  | #Callable.override_target as _override ->
-      (* TODO(T32010422) *)
-      []
+let get_callable_dependents ~dependencies callable =
+  let explicit =
+    Callable.Map.find dependencies callable
+    |> Option.value ~default:[]
+  in
+  (* Add implicit dependencies *)
+  let implicit =
+    match callable with
+    | #Callable.method_target as method_target ->
+        (* Leafs have no explicit override target. So for these we need to
+           expand to their explicit parents. *)
+        let override_target = Callable.get_corresponding_override method_target in
+        if Fixpoint.has_model override_target then
+          [override_target]
+        else
+          Callable.Map.find dependencies override_target
+          |> Option.value ~default:[]
+    | _ ->
+        []
+  in
+  implicit @ explicit
 
 
 let compute_callables_to_reanalyze step previous_batch ~dependencies ~all_callables =

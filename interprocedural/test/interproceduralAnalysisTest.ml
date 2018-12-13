@@ -134,7 +134,7 @@ let assert_summaries ~expected summaries =
 let test_unknown_function_analysis _ =
   let targets =
     List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
-    |> List.map ~f:(fun access -> Callable.create_real access)
+    |> List.map ~f:(fun access -> Callable.create_function access)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0; } in
   let environment = environment () in
@@ -151,12 +151,12 @@ let test_unknown_function_analysis _ =
   let externalized = List.concat_map ~f:Analysis.externalize targets in
   List.iter ~f:check_obscure_model targets;
   assert_summaries externalized ~expected:[
-    {| {"analysis":"analysisA","name":"fun_a (real)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"fun_a (real)","model":"obscure","result":null} |};
-    {| {"analysis":"analysisA","name":"fun_b (real)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"fun_b (real)","model":"obscure","result":null} |};
-    {| {"analysis":"analysisA","name":"fun_c (real)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"fun_c (real)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_a (fun)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_a (fun)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_b (fun)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_b (fun)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisA","name":"fun_c (fun)","model":-1,"result":null} |};
+    {| {"analysis":"analysisB","name":"fun_c (fun)","model":"obscure","result":null} |};
   ]
 
 
@@ -182,7 +182,7 @@ let check_meta_data ~step ~is_partial target =
 let test_meta_data _ =
   let targets =
     List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
-    |> List.map ~f:Callable.create_real in
+    |> List.map ~f:Callable.create_function in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0; } in
   let environment = environment () in
   let _ = Analysis.one_analysis_pass step1 ~analyses ~environment ~callables:targets in

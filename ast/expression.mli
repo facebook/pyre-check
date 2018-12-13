@@ -214,6 +214,7 @@ module Access : sig
   val drop_prefix: t -> prefix: t -> t
   (* Returns all but the last component in the access. *)
   val prefix: t -> t
+  val last: t -> expression_t access option
 
   val call
     :  ?arguments: Argument.t list

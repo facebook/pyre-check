@@ -1,4 +1,4 @@
 Call dependencies
-qualifier.dictionary_entry_sink (real) -> [__testSink (real)]
-qualifier.dictionary_source (real) -> [__testSource (real)]
-qualifier.dictionary_tito (real) -> []
+qualifier.dictionary_entry_sink (fun) -> [__testSink (fun)]
+qualifier.dictionary_source (fun) -> [__testSource (fun)]
+qualifier.dictionary_tito (fun) -> []

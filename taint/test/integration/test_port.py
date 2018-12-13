@@ -50,6 +50,6 @@ class Foo:
 
 
 def refer_to_method_as_field(foo: Foo):
-    # This comes up Instagram due to @cached_property decorators
+    # This comes up in Instagram due to @cached_property decorators
     taint = foo.some_source
     __testSink(taint)

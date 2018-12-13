@@ -8,11 +8,18 @@ open Analysis
 open Expression
 
 
+val is_local: Identifier.t -> bool
+
+val get_targets:
+  resolution: Resolution.t
+  -> global: Access.t
+  -> (Callable.t * Type.Callable.implicit) list
+
 val get_indirect_targets:
   resolution: Resolution.t
   -> receiver: Access.t
   -> method_name: Identifier.t
-  -> Callable.t list
+  -> (Callable.t * Type.Callable.implicit) list
 
 
 (* Returns a normalized path and optional addition parameter prefix, e.g. for
@@ -27,4 +34,4 @@ val normalize_global:
 val resolve_call_targets:
   resolution: Resolution.t
   -> Access.t
-  -> Callable.t list
+  -> (Callable.t * Type.Callable.implicit) list

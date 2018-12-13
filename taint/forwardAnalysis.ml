@@ -84,7 +84,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution call_location arguments state call_targets =
-      let apply_call_target call_target =
+      let apply_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         if not taint_model.is_obscure then
           let { TaintResult.forward; backward; _ } = taint_model.model in
@@ -197,12 +197,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
       | AccessPath.Global access ->
-          let access, extra_arguments =
+          let targets = Interprocedural.CallResolution.get_targets ~resolution ~global:access in
+          let _, extra_arguments =
             Interprocedural.CallResolution.normalize_global ~resolution access
           in
-          let call_target = Interprocedural.Callable.create_real access in
           let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution location arguments state [call_target]
+          apply_call_targets ~resolution location arguments state targets
       | AccessPath.Access { expression; member = method_name } ->
           let receiver = AccessPath.as_access expression in
           let arguments =
@@ -229,18 +229,27 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_normalized_expression ~resolution location state expression =
       let global_model access =
-        let call_target = Interprocedural.Callable.create_real access in
-        Interprocedural.Fixpoint.get_model call_target
-        >>= Interprocedural.Result.get_model TaintResult.kind
-        |> function
-        | Some { forward = { source_taint }; _ } ->
-            ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-            |> ForwardState.Tree.apply_call
-              location
-              ~callees:[call_target]
-              ~port:AccessPath.Root.LocalResult
-        | _ ->
-            ForwardState.Tree.empty
+        (* Fields are handled like methods *)
+        let target_candidates = [
+          Interprocedural.Callable.create_method access;
+          Interprocedural.Callable.create_object access;
+        ]
+        in
+        let merge_models result candidate =
+          let model =
+            Interprocedural.Fixpoint.get_model candidate
+            >>= Interprocedural.Result.get_model TaintResult.kind
+          in
+          match model with
+          | None -> result
+          | Some { forward = { source_taint }; _ } ->
+              ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
+              |> ForwardState.Tree.apply_call
+                location
+                ~callees:[candidate]
+                ~port:AccessPath.Root.LocalResult
+        in
+        List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
       in
       match expression with
       | Access { expression; member } ->

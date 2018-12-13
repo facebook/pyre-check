@@ -308,10 +308,6 @@ let normalize_access_list left = function
       failwith "invalid expr in access (not in root position)"
 
 
-let is_local identifier =
-  String.is_prefix ~prefix:"$" (Identifier.show identifier)
-
-
 let global_prefix ~resolution access =
   let rec module_prefix ~lead ~tail =
     match tail with
@@ -328,7 +324,8 @@ let global_prefix ~resolution access =
 
 
 let split_root ~resolution = function
-  | Access.Identifier identifier :: rest when is_local identifier ->
+  | Access.Identifier identifier :: rest
+    when Interprocedural.CallResolution.is_local identifier ->
       Local identifier, rest
   | Access.Expression expression :: rest ->
       Expression expression, rest

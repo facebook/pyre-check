@@ -114,12 +114,24 @@ let taint_return model expression =
 
 let create ~resolution ?(verify = true) ~model_source () =
   let defines =
-    let filter_define = function
+    let filter_define node =
+      match node with
       | { Node.value = Define define; _ } ->
-          Some define
+          let class_name = Access.prefix define.name in
+          let class_candidate =
+            Access.expression class_name
+            |> Resolution.parse_annotation resolution
+            |> Resolution.class_definition resolution
+          in
+          let call_target =
+            match class_candidate with
+            | Some _ -> Callable.create_method define.name
+            | None -> Callable.create_function define.name
+          in
+          Some (define, call_target)
       | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          Some {
+          let define = {
             Define.name = Expression.access target;
             parameters = [];
             body = [];
@@ -129,6 +141,8 @@ let create ~resolution ?(verify = true) ~model_source () =
             async = false;
             parent = None;
           }
+          in
+          Some (define, Callable.create_object define.name)
       | _ ->
           None
     in
@@ -136,8 +150,9 @@ let create ~resolution ?(verify = true) ~model_source () =
     |> Parser.parse
     |> List.filter_map ~f:filter_define
   in
-  let create_model { Define.name; parameters; return_annotation; _ } =
+  let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
     (* Make sure we know about what we model. *)
+    let call_target = (call_target :> Callable.t) in
     let annotation = Resolution.resolve resolution (Access.expression name) in
     if Type.equal annotation Type.Top then
       Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
@@ -166,8 +181,6 @@ let create ~resolution ?(verify = true) ~model_source () =
       | _ ->
           ()
     end;
-
-    let call_target = Callable.create_real name in
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters
     >>= Fn.flip taint_return return_annotation

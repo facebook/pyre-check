@@ -6,6 +6,7 @@
 open Core
 
 open Domains
+open Pyre
 
 
 module Forward = struct
@@ -186,3 +187,23 @@ end
 
 
 include Interprocedural.Result.Make(ResultArgument)
+
+
+(* Patch the forward reference to access the final summaries in trace info generation. *)
+let has_significant_summary root path target =
+  let model =
+    Interprocedural.Fixpoint.get_model target
+    >>= Interprocedural.Result.get_model kind
+  in
+  match model with
+  | None -> false
+  | Some { forward; backward; _ } ->
+      match root with
+      | AccessPath.Root.LocalResult ->
+          let tree = ForwardState.read ~root ~path forward.source_taint in
+          not (ForwardState.Tree.is_empty tree)
+      | _ ->
+          let tree = BackwardState.read ~root ~path backward.sink_taint in
+          not (BackwardState.Tree.is_empty tree)
+
+let () = TraceInfo.has_significant_summary := has_significant_summary

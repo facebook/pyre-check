@@ -1,3 +1,3 @@
 Call dependencies
-qualifier.rce_problem (real) -> [__userControlled (real) eval (real)]
-qualifier.subprocess_problem (real) -> [__userControlled (real) subprocess.check_call (real)]
+qualifier.rce_problem (fun) -> [__userControlled (fun) eval (fun)]
+qualifier.subprocess_problem (fun) -> [__userControlled (fun) subprocess.check_call (fun)]

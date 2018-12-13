@@ -1,4 +1,656 @@
 {
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testB",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 106,
+    "start": 20,
+    "end": 21,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 104,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.methodB", "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 106,
+                "start": 20,
+                "end": 21
+              },
+              "resolves_to": [ "qualifier.B.classMethod" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testB",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 105,
+    "start": 14,
+    "end": 15,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 104,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.methodB", "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 105,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "qualifier.D.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testBase",
+    "callable_line": 71,
+    "code": 5002,
+    "line": 73,
+    "start": 14,
+    "end": 15,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 72,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.methodB", "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 73,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "qualifier.D.methodA", "qualifier.A.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testBase",
+    "callable_line": 71,
+    "code": 5002,
+    "line": 74,
+    "start": 20,
+    "end": 21,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 72,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.methodB", "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 74,
+                "start": 20,
+                "end": 21
+              },
+              "resolves_to": [ "qualifier.B.classMethod" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testC",
+    "callable_line": 119,
+    "code": 5002,
+    "line": 121,
+    "start": 14,
+    "end": 15,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 120,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 121,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "qualifier.D.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testD",
+    "callable_line": 135,
+    "code": 5002,
+    "line": 137,
+    "start": 14,
+    "end": 15,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 136,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 137,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "qualifier.D.methodA" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "qualifier.testStaticB",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 111,
+    "start": 18,
+    "end": 19,
+    "filename": "test_overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 110,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.methodB", "qualifier.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "test_overrides.py",
+                "line": 111,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "qualifier.B.classMethod" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.B::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.B::classMethod}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 42,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.B::methodB}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 38,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          },
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 68,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.Base::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.Base::classMethod}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 42,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.Base::methodA}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 28,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          },
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 65,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.Base::methodB}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 38,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          },
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 68,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.C::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{qualifier.C::methodA}",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 65,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "qualifier.A.__init__",
@@ -21,6 +673,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "qualifier.A.methodA",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 28,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "qualifier.B.__init__",
     "sources": [],
     "sinks": [],
@@ -36,6 +713,56 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.B.classMethod",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 42,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.B.methodB",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 38,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }
 {
@@ -76,5 +803,75 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.D.__init__",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.D.methodA",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 65,
+              "start": 19,
+              "end": 22
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "qualifier.D.methodB",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "test_overrides.py",
+              "line": 68,
+              "start": 27,
+              "end": 29
+            },
+            "tito": [],
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
   }
 }

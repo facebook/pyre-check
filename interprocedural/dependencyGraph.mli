@@ -42,3 +42,5 @@ val create_overrides:
   -> overrides
 
 val union: t -> t -> t
+
+val expand_callees: Callable.t list -> Callable.non_override_target list

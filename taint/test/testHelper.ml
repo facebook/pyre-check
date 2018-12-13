@@ -27,6 +27,7 @@ type error_expectation = {
 
 
 type expectation = {
+  kind: [`Function | `Method | `Override | `Object];
   define_name: string;
   sink_parameters: parameter_taint list;
   tito_parameters: string list;
@@ -47,10 +48,20 @@ let get_model callable =
   |> Option.value ~default:Taint.Result.empty_model
 
 
+let create_callable kind define_name =
+  let name = Access.create define_name in
+  match kind with
+  | `Method -> Callable.create_method name
+  | `Function -> Callable.create_function name
+  | `Override -> Callable.create_override name
+  | `Object -> Callable.create_object name
+
+
 let check_expectation
     ?(get_model = get_model)
-    { define_name; sink_parameters; tito_parameters; returns; errors }
+    { define_name; sink_parameters; tito_parameters; returns; errors; kind }
   =
+  let callable = create_callable kind define_name in
   let open Taint.Result in
   let extract_sinks_by_parameter_name sink_map (root, sink_tree) =
     match AccessPath.Root.parameter_name root with
@@ -70,7 +81,7 @@ let check_expectation
         sink_map
   in
   let backward, forward =
-    let { backward; forward } = get_model (Callable.create_real (Access.create define_name)) in
+    let { backward; forward } = get_model callable in
     backward, forward
   in
   let taint_map =
@@ -181,10 +192,9 @@ let check_expectation
     expected_tito
     taint_in_taint_out_names;
 
-  (* Checke errors *)
+  (* Check errors *)
   let actual_errors =
-    let call_target = Callable.create_real (Access.create define_name) in
-    Fixpoint.get_result call_target
+    Fixpoint.get_result callable
     |> Result.get_result Taint.Result.kind
     >>| List.map ~f:Flow.generate_error
     |> Option.value ~default:[]

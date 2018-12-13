@@ -119,7 +119,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution arguments state call_taint call_targets =
-      let analyze_call_target call_target =
+      let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
         if not taint_model.is_obscure then
@@ -210,12 +210,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
       | Global access ->
-          let access, extra_arguments =
+          let targets = Interprocedural.CallResolution.get_targets ~resolution ~global:access in
+          let _, extra_arguments =
             Interprocedural.CallResolution.normalize_global ~resolution access
           in
-          let call_target = Interprocedural.Callable.create_real access in
           let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution arguments state taint [call_target]
+          apply_call_targets ~resolution arguments state taint targets
 
       | Access { expression = receiver; member = method_name} ->
           let state =

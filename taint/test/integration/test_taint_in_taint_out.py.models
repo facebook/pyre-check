@@ -1,6 +1,46 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{object::__init__}",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "qualifier.Data.__init__",
     "sources": [],
     "sinks": [],
