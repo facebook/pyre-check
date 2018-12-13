@@ -13,34 +13,7 @@ module Targets = struct
 end
 
 
-module HandleKey = struct
-  type t = File.Handle.t
-  let to_string = File.Handle.show
-  let compare = File.Handle.compare
-end
-
-
 module Overrides = SharedMemory.WithCache (Callable.Key) (Targets)
-
-module CallerKeys = SharedMemory.WithCache (HandleKey) (Targets)
-
-module CallEdges = SharedMemory.WithCache (Callable.Key) (Targets)
-
-
-let add_callers ~path =
-  CallerKeys.add path
-
-
-let get_callers ~path =
-  CallerKeys.get path
-
-
-let add_call_edges ~caller ~callees =
-  CallEdges.add caller callees
-
-
-let get_call_edges ~caller =
-  CallEdges.get caller
 
 
 let add_overrides ~ancestor ~children =

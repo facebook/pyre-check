@@ -47,17 +47,12 @@ let overrides_of_source ~environment ~source =
   |> List.fold ~init:Interprocedural.Callable.Map.empty ~f:record_overrides
 
 
-let record_and_merge_call_graph ~environment ~call_graph ~path ~source =
-  let record_and_merge_call_graph path map call_graph =
-    DependencyGraphSharedMemory.add_callers ~path (Callable.Map.keys call_graph);
-    let add_call_graph ~key:caller ~data:callees =
-      DependencyGraphSharedMemory.add_call_edges ~caller ~callees
-    in
-    Callable.Map.iteri call_graph ~f:add_call_graph;
+let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
+  let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
   DependencyGraph.create ~environment ~source
-  |> record_and_merge_call_graph path call_graph
+  |> record_and_merge_call_graph call_graph
 
 
 let record_overrides ~environment ~source =
