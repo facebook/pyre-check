@@ -13,7 +13,6 @@ import traceback
 
 from . import (
     EnvironmentException,
-    SharedAnalysisDirectory,
     assert_readable_directory,
     buck,
     commands,
@@ -21,7 +20,7 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    resolve_analysis_directories,
+    resolve_analysis_directory,
     switch_root,
     translate_arguments,
 )
@@ -301,7 +300,6 @@ def main() -> int:
             arguments.command = commands.Check
 
     configuration = None
-    analysis_directories = []
     shared_analysis_directory = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
@@ -338,35 +336,16 @@ def main() -> int:
                 return ExitCode.SUCCESS
 
             if arguments.command in [commands.Kill]:
-                analysis_directories = ["."]
+                analysis_directory = AnalysisDirectory(".")
             else:
                 prompt = arguments.command not in [commands.Incremental, commands.Check]
-                analysis_directories = resolve_analysis_directories(
-                    arguments, configuration, prompt=prompt
-                )
-
-            if len(analysis_directories) == 1:
-                analysis_directory = AnalysisDirectory(analysis_directories.pop())
-            else:
-                local_configuration_path = configuration.local_configuration
-                if local_configuration_path:
-                    local_root = os.path.dirname(
-                        os.path.relpath(
-                            local_configuration_path, arguments.current_directory
-                        )
-                    )
-                else:
-                    local_root = None
                 isolate = (
                     arguments.command in [commands.Check]
                     and not arguments.use_global_shared_analysis_directory
                 )
-                shared_analysis_directory = SharedAnalysisDirectory(
-                    analysis_directories,
-                    local_root,  # pyre-fixme: Expected Optional[str], got bytes
-                    isolate,
+                analysis_directory = resolve_analysis_directory(
+                    arguments, configuration, isolate=isolate, prompt=prompt
                 )
-                analysis_directory = shared_analysis_directory
 
         exit_code = (
             arguments.command(arguments, configuration, analysis_directory)

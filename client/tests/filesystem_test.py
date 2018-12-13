@@ -321,7 +321,7 @@ class FilesystemTest(unittest.TestCase):
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
         shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], "path/to/local"
+            ["first", "second"], ["path/to/local"], "path/to/local"
         )
 
         directory = shared_analysis_directory.get_scratch_directory()
@@ -334,7 +334,7 @@ class FilesystemTest(unittest.TestCase):
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
         shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], "path/to/local"
+            ["first", "second"], ["path/to/local"], "path/to/local"
         )
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")

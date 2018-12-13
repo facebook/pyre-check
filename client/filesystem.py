@@ -22,11 +22,15 @@ LOG = logging.getLogger(__name__)
 
 
 class AnalysisDirectory:
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, filter_paths: Optional[List[str]] = None) -> None:
         self._path = path
+        self._filter_paths = filter_paths
 
     def get_root(self) -> str:
         return self._path
+
+    def get_filter_root(self) -> List[str]:
+        return self._filter_paths or [self.get_root()]
 
     def prepare(self) -> None:
         pass
@@ -36,11 +40,13 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
         self,
         analysis_directories,
-        local_root: Optional[str] = None,
+        filter_paths: Optional[List[str]] = None,
+        local_configuration_root: Optional[str] = None,
         isolate: bool = False,
     ):
         self._analysis_directories = set(analysis_directories)
-        self._local_root = local_root
+        self._filter_paths = filter_paths
+        self._local_configuration_root = local_configuration_root
         self._isolate = isolate
 
     def get_scratch_directory(self) -> str:
@@ -55,7 +61,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     @functools.lru_cache(1)
     def get_root(self) -> str:
-        path_to_root = self._local_root or "shared_analysis_directory"
+        path_to_root = self._local_configuration_root or "shared_analysis_directory"
         suffix = "_{}".format(str(os.getpid())) if self._isolate else ""
         return os.path.join(
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)

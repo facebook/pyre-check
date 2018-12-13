@@ -15,8 +15,8 @@ from argparse import Namespace
 from typing import Any, Dict, Optional
 
 from . import buck
-from .exceptions import EnvironmentException as EnvironmentException
-from .filesystem import SharedAnalysisDirectory  # noqa
+from .exceptions import EnvironmentException
+from .filesystem import AnalysisDirectory, SharedAnalysisDirectory  # noqa
 
 
 LOG = logging.getLogger(__name__)
@@ -117,7 +117,17 @@ def translate_arguments(commands, arguments):
         arguments.logger = translate_path(root, arguments.logger)
 
 
-def resolve_analysis_directories(arguments, configuration, prompt: bool = True):
+def translate_paths(paths, original_directory):
+    current_directory = os.getcwd()
+    if not original_directory.startswith(current_directory):
+        return paths
+    translation = os.path.relpath(original_directory, current_directory)
+    if not translation:
+        return paths
+    return {translate_path(translation, path) for path in paths}
+
+
+def _resolve_analysis_paths(arguments, configuration, prompt):
     analysis_directories = set(arguments.analysis_directory or [])
     targets = set(arguments.target or [])
 
@@ -139,15 +149,44 @@ def resolve_analysis_directories(arguments, configuration, prompt: bool = True):
         raise EnvironmentException("No targets or source directories to analyze.")
 
     # Translate link trees if we switched directories earlier.
-    current_directory = os.getcwd()
-    if not arguments.original_directory.startswith(current_directory):
-        return analysis_directories
+    return translate_paths(analysis_directories, arguments.original_directory)
 
-    translation = os.path.relpath(arguments.original_directory, current_directory)
-    if not translation:
-        return analysis_directories
 
-    return {translate_path(translation, path) for path in analysis_directories}
+def _resolve_filter_paths(arguments, configuration):
+    filter_paths = []
+    if arguments.analysis_directory or arguments.target:
+        if arguments.analysis_directory:
+            filter_paths += arguments.analysis_directory
+        if arguments.target:
+            filter_paths += [
+                buck.presumed_target_root(target) for target in arguments.target
+            ]
+    else:
+        local_configuration_root = configuration.local_configuration_root
+        if local_configuration_root:
+            filter_paths = [local_configuration_root]
+    return translate_paths(filter_paths, arguments.original_directory)
+
+
+def resolve_analysis_directory(
+    arguments, configuration, isolate: bool = False, prompt: bool = True
+):
+    analysis_paths = _resolve_analysis_paths(arguments, configuration, prompt)
+    filter_paths = _resolve_filter_paths(arguments, configuration)
+    local_configuration_root = configuration.local_configuration_root
+    if local_configuration_root:
+        local_configuration_root = os.path.relpath(
+            local_configuration_root, arguments.current_directory
+        )
+
+    if len(analysis_paths) == 1:
+        analysis_directory = AnalysisDirectory(analysis_paths.pop(), filter_paths)
+    else:
+        shared_analysis_directory = SharedAnalysisDirectory(
+            analysis_paths, filter_paths, local_configuration_root, isolate
+        )
+        analysis_directory = shared_analysis_directory
+    return analysis_directory
 
 
 def number_of_workers() -> int:

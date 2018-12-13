@@ -6,8 +6,8 @@
 import json
 import logging
 import os
-import sys
 import shutil
+import sys
 from typing import Dict, List, Optional, Union
 
 from . import (
@@ -294,6 +294,14 @@ class Configuration:
         if not self._search_path:
             return []
         return [element.command_line_argument() for element in self._search_path]
+
+    @property
+    def local_configuration_root(self) -> Optional[str]:
+        if self.local_configuration:
+            if os.path.isdir(self.local_configuration):
+                return self.local_configuration
+            else:
+                return os.path.dirname(self.local_configuration)
 
     def _check_read_local_configuration(self, path: str, fail_on_error: bool) -> None:
         if fail_on_error and not os.path.exists(path):

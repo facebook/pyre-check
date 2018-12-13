@@ -6,7 +6,6 @@ from typing import Set
 
 from .. import log
 from ..error import Error
-from ..filesystem import get_filesystem
 from .command import ClientException, Command
 
 
@@ -52,11 +51,10 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        current_project_directory = self._analysis_directory.get_root()
-        if self._local_configuration:
-            current_project_directory = self._local_configuration
+        current_project_directory = self._analysis_directory.get_filter_root()
         directories_to_analyze = {
-            os.path.relpath(current_project_directory, os.getcwd())
+            os.path.relpath(filter_root, os.getcwd())
+            for filter_root in current_project_directory
         }
         return directories_to_analyze
 

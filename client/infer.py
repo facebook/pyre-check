@@ -25,7 +25,7 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
-    resolve_analysis_directories,
+    resolve_analysis_directory,
     switch_root,
 )
 from .commands import ExitCode
@@ -518,7 +518,6 @@ def main():
     error_message = ""
     try:
         exit_code = ExitCode.SUCCESS
-        analysis_directories = []
         shared_analysis_directory = None
 
         arguments.capable_terminal = is_capable_terminal()
@@ -537,25 +536,9 @@ def main():
             sys.stdout.write(get_binary_version(configuration) + "\n")
             return ExitCode.SUCCESS
 
-        analysis_directories = resolve_analysis_directories(
+        analysis_directory = resolve_analysis_directory(
             arguments, configuration, prompt=False
         )
-        if len(analysis_directories) == 1:
-            analysis_directory = AnalysisDirectory(analysis_directories.pop())
-        else:
-            local_configuration_path = configuration.local_configuration
-            if local_configuration_path:
-                local_root = os.path.dirname(
-                    os.path.relpath(
-                        local_configuration_path, arguments.current_directory
-                    )
-                )
-            else:
-                local_root = None
-            shared_analysis_directory = SharedAnalysisDirectory(
-                analysis_directories, local_root
-            )
-            analysis_directory = shared_analysis_directory
         Infer(arguments, configuration, analysis_directory).run()
     except (
         buck.BuckException,
