@@ -13,9 +13,8 @@ from .command_test import mock_arguments, mock_configuration
 
 class RestartTest(unittest.TestCase):
     @patch.object(restart, "Stop")
-    @patch.object(restart, "Start")
     @patch.object(monitor.Monitor, "daemonize")
-    def test_restart(self, _daemonize, commands_Start, commands_Stop) -> None:
+    def test_restart(self, _daemonize, commands_Stop) -> None:
         state = MagicMock()
         state.running = ["."]
 
@@ -25,22 +24,6 @@ class RestartTest(unittest.TestCase):
         configuration = mock_configuration()
 
         analysis_directory = "."
-
-        with patch.object(restart, "Stop") as commands_Stop, patch.object(
-            restart, "Start"
-        ) as commands_Start, patch.object(
-            restart, "Incremental"
-        ) as commands_Incremental:
-            commands.Restart(
-                arguments, configuration, analysis_directory, blocking=False
-            )._run()
-            commands_Stop.assert_called_with(
-                arguments, configuration, analysis_directory
-            )
-            commands_Start.assert_called_with(
-                arguments, configuration, analysis_directory
-            )
-            commands_Incremental.assert_not_called()
 
         with patch.object(restart, "Stop") as commands_Stop, patch.object(
             restart, "Start"
