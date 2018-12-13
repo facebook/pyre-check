@@ -37,10 +37,6 @@ class InitTest(unittest.TestCase):
             switch_root(arguments)
             self.assertEqual(arguments.local_configuration, None)
 
-            arguments.local_configuration = "fakepath"
-            switch_root(arguments)
-            self.assertEqual(arguments.local_configuration, "realpath")
-
             arguments.local_configuration = None
             with patch("os.getcwd", return_value="/a/b/c"):
                 isfile.side_effect = (
@@ -48,7 +44,7 @@ class InitTest(unittest.TestCase):
                 )
                 switch_root(arguments)
                 self.assertEqual(arguments.original_directory, "/a/b/c")
-                self.assertEqual(arguments.local_configuration_directory, "/a/b")
+                self.assertEqual(arguments.local_configuration, "/a/b")
 
         with patch(
             "{}.find_configuration_root".format(client_name)
@@ -56,12 +52,12 @@ class InitTest(unittest.TestCase):
             with patch("os.getcwd", return_value="/a/b"):
                 arguments.original_directory = "/a/b"
                 arguments.current_directory = "/a/b"
-                arguments.local_configuration_directory = "/a"
+                arguments.local_configuration = None
                 mock_find_configuation_root.side_effect = ["/a", "/a/b"]
                 switch_root(arguments)
                 self.assertEqual(arguments.original_directory, "/a/b")
                 self.assertEqual(arguments.current_directory, "/a/b")
-                self.assertEqual(arguments.local_configuration_directory, None)
+                self.assertEqual(arguments.local_configuration, None)
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")

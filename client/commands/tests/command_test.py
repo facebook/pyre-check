@@ -27,7 +27,6 @@ def mock_arguments(
     arguments.filter_directories = ["."]
     arguments.local = False
     arguments.local_configuration = None
-    arguments.local_configuration_directory = None
     arguments.log_identifier = None
     arguments.logger = None
     arguments.logging_sections = None

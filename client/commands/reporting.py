@@ -22,9 +22,7 @@ class Reporting(Command):
         self._output = arguments.output
         self._ignore_all_errors_paths = configuration.ignore_all_errors
         self._discovered_analysis_directories = [self._local_root]
-        self._local_configuration = (
-            arguments.local_configuration or arguments.local_configuration_directory
-        )
+        self._local_configuration = arguments.local_configuration
 
     def _print(self, errors) -> None:
         errors = [

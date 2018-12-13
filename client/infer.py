@@ -527,10 +527,7 @@ def main():
         log.initialize(arguments)
         switch_root(arguments)
 
-        configuration = Configuration(
-            local_configuration_directory=arguments.local_configuration_directory,
-            local_configuration=arguments.local_configuration,
-        )
+        configuration = Configuration(local_configuration=arguments.local_configuration)
 
         if arguments.version or arguments.binary_version:
             sys.stdout.write(get_binary_version(configuration) + "\n")

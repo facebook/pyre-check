@@ -69,24 +69,19 @@ def find_configuration_root(
 
 
 def switch_root(arguments) -> None:
-    if arguments.local_configuration is not None:
-        arguments.local_configuration = os.path.realpath(arguments.local_configuration)
-
     arguments.original_directory = os.getcwd()
-    arguments.local_configuration_directory = find_configuration_root(
+    local_root = find_configuration_root(
         arguments.original_directory, CONFIGURATION_FILE + ".local"
     )
     global_root = find_configuration_root(
         arguments.original_directory, CONFIGURATION_FILE
     )
-    # Check if the configuration root is deeper than
-    # configuration.local. If yes, ignore the local configuration directory.
-    if (
-        global_root
-        and arguments.local_configuration_directory is not None
-        and global_root.startswith(arguments.local_configuration_directory)
-    ):
-        arguments.local_configuration_directory = None
+
+    # If the global configuration root is deeper than local configuration, ignore local.
+    if global_root and local_root and global_root.startswith(local_root):
+        local_root = None
+    if local_root and arguments.local_configuration is None:
+        arguments.local_configuration = local_root
 
     root = global_root or arguments.original_directory
     os.chdir(root)

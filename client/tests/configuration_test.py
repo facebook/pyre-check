@@ -19,6 +19,7 @@ from ..configuration import (  # noqa
 class ConfigurationTest(unittest.TestCase):
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
+    @patch("os.path.exists")
     @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("json.load")
@@ -31,9 +32,11 @@ class ConfigurationTest(unittest.TestCase):
         json_load,
         builtins_open,
         access,
+        exists,
         isdir,
         _abspath,
     ) -> None:
+        exists.return_value = True
         json_load.side_effect = [
             {
                 "source_directories": ["a"],
@@ -276,7 +279,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.local_configuration, None)
 
         with patch.object(Configuration, "_read") as Configuration_read:
-            configuration = Configuration(local_configuration_directory="original")
+            configuration = Configuration(local_configuration="original")
             Configuration_read.assert_has_calls(
                 [
                     call("original/" + CONFIGURATION_FILE + ".local"),
@@ -302,9 +305,7 @@ class ConfigurationTest(unittest.TestCase):
                 "local/" + CONFIGURATION_FILE + ".local",
             )
         with patch.object(Configuration, "_read") as Configuration_read:
-            configuration = Configuration(
-                local_configuration_directory="original", local_configuration="local"
-            )
+            configuration = Configuration(local_configuration="local")
             Configuration_read.assert_has_calls(
                 [
                     call("local/" + CONFIGURATION_FILE + ".local"),
@@ -349,11 +350,6 @@ class ConfigurationTest(unittest.TestCase):
         with self.assertRaises(EnvironmentException):
             Configuration(local_configuration="local")
 
-        with self.assertRaises(EnvironmentException):
-            Configuration(
-                local_configuration_directory="original", local_configuration="local"
-            )
-
         # Test that a non-existing local configuration file was provided.
         os_path_exists.return_value = False
         os_path_isdir.return_value = False
@@ -362,10 +358,7 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="local/.some_configuration")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(
-                local_configuration_directory="original",
-                local_configuration="local/.some_configuration",
-            )
+            Configuration(local_configuration="local/.some_configuration")
 
         # Test an existing local directory, without a configuration file.
         os_path_exists.side_effect = lambda path: not path.endswith(".local")
@@ -375,9 +368,7 @@ class ConfigurationTest(unittest.TestCase):
             Configuration(local_configuration="localdir")
 
         with self.assertRaises(EnvironmentException):
-            Configuration(
-                local_configuration_directory="original", local_configuration="localdir"
-            )
+            Configuration(local_configuration="localdir")
 
     @patch("os.path.isdir")
     @patch.object(Configuration, "_validate")
