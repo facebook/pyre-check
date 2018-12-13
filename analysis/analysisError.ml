@@ -1402,16 +1402,20 @@ let filter ~configuration ~resolution errors =
       | IncompatibleVariableType { mismatch = { actual; _ }; _ }
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
-            (not (Type.equal annotation Type.Bottom)) &&
-            ((Resolution.less_or_equal
-                resolution
-                ~left:annotation
-                ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
-             (* Special-case mypy's workaround for mocks. *)
-             (Resolution.less_or_equal
-                resolution
-                ~left:annotation
-                ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock"))))
+            try
+              (not (Type.equal annotation Type.Bottom)) &&
+              ((Resolution.less_or_equal
+                  resolution
+                  ~left:annotation
+                  ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
+               (* Special-case mypy's workaround for mocks. *)
+               (Resolution.less_or_equal
+                  resolution
+                  ~left:annotation
+                  ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock"))))
+            with
+            | TypeOrder.Untracked _ ->
+                false
           in
           Type.exists actual ~predicate:is_subclass_of_mock
       | UnexpectedKeyword { callee = Some callee; _ } ->

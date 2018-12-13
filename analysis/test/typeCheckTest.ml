@@ -2232,7 +2232,18 @@ let test_check _ =
       def foo(a: typing.Union[GetItem, Contains]) -> None:
         5 in a
     |}
-    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."]
+    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."];
+  (* Don't crash when filtering on returning a bad type *)
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(a: gurbage) -> None:
+        return a
+    |}
+    [
+      "Undefined type [11]: Type `gurbage` is not defined.";
+      "Incompatible return type [7]: Expected `None` but got `gurbage`.";
+    ]
 
 
 let test_check_assign _ =
