@@ -1698,32 +1698,30 @@ let rec dequalify map annotation =
     |> Identifier.create
   in
   let dequalify_string string = Identifier.create string |> dequalify_identifier in
-  match annotation with
-  | Optional parameter ->
-      Parametric {
-        name = dequalify_string "typing.Optional";
-        parameters = [dequalify map parameter];
-      }
-  | Parametric { name; parameters } ->
-      Parametric {
-        name = dequalify_identifier (reverse_substitute name);
-        parameters = List.map parameters ~f:(dequalify map);
-      }
-  | Union parameters ->
-      Parametric {
-        name = dequalify_string "typing.Union";
-        parameters = List.map parameters ~f:(dequalify map);
-      }
-  | Primitive name -> Primitive (dequalify_identifier name)
-  | Variable { variable = name; constraints; variance } ->
-      let constraints =
-        match constraints with
-        | Bound bound -> Bound (dequalify map bound)
-        | Explicit constraints -> Explicit (List.map constraints ~f:(dequalify map))
-        | Unconstrained -> Unconstrained
-      in
-      Variable { variable = dequalify_identifier name; constraints; variance }
-  | _ -> annotation
+  let module DequalifyTransform = Transform.Make(struct
+      type state = unit
+
+      let visit_children _ _ =
+        true
+
+      let visit _ annotation =
+        (),
+        match annotation with
+        | Optional parameter ->
+            Parametric { name = dequalify_string "typing.Optional"; parameters = [parameter]; }
+        | Parametric { name; parameters } ->
+            Parametric { name = dequalify_identifier (reverse_substitute name); parameters; }
+        | Union parameters ->
+            Parametric { name = dequalify_string "typing.Union"; parameters; }
+        | Primitive name ->
+            Primitive (dequalify_identifier name)
+        | Variable { variable = name; constraints; variance } ->
+            Variable { variable = dequalify_identifier name; constraints; variance }
+        | _ ->
+            annotation
+    end)
+  in
+  snd (DequalifyTransform.visit () annotation)
 
 
 module Callable = struct

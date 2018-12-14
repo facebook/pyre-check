@@ -988,7 +988,7 @@ let test_dequalify _ =
 
   assert_dequalify
     (Type.Union [Type.string; create "A.B.C"])
-    (Type.parametric "typing.Union" [Type.string; create "C"]);
+    (Type.parametric "typing.Union" [create "C"; Type.string]);
 
   assert_dequalify
     (create "d")
