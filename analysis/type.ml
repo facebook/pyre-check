@@ -1532,96 +1532,32 @@ let is_not_instantiated annotation =
   exists annotation ~predicate
 
 
-let rec variables = function
-  | Callable { implementation; overloads; _ } ->
-      let variables { annotation; parameters } =
-        let variables_in_parameters  =
-          match parameters with
-          | Defined parameters ->
-              let variables = function
-                | Parameter.Named { Parameter.annotation; _ } ->
-                    variables annotation
-                | Parameter.Variable _
-                | Parameter.Keywords _ ->
-                    []
-              in
-              List.concat_map ~f:variables parameters
-          | Undefined ->
-              []
-        in
-        variables annotation @ variables_in_parameters
-      in
-      List.concat_map ~f:variables (implementation :: overloads)
-  | Optional annotation ->
-      variables annotation
-  | Tuple (Bounded elements) ->
-      List.concat_map ~f:variables elements
-  | Tuple (Unbounded annotation) ->
-      variables annotation
-  | Parametric { parameters; _ } ->
-      List.concat_map ~f:variables parameters
-  | (Variable _) as annotation ->
-      [annotation]
-  | TypedDictionary { fields; _ } ->
-      let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-      List.concat_map annotations ~f:variables
-  | Union elements ->
-      List.concat_map ~f:variables elements
-  | Bottom
-  | Deleted
-  | Object
-  | Primitive _
-  | Top ->
-      []
+let collect annotation ~predicate =
+  let module CollectorTransform = Transform.Make(struct
+      type state = t list
+
+      let visit_children _ _ =
+        true
+
+      let visit sofar annotation =
+        if predicate annotation then
+          sofar @ [annotation], annotation
+        else
+          sofar, annotation
+    end)
+  in
+  fst (CollectorTransform.visit [] annotation)
 
 
-let rec primitives annotation =
-  match annotation with
-  | Primitive _ ->
-      [annotation]
-  | Callable { implementation; overloads; _ } ->
-      let signature_primitives { annotation; parameters } =
-        match parameters with
-        | Defined parameters ->
-            let parameter = function
-              | Parameter.Named { Parameter.annotation; _ } ->
-                  primitives annotation
-              | Parameter.Variable _
-              | Parameter.Keywords _ ->
-                  []
-            in
-            (primitives annotation) @ List.concat_map ~f:parameter parameters
-        | Undefined ->
-            primitives annotation
-      in
-      List.concat_map (implementation :: overloads) ~f:signature_primitives
 
-  | Optional annotation
-  | Tuple (Unbounded annotation) ->
-      primitives annotation
+let variables annotation =
+  let predicate = function | Variable _ -> true | _ -> false in
+  collect annotation ~predicate
 
-  | Variable { constraints; _ } ->
-      begin
-        match constraints with
-        | Bound bound -> primitives bound
-        | Explicit constraints ->
-            List.concat_map constraints ~f:primitives
-        | Unconstrained ->
-            []
-      end
 
-  | TypedDictionary { fields; _ } ->
-      List.map fields ~f:(fun { annotation; _ } -> annotation)
-      |> List.concat_map ~f:primitives
-  | Parametric { parameters; _ }
-  | Tuple (Bounded parameters)
-  | Union parameters ->
-      List.concat_map parameters ~f:primitives
-  | Bottom
-  | Deleted
-  | Top
-  | Object ->
-      []
+let primitives annotation =
+  let predicate = function | Primitive _ -> true | _ -> false in
+  collect annotation ~predicate
 
 
 let is_resolved annotation =
