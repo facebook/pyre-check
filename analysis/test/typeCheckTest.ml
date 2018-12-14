@@ -5735,7 +5735,17 @@ let test_check_variable_bindings _ =
         foo(x)
     |}
     ["Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st anonymous " ^
-     "parameter to call `foo` but got `str`."]
+     "parameter to call `foo` but got `str`."];
+  assert_type_errors
+    {|
+      class C():
+        def baz(self) -> int:
+          return 7
+      T = typing.TypeVar('T', bound=C)
+      def foo(t: T) -> int:
+        return t.baz()
+    |}
+    []
 
 
 let test_check_refinement _ =

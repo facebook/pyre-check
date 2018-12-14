@@ -463,6 +463,7 @@ let fold ~resolution ~initial ~f access =
         | Type.Union annotations ->
             List.map annotations ~f:find_attribute
             |> List.concat
+        | Type.Variable { constraints = Bound annotation; _ }
         | annotation ->
             find_attribute annotation
       in

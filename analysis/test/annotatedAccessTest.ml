@@ -68,6 +68,8 @@ let test_fold _ =
             attribute: int = 1
             def method(self) -> int: ...
           instance: Class
+          TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+          v_instance: TV_Bound
 
           def function() -> str:
             def nested() -> str: ...
@@ -317,6 +319,51 @@ let test_fold _ =
     [
       { annotation = Type.primitive "Class"; element = Value };
       { annotation = Type.Top; element = NotCallable (Type.primitive "Class") };
+    ];
+
+  let bound_type_variable =
+    Type.Variable {
+      variable = Identifier.create "TV_Bound";
+      constraints = Bound (Type.primitive "Class");
+      variance = Invariant;
+    }
+  in
+
+  assert_fold "v_instance" [{ annotation = bound_type_variable; element = Value }];
+  assert_fold
+    "v_instance.attribute"
+    [
+      { annotation = bound_type_variable; element = Value };
+      { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
+    ];
+  assert_fold
+    "v_instance.undefined.undefined"
+    [
+      { annotation = bound_type_variable; element = Value };
+      { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
+    ];
+  assert_fold
+    "v_instance.method()"
+    [
+      { annotation = bound_type_variable; element = Value };
+      {
+        annotation =
+          parse_annotation "typing.Callable('Class.method')[[Named(self, $unknown)], int]";
+        element = Attribute { name = "method"; defined = true };
+      };
+      {
+        annotation = Type.integer;
+        element = SignatureFound {
+            callable = "typing.Callable(Class.method)[[Named(self, unknown)], int]";
+            callees = ["Class.method"];
+          };
+      };
+    ];
+  assert_fold
+    "v_instance()"
+    [
+      { annotation = bound_type_variable; element = Value };
+      { annotation = Type.Top; element = NotCallable bound_type_variable };
     ];
 
   assert_fold
