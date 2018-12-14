@@ -146,6 +146,18 @@ val create
 val expression: t -> Expression.t
 val access: t -> Access.t
 
+module Transform : sig
+  module type Transformer = sig
+    type state
+    val visit: state -> t -> state * t
+    val visit_children: state -> t -> bool
+  end
+
+  module Make (Transformer : Transformer) : sig
+    val visit: Transformer.state -> t -> Transformer.state * t
+  end
+end
+
 val exists: t -> predicate: (t -> bool) -> bool
 
 val contains_callable: t -> bool

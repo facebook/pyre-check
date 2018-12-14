@@ -510,60 +510,6 @@ let register_aliases (module Handler: Handler) sources =
     in
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
   in
-  let rec tracked annotation =
-    match annotation with
-    | Type.Primitive _
-    | Type.Parametric _ ->
-        let primitive, _ = Type.split annotation in
-        let access =
-          Type.expression primitive
-          |> Expression.access
-        in
-        if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
-          Some Type.Object
-        else if TypeOrder.contains order primitive then
-          Some annotation
-        else
-          None
-
-    | Type.Callable _ ->
-        Some annotation
-
-    | Type.Tuple (Type.Bounded annotations) ->
-        let tracked = List.filter_map annotations ~f:tracked in
-        if List.length tracked = List.length annotations then
-          Some (Type.Tuple (Type.Bounded tracked))
-        else
-          None
-    | Type.Tuple (Type.Unbounded annotation) ->
-        tracked annotation
-        >>| fun annotation -> Type.Tuple (Type.Unbounded annotation)
-
-    | Type.TypedDictionary _ ->
-        Some annotation
-
-    | Type.Union annotations ->
-        let tracked = List.filter_map annotations ~f:tracked in
-        if List.length tracked = List.length annotations then
-          Some (Type.union tracked)
-        else
-          None
-
-    | Type.Optional Type.Bottom ->
-        Some annotation
-    | Type.Optional annotation ->
-        tracked annotation
-        >>| Type.optional
-
-    | Type.Object
-    | Type.Variable _ ->
-        Some annotation
-
-    | Type.Top
-    | Type.Deleted
-    | Type.Bottom ->
-        None
-  in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation = Type.create ~aliases:Handler.aliases target in
     let value_annotation =
@@ -579,12 +525,43 @@ let register_aliases (module Handler: Handler) sources =
           annotation
     in
     let target_primitive, _ = Type.split target_annotation in
-    match not (TypeOrder.contains order target_primitive), tracked value_annotation with
-    | true, Some value_annotation ->
+    let module TrackedTransform = Type.Transform.Make(struct
+        type state = bool
+
+        let visit_children _ = function
+          | Type.Optional Bottom -> false
+          | _ -> true
+
+        let visit sofar annotation =
+          match annotation with
+          | Type.Parametric { name = primitive; _ }
+          | Primitive primitive ->
+              let access =
+                Type.expression (Type.Primitive primitive)
+                |> Expression.access
+              in
+              if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
+                sofar, Type.Object
+              else if TypeOrder.contains order (Primitive primitive) then
+                sofar, annotation
+              else
+                false, annotation
+          | Bottom
+          | Deleted
+          | Top ->
+              false, annotation
+          | _ ->
+              sofar, annotation
+      end)
+    in
+    let all_valid, value_annotation = TrackedTransform.visit true value_annotation in
+    if all_valid && not (TypeOrder.contains order target_primitive) then
+      begin
         Handler.register_alias ~handle ~key:target_annotation ~data:value_annotation;
         (true, unresolved)
-    | _ ->
-        (any_changed, (handle, target, value) :: unresolved)
+      end
+    else
+      (any_changed, (handle, target, value) :: unresolved)
   in
   let rec resolve_aliases unresolved =
     if List.is_empty unresolved then

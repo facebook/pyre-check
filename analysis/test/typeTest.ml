@@ -1184,6 +1184,93 @@ let test_lambda _ =
           ~return_annotation:Type.integer))
 
 
+let test_visit _ =
+  let create source =
+    Type.create ~aliases:(fun _ -> None) (parse_single_expression source)
+  in
+  let assert_types_equal annotation expected  =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      expected
+      annotation
+  in
+
+  let module CountTransform = Type.Transform.Make(struct
+      type state = int
+      let visit state _ = (state + 1), Type.integer
+      let visit_children _  _ = true
+    end)
+  in
+  let end_state, transformed = CountTransform.visit 0 (create "typing.List[int]") in
+  assert_types_equal transformed Type.integer;
+  assert_equal ~printer:string_of_int 2 end_state;
+
+  let end_state, transformed = CountTransform.visit 0 (create "Foo[Bar[Baz, Bop], Bang]") in
+  assert_types_equal transformed Type.integer;
+  assert_equal ~printer:string_of_int 5 end_state;
+
+  let module SubstitutionTransform = Type.Transform.Make(struct
+      type state = int
+      let visit state annotation =
+        match annotation with
+        | Type.Primitive integer when Identifier.show integer = "int" && state > 0 ->
+            (state - 1), Type.string
+        | _ ->
+            state, annotation
+      let visit_children _ = function | Type.Optional _ -> false | _ -> true
+    end)
+  in
+
+  let end_state, transformed =
+    SubstitutionTransform.visit 1 (create "typing.Callable[[int], int]")
+  in
+  assert_types_equal transformed (create "typing.Callable[[str], int]");
+  assert_equal ~printer:string_of_int  0 end_state;
+
+  let end_state, transformed =
+    SubstitutionTransform.visit 1 (create "typing.Callable[[typing.Optional[int], int], int]")
+  in
+  assert_types_equal transformed (create "typing.Callable[[typing.Optional[int], str], int]");
+  assert_equal ~printer:string_of_int  0 end_state;
+
+  let end_state, transformed =
+    SubstitutionTransform.visit
+      1
+      (create "mypy_extensions.TypedDict[('int', ('int', int), ('str', int))]")
+  in
+  assert_types_equal
+    transformed
+    (create "mypy_extensions.TypedDict[('int', ('int', str), ('str', int))]");
+  assert_equal ~printer:string_of_int 0 end_state;
+
+  let module ConcatenateTransform = Type.Transform.Make(struct
+      type state = string
+      let visit state annotation =
+        match annotation with
+        | Type.Primitive primitive ->
+            state ^ (Identifier.show primitive), annotation
+        | Type.Parametric { name; parameters; } ->
+            "",
+            Type.Parametric
+              { name = Identifier.create ((Identifier.show name) ^ state); parameters }
+        | _ ->
+            state, annotation
+      let visit_children _  _ = true
+    end)
+  in
+  let end_state, transformed =
+    ConcatenateTransform.visit "" (create "Foo[Bar[Baz, Bop], Bro[Loop, typing.Optional[Land]]]")
+  in
+  assert_types_equal
+    transformed
+    (create "Foo[BarBazBop[Baz, Bop], BroLoopLand[Loop, typing.Optional[Land]]]");
+  assert_equal "" end_state;
+
+  ()
+
+
+
 
 let () =
   "type">:::[
@@ -1209,6 +1296,7 @@ let () =
     "dequalify">::test_dequalify;
     "variables">::test_variables;
     "lambda">::test_lambda;
+    "visit">:: test_visit;
   ]
   |> Test.run;
   "callable">:::[

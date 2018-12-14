@@ -1296,58 +1296,121 @@ let access annotation =
   | _ -> failwith "Annotation expression is not an access"
 
 
-let rec exists annotation ~predicate =
-  if predicate annotation then
-    true
-  else
-    match annotation with
-    | Callable { implementation; overloads; _ } ->
-        let exists { annotation; parameters } =
-          let exists_in_parameters =
-            match parameters with
-            | Defined parameters ->
-                let parameter = function
-                  | Parameter.Named { Parameter.annotation; _ } ->
-                      exists annotation ~predicate
-                  | Parameter.Variable _
-                  | Parameter.Keywords _ ->
-                      false
+module Transform = struct
+  module type Transformer = sig
+    type state
+    val visit: state -> t -> state * t
+    val visit_children: state -> t -> bool
+  end
+  module Make (Transformer: Transformer) = struct
+    let rec visit_annotation ~state annotation =
+      let visit_children annotation =
+        match annotation with
+        | Callable ({ implementation; overloads; _ } as callable) ->
+            let open Record.Callable in
+            let visit_overload { annotation; parameters } =
+              let visit_parameters parameter =
+                let visit_named ({ RecordParameter.annotation; _ } as named) =
+                  { named with annotation = visit_annotation annotation ~state }
                 in
-                List.exists ~f:parameter parameters
-            | Undefined ->
-                false
-          in
-          exists annotation ~predicate || exists_in_parameters
-        in
-        List.exists ~f:exists (implementation :: overloads)
+                let visit_defined = function
+                  | RecordParameter.Named named ->
+                      RecordParameter.Named (visit_named named)
+                  | RecordParameter.Variable named ->
+                      RecordParameter.Variable (visit_named named)
+                  | RecordParameter.Keywords named ->
+                      RecordParameter.Keywords (visit_named named)
+                in
+                match parameter with
+                | Defined defined ->
+                    Defined (List.map defined ~f:visit_defined)
+                | Undefined ->
+                    Undefined
+              in
+              {
+                annotation = visit_annotation annotation ~state;
+                parameters = visit_parameters parameters;
+              }
+            in
+            Callable {
+              callable with
+              implementation = visit_overload implementation;
+              overloads = List.map overloads ~f:visit_overload;
+            }
 
-    | Optional annotation
-    | Tuple (Unbounded annotation) ->
-        exists ~predicate annotation
+        | Optional annotation ->
+            Optional (visit_annotation annotation ~state)
 
-    | Variable { constraints; _ } ->
-        begin
-          match constraints with
-          | Bound bound -> exists ~predicate bound
-          | Explicit constraints -> List.exists constraints ~f:(exists ~predicate)
-          | Unconstrained -> false
-        end
+        | Parametric { name; parameters } ->
+            Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
 
-    | Parametric { parameters; _ }
-    | Tuple (Bounded parameters)
-    | Union parameters ->
-        List.exists ~f:(exists ~predicate) parameters
+        | Tuple (Bounded annotations) ->
+            Tuple (Bounded (List.map annotations ~f:(visit_annotation ~state)))
+        | Tuple (Unbounded annotation) ->
+            Tuple (Unbounded (visit_annotation annotation ~state))
 
-    | TypedDictionary { fields; _ } ->
-        let annotations = List.map fields ~f:(fun { annotation; _ } -> annotation) in
-        List.exists annotations ~f:(exists ~predicate)
+        | TypedDictionary ({ fields; _ } as typed_dictionary) ->
+            let visit_field ({ annotation; _ } as field) =
+              { field with annotation = visit_annotation annotation ~state}
+            in
+            TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field}
 
-    | Bottom
-    | Deleted
-    | Top
-    | Object
-    | Primitive _ ->
-        false
+        | Union annotations ->
+            Union (List.map annotations ~f:(visit_annotation ~state))
+
+        | Variable ({ constraints; _ } as variable) ->
+            let constraints =
+              match constraints with
+              | Bound bound ->
+                  Bound (visit_annotation bound ~state)
+              | Explicit constraints ->
+                  Explicit (List.map constraints ~f:(visit_annotation ~state))
+              | Unconstrained ->
+                  Unconstrained
+            in
+            Variable { variable with constraints }
+
+        | Bottom
+        | Deleted
+        | Top
+        | Object
+        | Primitive _ ->
+            annotation
+      in
+      let annotation =
+        if Transformer.visit_children !state annotation then
+          visit_children annotation
+        else
+          annotation
+      in
+      let new_state, transformed_annotation =  Transformer.visit !state annotation in
+      state := new_state;
+      transformed_annotation
+
+
+    let visit state annotation =
+      let state = ref state in
+      let transformed_annotation = visit_annotation ~state annotation in
+      !state, transformed_annotation
+  end
+end
+
+
+let exists annotation ~predicate =
+  let module ExistsTransform = Transform.Make(struct
+      type state = bool
+
+      let visit_children _ _ =
+        true
+
+      let visit sofar annotation =
+        if predicate annotation then
+          true, annotation
+        else
+          sofar, annotation
+    end)
+  in
+  fst (ExistsTransform.visit false annotation)
 
 
 let contains_callable annotation =

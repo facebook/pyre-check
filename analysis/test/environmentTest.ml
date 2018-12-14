@@ -407,6 +407,40 @@ let test_register_aliases _ =
         |};
     ]
     ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"];
+
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "t")
+        {|
+          import x
+          X = typing.Dict[int, int]
+          T = typing.Dict[int, X]
+          C = typing.Callable[[T], int]
+        |};
+      parse
+        ~qualifier:(Access.create "x")
+        {|
+          import t
+          X = typing.Dict[int, int]
+          T = typing.Dict[int, t.X]
+          C = typing.Callable[[T], int]
+        |};
+    ]
+    [
+      "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
+      "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
+    ];
+
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Access.create "x")
+        {|
+          C = typing.Callable[[gurbage], gurbage]
+        |};
+    ]
+    ["x.C", "x.C"];
   ()
 
 
