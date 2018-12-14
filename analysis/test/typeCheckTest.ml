@@ -6132,9 +6132,7 @@ let test_check_meta _ =
       def boo() -> Subclass:
         return Subclass.__construct__()
     |}
-    [
-      "Incompatible return type [7]: Expected `Subclass` but got `C`.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -6145,7 +6143,7 @@ let test_check_meta _ =
           ...
       class Subclass(C):
         ...
-      def foo()-> C:
+      def foo() -> C:
         return Subclass.__construct__()
     |}
     [];
@@ -6163,6 +6161,35 @@ let test_check_meta _ =
         return C.__construct__()
     |}
     ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(s: Subclass) -> Subclass:
+        to_call = s.f
+        return to_call()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(c: C)-> Subclass:
+        to_call = c.f
+        return to_call()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
 
   assert_type_errors
     {|

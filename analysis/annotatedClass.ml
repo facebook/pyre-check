@@ -362,6 +362,7 @@ module Attribute = struct
   let create
       ~resolution
       ~parent
+      ?instantiated
       ?(defined = true)
       ?(default_class_attribute = false)
       {
@@ -406,18 +407,25 @@ module Attribute = struct
 
     (* Handle Callables *)
     let annotation =
+      let instantiated =
+        match instantiated with
+        | Some instantiated ->
+            instantiated
+        | None ->
+            class_annotation
+      in
       match defines with
       | Some ((define :: _) as defines) ->
           let parent =
             if Define.is_static_method define then
               None
             else if Define.is_class_method define then
-              Some (Type.meta class_annotation)
+              Some (Type.meta instantiated)
             else if class_attribute then
               (* Keep first argument around when calling instance methods from class attributes. *)
               None
             else
-              Some class_annotation
+              Some instantiated
           in
           List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
           |> Callable.create ~resolution ~parent
@@ -605,6 +613,7 @@ let attributes
   | Some result ->
       result
   | None ->
+      let class_annotation = annotation definition ~resolution in
       let definition_attributes
           ~in_test
           attributes
@@ -623,7 +632,11 @@ let attributes
             (* Map fold returns the reverse order; order matters when constructing callables *)
             attribute
             |> reverse_define_order
-            |> Attribute.create ~resolution ~parent ~default_class_attribute:class_attributes
+            |> Attribute.create
+              ~resolution
+              ~parent
+              ~instantiated:class_annotation
+              ~default_class_attribute:class_attributes
           in
           let existing_attribute =
             let compare_names existing_attribute =

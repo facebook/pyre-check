@@ -107,6 +107,7 @@ module Attribute : sig
   val create
     :  resolution: Resolution.t
     -> parent: class_t
+    -> ?instantiated: Type.t
     -> ?defined: bool
     -> ?default_class_attribute: bool
     -> Statement.Attribute.t
