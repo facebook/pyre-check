@@ -1339,7 +1339,7 @@ module Transform = struct
             }
 
         | Optional annotation ->
-            Optional (visit_annotation annotation ~state)
+            optional (visit_annotation annotation ~state)
 
         | Parametric { name; parameters } ->
             Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
@@ -1356,7 +1356,7 @@ module Transform = struct
             TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field}
 
         | Union annotations ->
-            Union (List.map annotations ~f:(visit_annotation ~state))
+            union (List.map annotations ~f:(visit_annotation ~state))
 
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
@@ -1649,74 +1649,24 @@ let assume_any = function
 
 
 let instantiate ?(widen = false) annotation ~constraints =
-  let rec instantiate annotation =
-    match constraints annotation with
-    | Some Bottom when widen ->
-        Top
-    | Some replacement ->
-        replacement
-    | None ->
-        begin
-          match annotation with
-          | Optional parameter ->
-              optional (instantiate parameter)
-          | Callable { kind; implementation; overloads; implicit } ->
-              let instantiate { annotation; parameters } =
-                let parameters  =
-                  match parameters with
-                  | Defined parameters ->
-                      let parameter parameter =
-                        match parameter with
-                        | Parameter.Named ({ Parameter.annotation; _ } as named) ->
-                            Parameter.Named {
-                              named with
-                              Parameter.annotation = instantiate annotation;
-                            }
-                        | Parameter.Variable ({ Parameter.annotation; _ } as named) ->
-                            Parameter.Variable {
-                              named with
-                              Parameter.annotation = instantiate annotation;
-                            }
-                        | Parameter.Keywords ({ Parameter.annotation; _ } as named) ->
-                            Parameter.Keywords {
-                              named with
-                              Parameter.annotation = instantiate annotation;
-                            }
-                      in
-                      Defined (List.map parameters ~f:parameter)
-                  | Undefined ->
-                      Undefined
-                in
-                { annotation = instantiate annotation; parameters }
-              in
-              Callable {
-                kind;
-                implementation = instantiate implementation;
-                overloads = List.map overloads ~f:instantiate;
-                implicit;
-              }
-          | Parametric ({ parameters; _ } as parametric) ->
-              Parametric {
-                parametric with
-                parameters = List.map parameters ~f:instantiate;
-              }
-          | Tuple tuple ->
-              let tuple =
-                match tuple with
-                | Bounded parameters ->
-                    Bounded (List.map parameters ~f:instantiate)
-                | Unbounded parameter ->
-                    Unbounded (instantiate parameter)
-              in
-              Tuple tuple
-          | Union parameters ->
-              List.map parameters ~f:instantiate
-              |> union
-          | _ ->
-              annotation
-        end
+  let module InstantiateTransform = Transform.Make(struct
+      type state = unit
+
+      let visit_children _ annotation =
+        constraints annotation
+        |>  Option.is_none
+
+      let visit _ annotation =
+        match constraints annotation with
+        | Some Bottom when widen ->
+            (), Top
+        | Some replacement ->
+            (), replacement
+        | None ->
+            (), annotation
+    end)
   in
-  instantiate annotation
+  snd (InstantiateTransform.visit () annotation)
 
 
 let instantiate_variables ~replacement annotation =
