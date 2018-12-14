@@ -61,3 +61,5 @@ val to_json:
   -> Yojson.Safe.json
 
 val generate_error: issue -> Interprocedural.Error.t
+
+val code_metadata: unit -> Yojson.Safe.json

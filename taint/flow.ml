@@ -329,3 +329,7 @@ let to_json callable issue =
     "message", `String message;
     "traces", traces;
   ]
+
+
+let code_metadata () =
+  `Assoc (List.map rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))

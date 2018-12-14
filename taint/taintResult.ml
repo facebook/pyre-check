@@ -108,7 +108,7 @@ type result = Flow.issue list
 
 module ResultArgument = struct
 
-  let name = "taint analysis"
+  let name = "taint"
 
   type nonrec result = result
   type nonrec call_model = call_model
@@ -183,6 +183,14 @@ module ResultArgument = struct
       issues
     else
       model_to_json callable model :: issues
+
+
+  let metadata () =
+    let codes = Flow.code_metadata () in
+    `Assoc [
+      "codes", codes;
+    ]
+
 end
 
 

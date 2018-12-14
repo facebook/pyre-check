@@ -64,6 +64,11 @@ module ResultA = Interprocedural.Result.Make(struct
           "result", result_json;
         ]
       ]
+
+    let metadata () =
+      `Assoc [
+        "codes", `List [`String "A"];
+      ]
   end)
 
 
@@ -111,6 +116,12 @@ module ResultB = Interprocedural.Result.Make(struct
           "result", result_json;
         ]
       ]
+
+    let metadata () =
+      `Assoc [
+        "codes", `List [`String "B"];
+      ]
+
   end)
 
 
@@ -148,14 +159,17 @@ let test_unknown_function_analysis _ =
         assert_equal (Result.get_model ResultA.kind models) (Some ResultA.obscure_model);
         assert_equal (Result.get_model ResultB.kind models) (Some ResultB.obscure_model)
   in
-  let externalized = List.concat_map ~f:Analysis.externalize targets in
+  let externalized_A = List.concat_map ~f:(Analysis.externalize AnalysisA.abstract_kind) targets in
+  let externalized_B = List.concat_map ~f:(Analysis.externalize AnalysisB.abstract_kind) targets in
   List.iter ~f:check_obscure_model targets;
-  assert_summaries externalized ~expected:[
+  assert_summaries externalized_A ~expected:[
     {| {"analysis":"analysisA","name":"fun_a (fun)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"fun_a (fun)","model":"obscure","result":null} |};
     {| {"analysis":"analysisA","name":"fun_b (fun)","model":-1,"result":null} |};
-    {| {"analysis":"analysisB","name":"fun_b (fun)","model":"obscure","result":null} |};
     {| {"analysis":"analysisA","name":"fun_c (fun)","model":-1,"result":null} |};
+  ];
+  assert_summaries externalized_B ~expected:[
+    {| {"analysis":"analysisB","name":"fun_a (fun)","model":"obscure","result":null} |};
+    {| {"analysis":"analysisB","name":"fun_b (fun)","model":"obscure","result":null} |};
     {| {"analysis":"analysisB","name":"fun_c (fun)","model":"obscure","result":null} |};
   ]
 

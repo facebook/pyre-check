@@ -249,11 +249,17 @@ let analyze
       Log.info "Fixpoint iterations: %d" iterations;
     with
       exn ->
-        Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables;
+        Interprocedural.Analysis.save_results
+          ~configuration:analysis_configuration
+          ~analyses
+          all_callables;
         raise exn
   in
   let () =
-    Interprocedural.Analysis.save_results ~configuration:analysis_configuration all_callables
+    Interprocedural.Analysis.save_results
+      ~configuration:analysis_configuration
+      ~analyses
+      all_callables
   in
   let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();

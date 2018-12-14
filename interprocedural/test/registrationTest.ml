@@ -32,6 +32,8 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
       next <= previous
 
     let externalize _ _ _ = []
+
+    let metadata () = `Assoc ["foo", `String "bar"]
   end)
 
 

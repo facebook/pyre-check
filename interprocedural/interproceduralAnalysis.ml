@@ -363,18 +363,21 @@ let get_errors results =
   |> List.concat_no_order
 
 
-let externalize_all_analyses callable models results =
+let externalize_analysis kind callable models results =
   let open Result in
-  let merge _ model_opt result_opt =
-    match model_opt, result_opt with
-    | Some model, _ ->
-        Some (model, result_opt)
-    | None, Some (Pkg { kind = ResultPart kind; _ }) ->
-        let module Analysis = (val (Result.get_analysis kind)) in
-        let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model} in
-        Some (model, result_opt)
-    | _ ->
-        None
+  let merge kind_candidate model_opt result_opt =
+    if kind_candidate = kind then
+      match model_opt, result_opt with
+      | Some model, _ ->
+          Some (model, result_opt)
+      | None, Some (Pkg { kind = ResultPart kind; _ }) ->
+          let module Analysis = (val (Result.get_analysis kind)) in
+          let model = Pkg { kind = ModelPart kind; value = Analysis.empty_model} in
+          Some (model, result_opt)
+      | _ ->
+          None
+    else
+      None
   in
   let merged = Kind.Map.merge merge models results in
   let get_summaries (_key, (Pkg { kind = ModelPart kind1; value = model; }, result_option)) =
@@ -393,17 +396,17 @@ let externalize_all_analyses callable models results =
   |> List.concat_map ~f:get_summaries
 
 
-let externalize callable =
+let externalize kind callable =
   match Fixpoint.get_model callable with
   | Some model ->
       let results = Fixpoint.get_result callable in
-      externalize_all_analyses callable model.models results
+      externalize_analysis kind callable model.models results
   | None ->
       []
 
 
-let emit_externalization emitter callable =
-  externalize callable
+let emit_externalization kind emitter callable =
+  externalize kind callable
   |> List.iter ~f:emitter
 
 
@@ -611,7 +614,7 @@ let extract_errors scheduler ~configuration all_callables =
   |> List.concat_no_order
 
 
-let save_results ~configuration all_callables =
+let save_results ~configuration ~analyses all_callables =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
     fun json ->
@@ -628,27 +631,47 @@ let save_results ~configuration all_callables =
   in
   match configuration.Configuration.StaticAnalysis.result_json_path with
   | None -> ()
-  | Some filepath ->
-      let out_channel = open_out (Path.absolute filepath) in
-      let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-      let array_emitter = emit_json_array_elements out_buffer in
-      let root =
-        configuration.Configuration.StaticAnalysis.configuration.local_root
-        |> Path.absolute
+  | Some directory ->
+      let save_models (Result.Analysis { Result.analysis; kind }) =
+        let kind = Result.Kind.abstract kind in
+        let module Analysis = (val analysis) in
+        let filename = Format.sprintf "%s-output.json" Analysis.name in
+        let output_path = Path.append directory ~element:filename in
+        let out_channel = open_out (Path.absolute output_path) in
+        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
+        let array_emitter = emit_json_array_elements out_buffer in
+        let root =
+          configuration.Configuration.StaticAnalysis.configuration.local_root
+          |> Path.absolute
+        in
+        let config =
+          `Assoc [
+            "repo", `String root;
+          ]
+        in
+        (* I wish Yojson had a stream emitter. *)
+        Bi_outbuf.add_string out_buffer "{\n";
+        Bi_outbuf.add_string out_buffer "\"config\": ";
+        Json.to_outbuf out_buffer config;
+        Bi_outbuf.add_string out_buffer ",\n";
+        Bi_outbuf.add_string out_buffer "\"results\": [\n";
+        List.iter ~f:(emit_externalization kind array_emitter) all_callables;
+        Bi_outbuf.add_string out_buffer "\n]\n";
+        Bi_outbuf.add_string out_buffer "}\n";
+        Bi_outbuf.flush_output_writer out_buffer;
+        close_out out_channel
       in
-      let config =
-        `Assoc [
-          "repo", `String root;
-        ]
+      let analyses = List.map ~f:Result.get_abstract_analysis analyses in
+      let save_metadata (Result.Analysis { Result.analysis; _ }) =
+        let module Analysis = (val analysis) in
+        let filename = Format.sprintf "%s-metadata.json" Analysis.name in
+        let output_path = Path.append directory ~element:filename in
+        let out_channel = open_out (Path.absolute output_path) in
+        let out_buffer = Bi_outbuf.create_channel_writer out_channel in
+        Analysis.metadata ()
+        |> Json.to_outbuf out_buffer;
+        Bi_outbuf.flush_output_writer out_buffer;
+        close_out out_channel
       in
-      (* I wish Yojson had a stream emitter. *)
-      Bi_outbuf.add_string out_buffer "{\n";
-      Bi_outbuf.add_string out_buffer "\"config\": ";
-      Json.to_outbuf out_buffer config;
-      Bi_outbuf.add_string out_buffer ",\n";
-      Bi_outbuf.add_string out_buffer "\"results\": [\n";
-      List.iter ~f:(emit_externalization array_emitter) all_callables;
-      Bi_outbuf.add_string out_buffer "\n]\n";
-      Bi_outbuf.add_string out_buffer "}\n";
-      Bi_outbuf.flush_output_writer out_buffer;
-      close_out out_channel;
+      List.iter analyses ~f:save_models;
+      List.iter analyses ~f:save_metadata

@@ -101,6 +101,7 @@ end
 
 module StaticAnalysis: sig
   type t = {
+    (* A directory to write files in. *)
     result_json_path: Path.t option;
     dump_call_graph: bool;
     (* Analysis configuration *)

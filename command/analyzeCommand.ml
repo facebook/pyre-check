@@ -68,6 +68,16 @@ let run_analysis
     result_json_path
     >>| Path.create_absolute ~follow_symbolic_links:false
   in
+  let () =
+    match result_json_path with
+    | Some path when not (Path.is_directory path) ->
+        begin
+          Log.error "--save-results-to path must be a directory.";
+          failwith "bad argument"
+        end
+    | _ ->
+        ()
+  in
   (fun () ->
      let timer = Timer.start () in
      let bucket_multiplier =
@@ -82,10 +92,10 @@ let run_analysis
          ?taint_models_directory
          ~scheduler
          ~configuration:{
-          Configuration.StaticAnalysis.configuration;
-          result_json_path;
-          dump_call_graph;
-        }
+           Configuration.StaticAnalysis.configuration;
+           result_json_path;
+           dump_call_graph;
+         }
          ~environment
          ~handles
          ()

@@ -26,6 +26,7 @@ module type ANALYSIS_PROVIDED = sig
 
   val get_errors: result -> InterproceduralError.t list
   val externalize: Callable.t -> result option -> call_model -> Yojson.Safe.json list
+  val metadata: unit -> Yojson.Safe.json
 
   val show_call_model: call_model -> string
 end

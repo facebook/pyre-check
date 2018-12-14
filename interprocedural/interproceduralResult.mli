@@ -14,6 +14,7 @@ module type ANALYSIS_PROVIDED = sig
   type call_model  (* Used in fixpoint computation (widened), used at call sites. *)
   type result      (* Produced in each iteration (replaced), not used at call sites. *)
 
+  (* Used as part of a filename, so avoid spaces and slashes *)
   val name: string
 
   (* Functions to construct global operations. *)
@@ -25,6 +26,8 @@ module type ANALYSIS_PROVIDED = sig
 
   val get_errors: result -> InterproceduralError.t list
   val externalize: Callable.t -> result option -> call_model -> Yojson.Safe.json list
+  (* Additional metadata an analysis wants to save, e.g., warning code explanation. *)
+  val metadata: unit -> Yojson.Safe.json
 
   val show_call_model: call_model -> string
 end
