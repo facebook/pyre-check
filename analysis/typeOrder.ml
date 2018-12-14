@@ -1150,7 +1150,7 @@ and join ((module Handler: Handler) as order) left right =
         join order (Type.parametric "tuple" [parameter]) annotation
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
-        Type.Object
+        Type.union [left; right]
 
     | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
       Type.Callable { Callable.kind = Callable.Named right; _ }

@@ -1349,6 +1349,11 @@ let test_join _ =
     !"0"
     (Type.Union [!"0"; Type.undeclared]);
 
+  assert_join
+    "typing.Tuple[int, int]"
+    "typing.Tuple[int, int, str]"
+    "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
+
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
