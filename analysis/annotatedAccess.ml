@@ -205,44 +205,27 @@ let fold ~resolution ~initial ~f access =
     let resolve_callables
         ~implicit_annotation
         ~callables
-        ~arguments:{ Node.value = arguments; location } =
+        ~arguments:{ Node.location; value = arguments } =
       let signatures =
         let signature callable =
           let resolve_independent_callable () =
-            let implicit, resolution =
-              let { Type.Callable.implicit; _ } = callable in
-              match implicit_annotation with
-              | Some annotation
-                when implicit <> Type.Callable.Function &&
-                     (not (Type.is_meta annotation) || implicit = Type.Callable.Class) ->
-                  let self = Access.create "$self" in
-                  let annotation = Annotation.create annotation in
-                  Some self, (Resolution.set_local resolution ~access:self ~annotation)
-              | _ ->
-                  None, resolution
-            in
-            let arguments =
-              implicit >>|
-              (fun implicit ->
-                 let argument =
-                   {
-                     Argument.name = None;
-                     value = Node.create ~location (Access implicit);
-                   }
-                 in
-                 argument :: arguments)
-              |> Option.value ~default:arguments
-            in
             let signature = Signature.select ~arguments ~resolution ~callable in
-
             let backup () =
-              let name =
+              let name, backup_argument =
                 match target, List.rev lead with
-                | Some _, (Access.Identifier _ as name) :: _ -> [name]
-                | _ -> []
+                | Some _, (Access.Identifier _ as name) :: rest -> [name], rest
+                | _ -> [], []
               in
-              match Access.backup ~arguments ~name with
-              | Some (([{ Argument.value; _ }; _ ] as arguments), name) ->
+              match arguments, Access.backup ~name with
+              | [{ Argument.value; _ }], Some name ->
+                  let arguments = [{
+                      Argument.value = {
+                        Node.location;
+                        value = Expression.Access backup_argument;
+                      };
+                      name = None;
+                    }]
+                  in
                   Resolution.resolve resolution value
                   |> Type.expression
                   |> Expression.access

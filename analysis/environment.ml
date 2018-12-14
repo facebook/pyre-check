@@ -750,6 +750,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
 
       let statement { Source.handle; _ } callables statement =
         let collect_callable
+            ~parent
             ~location
             callables
             ({ Define.name; _ } as define) =
@@ -761,7 +762,21 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
 
           (* Register callable global. *)
           let callable =
-            Annotated.Callable.create [define] ~resolution
+            let parent =
+              let parent =
+                parent
+                >>| (fun access -> Node.create ~location (Expression.Access access))
+                >>| Resolution.parse_annotation resolution
+              in
+              if Define.is_class_method define then
+                parent
+                >>| Type.meta
+              else if Define.is_static_method define then
+                None
+              else
+                parent
+            in
+            Annotated.Callable.create ~parent [define] ~resolution
             |> Node.create ~location
           in
           let change callable = function
@@ -776,11 +791,12 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             Recognized.property_decorators
         in
         match statement with
-        | { Node.location; value = Define define } when not (is_property define) ->
+        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) }
+          when not (is_property define) ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> Annotated.Define.create
             |> Annotated.Define.define
-            |> collect_callable ~location callables
+            |> collect_callable ~parent ~location callables
 
         | _ ->
             callables

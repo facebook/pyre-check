@@ -720,7 +720,10 @@ let test_query context =
                    parameters = Type.Callable.Defined [];
                  };
                  overloads = [];
-                 implicit = Type.Callable.Instance;
+                 implicit = Some {
+                     implicit_annotation = Type.primitive "C";
+                     name = Access.create "self";
+                   };
                }
            };
            { Protocol.TypeQuery.name = "x"; annotation = Type.integer };

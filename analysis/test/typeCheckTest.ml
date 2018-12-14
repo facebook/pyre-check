@@ -331,7 +331,7 @@ let test_forward_expression _ =
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~errors:(`Specific [
         "Incompatible parameter type [6]: "^
-        "Expected `int` for 2nd anonymous parameter to call `dict.add_key` but got `str`.";
+        "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
       ])
     "x.add_key('string')"
     Type.none;
@@ -1167,9 +1167,9 @@ let test_check_with_qualification _ =
 
   assert_type_errors
     {|
-      list: typing.List[int] = [1]
+      l: typing.List[int] = [1]
       def hello() -> int:
-        for i in list:
+        for i in l:
           return i
         return -1
     |}
@@ -1939,7 +1939,7 @@ let test_check _ =
       def f(c: C) -> None:
         a = c.f("", "")
     |}
-    ["Too many arguments [19]: Call `C.f` expects 2 arguments, 3 were provided."];
+    ["Too many arguments [19]: Call `C.f` expects 1 argument, 2 were provided."];
 
   assert_type_errors
     {|
@@ -2300,7 +2300,7 @@ let test_check_assign _ =
         x += 'asdf'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
 
   assert_type_errors
     {|
@@ -2308,7 +2308,7 @@ let test_check_assign _ =
         x["foo"] = "bar"
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`."];
+     "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`."];
 
   assert_type_errors
     {|
@@ -2320,7 +2320,7 @@ let test_check_assign _ =
     [
       "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`.";
+      "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`.";
     ];
 
   assert_type_errors
@@ -2329,7 +2329,7 @@ let test_check_assign _ =
         x["foo"]["bar"] = "baz"
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 3rd anonymous parameter to call `dict.__setitem__` but got `str`."];
+     "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`."];
 
   assert_type_errors
     {|
@@ -2337,7 +2337,7 @@ let test_check_assign _ =
         x[7] = 7
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 2nd anonymous parameter to call `dict.__setitem__` but got `int`."]
+     "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`."]
 
 
 let test_check_coverage _ =
@@ -3278,7 +3278,7 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3300,7 +3300,7 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3310,7 +3310,7 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 2nd anonymous parameter to call `str.substr` but got `str`.";
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
 
   assert_type_errors
@@ -3319,7 +3319,7 @@ let test_check_method_parameters _ =
         input + 1
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   assert_type_errors
     {|
@@ -3343,7 +3343,10 @@ let test_check_method_parameters _ =
         def bar(x: int) -> int:
           return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `Foo`."]
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
+      "Incompatible return type [7]: Expected `int` but got `Foo`.";
+    ]
 
 
 let test_check_method_resolution _ =
@@ -3408,8 +3411,25 @@ let test_check_self _ =
           def two(self: Other) -> None:
               pass
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `Other` for 1st anonymous parameter to call `Some.two` but got `Some`."]
+    [
+      "Incompatible variable type [9]: self is declared to have type `Other` but is used as type \
+       `Some`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T, x: int) -> T:
+          return self
+      class Subclass(C):
+        pass
+      def f() -> C:
+        a = Subclass()
+        b = a.f
+        return b(1)
+    |}
+    []
 
 
 let test_check_static _ =
@@ -3470,8 +3490,10 @@ let test_check_static _ =
       def foo() -> None:
         Foo.foo('asdf')
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.foo` but got `str`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Foo.foo` but got `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -3490,7 +3512,7 @@ let test_check_static _ =
           cls.classmethod('1234')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.classmethod` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Foo.classmethod` but got `str`."];
 
   assert_type_errors
     {|
@@ -3514,8 +3536,10 @@ let test_check_static _ =
         def classmethod(cls, i: int) -> None:
           cls.instancemethod(Foo(), '1234')
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.instancemethod` but got `str`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `Foo.instancemethod` but got `str`.";
+    ];
 
   (* Special classmethods are treated properly without a decorator. *)
   assert_type_errors
@@ -3746,7 +3770,7 @@ let test_check_init _ =
       "Missing global annotation [5]: Globally accessible variable `a` has type `Foo` " ^
       "but no type is specified.";
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`.";
+      "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
     ];
 
   assert_type_errors
@@ -3763,7 +3787,7 @@ let test_check_init _ =
       a: Foo = Foo("")
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.__new__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Foo.__new__` but got `str`."];
 
   (* Prefer init over new if both exist. *)
   assert_type_errors
@@ -3787,7 +3811,7 @@ let test_check_init _ =
       c: C = C("")
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Super.__new__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Super.__new__` but got `str`."];
 
   (* We look at both __init__ and __new__ in the inheritance structure. *)
   assert_type_errors
@@ -3800,9 +3824,9 @@ let test_check_init _ =
         pass
       c: C = C("")
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Super.__new__` but got `str`."];
-
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Super.__new__` but got `str`."];
   assert_type_errors
     {|
       class SuperSuper:
@@ -3814,7 +3838,7 @@ let test_check_init _ =
       c: C = C("")
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Super.__init__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`."]
 
 let test_check_attributes _ =
   assert_type_errors
@@ -4506,7 +4530,7 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
       " specified.";
-      "Too many arguments [19]: Call `object.__init__` expects 1 argument, 5 were" ^
+      "Too many arguments [19]: Call `object.__init__` expects 0 arguments, 4 were" ^
       " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`."]
 
@@ -5154,7 +5178,7 @@ let test_check_missing_return _ =
       1 + 'asdf'  # report in top-level function
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
 
 
 let test_check_missing_attribute _ =
@@ -5768,7 +5792,7 @@ let test_check_refinement _ =
         l.append('asdf')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5777,7 +5801,7 @@ let test_check_refinement _ =
         l.append('a')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5786,7 +5810,7 @@ let test_check_refinement _ =
         l.append('a')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `list.append` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
@@ -5924,7 +5948,7 @@ let test_check_tuple _ =
         a.tuple_method(1.0)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `tuple.tuple_method` but got `float`."];
+     "Expected `int` for 1st anonymous parameter to call `tuple.tuple_method` but got `float`."];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[int, ...]:
@@ -6108,7 +6132,9 @@ let test_check_meta _ =
       def boo() -> Subclass:
         return Subclass.__construct__()
     |}
-    [];
+    [
+      "Incompatible return type [7]: Expected `Subclass` but got `C`.";
+    ];
 
   assert_type_errors
     {|
@@ -6374,7 +6400,10 @@ let test_check_async _ =
         async for item in g:
           yield takes_int(item)
     |}
-    [];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `takes_int` but got `str`.";
+    ];
 
   assert_type_errors
     {|
@@ -6541,10 +6570,10 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors ~show_error_traces:true
     {|
       class Foo():
-        def bar(x: int) -> int:
+        def bar(self, x: int) -> int:
           return 1
       class Bar(Foo):
-        def bar(x: int) -> typing.Union[str, int]:
+        def bar(self, x: int) -> typing.Union[str, int]:
           return 1
     |}
     [
@@ -6569,9 +6598,9 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo(a: float) -> None: ...
+        def foo(self, a: float) -> None: ...
       class Bar(Foo):
-        def foo(a: int) -> None: pass
+        def foo(self, a: int) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -6580,9 +6609,9 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo(a) -> None: ...
+        def foo(self, a) -> None: ...
       class Bar(Foo):
-        def foo() -> None: pass
+        def foo(self, ) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -6591,33 +6620,33 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo(a: int) -> None: ...
+        def foo(self, a: int) -> None: ...
       class Bar(Foo):
-        def foo(a) -> None: pass  # TODO(T23629633): we should warn on this too.
+        def foo(self, a) -> None: pass
+    |}
+    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+  assert_type_errors
+    {|
+      class Foo():
+        def foo(self, ) -> None: ...
+      class Bar(Foo):
+        def foo(self, a) -> None: pass
+    |}
+    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+  assert_type_errors
+    {|
+      class Foo():
+        def foo(self, a) -> None: ...
+      class Bar(Foo):
+        def foo(self, a: int) -> None: pass
     |}
     [];
   assert_type_errors
     {|
       class Foo():
-        def foo() -> None: ...
+        def foo(self, a: int) -> None: pass
       class Bar(Foo):
-        def foo(a) -> None: pass
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo():
-        def foo(a) -> None: ...
-      class Bar(Foo):
-        def foo(a: int) -> None: pass
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo():
-        def foo(a: int) -> None: pass
-      class Bar(Foo):
-        def foo(b: int) -> None: pass
+        def foo(self, b: int) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -6626,18 +6655,18 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo(a: int) -> None: pass
+        def foo(self, a: int) -> None: pass
       class Bar(Foo):
-        def foo(_a: int) -> None: pass
+        def foo(self, _a: int) -> None: pass
     |}
     [];
   assert_type_errors ~show_error_traces:true
     {|
       class Foo():
-        def bar(x: typing.Union[str, int]) -> None:
+        def bar(self, x: typing.Union[str, int]) -> None:
           pass
       class Bar(Foo):
-        def bar(x: int) -> None:
+        def bar(self, x: int) -> None:
           pass
     |}
     [
@@ -6649,10 +6678,10 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]):
-        def bar(x: typing.Union[str, _T]) -> None:
+        def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Bar(Foo[float]):
-        def bar(x: typing.Union[str, int]) -> None:
+        def bar(self, x: typing.Union[str, int]) -> None:
           pass
     |}
     [
@@ -6664,10 +6693,10 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]):
-        def bar(x: typing.Union[str, _T]) -> None:
+        def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Bar(Foo[int]):
-        def bar(x: typing.Union[str, float]) -> None:
+        def bar(self, x: typing.Union[str, float]) -> None:
           pass
     |}
     [];
@@ -6675,11 +6704,11 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]):
-        def bar(x: typing.Union[str, _T]) -> None:
+        def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[float]):
-        def bar(x: typing.Union[str, int]) -> None:
+        def bar(self, x: typing.Union[str, int]) -> None:
           pass
     |}
     [
@@ -6691,11 +6720,11 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]):
-        def bar(x: typing.Union[str, _T]) -> None:
+        def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[int]):
-        def bar(x: typing.Union[str, float]) -> None:
+        def bar(self, x: typing.Union[str, float]) -> None:
           pass
     |}
     [];
@@ -6904,7 +6933,7 @@ let test_check_constructors _ =
         return Foo('asdf')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`."];
   assert_type_errors
     {|
       class Foo:
@@ -6916,9 +6945,9 @@ let test_check_constructors _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`.";
+      "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
       "Incompatible parameter type [6]: " ^
-      "Expected `typing.Optional[str]` for 3rd anonymous parameter to call `Foo.__init__` " ^
+      "Expected `typing.Optional[str]` for 2nd anonymous parameter to call `Foo.__init__` " ^
       "but got `int`.";
     ];
 
@@ -6931,8 +6960,8 @@ let test_check_constructors _ =
         def foo(self) -> None:
           Foo.__init__(self, 'asdf')
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
+    (* TODO(T37956736): Explicitly calling instance methods is broken. *)
+    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, 2 were provided."];
 
   (* Super calls. *)
   assert_type_errors
@@ -6945,7 +6974,7 @@ let test_check_constructors _ =
           super().foo('asdf')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Super.foo` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Super.foo` but got `str`."];
   assert_type_errors
     {|
       class Super:
@@ -6956,7 +6985,7 @@ let test_check_constructors _ =
           super().__init__('asdf')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Super.__init__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`."];
 
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating
      to the subclass, regardless of order. *)
@@ -7015,7 +7044,8 @@ let test_check_explicit_method_call _ =
           pass
       Class.method(object(), 1)
     |}
-    []
+    (* TODO(T37954790): We aren't supporting calling explicit methods from classes. *)
+    ["Too many arguments [19]: Call `Class.method` expects 1 argument, 2 were provided."]
 
 
 let test_check_meta_annotations _ =
@@ -7273,9 +7303,25 @@ let test_check_callables _ =
       def bar() -> None:
         return Foo.bar
     |}
+    (* TODO(T37954790): We aren't supporting calling explicit methods from classes. *)
     [
       "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
+      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar(self, x: int) -> str:
+          return ""
+
+      def bar() -> None:
+        return Foo.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
     ];
 
   assert_type_errors
@@ -7285,8 +7331,10 @@ let test_check_callables _ =
       def foo(call: Call) -> int:
         return call("")
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Call.__call__` but got `str`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Call.__call__` but got `str`.";
+    ];
 
   (* Callable parameter checks. *)
   assert_type_errors
@@ -7670,7 +7718,7 @@ let test_scheduling _ =
   assert_type_errors
     "'string' + 1"
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Functions are scheduled. *)
   assert_type_errors
@@ -7680,7 +7728,7 @@ let test_scheduling _ =
         'string' + 1
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   assert_type_errors
     {|
@@ -7689,7 +7737,7 @@ let test_scheduling _ =
           'string' + 1
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Class bodies are scheduled. *)
   assert_type_errors
@@ -7698,7 +7746,7 @@ let test_scheduling _ =
         'string' + 1
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Methods are scheduled. *)
   assert_type_errors
@@ -7708,7 +7756,7 @@ let test_scheduling _ =
           'string' + 1
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
 
   (* Entry states are propagated. *)
   assert_type_errors
@@ -7774,7 +7822,7 @@ let test_format_string _ =
         f'foo{1 + "x"}'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
   assert_type_errors
     {|
       global_number: int = 1
@@ -7782,7 +7830,7 @@ let test_format_string _ =
         f'foo{global_number + "x"}'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
   assert_type_errors
     {|
       global_number: int = 1
@@ -7799,7 +7847,7 @@ let test_format_string _ =
         f'{boo() + "x"}'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__add__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
 
 
 let test_check_data_class _ =
@@ -7812,7 +7860,7 @@ let test_check_data_class _ =
           b = Foo('a')
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `Foo.__init__` but got `str`."];
+     "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`."];
   assert_type_errors
     {|
       @dataclass
@@ -7821,8 +7869,8 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 2 arguments, " ^
-     "3 were provided."];
+    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
+     "2 were provided."];
   assert_type_errors
     {|
       @dataclasses.dataclass
@@ -7831,8 +7879,8 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 2 arguments, " ^
-     "3 were provided."];
+    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
+     "2 were provided."];
   assert_type_errors
     {|
       @dataclass
@@ -7844,7 +7892,7 @@ let test_check_data_class _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Too many arguments [19]: Call `Foo.__init__` expects 1 argument, 2 were" ^
+      "Too many arguments [19]: Call `Foo.__init__` expects 0 arguments, 1 was" ^
       " provided.";
     ];
   assert_type_errors
@@ -8125,8 +8173,7 @@ let test_check_typed_dictionaries _ =
         movie = Movie(name=1982, year='Blade Runner')
         return movie['year']
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 3rd parameter `year` to call `__init__` but got `str`."];
+    ["Incompatible parameter type [6]: Expected `int` for 2nd parameter `year` to call `__init__` but got `str`."];
 
   assert_test_typed_dictionary
     {|
@@ -8135,7 +8182,7 @@ let test_check_typed_dictionaries _ =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Too many arguments [19]: Call `__init__` expects 4 arguments, 6 were provided."];
+    ["Too many arguments [19]: Call `__init__` expects 3 arguments, 5 were provided."];
 
   assert_test_typed_dictionary
     {|
@@ -8219,8 +8266,8 @@ let test_check_typed_dictionaries _ =
         movie['name'] += 7
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `int.__radd__` but got " ^
-     "`str`."];
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got " ^
+     "`unknown`."];
 
   assert_test_typed_dictionary
     {|

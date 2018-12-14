@@ -363,7 +363,7 @@ module Attribute = struct
       ~resolution
       ~parent
       ?(defined = true)
-      ?(default_class_attribute = true)
+      ?(default_class_attribute = false)
       {
         Node.location;
         value = {
@@ -407,9 +407,20 @@ module Attribute = struct
     (* Handle Callables *)
     let annotation =
       match defines with
-      | Some defines ->
+      | Some ((define :: _) as defines) ->
+          let parent =
+            if Define.is_static_method define then
+              None
+            else if Define.is_class_method define then
+              Some (Type.meta class_annotation)
+            else if class_attribute then
+              (* Keep first argument around when calling instance methods from class attributes. *)
+              None
+            else
+              Some class_annotation
+          in
           List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
-          |> Callable.create ~resolution
+          |> Callable.create ~resolution ~parent
           |> (fun callable -> Some (Type.Callable callable))
       | _ ->
           annotation
@@ -914,24 +925,6 @@ let constructor definition ~resolution =
       attribute
       |> Attribute.annotation
       |> Annotation.annotation
-      |> function
-      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
-          let open Type.Callable in
-          (* __new__ requires a metaclass to be passed in as the first argument; unannotate to
-             prevent extraneous errors. *)
-          let unannotate_first_parameter ({ parameters; _ } as signature) =
-            match parameters with
-            | Defined ((Parameter.Named { name; default; _ }) :: rest) ->
-                let parameter = Parameter.Named { name; default; annotation = class_annotation } in
-                { signature with parameters = Defined (parameter :: rest) }
-            | _ ->
-                signature
-          in
-          let implementation = unannotate_first_parameter implementation in
-          let overloads = List.map overloads ~f:unannotate_first_parameter in
-          Type.Callable { callable with Type.Callable.implementation; overloads }
-      | annotation ->
-          annotation
     in
     signature, definition_index attribute
   in
@@ -998,21 +991,6 @@ let inferred_callable_type definition ~resolution =
   if List.is_empty explicit_callables then
     None
   else
-    let callable_type = Callable.create explicit_callables ~resolution in
-    match callable_type with
-    | ({
-      Type.Callable.implementation = {
-        Type.Callable.parameters = Type.Callable.Defined parameters;
-        _;
-      } as implementation;
-      _;
-    } as callable) ->
-        Some (Type.Callable {
-            callable with
-            Type.Callable.implementation = {
-              implementation with
-              Type.Callable.parameters = Type.Callable.Defined (List.drop parameters 1);
-            };
-          })
-    | _ ->
-        Some (Type.Callable callable_type)
+    let parent = annotation definition ~resolution in
+    let callable = Callable.create ~parent:(Some parent) explicit_callables ~resolution in
+    Some (Type.Callable callable)

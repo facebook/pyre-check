@@ -29,6 +29,11 @@ module Record : sig
       | Anonymous
       | Named of Access.t
 
+    and 'annotation implicit_record = {
+      implicit_annotation: 'annotation;
+      name: Access.t;
+    }
+
     and 'annotation parameters =
       | Defined of ('annotation RecordParameter.t) list
       | Undefined
@@ -38,16 +43,11 @@ module Record : sig
       parameters: 'annotation parameters;
     }
 
-    and implicit =
-      | Class
-      | Instance
-      | Function
-
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: ('annotation overload) list;
-      implicit: implicit;
+      implicit: ('annotation implicit_record) option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -99,6 +99,58 @@ module Cache: sig
   val disable: unit -> unit
 end
 
+module Callable : sig
+  module Parameter: sig
+    include module type of struct include Record.Callable.RecordParameter end
+
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map : Core.Map.S with type Key.t = parameter
+
+    val name: parameter -> Identifier.t
+    val annotation: parameter -> type_t
+    val default: parameter -> bool
+    val is_anonymous: parameter -> bool
+
+    val names_compatible: parameter -> parameter -> bool
+  end
+
+  include module type of struct include Record.Callable end
+
+  type implicit = type_t Record.Callable.implicit_record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = type_t Record.Callable.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  module Overload: sig
+    val parameters: type_t overload -> Parameter.parameter list option
+
+    val return_annotation: type_t overload -> type_t
+    val is_undefined: type_t overload -> bool
+  end
+
+  val from_overloads: t list -> t option
+
+  val map: t -> f:(type_t -> type_t) -> t option
+
+  val with_return_annotation: t -> annotation: type_t -> t
+end
+
+module TypedDictionary : sig
+  val anonymous: typed_dictionary_field list -> t
+
+  val fields_have_colliding_keys
+    : typed_dictionary_field list
+    -> typed_dictionary_field list
+    -> bool
+
+  val constructor: name: Identifier.t -> fields: typed_dictionary_field list -> Callable.t
+  val setter: callable: Callable.t -> annotation: t -> Callable.t
+end
+
+
 val serialize: t -> string
 
 val primitive: string -> t
@@ -110,8 +162,9 @@ val bool: t
 val bytes: t
 val callable
   :  ?name: Access.t
-  -> ?overloads: (t Record.Callable.overload) list
-  -> ?parameters: t Record.Callable.parameters
+  -> ?overloads: (t Callable.overload) list
+  -> ?parameters: t Callable.parameters
+  -> ?implicit: Callable.implicit
   -> annotation: t
   -> unit
   -> t
@@ -213,53 +266,5 @@ val instantiate_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
-
-module Callable : sig
-  module Parameter: sig
-    include module type of struct include Record.Callable.RecordParameter end
-
-    type parameter = type_t t
-    [@@deriving compare, eq, sexp, show, hash]
-
-    module Map : Core.Map.S with type Key.t = parameter
-
-    val name: parameter -> Identifier.t
-    val annotation: parameter -> type_t
-    val default: parameter -> bool
-    val is_anonymous: parameter -> bool
-
-    val names_compatible: parameter -> parameter -> bool
-  end
-
-  include module type of struct include Record.Callable end
-
-  type t = type_t Record.Callable.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  module Overload: sig
-    val parameters: type_t overload -> Parameter.parameter list option
-
-    val return_annotation: type_t overload -> type_t
-    val is_undefined: type_t overload -> bool
-  end
-
-  val from_overloads: t list -> t option
-
-  val map: t -> f:(type_t -> type_t) -> t option
-
-  val with_return_annotation: t -> annotation: type_t -> t
-end
-
-module TypedDictionary : sig
-  val anonymous: typed_dictionary_field list -> t
-
-  val fields_have_colliding_keys
-    : typed_dictionary_field list
-    -> typed_dictionary_field list
-    -> bool
-
-  val constructor: name: Identifier.t -> fields: typed_dictionary_field list -> Callable.t
-  val setter: callable: Callable.t -> annotation: t -> Callable.t
-end
 
 val to_yojson: t -> Yojson.Safe.json

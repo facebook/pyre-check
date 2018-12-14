@@ -1194,8 +1194,7 @@ and join ((module Handler: Handler) as order) left right =
 
     | Type.Callable left,
       Type.Callable right ->
-        if left.Callable.implicit = right.Callable.implicit
-        && List.is_empty left.Callable.overloads
+        if List.is_empty left.Callable.overloads
         && List.is_empty right.Callable.overloads then
           let kind =
             if Type.Callable.equal_kind left.kind right.kind then
@@ -1387,8 +1386,7 @@ and meet ((module Handler: Handler) as order) left right =
           Type.Bottom
 
     | Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as left),
-      Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right)
-      when left.Callable.implicit = right.Callable.implicit ->
+      Type.Callable ({ Callable.kind = Callable.Anonymous; _ } as right) ->
         join_implementations
           ~parameter_join:join
           ~return_join:meet

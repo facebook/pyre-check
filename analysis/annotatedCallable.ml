@@ -59,9 +59,9 @@ let apply_decorators ~define ~resolution =
     define
 
 
-let create defines ~resolution =
-  let ({ Define.name; _ } as define) = List.hd_exn defines in
+let create ~parent ~resolution defines =
   let open Type.Callable in
+  let { Define.name; _ } = List.hd_exn defines in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let name = Identifier.show name in
     let access =
@@ -79,14 +79,6 @@ let create defines ~resolution =
       Parameter.Variable { Parameter.name = access; annotation; default = false }
     else
       Parameter.Named { Parameter.name = access; annotation; default = Option.is_some value }
-  in
-  let implicit =
-    if Define.is_class_method define then
-      Type.Callable.Class
-    else if Define.is_method define && not (Define.is_static_method define) then
-      Type.Callable.Instance
-    else
-      Type.Callable.Function
   in
   let implementation, overloads =
     let to_signature (implementation, overloads) ({ Define.parameters; _ } as define) =
@@ -106,9 +98,59 @@ let create defines ~resolution =
       ~f:to_signature
       defines
   in
-  {
-    kind = Named name;
-    implementation;
-    overloads;
-    implicit;
-  }
+  let callable =
+    {
+      kind = Named name;
+      implementation;
+      overloads;
+      implicit = None;
+    }
+  in
+  match parent with
+  | Some parent ->
+      let { Type.Callable.kind; implementation; overloads; implicit } =
+        match implementation with
+        | { parameters = Defined (self_parameter :: _); _ } ->
+            let callable =
+              let implicit = {
+                implicit_annotation = parent;
+                name = [Access.Identifier (Type.Callable.Parameter.name self_parameter)];
+              }
+              in
+              { callable with implicit = Some implicit }
+            in
+            let constraints =
+              TypeOrder.diff_variables
+                Type.Map.empty
+                (Parameter.annotation self_parameter)
+                parent
+            in
+            let instantiated =
+              Type.instantiate (Type.Callable callable) ~constraints:(Map.find constraints)
+            in
+            begin
+              match instantiated with
+              | Type.Callable callable -> callable
+              | _ -> callable
+            end
+        | _ ->
+            callable
+      in
+      let drop_self { Type.Callable.annotation; parameters } =
+        let parameters =
+          match parameters with
+          | Type.Callable.Defined (_ :: parameters) ->
+              Type.Callable.Defined parameters
+          | _ ->
+              parameters
+        in
+        { Type.Callable.annotation; parameters }
+      in
+      {
+        Type.Callable.kind;
+        implementation = drop_self implementation;
+        overloads = List.map overloads ~f:drop_self;
+        implicit;
+      }
+  | None ->
+      callable

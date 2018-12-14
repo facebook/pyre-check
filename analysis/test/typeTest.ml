@@ -209,7 +209,7 @@ let test_create _ =
         kind = Type.Callable.Named (Access.create "name");
         implementation = { annotation = Type.integer; parameters = Undefined };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
 
   assert_create
@@ -218,7 +218,7 @@ let test_create _ =
         kind = Type.Callable.Named (Access.create "foo");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
 
   assert_create
@@ -245,7 +245,7 @@ let test_create _ =
             ];
         };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
   assert_create
     "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
@@ -277,7 +277,7 @@ let test_create _ =
             ];
         };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
   assert_create
     "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
@@ -304,7 +304,7 @@ let test_create _ =
             ];
         };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
   assert_create
     "typing.Callable[[Named(a, int, default)], int]"
@@ -321,7 +321,7 @@ let test_create _ =
             ];
         };
         overloads = [];
-        implicit = Type.Callable.Function;
+        implicit = None;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
   assert_create "function" (Type.callable ~annotation:Type.Object ());

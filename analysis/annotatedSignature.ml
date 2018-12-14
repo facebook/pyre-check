@@ -601,7 +601,7 @@ let select
                 Type.Callable.kind = Anonymous;
                 implementation;
                 overloads = [];
-                implicit = Function;
+                implicit = None;
               }
               |> Type.variables
               |> List.filter ~f:is_unbound

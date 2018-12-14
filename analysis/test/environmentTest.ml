@@ -647,13 +647,13 @@ let test_register_functions _ =
 
   assert_global
     "Class.__init__"
-    "typing.Callable('Class.__init__')[[Named(self, $unknown)], None]";
+    "typing.Callable('Class.__init__')[[], None]";
   assert_global
     "Class.method"
-    "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]";
+    "typing.Callable('Class.method')[[Named(i, int)], int]";
   assert_global
     "Class.Nested.nested_class_method"
-    "typing.Callable('Class.Nested.nested_class_method')[[Named(self, $unknown)], str]";
+    "typing.Callable('Class.Nested.nested_class_method')[[], str]";
 
   assert_global
     "overloaded"
@@ -662,8 +662,8 @@ let test_register_functions _ =
   assert_global
     "ClassWithOverloadedConstructor.__init__"
     ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
-     "[[Named(self, $unknown), Named(i, int)], None]" ^
-     "[[[Named(self, $unknown), Named(s, str)], None]]")
+     "[[Named(i, int)], None]" ^
+     "[[[Named(s, str)], None]]")
 
 
 let test_populate _ =
@@ -721,7 +721,28 @@ let test_populate _ =
       parameters = superclass_parameters annotation;
     }
     in
-    assert_equal targets (Some (List.map superclasses ~f:to_target))
+    let show_targets = function
+      | None ->
+          ""
+      | Some targets ->
+          let show_target { TypeOrder.Target.target; parameters } =
+            let index = Int.to_string target in
+            let target =
+              Handler.TypeOrderHandler.find_unsafe
+                (Handler.TypeOrderHandler.annotations ())
+                target
+              |> Type.show
+            in
+            let parameters = List.to_string parameters ~f:Type.show in
+            Format.sprintf "%s: %s%s" index target parameters
+          in
+          List.to_string targets ~f:show_target
+    in
+    assert_equal
+      ~printer:show_targets
+      ~cmp:(Option.equal (List.equal ~equal:TypeOrder.Target.equal))
+      targets
+      (Some (List.map superclasses ~f:to_target))
   in
   (* Metaclasses aren't superclasses. *)
   let environment =
@@ -818,13 +839,7 @@ let test_populate _ =
        ~global:true
        (Type.callable
           ~name:(Access.create "Class.__init__")
-          ~parameters:(Type.Callable.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "self";
-                annotation = Type.Top;
-                default = false;
-              };
-            ])
+          ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
           ()));
 
@@ -869,11 +884,6 @@ let test_populate _ =
         [
           parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
           |> Type.create ~aliases:(fun _ -> None)
-          |> function
-          | Type.Callable callable ->
-              Type.Callable { callable with Type.Callable.implicit = Type.Callable.Instance }
-          | annotation ->
-              annotation
         ]
     | _ ->
         []
@@ -882,7 +892,8 @@ let test_populate _ =
     ~superclass_parameters:type_parameters
     ~environment
     "CallMe"
-    ~superclasses:[Type.primitive "typing.Callable"]
+    ~superclasses:[Type.primitive "typing.Callable"];
+  ()
 
 
 let test_infer_protocols_edges _ =
@@ -892,21 +903,21 @@ let test_infer_protocols_edges _ =
         class Empty(typing.Protocol):
           pass
         class Sized(typing.Protocol):
-          def empty() -> bool: pass
-          def len() -> int: pass
+          def empty(self) -> bool: pass
+          def len(self) -> int: pass
         class Supersized(typing.Protocol):
-          def empty() -> bool: pass
-          def len() -> int: pass
+          def empty(self) -> bool: pass
+          def len(self) -> int: pass
         class List():
-          def empty() -> bool: pass
-          def length() -> int: pass
+          def empty(self) -> bool: pass
+          def length(self) -> int: pass
         class Set():
-          def empty() -> bool: pass
-          def len() -> int: pass
+          def empty(self) -> bool: pass
+          def len(self) -> int: pass
         class Subset(Set): pass
         class AlmostSet():
-          def empty(a) -> bool: pass
-          def len() -> int: pass
+          def empty(self, a) -> bool: pass
+          def len(self) -> int: pass
         class object:
           def __hash__(self) -> int: ...
         class SuperObject(typing.Protocol):
@@ -960,7 +971,7 @@ let test_infer_protocols_edges _ =
     assert_false (Set.mem edges { TypeOrder.Edge.source; target })
   in
 
-  assert_equal (Set.length edges) 11;
+  assert_equal ~printer:Int.to_string (Set.length edges) 11;
 
   assert_edge_not_inferred (Type.primitive "List") (Type.primitive "Sized");
   assert_edge_inferred (Type.primitive "Set") (Type.primitive "Sized");

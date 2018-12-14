@@ -152,9 +152,9 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_super_call reverse_access ->
         [Callable.create_method name, implicit]
-    | Type.Callable { implicit = Type.Callable.Function; kind = Named name; _ }, None
+    | Type.Callable { implicit = None; kind = Named name; _ }, None
       when is_all_names access ->
-        [Callable.create_function name, Type.Callable.Function]
+        [Callable.create_function name, None]
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_all_names access ->
         [Callable.create_method name, implicit]
@@ -163,7 +163,10 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
         |> List.map ~f:(fun target -> target, implicit)
     | access_type, _ when Type.is_meta access_type && is_global ~resolution access ->
         let access, _ = normalize_global ~resolution access in
-        [Callable.create_method access, Type.Callable.Instance]
+        [
+          Callable.create_method access,
+          Some { Type.Callable.implicit_annotation = access_type; name = access };
+        ]
     | Type.Union annotations, _ ->
         List.concat_map ~f:resolve_type annotations
     | _ ->

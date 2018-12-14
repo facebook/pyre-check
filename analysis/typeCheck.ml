@@ -594,12 +594,39 @@ module State = struct
           |> fun name -> [Access.Identifier name]
         in
         let { Annotation.annotation; mutability }, errors =
+          let add_incompatible_variable_error errors annotation default =
+            if Type.equal default Type.Object ||
+               Resolution.less_or_equal resolution ~left:default ~right:annotation then
+              errors
+            else
+              let error =
+                let instantiate location =
+                  Location.instantiate
+                    ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
+                    location
+                in
+                Error.create
+                  ~location
+                  ~kind:(Error.IncompatibleVariableType {
+                      name = [Expression.Access.Identifier name];
+                      mismatch =
+                        Error.create_mismatch
+                          ~resolution
+                          ~expected:annotation
+                          ~actual:default
+                          ~covariant:true;
+                      declare_location = instantiate location;
+                    })
+                  ~define:define_node
+              in
+              Map.set ~key:location ~data:error errors
+          in
           match index, parent with
           | 0, Some parent
             when Define.is_method define &&
                  not (Define.is_static_method define) ->
-              let annotation =
-                let annotation =
+              let resolved =
+                let parent_annotation =
                   Access.expression parent
                   |> Resolution.parse_annotation resolution
                   |> function
@@ -623,12 +650,28 @@ module State = struct
                 in
                 if Define.is_class_method define || Define.is_class_property define then
                   (* First parameter of a method is a class object. *)
-                  Type.meta annotation
+                  Type.meta parent_annotation
                 else
                   (* First parameter of a method is the callee object. *)
-                  annotation
+                  parent_annotation
               in
-              Annotation.create annotation, errors
+              begin
+                match annotation with
+                | Some annotation ->
+                    let annotation = Resolution.parse_annotation resolution annotation in
+                    let errors =
+                      check_annotation ~resolution ~location ~define:define_node ~annotation
+                      |> List.fold
+                        ~init:errors
+                        ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
+                    in
+                    let errors =
+                      add_incompatible_variable_error errors annotation resolved
+                    in
+                    Annotation.create resolved, errors
+                | None ->
+                    Annotation.create resolved, errors
+              end
           | _ ->
               let add_missing_parameter_error ~annotation ~due_to_any errors =
                 let error =
@@ -647,33 +690,6 @@ module State = struct
                     ~define:define_node
                 in
                 Map.set ~key:location ~data:error errors
-              in
-              let add_incompatible_variable_error errors annotation default =
-                if Type.equal default Type.Object ||
-                   Resolution.less_or_equal resolution ~left:default ~right:annotation then
-                  errors
-                else
-                  let error =
-                    let instantiate location =
-                      Location.instantiate
-                        ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
-                        location
-                    in
-                    Error.create
-                      ~location
-                      ~kind:(Error.IncompatibleVariableType {
-                          name = [Expression.Access.Identifier name];
-                          mismatch =
-                            Error.create_mismatch
-                              ~resolution
-                              ~expected:annotation
-                              ~actual:default
-                              ~covariant:true;
-                          declare_location = instantiate location;
-                        })
-                      ~define:define_node
-                  in
-                  Map.set ~key:location ~data:error errors
               in
               match annotation, value with
               | Some annotation, Some value

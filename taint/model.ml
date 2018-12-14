@@ -167,9 +167,11 @@ let create ~resolution ?(verify = true) ~model_source () =
               Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
               _;
             };
+            implicit;
             _;
           } as callable) ->
-          if List.length parameters <> List.length implementation_parameters then
+          let self_length = if Option.is_some implicit then 1 else 0 in
+          if List.length parameters <> self_length + List.length implementation_parameters then
             let message =
               Format.asprintf
                 "Model signature parameters for `%a` do not match implementation `%a`"

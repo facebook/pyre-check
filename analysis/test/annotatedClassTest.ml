@@ -252,11 +252,11 @@ let test_constructors _ =
   (* Undefined constructors. *)
   assert_constructor
     "class Foo: pass"
-    (Some "typing.Callable('object.__init__')[[Named(self, $unknown)], Foo]");
+    (Some "typing.Callable('object.__init__')[[], Foo]");
 
   assert_constructor
     "class Foo: ..."
-    (Some "typing.Callable('object.__init__')[[Named(self, $unknown)], Foo]");
+    (Some "typing.Callable('object.__init__')[[], Foo]");
 
   (* Statement.Defined constructors. *)
   assert_constructor
@@ -264,7 +264,7 @@ let test_constructors _ =
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
     |}
-    (Some "typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], Foo]");
+    (Some "typing.Callable('Foo.__init__')[[Named(a, int)], Foo]");
 
   assert_constructor
     {|
@@ -274,8 +274,8 @@ let test_constructors _ =
         def Foo.__init__(self, b: str) -> None: pass
     |}
     (Some
-       ("typing.Callable('Foo.__init__')[[Named(self, $unknown), Named(a, int)], Foo]" ^
-        "[[[Named(self, $unknown), Named(b, str)], Foo]]"));
+       ("typing.Callable('Foo.__init__')[[Named(a, int)], Foo]" ^
+        "[[[Named(b, str)], Foo]]"));
 
   (* Generic classes. *)
   assert_constructor
@@ -285,7 +285,7 @@ let test_constructors _ =
       class Foo(typing.Generic[_K, _V]):
         def Foo.__init__(self) -> None: pass
     |}
-    (Some "typing.Callable('Foo.__init__')[[Named(self, $unknown)], Foo[_K, _V]]");
+    (Some "typing.Callable('Foo.__init__')[[], Foo[_K, _V]]");
 
   (* Tuples. *)
   assert_constructor
@@ -294,7 +294,7 @@ let test_constructors _ =
       class tuple(typing.Generic[_T]):
         def tuple.__init__(self) -> None: ...
     |}
-    (Some "typing.Callable('tuple.__init__')[[Named(self, $unknown)], typing.Tuple[_T, ...]]");
+    (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[_T, ...]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor
@@ -305,7 +305,7 @@ let test_constructors _ =
       class C(Parent):
         pass
     |}
-    (Some "typing.Callable('Parent.__init__')[[Named(self, $unknown), Named(x, int)], C]");
+    (Some "typing.Callable('Parent.__init__')[[Named(x, int)], C]");
   assert_constructor
     {|
       class Parent:
@@ -314,7 +314,7 @@ let test_constructors _ =
       class C(Parent):
         pass
     |}
-    (Some "typing.Callable('Parent.__new__')[[Named(self, C), Named(x, str)], C]")
+    (Some "typing.Callable('Parent.__new__')[[Named(x, str)], C]")
 
 
 let test_methods _ =
@@ -548,7 +548,7 @@ let test_implements _ =
         def empty() -> bool: pass
         def length() -> int: pass
     |}
-    false
+    true
 
 
 let test_class_attributes _ =
@@ -821,7 +821,7 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "bar"
-        "typing.Callable('Attributes.bar')[[Named(self, $unknown)], int]");
+        "typing.Callable('Attributes.bar')[[], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.primitive "Attributes")
@@ -829,7 +829,7 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        ("typing.Callable('Attributes.baz')[[Named(self, $unknown), Named(x, str)], str]"))
+        ("typing.Callable('Attributes.baz')[[Named(x, str)], str]"))
 
 
 let test_fallback_attribute _ =

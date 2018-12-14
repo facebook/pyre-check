@@ -11,4 +11,4 @@ val return_annotation: define: Define.t -> resolution: Resolution.t -> Type.t
 
 val apply_decorators: define: Define.t -> resolution: Resolution.t -> Define.t
 
-val create: Define.t list -> resolution: Resolution.t -> Type.Callable.t
+val create: parent: Type.t option -> resolution: Resolution.t -> Define.t list -> Type.Callable.t

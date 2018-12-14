@@ -41,6 +41,12 @@ module Record = struct
       | Named of Access.t
 
 
+    and 'annotation implicit_record = {
+      implicit_annotation: 'annotation;
+      name: Access.t;
+    }
+
+
     and 'annotation parameters =
       | Defined of ('annotation RecordParameter.t) list
       | Undefined
@@ -52,17 +58,11 @@ module Record = struct
     }
 
 
-    and implicit =
-      | Class
-      | Instance
-      | Function
-
-
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: ('annotation overload) list;
-      implicit: implicit;
+      implicit: ('annotation implicit_record) option;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -391,6 +391,7 @@ let callable
     ?name
     ?(overloads = [])
     ?(parameters = Undefined)
+    ?implicit
     ~annotation
     () =
   let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
@@ -398,7 +399,7 @@ let callable
     kind;
     implementation = { annotation; parameters };
     overloads;
-    implicit = Function;
+    implicit;
   }
 
 
@@ -485,7 +486,7 @@ let lambda ~parameters ~return_annotation =
              parameters);
     };
     overloads = [];
-    implicit = Function;
+    implicit = None;
   }
 
 
@@ -972,7 +973,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             | _ ->
                 undefined, []
           in
-          Callable { kind; implementation; overloads; implicit = Function }
+          Callable { kind; implementation; overloads; implicit = None }
         in
         match expression with
         | Access [
@@ -1794,6 +1795,9 @@ module Callable = struct
 
   include Record.Callable
 
+  type implicit = type_t Record.Callable.implicit_record
+  [@@deriving compare, eq, sexp, show, hash]
+
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -1819,9 +1823,7 @@ module Callable = struct
         let fold sofar signature =
           match sofar, signature with
           | Some sofar, { kind; implementation; overloads; implicit } ->
-              if
-                equal_kind kind sofar.kind && implicit = sofar.implicit
-              then
+              if equal_kind kind sofar.kind then
                 Some {
                   kind;
                   implementation;
@@ -2003,13 +2005,6 @@ module TypedDictionary = struct
 
   let constructor ~name ~fields =
     let parameters =
-      let self_parameter =
-        Record.Callable.RecordParameter.Named {
-          name = Access.create "self";
-          annotation = Top;
-          default = false;
-        };
-      in
       let single_star =
         Record.Callable.RecordParameter.Variable {
           name = Access.create "";
@@ -2027,7 +2022,7 @@ module TypedDictionary = struct
         in
         List.map ~f:field_to_argument fields
       in
-      self_parameter :: single_star :: field_arguments
+      single_star :: field_arguments
     in
     {
       Callable.kind = Named (Access.create "__init__");
@@ -2036,7 +2031,7 @@ module TypedDictionary = struct
         parameters = Defined parameters;
       };
       overloads = [];
-      implicit = Class;
+      implicit = None;
     }
 
 

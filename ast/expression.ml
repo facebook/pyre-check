@@ -497,7 +497,7 @@ module Access = struct
         None
 
 
-  let backup ~arguments ~name =
+  let backup ~name =
     match List.rev name with
     | (Identifier name) :: _ ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
@@ -519,7 +519,7 @@ module Access = struct
           | "__or__" -> Some "__ror__"
           | _ -> None
         end
-        >>| fun name -> List.rev arguments, [Identifier (Identifier.create name)]
+        >>| fun name -> [Identifier (Identifier.create name)]
     | _ ->
         None
 

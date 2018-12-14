@@ -101,25 +101,48 @@ let test_apply_decorators _ =
 
 
 let test_create _ =
-  let assert_callable ?parent ~expected source =
+  let assert_callable ?expected_implicit ?parent ~expected source =
     let resolution =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()
     in
+
+    let expected = parse_callable expected in
+    let check_implicit { Type.Callable.implicit = actual; _ } =
+      match expected_implicit with
+      (* Verify implicit if we're checking for it explicitly, ignore otherwise
+         for convenience. *)
+      | Some expected ->
+          assert_equal
+            ~cmp:(Option.equal Type.Callable.equal_implicit)
+            (Some expected)
+            actual
+      | _ ->
+          ()
+    in
+    let implicit =
+      match expected with
+      | Type.Callable { Type.Callable.implicit; _ } ->
+          implicit
+      | _ ->
+          None
+    in
     let callable =
+      let parent_annotation = parent >>| Type.primitive in
       let parent = parent >>| Access.create in
       parse source
       |> Preprocessing.defines ~include_stubs:true
       |> List.rev
       |> List.map ~f:Node.value
       |> List.map ~f:(fun define -> { define with Statement.Define.parent })
-      |> Callable.create ~resolution
-      |> fun callable -> Type.Callable callable
+      |> Callable.create ~parent:parent_annotation ~resolution
+      |> (fun callable -> check_implicit callable; callable)
+      |> fun callable -> Type.Callable { callable with Type.Callable.implicit }
     in
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
-      (parse_callable expected)
+      expected
       callable
   in
 
@@ -148,15 +171,15 @@ let test_create _ =
   assert_callable
     ~parent:"module.Foo"
     "def module.Foo.foo(a: int, b) -> str: ..."
-    ~expected:"typing.Callable('module.Foo.foo')[[Named(a, int), Named(b, $unknown)], str]";
+    ~expected:"typing.Callable('module.Foo.foo')[[Named(b, $unknown)], str]";
 
   assert_callable
     ~parent:"module.Foo"
     {|
       @overload
-      def module.Foo.foo(a: int) -> int: ...
+      def module.Foo.foo(self, a: int) -> int: ...
       @overload
-      def module.Foo.foo(a: str) -> str: ...
+      def module.Foo.foo(self, a: str) -> str: ...
     |}
     ~expected:(
       "typing.Callable('module.Foo.foo')[..., $unknown]" ^
@@ -166,9 +189,9 @@ let test_create _ =
     ~parent:"module.Foo"
     {|
         @overload
-        def module.Foo.foo(a: int) -> int: ...
+        def module.Foo.foo(self, a: int) -> int: ...
         @overload
-        def module.Foo.foo(a: str, b: int) -> str: ...
+        def module.Foo.foo(self, a: str, b: int) -> str: ...
       |}
     ~expected:(
       "typing.Callable('module.Foo.foo')[..., $unknown]" ^
@@ -177,44 +200,22 @@ let test_create _ =
   assert_callable
     ~parent:"module.Foo"
     {|
-        def module.Foo.foo(a: int) -> int: ...
-        def module.Foo.foo(a: str) -> str: ...
+        def module.Foo.foo(self, a: int) -> int: ...
+        def module.Foo.foo(self, a: str) -> str: ...
       |}
     ~expected:(
       "typing.Callable('module.Foo.foo')[[Named(a, str)], str]");
 
-  let assert_implicit_argument ?parent source expected =
-    let resolution =
-      populate source
-      |> fun environment -> TypeCheck.resolution environment ()
-    in
-    let implicit_argument =
-      let parent = parent >>| Access.create in
-      parse_single_define source
-      |> (fun define -> { define with Statement.Define.parent })
-      |> (fun define -> Callable.create ~resolution [define])
-      |> fun { Type.Callable.implicit; _ } -> implicit
-    in
-    assert_equal
-      expected
-      implicit_argument
-  in
-  assert_implicit_argument "def foo(self) -> None: ..." Type.Callable.Function;
-  assert_implicit_argument ~parent:"module.Foo" "def foo(self) -> None: ..." Type.Callable.Instance;
-  assert_implicit_argument
+  assert_callable
     ~parent:"module.Foo"
+    ~expected_implicit:{
+      implicit_annotation = Type.primitive "module.Foo";
+      name = Access.create "self";
+    }
     {|
-      @classmethod
-      def foo(cls, other) -> None: ...
+      def module.Foo.foo(self, a: int) -> int: ...
     |}
-    Type.Callable.Class;
-  assert_implicit_argument
-    ~parent:"module.Foo"
-    {|
-      @staticmethod
-      def foo(other) -> None: ...
-    |}
-    Type.Callable.Function
+    ~expected:("typing.Callable('module.Foo.foo')[[Named(a, int)], int]")
 
 
 let () =

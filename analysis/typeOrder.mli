@@ -113,6 +113,8 @@ val widen
   -> next: Type.t
   -> iteration: int
   -> Type.t
+val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
+
 
 val instantiate_successors_parameters
   :  (module Handler)
