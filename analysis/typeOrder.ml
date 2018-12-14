@@ -630,7 +630,8 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Union left, right ->
       List.fold
         ~init:true
-        ~f:(fun current left -> current && less_or_equal order ~left ~right)
+        ~f:(fun current left ->
+            current && less_or_equal order ~left ~right)
         left
   (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
   | left, Type.Union right ->
@@ -651,7 +652,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
       less_or_equal order ~left ~right
   | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right) ->
-      List.for_all ~f:(fun element -> Type.equal element left) tail &&
+      let left = List.fold tail ~init:left ~f:(join order) in
       less_or_equal order ~left ~right
   | Type.Tuple _, Type.Parametric _ ->
       (* Join parameters to handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)

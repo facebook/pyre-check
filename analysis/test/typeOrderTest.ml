@@ -709,6 +709,23 @@ let test_less_or_equal _ =
   assert_false (less_or_equal default ~left:(Type.undeclared) ~right:(Type.Top));
   assert_false (less_or_equal default ~left:(Type.Top) ~right:(Type.undeclared));
 
+  (* Tuples. *)
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.tuple [Type.integer; Type.integer])
+       ~right:(Type.Tuple (Type.Unbounded Type.integer)));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.tuple [Type.integer; Type.integer])
+       ~right:(Type.Tuple (Type.Unbounded Type.float)));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.tuple [Type.integer; Type.float])
+       ~right:(Type.Tuple (Type.Unbounded Type.float)));
+
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =

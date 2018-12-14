@@ -5968,6 +5968,31 @@ let test_check_tuple _ =
 
   assert_type_errors
     {|
+      def foo() -> typing.Tuple[float, ...]:
+        return tuple([1])
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[float, ...]:
+        return (1, 2)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[float, ...]:
+        return (1.0, 2.0)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[float, ...]:
+        return (1.0, 2)
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(x: typing.Tuple[int, int, str]) -> typing.Tuple[str, int]:
         a, *b = x
         return b
