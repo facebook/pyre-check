@@ -202,6 +202,20 @@ let fold ~resolution ~initial ~f access =
 
   let rec fold ~state ~lead ~tail =
     let { State.accumulator; resolved; target; resolution; _ } = state in
+    let find_method ~parent ~name =
+      parent
+      |> Resolution.class_definition resolution
+      >>| Class.create
+      >>| Class.attribute ~resolution ~name ~instantiated:parent
+      >>= fun attribute -> Option.some_if (Attribute.defined attribute) attribute
+      >>| Attribute.annotation
+      >>| Annotation.annotation
+      >>= function
+      | Type.Callable callable ->
+          Some callable
+      | _ ->
+          None
+    in
     let resolve_callables
         ~implicit_annotation
         ~callables
@@ -227,11 +241,8 @@ let fold ~resolution ~initial ~f access =
                     }]
                   in
                   Resolution.resolve resolution value
-                  |> Type.expression
-                  |> Expression.access
-                  |> (fun access -> access @ name)
-                  |> (fun access -> Resolution.get_local_callable resolution ~access)
-                  >>| (fun callable -> Signature.select ~arguments ~resolution ~callable)
+                  |> fun annotation -> find_method ~parent:annotation ~name
+                  >>| fun callable -> Signature.select ~arguments ~resolution ~callable
               | _ ->
                   None
             in
@@ -524,11 +535,9 @@ let fold ~resolution ~initial ~f access =
                     target >>| State.annotation,
                     List.map annotations ~f:extract_callable
                 | _ ->
+                    let callable = find_method ~parent:resolved ~name:(Access.create "__call__") in
                     Some resolved,
-                    Type.class_name resolved
-                    |> (fun name -> name @ (Access.create "__call__"))
-                    |> (fun access -> Resolution.get_local_callable resolution ~access)
-                    |> Option.to_list
+                    Option.to_list callable
               in
               if List.is_empty callables then
                 State.abort state ~element:(NotCallable resolved) ~lead ()

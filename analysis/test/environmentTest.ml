@@ -599,10 +599,12 @@ let test_register_functions _ =
        class Class:
          def Class.__init__(self) -> None: ...
          def Class.method(self, i: int) -> int: ...
+         @classmethod
+         def Class.classmethod(cls, i: str) -> str: ...
          @property
          def Class.property_method(self) -> int: ...
          class Class.Nested:
-           def Class.Nested.nested_class_method(self) -> str: ...
+           def Class.Nested.nested_instance_method(self) -> str: ...
 
        class ClassWithOverloadedConstructor:
          @overload
@@ -647,23 +649,27 @@ let test_register_functions _ =
 
   assert_global
     "Class.__init__"
-    "typing.Callable('Class.__init__')[[], None]";
+    "typing.Callable('Class.__init__')[[Named(self, $unknown)], None]";
   assert_global
     "Class.method"
-    "typing.Callable('Class.method')[[Named(i, int)], int]";
+    "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]";
   assert_global
-    "Class.Nested.nested_class_method"
-    "typing.Callable('Class.Nested.nested_class_method')[[], str]";
+    "Class.classmethod"
+    "typing.Callable('Class.classmethod')[[Named(i, str)], str]";
+  assert_global
+    "Class.Nested.nested_instance_method"
+    "typing.Callable('Class.Nested.nested_instance_method')[[Named(self, $unknown)], str]";
 
   assert_global
     "overloaded"
     ("typing.Callable('overloaded')[[Named(i, str)], None]" ^
-     "[[[Named(i, int)], None][[Named(i, float)], None]]");
+     "[[[Named(i, int)], None]" ^
+     "[[Named(i, float)], None]]");
   assert_global
     "ClassWithOverloadedConstructor.__init__"
     ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
-     "[[Named(i, int)], None]" ^
-     "[[[Named(s, str)], None]]")
+     "[[Named(self, $unknown), Named(i, int)], None]" ^
+     "[[[Named(self, $unknown), Named(s, str)], None]]")
 
 
 let test_populate _ =
@@ -839,7 +845,13 @@ let test_populate _ =
        ~global:true
        (Type.callable
           ~name:(Access.create "Class.__init__")
-          ~parameters:(Type.Callable.Defined [])
+          ~parameters:(Type.Callable.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = Access.create "self";
+                annotation = Type.Top;
+                default = false;
+              };
+            ])
           ~annotation:Type.Top
           ()));
 

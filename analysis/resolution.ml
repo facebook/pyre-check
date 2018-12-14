@@ -98,14 +98,6 @@ let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
       None
 
 
-let get_local_callable resolution ~access =
-  get_local resolution ~access
-  >>| Annotation.annotation
-  >>= function
-  | Type.Callable callable -> Some callable
-  | _ -> None
-
-
 let annotations { annotations; _ } =
   annotations
 

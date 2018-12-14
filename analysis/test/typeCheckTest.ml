@@ -6987,8 +6987,10 @@ let test_check_constructors _ =
         def foo(self) -> None:
           Foo.__init__(self, 'asdf')
     |}
-    (* TODO(T37956736): Explicitly calling instance methods is broken. *)
-    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, 2 were provided."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `Foo.__init__` but got `str`.";
+    ];
 
   (* Super calls. *)
   assert_type_errors
@@ -7071,8 +7073,7 @@ let test_check_explicit_method_call _ =
           pass
       Class.method(object(), 1)
     |}
-    (* TODO(T37954790): We aren't supporting calling explicit methods from classes. *)
-    ["Too many arguments [19]: Call `Class.method` expects 1 argument, 2 were provided."]
+    []
 
 
 let test_check_meta_annotations _ =
@@ -7330,10 +7331,9 @@ let test_check_callables _ =
       def bar() -> None:
         return Foo.bar
     |}
-    (* TODO(T37954790): We aren't supporting calling explicit methods from classes. *)
     [
       "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
+      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
     ];
 
   assert_type_errors

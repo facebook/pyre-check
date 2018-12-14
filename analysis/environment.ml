@@ -762,19 +762,16 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
 
           (* Register callable global. *)
           let callable =
+            (* Only omit `self` for class methods in the environment.When accessed globally,
+               Instance methods require the calling class to be passed in. *)
             let parent =
-              let parent =
+              if Define.is_class_method define then
                 parent
                 >>| (fun access -> Node.create ~location (Expression.Access access))
                 >>| Resolution.parse_annotation resolution
-              in
-              if Define.is_class_method define then
-                parent
                 >>| Type.meta
-              else if Define.is_static_method define then
-                None
               else
-                parent
+                None
             in
             Annotated.Callable.create ~parent [define] ~resolution
             |> Node.create ~location
