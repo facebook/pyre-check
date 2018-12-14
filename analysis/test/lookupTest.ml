@@ -215,6 +215,20 @@ let test_lookup_class_attributes _ =
     ~annotation:None
 
 
+let test_lookup_comprehensions _ =
+  let source =
+    {|a = [x for x in []]|}
+  in
+  let (lookup, _) = generate_lookup source in
+  assert_annotation_list
+    ~lookup
+    [
+      "1:0-1:1/typing.List[unknown]";
+      "1:16-1:18/typing.List[]";
+      "1:4-1:19/typing.List[unknown]";
+    ]
+
+
 let test_lookup_identifier_accesses _ =
   let source =
     {|
@@ -515,35 +529,40 @@ let test_lookup_unbound _ =
   let lookup, source = generate_lookup source in
   let assert_annotation = assert_annotation ~lookup ~source ~path:"test.py" in
 
-  (* TODO(T37961091): Fix the comprehension lookups here. *)
   assert_annotation_list
     ~lookup
     [
       "2:27-2:31/None";
       "2:8-2:12/List[Variable[_T]]";
       "3:18-3:20/typing.List[]";
+      "3:2-3:3/typing.List[unknown]";
+      "3:6-3:21/typing.List[unknown]";
+      "4:15-4:16/typing.List[unknown]";
+      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown]\
+       [[[Named(s, slice)], typing.List[unknown]][[Named(i, int)], unknown]]";
+      "4:22-4:23/typing.List[unknown]";
       "4:24-4:25/int";
+      "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(s, slice)], \
+       typing.List[unknown]][[Named(i, int)], unknown]]";
+      "4:7-4:8/typing.List[unknown]";
       "4:9-4:10/int";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "6:2-6:3/List[Variable[_T]]";
       "6:6-6:10/List[Variable[_T]]";
     ];
-  (* TODO(T37961091): Fix the comprehension lookups here. *)
   assert_annotation
     ~position:{ Location.line = 3; column = 6 }
-    ~annotation:None;
+    ~annotation:(Some "3:6-3:21/typing.List[unknown]");
   assert_annotation
     ~position:{ Location.line = 3; column = 18 }
     ~annotation:(Some "3:18-3:20/typing.List[]");
-  (* TODO(T37961091): Fix the comprehension lookups here. *)
   assert_annotation
     ~position:{ Location.line = 4; column = 7 }
-    ~annotation:None;
-  (* TODO(T37961091): Fix the comprehension lookups here. *)
+    ~annotation:(Some "4:7-4:8/typing.List[unknown]");
   assert_annotation
     ~position:{ Location.line = 4; column = 22 }
-    ~annotation:None
+    ~annotation:(Some "4:22-4:23/typing.List[unknown]")
 
 
 let test_lookup_if_statements _ =
@@ -736,6 +755,7 @@ let () =
     "lookup_union_type_resolution">::test_lookup_union_type_resolution;
     "lookup_unbound">::test_lookup_unbound;
     "lookup_if_statements">::test_lookup_if_statements;
+    "lookup_comprehensions">::test_lookup_comprehensions;
     "lookup_definitions">::test_lookup_definitions;
     "lookup_definitions_instances">::test_lookup_definitions_instances;
   ]

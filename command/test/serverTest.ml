@@ -1261,6 +1261,10 @@ let test_incremental_lookups _ =
     ~printer:(String.concat ~sep:", ")
     [
       ":3:11-3:12/int";
+      Format.sprintf
+        ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
+        (Source.qualifier ~handle
+         |> Access.show);
       ":6:11-6:12/int";
     ]
     annotations
