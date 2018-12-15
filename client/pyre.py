@@ -115,12 +115,12 @@ def main() -> int:
     # Link tree determination.
     buck_arguments = parser.add_argument_group("buck")
     buck_arguments.add_argument(
+        "--target", action="append", dest="targets", help="The buck target to check"
+    )
+    buck_arguments.add_argument(
         "--build",
         action="store_true",
         help="Freshly build all the necessary artifacts.",
-    )
-    buck_arguments.add_argument(
-        "--target", action="append", dest="targets", help="The buck target to check"
     )
 
     source_directories = parser.add_argument_group("source-directories")
@@ -129,6 +129,9 @@ def main() -> int:
         action="append",
         dest="source_directories",
         help="The source directory to check",
+    )
+    source_directories.add_argument(
+        "--filter-directory", help=argparse.SUPPRESS  # override filter directory
     )
 
     parser.add_argument(

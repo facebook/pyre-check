@@ -171,7 +171,10 @@ def resolve_analysis_directory(
     source_directories = _resolve_source_directories(
         arguments, commands, configuration, prompt
     )
-    filter_paths = _resolve_filter_paths(arguments, configuration)
+    if arguments.filter_directory:
+        filter_paths = [arguments.filter_directory]
+    else:
+        filter_paths = _resolve_filter_paths(arguments, configuration)
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
@@ -181,10 +184,9 @@ def resolve_analysis_directory(
     if len(source_directories) == 1:
         analysis_directory = AnalysisDirectory(source_directories.pop(), filter_paths)
     else:
-        shared_analysis_directory = SharedAnalysisDirectory(
+        analysis_directory = SharedAnalysisDirectory(
             source_directories, filter_paths, local_configuration_root, isolate
         )
-        analysis_directory = shared_analysis_directory
     return analysis_directory
 
 

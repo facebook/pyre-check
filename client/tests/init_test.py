@@ -14,8 +14,11 @@ from .. import (
     buck,
     commands,
     find_configuration_root,
+    resolve_analysis_directory,
     switch_root,
+    translate_paths,
 )
+from ..filesystem import AnalysisDirectory, SharedAnalysisDirectory
 
 
 class InitTest(unittest.TestCase):
@@ -188,3 +191,54 @@ class InitTest(unittest.TestCase):
         configuration.local_configuration_root = "/project/local"
         filter_paths = _resolve_filter_paths(arguments, configuration)
         self.assertEqual(filter_paths, ["/project/local"])
+
+    @patch.object(
+        buck,
+        "generate_source_directories",
+        side_effect=lambda targets, build, prompt: targets,
+    )
+    def test_resolve_analysis_directory(self, buck) -> None:
+        arguments = MagicMock()
+        arguments.source_directories = ["a/b"]
+        arguments.targets = None
+        arguments.build = None
+        arguments.filter_directory = None
+        arguments.original_directory = "/project"
+        arguments.current_directory = "/project"
+
+        def assert_analysis_directory(expected, actual) -> None:
+            self.assertEqual(expected.get_root(), actual.get_root())
+            self.assertEqual(expected.get_filter_root(), actual.get_filter_root())
+
+        configuration = MagicMock()
+        configuration.source_directories = []
+        configuration.targets = []
+        configuration.local_configuration_root = None
+
+        expected_analysis_directory = AnalysisDirectory("a/b")
+        analysis_directory = resolve_analysis_directory(
+            arguments, commands, configuration
+        )
+        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+
+        arguments.source_directories = ["/symlinked/directory"]
+        arguments.filter_directory = "/real/directory"
+        expected_analysis_directory = AnalysisDirectory(
+            "/symlinked/directory", ["/real/directory"]
+        )
+        analysis_directory = resolve_analysis_directory(
+            arguments, commands, configuration
+        )
+        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+
+        arguments.source_directories = ["a/b"]
+        arguments.targets = ["//x:y", "//y/..."]
+        arguments.filter_directory = "/filter"
+        configuration.targets = ["//overridden/..."]
+        expected_analysis_directory = SharedAnalysisDirectory(
+            ["a/b", "//x:y", "//y:/..."], ["/filter"]
+        )
+        analysis_directory = resolve_analysis_directory(
+            arguments, commands, configuration
+        )
+        assert_analysis_directory(expected_analysis_directory, analysis_directory)
