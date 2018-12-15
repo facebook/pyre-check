@@ -164,11 +164,14 @@ let parse_list named_sources =
       ~content:(trim_extra_indentation source)
       (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
   in
-  Service.Parser.parse_sources
-    ~configuration:(
-      Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
-    ~scheduler:(Scheduler.mock ())
-    ~files:(List.map ~f:create_file named_sources)
+  let { Service.Parser.parsed; _ } =
+    Service.Parser.parse_sources
+      ~configuration:(
+        Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
+      ~scheduler:(Scheduler.mock ())
+      ~files:(List.map ~f:create_file named_sources)
+  in
+  parsed
 
 
 let parse_single_statement ?(preprocess = false) source =

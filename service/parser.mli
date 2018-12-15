@@ -7,11 +7,17 @@
 val find_sources: ?filter: (string -> bool) -> Configuration.Analysis.t -> Pyre.Path.t list
 val find_stubs: configuration: Configuration.Analysis.t -> Pyre.Path.t list
 
+type parse_sources_result = {
+  parsed: File.Handle.t list;
+  syntax_error: File.Handle.t list;
+  system_error: File.Handle.t list;
+}
+
 val parse_sources
   :  configuration: Configuration.Analysis.t
   -> scheduler: Scheduler.t
   -> files: File.t list
-  -> File.Handle.t list
+  -> parse_sources_result
 
 type result = {
   stubs: File.Handle.t list;

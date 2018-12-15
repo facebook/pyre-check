@@ -35,7 +35,7 @@ let test_parse_stubs_modules_list _ =
       create_module_with_relative "2and3/modd.py";
     ]
   in
-  let handles =
+  let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
       ~configuration:(Configuration.Analysis.create ())
       ~scheduler:(Scheduler.mock ())
@@ -170,7 +170,7 @@ let test_parse_source _ =
       ~content:"def foo()->int:\n    return 1\n"
       (Path.create_relative ~root ~relative:"a.py")
   in
-  let handles =
+  let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
       ~configuration:(
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
@@ -326,7 +326,7 @@ let test_register_modules _ =
     let configuration =
       Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
     in
-    let sources =
+    let { Service.Parser.parsed = sources; _ } =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler:(Scheduler.mock ())

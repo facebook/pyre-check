@@ -814,7 +814,9 @@ let process_type_check_request
       in
       List.partition_tf ~f:is_stub update_environment_with
     in
-    let stubs = Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs in
+    let { Service.Parser.parsed = stubs; _ } =
+      Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs
+    in
     let sources =
       let keep file =
         (handle file
@@ -826,7 +828,9 @@ let process_type_check_request
       in
       List.filter ~f:keep sources
     in
-    let sources = Service.Parser.parse_sources ~configuration ~scheduler ~files:sources in
+    let { Service.Parser.parsed = sources; _ } =
+      Service.Parser.parse_sources ~configuration ~scheduler ~files:sources
+    in
     stubs @ sources
   in
   Log.log

@@ -11,39 +11,48 @@ open Pyre
 open PyreParser
 
 
+type 'success parse_result =
+  | Success of 'success
+  | SyntaxError of File.Handle.t
+  | SystemError of File.Handle.t
+
+
 let parse_source ~configuration ?(show_parser_errors = true) file =
+  let parse_lines ~handle lines =
+    let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
+    try
+      let statements = Parser.parse ~handle lines in
+      let hash = [%hash: string list] lines in
+      Success (
+        Source.create
+          ~docstring:(Statement.extract_docstring statements)
+          ~hash
+          ~metadata
+          ~handle
+          ~qualifier:(Source.qualifier ~handle)
+          statements)
+    with
+    | Parser.Error error ->
+        if show_parser_errors then
+          Log.log ~section:`Parser "%s" error;
+        SyntaxError handle
+    | Failure error ->
+        Log.error "%s" error;
+        SystemError handle
+  in
   File.handle ~configuration file
   |> fun handle ->
   Path.readlink (File.path file)
   >>| (fun target -> Ast.SharedMemory.SymlinksToPaths.add target (File.path file))
   |> ignore;
   File.lines file
-  >>= fun lines ->
-  let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
-  try
-    let statements = Parser.parse ~handle lines in
-    let hash = [%hash: string list] lines in
-    Some (
-      Source.create
-        ~docstring:(Statement.extract_docstring statements)
-        ~hash
-        ~metadata
-        ~handle
-        ~qualifier:(Source.qualifier ~handle)
-        statements)
-  with
-  | Parser.Error error ->
-      if show_parser_errors then
-        Log.log ~section:`Parser "%s" error;
-      None
-  | Failure error ->
-      Log.error "%s" error;
-      None
+  >>| parse_lines ~handle
+  |> Option.value ~default:(SystemError handle)
 
 
 module FixpointResult = struct
   type t = {
-    parsed: File.Handle.t list;
+    parsed: File.Handle.t parse_result list;
     not_parsed: File.t list;
   }
 
@@ -91,21 +100,31 @@ let parse_sources_job ~show_parser_errors ~force ~configuration ~files =
           Analysis.Preprocessing.preprocess source
           |> fun preprocessed -> store_result ~preprocessed ~file
         in
-        { result with parsed = handle :: parsed }
+        { result with parsed = Success handle :: parsed }
       else
         match Analysis.Preprocessing.try_preprocess source with
         | Some preprocessed ->
             let handle = store_result ~preprocessed ~file in
-            { result with parsed = handle :: parsed }
+            { result with parsed = Success handle :: parsed }
         | None ->
             { result with not_parsed = file :: not_parsed }
     in
 
     parse_source ~configuration ~show_parser_errors file
-    >>| use_parsed_source
-    |> Option.value ~default:result
+    |> fun parsed_source ->
+    match parsed_source with
+    | Success parsed -> use_parsed_source parsed
+    | SyntaxError error -> { result with parsed = SyntaxError error :: parsed }
+    | SystemError error -> { result with parsed = SystemError error :: parsed }
   in
   List.fold ~init:{ FixpointResult.parsed = []; not_parsed = [] } ~f:parse files
+
+
+type parse_sources_result = {
+  parsed: File.Handle.t list;
+  syntax_error: File.Handle.t list;
+  system_error: File.Handle.t list;
+}
 
 
 let parse_sources ~configuration ~scheduler ~files =
@@ -136,7 +155,7 @@ let parse_sources ~configuration ~scheduler ~files =
       (* We made some progress, continue with the fixpoint. *)
       fixpoint { parsed = parsed @ new_parsed; not_parsed = new_not_parsed }
   in
-  let handles = fixpoint { parsed = []; not_parsed = files } in
+  let result = fixpoint { parsed = []; not_parsed = files } in
   let () =
     let get_qualifier file =
       File.handle ~configuration file
@@ -145,24 +164,52 @@ let parse_sources ~configuration ~scheduler ~files =
     List.map files ~f:get_qualifier
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
   in
-  handles
+  let categorize ({ parsed; syntax_error; system_error } as result) parse_result =
+    match parse_result with
+    | Success handle -> { result with parsed = handle :: parsed }
+    | SyntaxError handle -> { result with syntax_error = handle :: syntax_error }
+    | SystemError handle -> { result with system_error = handle :: system_error }
+  in
+  List.fold result ~init:{ parsed = []; syntax_error = []; system_error = [] } ~f:categorize
 
 
-let log_parse_errors ~count ~description =
+let log_parse_errors ~syntax_error ~system_error ~description =
+  let syntax_errors = List.length syntax_error in
+  let system_errors = List.length system_error in
+  let count = syntax_errors + system_errors in
   if count > 0 then
     let hint =
-      if not (Log.is_enabled `Parser) then
+      if syntax_errors > 0 && not (Log.is_enabled `Parser) then
         Format.asprintf
-          " Run `pyre --show-parse-errors%s` for more details."
+          " Run `pyre --show-parse-errors%s` for more details%s."
           (try " " ^ (Array.nget Sys.argv 1) with _ -> "")
+          (if system_errors > 0 then " on the syntax errors" else "")
       else
         ""
     in
+    let details =
+      let to_string count description =
+        Format.sprintf "%d %s%s"
+          count
+          description
+          (if count == 1 then "" else "s")
+      in
+      if syntax_errors > 0 && system_errors > 0 then
+        Format.sprintf
+          ": %s, %s"
+          (to_string syntax_errors "syntax error")
+          (to_string system_errors "system error")
+      else if syntax_errors > 0 then
+        " due to syntax errors"
+      else
+        " due to system errors"
+    in
     Log.warning
-      "Could not parse %d %s%s due to syntax errors!%s"
+      "Could not parse %d %s%s%s!%s"
       count
       description
       (if count > 1 then "s" else "")
+      details
       hint
 
 
@@ -282,13 +329,12 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     let timer = Timer.start () in
     let stub_paths = find_stubs ~configuration in
     Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
-    let handles =
+    let { parsed; syntax_error; system_error }  =
       parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create stub_paths)
     in
-    let not_parsed = (List.length stub_paths) - (List.length handles) in
-    log_parse_errors ~count:not_parsed ~description:"external file";
+    log_parse_errors ~syntax_error ~system_error ~description:"external file";
     Statistics.performance ~name:"stubs parsed" ~timer ();
-    handles
+    parsed
   in
   let known_stubs =
     let add_to_known_stubs sofar handle =
@@ -324,12 +370,11 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     let timer = Timer.start () in
     let paths = find_sources configuration ~filter in
     Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp local_root;
-    let handles =
+    let { parsed; syntax_error; system_error }  =
       parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
     in
-    let not_parsed = (List.length paths) - (List.length handles) in
-    log_parse_errors ~count:not_parsed ~description:"file";
+    log_parse_errors ~syntax_error ~system_error ~description:"file";
     Statistics.performance ~name:"sources parsed" ~timer ();
-    handles
+    parsed
   in
   { stubs; sources }

@@ -1165,13 +1165,15 @@ let test_expand_wildcard_imports _ =
     let files = List.map environment_sources ~f:create_file in
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
-    let file_to_check_handle =
+    let { Service.Parser.parsed; _ } =
       Service.Parser.parse_sources
         ~configuration:(
           Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
         ~files:(file_to_check :: files)
-      |> List.find_exn ~f:(fun handle -> File.Handle.show handle = "test.py")
+    in
+    let file_to_check_handle =
+      List.find_exn parsed ~f:(fun handle -> File.Handle.show handle = "test.py")
     in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)

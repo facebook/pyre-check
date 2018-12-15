@@ -13,7 +13,7 @@ open Service
 
 let test_coverage _ =
   let coverage =
-    let handles =
+    let { Service.Parser.parsed; _ } =
       Service.Parser.parse_sources
         ~configuration:(Configuration.Analysis.create ())
         ~scheduler:(Scheduler.mock ())
@@ -29,7 +29,7 @@ let test_coverage _ =
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
         ]
     in
-    Service.Coverage.coverage ~number_of_files:3 ~sources:handles
+    Service.Coverage.coverage ~number_of_files:3 ~sources:parsed
   in
   assert_equal
     coverage
