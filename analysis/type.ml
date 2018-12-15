@@ -279,7 +279,9 @@ let rec pp format annotation =
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let parameters =
-        if List.for_all parameters ~f:(equal Bottom) then
+        if List.for_all
+            parameters
+            ~f:(fun parameter -> equal parameter Bottom || equal parameter Top) then
           ""
         else
           List.map parameters ~f:show

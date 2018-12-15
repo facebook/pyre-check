@@ -2545,7 +2545,7 @@ let test_check_comprehensions _ =
     |}
     [
       "Incompatible return type [7]: Expected `typing.Dict[int, str]` but got " ^
-      "`typing.Dict[unknown, unknown]`.";
+      "`typing.Dict[]`.";
       "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
     ];
 
