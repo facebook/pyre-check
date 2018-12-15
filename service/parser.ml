@@ -210,7 +210,24 @@ let log_parse_errors ~syntax_error ~system_error ~description =
       description
       (if count > 1 then "s" else "")
       details
-      hint
+      hint;
+    let trace list =
+      List.map list ~f:File.Handle.show
+      |> String.concat ~sep:";"
+    in
+    Statistics.event
+      ~flush:true
+      ~name:"parse errors"
+      ~integers:[
+        "syntax errors", syntax_errors;
+        "system errors", system_errors;
+      ]
+      ~normals:[
+        "description", description;
+        "syntax errors trace", trace syntax_error;
+        "system errors trace", trace system_error;
+      ]
+      ()
 
 
 let find_stubs
