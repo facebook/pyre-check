@@ -20,5 +20,4 @@
   ppx_deriving_yojson.runtime
   pyrelib.ast
   pyrelib.analysis
-  pyrelib.experimental
   pyrelib.version))

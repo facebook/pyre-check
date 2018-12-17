@@ -21,12 +21,6 @@
 
 
 (library
- (name experimental)
- (modules experimental)
- (public_name pyrelib.experimental))
-
-
-(library
  (name timer)
  (modules timer)
  (public_name pyrelib.timer)
