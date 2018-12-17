@@ -454,6 +454,7 @@ let fold ~resolution ~initial ~f access =
           |> Option.to_list
         in
         match annotation with
+        | Type.Variable { constraints = Explicit annotations; _ }
         | Type.Union annotations ->
             List.map annotations ~f:find_attribute
             |> List.concat

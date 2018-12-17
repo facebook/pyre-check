@@ -67,9 +67,14 @@ let test_fold _ =
           class Class(Super):
             attribute: int = 1
             def method(self) -> int: ...
+          class Other():
+            attribute: str = "A"
+            def method(self) -> str: ...
           instance: Class
           TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+          TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
           v_instance: TV_Bound
+          v_explicit_instance: TV_Explicit
 
           def function() -> str:
             def nested() -> str: ...
@@ -365,6 +370,78 @@ let test_fold _ =
       { annotation = bound_type_variable; element = Value };
       { annotation = Type.Top; element = NotCallable bound_type_variable };
     ];
+
+  let explicit_type_variable =
+    Type.Variable {
+      variable = Identifier.create "TV_Explicit";
+      constraints = Explicit [Type.primitive "Class"; Type.primitive "Other"];
+      variance = Invariant;
+    }
+  in
+
+  assert_fold "v_explicit_instance" [{ annotation = explicit_type_variable; element = Value }];
+  assert_fold
+    "v_explicit_instance.attribute"
+    [
+      { annotation = explicit_type_variable; element = Value };
+      {
+        annotation = Type.Union [Type.integer; Type.string];
+        element = Attribute { name = "attribute"; defined = true };
+      };
+    ];
+  assert_fold
+    "v_explicit_instance.undefined.undefined"
+    [
+      { annotation = explicit_type_variable; element = Value };
+      { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
+    ];
+  assert_fold
+    "v_explicit_instance.method()"
+    [
+      { annotation = explicit_type_variable; element = Value };
+      {
+        annotation =
+          Type.Union [
+            Type.Callable {
+              kind = Named (Access.create "Class.method");
+              implementation = {
+                annotation= Type.integer;
+                parameters= Defined [
+                    Named { name = Access.create "self"; annotation = Type.Top; default = false };
+                  ];
+              };
+              overloads = [];
+              implicit = Instance;
+            };
+            Type.Callable {
+              kind = Named (Access.create "Other.method");
+              implementation = {
+                annotation= Type.string;
+                parameters= Defined [
+                    Named { name = Access.create "self"; annotation = Type.Top; default = false };
+                  ];
+              };
+              overloads = [];
+              implicit = Instance;
+            };
+          ];
+        element = Attribute { name = "method"; defined = true };
+      };
+      {
+        annotation = Type.Union [Type.integer; Type.string];
+        element = SignatureFound {
+            callable = "typing.Callable[[Named(self, unknown)], typing.Union[int, str]]";
+            callees = ["Class.method"; "Other.method"];
+          };
+      };
+    ];
+  assert_fold
+    "v_explicit_instance()"
+    [
+      { annotation = explicit_type_variable; element = Value };
+      { annotation = Type.Top; element = NotCallable explicit_type_variable };
+    ];
+
 
   assert_fold
     ~parent:(Access.create "Class")

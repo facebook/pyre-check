@@ -5722,7 +5722,6 @@ let test_check_variable_restrictions _ =
          return variable_restricted_identity(x)
     |}
     ["Incompatible return type [7]: Expected `str` but got `unknown`."];
-
   assert_type_errors
     {|
       T = typing.TypeVar('T', int, str)
@@ -5730,7 +5729,20 @@ let test_check_variable_restrictions _ =
       def bar(t: T) -> None:
         foo(t)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', 'C', 'X')
+      class C():
+        def baz(self) -> int:
+          return 7
+      class X():
+        def baz(self) -> str:
+          return "A"
+      def foo(t: T) -> int:
+        return t.baz()
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
 
 
 let test_check_variable_bindings _ =
