@@ -406,23 +406,25 @@ let test_fold _ =
               kind = Named (Access.create "Class.method");
               implementation = {
                 annotation= Type.integer;
-                parameters= Defined [
-                    Named { name = Access.create "self"; annotation = Type.Top; default = false };
-                  ];
+                parameters= Defined [];
               };
               overloads = [];
-              implicit = Instance;
+              implicit = Some {
+                  Type.Callable.implicit_annotation = Type.primitive "Class";
+                  name = Access.create "self";
+                };
             };
             Type.Callable {
               kind = Named (Access.create "Other.method");
               implementation = {
                 annotation= Type.string;
-                parameters= Defined [
-                    Named { name = Access.create "self"; annotation = Type.Top; default = false };
-                  ];
+                parameters= Defined [];
               };
               overloads = [];
-              implicit = Instance;
+              implicit = Some {
+                  Type.Callable.implicit_annotation = Type.primitive "Other";
+                  name = Access.create "self";
+                };
             };
           ];
         element = Attribute { name = "method"; defined = true };
@@ -430,7 +432,7 @@ let test_fold _ =
       {
         annotation = Type.Union [Type.integer; Type.string];
         element = SignatureFound {
-            callable = "typing.Callable[[Named(self, unknown)], typing.Union[int, str]]";
+            callable = "typing.Callable[[], typing.Union[int, str]]";
             callees = ["Class.method"; "Other.method"];
           };
       };
