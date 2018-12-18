@@ -423,9 +423,10 @@ let messages ~detailed:_ ~define location kind =
   | MissingTypeParameters { annotation; number_of_parameters } ->
       [
         Format.asprintf
-          "Generic type `%a` expects %d type parameters."
+          "Generic type `%a` expects %d type parameter%s."
           Type.pp annotation
-          number_of_parameters;
+          number_of_parameters
+          (if (number_of_parameters > 1) then "s" else "");
       ]
   | IncompatibleParameterType {
       name;
