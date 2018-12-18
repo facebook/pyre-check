@@ -2753,6 +2753,26 @@ let test_assign _ =
       };
     ];
   assert_parsed_equal
+    "a: int"
+    [
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some !"int";
+        value = +Ellipses;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "a # type: int"
+    [
+      +Assign {
+        Assign.target = !"a";
+        annotation = Some (+String (StringLiteral.create "int"));
+        value = +Ellipses;
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
     "a = 1  # type: ignore"
     [
       +Assign {

@@ -370,6 +370,18 @@ small_statement:
       }]
     }
   | target = test_list;
+    annotation = comment_annotation {
+      [{
+        Node.location = target.Node.location;
+        value = Assign {
+          Assign.target;
+          annotation = Some annotation;
+          value = Node.create_with_default_location Ellipses;
+          parent = None;
+        };
+      }]
+    }
+  | target = test_list;
     annotation = annotation;
     EQUALS;
     value = test_list {
