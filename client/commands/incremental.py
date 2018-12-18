@@ -73,7 +73,6 @@ class Incremental(Reporting):
 
         return flags
 
-    # pyre-ignore: T31696900
     def _read_stderr(self, _stream, analysis_directory) -> None:
         stderr_file = os.path.join(analysis_directory, ".pyre/server/server.stdout")
         with subprocess.Popen(

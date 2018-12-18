@@ -5,7 +5,7 @@ import ast
 import json
 import os
 import subprocess
-from typing import Mapping  # noqa
+from typing import Dict, Mapping # noqa
 
 from tools.pyre.client import find_configuration_root
 from tools.pyre.client.commands.command import ExitCode
@@ -59,7 +59,6 @@ class AddTypes(ast.NodeTransformer):
     def __init__(self, annotation_lookup: Mapping[Location, Annotation]) -> None:
         self._annotation_lookup = annotation_lookup
 
-    # pyre-fixme: Overridden generic_visit has return type of `None`
     def generic_visit(self, node: ast.AST) -> ast.AST:
         if hasattr(node, "lineno") and hasattr(node, "col_offset"):
             location = Location(node.lineno, node.col_offset)
@@ -145,7 +144,7 @@ class PyreAst:
                 )
             )
         annotation_locations_list = json.loads(annotations)["response"]["types"]
-        type_lookup = {}  # type: Mapping[Location, Annotation]
+        type_lookup = {}  # type: Dict[Location, Annotation]
         for annotation_location in annotation_locations_list:
             start = annotation_location["location"]["start"]
             stop = annotation_location["location"]["stop"]

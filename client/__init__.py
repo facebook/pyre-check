@@ -209,7 +209,7 @@ def log_statistics(
     integers = integers or {}
     normals = normals or {}
     if configuration:
-        normals = {**normals, "version": configuration.version_hash}
+        normals = {**normals, "version": configuration.version_hash}  # type: Dict[str, str]
         if not logger:
             logger = configuration.logger
     if not logger:

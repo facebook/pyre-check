@@ -5,7 +5,7 @@ import ast
 import os
 import unittest
 from tempfile import NamedTemporaryFile
-from typing import Any, List, Mapping, Optional, Tuple  # noqa
+from typing import Any, List, Dict, Mapping, Optional, Tuple  # noqa
 from unittest.mock import Mock, patch
 
 from tools.pyre.python_ast.pyre import (
@@ -17,7 +17,6 @@ from tools.pyre.python_ast.pyre import (
 
 
 class AddTypeAttribute(ast.NodeTransformer):
-    # pyre-fixme: Overridden generic_visit has return type of `None`
     def generic_visit(self, node: ast.AST) -> ast.AST:
         if hasattr(node, "lineno") and hasattr(node, "col_offset"):
             setattr(node, "_attributes", node._attributes + ("type",))
@@ -64,7 +63,7 @@ class TypedAstTestCase(unittest.TestCase):
         self, annotation_list: List[Tuple[int, int, int, int, str]]
     ) -> Mapping[Location, Annotation]:
         def add_file_type(
-            file_types: Mapping[Location, Annotation],
+            file_types: Dict[Location, Annotation],
             start_line: int,
             start_column: int,
             end_line: int,
@@ -79,7 +78,6 @@ class TypedAstTestCase(unittest.TestCase):
 
         file_types: Mapping[Location, Annotation] = {}
         for annotation in annotation_list:
-            # pyre-ignore: Unpacking tuple issue
             file_types = add_file_type(file_types, *annotation)
         return file_types
 

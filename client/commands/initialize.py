@@ -72,7 +72,7 @@ class Initialize(Command):
         return configuration
 
     def _get_local_configuration(self) -> Dict[str, Any]:
-        configuration = {}
+        configuration: Dict[str, Any] = {}
         targets = log.get_input(
             "Which buck target(s) should pyre analyze? (//target:a,//target/b/...) "
         )
