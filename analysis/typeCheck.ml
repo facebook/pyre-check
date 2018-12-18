@@ -674,22 +674,25 @@ module State = struct
               end
           | _ ->
               let add_missing_parameter_error ~annotation ~due_to_any errors =
-                let error =
-                  let sanitized_access =
-                    name
-                    |> Identifier.sanitized
-                    |> fun name -> [Access.Identifier name]
-                  in
-                  Error.create
-                    ~location
-                    ~kind:(Error.MissingParameterAnnotation {
-                        name = sanitized_access;
-                        annotation;
-                        due_to_any;
-                      })
-                    ~define:define_node
+                let sanitized_access =
+                  name
+                  |> Identifier.sanitized
+                  |> fun name -> [Access.Identifier name]
                 in
-                Map.set ~key:location ~data:error errors
+                if Access.show sanitized_access = "*" then
+                  errors
+                else
+                  let error =
+                    Error.create
+                      ~location
+                      ~kind:(Error.MissingParameterAnnotation {
+                          name = sanitized_access;
+                          annotation;
+                          due_to_any;
+                        })
+                      ~define:define_node
+                  in
+                  Map.set ~key:location ~data:error errors
               in
               match annotation, value with
               | Some annotation, Some value

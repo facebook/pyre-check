@@ -2900,7 +2900,7 @@ let test_check_function_parameters _ =
       def foo(i: int, *, j: int) -> None:
         pass
     |}
-    ["Missing parameter annotation [2]: Parameter `*` has no type specified."];
+    [];
 
   assert_type_errors
     {|
