@@ -8006,6 +8006,10 @@ let test_check_typed_dictionaries _ =
               alpha: int
               beta: str
               gamma: bool
+            class ClassBasedNonTotalTypedDictGreekLetters(TypedDict, total=False):
+              alpha: int
+              beta: str
+              gamma: bool
           |}
       }
     in
@@ -8261,6 +8265,24 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie(year=1982)
+        return movie['year']
+    |}
+    ["Missing argument [20]: Call `__init__` expects argument `name`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int}, total=False)
+      def foo() -> int:
+        movie = Movie(year=1982)
+        return movie['year']
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
@@ -8340,6 +8362,22 @@ let test_check_typed_dictionaries _ =
       from foo.bar.baz import ClassBasedTypedDictGreekLetters
       def f() -> int:
         baz = ClassBasedTypedDictGreekLetters(alpha = 7, beta = "a", gamma = True)
+        return baz['alpha']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from foo.bar.baz import ClassBasedTypedDictGreekLetters
+      def f() -> int:
+        baz = ClassBasedTypedDictGreekLetters(alpha = 7, gamma = True)
+        return baz['alpha']
+    |}
+    ["Missing argument [20]: Call `__init__` expects argument `beta`."];
+  assert_test_typed_dictionary
+    {|
+      from foo.bar.baz import ClassBasedNonTotalTypedDictGreekLetters
+      def f() -> int:
+        baz = ClassBasedNonTotalTypedDictGreekLetters(alpha = 7, gamma = True)
         return baz['alpha']
     |}
     [];

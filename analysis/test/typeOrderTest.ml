@@ -1080,38 +1080,58 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('foo', str), ('bar', int), ('baz', int))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
-  assert_false
-    (less_or_equal
-       order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('foo', str), ('bar', float))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
   assert_true
     (less_or_equal
        order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str))]"
-       ~right:"mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int))]");
+       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('foo', str), ('bar', int), ('baz', int))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', int), ('baz', int))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int))]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('foo', str), ('bar', float))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str))]"
+       ~right:"mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int))]");
 
   assert_true
     (less_or_equal
        order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
+       ~right:"typing.Mapping[str, typing.Any]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', int))]"
        ~right:"typing.Mapping[str, typing.Any]");
   assert_false
     (less_or_equal
        order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
        ~right:"typing.Mapping[str, int]");
   assert_false
     (less_or_equal
        order
        ~left:"typing.Mapping[str, typing.Any]"
-       ~right:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]");
+       ~right:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]");
   assert_false
     (less_or_equal
        order
-       ~left:"mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', int))]"
+       ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
        ~right:"dict[str, typing.Any]")
 
 
@@ -1586,27 +1606,39 @@ let test_join _ =
 
   (* TypedDictionaries *)
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
-    "mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int), ('baz', int))]"
-    "mypy_extensions.TypedDict[('$anonymous', ('foo', str), ('bar', int))]";
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int), ('baz', int))]"
+    "mypy_extensions.TypedDict[('$anonymous', True, ('foo', str), ('bar', int))]";
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('ben', int))]"
-    "mypy_extensions.TypedDict[('Beta', ('foo', str))]"
-    "mypy_extensions.TypedDict[('$anonymous', )]";
+    "mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int), ('baz', int))]"
+    "mypy_extensions.TypedDict[('$anonymous', False, ('foo', str), ('bar', int))]";
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
-    "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', str))]"
+    "mypy_extensions.TypedDict[('$anonymous', True)]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', int))]"
     "typing.Mapping[str, typing.Any]";
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int), ('baz', int))]"
+    "typing.Mapping[str, typing.Any]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[str, str]"
     "typing.Mapping[str, typing.Any]";
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "mypy_extensions.TypedDict[('Alpha', False, ('bar', str), ('foo', str), ('ben', str))]"
+    "typing.Mapping[str, str]"
+    "typing.Mapping[str, typing.Any]";
+  assert_join
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[int, str]"
     "typing.Any";
   assert_join
-    "mypy_extensions.TypedDict[('Alpha', ('bar', str), ('foo', str), ('ben', str))]"
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Dict[str, str]"
     "typing.Any";
 
@@ -1767,16 +1799,25 @@ let test_meet _ =
 
   (* TypedDictionaries *)
   assert_meet
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
-    "mypy_extensions.TypedDict[('Beta', ('foo', str), ('bar', int), ('baz', int))]"
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int), ('baz', int))]"
     ("mypy_extensions.TypedDict" ^
-     "[('$anonymous', ('bar', int), ('baz', int), ('ben', int), ('foo', str))]");
+     "[('$anonymous', True, ('bar', int), ('baz', int), ('ben', int), ('foo', str))]");
   assert_meet
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
-    "mypy_extensions.TypedDict[('Beta', ('foo', int))]"
+    "mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', False, ('foo', str), ('bar', int), ('baz', int))]"
+    ("mypy_extensions.TypedDict" ^
+     "[('$anonymous', False, ('bar', int), ('baz', int), ('ben', int), ('foo', str))]");
+  assert_meet
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', int))]"
     "$bottom";
   assert_meet
-    "mypy_extensions.TypedDict[('Alpha', ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Alpha', False, ('bar', int), ('foo', str), ('ben', int))]"
+    "mypy_extensions.TypedDict[('Beta', True, ('foo', str), ('bar', int), ('baz', int))]"
+    "$bottom";
+  assert_meet
+    "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
     "typing.Mapping[str, typing.Any]"
     "$bottom";
 

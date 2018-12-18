@@ -327,11 +327,11 @@ let fold ~resolution ~initial ~f access =
             | _ -> false
           in
           match implicit_annotation, callable with
-          | Some (Type.TypedDictionary { fields; name }),
+          | Some (Type.TypedDictionary { fields; name; _ }),
             { Type.Record.Callable.kind = Named access; _ }
             when tail_is access "__getitem__" ->
               resolve_typed_dictionary_get_item_callable ~fields ~name
-          | Some (Type.TypedDictionary { fields; name }),
+          | Some (Type.TypedDictionary { fields; name; _ }),
             { Type.Record.Callable.kind = Named access; _ }
             when tail_is access "__setitem__" ->
               resolve_typed_dictionary_set_item_callable ~fields ~name
@@ -511,8 +511,8 @@ let fold ~resolution ~initial ~f access =
                 | meta when Type.is_meta resolved ->
                     let callable =
                       match Type.single_parameter meta with
-                      | TypedDictionary { name; fields } ->
-                          Type.TypedDictionary.constructor ~name ~fields
+                      | TypedDictionary { name; fields; total } ->
+                          Type.TypedDictionary.constructor ~name ~fields ~total
                           |> Option.some
                       | meta_parameter ->
                           let class_definition =

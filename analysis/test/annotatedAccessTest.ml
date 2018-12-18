@@ -519,6 +519,7 @@ let test_fold _ =
           { name = "year"; annotation = Type.integer };
           { name = "title"; annotation = Type.string };
         ];
+        total = true;
       };
     element = Value;
   } in

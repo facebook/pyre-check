@@ -82,7 +82,7 @@ and t =
   | Primitive of Identifier.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
+  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
   | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show]
@@ -139,14 +139,18 @@ module Callable : sig
 end
 
 module TypedDictionary : sig
-  val anonymous: typed_dictionary_field list -> t
+  val anonymous: total: bool -> typed_dictionary_field list -> t
 
   val fields_have_colliding_keys
     : typed_dictionary_field list
     -> typed_dictionary_field list
     -> bool
 
-  val constructor: name: Identifier.t -> fields: typed_dictionary_field list -> Callable.t
+  val constructor
+    : name: Identifier.t
+    -> fields: typed_dictionary_field list
+    -> total: bool
+    -> Callable.t
   val setter: callable: Callable.t -> annotation: t -> Callable.t
 end
 

@@ -789,7 +789,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       let field_not_found field =
         not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
       in
-      not (List.exists right.fields ~f:field_not_found)
+      (left.total = right.total) && not (List.exists right.fields ~f:field_not_found)
 
   | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key; value ] }
     when Identifier.show mapping = "typing.Mapping" &&
@@ -1159,9 +1159,12 @@ and join ((module Handler: Handler) as order) left right =
       Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
-    | Type.TypedDictionary { fields = left_fields; _ },
-      Type.TypedDictionary { fields = right_fields; _ } ->
-        if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
+    | Type.TypedDictionary { fields = left_fields; total = left_total; _  },
+      Type.TypedDictionary { fields = right_fields; total = right_total; _ } ->
+        if
+          Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields ||
+          left_total <> right_total
+        then
           Type.Parametric {
             name = Identifier.create "typing.Mapping";
             parameters = [ Type.string; Type.Object ]
@@ -1178,7 +1181,7 @@ and join ((module Handler: Handler) as order) left right =
               in
               List.filter right_fields ~f:found_match
           in
-          Type.TypedDictionary.anonymous join_fields
+          Type.TypedDictionary.anonymous ~total:left_total join_fields
 
     | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }
     | Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }, Type.TypedDictionary _
@@ -1404,9 +1407,12 @@ and meet ((module Handler: Handler) as order) left right =
     | Type.Callable _, _
     | _, Type.Callable _ ->
         Type.Bottom
-    | Type.TypedDictionary { fields = left_fields; _ },
-      Type.TypedDictionary { fields = right_fields; _ } ->
-        if Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields then
+    | Type.TypedDictionary { fields = left_fields; total = left_total; _ },
+      Type.TypedDictionary { fields = right_fields; total = right_total; _ } ->
+        if
+          Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields
+          || left_total <> right_total
+        then
           Type.Bottom
         else
           let meet_fields =
@@ -1419,7 +1425,7 @@ and meet ((module Handler: Handler) as order) left right =
                 (left_fields @ right_fields)
                 ~compare:Type.compare_typed_dictionary_field
           in
-          Type.TypedDictionary.anonymous meet_fields
+          Type.TypedDictionary.anonymous ~total:left_total meet_fields
     | Type.TypedDictionary _, _
     | _, Type.TypedDictionary _ ->
         Type.Bottom
@@ -1620,15 +1626,17 @@ and diff_variables substitutions left right =
       diff_variables_list substitutions left right
   | Tuple (Unbounded left), Tuple (Unbounded right) ->
       diff_variables substitutions left right
-  | TypedDictionary { fields = left_fields; _ }, TypedDictionary { fields = right_fields; _ } ->
-      begin
+  | TypedDictionary { fields = left_fields; total = left_total; _ },
+    TypedDictionary { fields = right_fields; total = right_total;  _ } ->
+      if left_total = right_total then
         let diff_fields substitutions { Type.annotation = left; _ } { Type.annotation = right; _ } =
           diff_variables substitutions left right
         in
         match List.fold2 ~init:substitutions ~f:diff_fields left_fields right_fields with
         | Ok substitutions -> substitutions
         | Unequal_lengths -> substitutions
-      end
+      else
+        substitutions
   | Union left, Union right ->
       diff_variables_list substitutions left right
   | Variable _, _ ->

@@ -331,13 +331,25 @@ let test_create _ =
     (Type.callable ~annotation:(Type.callable ~annotation:Type.Object ()) ());
 
   assert_create
-    "mypy_extensions.TypedDict[('Movie', ('year', int), ('name', str))]"
+    "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
     (Type.TypedDictionary {
         name = (Identifier.create "Movie");
         fields = [
           { name = "year"; annotation = Type.integer };
           { name = "name"; annotation = Type.string };
         ];
+        total = true;
+      });
+
+  assert_create
+    "mypy_extensions.TypedDict[('Movie', False, ('year', int), ('name', str))]"
+    (Type.TypedDictionary {
+        name = (Identifier.create "Movie");
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+        total = false;
       })
 
 
@@ -491,9 +503,22 @@ let test_expression _ =
           { name = "title"; annotation = Type.string };
           { name = "year"; annotation = Type.integer };
         ];
+        total = true;
       }
     )
-    "mypy_extensions.TypedDict[(\"Movie\", (\"title\", str), (\"year\", int))]"
+    "mypy_extensions.TypedDict[(\"Movie\", True, (\"title\", str), (\"year\", int))]";
+
+  assert_expression
+    (Type.TypedDictionary {
+        name = Identifier.create "Movie";
+        fields = [
+          { name = "title"; annotation = Type.string };
+          { name = "year"; annotation = Type.integer };
+        ];
+        total = false;
+      }
+    )
+    "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]"
 
 
 let test_union _ =
@@ -592,6 +617,7 @@ let test_primitives _ =
           { name = "year"; annotation = Type.integer };
           { name = "name"; annotation = Type.string };
         ];
+        total = true;
       } |> Type.primitives)
 
 
@@ -1238,11 +1264,11 @@ let test_visit _ =
   let end_state, transformed =
     SubstitutionTransform.visit
       1
-      (create "mypy_extensions.TypedDict[('int', ('int', int), ('str', int))]")
+      (create "mypy_extensions.TypedDict[('int', True, ('int', int), ('str', int))]")
   in
   assert_types_equal
     transformed
-    (create "mypy_extensions.TypedDict[('int', ('int', str), ('str', int))]");
+    (create "mypy_extensions.TypedDict[('int', True, ('int', str), ('str', int))]");
   assert_equal ~printer:string_of_int 0 end_state;
 
   let module ConcatenateTransform = Type.Transform.Make(struct

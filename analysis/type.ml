@@ -115,7 +115,7 @@ and t =
   | Primitive of Identifier.t
   | Top
   | Tuple of tuple
-  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list }
+  | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
   | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
 [@@deriving compare, eq, sexp, show, hash]
@@ -305,20 +305,20 @@ let rec pp format annotation =
             Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
-  | TypedDictionary { name; fields } ->
+  | TypedDictionary { name; fields; total } ->
       let fields =
         fields
         |> List.map ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp annotation)
         |> String.concat ~sep:", "
       in
-      if Identifier.show name = "$anonymous" then
-        Format.fprintf format "TypedDict with fields (%s)" fields
-      else
-        Format.fprintf format
-          "TypedDict `%a` with fields (%s)"
-          Identifier.pp
-          name
-          fields
+      let totality = if total then "" else " (non-total)" in
+      let name =
+        if Identifier.show name = "$anonymous" then
+          ""
+        else
+          Format.sprintf " `%s`" (Identifier.show name)
+      in
+      Format.fprintf format "TypedDict%s%s with fields (%s)" totality name fields
   | Union parameters ->
       Format.fprintf format
         "typing.Union[%s]"
@@ -779,14 +779,14 @@ let rec create ~aliases { Node.value = expression; _ } =
                               Unconstrained
                         in
                         Variable { variable with constraints }
-                    | TypedDictionary { fields; name } ->
+                    | TypedDictionary { fields; name; total } ->
                         let fields =
                           let resolve_field_annotation { name; annotation } =
                             { name; annotation = resolve visited annotation }
                           in
                           List.map fields ~f:resolve_field_annotation;
                         in
-                        TypedDictionary { name; fields }
+                        TypedDictionary { name; fields; total }
                     | Union elements ->
                         Union (List.map elements ~f:(resolve visited))
                     | Bottom
@@ -1062,40 +1062,59 @@ let rec create ~aliases { Node.value = expression; _ } =
                 Node.value = [{
                     Argument.name = None;
                     value = {
-                      Node.value = Expression.Tuple ({
-                          Node.value = Expression.String { value = typed_dictionary_name; _ };
-                          _;
-                        } :: fields);
+                      Node.value = Expression.Tuple (
+                          {
+                            Node.value = Expression.String { value = typed_dictionary_name; _ };
+                            _;
+                          } ::
+                          {
+                            Node.value = true_or_false;
+                            _;
+                          } ::
+                          fields);
                       _;
                     };
                   }];
                 _;
               });
-          ])
+          ] as access)
           when Identifier.show mypy_extensions = "mypy_extensions" &&
                Identifier.show typed_dictionary = "TypedDict" &&
                Identifier.show get_item  = "__getitem__" ->
-            let fields =
-              let tuple_to_field =
-                function
-                | {
-                  Node.value = Expression.Tuple [
-                      { Node.value = Expression.String { value = field_name; _ }; _ };
-                      field_annotation;
-                    ];
-                  _;
-                } ->
-                    Some { name = field_name; annotation = create field_annotation ~aliases }
-                | _ ->
-                    None
-              in
-              fields
-              |> List.filter_map ~f:tuple_to_field
+            let total =
+              match true_or_false with
+              | Expression.True -> Some true
+              | Expression.False -> Some false
+              | _ -> None
             in
-            TypedDictionary {
-              name = Identifier.create typed_dictionary_name;
-              fields;
-            }
+            let parse_typed_dictionary total =
+              let fields =
+                let tuple_to_field =
+                  function
+                  | {
+                    Node.value = Expression.Tuple [
+                        { Node.value = Expression.String { value = field_name; _ }; _ };
+                        field_annotation;
+                      ];
+                    _;
+                  } ->
+                      Some { name = field_name; annotation = create field_annotation ~aliases }
+                  | _ ->
+                      None
+                in
+                fields
+                |> List.filter_map ~f:tuple_to_field
+              in
+              TypedDictionary {
+                name = Identifier.create typed_dictionary_name;
+                fields;
+                total;
+              }
+            in
+            total
+            >>| parse_typed_dictionary
+            |> Option.value ~default:(parse [] access)
+
         | Access access ->
             parse [] access
 
@@ -1254,7 +1273,7 @@ let rec expression annotation =
           | Unbounded parameter -> [parameter; Primitive (Identifier.create "...")]
         in
         (Access.create "typing.Tuple") @ (get_item_call parameters)
-    | TypedDictionary { name; fields; } ->
+    | TypedDictionary { name; fields; total } ->
         let argument =
           let tuple =
             let tail =
@@ -1269,9 +1288,13 @@ let rec expression annotation =
               in
               List.map fields ~f:field_to_tuple
             in
+            let totality =
+              (if total then Expression.True else Expression.False)
+              |> Node.create_with_default_location
+            in
             Expression.String { value = Identifier.show name; kind = StringLiteral.String }
             |> Node.create_with_default_location
-            |> (fun name -> Expression.Tuple(name :: tail))
+            |> (fun name -> Expression.Tuple(name :: totality :: tail))
             |> Node.create_with_default_location
           in
           { Argument.name = None; value = tuple; }
@@ -1991,8 +2014,8 @@ let rec mismatch_with_any left right =
 
 
 module TypedDictionary = struct
-  let anonymous fields =
-    TypedDictionary { name = Identifier.create "$anonymous"; fields }
+  let anonymous ~total fields =
+    TypedDictionary { name = Identifier.create "$anonymous"; fields; total }
 
 
   let fields_have_colliding_keys left_fields right_fields =
@@ -2005,7 +2028,7 @@ module TypedDictionary = struct
     List.exists right_fields ~f:found_collision
 
 
-  let constructor ~name ~fields =
+  let constructor ~name ~fields ~total =
     let parameters =
       let single_star =
         Record.Callable.RecordParameter.Variable {
@@ -2019,7 +2042,7 @@ module TypedDictionary = struct
           Record.Callable.RecordParameter.Named {
             name = Access.create (Format.asprintf "$parameter$%s" name);
             annotation;
-            default = false;
+            default = not total;
           }
         in
         List.map ~f:field_to_argument fields
@@ -2029,7 +2052,7 @@ module TypedDictionary = struct
     {
       Callable.kind = Named (Access.create "__init__");
       implementation = {
-        annotation = TypedDictionary { name; fields };
+        annotation = TypedDictionary { name; fields; total };
         parameters = Defined parameters;
       };
       overloads = [];

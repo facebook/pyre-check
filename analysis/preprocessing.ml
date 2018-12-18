@@ -1364,15 +1364,18 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
 let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as source) =
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
-      let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent =
+      let typed_dictionary_declaration_assignment ~name ~fields ~target ~parent ~total =
         let arguments =
           let fields =
             let tuple (key, value) = Node.create (Expression.Tuple [key; value]) ~location in
             List.map fields ~f:tuple
           in
+          let total =
+            Node.create (if total then Expression.True else Expression.False) ~location
+          in
           [{
             Argument.name = None;
-            value = Node.create (Expression.Tuple (name :: fields)) ~location;
+            value = Node.create (Expression.Tuple (name :: total :: fields)) ~location;
           }]
         in
         let access =
@@ -1406,6 +1409,24 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         Identifier.show module_name = "mypy_extensions" &&
         Identifier.show typed_dictionary = "TypedDict"
       in
+      let extract_totality arguments =
+        let is_total ~total = Identifier.show_sanitized total = "total" in
+        match arguments with
+        | [] ->
+            Some true
+        | [{
+            Argument.name = Some { value = total; _ };
+            value = { Node.value = Expression.True; _ }
+          }] when is_total ~total ->
+            Some true
+        | [{
+            Argument.name = Some { value = total; _ };
+            value = { Node.value = Expression.False; _ }
+          }] when is_total ~total ->
+            Some false
+        | _ ->
+            None
+      in
       match value with
       | Assign {
           target;
@@ -1416,14 +1437,13 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                 Access.Identifier typed_dictionary;
                 Access.Call {
                   Node.value =
-                    [
-                      { Argument.name = None; value = name };
-                      {
-                        Argument.name = None;
-                        value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
-                        _;
-                      };
-                    ];
+                    { Argument.name = None; value = name }
+                    :: {
+                      Argument.name = None;
+                      value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+                      _;
+                    }
+                    :: argument_tail;
                   _;
                 };
               ];
@@ -1434,22 +1454,23 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         }
         when is_typed_dictionary ~module_name ~typed_dictionary ->
           let fields = List.map entries ~f:(fun { Dictionary.key; value } -> key, value) in
-          typed_dictionary_declaration_assignment ~name ~fields ~target ~parent
+          extract_totality argument_tail
+          >>| (fun total ->
+              typed_dictionary_declaration_assignment ~name ~fields ~target ~parent ~total)
+          |> Option.value ~default:value
       | Class {
           name = class_name;
           bases =
-            [
-              {
-                Argument.name = None;
-                value = {
-                  Node.value = Access [
-                      Access.Identifier module_name;
-                      Access.Identifier typed_dictionary;
-                    ];
-                  _;
-                };
-              }
-            ];
+            {
+              Argument.name = None;
+              value = {
+                Node.value = Access [
+                    Access.Identifier module_name;
+                    Access.Identifier typed_dictionary;
+                  ];
+                _;
+              };
+            } :: bases_tail;
           body;
           decorators = [];
           docstring = _;
@@ -1487,15 +1508,18 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           if List.length fields = List.length body then
             let declaration class_name =
               let qualified = qualify_local_identifier class_name ~qualifier in
-              typed_dictionary_declaration_assignment
-                ~name:(string_literal class_name)
-                ~fields
-                ~target:(Node.create (Access qualified) ~location)
-                ~parent:None
+              extract_totality bases_tail
+              >>| (fun total ->
+                  typed_dictionary_declaration_assignment
+                    ~name:(string_literal class_name)
+                    ~fields
+                    ~target:(Node.create (Access qualified) ~location)
+                    ~parent:None
+                    ~total)
             in
             Access.drop_prefix class_name ~prefix:qualifier
             |> single_identifier
-            >>| declaration
+            >>= declaration
             |> Option.value ~default:value
           else
             value
