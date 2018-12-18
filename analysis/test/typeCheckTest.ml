@@ -3778,6 +3778,15 @@ let test_check_init _ =
        alias = int
     |}
     [];
+  assert_type_errors
+    {|
+      class C:
+        class D:
+          pass
+      B = C
+      reveal_type(B.D)
+    |}
+    ["Revealed type [-1]: Revealed type for `B.D` is `typing.Type[C.D]`."];
 
   assert_type_errors
     {|

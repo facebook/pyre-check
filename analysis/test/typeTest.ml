@@ -175,6 +175,17 @@ let test_create _ =
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.primitive "C"));
+  (* Aliasing of subclasses through imports. *)
+  let aliases = function
+    | Type.Primitive name when Identifier.show name = "A" ->
+        Some (Type.primitive "B")
+    | _ ->
+        None
+  in
+  assert_create ~aliases "A" (Type.primitive "B");
+  assert_create ~aliases "A.InnerClass" (Type.primitive "B.InnerClass");
+  (* Known limitation: We're not following parametric types here. *)
+  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "A.InnerClass" [Type.integer]);
 
   (* Aliases with Unions. *)
   let aliases = function

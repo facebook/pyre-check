@@ -733,7 +733,44 @@ let rec create ~aliases { Node.value = expression; _ } =
               annotation
             else
               let visited = Set.add visited annotation in
-              match aliases annotation with
+              let alias annotation =
+                let apply_aliases name =
+                  let rec try_resolving reversed_tail reversed_lead =
+                    match reversed_lead with
+                    | [] ->
+                        None
+                    | current :: rest ->
+                        let annotation =
+                          reversed_lead
+                          |> List.rev
+                          |> Access.show
+                          |> primitive
+                        in
+                        match aliases annotation with
+                        | Some (Primitive alias) ->
+                            Format.sprintf
+                              "%s.%s"
+                              (Identifier.show alias)
+                              (Access.show (List.rev reversed_tail))
+                            |> primitive
+                            |> Option.some
+                        | _ ->
+                            try_resolving (current :: reversed_tail) rest
+                  in
+                  Identifier.show name
+                  |> Access.create
+                  |> List.rev
+                  |> try_resolving []
+                in
+                match aliases annotation, annotation with
+                | Some alias, _ ->
+                    Some alias
+                | None, Primitive name ->
+                    apply_aliases name
+                | _ ->
+                    None
+              in
+              match alias annotation with
               | Some alias ->
                   resolve visited alias
               | _ ->
