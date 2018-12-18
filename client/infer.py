@@ -501,22 +501,19 @@ def main():
         "--build", action="store_true", help="Build all the necessary artifacts."
     )
     buck_arguments.add_argument(
-        "--target", action="append", help="The buck target to check"
+        "--target", action="append", dest="targets", help="The buck target to check"
     )
 
     source_directories = parser.add_argument_group("source-directories")
     source_directories.add_argument(
         "--source-directory",
         action="append",
+        dest="source_directories",
         help="The source directory to run the inference on.",
     )
 
     arguments = parser.parse_args()
-
-    arguments.source_directories = arguments.source_directory
-    del arguments.source_directory
-    arguments.targets = arguments.target
-    del arguments.target
+    arguments.filter_directory = None
 
     start = time.time()
     stubs = []
