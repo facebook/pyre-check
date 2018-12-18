@@ -651,6 +651,8 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
   | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
       less_or_equal order ~left ~right
+  | Type.Tuple (Type.Bounded []), Type.Tuple (Type.Unbounded _) ->
+      true
   | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right) ->
       let left = List.fold tail ~init:left ~f:(join order) in
       less_or_equal order ~left ~right

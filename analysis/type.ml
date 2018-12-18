@@ -301,7 +301,7 @@ let rec pp format annotation =
         | Bounded parameters ->
             List.map parameters ~f:show
             |> String.concat ~sep:", "
-        | Unbounded parameter  ->
+        | Unbounded parameter ->
             Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
@@ -555,7 +555,7 @@ let string =
 
 let tuple parameters: t =
   match parameters with
-  | [] -> Tuple (Unbounded Object)
+  | [] -> Tuple (Bounded [])
   | _ -> Tuple (Bounded parameters)
 
 

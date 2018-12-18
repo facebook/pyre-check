@@ -682,7 +682,7 @@ let test_forward_statement _ =
     []
     "x, y = return_tuple()"
     ["x", Type.integer; "y", Type.integer;];
-  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Unbounded Type.Object)];
+  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded [])];
 
   (* Assignments with list. *)
   assert_forward
@@ -6053,14 +6053,32 @@ let test_check_tuple _ =
 
   assert_type_errors
     {|
-      def foo()-> typing.Tuple:
+      def foo() -> typing.Tuple:
         return ()
     |}
     [];
   assert_type_errors
     {|
-      def foo()-> typing.Tuple:
-        return (1, 2)
+      def foo() -> typing.Tuple[()]:
+        return ()
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[int, str]:
+        return ()
+    |}
+    ["Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got `typing.Tuple[]`."];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[int, ...]:
+        return ()
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Iterable[int]:
+        return ()
     |}
     [];
   assert_type_errors

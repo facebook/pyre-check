@@ -60,6 +60,7 @@ let test_create _ =
 
   assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
   assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
+  assert_create "typing.Tuple[()]" (Type.tuple []);
 
   assert_create "typing.Any" Type.Object;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
