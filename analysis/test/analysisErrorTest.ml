@@ -406,7 +406,7 @@ let test_join _ =
       stop = { Location.line = 1; column = 1 };
     }
   in
- assert_join
+  assert_join
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
@@ -428,7 +428,7 @@ let test_join _ =
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
          }));
- assert_join
+  assert_join
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];
@@ -450,7 +450,7 @@ let test_join _ =
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }));
- assert_join
+  assert_join
     (error
        (Error.MissingGlobalAnnotation {
            Error.name = [Access.Identifier (~~"")];

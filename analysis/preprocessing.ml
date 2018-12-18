@@ -495,16 +495,16 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         }
       in
       let qualify_define
-        ({ qualifier; _ } as scope)
-        ({
-          Define.name;
-          parameters;
-          body;
-          decorators;
-          return_annotation;
-          parent;
-          _;
-        } as define) =
+          ({ qualifier; _ } as scope)
+          ({
+            Define.name;
+            parameters;
+            body;
+            decorators;
+            return_annotation;
+            parent;
+            _;
+          } as define) =
         let scope = { scope with is_top_level = false } in
         let return_annotation =
           return_annotation
@@ -550,21 +550,21 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             let scope, statement =
               match value with
               | Define ({ Define.name; parameters; return_annotation; _ } as define) ->
-                let define = qualify_define original_scope define in
-                let _, parameters = qualify_parameters ~scope parameters in
-                let return_annotation =
-                  return_annotation
-                  >>| qualify_expression ~scope ~qualify_strings:true
-                in
-                scope, {
-                  Node.location;
-                  value = Define {
-                    define with
-                    Define.name = qualify_access name ~scope ~qualify_strings:false;
-                    parameters;
-                    return_annotation;
-                  };
-                }
+                  let define = qualify_define original_scope define in
+                  let _, parameters = qualify_parameters ~scope parameters in
+                  let return_annotation =
+                    return_annotation
+                    >>| qualify_expression ~scope ~qualify_strings:true
+                  in
+                  scope, {
+                    Node.location;
+                    value = Define {
+                        define with
+                        Define.name = qualify_access name ~scope ~qualify_strings:false;
+                        parameters;
+                        return_annotation;
+                      };
+                  }
               | _ ->
                   qualify_statement statement ~qualify_assign:true ~scope
             in

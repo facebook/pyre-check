@@ -142,10 +142,10 @@ module Make(Element : ELEMENT_DOMAIN) = struct
       | Element ->
           add so_far value
       | _ ->
-        Obj.extension_constructor part
-        |> Obj.extension_name
-        |> Format.sprintf "Unknown part %s in transform"
-        |> failwith
+          Obj.extension_constructor part
+          |> Obj.extension_name
+          |> Format.sprintf "Unknown part %s in transform"
+          |> failwith
     in
     List.fold parts ~f:create_part ~init:bottom
 end
