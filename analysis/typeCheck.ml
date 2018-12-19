@@ -1881,8 +1881,8 @@ module State = struct
                               })
                             ~define
                         )
-                    | Attribute { attribute = access; origin = Instance attribute; _ }
-                      when insufficiently_annotated ->
+                    | Attribute { attribute = access; origin = Instance attribute; defined }
+                      when defined && insufficiently_annotated ->
                         let attribute_location = Attribute.location attribute in
                         Some (
                           attribute_location,

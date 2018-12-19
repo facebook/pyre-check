@@ -3973,8 +3973,6 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
-      "type is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
@@ -4049,8 +4047,6 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but no " ^
-      "type is specified.";
       "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`.";
     ];
@@ -4173,8 +4169,6 @@ let test_check_attributes _ =
           return self.baz
     |}
     [
-      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` has type " ^
-      "`typing.Optional[int]` but no type is specified.";
       (* TODO(T24330702): we should only report this once. *)
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
@@ -4791,8 +4785,6 @@ let test_check_immutables _ =
         foo.attribute = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
-      "no type is specified.";
       "Undefined name [18]: Global name `attribute` is undefined.";
     ];
 
@@ -4914,8 +4906,6 @@ let test_check_immutables _ =
     |}
     [
       "Undefined name [18]: Global name `constant` is undefined.";
-      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but " ^
-      "no type is specified.";
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
