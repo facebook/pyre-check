@@ -85,7 +85,17 @@ let rec extract_taint_kinds expression =
       []
 
 
-let taint_annotation = function
+let rec taint_annotations = function
+  | Some {
+      Node.value =
+        Expression.Access
+          (Identifier union
+           :: _
+           :: Call {
+             value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
+           :: _);
+      _ } when Identifier.show union = "Union" ->
+      List.concat_map ~f:(fun expression -> taint_annotations (Some expression)) expressions
   | Some {
       Node.value =
         Expression.Access
@@ -95,34 +105,38 @@ let taint_annotation = function
              value = { Argument.value = expression; _; } :: _; _ }
            :: _);
       _ } ->
-      Some (Identifier.show taint_direction, extract_taint_kinds expression)
+      [Identifier.show taint_direction, extract_taint_kinds expression]
   | _ ->
-      None
+      []
 
 
 let taint_parameter model (root, _name, annotation) =
-  model >>= fun model ->
-  match taint_annotation annotation with
-  | Some (taint_direction, taint_kinds)
-    when taint_direction = "TaintSink" || taint_direction = "TaintInTaintOut" ->
-      let taint_sink_kinds = List.map ~f:Sinks.create taint_kinds in
-      List.fold taint_sink_kinds ~f:(introduce_sink_taint ~root) ~init:model
-      |> Or_error.return
-  | Some (taint_direction, _) ->
-      Or_error.errorf "Unrecognized taint direction in parameter annotation %s" taint_direction
-  | _ ->
-      Or_error.return model
+  let add_to_model model (taint_direction, taint_kinds) =
+    model >>= fun model ->
+    match taint_direction with
+    | "TaintSink" | "TaintInTaintOut" ->
+        let taint_sink_kinds = List.map ~f:Sinks.create taint_kinds in
+        List.fold taint_sink_kinds ~f:(introduce_sink_taint ~root) ~init:model
+        |> Or_error.return
+    | _ ->
+        Or_error.errorf "Unrecognized taint direction in parameter annotation %s" taint_direction
+  in
+  taint_annotations annotation
+  |> List.fold ~init:model ~f:add_to_model
 
 
 let taint_return model expression =
-  match taint_annotation expression with
-  | Some (taint_direction, taint_kinds) when taint_direction = "TaintSource" ->
-      let taint_source_kinds = List.map ~f:Sources.create taint_kinds in
-      Or_error.return { model with forward = introduce_source_taint taint_source_kinds }
-  | Some (taint_direction, _) ->
-      Or_error.errorf "Unrecognized taint direction in return annotation: %s" taint_direction
-  | _ ->
-      Or_error.return model
+  let add_to_model model (taint_direction, taint_kinds) =
+    model >>= fun model ->
+    match taint_direction with
+    | "TaintSource" ->
+        let taint_source_kinds = List.map ~f:Sources.create taint_kinds in
+        Or_error.return { model with forward = introduce_source_taint taint_source_kinds }
+    | _ ->
+        Or_error.errorf "Unrecognized taint direction in return annotation: %s" taint_direction
+  in
+  taint_annotations expression
+  |> List.fold ~init:model ~f:add_to_model
 
 
 let create ~resolution ?(verify = true) ~model_source () =
@@ -198,7 +212,7 @@ let create ~resolution ?(verify = true) ~model_source () =
     end;
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters
-    >>= Fn.flip taint_return return_annotation
+    |> Fn.flip taint_return return_annotation
     >>= (fun model -> Ok { model; call_target; is_obscure = false })
   in
   match List.map defines ~f:create_model with

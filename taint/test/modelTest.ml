@@ -214,6 +214,23 @@ let test_taint_in_taint_out_models _ =
     ]
 
 
+let test_union_models _ =
+  assert_model
+    ~model_source:"def both(parameter: Union[TaintInTaintOut[LocalReturn], TaintSink[XSS]]): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "both";
+        returns = [];
+        errors = [];
+        sink_parameters = [
+          { name = "parameter"; sinks = [Taint.Sinks.XSS] };
+        ];
+        tito_parameters = ["parameter"]
+      };
+    ]
+
+
 let test_invalid_models _ =
   let assert_invalid_model ~model_source ~expect =
     let resolution =
@@ -271,6 +288,7 @@ let () =
     "source_models">::test_source_models;
     "sink_models">::test_sink_models;
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
+    "taint_union_models">::test_union_models;
     "invalid_models">::test_invalid_models;
   ]
   |> Test.run
