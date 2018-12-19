@@ -443,6 +443,7 @@ let typeshed_stubs = (* Yo dawg... *)
 
         class type:
           __name__: str = ...
+          def __call__(self, *args: typing.Any, **kwargs: typing.Any) -> typing.Any: ...
 
         class object():
           __doc__: str

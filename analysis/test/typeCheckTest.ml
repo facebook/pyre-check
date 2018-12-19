@@ -4377,6 +4377,7 @@ let test_check_attributes _ =
           return self
     |}
     [];
+
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -4409,6 +4410,28 @@ let test_check_attributes _ =
         return c.property
     |}
     [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def f(t: typing.Type[T]) -> None:
+        a = t()
+    |}
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def f(t: typing.Type[T]) -> None:
+        a = t()
+    |}
+    ["Missing argument [20]: Call `int.__init__` expects argument `value`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', int)
+      def f(t: typing.Type[T]) -> None:
+        a = t()
+    |}
+    ["Missing argument [20]: Call `int.__init__` expects argument `value`."];
 
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors

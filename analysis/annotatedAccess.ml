@@ -514,9 +514,23 @@ let fold ~resolution ~initial ~f access =
                       | TypedDictionary { name; fields; total } ->
                           Type.TypedDictionary.constructor ~name ~fields ~total
                           |> Option.some
+                      | Variable { constraints = Type.Unconstrained; _ } ->
+                          find_method ~parent:resolved ~name:(Access.create "__call__")
+                      | Variable { constraints = Type.Explicit constraints; _ }
+                        when List.length constraints > 1 ->
+                          find_method ~parent:resolved ~name:(Access.create "__call__")
                       | meta_parameter ->
                           let class_definition =
-                            Resolution.class_definition resolution meta_parameter
+                            let parent =
+                              match meta_parameter with
+                              | Variable { constraints = Type.Explicit [parent]; _ } ->
+                                  parent
+                              | Variable { constraints = Type.Bound parent; _ } ->
+                                  parent
+                              | _ ->
+                                  meta_parameter
+                            in
+                            Resolution.class_definition resolution parent
                             >>| Class.create
                           in
                           match class_definition >>| Class.constructor ~resolution with
