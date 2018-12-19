@@ -7912,7 +7912,19 @@ let test_format_string _ =
         f'{boo() + "x"}'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        f'{{x}}'
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        f'{{{x}}}'
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."]
 
 
 let test_check_data_class _ =
