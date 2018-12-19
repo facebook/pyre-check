@@ -511,7 +511,9 @@ let select
                                 constraints >>= update argument parameter)
                           |> (function
                               | List.Or_unequal_lengths.Ok constraints -> constraints
-                              | _ -> None)
+                              (* Don't ignore previous constraints if encountering a mismatch due to
+                               *args/**kwargs vs. concrete parameters or default arguments. *)
+                              | _ -> constraints)
                       | _ ->
                           Some constraints
                     in

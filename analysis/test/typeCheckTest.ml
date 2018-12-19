@@ -7509,6 +7509,17 @@ let test_check_callables _ =
      "Expected `typing.Callable[..., unknown]` for 1st anonymous parameter to call `hof` but got " ^
      "`int`."];
 
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def foo(x: typing.Callable[[], T]) -> T:
+        ...
+      def f(x: int = 1) -> str:
+        return ""
+      reveal_type(foo(f))
+    |}
+    ["Revealed type [-1]: Revealed type for `foo.(...)` is `str`."];
+
   (* Lambdas. *)
   assert_type_errors
     {|
