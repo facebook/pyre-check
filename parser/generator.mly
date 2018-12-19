@@ -630,21 +630,37 @@ compound_statement:
         match signature_comment with
         | Some (parameter_annotations, _)
           when not (List.is_empty parameter_annotations) ->
-            let add_annotation
-              ({ Node.value = parameter; _ } as parameter_node)
-              annotation =
-                {
-                  parameter_node with
-                  Node.value = {
-                    parameter with
-                      Parameter.annotation = Some {
-                        Node.location = Location.Reference.any;
-                        value = String (StringLiteral.create annotation);
+            let add_annotation ({ Node.value = parameter; _ } as parameter_node) annotation =
+                match annotation with
+                | None ->
+                    parameter_node
+                | Some annotation -> {
+                    parameter_node with
+                    Node.value = {
+                      parameter with
+                        Parameter.annotation = Some {
+                          Node.location = Location.Reference.any;
+                          value = String (StringLiteral.create annotation);
+                        };
                       }
                   }
-                }
             in
-            if List.length parameters = List.length parameter_annotations then
+            (* We don't know whether a define is a method at this point, and mypy's documentation
+               specifies that a method's self should NOT be annotated:
+               `https://mypy.readthedocs.io/en/latest/python2.html`.
+
+                Because we don't know whether we are parsing a method at this point or whether
+                there's any decorators that mean a function doesn't have a self parameter, we make
+                the angelic assumption that annotations lacking a single annotation knowingly elided
+                the self annotation. *)
+            let unannotated_parameter_count =
+               List.length parameters - List.length parameter_annotations
+            in
+            if unannotated_parameter_count = 0 || unannotated_parameter_count = 1 then
+              let parameter_annotations =
+                List.init ~f:(fun _ -> None) unannotated_parameter_count @
+                List.map ~f:Option.some parameter_annotations
+              in
               List.map2_exn
                 ~f:add_annotation
                 parameters

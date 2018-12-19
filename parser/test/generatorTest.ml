@@ -1151,6 +1151,83 @@ let test_define _ =
 
   assert_parsed_equal
     (trim_extra_indentation {|
+      def foo(self, a, b): # type: (typing.Union[typing.List[int], str], typing.List[str]) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"self";
+            value = None;
+            annotation = None;
+          };
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = Some
+                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = Some (+String (StringLiteral.create "typing.List[str]"));
+          };
+        ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String (StringLiteral.create "str"));
+        async = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+      def foo(self, a, b): # type: (int) -> str
+        return 4
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = ~~"self";
+            value = None;
+            annotation = None;
+          };
+          +{
+            Parameter.name = ~~"a";
+            value = None;
+            annotation = None;
+          };
+          +{
+            Parameter.name = ~~"b";
+            value = None;
+            annotation = None;
+          };
+        ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String (StringLiteral.create "str"));
+        async = false;
+        parent = None;
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
       def foo():
         # type: (...) ->List[str]
         return 4
