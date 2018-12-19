@@ -941,7 +941,10 @@ define_parameters:
 %inline comment_annotation:
   | annotation = ANNOTATION_COMMENT {
       let (start, stop), annotation = annotation in
-      String (StringLiteral.create annotation)
+      annotation
+      |> String.strip ~drop:(function | '\'' | '"' -> true | _ -> false)
+      |> StringLiteral.create
+      |> fun string -> String string
       |> Node.create ~location:(Location.create ~start ~stop)
     }
 
