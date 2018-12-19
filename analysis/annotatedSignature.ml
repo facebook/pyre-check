@@ -376,6 +376,16 @@ let select
               in
               { reasons with annotation = mismatch :: annotation }
             in
+            let argument_annotation =
+              if Type.is_meta argument_annotation && Type.is_callable parameter_annotation then
+                  Type.single_parameter argument_annotation
+                  |> Resolution.class_definition resolution
+                  >>| Class.create
+                  >>| Class.constructor ~resolution
+                  |> Option.value ~default:argument_annotation
+              else
+                argument_annotation
+            in
             let less_or_equal =
               try
                 (Type.equal argument_annotation Type.Top &&

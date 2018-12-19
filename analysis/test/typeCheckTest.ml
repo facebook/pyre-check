@@ -7114,6 +7114,28 @@ let test_check_constructors _ =
       "Undefined type [11]: Type `Clss` is not defined.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`.";
       "Call error [29]: `typing.Type[Clss]` is not a function.";
+    ];
+
+  assert_type_errors
+    {|
+      class Class:
+        def __init__(self, i: int) -> None:
+          ...
+      def foo(x: typing.Callable[[int], Class]) -> None: ...
+      foo(Class)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Class:
+        def __init__(self, i: int) -> None:
+          ...
+      def foo(x: typing.Callable[[str], Class]) -> None: ...
+      foo(Class)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
+       parameter to call `foo` but got `typing.Type[Class]`.";
     ]
 
 

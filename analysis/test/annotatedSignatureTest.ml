@@ -24,8 +24,10 @@ open Signature
 let resolution =
   populate
     {|
-      class int: ...
-      class str: ...
+      class int:
+        def int.__init__(self, o: typing.Any) -> None: ...
+      class str:
+        def str.__init__(self, o: typing.Any) -> None: ...
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       _R = typing.TypeVar('_R', int, float)
@@ -272,7 +274,27 @@ let test_select _ =
     "(**{'i': 1}, j=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
 
-
+  (* Constructor resolution. *)
+  assert_select
+    "[[typing.Callable[[typing.Any], int]], int]"
+    "(int)"
+    (`Found "[[typing.Callable[[typing.Any], int]], int]");
+  assert_select
+    "[[typing.Callable[[typing.Any], int]], int]"
+    "(str)"
+    (`NotFoundMismatch (
+        Type.meta Type.string,
+        Type.callable
+          ~parameters:(Type.Callable.Defined [
+              Type.Callable.Parameter.Named {
+              Type.Callable.Parameter.name = Access.create "$0";
+              annotation = Type.Object;
+              default = false;
+            }])
+          ~annotation:Type.integer
+          (),
+        None,
+        1));
   (* Keywords. *)
   assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
   assert_select "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
@@ -299,6 +321,7 @@ let test_select _ =
     "[[typing.Callable[[], _T]], _T]"
     "(lambda: 1)"
     (`Found "[[typing.Callable[[], int]], int]");
+
   assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
   assert_select
     "[[_T, _T], int]"
