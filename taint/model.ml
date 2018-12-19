@@ -26,11 +26,12 @@ type t = {
 
 let introduce_sink_taint
     ~root
-    ~taint_sink_kind
-    ({ TaintResult.backward = { sink_taint; taint_in_taint_out }; _ } as taint) =
+    ({ TaintResult.backward = { sink_taint; taint_in_taint_out }; _ } as taint)
+    taint_sink_kind =
   let backward =
     let assign_backward_taint environment taint =
       BackwardState.assign
+        ~weak:true
         ~root
         ~path:[]
         taint
@@ -52,16 +53,36 @@ let introduce_sink_taint
   { taint with backward }
 
 
-let introduce_source_taint taint_source_kind =
+let introduce_source_taint taint_source_kinds =
   let source_taint =
+    let source_taint =
+      List.fold
+        taint_source_kinds
+        ~init:ForwardTaint.bottom
+        ~f:(fun taint kind -> ForwardTaint.join taint (ForwardTaint.singleton kind))
+    in
     ForwardState.assign
       ~root:AccessPath.Root.LocalResult
       ~path:[]
-      (ForwardTaint.singleton taint_source_kind
-       |> ForwardState.Tree.create_leaf)
+      (ForwardState.Tree.create_leaf source_taint)
       ForwardState.empty
   in
   TaintResult.Forward.{ source_taint }
+
+
+let extract_identifier = function
+  | Access.Identifier name -> Some name
+  | _ -> None
+
+
+let rec extract_taint_kinds expression =
+  match expression.Node.value with
+  | Access [Identifier taint_kind] ->
+      [Identifier.show taint_kind]
+  | Tuple expressions ->
+      List.concat_map ~f:extract_taint_kinds expressions
+  | _ ->
+      []
 
 
 let taint_annotation = function
@@ -71,18 +92,10 @@ let taint_annotation = function
           (Identifier taint_direction
            :: _
            :: Call {
-             value = {
-               Argument.value = {
-                 value = Access (Identifier taint_kind :: _);
-                 _;
-               };
-               _;
-             }
-               :: _;
-             _ }
+             value = { Argument.value = expression; _; } :: _; _ }
            :: _);
       _ } ->
-      Some (Identifier.show taint_direction, Identifier.show taint_kind)
+      Some (Identifier.show taint_direction, extract_taint_kinds expression)
   | _ ->
       None
 
@@ -90,10 +103,10 @@ let taint_annotation = function
 let taint_parameter model (root, _name, annotation) =
   model >>= fun model ->
   match taint_annotation annotation with
-  | Some (taint_direction, taint_kind)
+  | Some (taint_direction, taint_kinds)
     when taint_direction = "TaintSink" || taint_direction = "TaintInTaintOut" ->
-      let taint_sink_kind = Sinks.create taint_kind in
-      introduce_sink_taint ~root ~taint_sink_kind model
+      let taint_sink_kinds = List.map ~f:Sinks.create taint_kinds in
+      List.fold taint_sink_kinds ~f:(introduce_sink_taint ~root) ~init:model
       |> Or_error.return
   | Some (taint_direction, _) ->
       Or_error.errorf "Unrecognized taint direction in parameter annotation %s" taint_direction
@@ -103,9 +116,9 @@ let taint_parameter model (root, _name, annotation) =
 
 let taint_return model expression =
   match taint_annotation expression with
-  | Some (taint_direction, taint_kind) when taint_direction = "TaintSource" ->
-      let taint_source_kind = Sources.create taint_kind in
-      Or_error.return { model with forward = introduce_source_taint taint_source_kind }
+  | Some (taint_direction, taint_kinds) when taint_direction = "TaintSource" ->
+      let taint_source_kinds = List.map ~f:Sources.create taint_kinds in
+      Or_error.return { model with forward = introduce_source_taint taint_source_kinds }
   | Some (taint_direction, _) ->
       Or_error.errorf "Unrecognized taint direction in return annotation: %s" taint_direction
   | _ ->

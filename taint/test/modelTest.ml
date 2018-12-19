@@ -71,6 +71,18 @@ let test_source_models _ =
         tito_parameters = [];
         errors = [];
       };
+    ];
+  assert_model
+    ~model_source:"def taint() -> TaintSource[Test, UserControlled]: ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "taint";
+        returns = [Sources.Test; Sources.UserControlled];
+        sink_parameters = [];
+        tito_parameters = [];
+        errors = [];
+      };
     ]
 
 
@@ -165,6 +177,21 @@ let test_sink_models _ =
         returns = [];
         sink_parameters = [
           { name = "parameter"; sinks = [Taint.Sinks.XSS] };
+        ];
+        tito_parameters = [];
+        errors = [];
+      };
+    ];
+
+  assert_model
+    ~model_source:"def multiple(parameter: TaintSink[XSS, Thrift]): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "multiple";
+        returns = [];
+        sink_parameters = [
+          { name = "parameter"; sinks = [Taint.Sinks.Thrift; Taint.Sinks.XSS] };
         ];
         tito_parameters = [];
         errors = [];
