@@ -153,14 +153,21 @@ let expand_format_string ({ Source.handle; _ } as source) =
           Node.location = ({ Location.start = { Location.line; column }; _ } as location);
           value = String ({ StringLiteral.value; kind = StringLiteral.Format _; _ } as literal);
         } ->
+            let string_starts_with string prefix =
+              let prefix_length = String.length prefix in
+              (String.sub string ~pos:0 ~len:prefix_length) = prefix
+            in
             let rec get_matches regular_expression input_string start_position =
               try
                 let match_start_position =
                   Str.search_forward regular_expression input_string start_position
                 in
                 let match_string = Str.matched_string input_string in
-                (match_start_position + column, match_string)
-                :: get_matches regular_expression input_string (match_start_position + 1)
+                if string_starts_with match_string "{{" then
+                  get_matches regular_expression input_string (match_start_position + 2)
+                else
+                  (match_start_position + column, match_string)
+                  :: get_matches regular_expression input_string (match_start_position + 1)
               with Not_found -> []
             in
             let parse (start_column, input_string) =
@@ -186,7 +193,7 @@ let expand_format_string ({ Source.handle; _ } as source) =
                   end
             in
             let expressions =
-              get_matches (Str.regexp "{[^{^}]*}") value 0
+              get_matches (Str.regexp "{{?[^{^}]*}?}") value 0
               |> List.concat_map ~f:parse
             in
             {
