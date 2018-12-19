@@ -66,9 +66,16 @@ module FixpointResult = struct
 end
 
 
-let parse_sources_job ~show_parser_errors ~force ~configuration ~files =
+let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configuration ~files =
   let parse ({ FixpointResult.parsed; not_parsed } as result) file =
     let use_parsed_source source =
+      let source =
+        match preprocessing_state with
+        | Some state ->
+            ProjectSpecificPreprocessing.preprocess ~state source
+        | None ->
+            source
+      in
       let store_result ~preprocessed ~file =
         let add_module_from_source
             {
@@ -127,7 +134,7 @@ type parse_sources_result = {
 }
 
 
-let parse_sources ~configuration ~scheduler ~files =
+let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
   let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
     let { FixpointResult.parsed = new_parsed; not_parsed = new_not_parsed } =
       Scheduler.map_reduce
@@ -137,6 +144,7 @@ let parse_sources ~configuration ~scheduler ~files =
         ~map:(fun _ files ->
             parse_sources_job
               ~show_parser_errors:((List.length parsed) = 0)
+              ~preprocessing_state
               ~force
               ~configuration
               ~files)
@@ -347,7 +355,22 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     let stub_paths = find_stubs ~configuration in
     Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
     let { parsed; syntax_error; system_error }  =
-      parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create stub_paths)
+      let preprocessing_state =
+        let to_handle path =
+          try
+            File.create path
+            |> File.handle ~configuration
+            |> Option.some
+          with File.NonexistentHandle _ ->
+            None
+        in
+        ProjectSpecificPreprocessing.initial (List.filter_map stub_paths ~f:to_handle)
+      in
+      parse_sources
+        ~configuration
+        ~scheduler
+        ~preprocessing_state:(Some preprocessing_state)
+        ~files:(List.map ~f:File.create stub_paths)
     in
     log_parse_errors ~syntax_error ~system_error ~description:"external file";
     Statistics.performance ~name:"stubs parsed" ~timer ();
@@ -388,7 +411,11 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     let paths = find_sources configuration ~filter in
     Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp local_root;
     let { parsed; syntax_error; system_error }  =
-      parse_sources ~configuration ~scheduler ~files:(List.map ~f:File.create paths)
+      parse_sources
+        ~preprocessing_state:None
+        ~configuration
+        ~scheduler
+        ~files:(List.map ~f:File.create paths)
     in
     log_parse_errors ~syntax_error ~system_error ~description:"file";
     Statistics.performance ~name:"sources parsed" ~timer ();

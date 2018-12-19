@@ -16,6 +16,7 @@
   ppxlib
   pyrelib.ast
   pyrelib.analysis
+  pyrelib.projectSpecificPreprocessing
   pyrelib.interprocedural
   pyrelib.path
   pyrelib.plugin

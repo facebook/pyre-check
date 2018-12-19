@@ -169,6 +169,7 @@ let parse_list named_sources =
       ~configuration:(
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
+      ~preprocessing_state:None
       ~files:(List.map ~f:create_file named_sources)
   in
   parsed

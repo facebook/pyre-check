@@ -16,6 +16,7 @@ type parse_sources_result = {
 val parse_sources
   :  configuration: Configuration.Analysis.t
   -> scheduler: Scheduler.t
+  -> preprocessing_state: ProjectSpecificPreprocessing.state option
   -> files: File.t list
   -> parse_sources_result
 

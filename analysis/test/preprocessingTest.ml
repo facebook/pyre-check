@@ -1170,6 +1170,7 @@ let test_expand_wildcard_imports _ =
         ~configuration:(
           Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
+        ~preprocessing_state:None
         ~files:(file_to_check :: files)
     in
     let file_to_check_handle =

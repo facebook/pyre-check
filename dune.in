@@ -44,6 +44,18 @@
   core))
 
 (library
+ (name projectSpecificPreprocessing)
+ (modules projectSpecificPreprocessing)
+ (public_name pyrelib.projectSpecificPreprocessing)
+ (libraries
+  pyrelib.network
+  pyrePath
+  pyre
+  core
+  yojson))
+
+
+(library
  (name fetchSavedState)
  (modules fetchSavedState)
  (public_name pyrelib.fetchSavedState)
@@ -163,13 +175,18 @@
 
 (tests
  (names
-  fetchSavedStateTest)
-  (modules fetchSavedStateTest)
-  (libraries
-   pyrelib
-   pyrelib.fetchSavedState
-   oUnit
-   test))
+  fetchSavedStateTest
+  projectSpecificPreprocessingTest)
+ (modules
+  fetchSavedStateTest
+  projectSpecificPreprocessingTest
+  )
+ (libraries
+  pyrelib
+  pyrelib.fetchSavedState
+  pyrelib.projectSpecificPreprocessing
+  oUnit
+  test))
 
 
 (executable

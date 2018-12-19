@@ -59,7 +59,7 @@ let initialize sources =
     SharedMemory.Sources.remove ~handles;
     SharedMemory.Modules.remove
       ~qualifiers:(List.map handles ~f:(fun handle -> Source.qualifier ~handle));
-    Service.Parser.parse_sources ~configuration ~scheduler ~files
+    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;
     let add_module handle =
       match SharedMemory.Sources.get handle with

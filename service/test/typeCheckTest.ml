@@ -28,7 +28,11 @@ let assert_errors ?filter_directories ~root ~files errors =
   in
   List.iter ~f:add_file files;
   let { Service.Parser.parsed = handles; _ } =
-    Service.Parser.parse_sources ~configuration ~scheduler ~files
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:None
+      ~files
   in
   let ((module Handler: Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)

@@ -39,6 +39,7 @@ let test_parse_stubs_modules_list _ =
     Service.Parser.parse_sources
       ~configuration:(Configuration.Analysis.create ())
       ~scheduler:(Scheduler.mock ())
+      ~preprocessing_state:None
       ~files
   in
   assert_equal (List.length files) (List.length handles);
@@ -175,6 +176,7 @@ let test_parse_source _ =
       ~configuration:(
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
+      ~preprocessing_state:None
       ~files:[file]
   in
   let handle = File.handle ~configuration file in
@@ -330,6 +332,7 @@ let test_register_modules _ =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler:(Scheduler.mock ())
+        ~preprocessing_state:None
         ~files
     in
     (* Check specific file. *)

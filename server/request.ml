@@ -700,7 +700,11 @@ let process_type_check_request
             List.filter_map update_environment_with ~f:find_target
           in
           Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-          Service.Parser.parse_sources ~configuration ~scheduler ~files:update_environment_with
+          Service.Parser.parse_sources
+            ~configuration
+            ~scheduler
+            ~preprocessing_state:None
+            ~files:update_environment_with
           |> ignore;
 
           let new_signature_hashes = signature_hashes ~default:(-1) in
@@ -815,7 +819,7 @@ let process_type_check_request
       List.partition_tf ~f:is_stub update_environment_with
     in
     let { Service.Parser.parsed = stubs; _ } =
-      Service.Parser.parse_sources ~configuration ~scheduler ~files:stubs
+      Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files:stubs
     in
     let sources =
       let keep file =
@@ -829,7 +833,11 @@ let process_type_check_request
       List.filter ~f:keep sources
     in
     let { Service.Parser.parsed = sources; _ } =
-      Service.Parser.parse_sources ~configuration ~scheduler ~files:sources
+      Service.Parser.parse_sources
+        ~configuration
+        ~scheduler
+        ~preprocessing_state:None
+        ~files:sources
     in
     stubs @ sources
   in

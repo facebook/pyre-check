@@ -17,6 +17,7 @@ let test_coverage _ =
       Service.Parser.parse_sources
         ~configuration:(Configuration.Analysis.create ())
         ~scheduler:(Scheduler.mock ())
+        ~preprocessing_state:None
         ~files:[
           File.create
             ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
