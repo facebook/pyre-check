@@ -119,6 +119,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution arguments state call_taint call_targets =
+      let add_obscure set =
+        SimpleFeatures.Breadcrumb Breadcrumb.Obscure :: set
+      in
       let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
@@ -193,14 +196,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.fold ~f:analyze_argument combined_matches ~init:state
         else
           (* obscure or no model *)
-          let obscure_taint = BackwardState.Tree.create_leaf collapsed_call_taint in
+          let obscure_taint =
+            collapsed_call_taint
+            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_obscure
+            |> BackwardState.Tree.create_leaf
+          in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
       in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
           let obscure_taint =
-            BackwardState.Tree.collapse call_taint |> BackwardState.Tree.create_leaf
+            BackwardState.Tree.collapse call_taint
+            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_obscure
+            |> BackwardState.Tree.create_leaf
           in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
       | call_targets ->

@@ -14,7 +14,6 @@
               "start": 24,
               "end": 27
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -38,7 +37,6 @@
               "start": 25,
               "end": 27
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -60,7 +58,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
           }
         ]

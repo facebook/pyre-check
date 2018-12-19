@@ -186,11 +186,23 @@ end
 module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 
 
+module Breadcrumb = struct
+  type t =
+    | Obscure
+  [@@deriving show, sexp, compare]
+
+  let to_json = function
+    | Obscure ->
+        `Assoc ["via", `String "obscure" ]
+end
+
+
 (* Simple set of features that are unrelated, thus cheap to maintain *)
 module SimpleFeatures = struct
   type t =
     | LeafName of string
     | TitoPosition of Location.Reference.t
+    | Breadcrumb of Breadcrumb.t
   [@@deriving show, sexp, compare]
 end
 module SimpleFeatureSet = AbstractSetDomain.Make(SimpleFeatures)
@@ -252,6 +264,7 @@ module FlowDetails = struct
   let gather_leaf_names accumulator = function
     | SimpleFeatures.LeafName name ->
         name :: accumulator
+    | Breadcrumb _
     | TitoPosition _ ->
         accumulator
 
@@ -330,25 +343,29 @@ end = struct
         |> List.dedup_and_sort ~compare:TraceInfo.compare
       in
       let leaf_kind_json = `String (Leaf.show leaf) in
-      let tito_positions, leaf_json =
-        let gather_json (tito, leaves) = function
+      let breadcrumbs, tito_positions, leaf_json =
+        let gather_json (breadcrumbs, tito, leaves) = function
           | SimpleFeatures.LeafName name ->
-              (tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves)
+              (breadcrumbs, tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves)
           | TitoPosition location ->
               let tito_location_json =
                 Location.instantiate ~lookup:(fun _ -> Some "") location
                 |> location_to_json ~include_filename:false
               in
-              (tito_location_json :: tito, leaves)
+              (breadcrumbs, tito_location_json :: tito, leaves)
+          | Breadcrumb breadcrumb ->
+              let breadcrumb_json = Breadcrumb.to_json breadcrumb in
+              (breadcrumb_json :: breadcrumbs, tito, leaves)
         in
         let gather_return_access_path leaves = function
           | ComplexFeatures.ReturnAccessPath path ->
               let path_name = AbstractTreeDomain.Label.show_path path in
               `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
         in
-        let tito_positions, leaves =
-          FlowDetails.(fold simple_feature ~f:gather_json ~init:([], []) features)
+        let breadcrumbs, tito_positions, leaves =
+          FlowDetails.(fold simple_feature ~f:gather_json ~init:([], [], []) features)
         in
+        breadcrumbs,
         tito_positions,
         FlowDetails.(fold complex_feature ~f:gather_return_access_path ~init:leaves features)
       in
@@ -359,22 +376,24 @@ end = struct
         else
           leaf_json
       in
+      let association =
+        let cons_if_non_empty key list assoc =
+          if List.is_empty list then
+            assoc
+          else
+            (key, `List list) :: assoc
+        in
+        []
+        |> cons_if_non_empty "features" breadcrumbs
+        |> cons_if_non_empty "leaves" leaf_json
+        |> cons_if_non_empty "tito" tito_positions
+      in
       if List.is_empty trace_json then
-        [`Assoc [
-            "decl", `String "MISSING";
-            "tito", `List tito_positions;
-            "leaves", `List leaf_json;
-          ]
-        ]
+        [`Assoc (("decl", `String "MISSING") :: association) ]
       else
         List.map
           trace_json
-          ~f:(fun trace_pair ->
-              `Assoc [
-                trace_pair;
-                "tito", `List tito_positions;
-                "leaves", `List leaf_json;
-              ])
+          ~f:(fun trace_pair -> `Assoc (trace_pair :: association))
     in
     let elements =
       Map.to_alist taint

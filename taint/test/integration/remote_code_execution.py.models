@@ -21,7 +21,6 @@
               "start": 24,
               "end": 26
             },
-            "tito": [],
             "leaves": [
               { "kind": "UserControlled", "name": "__userControlled" }
             ]
@@ -38,7 +37,6 @@
               "start": 9,
               "end": 10
             },
-            "tito": [],
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
         ]
@@ -69,7 +67,6 @@
               "start": 24,
               "end": 26
             },
-            "tito": [],
             "leaves": [
               { "kind": "UserControlled", "name": "__userControlled" }
             ]
@@ -86,7 +83,6 @@
               "start": 26,
               "end": 27
             },
-            "tito": [],
             "leaves": [
               {
                 "kind": "RemoteCodeExecution",

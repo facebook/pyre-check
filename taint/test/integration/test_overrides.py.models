@@ -26,7 +26,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -46,7 +45,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -82,7 +80,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -102,7 +99,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -138,7 +134,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -158,7 +153,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -194,7 +188,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -214,7 +207,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -250,7 +242,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -270,7 +261,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -306,7 +296,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -326,7 +315,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -362,7 +350,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -382,7 +369,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -402,7 +388,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -422,7 +407,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -446,7 +430,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -470,7 +453,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           },
           {
@@ -480,7 +462,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -502,7 +483,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -526,7 +506,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -551,7 +530,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           },
           {
@@ -561,7 +539,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -585,7 +562,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           },
           {
@@ -595,7 +571,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -617,7 +592,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -641,7 +615,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -662,7 +635,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -686,7 +658,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -707,7 +678,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -731,7 +701,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -755,7 +724,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -777,7 +745,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -797,7 +764,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -817,7 +783,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -841,7 +806,6 @@
               "start": 19,
               "end": 22
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -865,7 +829,6 @@
               "start": 27,
               "end": 29
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]

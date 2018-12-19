@@ -26,7 +26,6 @@
               "port": "result",
               "length": 2
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -46,7 +45,6 @@
               "port": "formal(arg)",
               "length": 2
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -75,7 +73,6 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -99,7 +96,6 @@
               "start": 23,
               "end": 25
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
@@ -125,7 +121,6 @@
               "start": 15,
               "end": 18
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
         ]
@@ -154,7 +149,6 @@
               "port": "result",
               "length": 1
             },
-            "tito": [],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]

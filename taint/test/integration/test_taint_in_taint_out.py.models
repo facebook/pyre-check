@@ -10,7 +10,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
           }
         ]
@@ -20,7 +19,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
           }
         ]
@@ -30,7 +28,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -50,7 +47,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[b]" } ]
           }
         ]
@@ -60,7 +56,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "[a]" } ]
           }
         ]
@@ -70,7 +65,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -90,7 +84,6 @@
         "taint": [
           {
             "decl": null,
-            "tito": [],
             "leaves": [
               { "kind": "LocalReturn", "name": "[name]" },
               { "kind": "LocalReturn", "name": "[id]" }
@@ -128,7 +121,8 @@
               { "kind": "LocalReturn", "name": "[report]" },
               { "kind": "LocalReturn", "name": "[name]" },
               { "kind": "LocalReturn", "name": "[id]" }
-            ]
+            ],
+            "features": [ { "via": "obscure" } ]
           }
         ]
       }

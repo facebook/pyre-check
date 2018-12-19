@@ -84,6 +84,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution call_location arguments state call_targets =
+      let add_obscure set =
+        SimpleFeatures.Breadcrumb Breadcrumb.Obscure :: set
+      in
       let apply_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         if not taint_model.is_obscure then
@@ -184,11 +187,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             arguments
             ~init:ForwardState.Tree.empty
             ~f:(analyze_argument ~resolution state)
+          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:add_obscure
       in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
           List.fold arguments ~init:ForwardState.Tree.empty ~f:(analyze_argument ~resolution state)
+          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:add_obscure
       | call_targets ->
           List.map call_targets ~f:apply_call_target
           |> List.fold ~init:ForwardState.Tree.empty ~f:ForwardState.Tree.join
