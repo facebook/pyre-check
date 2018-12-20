@@ -329,7 +329,10 @@ let run_command ~daemonize ~verbose ~sections ~local_root ~search_path ~project_
     in
     let watchman_watches_root =
       let directory_contains_root directory =
-        Path.directory_contains ~directory:(Path.create_absolute directory) project_root
+        try
+          Path.directory_contains ~directory:(Path.create_absolute directory) project_root
+        with Unix.Unix_error _ ->
+          false
       in
       try
         let watch_list = Yojson.Safe.from_string input in
