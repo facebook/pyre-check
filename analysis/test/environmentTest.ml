@@ -1597,6 +1597,102 @@ let test_infer_protocols _ =
     ["A", "P"; "C", "P"]
 
 
+let test_propagate_nested_classes _ =
+  let test_propagate sources aliases =
+    Type.Cache.disable ();
+    Type.Cache.enable ();
+    let sources = List.map sources ~f:Preprocessing.preprocess in
+    let environment = Environment.Builder.create () in
+    let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+    let resolution = TypeCheck.resolution (module Handler) () in
+    let _ = List.map ~f:(Environment.register_class_definitions (module Handler)) sources in
+    Environment.register_aliases (module Handler) sources;
+    List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
+
+    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources;
+    let assert_alias (alias, target) =
+      parse_single_expression alias
+      |> parse_annotation (module Handler)
+      |> Type.show
+      |> assert_equal  ~printer:(fun string -> string) target
+    in
+    List.iter aliases ~f:assert_alias
+  in
+  test_propagate
+    [
+      parse
+        {|
+          class B:
+            class N:
+              pass
+          class C(B):
+            pass
+        |};
+    ]
+    ["C.N", "B.N"];
+  test_propagate
+    [
+      parse
+        {|
+          class B:
+            class N:
+              pass
+          class C(B):
+            class N:
+              pass
+        |};
+    ]
+    ["C.N", "C.N"];
+  test_propagate
+    [
+      parse
+        {|
+          class B1:
+            class N:
+              pass
+          class B2:
+            class N:
+              pass
+          class C(B1, B2):
+            pass
+        |};
+    ]
+    ["C.N", "B1.N"];
+  test_propagate
+    [
+      parse
+        ~qualifier:(Access.create "qual")
+        {|
+          class B:
+            class N:
+              pass
+        |};
+      parse
+        ~qualifier:(Access.create "importer")
+        {|
+          from qual import B
+          class C(B):
+            pass
+        |};
+    ]
+    ["importer.C.N", "qual.B.N"];
+  test_propagate
+    [
+      parse
+        {|
+          class B:
+            class N:
+              class NN:
+                class NNN:
+                  pass
+          class C(B):
+            pass
+        |};
+    ]
+    ["C.N.NN.NNN", "B.N.NN.NNN"];
+  ()
+
+
 let () =
   "environment_type_order">:::[
     "connect_type_order">::test_connect_type_order;
@@ -1622,5 +1718,6 @@ let () =
     "register_dependencies">::test_register_dependencies;
     "register_functions">::test_register_functions;
     "register_globals">::test_register_globals;
+    "propagate_nested_classes">::test_propagate_nested_classes;
   ]
   |> Test.run

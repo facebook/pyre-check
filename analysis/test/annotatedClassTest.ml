@@ -285,7 +285,7 @@ let test_constructors _ =
       class Foo(typing.Generic[_K, _V]):
         def Foo.__init__(self) -> None: pass
     |}
-    (Some "typing.Callable('Foo.__init__')[[], Foo[_K, _V]]");
+    (Some "typing.Callable('Foo.__init__')[[], Foo[typing.TypeVar('_K'),typing.TypeVar('_V')]]");
 
   (* Tuples. *)
   assert_constructor

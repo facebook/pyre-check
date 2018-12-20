@@ -36,6 +36,7 @@ let populate
   (* Build type order. *)
   List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+  List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources;
 
   if debug then
     (* Validate integrity of the type order built so far before moving forward.

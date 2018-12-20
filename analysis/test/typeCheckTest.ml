@@ -8694,6 +8694,64 @@ let test_check_literal_variance _ =
     ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."]
 
 
+let test_check_nested_class_inheritance _ =
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return Y.Q()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return X.Q()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      class Z():
+          class Q():
+              pass
+
+      def foo() -> Y.Q:
+          return Z.Q()
+    |}
+    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
+  assert_type_errors
+    {|
+      class X:
+        class N:
+          class NN:
+            class NNN:
+              pass
+      class Y(X):
+        pass
+      def foo() -> Y.N.NN.NNN:
+          return Y.N.NN.NNN()
+    |}
+    []
+
 
 let () =
   "type">:::[
@@ -8770,5 +8828,6 @@ let () =
     "check_getattr">::test_check_getattr;
     "check_typed_dictionarys">::test_check_typed_dictionaries;
     "check_literal_variance">::test_check_literal_variance;
+    "check_nested_class_inheritance">::test_check_nested_class_inheritance;
   ]
   |> Test.run
