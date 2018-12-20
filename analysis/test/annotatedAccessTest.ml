@@ -899,13 +899,12 @@ let test_object_callables _ =
   assert_resolved "module.call" "module.Call[int, str]";
   assert_resolved "module.call.attribute" "int";
   assert_resolved "module.call.generic_callable" "typing.Callable[[int], str]";
-  (* TODO(T37956736): Restore this test to return $bottom. *)
-  (* assert_resolved "module.call()" "$bottom"; *)
+  assert_resolved "module.call()" "str";
   assert_resolved "module.callable()" "int";
 
   assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
-  (* TODO(T37956736): Restore this test. *)
-  (* assert_resolved "module.meta" "module.Call[$bottom, $bottom]"; *)
+  (* We don't resolve calls to constructors at the resolve_literal level. *)
+  assert_resolved "module.meta()" "$unknown";
   assert_resolved "module.submodule.generic_callable" "typing.Callable[[int], int]"
 
 
