@@ -7357,6 +7357,19 @@ let test_check_callables _ =
     |}
     [];
 
+  (* We handle subclassing. *)
+  assert_type_errors
+    {|
+      class BaseClass:
+        def __call__(self, val: typing.Optional[str] = None) -> "BaseClass":
+          ...
+      class SubClass(BaseClass):
+        pass
+      def f(sc: SubClass) -> None:
+        sc('foo')
+    |}
+    [];
+
   assert_type_errors
     {|
       class Call:

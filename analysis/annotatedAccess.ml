@@ -206,7 +206,7 @@ let fold ~resolution ~initial ~f access =
       parent
       |> Resolution.class_definition resolution
       >>| Class.create
-      >>| Class.attribute ~resolution ~name ~instantiated:parent
+      >>| Class.attribute ~resolution ~name ~instantiated:parent ~transitive:true
       >>= fun attribute -> Option.some_if (Attribute.defined attribute) attribute
       >>| Attribute.annotation
       >>| Annotation.annotation
