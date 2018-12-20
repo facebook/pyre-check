@@ -735,7 +735,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               let visited = Set.add visited annotation in
               let alias annotation =
                 let apply_aliases name =
-                  let rec try_resolving reversed_tail reversed_lead =
+                  let rec try_resolving tail reversed_lead =
                     match reversed_lead with
                     | [] ->
                         None
@@ -751,11 +751,11 @@ let rec create ~aliases { Node.value = expression; _ } =
                             Format.sprintf
                               "%s.%s"
                               (Identifier.show alias)
-                              (Access.show (List.rev reversed_tail))
+                              (Access.show tail)
                             |> primitive
                             |> Option.some
                         | _ ->
-                            try_resolving (current :: reversed_tail) rest
+                            try_resolving (current :: tail) rest
                   in
                   Identifier.show name
                   |> Access.create

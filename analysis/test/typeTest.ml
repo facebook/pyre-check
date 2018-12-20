@@ -186,6 +186,10 @@ let test_create _ =
   assert_create ~aliases "A.InnerClass" (Type.primitive "B.InnerClass");
   (* Known limitation: We're not following parametric types here. *)
   assert_create ~aliases "A.InnerClass[int]" (Type.parametric "A.InnerClass" [Type.integer]);
+  assert_create
+    ~aliases
+    "A.InnerClass.InnerInnerClass"
+    (Type.primitive "B.InnerClass.InnerInnerClass");
 
   (* Aliases with Unions. *)
   let aliases = function
