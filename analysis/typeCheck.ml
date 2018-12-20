@@ -1599,60 +1599,6 @@ module State = struct
     (* We weaken type inference of mutable literals for assignments and returns
        to get around the invariance of containers when we can prove that casting to
        a supertype is safe. *)
-    let resolve_mutable_literals resolution ~expression ~resolved ~expected =
-      match expression with
-      | Some { Node.value = Expression.List _; _ }
-      | Some { Node.value = Expression.ListComprehension _; _ } ->
-          begin
-            match resolved, expected with
-            | Type.Parametric { name = actual_name; parameters = [actual] },
-              Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-              when Identifier.equal actual_name (Identifier.create "list") &&
-                   Identifier.equal expected_name (Identifier.create "list") &&
-                   Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
-                expected
-            | _ ->
-                resolved
-          end
-
-      | Some { Node.value = Expression.Set _; _ }
-      | Some { Node.value = Expression.SetComprehension _; _ } ->
-          begin
-            match resolved, expected with
-            | Type.Parametric { name = actual_name; parameters = [actual] },
-              Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-              when Identifier.equal actual_name (Identifier.create "set") &&
-                   Identifier.equal expected_name (Identifier.create "set") &&
-                   Resolution.less_or_equal resolution ~left:actual ~right:expected_parameter ->
-                expected
-            | _ ->
-                resolved
-          end
-
-      | Some { Node.value = Expression.Dictionary _; _ }
-      | Some { Node.value = Expression.DictionaryComprehension _; _ } ->
-          begin
-            match resolved, expected with
-            | Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
-              Type.Parametric {
-                name = expected_name;
-                parameters = [expected_key; expected_value];
-              }
-              when Identifier.equal actual_name (Identifier.create "dict") &&
-                   Identifier.equal expected_name (Identifier.create "dict") &&
-                   Resolution.less_or_equal resolution ~left:actual_key ~right:expected_key &&
-                   Resolution.less_or_equal
-                     resolution
-                     ~left:actual_value
-                     ~right:expected_value ->
-                expected
-            | _ ->
-                resolved
-          end
-
-      | _ ->
-          resolved
-    in
     let validate_return ~expression ~state ~actual ~is_implicit =
       let return_annotation =
         let annotation =
@@ -1664,7 +1610,11 @@ module State = struct
           annotation
       in
       let actual =
-        resolve_mutable_literals resolution ~expression ~resolved:actual ~expected:return_annotation
+        Resolution.resolve_mutable_literals
+          resolution
+          ~expression
+          ~resolved:actual
+          ~expected:return_annotation
       in
       try
         if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
@@ -1806,7 +1756,9 @@ module State = struct
                   annotation, element
               in
               let expected = Annotation.original annotation in
-              let resolved = resolve_mutable_literals resolution ~expression ~resolved ~expected in
+              let resolved =
+                Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
+              in
               (* Check if assignment is valid. *)
               let state =
                 let error =

@@ -8704,7 +8704,47 @@ let test_check_literal_variance _ =
         a = {1}
         return a
     |}
-    ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."]
+    ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."];
+  assert_type_errors
+    {|
+      def foo(a: typing.List[float]) -> float:
+        return a[0]
+      def bar() -> float:
+        return foo([1,2,3])
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(a: typing.List[float]) -> float:
+        return a[0]
+      def bar() -> float:
+        a = [1,2,3]
+        return foo(a)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.List[float]` " ^
+      "for 1st anonymous parameter to call `foo` but got `typing.List[int]`."
+    ];
+  assert_type_errors
+    {|
+      def foo(a: typing.Dict[str, float]) -> float:
+        return a["a"]
+      def bar() -> float:
+        return foo({ "a" : 1 })
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(a: typing.Dict[str, float]) -> float:
+        return a["a"]
+      def bar() -> float:
+        a = { "a" : 1 }
+        return foo(a)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.Dict[str, float]` for " ^
+      "1st anonymous parameter to call `foo` but got `typing.Dict[str, int]`."
+    ]
 
 
 let test_check_nested_class_inheritance _ =

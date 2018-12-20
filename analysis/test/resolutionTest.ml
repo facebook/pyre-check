@@ -71,21 +71,27 @@ let test_parse_annotation _ =
     ~expected:"typing.Dict[str, typing.Any]"
 
 
+let make_resolution source =
+  let configuration = Configuration.Analysis.create () in
+  let populate source =
+    let environment =
+      let environment = Environment.Builder.create () in
+      Service.Environment.populate
+        ~configuration
+        (Environment.handler ~configuration environment)
+        (parse source :: typeshed_stubs);
+      environment
+    in
+    Environment.handler ~configuration environment
+  in
+  populate source
+  |> fun environment -> TypeCheck.resolution environment ()
+
+
 let test_resolve_literal _ =
   let resolution =
-    let configuration = Configuration.Analysis.create () in
-    let populate source =
-      let environment =
-        let environment = Environment.Builder.create () in
-        Service.Environment.populate
-          ~configuration
-          (Environment.handler ~configuration environment)
-          (parse source :: typeshed_stubs);
-        environment
-      in
-      Environment.handler ~configuration environment
-    in
-    populate {|
+    make_resolution
+      {|
       class C:
         def __init__(self) -> None:
           pass
@@ -97,7 +103,6 @@ let test_resolve_literal _ =
       t = 1, 1.0
       awaitable: typing.Awaitable[int]
     |}
-    |> fun environment -> TypeCheck.resolution environment ()
   in
   let assert_resolve_literal source expected =
     let expression =
@@ -117,11 +122,93 @@ let test_resolve_literal _ =
   assert_resolve_literal "foo()" Type.Top;
   assert_resolve_literal "C()" (Type.primitive "C")
 
+let test_resolve_mutable_literals _ =
+  let resolution =
+    make_resolution
+      {|
+      class C: ...
+      class D(C): ...
+      class Q: ...
+    |}
+  in
+  let assert_resolve_mutable_literals ~source ~against expected_output =
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> Resolution.parse_annotation resolution
+    in
+    let expression =
+      match parse_single_statement source with
+      | { Node.value = Statement.Expression expression; _ } -> expression
+      | _ -> failwith "No Assign to parse"
+    in
+    let resolved = Resolution.resolve resolution expression in
+    let expression = Some expression in
+    let expected = parse_annotation against in
+    assert_equal
+      ~printer:Type.show
+      (parse_annotation expected_output)
+      (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
+  in
+  assert_resolve_mutable_literals
+    ~source:"[D()]"
+    ~against:"typing.List[C]"
+    "typing.List[C]";
+  assert_resolve_mutable_literals
+    ~source:"[Q()]"
+    ~against:"typing.List[C]"
+    "typing.List[Q]";
+
+  assert_resolve_mutable_literals
+    ~source:"[y for y in [D()]]"
+    ~against:"typing.List[C]"
+    "typing.List[C]";
+  assert_resolve_mutable_literals
+    ~source:"[y for y in [Q()]]"
+    ~against:"typing.List[C]"
+    "typing.List[Q]";
+
+  assert_resolve_mutable_literals
+    ~source:"{ 's': D() }"
+    ~against:"typing.Dict[str, C]"
+    "typing.Dict[str, C]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': Q() }"
+    ~against:"typing.Dict[str, C]"
+    "typing.Dict[str, Q]";
+
+  assert_resolve_mutable_literals
+    ~source:"{ 's': y for y in [D()] }"
+    ~against:"typing.Dict[str, C]"
+    "typing.Dict[str, C]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': y for y in [Q()] }"
+    ~against:"typing.Dict[str, C]"
+    "typing.Dict[str, Q]";
+
+  assert_resolve_mutable_literals
+    ~source:"{ D() }"
+    ~against:"typing.Set[C]"
+    "typing.Set[C]";
+  assert_resolve_mutable_literals
+    ~source:"{ Q() }"
+    ~against:"typing.Set[C]"
+    "typing.Set[Q]";
+
+  assert_resolve_mutable_literals  "{ y for y in [D()] }"
+    ~source:"typing.Set[C]"
+    ~against:"typing.Set[C]";
+  assert_resolve_mutable_literals  "{ y for y in [Q()] }"
+    ~source:"typing.Set[C]"
+    ~against:"typing.Set[Q]"
+
+
 
 let () =
   "resolution">:::[
     "set_local">::test_set_local;
     "parse_annotation">::test_parse_annotation;
     "resolve_literal">::test_resolve_literal;
+    "resolve_mutable_literals">::test_resolve_mutable_literals;
   ]
   |> Test.run

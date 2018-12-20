@@ -294,3 +294,57 @@ let rec resolve_literal resolution expression =
 
   | _ ->
       Type.Top
+
+let resolve_mutable_literals resolution ~expression ~resolved ~expected =
+  match expression with
+  | Some { Node.value = Expression.List _; _ }
+  | Some { Node.value = Expression.ListComprehension _; _ } ->
+      begin
+        match resolved, expected with
+        | Type.Parametric { name = actual_name; parameters = [actual] },
+          Type.Parametric { name = expected_name; parameters = [expected_parameter] }
+          when Identifier.equal actual_name (Identifier.create "list") &&
+               Identifier.equal expected_name (Identifier.create "list") &&
+               less_or_equal resolution ~left:actual ~right:expected_parameter ->
+            expected
+        | _ ->
+            resolved
+      end
+
+  | Some { Node.value = Expression.Set _; _ }
+  | Some { Node.value = Expression.SetComprehension _; _ } ->
+      begin
+        match resolved, expected with
+        | Type.Parametric { name = actual_name; parameters = [actual] },
+          Type.Parametric { name = expected_name; parameters = [expected_parameter] }
+          when Identifier.equal actual_name (Identifier.create "set") &&
+               Identifier.equal expected_name (Identifier.create "set") &&
+               less_or_equal resolution ~left:actual ~right:expected_parameter ->
+            expected
+        | _ ->
+            resolved
+      end
+
+  | Some { Node.value = Expression.Dictionary _; _ }
+  | Some { Node.value = Expression.DictionaryComprehension _; _ } ->
+      begin
+        match resolved, expected with
+        | Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
+          Type.Parametric {
+            name = expected_name;
+            parameters = [expected_key; expected_value];
+          }
+          when Identifier.equal actual_name (Identifier.create "dict") &&
+               Identifier.equal expected_name (Identifier.create "dict") &&
+               less_or_equal resolution ~left:actual_key ~right:expected_key &&
+               less_or_equal
+                 resolution
+                 ~left:actual_value
+                 ~right:expected_value ->
+            expected
+        | _ ->
+            resolved
+      end
+
+  | _ ->
+      resolved

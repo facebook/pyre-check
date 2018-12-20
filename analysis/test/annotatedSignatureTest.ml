@@ -41,6 +41,9 @@ let resolution =
       class list(typing.Generic[_T], typing.Sequence[_T]): ...
       class dict(typing.Generic[_T, _S], typing.Mapping[_T, _S]): ...
 
+      class C(): ...
+      class B(C): ...
+
       meta: typing.Type[typing.List[int]] = ...
       union: typing.Union[int, str] = ...
 
@@ -287,10 +290,10 @@ let test_select _ =
         Type.callable
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
-              Type.Callable.Parameter.name = Access.create "$0";
-              annotation = Type.Object;
-              default = false;
-            }])
+                Type.Callable.Parameter.name = Access.create "$0";
+                annotation = Type.Object;
+                default = false;
+              }])
           ~annotation:Type.integer
           (),
         None,
@@ -339,6 +342,24 @@ let test_select _ =
 
   assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
+  assert_select "[[typing.List[C]], int]" "([B()])" (`Found "[[typing.List[C]], int]");
+  assert_select
+    "[[typing.List[C]], int]"
+    "([B() for x in range(3)])"
+    (`Found "[[typing.List[C]], int]");
+  assert_select "[[typing.Set[C]], int]" "({ B(), B() })" (`Found "[[typing.Set[C]], int]");
+  assert_select
+    "[[typing.Set[C]], int]"
+    "({ B() for x in range(3) })"
+    (`Found "[[typing.Set[C]], int]");
+  assert_select
+    "[[typing.Dict[int, C]], int]"
+    "({ 7: B() })"
+    (`Found "[[typing.Dict[int, C]], int]");
+  assert_select
+    "[[typing.Dict[int, C]], int]"
+    "({n: B() for n in range(5)})"
+    (`Found "[[typing.Dict[int, C]], int]");
   assert_select
     "[[typing.Sequence[_T]], int]"
     "(1)"

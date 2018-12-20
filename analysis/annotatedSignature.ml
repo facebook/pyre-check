@@ -378,11 +378,11 @@ let select
             in
             let argument_annotation =
               if Type.is_meta argument_annotation && Type.is_callable parameter_annotation then
-                  Type.single_parameter argument_annotation
-                  |> Resolution.class_definition resolution
-                  >>| Class.create
-                  >>| Class.constructor ~resolution
-                  |> Option.value ~default:argument_annotation
+                Type.single_parameter argument_annotation
+                |> Resolution.class_definition resolution
+                >>| Class.create
+                >>| Class.constructor ~resolution
+                |> Option.value ~default:argument_annotation
               else
                 argument_annotation
             in
@@ -581,7 +581,17 @@ let select
                       Resolution.resolve resolution expression
                       |> sequence_parameter
                   | { Argument.value = expression; _ } ->
-                      let argument_annotation = Resolution.resolve resolution expression in
+                      let resolved = Resolution.resolve resolution expression in
+                      let argument_annotation =
+                        if Type.is_resolved parameter_annotation then
+                          Resolution.resolve_mutable_literals
+                            resolution
+                            ~expression:(Some expression)
+                            ~resolved
+                            ~expected:parameter_annotation
+                        else
+                          resolved
+                      in
                       if Type.is_meta parameter_annotation &&
                          Type.equal argument_annotation Type.Top then
                         Resolution.parse_annotation resolution expression
