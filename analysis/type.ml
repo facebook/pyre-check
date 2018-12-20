@@ -764,15 +764,19 @@ let rec create ~aliases { Node.value = expression; _ } =
                 in
                 match aliases annotation, annotation with
                 | Some alias, _ ->
-                    Some alias
+                    resolve visited alias
+                    |> Option.some
                 | None, Primitive name ->
+                    (* Don't apply the fixpoint if we're folding over the type. It can lead
+                       to infinite loops in the case where you have module c define class c,
+                       the `c.c` alias would loop forever. *)
                     apply_aliases name
                 | _ ->
                     None
               in
               match alias annotation with
               | Some alias ->
-                  resolve visited alias
+                  alias
               | _ ->
                   begin
                     match annotation with

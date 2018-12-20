@@ -172,6 +172,8 @@ let test_create _ =
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" -> Some (Type.list (Type.primitive "B"))
     | Type.Primitive name when Identifier.show name = "B" -> Some (Type.primitive "C")
+    | Type.Primitive name when Identifier.show name = "module.R" ->
+        Some (Type.primitive "module.R.R")
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.primitive "C"));
@@ -186,6 +188,7 @@ let test_create _ =
   assert_create ~aliases "A.InnerClass" (Type.primitive "B.InnerClass");
   (* Known limitation: We're not following parametric types here. *)
   assert_create ~aliases "A.InnerClass[int]" (Type.parametric "A.InnerClass" [Type.integer]);
+  assert_create ~aliases "module.R.R" (Type.primitive "module.R.R");
   assert_create
     ~aliases
     "A.InnerClass.InnerInnerClass"
