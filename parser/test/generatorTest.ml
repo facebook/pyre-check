@@ -4159,6 +4159,213 @@ let test_ellipsis _ =
     ]
 
 
+let test_setitem _ =
+  assert_parsed_equal
+    "i[j] = 3"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              { Argument.name = None; value = +Integer 3 };
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "i[j] += 3"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              {
+                Argument.name = None;
+                value = +Access[
+                  Access.Identifier ~~"i";
+                  Access.Identifier ~~"__getitem__";
+                  Access.Call(+[{ Argument.name = None; value = !"j" }]);
+                  Access.Identifier ~~"__add__";
+                  Access.Call(+[{ Argument.name = None; value = +Integer 3 }]);
+                ];
+              }
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "i[j][7] = 8"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__getitem__";
+          Access.Call(+[{ Argument.name = None; value = !"j" }]);
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = +Integer 7 };
+              { Argument.name = None; value = +Integer 8 };
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "i[j::1] = i[:j]"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              {
+                Argument.name = None;
+                value = +Access[
+                  Access.Identifier ~~"slice";
+                  Access.Call(+[
+                      { Argument.name = None; value = !"j" };
+                      { Argument.name = None; value = !"None" };
+                      { Argument.name = None; value = +Integer 1 };
+                    ]);
+                ];
+              };
+              {
+                Argument.name = None;
+                value = +Access[
+                  Access.Identifier ~~"i";
+                  Access.Identifier ~~"__getitem__";
+                  Access.Call(+[
+                      {
+                        Argument.name = None;
+                        value = +Access[
+                          Access.Identifier ~~"slice";
+                          Access.Call(+[
+                              { Argument.name = None; value = !"None" };
+                              { Argument.name = None; value = !"j" };
+                              { Argument.name = None; value = !"None" };
+                            ]);
+                        ];
+                      };
+                    ]);
+                ];
+              }
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "i[j] = 5 if 1 else 1"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              {
+                Argument.name = None;
+                value = +Ternary {
+                  target = +Integer 5;
+                  test = +Integer 1;
+                  alternative = +Integer 1;
+                };
+              }
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "x = i[j] = y"
+    [
+      +Assign {
+        target = !"x";
+        annotation = None;
+        value = !"y";
+        parent = None;
+      };
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              { Argument.name = None; value = !"y" };
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "j[i] = x = i[j] = y"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"j";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"i" };
+              { Argument.name = None; value = !"y" };
+            ]);
+        ]
+      );
+      +Assign {
+        target = !"x";
+        annotation = None;
+        value = !"y";
+        parent = None;
+      };
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              { Argument.name = None; value = !"y" };
+            ]);
+        ]
+      );
+    ];
+  assert_parsed_equal
+    "x, i[j] = y"
+    [
+      +Assign {
+        target = +Tuple[
+          !"x";
+          +Access[
+            Access.Identifier ~~"i";
+            Access.Identifier ~~"__getitem__";
+            Access.Call(+[{ Argument.name = None; value = !"j" }]);
+          ];
+        ];
+        annotation = None;
+        value = !"y";
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "i[j] = x =  ... # type: Something"
+    [
+      +Expression (
+        +Access [
+          Access.Identifier ~~"i";
+          Access.Identifier ~~"__setitem__";
+          Access.Call(+[
+              { Argument.name = None; value = !"j" };
+              { Argument.name = None; value = +Ellipses };
+            ]);
+        ]
+      );
+      +Assign {
+        target = !"x";
+        annotation = Some (+String (StringLiteral.create "Something"));
+        value = +Ellipses;
+        parent = None;
+      };
+    ]
+
+
 let () =
   "parsing">:::[
     "lexer">::test_lexer;
@@ -4202,5 +4409,6 @@ let () =
     "stubs">::test_stubs;
     "nonlocal">::test_nonlocal;
     "ellipsis">::test_ellipsis;
+    "setitem">::test_setitem;
   ]
   |> Test.run
