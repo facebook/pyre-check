@@ -217,7 +217,7 @@ let fold ~resolution ~initial ~f access =
           None
     in
     let resolve_callables
-        ~implicit_annotation
+        ~implicit_parameter_annotation
         ~callables
         ~arguments:{ Node.location; value = arguments } =
       let signatures =
@@ -328,7 +328,7 @@ let fold ~resolution ~initial ~f access =
             | Some (Access.Identifier get_item) -> get_item = name
             | _ -> false
           in
-          match implicit_annotation, callable with
+          match implicit_parameter_annotation, callable with
           | Some (Type.TypedDictionary { fields; name; _ }),
             { Type.Record.Callable.kind = Named access; _ }
             when tail_is access "__getitem__" ->
@@ -508,7 +508,7 @@ let fold ~resolution ~initial ~f access =
                 else
                   target
               in
-              let implicit_annotation, callables =
+              let implicit_parameter_annotation, callables =
                 match resolved with
                 | meta when Type.is_meta resolved ->
                     let callable =
@@ -559,7 +559,7 @@ let fold ~resolution ~initial ~f access =
               if List.is_empty callables then
                 State.abort state ~element:(NotCallable resolved) ~lead ()
               else
-                resolve_callables ~implicit_annotation ~callables ~arguments
+                resolve_callables ~implicit_parameter_annotation ~callables ~arguments
 
           | Some resolved, Access.Identifier _
             when Type.is_callable (Annotation.annotation resolved) ->
