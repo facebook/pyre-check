@@ -835,7 +835,7 @@ let test_class_attributes _ =
 
 
 let test_fallback_attribute _ =
-  let assert_fallback_attribute source annotation =
+  let assert_fallback_attribute ~name source annotation =
     Class.Attribute.Cache.clear ();
     let resolution =
       populate source
@@ -848,7 +848,7 @@ let test_fallback_attribute _ =
               Class.create (Node.create ~location definition)
           | _ ->
               failwith "Last statement was not a class")
-      |> Class.fallback_attribute ~resolution ~access:[]
+      |> Class.fallback_attribute ~resolution ~name:(Access.create name)
     in
     match annotation with
     | None ->
@@ -858,17 +858,20 @@ let test_fallback_attribute _ =
         let attribute = Option.value_exn attribute in
         assert_equal
           ~cmp:Type.equal
+          ~printer:Type.show
           annotation
           (Attribute.annotation attribute |> Annotation.annotation)
   in
 
   assert_fallback_attribute
+    ~name:"attribute"
     {|
       class Foo:
         pass
     |}
     None;
   assert_fallback_attribute
+    ~name:"attribute"
     {|
       class Foo:
         def Foo.__getattr__(self, attribute: str) -> int:
@@ -876,17 +879,42 @@ let test_fallback_attribute _ =
     |}
     (Some Type.integer);
   assert_fallback_attribute
+    ~name:"attribute"
     {|
       class Foo:
         def Foo.__getattr__(self, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
+    ~name:"attribute"
     {|
       class Foo:
         def Foo.__getattr__(self, attribute: str) -> int: ...
       class Bar(Foo):
         pass
+    |}
+    (Some Type.integer);
+
+  assert_fallback_attribute
+    ~name:"__iadd__"
+    {|
+      class Foo:
+        def Foo.__add__(self, other: Foo) -> int:
+          pass
+    |}
+    (Some (parse_callable "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]"));
+  assert_fallback_attribute
+    ~name:"__iadd__"
+    {|
+      class Foo:
+        pass
+    |}
+    None;
+  assert_fallback_attribute
+    ~name:"__iadd__"
+    {|
+      class Foo:
+        def Foo.__getattr__(self, attribute) -> int: ...
     |}
     (Some Type.integer)
 

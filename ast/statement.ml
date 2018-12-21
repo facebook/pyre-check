@@ -933,7 +933,6 @@ module Class = struct
       ?(include_generated_attributes = true)
       ?(in_test = false)
       definition =
-
     let explicit_attributes = explicitly_assigned_attributes definition in
     if not include_generated_attributes then
       explicit_attributes

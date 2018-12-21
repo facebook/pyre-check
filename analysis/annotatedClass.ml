@@ -828,49 +828,86 @@ let attribute
       |> Option.value ~default:undefined)
 
 
-let fallback_attribute ~resolution ~access definition =
-  let fallback =
-    attribute
-      definition
-      ~class_attributes:true
-      ~transitive:true
-      ~resolution
-      ~name:(Access.create "__getattr__")
-      ~instantiated:(annotation definition ~resolution)
-  in
-  if Attribute.defined fallback then
-    let annotation =
-      fallback
-      |> Attribute.annotation
-      |> Annotation.annotation
+let rec fallback_attribute ~resolution ~name definition =
+  let compound_backup =
+    let name =
+      match Access.show name with
+      | "__iadd__" -> Some "__add__"
+      | "__isub__" -> Some "__sub__"
+      | "__imul__" -> Some "__mul__"
+      | "__imatmul__" -> Some "__matmul__"
+      | "__itruediv__" -> Some "__truediv__"
+      | "__ifloordiv__" -> Some "__floordiv__"
+      | "__imod__" -> Some "__mod__"
+      | "__idivmod__" -> Some "__divmod__"
+      | "__ipow__" -> Some "__pow__"
+      | "__ilshift__" -> Some "__lshift__"
+      | "__irshift__" -> Some "__rshift__"
+      | "__iand__" -> Some "__and__"
+      | "__ixor__" -> Some "__xor__"
+      | "__ior__" -> Some "__or__"
+      | _ -> None
     in
-    begin
-      match annotation with
-      | Type.Callable { Type.Callable.implementation; _ } ->
-          let return_annotation = Type.Callable.Overload.return_annotation implementation in
-          let location = Attribute.location fallback in
-          Some
-            (Attribute.create
-               ~resolution
-               ~parent:definition
-               {
-                 Node.location;
-                 value = {
-                   Statement.Attribute.target = Node.create ~location (Access access);
-                   annotation = Some (Type.expression return_annotation);
-                   defines = None;
-                   value = None;
-                   async = false;
-                   setter = false;
-                   property = false;
-                   primitive = true;
-                 };
-               })
-      | _ ->
-          None
-    end
-  else
-    None
+    match name with
+    | Some name ->
+        attribute
+          definition
+          ~class_attributes:false
+          ~transitive:true
+          ~resolution
+          ~name:(Access.create name)
+          ~instantiated:(annotation definition ~resolution)
+        |> Option.some
+    | _ ->
+        None
+  in
+  let getitem_backup () =
+    let fallback =
+      attribute
+        definition
+        ~class_attributes:true
+        ~transitive:true
+        ~resolution
+        ~name:(Access.create "__getattr__")
+        ~instantiated:(annotation definition ~resolution)
+    in
+    if Attribute.defined fallback then
+      let annotation =
+        fallback
+        |> Attribute.annotation
+        |> Annotation.annotation
+      in
+      begin
+        match annotation with
+        | Type.Callable { Type.Callable.implementation; _ } ->
+            let return_annotation = Type.Callable.Overload.return_annotation implementation in
+            let location = Attribute.location fallback in
+            Some
+              (Attribute.create
+                 ~resolution
+                 ~parent:definition
+                 {
+                   Node.location;
+                   value = {
+                     Statement.Attribute.target = Node.create ~location (Access name);
+                     annotation = Some (Type.expression return_annotation);
+                     defines = None;
+                     value = None;
+                     async = false;
+                     setter = false;
+                     property = false;
+                     primitive = true;
+                   };
+                 })
+        | _ ->
+            None
+      end
+    else
+      None
+  in
+  match compound_backup with
+  | Some backup when Attribute.defined backup -> Some backup
+  | _ -> getitem_backup ()
 
 
 let constructor definition ~resolution =

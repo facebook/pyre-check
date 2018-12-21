@@ -58,23 +58,26 @@
     | RightShift
     | Subtract
 
-  let binary_operator ~left:({ Node.location; _ } as left) ~operator ~right =
+  let binary_operator ~compound ~left:({ Node.location; _ } as left) ~operator ~right =
     let access =
       let name =
-        match operator with
-        | Add -> "__add__"
-        | At -> "__matmul__"
-        | BitAnd -> "__and__"
-        | BitOr -> "__or__"
-        | BitXor -> "__xor__"
-        | Divide -> "__truediv__"
-        | FloorDivide -> "__floordiv__"
-        | LeftShift -> "__lshift__"
-        | Modulo -> "__mod__"
-        | Multiply -> "__mul__"
-        | Power -> "__pow__"
-        | RightShift -> "__rshift__"
-        | Subtract -> "__sub__"
+        let name =
+          match operator with
+          | Add -> "add"
+          | At -> "matmul"
+          | BitAnd -> "and"
+          | BitOr -> "or"
+          | BitXor -> "xor"
+          | Divide -> "truediv"
+          | FloorDivide -> "floordiv"
+          | LeftShift -> "lshift"
+          | Modulo -> "mod"
+          | Multiply -> "mul"
+          | Power -> "pow"
+          | RightShift -> "rshift"
+          | Subtract -> "sub"
+        in
+        Format.asprintf "__%s%s__" (if compound then "i" else "") name
       in
       let arguments = [{ Argument.name = None; value = right }] in
       ((access left) @ (Access.call ~arguments ~location ~name ()))
@@ -334,6 +337,7 @@ small_statement:
   | subscript = subscript; compound = compound_operator; value = test {
       let value =
         binary_operator
+          ~compound:true
           ~left:(subscript_access subscript)
           ~operator:compound
           ~right:value
@@ -343,7 +347,7 @@ small_statement:
   | target = test_list;
     compound = compound_operator;
     value = test_list {
-      let value = binary_operator ~left:target ~operator:compound ~right:value in
+      let value = binary_operator ~compound:true ~left:target ~operator:compound ~right:value in
       [{
         Node.location = {
           target.Node.location with Location.stop =
@@ -1111,7 +1115,7 @@ atom:
   | left = expression;
     operator = binary_operator;
     right = expression; {
-      binary_operator ~left ~operator ~right
+      binary_operator ~compound:false ~left ~operator ~right
     }
 
   | bytes = BYTES+ {

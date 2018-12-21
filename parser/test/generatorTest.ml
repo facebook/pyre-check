@@ -2930,7 +2930,7 @@ let test_assign _ =
         annotation = None;
         value = +Access [
           Access.Identifier "a";
-          Access.Identifier "__add__";
+          Access.Identifier "__iadd__";
           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
         ];
         parent = None;
@@ -2945,7 +2945,7 @@ let test_assign _ =
         value = +Access [
           Access.Identifier "a";
           Access.Identifier "b";
-          Access.Identifier "__add__";
+          Access.Identifier "__iadd__";
           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
         ];
         parent = None;
@@ -4189,7 +4189,7 @@ let test_setitem _ =
                   Access.Identifier "i";
                   Access.Identifier "__getitem__";
                   Access.Call(+[{ Argument.name = None; value = !"j" }]);
-                  Access.Identifier "__add__";
+                  Access.Identifier "__iadd__";
                   Access.Call(+[{ Argument.name = None; value = +Integer 3 }]);
                 ];
               }

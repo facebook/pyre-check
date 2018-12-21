@@ -447,7 +447,7 @@ let fold ~resolution ~initial ~f access =
                   ~instantiated
               in
               if not (Attribute.defined attribute) then
-                Class.fallback_attribute definition ~resolution ~access:name
+                Class.fallback_attribute definition ~resolution ~name
                 |> Option.value ~default:attribute
               else
                 attribute)

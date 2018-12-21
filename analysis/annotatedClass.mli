@@ -158,7 +158,7 @@ val attribute
   -> Attribute.t
 
 (* Attribute defined by `__getattr__`. *)
-val fallback_attribute: resolution: Resolution.t -> access: Access.t -> t -> Attribute.t option
+val fallback_attribute: resolution: Resolution.t -> name: Access.t -> t -> Attribute.t option
 
 val constructor: t -> resolution: Resolution.t -> Type.t
 
