@@ -7383,6 +7383,14 @@ let test_check_callables _ =
       "Call error [29]: `Call` is not a function.";
     ];
 
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(call) -> int:
+        return call()
+    |}
+    [];
+
   (* Test for terminating fixpoint *)
   assert_type_errors
     {|
