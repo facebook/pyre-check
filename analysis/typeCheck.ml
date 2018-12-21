@@ -135,12 +135,14 @@ module State = struct
     }
 
 
-  let check_annotation ~resolution ~location ~define ~annotation =
+  let check_annotation ~resolution ~location ~define ~annotation ~resolved =
     let check_untracked_annotation errors annotation =
       if Resolution.is_tracked resolution annotation then
         errors
-      else
+      else if Type.is_unknown resolved then
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
+      else
+        Error.create ~location ~kind:(Error.InvalidType annotation) ~define :: errors
     in
     let check_missing_type_parameters errors annotation =
       match annotation with
@@ -181,8 +183,9 @@ module State = struct
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
     let annotation = Resolution.parse_annotation resolution expression in
+    let resolved = Resolution.resolve resolution expression in
     let errors =
-      check_annotation ~resolution ~location ~define ~annotation
+      check_annotation ~resolution ~location ~define ~annotation ~resolved
       |> List.fold
         ~init:errors
         ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
@@ -616,7 +619,7 @@ module State = struct
                     declare_location = instantiate location;
                   })
                 ~define:define_node
-                |> add_error ~state
+              |> add_error ~state
           in
           let add_missing_parameter_error ~state ~due_to_any annotation =
             let sanitized_access =

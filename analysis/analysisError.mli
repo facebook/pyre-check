@@ -64,6 +64,7 @@ type kind =
   | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
+  | InvalidType of Type.t
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
       parent: Type.t;

@@ -7802,6 +7802,33 @@ let test_check_analysis_failure _ =
     ["Analysis failure [30]: Terminating analysis because type `Derp` is not defined."]
 
 
+let test_check_invalid_type _ =
+  assert_type_errors
+    {|
+      MyType: typing.Type[int] = int
+      x: MyType = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      x: MyType = 1
+    |}
+    ["Undefined type [11]: Type `MyType` is not defined."];
+  assert_type_errors
+    {|
+      MyType: int
+      x: MyType = 1
+    |}
+    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+  (* TODO(T38210392): Any should be special-cased to be a valid type to comply with typeshed *)
+  assert_type_errors
+    {|
+      MyType: typing.Any
+      x: MyType = 1
+    |}
+    ["Invalid type [31]: Expression `MyType` is not a valid type."]
+
+
 let test_check_missing_type_parameters _ =
   assert_type_errors
     {|
@@ -8485,7 +8512,7 @@ let test_check_typed_dictionaries _ =
       "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` has type " ^
       "`Type[typing.Dict[typing.Any, typing.Any]]` but no type is specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
-      "Undefined type [11]: Type `NamelessTypedDict` is not defined.";
+      "Invalid type [31]: Expression `NamelessTypedDict` is not a valid type.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
       "but got `unknown`.";
     ]
@@ -8894,6 +8921,7 @@ let () =
     "check_assert_functions">::test_check_assert_functions;
     "check_undefined_type">::test_check_undefined_type;
     "check_analysis_failure">::test_check_analysis_failure;
+    "check_invalid_type">::test_check_invalid_type;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "environment">::test_environment;
     "scheduling">::test_scheduling;

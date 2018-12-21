@@ -75,6 +75,7 @@ type kind =
   | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
+  | InvalidType of Type.t
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
       parent: Type.t;
@@ -149,6 +150,7 @@ let code = function
   | UnexpectedKeyword _ -> 28
   | NotCallable _ -> 29
   | AnalysisFailure _ -> 30
+  | InvalidType _ -> 31
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -164,6 +166,7 @@ let name = function
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
+  | InvalidType _ -> "Invalid type"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -576,6 +579,12 @@ let messages ~detailed:_ ~define location kind =
           Access.pp parent
           detail
       ]
+  | InvalidType annotation ->
+      [
+        Format.asprintf
+          "Expression `%a` is not a valid type."
+          Type.pp annotation
+      ]
   | MissingArgument { callee; name } ->
       let callee =
         match callee with
@@ -896,6 +905,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
+  | InvalidType actual
   | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
   | MissingGlobalAnnotation { annotation = Some actual; _ }
   | MissingParameterAnnotation { annotation = actual; _ }
@@ -978,6 +988,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | RevealedType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | InvalidType _
   | Top
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
@@ -1065,6 +1076,8 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
+    | InvalidType left, InvalidType right ->
+        Resolution.less_or_equal resolution ~left ~right
     | TooManyArguments left, TooManyArguments right ->
         Option.equal Access.equal left.callee right.callee &&
         left.expected = right.expected &&
@@ -1233,6 +1246,8 @@ let join ~resolution left right =
         InconsistentOverride {
           left with override = WeakenedPostcondition (join_mismatch left_mismatch right_mismatch);
         }
+    | InvalidType left, InvalidType right when Type.equal left right ->
+        InvalidType left
     | TooManyArguments left, TooManyArguments right ->
         if Option.equal Access.equal left.callee right.callee &&
            left.expected = right.expected &&
@@ -1488,6 +1503,7 @@ let suppress ~mode error =
       | IncompatibleParameterType _
       | IncompatibleReturnType _
       | IncompatibleConstructorAnnotation _
+      | InvalidType _
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
       | MissingTypeParameters _
@@ -1614,6 +1630,8 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | InvalidType annotation ->
+        InvalidType (dequalify annotation)
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->
