@@ -430,7 +430,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             |> List.sort ~compare:Int.compare
             |> Fn.flip List.drop 1 (* Drop the self argument *)
             |> List.map ~f:(Map.find_exn annotations)
-            |> fun parameters -> (Type.primitive "self") :: parameters
+            |> fun parameters -> (Type.Primitive "self") :: parameters
           in
           let return_annotation = return_annotation ~resolution annotated_method in
           { TypeQuery.name; parameters; return_annotation }

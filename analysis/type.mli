@@ -157,7 +157,6 @@ end
 
 val serialize: t -> string
 
-val primitive: string -> t
 val parametric: string -> t list -> t
 val variable: ?constraints: constraints -> ?variance: variance -> string -> t
 

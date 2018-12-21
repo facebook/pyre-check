@@ -196,7 +196,7 @@ let test_defines _ =
       (List.length (Class.defines definition))
       ~msg:"Wrong number of defines"
       ~printer:Int.to_string;
-    let method_id = Identifier.create method_name in
+    let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
         assert_equal
@@ -576,7 +576,7 @@ let test_attributes _ =
     [
       attribute
         ~target:"Bar"
-        ~annotation:(Type.class_variable (Type.meta (Type.primitive "Foo.Bar")))
+        ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
         ();
     ];
   assert_attributes

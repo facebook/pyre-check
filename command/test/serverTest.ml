@@ -432,12 +432,12 @@ let test_query context =
        (Protocol.TypeQuery.FoundMethods [
            {
              Protocol.TypeQuery.name = "foo";
-             parameters = [Type.primitive "self"];
+             parameters = [Type.Primitive "self"];
              return_annotation = Type.integer;
            };
            {
              Protocol.TypeQuery.name = "bar";
-             parameters = [Type.primitive "self"];
+             parameters = [Type.Primitive "self"];
              return_annotation = Type.string;
            }
          ]));
@@ -721,7 +721,7 @@ let test_query context =
                  };
                  overloads = [];
                  implicit = Some {
-                     implicit_annotation = Type.primitive "C";
+                     implicit_annotation = Type.Primitive "C";
                      name = Access.create "self";
                    };
                }

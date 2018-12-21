@@ -117,7 +117,7 @@ let test_expand_format_string _ =
     [
       +Access [
         Access.Expression (+Integer 1);
-        Access.Identifier ~~"__add__";
+        Access.Identifier "__add__";
         Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
       ]
     ];
@@ -1360,7 +1360,7 @@ let test_defines _ =
       Define.name = Access.create name;
       parameters = [
         +{
-          Parameter.name = ~~"a";
+          Parameter.name = "a";
           value = None;
           annotation = None;
         };
@@ -1396,7 +1396,7 @@ let test_defines _ =
       Define.name = Access.create "foo";
       parameters = [
         +{
-          Parameter.name = ~~"a";
+          Parameter.name = "a";
           value = None;
           annotation = None;
         };
@@ -1414,7 +1414,7 @@ let test_defines _ =
       Define.name = Access.create "foo";
       parameters = [
         +{
-          Parameter.name = ~~"a";
+          Parameter.name = "a";
           value = None;
           annotation = None;
         };

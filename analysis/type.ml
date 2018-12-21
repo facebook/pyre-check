@@ -193,19 +193,13 @@ end
 
 
 let reverse_substitute name =
-  match Identifier.show name with
-  | "collections.defaultdict" ->
-      Identifier.create "typing.DefaultDict"
-  | "dict" ->
-      Identifier.create "typing.Dict"
-  | "list" ->
-      Identifier.create "typing.List"
-  | "set" ->
-      Identifier.create "typing.Set"
-  | "type" ->
-      Identifier.create "typing.Type"
-  | _ ->
-      name
+  match name with
+  | "collections.defaultdict" -> "typing.DefaultDict"
+  | "dict" -> "typing.Dict"
+  | "list" -> "typing.List"
+  | "set" -> "typing.Set"
+  | "type" -> "typing.Type"
+  | _ -> name
 
 
 let rec pp format annotation =
@@ -274,7 +268,7 @@ let rec pp format annotation =
   | Optional parameter ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
   | Parametric { name; parameters }
-    when (Identifier.show name = "typing.Optional" or Identifier.show name = "Optional") &&
+    when (name = "typing.Optional" or name = "Optional") &&
          parameters = [Bottom] ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
@@ -289,10 +283,10 @@ let rec pp format annotation =
       in
       Format.fprintf format
         "%s[%s]"
-        (Identifier.show (reverse_substitute name))
+        (reverse_substitute name)
         parameters
   | Primitive name ->
-      Format.fprintf format "%a" Identifier.pp name
+      Format.fprintf format "%a" String.pp name
   | Top ->
       Format.fprintf format "unknown"
   | Tuple tuple ->
@@ -313,10 +307,10 @@ let rec pp format annotation =
       in
       let totality = if total then "" else " (non-total)" in
       let name =
-        if Identifier.show name = "$anonymous" then
+        if name = "$anonymous" then
           ""
         else
-          Format.sprintf " `%s`" (Identifier.show name)
+          Format.sprintf " `%s`" name
       in
       Format.fprintf format "TypedDict%s%s with fields (%s)" totality name fields
   | Union parameters ->
@@ -346,7 +340,7 @@ let rec pp format annotation =
       Format.fprintf
         format
         "Variable[%s%s]%s"
-        (Identifier.show variable)
+        variable
         constraints
         variance
 
@@ -362,31 +356,27 @@ let rec serialize = function
       Format.asprintf "%a" pp annotation
 
 
-let primitive name =
-  Primitive (Identifier.create name)
-
-
 let parametric name parameters =
-  Parametric { name = Identifier.create name; parameters }
+  Parametric { name; parameters }
 
 
 let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = Identifier.create name; constraints; variance }
+  Variable { variable = name; constraints; variance }
 
 
 let awaitable parameter =
   Parametric {
-    name = Identifier.create "typing.Awaitable";
+    name = "typing.Awaitable";
     parameters = [parameter];
   }
 
 
 let bool =
-  Primitive (Identifier.create "bool")
+  Primitive "bool"
 
 
 let bytes =
-  Primitive (Identifier.create "bytes")
+  Primitive "bytes"
 
 
 let callable
@@ -406,56 +396,56 @@ let callable
 
 
 let complex =
-  Primitive (Identifier.create "complex")
+  Primitive "complex"
 
 
 let dictionary ~key ~value =
   Parametric {
-    name = Identifier.create "dict";
+    name = "dict";
     parameters = [key; value];
   }
 
 
 let ellipses =
-  Primitive (Identifier.create "ellipses")
+  Primitive "ellipses"
 
 
 let float =
-  Primitive (Identifier.create "float")
+  Primitive "float"
 
 
 let generator ?(async=false) parameter =
   let none = Optional Bottom in
   if async then
     Parametric {
-      name = Identifier.create "typing.AsyncGenerator";
+      name = "typing.AsyncGenerator";
       parameters = [parameter; none];
     }
   else
     Parametric {
-      name = Identifier.create "typing.Generator";
+      name = "typing.Generator";
       parameters = [parameter; none; none];
     }
 
 
 let generic =
-  Primitive (Identifier.create "typing.Generic")
+  Primitive "typing.Generic"
 
 
 let integer =
-  Primitive (Identifier.create "int")
+  Primitive "int"
 
 
 let iterable parameter =
   Parametric {
-    name = Identifier.create "typing.Iterable";
+    name = "typing.Iterable";
     parameters = [parameter];
   }
 
 
 let iterator parameter =
   Parametric {
-    name = Identifier.create "typing.Iterator";
+    name = "typing.Iterator";
     parameters = [parameter];
   }
 
@@ -494,7 +484,7 @@ let lambda ~parameters ~return_annotation =
 
 let list parameter =
   Parametric {
-    name = Identifier.create "list";
+    name = "list";
     parameters = [parameter];
   }
 
@@ -508,13 +498,13 @@ let meta annotation =
         annotation
   in
   Parametric {
-    name = Identifier.create "type";
+    name = "type";
     parameters = [parameter];
   }
 
 
 let named_tuple =
-  Primitive (Identifier.create "typing.NamedTuple")
+  Primitive "typing.NamedTuple"
 
 
 let none =
@@ -537,20 +527,20 @@ let rec optional parameter =
 
 let sequence parameter =
   Parametric {
-    name = Identifier.create "typing.Sequence";
+    name = "typing.Sequence";
     parameters = [parameter];
   }
 
 
 let set parameter =
   Parametric {
-    name = Identifier.create "set";
+    name = "set";
     parameters = [parameter];
   }
 
 
 let string =
-  Primitive (Identifier.create "str")
+  Primitive "str"
 
 
 let tuple parameters: t =
@@ -560,7 +550,7 @@ let tuple parameters: t =
 
 
 let undeclared =
-  primitive "typing.Undeclared"
+  Primitive "typing.Undeclared"
 
 
 let union parameters =
@@ -608,7 +598,7 @@ let union parameters =
 
 let yield parameter =
   Parametric {
-    name = Identifier.create "Yield";
+    name = "Yield";
     parameters = [parameter];
   }
 
@@ -620,7 +610,7 @@ let primitive_substitution_map =
       | 0 -> sofar
       | _ -> parameters (Object :: sofar) (remaining - 1)
     in
-    Parametric { name = Identifier.create name; parameters = (parameters [] number_of_anys) }
+    Parametric { name; parameters = (parameters [] number_of_anys) }
   in
   [
     "$bottom", Bottom;
@@ -656,7 +646,7 @@ let primitive_substitution_map =
     "typing.Type", parametric_anys "type" 1;
   ]
   |> List.map
-    ~f:(fun (original, substitute) -> Identifier.create original, substitute)
+    ~f:(fun (original, substitute) -> original, substitute)
   |> Identifier.Map.of_alist_exn
 
 
@@ -673,7 +663,7 @@ let parametric_substitution_map =
     "typing.Type", "type";
   ]
   |> List.map
-    ~f:(fun (original, substitute) -> Identifier.create original, Identifier.create substitute)
+    ~f:(fun (original, substitute) -> original, substitute)
   |> Identifier.Map.of_alist_exn
 
 
@@ -688,7 +678,7 @@ let rec create ~aliases { Node.value = expression; _ } =
           | (Access.Identifier get_item)
             :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
             :: _
-            when Identifier.show get_item = "__getitem__" ->
+            when get_item = "__getitem__" ->
               let parameters =
                 match Node.value argument with
                 | Expression.Tuple elements -> elements
@@ -697,7 +687,6 @@ let rec create ~aliases { Node.value = expression; _ } =
               let name =
                 List.rev reversed_lead
                 |> Access.show
-                |> Identifier.create
               in
               Parametric { name; parameters = List.map parameters ~f:(create ~aliases) }
           | (Access.Identifier _ as access) :: tail ->
@@ -707,10 +696,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 let sanitized =
                   match reversed_lead with
                   | (Access.Identifier name) :: tail ->
-                      let name =
-                        Identifier.show_sanitized name
-                        |> Identifier.create
-                      in
+                      let name = Identifier.sanitized name in
                       (Access.Identifier name) :: tail
                   | _ ->
                       reversed_lead
@@ -721,7 +707,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               if name = "None" then
                 none
               else
-                Primitive (Identifier.create name)
+                Primitive name
           | _ ->
               Top
         in
@@ -744,20 +730,20 @@ let rec create ~aliases { Node.value = expression; _ } =
                           reversed_lead
                           |> List.rev
                           |> Access.show
-                          |> primitive
+                          |> fun primitive -> Primitive primitive
                         in
                         match aliases annotation with
                         | Some (Primitive alias) ->
                             Format.sprintf
                               "%s.%s"
-                              (Identifier.show alias)
+                              (alias)
                               (Access.show tail)
-                            |> primitive
+                            |> fun primitive -> Primitive primitive
                             |> Option.some
                         | _ ->
                             try_resolving (current :: tail) rest
                   in
-                  Identifier.show name
+                  name
                   |> Access.create
                   |> List.rev
                   |> try_resolving []
@@ -857,7 +843,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                   Parametric { name; parameters }
               | None ->
                   begin
-                    match Identifier.show name with
+                    match name with
                     | "typing.Optional" when List.length parameters = 1 ->
                         optional (List.hd_exn parameters)
 
@@ -865,7 +851,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | "typing.Tuple" ->
                         let tuple: tuple =
                           match parameters with
-                          | [parameter; Primitive ellipses] when Identifier.show ellipses = "..." ->
+                          | [parameter; Primitive ellipses] when ellipses = "..." ->
                               Unbounded parameter
                           | _ -> Bounded parameters
                         in
@@ -913,13 +899,13 @@ let rec create ~aliases { Node.value = expression; _ } =
                                 arguments
                                 ~f:(fun { Argument.value; _ } -> value)
                             in
-                            match Identifier.show name, arguments with
+                            match name, arguments with
                             | "Named",
                               { Node.value = Access name; _ } :: annotation :: tail ->
                                 let default =
                                   match tail with
                                   | [{ Node.value = Access [Access.Identifier default]; _ }]
-                                    when Identifier.show default = "default" -> true
+                                    when default = "default" -> true
                                   | _ -> false
                                 in
                                 Parameter.Named {
@@ -977,7 +963,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             | (Access.Identifier get_item) ::
               (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
               []
-              when Identifier.show get_item = "__getitem__" ->
+              when get_item = "__getitem__" ->
                 get_signature argument, []
             | (Access.Identifier get_item) ::
               (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
@@ -989,8 +975,8 @@ let rec create ~aliases { Node.value = expression; _ } =
                   _;
                 }) ::
               []
-              when Identifier.show get_item = "__getitem__"
-                && Identifier.show get_item_overloads = "__getitem__" ->
+              when get_item = "__getitem__"
+                && get_item_overloads = "__getitem__" ->
                 let rec parse_overloads overloads =
                   match overloads with
                   | Expression.List arguments ->
@@ -1005,7 +991,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                       :: Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }
                       :: tail
                     )
-                    when Identifier.show get_item = "__getitem__" ->
+                    when get_item = "__getitem__" ->
                       get_signature argument :: (parse_overloads (Access tail))
                   | Access [] ->
                       []
@@ -1030,7 +1016,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 _;
               });
           ]
-          when Identifier.show typing = "typing" && Identifier.show typevar = "TypeVar" ->
+          when typing = "typing" && typevar = "TypeVar" ->
             let constraints =
               let explicits =
                 let explicit = function
@@ -1045,7 +1031,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               let bound =
                 let bound = function
                   | { Argument.value; Argument.name = Some { Node.value = bound; _ }; }
-                    when Identifier.show_sanitized bound = "bound" ->
+                    when Identifier.sanitized bound = "bound" ->
                       create value ~aliases
                       |> Option.some
                   | _ ->
@@ -1065,12 +1051,12 @@ let rec create ~aliases { Node.value = expression; _ } =
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.show_sanitized name = "covariant" ->
+                } when Identifier.sanitized name = "covariant" ->
                     Some Covariant
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.show_sanitized name = "contravariant" ->
+                } when Identifier.sanitized name = "contravariant" ->
                     Some Contravariant
                 | _ ->
                     None
@@ -1079,7 +1065,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               |> Option.value ~default:Invariant
             in
             Variable {
-              variable = Identifier.create value;
+              variable = value;
               constraints;
               variance;
             }
@@ -1089,10 +1075,10 @@ let rec create ~aliases { Node.value = expression; _ } =
              :: (Access.Identifier callable)
              :: (Access.Call { Node.value = modifiers; _ })
              :: signatures)
-          when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
+          when typing = "typing" && callable = "Callable" ->
             parse_callable ~modifiers ~signatures ()
         | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: signatures)
-          when Identifier.show typing = "typing" && Identifier.show callable = "Callable" ->
+          when typing = "typing" && callable = "Callable" ->
             parse_callable ~signatures ()
 
         | Access ([
@@ -1119,9 +1105,9 @@ let rec create ~aliases { Node.value = expression; _ } =
                 _;
               });
           ] as access)
-          when Identifier.show mypy_extensions = "mypy_extensions" &&
-               Identifier.show typed_dictionary = "TypedDict" &&
-               Identifier.show get_item  = "__getitem__" ->
+          when mypy_extensions = "mypy_extensions" &&
+               typed_dictionary = "TypedDict" &&
+               get_item  = "__getitem__" ->
             let total =
               match true_or_false with
               | Expression.True -> Some true
@@ -1147,7 +1133,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 |> List.filter_map ~f:tuple_to_field
               in
               TypedDictionary {
-                name = Identifier.create typed_dictionary_name;
+                name = typed_dictionary_name;
                 fields;
                 total;
               }
@@ -1160,7 +1146,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             parse [] access
 
         | Ellipses ->
-            Primitive (Identifier.create "...")
+            Primitive "..."
 
         | String { StringLiteral.value; _ } ->
             let access =
@@ -1189,9 +1175,9 @@ let rec create ~aliases { Node.value = expression; _ } =
 
 let rec expression annotation =
   let split name =
-    match Identifier.show name with
+    match name with
     | "..." ->
-        [Access.Identifier (Identifier.create "...")]
+        [Access.Identifier "..."]
     | name ->
         String.split name ~on:'.'
         |> List.map ~f:Access.create
@@ -1219,7 +1205,7 @@ let rec expression annotation =
           []
     in
     [
-      Access.Identifier (Identifier.create "__getitem__");
+      Access.Identifier "__getitem__";
       Access.Call (Node.create_with_default_location parameter);
     ]
   in
@@ -1282,7 +1268,7 @@ let rec expression annotation =
             []
           else
             [
-              Access.Identifier (Identifier.create "__getitem__");
+              Access.Identifier "__getitem__";
               Access.Call
                 (Node.create_with_default_location [
                     {
@@ -1296,12 +1282,12 @@ let rec expression annotation =
     | Deleted -> Access.create "$deleted"
     | Object -> Access.create "object"
     | Optional Bottom ->
-        split (Identifier.create "None")
+        split "None"
     | Optional parameter ->
         (Access.create "typing.Optional") @ (get_item_call [parameter])
     | Parametric { name; parameters }
-      when Identifier.show name = "typing.Optional" && parameters = [Bottom] ->
-        split (Identifier.create "None")
+      when name = "typing.Optional" && parameters = [Bottom] ->
+        split "None"
     | Parametric { name; parameters } ->
         (split (reverse_substitute name)) @ (get_item_call parameters)
     | Primitive name ->
@@ -1311,7 +1297,7 @@ let rec expression annotation =
         let parameters =
           match elements with
           | Bounded parameters -> parameters
-          | Unbounded parameter -> [parameter; Primitive (Identifier.create "...")]
+          | Unbounded parameter -> [parameter; Primitive "..."]
         in
         (Access.create "typing.Tuple") @ (get_item_call parameters)
     | TypedDictionary { name; fields; total } ->
@@ -1333,7 +1319,7 @@ let rec expression annotation =
               (if total then Expression.True else Expression.False)
               |> Node.create_with_default_location
             in
-            Expression.String { value = Identifier.show name; kind = StringLiteral.String }
+            Expression.String { value = name; kind = StringLiteral.String }
             |> Node.create_with_default_location
             |> (fun name -> Expression.Tuple(name :: totality :: tail))
             |> Node.create_with_default_location
@@ -1341,7 +1327,7 @@ let rec expression annotation =
           { Argument.name = None; value = tuple; }
         in
         (Access.create "mypy_extensions.TypedDict") @ [
-          Access.Identifier (Identifier.create "__getitem__");
+          Access.Identifier "__getitem__";
           Access.Call (Node.create_with_default_location ([argument]));
         ]
     | Union parameters ->
@@ -1351,7 +1337,7 @@ let rec expression annotation =
 
   let value =
     match annotation with
-    | Primitive name when Identifier.show name = "..." -> Ellipses
+    | Primitive name when name = "..." -> Ellipses
     | _ -> Access (access annotation)
   in
   Node.create_with_default_location value
@@ -1495,7 +1481,7 @@ let is_deleted = function
 
 
 let is_ellipses = function
-  | Primitive primitive when Identifier.show primitive = "ellipses" -> true
+  | Primitive primitive when primitive = "ellipses" -> true
   | _ -> false
 
 
@@ -1504,34 +1490,34 @@ let is_generator = function
       List.mem
         ~equal:String.equal
         ["typing.Generator"; "typing.AsyncGenerator"]
-        (Identifier.show name)
+        name
   | _ ->
       false
 
 
 let is_generic = function
   | Parametric { name; _ } ->
-      Identifier.show name = "typing.Generic"
+      name = "typing.Generic"
   | _ ->
       false
 
 
 let is_iterable = function
   | Parametric { name; _ } ->
-      String.equal (Identifier.show name) "typing.Iterable"
+      String.equal name "typing.Iterable"
   | _ ->
       false
 
 
 let is_iterator = function
   | Parametric { name; _ } ->
-      String.equal (Identifier.show name) "typing.Iterator"
+      String.equal name "typing.Iterator"
   | _ ->
       false
 
 
 let is_meta = function
-  | Parametric { name; _ } -> Identifier.show name = "type"
+  | Parametric { name; _ } -> name = "type"
   | _ -> false
 
 
@@ -1541,7 +1527,7 @@ let is_none = function
 
 
 let is_noreturn = function
-  | Primitive name -> Identifier.show name = "typing.NoReturn"
+  | Primitive name -> name = "typing.NoReturn"
   | _ -> false
 
 
@@ -1551,7 +1537,7 @@ let is_optional = function
 
 
 let is_optional_primitive = function
-  | Primitive optional when Identifier.show optional = "typing.Optional" -> true
+  | Primitive optional when optional = "typing.Optional" -> true
   | _ -> false
 
 
@@ -1562,7 +1548,7 @@ let is_primitive = function
 
 let is_protocol = function
   | Parametric { name; _ } ->
-      Identifier.show name = "typing.Protocol"
+      name = "typing.Protocol"
   | _ ->
       false
 
@@ -1587,7 +1573,7 @@ let is_unknown annotation =
   exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
 
 
-let is_type_alias annotation = equal annotation (primitive "typing.TypeAlias")
+let is_type_alias annotation = equal annotation (Primitive "typing.TypeAlias")
 
 
 let is_not_instantiated annotation =
@@ -1649,14 +1635,14 @@ let optional_value = function
 
 let async_generator_value = function
   | Parametric { name; parameters = [parameter; _] }
-    when Identifier.show name = "typing.AsyncGenerator" ->
+    when name = "typing.AsyncGenerator" ->
       generator parameter
   | _ ->
       Top
 
 
 let awaitable_value = function
-  | Parametric { name; parameters = [parameter] } when Identifier.show name = "typing.Awaitable" ->
+  | Parametric { name; parameters = [parameter] } when name = "typing.Awaitable" ->
       parameter
   | _ ->
       Top
@@ -1674,7 +1660,7 @@ let single_parameter = function
 
 let split = function
   | Optional parameter ->
-      primitive "typing.Optional", [parameter]
+      Primitive "typing.Optional", [parameter]
   | Parametric { name; parameters } ->
       Primitive name, parameters
   | Tuple tuple ->
@@ -1683,9 +1669,9 @@ let split = function
         | Bounded parameters -> parameters
         | Unbounded parameter -> [parameter]
       in
-      Primitive (Identifier.create "tuple"), parameters
+      Primitive "tuple", parameters
   | (TypedDictionary _) as typed_dictionary ->
-      primitive "TypedDictionary", [typed_dictionary]
+      Primitive "TypedDictionary", [typed_dictionary]
   | annotation ->
       annotation, []
 
@@ -1703,7 +1689,7 @@ let class_variable annotation =
 
 let class_variable_value = function
   | Parametric { name; parameters = [parameter] }
-    when Identifier.show name = "typing.ClassVar" ->
+    when name = "typing.ClassVar" ->
       Some parameter
   | _ -> None
 
@@ -1757,14 +1743,13 @@ let rec dequalify map annotation =
             fold (tail :: accumulator) rest
         | [] -> accumulator
     in
-    Identifier.show identifier
+    identifier
     |> Access.create
     |> List.rev
     |> fold []
     |> Access.show
-    |> Identifier.create
   in
-  let dequalify_string string = Identifier.create string |> dequalify_identifier in
+  let dequalify_string string = string |> dequalify_identifier in
   let module DequalifyTransform = Transform.Make(struct
       type state = unit
 
@@ -1806,9 +1791,9 @@ module Callable = struct
       end)
 
     let name = function
-      | Named { name; _ } -> Identifier.create (Access.show name)
-      | Variable { name; _ } -> Identifier.create ("*" ^ (Access.show name))
-      | Keywords { name; _ } -> Identifier.create ("**" ^ (Access.show name))
+      | Named { name; _ } -> (Access.show name)
+      | Variable { name; _ } -> ("*" ^ (Access.show name))
+      | Keywords { name; _ } -> ("**" ^ (Access.show name))
 
 
     let annotation = function
@@ -1843,16 +1828,8 @@ module Callable = struct
              String.is_prefix ~prefix:"$" right then
             true
           else
-            let left =
-              left
-              |> Identifier.create
-              |> Identifier.remove_leading_underscores
-            in
-            let right =
-              right
-              |> Identifier.create
-              |> Identifier.remove_leading_underscores
-            in
+            let left = Identifier.remove_leading_underscores left in
+            let right = Identifier.remove_leading_underscores right in
             Identifier.equal left right
       | _ ->
           false
@@ -1924,13 +1901,13 @@ end
 let rec mismatch_with_any left right =
   let compatible left right =
     let symmetric left right =
-      (Identifier.show left = "typing.Mapping" && Identifier.show right = "dict") ||
-      (Identifier.show left = "collections.OrderedDict" && Identifier.show right = "dict") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "list") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Iterable" && Identifier.show right = "set") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "typing.List") ||
-      (Identifier.show left = "typing.Sequence" && Identifier.show right = "list")
+      (left = "typing.Mapping" && right = "dict") ||
+      (left = "collections.OrderedDict" && right = "dict") ||
+      (left = "typing.Iterable" && right = "list") ||
+      (left = "typing.Iterable" && right = "typing.List") ||
+      (left = "typing.Iterable" && right = "set") ||
+      (left = "typing.Sequence" && right = "typing.List") ||
+      (left = "typing.Sequence" && right = "list")
     in
     Identifier.equal left right ||
     symmetric left right ||
@@ -1995,10 +1972,10 @@ let rec mismatch_with_any left right =
       else
         false
   | Parametric { name; parameters = [left] }, right
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
+    when name = "typing.Optional" ->
       mismatch_with_any left right
   | left, Parametric { name; parameters = [right] }
-    when Identifier.equal name (Identifier.create "typing.Optional") ->
+    when name = "typing.Optional" ->
       mismatch_with_any left right
   | Optional left, Optional right
   | Optional left, right
@@ -2014,9 +1991,9 @@ let rec mismatch_with_any left right =
     Parametric { name = generator; parameters = generator_parameter :: _ }
   | Parametric { name = generator; parameters = generator_parameter :: _ },
     Parametric { name = iterator; parameters = [iterator_parameter] }
-    when (Identifier.show iterator = "typing.Iterator" ||
-          Identifier.show iterator = "typing.Iterable") &&
-         Identifier.show generator = "typing.Generator" ->
+    when (iterator = "typing.Iterator" ||
+          iterator = "typing.Iterable") &&
+         generator = "typing.Generator" ->
       mismatch_with_any iterator_parameter generator_parameter
 
   | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
@@ -2056,7 +2033,7 @@ let rec mismatch_with_any left right =
 
 module TypedDictionary = struct
   let anonymous ~total fields =
-    TypedDictionary { name = Identifier.create "$anonymous"; fields; total }
+    TypedDictionary { name = "$anonymous"; fields; total }
 
 
   let fields_have_colliding_keys left_fields right_fields =

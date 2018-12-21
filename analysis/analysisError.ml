@@ -614,13 +614,13 @@ let messages ~detailed:_ ~define location kind =
           acceptable_keys
       ]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
-      if Identifier.show typed_dictionary_name = "$anonymous" then
+      if typed_dictionary_name = "$anonymous" then
         [ Format.asprintf "TypedDict has no key `%s`." missing_key ]
       else
         [
           Format.asprintf
             "TypedDict `%a` has no key `%s`."
-            Identifier.pp typed_dictionary_name
+            String.pp typed_dictionary_name
             missing_key
         ]
   | Unpack { expected_count; unpack_problem } ->
@@ -714,7 +714,7 @@ let messages ~detailed:_ ~define location kind =
       [
         Format.asprintf
           "Unexpected keyword argument `%s` to %s."
-          (Identifier.show_sanitized name)
+          (Identifier.sanitized name)
           callee
       ]
   | UninitializedAttribute {
@@ -794,7 +794,7 @@ let inference_information
         |> Option.value ~default:`Null
       in
       `Assoc [
-        "name", `String (Identifier.show_sanitized name);
+        "name", `String (Identifier.sanitized name);
         "type", annotation;
         "value", value
       ]
@@ -1408,12 +1408,12 @@ let filter ~configuration ~resolution errors =
               ((Resolution.less_or_equal
                   resolution
                   ~left:annotation
-                  ~right:(Type.Primitive (Identifier.create "unittest.mock.Base"))) ||
+                  ~right:(Type.Primitive ("unittest.mock.Base"))) ||
                (* Special-case mypy's workaround for mocks. *)
                (Resolution.less_or_equal
                   resolution
                   ~left:annotation
-                  ~right:(Type.Primitive (Identifier.create "unittest.mock.NonCallableMock"))))
+                  ~right:(Type.Primitive ("unittest.mock.NonCallableMock"))))
             with
             | TypeOrder.Untracked _ ->
                 false

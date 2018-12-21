@@ -81,12 +81,12 @@ let test_backward _ =
 
   assert_backward ["x", Type.integer] "x = y = z" ["x", Type.integer; "z", Type.integer];
   assert_backward
-    ["x", Type.Primitive ~~"B"; "y", Type.Primitive ~~"C"]
+    ["x", Type.Primitive "B"; "y", Type.Primitive "C"]
     "x = y = z"
     [
-      "x", Type.Primitive ~~"B";
-      "y", Type.Primitive ~~"C";
-      "z", Type.Primitive ~~"B";
+      "x", Type.Primitive "B";
+      "y", Type.Primitive "C";
+      "z", Type.Primitive "B";
     ];
 
   assert_backward
@@ -108,8 +108,8 @@ let test_backward _ =
   (* Literals. *)
   assert_backward [] "x = 1.0" [];
   assert_backward [] "x = 'string'" [];
-  assert_backward ["x", Type.Primitive ~~"Foo"] "x = 'string'" ["x", Type.Primitive ~~"Foo"];
-  assert_backward ["x", Type.Primitive ~~"Foo"] "x = 'string'" ["x", Type.Primitive ~~"Foo"];
+  assert_backward ["x", Type.Primitive "Foo"] "x = 'string'" ["x", Type.Primitive "Foo"];
+  assert_backward ["x", Type.Primitive "Foo"] "x = 'string'" ["x", Type.Primitive "Foo"];
 
   (* Calls *)
   assert_backward [] "int_to_str(x)" ["x", Type.integer];

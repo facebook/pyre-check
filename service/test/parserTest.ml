@@ -197,7 +197,7 @@ let test_parse_source _ =
           ~cmp:Access.equal
           ~printer:Access.show
           name
-          (Access.create_from_identifiers [~~"a"; ~~"foo"])
+          (Access.create_from_identifiers ["a"; "foo"])
     | _ -> assert_unreached ()
   end
 

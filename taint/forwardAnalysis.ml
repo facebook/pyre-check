@@ -281,7 +281,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           let inferred_taint =
             let taint = analyze_normalized_expression ~resolution location state expression in
-            let field = AbstractTreeDomain.Label.Field (Identifier.show member) in
+            let field = AbstractTreeDomain.Label.Field member in
             ForwardState.Tree.read
               [field]
               taint

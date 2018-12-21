@@ -12,7 +12,7 @@ open Ast
 let test_remove_leading_underscores _ =
   let assert_removed identifier expected =
     let removed =
-      Identifier.create identifier
+      identifier
       |> Identifier.remove_leading_underscores
       |> Identifier.show
     in

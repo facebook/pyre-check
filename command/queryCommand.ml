@@ -48,7 +48,7 @@ let parse_query ~root query =
             raise (InvalidQuery "expected string")
       in
       begin
-        match String.lowercase (Identifier.show name), arguments with
+        match String.lowercase name, arguments with
         | "attributes", [name] ->
             Request.TypeQueryRequest (Attributes (access name))
         | "join", [left; right] ->

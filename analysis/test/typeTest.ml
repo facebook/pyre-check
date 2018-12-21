@@ -23,18 +23,18 @@ let test_create _ =
       (Type.create ~aliases (parse_single_expression source))
   in
 
-  assert_create "foo" (Type.primitive "foo");
-  assert_create "foo.bar" (Type.primitive "foo.bar");
-  assert_create "foo.$local_qualifier$bar" (Type.primitive "foo.bar");
+  assert_create "foo" (Type.Primitive "foo");
+  assert_create "foo.bar" (Type.Primitive "foo.bar");
+  assert_create "foo.$local_qualifier$bar" (Type.Primitive "foo.bar");
 
   assert_create "$deleted" Type.Deleted;
   assert_create "object" Type.Object;
   assert_create "$unknown" Type.Top;
 
-  assert_create "foo[bar]" (Type.parametric "foo" [Type.primitive "bar"]);
+  assert_create "foo[bar]" (Type.parametric "foo" [Type.Primitive "bar"]);
   assert_create
     "foo[bar, baz]"
-    (Type.parametric "foo" [Type.primitive "bar"; Type.primitive "baz"]);
+    (Type.parametric "foo" [Type.Primitive "bar"; Type.Primitive "baz"]);
 
   assert_create "typing.List.__getitem__(int)" (Type.list Type.integer);
   assert_create
@@ -104,10 +104,10 @@ let test_create _ =
     (Type.variable ~constraints:(Type.Bound Type.integer) "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound='C')"
-    (Type.variable ~constraints:(Type.Bound (Type.primitive "C")) "_T");
+    (Type.variable ~constraints:(Type.Bound (Type.Primitive "C")) "_T");
   assert_create
     "typing.TypeVar('_T', 'C', X)"
-    (Type.variable ~constraints:(Type.Explicit [Type.primitive "C"; Type.primitive "X"]) "_T");
+    (Type.variable ~constraints:(Type.Explicit [Type.Primitive "C"; Type.Primitive "X"]) "_T");
   assert_create
     "typing.TypeVar('_T', int, name=float)"
     (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
@@ -116,8 +116,8 @@ let test_create _ =
   let assert_alias source resolved =
     let aliases =
       Type.Table.of_alist_exn [
-        Type.primitive "Alias", Type.primitive "Aliased";
-        Type.primitive "_Future",
+        Type.Primitive "Alias", Type.Primitive "Aliased";
+        Type.Primitive "_Future",
         Type.union [
           Type.parametric "Future" [Type.integer; Type.variable "_T"];
           Type.awaitable (Type.variable "_T");
@@ -127,10 +127,10 @@ let test_create _ =
     in
     assert_create ~aliases source resolved
   in
-  assert_alias "Alias" (Type.primitive "Aliased");
-  assert_alias "Aliased" (Type.primitive "Aliased");
-  assert_alias "typing.Optional[Alias]" (Type.optional (Type.primitive "Aliased"));
-  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.primitive "Aliased"]);
+  assert_alias "Alias" (Type.Primitive "Aliased");
+  assert_alias "Aliased" (Type.Primitive "Aliased");
+  assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
+  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.Primitive "Aliased"]);
   assert_alias "Alias[int]" (Type.parametric "Aliased" [Type.integer]);
   (* TODO(T30095392): we're blindly stripping away the first type parameter of `Future`. *)
   assert_alias
@@ -138,65 +138,65 @@ let test_create _ =
     (Type.union [Type.parametric "Future" [Type.integer]; Type.awaitable Type.integer]);
 
   (* String literals. *)
-  assert_create "'foo'" (Type.primitive "foo");
-  assert_create "'foo.bar'" (Type.primitive "foo.bar");
-  assert_create "foo['bar']" (Type.parametric "foo" [Type.primitive "bar"]);
-  assert_create "'Type[str]'" (Type.parametric "Type" [Type.primitive "str"]);
-  assert_create "'Type[[[]str]'" (Type.primitive "Type[[[]str]");
+  assert_create "'foo'" (Type.Primitive "foo");
+  assert_create "'foo.bar'" (Type.Primitive "foo.bar");
+  assert_create "foo['bar']" (Type.parametric "foo" [Type.Primitive "bar"]);
+  assert_create "'Type[str]'" (Type.parametric "Type" [Type.Primitive "str"]);
+  assert_create "'Type[[[]str]'" (Type.Primitive "Type[[[]str]");
 
   (* Recursive aliasing. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.primitive "B")
-    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.primitive "C")
+    | Type.Primitive name when name = "A" -> Some (Type.Primitive "B")
+    | Type.Primitive name when name = "B" -> Some (Type.Primitive "C")
     | _ -> None
   in
-  assert_create ~aliases "A" (Type.primitive "C");
+  assert_create ~aliases "A" (Type.Primitive "C");
 
   (* Recursion with loop. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.primitive "A")
+    | Type.Primitive name when name = "A" ->
+        Some (Type.Primitive "A")
     | _ ->
         None
   in
-  assert_create ~aliases "A" (Type.primitive "A");
+  assert_create ~aliases "A" (Type.Primitive "A");
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.list (Type.primitive "A"))
+    | Type.Primitive name when name = "A" ->
+        Some (Type.list (Type.Primitive "A"))
     | _ ->
         None
   in
-  assert_create ~aliases "A" (Type.list (Type.list (Type.primitive "A")));
+  assert_create ~aliases "A" (Type.list (Type.list (Type.Primitive "A")));
 
   (* Nested aliasing. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.list (Type.primitive "B"))
-    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.primitive "C")
-    | Type.Primitive name when Identifier.show name = "module.R" ->
-        Some (Type.primitive "module.R.R")
+    | Type.Primitive name when name = "A" -> Some (Type.list (Type.Primitive "B"))
+    | Type.Primitive name when name = "B" -> Some (Type.Primitive "C")
+    | Type.Primitive name when name = "module.R" ->
+        Some (Type.Primitive "module.R.R")
     | _ -> None
   in
-  assert_create ~aliases "A" (Type.list (Type.primitive "C"));
+  assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
   (* Aliasing of subclasses through imports. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
-        Some (Type.primitive "B")
+    | Type.Primitive name when name = "A" ->
+        Some (Type.Primitive "B")
     | _ ->
         None
   in
-  assert_create ~aliases "A" (Type.primitive "B");
-  assert_create ~aliases "A.InnerClass" (Type.primitive "B.InnerClass");
+  assert_create ~aliases "A" (Type.Primitive "B");
+  assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
   (* Known limitation: We're not following parametric types here. *)
   assert_create ~aliases "A.InnerClass[int]" (Type.parametric "A.InnerClass" [Type.integer]);
-  assert_create ~aliases "module.R.R" (Type.primitive "module.R.R");
+  assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R");
   assert_create
     ~aliases
     "A.InnerClass.InnerInnerClass"
-    (Type.primitive "B.InnerClass.InnerInnerClass");
+    (Type.Primitive "B.InnerClass.InnerInnerClass");
 
   (* Aliases with Unions. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
+    | Type.Primitive name when name = "A" ->
         Some (Type.union [Type.string; Type.bytes])
     | _ ->
         None
@@ -351,7 +351,7 @@ let test_create _ =
   assert_create
     "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
     (Type.TypedDictionary {
-        name = (Identifier.create "Movie");
+        name = "Movie";
         fields = [
           { name = "year"; annotation = Type.integer };
           { name = "name"; annotation = Type.string };
@@ -362,7 +362,7 @@ let test_create _ =
   assert_create
     "mypy_extensions.TypedDict[('Movie', False, ('year', int), ('name', str))]"
     (Type.TypedDictionary {
-        name = (Identifier.create "Movie");
+        name = "Movie";
         fields = [
           { name = "year"; annotation = Type.integer };
           { name = "name"; annotation = Type.string };
@@ -381,7 +381,7 @@ let test_instantiate _ =
       (Type.instantiate ~constraints:(Map.find map) generic)
   in
 
-  assert_instantiate [] ~generic:(Type.primitive "foo") ~expected:(Type.primitive "foo");
+  assert_instantiate [] ~generic:(Type.Primitive "foo") ~expected:(Type.Primitive "foo");
   (* Union[_T, _VT] + (_T = int, _VT = None) -> Optional[int] *)
   assert_instantiate
     [
@@ -401,16 +401,16 @@ let test_expression _ =
       (parse_single_expression expression)
   in
 
-  assert_expression (Type.primitive "foo") "foo";
-  assert_expression (Type.primitive "...") "...";
-  assert_expression (Type.primitive "foo.bar") "foo.bar";
+  assert_expression (Type.Primitive "foo") "foo";
+  assert_expression (Type.Primitive "...") "...";
+  assert_expression (Type.Primitive "foo.bar") "foo.bar";
   assert_expression Type.Top "$unknown";
   assert_expression Type.Deleted "$deleted";
 
   assert_expression
     (Type.Parametric {
-        name = ~~"foo.bar";
-        parameters = [Type.primitive "baz"];
+        name = "foo.bar";
+        parameters = [Type.Primitive "baz"];
       })
     "foo.bar.__getitem__(baz)";
 
@@ -421,7 +421,7 @@ let test_expression _ =
     (Type.Tuple (Type.Unbounded Type.integer))
     "typing.Tuple.__getitem__((int, ...))";
   assert_expression
-    (Type.Parametric { name = ~~"list"; parameters = [Type.integer] })
+    (Type.Parametric { name = "list"; parameters = [Type.integer] })
     "typing.List.__getitem__(int)";
 
   (* Callables. *)
@@ -516,7 +516,7 @@ let test_expression _ =
 
   assert_expression
     (Type.TypedDictionary {
-        name = Identifier.create "Movie";
+        name = "Movie";
         fields = [
           { name = "title"; annotation = Type.string };
           { name = "year"; annotation = Type.integer };
@@ -528,7 +528,7 @@ let test_expression _ =
 
   assert_expression
     (Type.TypedDictionary {
-        name = Identifier.create "Movie";
+        name = "Movie";
         fields = [
           { name = "title"; annotation = Type.string };
           { name = "year"; annotation = Type.integer };
@@ -630,7 +630,7 @@ let test_primitives _ =
   assert_equal
     [Type.integer; Type.string]
     (Type.TypedDictionary {
-        name = (Identifier.create "Movie");
+        name = "Movie";
         fields = [
           { name = "year"; annotation = Type.integer };
           { name = "name"; annotation = Type.string };
@@ -667,7 +667,7 @@ let test_exists _ =
 let test_is_iterator _ =
   assert_true (Type.is_iterator (Type.iterator Type.string));
   assert_false (Type.is_iterator Type.string);
-  assert_false (Type.is_iterator (Type.primitive "typing.Iterator"))
+  assert_false (Type.is_iterator (Type.Primitive "typing.Iterator"))
 
 
 let test_is_generator _ =
@@ -681,7 +681,7 @@ let test_contains_callable _ =
   assert_true (Type.contains_callable (Type.Optional (Type.callable ~annotation:Type.integer ())));
   assert_true
     (Type.contains_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer ())]));
-  assert_false (Type.contains_callable (Type.Primitive (Identifier.create "foo")))
+  assert_false (Type.contains_callable (Type.Primitive "foo"))
 
 
 let test_is_not_instantiated _ =
@@ -695,24 +695,24 @@ let test_is_not_instantiated _ =
 let test_is_meta _ =
   assert_true
     (Type.is_meta
-       (Type.Parametric { name = ~~"type"; parameters = [Type.integer] }));
+       (Type.Parametric { name = "type"; parameters = [Type.integer] }));
   assert_false (Type.is_meta Type.integer);
   assert_false
     (Type.is_meta
-       (Type.Parametric { name = ~~"typing.Type"; parameters = [Type.integer] }))
+       (Type.Parametric { name = "typing.Type"; parameters = [Type.integer] }))
 
 
 
 let test_is_none _ =
-  assert_false (Type.is_none (Type.primitive "None"));
+  assert_false (Type.is_none (Type.Primitive "None"));
   assert_false (Type.is_none Type.integer);
-  assert_false (Type.is_none (Type.primitive "foo"));
+  assert_false (Type.is_none (Type.Primitive "foo"));
   assert_true (Type.is_none (Type.Optional Type.Bottom))
 
 
 
 let test_is_type_alias _ =
-  assert_true (Type.is_type_alias (Type.primitive "typing.TypeAlias"));
+  assert_true (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
   assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" [Type.Top]))
 
 let test_is_unknown _ =
@@ -726,20 +726,20 @@ let test_is_unknown _ =
     (Type.is_unknown (
         Type.Optional
           (Type.Parametric {
-              name = ~~"foo";
+              name = "foo";
               parameters = [Type.integer; Type.Top];
             })));
 
   assert_true
     (Type.is_unknown (
         (Type.Parametric {
-            name = ~~"foo";
+            name = "foo";
             parameters = [Type.integer; Type.Top];
           })));
   assert_false
     (Type.is_unknown (
         (Type.Parametric {
-            name = ~~"foo";
+            name = "foo";
             parameters = [Type.integer];
           })));
 
@@ -954,7 +954,7 @@ let test_class_name _ =
       (Type.class_name annotation)
   in
 
-  assert_class_name (Type.primitive "qualified.primitive") "qualified.primitive";
+  assert_class_name (Type.Primitive "qualified.primitive") "qualified.primitive";
   assert_class_name (Type.list Type.integer) "list";
   assert_class_name
     (Type.union [Type.string; Type.integer])
@@ -967,21 +967,21 @@ let test_optional_value _ =
     (Type.optional_value (
         Type.Optional
           (Type.Parametric {
-              name = ~~"foo";
+              name = "foo";
               parameters = [Type.integer; Type.Top];
             })))
     (Type.Parametric {
-        name = ~~"foo";
+        name = "foo";
         parameters = [Type.integer; Type.Top];
       });
   assert_equal
     (Type.optional_value
        (Type.Parametric {
-           name = ~~"foo";
+           name = "foo";
            parameters = [Type.integer; Type.Top];
          }))
     (Type.Parametric {
-        name = ~~"foo";
+        name = "foo";
         parameters = [Type.integer; Type.Top];
       })
 
@@ -991,11 +991,11 @@ let test_async_generator_value _ =
     ~printer:(Format.asprintf "%a" Type.pp)
     (Type.async_generator_value (
         Type.Parametric {
-          name = Identifier.create "typing.AsyncGenerator";
+          name = "typing.AsyncGenerator";
           parameters = [Type.integer; Type.Optional Type.Bottom];
         }))
     (Type.Parametric {
-        name = Identifier.create "typing.Generator";
+        name = "typing.Generator";
         parameters = [Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom];
       })
 
@@ -1022,7 +1022,7 @@ let test_dequalify _ =
          source)
       expected
   in
-  let create name = Type.primitive name in
+  let create name = Type.Primitive name in
   assert_dequalify
     (Type.optional (Type.string))
     (Type.parametric "Optional" [Type.string]);
@@ -1136,8 +1136,8 @@ let test_variables _ =
     let aliases =
       let aliases =
         Type.Map.of_alist_exn [
-          Type.primitive "T", Type.variable "T";
-          Type.primitive "S", Type.variable "S";
+          Type.Primitive "T", Type.variable "T";
+          Type.Primitive "S", Type.variable "S";
         ]
       in
       Map.find aliases
@@ -1259,7 +1259,7 @@ let test_visit _ =
       type state = int
       let visit state annotation =
         match annotation with
-        | Type.Primitive integer when Identifier.show integer = "int" && state > 0 ->
+        | Type.Primitive integer when integer = "int" && state > 0 ->
             (state - 1), Type.string
         | _ ->
             state, annotation
@@ -1294,11 +1294,11 @@ let test_visit _ =
       let visit state annotation =
         match annotation with
         | Type.Primitive primitive ->
-            state ^ (Identifier.show primitive), annotation
+            state ^ (primitive), annotation
         | Type.Parametric { name; parameters; } ->
             "",
             Type.Parametric
-              { name = Identifier.create ((Identifier.show name) ^ state); parameters }
+              { name = ((name) ^ state); parameters }
         | _ ->
             state, annotation
       let visit_children _  _ = true

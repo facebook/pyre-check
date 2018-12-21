@@ -664,7 +664,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
         let name =
           match primitive with
           | Type.Primitive name -> name
-          | _ -> Identifier.create "?"
+          | _ -> "?"
         in
         Type.Parametric { name; parameters = [parameter] }
       in
@@ -675,7 +675,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       let parameter = List.fold ~f:(join order) ~init:left tail in
       less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
   | Type.Primitive name, Type.Tuple _ ->
-      Identifier.show name = "tuple"
+      name = "tuple"
   | Type.Tuple _, _
   | _, Type.Tuple _ ->
       false
@@ -776,7 +776,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       begin
         match joined with
         | Type.Parametric { name; parameters = [left] }
-          when Identifier.equal name (Identifier.create "typing.Callable") ->
+          when Identifier.equal name "typing.Callable" ->
             less_or_equal (module Handler) ~left ~right
         | _ ->
             false
@@ -792,7 +792,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       (left.total = right.total) && not (List.exists right.fields ~f:field_not_found)
 
   | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key; value ] }
-    when Identifier.show mapping = "typing.Mapping" &&
+    when mapping = "typing.Mapping" &&
          Type.equal Type.string key &&
          Type.equal Type.Object value ->
       true
@@ -1166,7 +1166,7 @@ and join ((module Handler: Handler) as order) left right =
           left_total <> right_total
         then
           Type.Parametric {
-            name = Identifier.create "typing.Mapping";
+            name = "typing.Mapping";
             parameters = [ Type.string; Type.Object ]
           }
         else
@@ -1185,11 +1185,11 @@ and join ((module Handler: Handler) as order) left right =
 
     | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }
     | Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }, Type.TypedDictionary _
-      when Identifier.show mapping = "typing.Mapping" &&
+      when mapping = "typing.Mapping" &&
            (* Mappings are only covariant in their value annotations. *)
            Type.equal key_annotation Type.string ->
         Type.Parametric {
-          name = Identifier.create "typing.Mapping";
+          name = "typing.Mapping";
           parameters = [ Type.string; Type.Object ]
         }
 
@@ -1224,7 +1224,7 @@ and join ((module Handler: Handler) as order) left right =
         begin
           match other with
           | Type.Parametric { name; parameters = [other_callable] }
-            when Identifier.equal name (Identifier.create "typing.Callable") ->
+            when Identifier.equal name "typing.Callable" ->
               join (module Handler) (Type.Callable callable) other_callable
           | _ ->
               Type.union [left; right]
@@ -1935,36 +1935,36 @@ module Builder = struct
     [
       [Type.Bottom; Type.Object; Type.Deleted; Type.Top];
       (* Special forms *)
-      singleton (Type.primitive "typing.Tuple");
+      singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
       singleton Type.generic;
-      singleton (Type.primitive "typing.Protocol");
-      singleton (Type.primitive "typing.Callable");
-      singleton (Type.primitive "typing.FrozenSet");
-      singleton (Type.primitive "typing.Optional");
-      singleton (Type.primitive "typing.TypeVar");
-      singleton (Type.primitive "typing.Undeclared");
-      singleton (Type.primitive "typing.Union");
-      singleton (Type.primitive "typing.NoReturn");
+      singleton (Type.Primitive "typing.Protocol");
+      singleton (Type.Primitive "typing.Callable");
+      singleton (Type.Primitive "typing.FrozenSet");
+      singleton (Type.Primitive "typing.Optional");
+      singleton (Type.Primitive "typing.TypeVar");
+      singleton (Type.Primitive "typing.Undeclared");
+      singleton (Type.Primitive "typing.Union");
+      singleton (Type.Primitive "typing.NoReturn");
       (* Ensure unittest.mock.Base is there because we check against it. *)
-      singleton (Type.primitive "unittest.mock.Base");
-      singleton (Type.primitive "unittest.mock.NonCallableMock");
-      singleton (Type.primitive "typing.ClassVar");
-      [Type.Bottom; Type.primitive "dict"; Type.primitive "typing.Dict"; Type.Object];
-      singleton (Type.primitive "None");
+      singleton (Type.Primitive "unittest.mock.Base");
+      singleton (Type.Primitive "unittest.mock.NonCallableMock");
+      singleton (Type.Primitive "typing.ClassVar");
+      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.Object];
+      singleton (Type.Primitive "None");
       (* Numerical hierarchy. *)
       [
         Type.Bottom;
         Type.integer;
         Type.float;
         Type.complex;
-        Type.primitive "numbers.Complex";
-        Type.primitive "numbers.Number";
+        Type.Primitive "numbers.Complex";
+        Type.Primitive "numbers.Number";
         Type.Object;
       ];
-      [Type.integer; Type.primitive "numbers.Integral"; Type.Object];
-      [Type.float; Type.primitive "numbers.Rational"; Type.Object];
-      [Type.float; Type.primitive "numbers.Real"; Type.Object];
+      [Type.integer; Type.Primitive "numbers.Integral"; Type.Object];
+      [Type.float; Type.Primitive "numbers.Rational"; Type.Object];
+      [Type.float; Type.Primitive "numbers.Real"; Type.Object];
     ]
 
 
@@ -1989,7 +1989,7 @@ module Builder = struct
     List.iter ~f:connect_primitive_chain default_annotations;
 
     (* Since the builtin type hierarchy is not primitive, it's special cased. *)
-    let type_builtin = Type.Primitive (Identifier.create "type") in
+    let type_builtin = Type.Primitive ("type") in
     let type_variable = Type.variable "_T" in
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;

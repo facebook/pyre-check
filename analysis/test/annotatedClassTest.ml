@@ -109,9 +109,9 @@ let test_superclasses _ =
   assert_successors
     !"SubRedundant"
     [
-      Type.primitive "SubFooBar";
-      Type.primitive "Foo";
-      Type.primitive "Bar";
+      Type.Primitive "SubFooBar";
+      Type.Primitive "Foo";
+      Type.Primitive "Bar";
       Type.Object;
       Type.Deleted;
       Type.Top;
@@ -195,8 +195,8 @@ let test_get_decorator _ =
       {
         access = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+(~~"a"); value = !"b"};
-            { Argument.name = Some ~+(~~"c"); value = !"d"}
+            { Argument.name = Some ~+"a"; value = !"b"};
+            { Argument.name = Some ~+"c"; value = !"d"}
           ];
       };
     ];
@@ -212,14 +212,14 @@ let test_get_decorator _ =
       {
         access = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+(~~"a"); value = !"b"};
+            { Argument.name = Some ~+"a"; value = !"b"};
           ];
       };
       {
         access = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+(~~"a"); value = !"b"};
-            { Argument.name = Some ~+(~~"c"); value = !"d"}
+            { Argument.name = Some ~+"a"; value = !"b"};
+            { Argument.name = Some ~+"c"; value = !"d"}
           ];
       };
     ]
@@ -417,7 +417,7 @@ let test_is_protocol _ =
   assert_is_protocol [{ Argument.name = None; value = !"typing.Protocol" }] true;
   assert_is_protocol [{ Argument.name = None; value = !"typing_extensions.Protocol" }] true;
   assert_is_protocol
-    [{ Argument.name = Some ~+(~~"metaclass"); value = !"abc.ABCMeta"; }]
+    [{ Argument.name = Some ~+"metaclass"; value = !"abc.ABCMeta" }]
     false
 
 
@@ -660,7 +660,7 @@ let test_class_attributes _ =
     (Expression.Access (Access.create "first"));
   assert_equal
     (Attribute.annotation attribute)
-    (Annotation.create_immutable ~global:true (Type.Primitive ~~"int"));
+    (Annotation.create_immutable ~global:true (Type.Primitive "int"));
   assert_false (Attribute.class_attribute attribute);
 
   let attribute =
@@ -808,7 +808,7 @@ let test_class_attributes _ =
   let create_expected_attribute name callable =
     {
       Class.Attribute.name = Expression.Access (Access.create name);
-      parent = Type.primitive "Attributes";
+      parent = Type.Primitive "Attributes";
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = Node.create_with_default_location Expression.Ellipses;
       defined = true;
@@ -818,7 +818,7 @@ let test_class_attributes _ =
   in
   assert_attribute
     ~parent
-    ~parent_instantiated_type:(Type.primitive "Attributes")
+    ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:(Access.create "bar")
     ~expected_attribute:(
       create_expected_attribute
@@ -826,12 +826,12 @@ let test_class_attributes _ =
         "typing.Callable('Attributes.bar')[[], int]");
   assert_attribute
     ~parent
-    ~parent_instantiated_type:(Type.primitive "Attributes")
+    ~parent_instantiated_type:(Type.Primitive "Attributes")
     ~attribute_name:(Access.create "baz")
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        ("typing.Callable('Attributes.baz')[[Named(x, str)], str]"))
+        "typing.Callable('Attributes.baz')[[Named(x, str)], str]")
 
 
 let test_fallback_attribute _ =
@@ -926,7 +926,7 @@ let test_constraints _ =
 
   assert_constraints
     ~target:"Foo"
-    ~instantiated:(Type.primitive "Foo")
+    ~instantiated:(Type.Primitive "Foo")
     {|
       class Foo:
         pass
@@ -964,7 +964,7 @@ let test_constraints _ =
 
   assert_constraints
     ~target:"Foo"
-    ~instantiated:(Type.primitive "Foo")
+    ~instantiated:(Type.Primitive "Foo")
     {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -975,7 +975,7 @@ let test_constraints _ =
     [];
   assert_constraints
     ~target:"Bar"
-    ~instantiated:(Type.primitive "Foo")
+    ~instantiated:(Type.Primitive "Foo")
     {|
       _T = typing.TypeVar('_T')
       class Bar(typing.Generic[_T]):
@@ -1135,7 +1135,7 @@ let test_metaclasses _ =
     match target with
     | Some target ->
         assert_equal
-          (Type.primitive metaclass)
+          (Type.Primitive metaclass)
           (Annotated.Class.metaclass ~resolution target)
     | None ->
         assert_unreached ()
@@ -1186,7 +1186,7 @@ let test_overrides _ =
   in
   let definition =
     let definition =
-      Resolution.class_definition resolution (Type.Primitive ~~"Baz")
+      Resolution.class_definition resolution (Type.Primitive "Baz")
       >>| Class.create
     in
     Option.value_exn ~message:"Missing definition."  definition

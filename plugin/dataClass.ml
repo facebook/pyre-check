@@ -54,7 +54,7 @@ let transform_environment (module Handler: Handler) resolution source =
                       value = { Node.value; _ };
                     } ->
                         begin
-                          match Identifier.show_sanitized name, value with
+                          match Identifier.sanitized name, value with
                           | "init", False -> { options with init = false }
                           | "repr", False -> { options with repr = false }
                           | "eq", False -> { options with eq = false }
@@ -73,7 +73,7 @@ let transform_environment (module Handler: Handler) resolution source =
                 {
                   Define.name = parent @ (Access.create name);
                   parameters =
-                    Parameter.create ~name:(Identifier.create "self") ()
+                    Parameter.create ~name:"self" ()
                     :: parameters;
                   body = [Node.create ~location Pass];
                   decorators = [];
@@ -168,7 +168,7 @@ let transform_environment (module Handler: Handler) resolution source =
                       ~name:(Access.create "__eq__")) then
                   create_method
                     ~name:"__eq__"
-                    ~parameters:[Parameter.create ~name:(Identifier.create "o") ()]
+                    ~parameters:[Parameter.create ~name:"o" ()]
                     ~return_annotation:"bool"
                   :: methods
                 else

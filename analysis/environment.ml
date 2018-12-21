@@ -104,7 +104,7 @@ let connect_definition
     | Some callable ->
         connect
           ~predecessor:primitive
-          ~successor:(Type.primitive "typing.Callable")
+          ~successor:(Type.Primitive "typing.Callable")
           ~parameters:[callable]
     | None ->
         ()
@@ -447,9 +447,7 @@ let register_aliases (module Handler: Handler) sources =
                 Access.Call _;
               ];
             _;
-          } when Identifier.show typing = "typing"
-              && Identifier.show typ = "Type"
-              && Identifier.show getitem = "__getitem__" ->
+          } when typing = "typing" && typ = "Type" && getitem = "__getitem__" ->
             true
         | None ->
             true
@@ -518,7 +516,6 @@ let register_aliases (module Handler: Handler) sources =
           let name =
             Expression.access target
             |> Access.show
-            |> Identifier.create
           in
           Type.Variable { variable with variable = name }
       | annotation ->
@@ -593,7 +590,7 @@ let register_globals
   let qualified_access access =
     let access =
       match access with
-      | (Access.Identifier builtins) :: tail when Identifier.show builtins = "builtins" -> tail
+      | (Access.Identifier builtins) :: tail when builtins = "builtins" -> tail
       | _ -> access
     in
     Access.delocalize_qualified access
@@ -842,7 +839,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             let get_implementing_methods method_name =
               implementing_classes ~method_name
               |> Option.value ~default:[]
-              |> List.map ~f:(fun class_name -> Type.primitive (Statement.Access.show class_name))
+              |> List.map ~f:(fun class_name -> Type.Primitive (Statement.Access.show class_name))
             in
             List.concat_map ~f:get_implementing_methods names
             |> List.dedup_and_sort ~compare:Type.compare
@@ -1075,7 +1072,7 @@ module Builder = struct
     in
     Hashtbl.set globals ~key:(Access.create "None") ~data:(annotation Type.none);
     Hashtbl.set globals
-      ~key:[Access.Identifier (Identifier.create "...")]
+      ~key:[Access.Identifier ("...")]
       ~data:(annotation Type.Object);
 
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
@@ -1095,7 +1092,7 @@ module Builder = struct
         (List.map bases ~f:successor) @ [Type.Object]
       in
       Hashtbl.set
-        ~key:(Type.primitive name)
+        ~key:(Type.Primitive name)
         ~data:{
           Resolution.class_definition = Node.create_with_default_location definition;
           methods = [];
@@ -1127,7 +1124,7 @@ module Builder = struct
           Define {
             Define.name = Access.create "typing.Generic.__getitem__";
             parameters = [
-              { Parameter.name = Identifier.create "*args"; value = None; annotation = None}
+              { Parameter.name = "*args"; value = None; annotation = None}
               |> Node.create_with_default_location;
             ];
             body = [];
@@ -1144,7 +1141,7 @@ module Builder = struct
           {
             Argument.name = None;
             value =
-              Type.primitive "typing.Mapping"
+              Type.Primitive "typing.Mapping"
               |> Type.expression
           };
         ],
@@ -1152,11 +1149,11 @@ module Builder = struct
           Define {
             Define.name = Access.create "TypedDictionary.__setitem__";
             parameters = [
-              { Parameter.name = Identifier.create "self"; value = None; annotation = None}
+              { Parameter.name = "self"; value = None; annotation = None}
               |> Node.create_with_default_location;
-              { Parameter.name = Identifier.create "key"; value = None; annotation = None}
+              { Parameter.name = "key"; value = None; annotation = None}
               |> Node.create_with_default_location;
-              { Parameter.name = Identifier.create "value"; value = None; annotation = None}
+              { Parameter.name = "value"; value = None; annotation = None}
               |> Node.create_with_default_location;
             ];
             body = [];
@@ -1173,22 +1170,22 @@ module Builder = struct
     (* Register hardcoded aliases. *)
     Hashtbl.set
       aliases
-      ~key:(Type.primitive "typing.DefaultDict")
-      ~data:(Type.primitive "collections.defaultdict");
+      ~key:(Type.Primitive "typing.DefaultDict")
+      ~data:(Type.Primitive "collections.defaultdict");
     Hashtbl.set
       aliases
-      ~key:(Type.primitive "None")
+      ~key:(Type.Primitive "None")
       ~data:(Type.Optional Type.Bottom);
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set
       aliases
-      ~key:(Type.primitive "PathLike")
-      ~data:(Type.primitive "_PathLike");
+      ~key:(Type.Primitive "PathLike")
+      ~data:(Type.Primitive "_PathLike");
 
     TypeOrder.insert
       (TypeOrder.handler order)
-      (Type.primitive "TypedDictionary");
+      (Type.Primitive "TypedDictionary");
 
 
     {

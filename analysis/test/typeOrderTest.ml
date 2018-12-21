@@ -6,14 +6,13 @@
 open Core
 open OUnit2
 
-open Ast
 open Analysis
 open Test
 open TypeOrder
 
 
 let (!) name =
-  Type.Primitive ~~name
+  Type.Primitive name
 
 
 let connect ?(parameters = []) order ~predecessor ~successor =
@@ -444,7 +443,7 @@ let test_default _ =
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
-    assert_true (TypeOrder.contains order (Type.Primitive (Identifier.create primitive_name)))
+    assert_true (TypeOrder.contains order (Type.Primitive primitive_name))
   in
   assert_has_special_form "typing.Tuple";
   assert_has_special_form "typing.Generic";
@@ -453,9 +452,9 @@ let test_default _ =
   assert_has_special_form "typing.ClassVar";
 
   (* Mock. *)
-  assert_true (less_or_equal order ~left:(Type.primitive "unittest.mock.Base") ~right:Type.Top);
+  assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);
   assert_true
-    (less_or_equal order ~left:(Type.primitive "unittest.mock.NonCallableMock") ~right:Type.Top);
+    (less_or_equal order ~left:(Type.Primitive "unittest.mock.NonCallableMock") ~right:Type.Top);
 
   (* Numerical types. *)
   assert_true (less_or_equal order ~left:Type.integer ~right:Type.integer);
@@ -466,16 +465,16 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.float ~right:Type.complex);
   assert_false (less_or_equal order ~left:Type.complex ~right:Type.float);
 
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Integral"));
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Rational"));
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.primitive "numbers.Number"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Real"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Rational"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Complex"));
-  assert_true (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Number"));
-  assert_false (less_or_equal order ~left:Type.float ~right:(Type.primitive "numbers.Integral"));
-  assert_true (less_or_equal order ~left:Type.complex ~right:(Type.primitive "numbers.Complex"));
-  assert_false (less_or_equal order ~left:Type.complex ~right:(Type.primitive "numbers.Real"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.Primitive "numbers.Number"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Real"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Rational"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Complex"));
+  assert_true (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Number"));
+  assert_false (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Integral"));
+  assert_true (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Complex"));
+  assert_false (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Real"));
 
   (* Test join. *)
   assert_equal (join order Type.integer Type.integer) Type.integer;
@@ -607,7 +606,7 @@ let test_greatest _ =
     | Type.Primitive name ->
         begin
           try
-            (Identifier.show name |> Int.of_string) < value
+            (Int.of_string name) < value
           with _ ->
             false
         end
@@ -690,7 +689,7 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Primitive ~~"tuple")
+       ~left:(Type.Primitive "tuple")
        ~right:(Type.Tuple (Type.Unbounded Type.float)));
   assert_true
     (less_or_equal
@@ -1291,7 +1290,7 @@ let test_join _ =
     let parse_annotation source =
       let integer = try Int.of_string source |> ignore; true with _ -> false in
       if integer then
-        Type.Primitive ~~source
+        Type.Primitive source
       else
         parse_single_expression source
         |> Type.create ~aliases
@@ -1481,9 +1480,9 @@ let test_join _ =
   in
   let aliases =
     Type.Table.of_alist_exn [
-      Type.primitive "_1", Type.variable "_1";
-      Type.primitive "_2", Type.variable "_2";
-      Type.primitive "_T", Type.variable "_T";
+      Type.Primitive "_1", Type.variable "_1";
+      Type.Primitive "_2", Type.variable "_2";
+      Type.Primitive "_T", Type.variable "_T";
     ]
     |> Type.Table.find
   in
@@ -1659,9 +1658,9 @@ let test_join _ =
   (* Variance. *)
   let variance_aliases =
     Type.Table.of_alist_exn [
-      Type.primitive "_T", Type.variable "_T";
-      Type.primitive "_T_co", Type.variable "_T_co" ~variance:Covariant;
-      Type.primitive "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
+      Type.Primitive "_T", Type.variable "_T";
+      Type.Primitive "_T_co", Type.variable "_T_co" ~variance:Covariant;
+      Type.Primitive "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
     ]
     |> Type.Table.find
   in
@@ -1757,7 +1756,7 @@ let test_meet _ =
     let parse_annotation source =
       let integer = try Int.of_string source |> ignore; true with _ -> false in
       if integer then
-        Type.Primitive ~~source
+        Type.Primitive source
       else
         parse_single_expression source
         |> Type.create ~aliases

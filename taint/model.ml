@@ -78,7 +78,7 @@ let extract_identifier = function
 let rec extract_taint_kinds expression =
   match expression.Node.value with
   | Access [Identifier taint_kind] ->
-      [Identifier.show taint_kind]
+      [taint_kind]
   | Tuple expressions ->
       List.concat_map ~f:extract_taint_kinds expressions
   | _ ->
@@ -94,7 +94,7 @@ let rec taint_annotations = function
            :: Call {
              value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
            :: _);
-      _ } when Identifier.show union = "Union" ->
+      _ } when union = "Union" ->
       List.concat_map ~f:(fun expression -> taint_annotations (Some expression)) expressions
   | Some {
       Node.value =
@@ -105,7 +105,7 @@ let rec taint_annotations = function
              value = { Argument.value = expression; _; } :: _; _ }
            :: _);
       _ } ->
-      [Identifier.show taint_direction, extract_taint_kinds expression]
+      [taint_direction, extract_taint_kinds expression]
   | _ ->
       []
 
@@ -244,7 +244,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
         | {
           Argument.name = Some { Node.value = shell; _ };
           value = { Node.value = True; _ };
-        } when Identifier.show shell = "$parameter$shell" -> true
+        } when shell = "$parameter$shell" -> true
         | _ -> false
       in
       List.exists arguments ~f:shell_set_to_true

@@ -128,7 +128,7 @@ let test_create _ =
           None
     in
     let callable =
-      let parent_annotation = parent >>| Type.primitive in
+      let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Access.create in
       parse source
       |> Preprocessing.defines ~include_stubs:true
@@ -209,7 +209,7 @@ let test_create _ =
   assert_callable
     ~parent:"module.Foo"
     ~expected_implicit:{
-      implicit_annotation = Type.primitive "module.Foo";
+      implicit_annotation = Type.Primitive "module.Foo";
       name = Access.create "self";
     }
     {|

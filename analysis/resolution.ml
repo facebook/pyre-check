@@ -137,7 +137,7 @@ let parse_annotation { parse_annotation; module_definition; _ } expression =
   let constraints = function
     | Type.Primitive name ->
         let originates_from_empty_stub =
-          Identifier.show name
+          name
           |> Access.create
           |> fun access -> Module.from_empty_stub ~access ~module_definition
         in
@@ -303,8 +303,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
         match resolved, expected with
         | Type.Parametric { name = actual_name; parameters = [actual] },
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-          when Identifier.equal actual_name (Identifier.create "list") &&
-               Identifier.equal expected_name (Identifier.create "list") &&
+          when Identifier.equal actual_name "list" &&
+               Identifier.equal expected_name "list" &&
                less_or_equal resolution ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
@@ -317,8 +317,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
         match resolved, expected with
         | Type.Parametric { name = actual_name; parameters = [actual] },
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-          when Identifier.equal actual_name (Identifier.create "set") &&
-               Identifier.equal expected_name (Identifier.create "set") &&
+          when Identifier.equal actual_name "set" &&
+               Identifier.equal expected_name "set" &&
                less_or_equal resolution ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
@@ -334,8 +334,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
             name = expected_name;
             parameters = [expected_key; expected_value];
           }
-          when Identifier.equal actual_name (Identifier.create "dict") &&
-               Identifier.equal expected_name (Identifier.create "dict") &&
+          when Identifier.equal actual_name "dict" &&
+               Identifier.equal expected_name "dict" &&
                less_or_equal resolution ~left:actual_key ~right:expected_key &&
                less_or_equal
                  resolution

@@ -264,10 +264,6 @@ let (~+) value =
   Node.create_with_default_location value
 
 
-let (~~) =
-  Identifier.create
-
-
 let (!) name =
   let open Expression in
   +Access (Access.create name)

@@ -26,7 +26,7 @@ end
 
 let initial_taint define =
   match List.rev define.Define.name with
-  | Access.Identifier name :: _ when Identifier.show name = "__init__" ->
+  | Access.Identifier name :: _ when name = "__init__" ->
       begin
         (* Constructor. Make self the return value *)
         match define.Define.parameters with
@@ -264,7 +264,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         BackwardState.Tree.pp taint;
       match expression with
       | Access { expression; member } ->
-          let field = AbstractTreeDomain.Label.Field (Identifier.show member) in
+          let field = AbstractTreeDomain.Label.Field member in
           let taint =
             BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
           in

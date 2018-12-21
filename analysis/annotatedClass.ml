@@ -149,7 +149,7 @@ module Method = struct
       begin
         match annotation with
         | Type.Parametric { name; parameters = [_; _; return_annotation] }
-          when Identifier.show name = "typing.Generator" ->
+          when name = "typing.Generator" ->
             Type.awaitable return_annotation
         | _ ->
             Type.Top
@@ -309,7 +309,7 @@ let metaclass definition ~resolution =
   let get_metaclass { Node.value = { Class.bases; _ }; _ } =
     let get_metaclass = function
       | { Argument.name = Some { Node.value = metaclass; _ }; value }
-        when Identifier.equal metaclass (Identifier.create "metaclass") ->
+        when Identifier.equal metaclass "metaclass" ->
           Some (Resolution.parse_annotation resolution value)
       | _ ->
           None
@@ -318,7 +318,7 @@ let metaclass definition ~resolution =
   in
   definition :: superclasses ~resolution definition
   |> List.find_map ~f:get_metaclass
-  |> Option.value ~default:(Type.primitive "type")
+  |> Option.value ~default:(Type.Primitive "type")
 
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
@@ -882,7 +882,7 @@ let constructor definition ~resolution =
     | Type.Parametric { name; _ } ->
         let generics = generics definition ~resolution in
         (* Tuples are special. *)
-        if Identifier.show name = "tuple" then
+        if name = "tuple" then
           match generics with
           | [tuple_variable] ->
               Type.Tuple (Type.Unbounded tuple_variable)
@@ -993,7 +993,7 @@ let inferred_callable_type definition ~resolution =
   let explicit_callables =
     let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
       match List.last name with
-      | Some (Access.Identifier call) when Identifier.equal call (Identifier.create "__call__") ->
+      | Some (Access.Identifier call) when Identifier.equal call "__call__" ->
           Some define
       | _ ->
           None

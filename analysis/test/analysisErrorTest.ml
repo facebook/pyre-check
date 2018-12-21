@@ -38,7 +38,7 @@ let mock_define =
   define ()
 
 
-let mock_parent = Type.primitive "foo"
+let mock_parent = Type.Primitive "foo"
 
 
 let error ?(define = mock_define) ?(location = Location.Instantiated.any) kind =
@@ -78,7 +78,7 @@ let undefined_attribute actual =
 
 let unexpected_keyword name callee =
   Error.UnexpectedKeyword {
-    name = Identifier.create name;
+    name = name;
     callee = callee >>| Access.create;
   }
 
@@ -94,7 +94,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               parent = mock_parent;
               incompatible_type = {
-                Error.name = [Access.Identifier (~~"")];
+                Error.name = [Access.Identifier ""];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.Top;
@@ -109,7 +109,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               parent = mock_parent;
               incompatible_type = {
-                Error.name = [Access.Identifier (~~"")];
+                Error.name = [Access.Identifier ""];
                 mismatch = {
                   Error.actual = Type.Top;
                   expected = Type.string;
@@ -124,7 +124,7 @@ let test_due_to_analysis_limitations _ =
           (Error.IncompatibleAttributeType {
               parent = mock_parent;
               incompatible_type = {
-                Error.name = [Access.Identifier (~~"")];
+                Error.name = [Access.Identifier ""];
                 mismatch = {
                   Error.actual = Type.string;
                   expected = Type.Top;
@@ -139,7 +139,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute {
-              name = [Access.Identifier (~~"")];
+              name = [Access.Identifier ""];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.Top;
@@ -152,7 +152,7 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.UninitializedAttribute {
-              name = [Access.Identifier (~~"")];
+              name = [Access.Identifier ""];
               parent = mock_parent;
               mismatch = {
                 Error.actual = Type.string;
@@ -204,7 +204,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               parent = mock_parent;
               missing_annotation = {
-                Error.name = [Access.Identifier ~~""];
+                Error.name = [Access.Identifier ""];
                 annotation = Some Type.Top;
                 due_to_any = false;
                 evidence_locations = [];
@@ -216,7 +216,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               parent = mock_parent;
               missing_annotation = {
-                Error.name = [Access.Identifier ~~""];
+                Error.name = [Access.Identifier ""];
                 annotation = Some Type.string;
                 due_to_any = false;
                 evidence_locations = [];
@@ -228,7 +228,7 @@ let test_due_to_analysis_limitations _ =
           (Error.MissingAttributeAnnotation {
               parent = mock_parent;
               missing_annotation = {
-                Error.name = [Access.Identifier ~~""];
+                Error.name = [Access.Identifier ""];
                 annotation = None;
                 due_to_any = false;
                 evidence_locations = [];
@@ -284,7 +284,7 @@ let test_due_to_analysis_limitations _ =
               position = 1;
               callee = Some (Access.create "callee");
               mismatch = {
-                Error.actual = Type.primitive "typing.TypeAlias";
+                Error.actual = Type.Primitive "typing.TypeAlias";
                 expected = Type.Top;
                 due_to_invariance = false;
               };
@@ -346,7 +346,7 @@ let test_join _ =
        (Error.IncompatibleAttributeType {
            parent = mock_parent;
            incompatible_type = {
-             Error.name = [Access.Identifier (~~"")];
+             Error.name = [Access.Identifier ""];
              mismatch = {
                Error.actual = Type.Top;
                expected = Type.Top;
@@ -356,7 +356,7 @@ let test_join _ =
            };
          }))
     (error (Error.IncompatibleVariableType {
-         Error.name = [Access.Identifier (~~"")];
+         Error.name = [Access.Identifier ""];
          mismatch = {
            Error.actual = Type.Top;
            expected = Type.Top;
@@ -409,21 +409,21 @@ let test_join _ =
   assert_join
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.float;
            evidence_locations = [create_mock_location "derp.py"; create_mock_location "durp.py"];
            due_to_any = false;
@@ -431,21 +431,21 @@ let test_join _ =
   assert_join
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = None;
            evidence_locations = [];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.integer;
            evidence_locations = [create_mock_location "derp.py"];
            due_to_any = false;
@@ -453,45 +453,45 @@ let test_join _ =
   assert_join
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = None;
            evidence_locations = [];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }))
     (error
        (Error.MissingGlobalAnnotation {
-           Error.name = [Access.Identifier (~~"")];
+           Error.name = [Access.Identifier ""];
            annotation = Some Type.float;
            evidence_locations = [create_mock_location "durp.py"];
            due_to_any = false;
          }));
 
   assert_join
-    (error (Error.UndefinedType (Type.primitive "derp")))
-    (error (Error.UndefinedType (Type.primitive "derp")))
-    (error (Error.UndefinedType (Type.primitive "derp")));
+    (error (Error.UndefinedType (Type.Primitive "derp")))
+    (error (Error.UndefinedType (Type.Primitive "derp")))
+    (error (Error.UndefinedType (Type.Primitive "derp")));
 
   assert_join
-    (error (Error.UndefinedType (Type.primitive "derp")))
-    (error (Error.UndefinedType (Type.primitive "herp")))
+    (error (Error.UndefinedType (Type.Primitive "derp")))
+    (error (Error.UndefinedType (Type.Primitive "herp")))
     (error (Error.Top));
 
   assert_join
-    (error (Error.AnalysisFailure (Type.primitive "derp")))
-    (error (Error.AnalysisFailure (Type.primitive "derp")))
-    (error (Error.AnalysisFailure (Type.primitive "derp")));
+    (error (Error.AnalysisFailure (Type.Primitive "derp")))
+    (error (Error.AnalysisFailure (Type.Primitive "derp")))
+    (error (Error.AnalysisFailure (Type.Primitive "derp")));
 
   assert_join
-    (error (Error.AnalysisFailure (Type.primitive "derp")))
-    (error (Error.AnalysisFailure (Type.primitive "herp")))
-    (error (Error.AnalysisFailure (Type.union [Type.primitive "derp"; Type.primitive "herp"])));
+    (error (Error.AnalysisFailure (Type.Primitive "derp")))
+    (error (Error.AnalysisFailure (Type.Primitive "herp")))
+    (error (Error.AnalysisFailure (Type.union [Type.Primitive "derp"; Type.Primitive "herp"])));
 
   assert_join
     (error (revealed_type "a" Type.integer))
@@ -536,18 +536,18 @@ let test_filter _ =
   in
   (* Suppress stub errors. *)
   let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
-  assert_filtered ~location:stub (undefined_attribute (Type.primitive "Foo"));
+  assert_filtered ~location:stub (undefined_attribute (Type.Primitive "Foo"));
   assert_unfiltered
     ~location:Location.Instantiated.any
-    (undefined_attribute (Type.primitive "Foo"));
+    (undefined_attribute (Type.Primitive "Foo"));
 
   (* Suppress mock errors. *)
-  assert_filtered (incompatible_return_type (Type.primitive "unittest.mock.Mock") Type.integer);
-  assert_unfiltered (incompatible_return_type Type.integer (Type.primitive "unittest.mock.Mock"));
-  assert_filtered (undefined_attribute (Type.primitive "MockChild"));
-  assert_filtered (undefined_attribute (Type.primitive "NonCallableChild"));
-  assert_unfiltered (undefined_attribute (Type.primitive "NonMockChild"));
-  assert_filtered (undefined_attribute (Type.Optional (Type.primitive "NonCallableChild")));
+  assert_filtered (incompatible_return_type (Type.Primitive "unittest.mock.Mock") Type.integer);
+  assert_unfiltered (incompatible_return_type Type.integer (Type.Primitive "unittest.mock.Mock"));
+  assert_filtered (undefined_attribute (Type.Primitive "MockChild"));
+  assert_filtered (undefined_attribute (Type.Primitive "NonCallableChild"));
+  assert_unfiltered (undefined_attribute (Type.Primitive "NonMockChild"));
+  assert_filtered (undefined_attribute (Type.Optional (Type.Primitive "NonCallableChild")));
   assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
@@ -633,13 +633,13 @@ let test_suppress _ =
   assert_suppressed
     Source.Default
     (Error.MissingTypeParameters {
-        annotation = Type.primitive "dict";
+        annotation = Type.Primitive "dict";
         number_of_parameters = 2;
       });
   assert_not_suppressed
     Source.Strict
     (Error.MissingTypeParameters {
-        annotation = Type.primitive "dict";
+        annotation = Type.Primitive "dict";
         number_of_parameters = 2;
       });
 

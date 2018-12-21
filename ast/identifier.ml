@@ -30,8 +30,8 @@ let pp format identifier =
   Format.fprintf format "%a" String.pp identifier
 
 
-let create name = name
-let show name = name
+let show identifier =
+  identifier
 
 
 let sanitization_pattern = Str.regexp "^\\$.*\\$"
@@ -50,19 +50,6 @@ let sanitized name =
   |> Format.asprintf "%s%s" stars
 
 
-let pp_sanitized format name =
-  sanitized name
-  |> Format.fprintf format "%s"
-
-
-let show_sanitized name =
-  sanitized name
-
-
 let remove_leading_underscores name =
   let renaming_pattern = Str.regexp "\\(\\$.*\\$\\)_+" in
   Str.global_replace renaming_pattern "\\1" name
-
-
-let map identifier ~f =
-  f identifier

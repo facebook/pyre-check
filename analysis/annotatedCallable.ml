@@ -24,7 +24,7 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
     begin
       match annotation with
       | Type.Parametric { name; parameters = [_; _; return_annotation] }
-        when Identifier.show name = "typing.Generator" ->
+        when name = "typing.Generator" ->
           Type.awaitable return_annotation
       | _ ->
           Type.Top
@@ -63,7 +63,7 @@ let create ~parent ~resolution defines =
   let open Type.Callable in
   let { Define.name; _ } = List.hd_exn defines in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
-    let name = Identifier.show name in
+    let name = name in
     let access =
       String.lstrip ~drop:(function | '*' -> true | _ -> false) name
       |> Access.create

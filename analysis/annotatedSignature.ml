@@ -266,7 +266,7 @@ let select
         (Parameter.Variable _ as parameter) :: _ ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
-            if Identifier.show_sanitized (Parameter.name parameter) = "*" then
+            if Identifier.sanitized (Parameter.name parameter) = "*" then
               {
                 signature_match with
                 reasons = arity_mismatch reasons ~parameters:all_parameters ~arguments;

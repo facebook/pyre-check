@@ -120,7 +120,7 @@ let test_resolve_literal _ =
   assert_resolve_literal "1+1" Type.Top;
   assert_resolve_literal "j" Type.Top;
   assert_resolve_literal "foo()" Type.Top;
-  assert_resolve_literal "C()" (Type.primitive "C")
+  assert_resolve_literal "C()" (Type.Primitive "C")
 
 let test_resolve_mutable_literals _ =
   let resolution =

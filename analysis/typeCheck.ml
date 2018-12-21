@@ -237,7 +237,7 @@ module State = struct
                     _;
                   };
                   _;
-                } when Identifier.equal self (Statement.Define.self_identifier define) ->
+                } when self = Statement.Define.self_identifier define ->
                   let attribute_annotation =
                     Annotated.Class.attribute
                       class_definition
@@ -328,7 +328,7 @@ module State = struct
               |> List.rev
               |> Access.show
             in
-            Resolution.class_definition resolution (Type.primitive name)
+            Resolution.class_definition resolution (Type.Primitive name)
             >>| (fun { Node.value = definition; _ } -> Class.constructors definition)
             >>| List.is_empty
             |> Option.value ~default:false
@@ -590,9 +590,7 @@ module State = struct
             { Node.location; value = { Parameter.name; value; annotation } } =
           let access =
             name
-            |> Identifier.show
             |> String.filter ~f:(fun character -> character <> '*')
-            |> Identifier.create
             |> fun name -> [Access.Identifier name]
           in
           let add_incompatible_variable_error ~state annotation default =
@@ -725,9 +723,9 @@ module State = struct
                     Annotation.create Type.Bottom
           in
           let annotation =
-            if String.is_prefix ~prefix:"**" (Identifier.show name) then
+            if String.is_prefix ~prefix:"**" name then
               Type.dictionary ~key:Type.string ~value:annotation
-            else if String.is_prefix ~prefix:"*" (Identifier.show name) then
+            else if String.is_prefix ~prefix:"*" name then
               Type.Tuple (Type.Unbounded annotation)
             else
               annotation
@@ -810,11 +808,11 @@ module State = struct
                  (* Check weakening of precondition. *)
                  let overriding_parameters =
                    let remove_unused_parameter_denotation ~key ~data map =
-                     Identifier.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
+                     String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                    in
                    Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
                    |> Method.parameter_annotations ~resolution
-                   |> Map.fold ~init:Identifier.Map.empty ~f:remove_unused_parameter_denotation
+                   |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
                  in
                  let check_parameter errors overridden_parameter =
                    let expected = Type.Callable.Parameter.annotation overridden_parameter in
@@ -862,7 +860,7 @@ module State = struct
                        let has_keyword_and_anonymous_starred_parameters =
                          let starred =
                            let collect_starred_parameters ~key ~data:_ starred =
-                             if String.is_prefix (Identifier.show key) ~prefix:"*" then
+                             if String.is_prefix key ~prefix:"*" then
                                key :: starred
                              else
                                starred
@@ -870,7 +868,7 @@ module State = struct
                            Map.fold ~f:collect_starred_parameters ~init:[] overriding_parameters
                          in
                          let count_stars parameter =
-                           Identifier.show parameter
+                           parameter
                            |> String.take_while ~f:(fun character -> character = '*')
                            |> String.length
                          in
@@ -881,8 +879,7 @@ module State = struct
                          errors
                        else
                          let parameter_name =
-                           Identifier.show_sanitized name
-                           |> Identifier.create
+                           Identifier.sanitized name
                            |> fun name -> [Expression.Access.Identifier name]
                          in
                          let error =
@@ -945,9 +942,9 @@ module State = struct
         let value =
           if async then
             Access (Expression.access iterator @ [
-                Access.Identifier (Identifier.create "__aiter__");
+                Access.Identifier "__aiter__";
                 Access.Call (Node.create ~location []);
-                Access.Identifier (Identifier.create "__anext__");
+                Access.Identifier "__anext__";
                 Access.Call (Node.create ~location []);
               ])
             |> Node.create ~location
@@ -955,9 +952,9 @@ module State = struct
             |> Node.create ~location
           else
             Access (Expression.access iterator @ [
-                Access.Identifier (Identifier.create "__iter__");
+                Access.Identifier "__iter__";
                 Access.Call (Node.create ~location []);
-                Access.Identifier (Identifier.create "__next__");
+                Access.Identifier "__next__";
                 Access.Call (Node.create ~location []);
               ])
             |> Node.create ~location
@@ -1011,7 +1008,7 @@ module State = struct
         Expression.Access.Call {
           Node.location;
           value = [{ Expression.Argument.value; _ }] };
-      ] when reveal_type = Identifier.create "reveal_type" ->
+      ] when reveal_type = "reveal_type" ->
         (* Special case reveal_type(). *)
         let { state; resolved = annotation } = forward_expression ~state ~expression:value in
         let state =
@@ -1032,8 +1029,8 @@ module State = struct
           ];
           location;
         }
-      ] when Identifier.equal typing (Identifier.create "typing") &&
-             Identifier.equal cast (Identifier.create "cast") ->
+      ] when typing = "typing" &&
+             cast = "cast" ->
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { resolved; _ } = forward_expression ~state ~expression:value in
         let state =
@@ -1055,7 +1052,7 @@ module State = struct
             { Argument.value = annotations; _ };
           ];
           _;
-        }] when Identifier.show isinstance = "isinstance" ->
+        }] when isinstance = "isinstance" ->
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
@@ -1454,7 +1451,6 @@ module State = struct
         let resolution_with_parameters =
           let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
             let name =
-              let name = Identifier.show name in
               String.chop_prefix name ~prefix:"*"
               |> Option.value ~default:name
             in
@@ -1472,7 +1468,7 @@ module State = struct
         in
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
           Type.Callable.Parameter.Named {
-            Type.Callable.Parameter.name = Access.create (Identifier.show name);
+            Type.Callable.Parameter.name = Access.create name;
             annotation = Type.Object;
             default = false;
           }
@@ -2036,7 +2032,7 @@ module State = struct
                   ];
                 _;
               };
-            } when Identifier.show name = "isinstance" ->
+            } when name = "isinstance" ->
               begin
                 match Resolution.parse_meta_annotation resolution annotation with
                 | Some expected ->
@@ -2096,7 +2092,7 @@ module State = struct
                 ];
                 _;
               }
-            ] when Identifier.show name = "isinstance" ->
+            ] when name = "isinstance" ->
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
@@ -2137,7 +2133,7 @@ module State = struct
                   ];
                 _;
               };
-            } when Identifier.show name = "isinstance" ->
+            } when name = "isinstance" ->
               begin
                 match Resolution.get_local resolution ~access with
                 | Some {
@@ -2269,14 +2265,14 @@ module State = struct
               ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
               right = { Node.value = Access [Access.Identifier identifier; ]; _ };
-            } when Identifier.show identifier = "None" ->
+            } when identifier = "None" ->
               let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume left) in
               resolution
           | ComparisonOperator {
               ComparisonOperator.left = { Node.value = Access access; _ };
               operator = ComparisonOperator.Is;
               right = { Node.value = Access [Access.Identifier identifier; ]; _ };
-            } when Identifier.show identifier = "None" ->
+            } when identifier = "None" ->
               let open Annotated in
               let open Access in
               let element = Access.last_element ~resolution (Access.create access) in
@@ -2409,7 +2405,7 @@ module State = struct
         let actual =
           match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
           | Type.Parametric { name; parameters = [parameter] }
-            when Identifier.show name = "typing.Iterator" ->
+            when name = "typing.Iterator" ->
               Type.generator parameter
           | annotation ->
               Type.generator annotation

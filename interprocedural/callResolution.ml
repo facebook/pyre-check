@@ -38,7 +38,7 @@ let normalize_global ~resolution access =
     }
     in
     let full_access =
-      (Access.Identifier (Identifier.create "__init__")) :: List.rev access
+      (Access.Identifier "__init__") :: List.rev access
       |> List.rev
     in
     full_access, [dummy_self]
@@ -47,7 +47,7 @@ let normalize_global ~resolution access =
 
 
 let is_local identifier =
-  String.is_prefix ~prefix:"$" (Identifier.show identifier)
+  String.is_prefix ~prefix:"$" identifier
 
 
 let is_class ~resolution access =
@@ -61,8 +61,8 @@ let is_global ~resolution access =
   match access with
   | Access.Identifier head::_
     when not (is_local head)
-      && Identifier.show head <> "super"
-      && Identifier.show head <> "type" ->
+      && head <> "super"
+      && head <> "type" ->
       Resolution.global resolution access
       |> Option.is_some
       && not (is_class ~resolution (Access.prefix access))
@@ -133,7 +133,7 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
 let resolve_target ~resolution ?receiver_type access ~reverse_access =
   let is_super_call = function
     | Access.Identifier _ :: Access.Call _ :: Access.Identifier name :: _ ->
-        Identifier.show name = "super"
+        name = "super"
     | _ ->
         false
   in

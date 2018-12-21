@@ -37,7 +37,7 @@ let test_normalize_access _ =
       normalized
   in
 
-  let local name = AccessPath.Local (Identifier.create name) in
+  let local name = AccessPath.Local name in
   let global access = AccessPath.Global (Access.create access) in
 
   assert_normalized "a" (global "a");
@@ -45,7 +45,7 @@ let test_normalize_access _ =
   assert_normalized
     ~modules:["a"]
     "a.b.c"
-    (AccessPath.Access { expression = global "a.b"; member = Identifier.create "c" });
+    (AccessPath.Access { expression = global "a.b"; member = "c" });
   assert_normalized ~modules:["a"; "a.b"] "a.b.c" (global "a.b.c");
   assert_normalized
     ~modules:["a"; "a.b"]
@@ -57,16 +57,16 @@ let test_normalize_access _ =
     (AccessPath.Access {
         expression = AccessPath.Access {
             expression = global "a.b.c";
-            member = Identifier.create "d";
+            member = "d";
           };
-        member = Identifier.create "e";
+        member = "e";
       });
 
   assert_normalized "$a" (local "$a");
   assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = +[] });
   assert_normalized
     "$a.b"
-    (AccessPath.Access { expression = local "$a"; member = Identifier.create "b" })
+    (AccessPath.Access { expression = local "$a"; member = "b" })
 
 
 let () =

@@ -22,10 +22,10 @@ let transform_ast ({ Source.statements; _ } as source) =
           Access.Identifier named_tuple;
           Access.Call { Node.value = arguments; _ };
         ];
-    } when (Identifier.show module_name = "typing" &&
-            Identifier.show named_tuple = "NamedTuple") ||
-           (Identifier.show module_name = "collections" &&
-            Identifier.show named_tuple = "namedtuple") ->
+    } when (module_name = "typing" &&
+            named_tuple = "NamedTuple") ||
+           (module_name = "collections" &&
+            named_tuple = "namedtuple") ->
         let any_annotation = Node.create ~location (Access (Access.create "typing.Any")) in
         let attributes =
           match arguments with
@@ -84,14 +84,14 @@ let transform_ast ({ Source.statements; _ } as source) =
   in
   let tuple_constructor ~parent ~location attributes =
     let parameters =
-      let self_parameter = Parameter.create ~name:(Identifier.create "self") () in
+      let self_parameter = Parameter.create ~name:("self") () in
       let to_parameter (name, annotation, value) =
         let value =
           match value with
           | Some { Node.value = Ellipses; _ } -> None
           | _ -> value
         in
-        Parameter.create ?value ~annotation ~name:(Identifier.create ("$parameter$" ^ name)) ()
+        Parameter.create ?value ~annotation ~name:("$parameter$" ^ name) ()
       in
       self_parameter :: List.map attributes ~f:to_parameter
     in

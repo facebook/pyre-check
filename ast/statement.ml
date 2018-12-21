@@ -282,7 +282,7 @@ module Define = struct
   let self_identifier { parameters; _ } =
     match parameters with
     | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
-    | _ -> Identifier.create "self"
+    | _ -> "self"
 
 
   let is_method { parent; _ } =
@@ -340,7 +340,7 @@ module Define = struct
   let is_constructor ?(in_test = false) { name; parent; _ } =
     let name =
       match List.last name with
-      | Some (Access.Identifier name) -> Identifier.show name
+      | Some (Access.Identifier name) -> name
       | _ -> "$unknown"
     in
     if Option.is_none parent then
@@ -374,13 +374,13 @@ module Define = struct
 
   let is_toplevel { name; _ } =
     match List.last name with
-    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$toplevel" -> true
+    | Some (Access.Identifier toplevel) when toplevel = "$toplevel" -> true
     | _ -> false
 
 
   let is_class_toplevel { name; _ } =
     match List.last name with
-    | Some (Access.Identifier toplevel) when Identifier.show toplevel = "$class_toplevel" -> true
+    | Some (Access.Identifier toplevel) when toplevel = "$class_toplevel" -> true
     | _ -> false
 
 
@@ -395,7 +395,7 @@ module Define = struct
             _;
           };
         _;
-      } when Identifier.show identifier = name ->
+      } when identifier = name ->
           true
       | _ ->
           false
@@ -504,9 +504,9 @@ module Define = struct
                   Some {
                     Node.location;
                     value = Access [
-                        Access.Identifier (Identifier.create "typing");
-                        Access.Identifier (Identifier.create "Union");
-                        Access.Identifier (Identifier.create "__getitem__");
+                        Access.Identifier "typing";
+                        Access.Identifier "Union";
+                        Access.Identifier "__getitem__";
                         Access.Call (Node.create_with_default_location [argument]);
                       ];
                   }
@@ -586,9 +586,9 @@ module Define = struct
               Some {
                 Node.location;
                 value = Access [
-                    Access.Identifier (Identifier.create "typing");
-                    Access.Identifier (Identifier.create "ClassVar");
-                    Access.Identifier (Identifier.create "__getitem__");
+                    Access.Identifier "typing";
+                    Access.Identifier "ClassVar";
+                    Access.Identifier "__getitem__";
                     Access.Call (Node.create_with_default_location [argument]);
                   ];
               }
@@ -714,7 +714,7 @@ module Class = struct
                   let get_item =
                     let index = Node.create ~location (Integer index) in
                     [
-                      Access.Identifier (Identifier.create "__getitem__");
+                      Access.Identifier ("__getitem__");
                       Access.Call
                         (Node.create ~location [{ Argument.name = None; value = index }]);
                     ]
@@ -855,9 +855,9 @@ module Class = struct
                 Node.create
                   ~location
                   (Access [
-                      Access.Identifier (Identifier.create "typing");
-                      Access.Identifier (Identifier.create "Type");
-                      Access.Identifier (Identifier.create "__getitem__");
+                      Access.Identifier "typing";
+                      Access.Identifier "Type";
+                      Access.Identifier "__getitem__";
                       Access.Call (Node.create_with_default_location [argument]);
                     ])
               in
@@ -865,9 +865,9 @@ module Class = struct
               Node.create
                 ~location
                 (Access [
-                    Access.Identifier (Identifier.create "typing");
-                    Access.Identifier (Identifier.create "ClassVar");
-                    Access.Identifier (Identifier.create "__getitem__");
+                    Access.Identifier "typing";
+                    Access.Identifier "ClassVar";
+                    Access.Identifier "__getitem__";
                     Access.Call (Node.create_with_default_location [argument]);
                   ])
             in
@@ -891,7 +891,7 @@ module Class = struct
         let is_slots access =
           match List.last access with
           | Some (Access.Identifier identifier)
-            when (Identifier.show identifier) = "__slots__" ->
+            when (identifier) = "__slots__" ->
               true
           | _ ->
               false
@@ -1143,7 +1143,6 @@ module Try = struct
     let open Expression in
     let name =
       name
-      >>| Identifier.show
       >>| Access.create
     in
     let assume ~location ~target ~annotation =
@@ -1378,7 +1377,7 @@ module PrettyPrinter = struct
           pp_statement_list orelse
 
     | Global global_list ->
-        pp_list formatter Identifier.pp "," global_list
+        pp_list formatter String.pp "," global_list
 
     | If { If.test; body; orelse } ->
         Format.fprintf
@@ -1412,7 +1411,7 @@ module PrettyPrinter = struct
           pp_imports imports
 
     | Nonlocal nonlocal_list ->
-        pp_list formatter Identifier.pp "," nonlocal_list
+        pp_list formatter String.pp "," nonlocal_list
 
     | Pass ->
         Format.fprintf formatter "%s" "pass"
@@ -1438,7 +1437,7 @@ module PrettyPrinter = struct
         in
         let pp_except_block formatter handlers =
           let pp_as formatter name =
-            pp_option_with_prefix formatter (" as ", name) Identifier.pp
+            pp_option_with_prefix formatter (" as ", name) String.pp
           in
           let pp_handler formatter { Record.Try.kind; name; handler_body } =
             Format.fprintf

@@ -288,24 +288,24 @@ let test_fold _ =
     ];
 
   (* Classes. *)
-  assert_fold "Class" [{ annotation = Type.meta (Type.primitive "Class"); element = Value }];
-  assert_fold "instance" [{ annotation = Type.primitive "Class"; element = Value }];
+  assert_fold "Class" [{ annotation = Type.meta (Type.Primitive "Class"); element = Value }];
+  assert_fold "instance" [{ annotation = Type.Primitive "Class"; element = Value }];
   assert_fold
     "instance.attribute"
     [
-      { annotation = Type.primitive "Class"; element = Value };
+      { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
     ];
   assert_fold
     "instance.undefined.undefined"
     [
-      { annotation = Type.primitive "Class"; element = Value };
+      { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
     ];
   assert_fold
     "instance.method()"
     [
-      { annotation = Type.primitive "Class"; element = Value };
+      { annotation = Type.Primitive "Class"; element = Value };
       {
         annotation =
           parse_annotation "typing.Callable('Class.method')[[], int]";
@@ -322,14 +322,14 @@ let test_fold _ =
   assert_fold
     "instance()"
     [
-      { annotation = Type.primitive "Class"; element = Value };
-      { annotation = Type.Top; element = NotCallable (Type.primitive "Class") };
+      { annotation = Type.Primitive "Class"; element = Value };
+      { annotation = Type.Top; element = NotCallable (Type.Primitive "Class") };
     ];
 
   let bound_type_variable =
     Type.Variable {
-      variable = Identifier.create "TV_Bound";
-      constraints = Bound (Type.primitive "Class");
+      variable = "TV_Bound";
+      constraints = Bound (Type.Primitive "Class");
       variance = Invariant;
     }
   in
@@ -373,8 +373,8 @@ let test_fold _ =
 
   let explicit_type_variable =
     Type.Variable {
-      variable = Identifier.create "TV_Explicit";
-      constraints = Explicit [Type.primitive "Class"; Type.primitive "Other"];
+      variable = "TV_Explicit";
+      constraints = Explicit [Type.Primitive "Class"; Type.Primitive "Other"];
       variance = Invariant;
     }
   in
@@ -410,7 +410,7 @@ let test_fold _ =
               };
               overloads = [];
               implicit = Some {
-                  Type.Callable.implicit_annotation = Type.primitive "Class";
+                  Type.Callable.implicit_annotation = Type.Primitive "Class";
                   name = Access.create "self";
                 };
             };
@@ -422,7 +422,7 @@ let test_fold _ =
               };
               overloads = [];
               implicit = Some {
-                  Type.Callable.implicit_annotation = Type.primitive "Other";
+                  Type.Callable.implicit_annotation = Type.Primitive "Other";
                   name = Access.create "self";
                 };
             };
@@ -449,7 +449,7 @@ let test_fold _ =
     ~parent:(Access.create "Class")
     "super().__init__()"
     [
-      { annotation = Type.primitive "Super"; element = Value };
+      { annotation = Type.Primitive "Super"; element = Value };
       {
         annotation =
           parse_annotation "typing.Callable('object.__init__')[[], None]";
@@ -514,7 +514,7 @@ let test_fold _ =
   (* Typed dictionaries. *)
   let movie_typed_dictionary = {
     annotation = Type.TypedDictionary {
-        name = Identifier.create "Movie";
+        name = "Movie";
         fields = [
           { name = "year"; annotation = Type.integer };
           { name = "title"; annotation = Type.string };
@@ -579,7 +579,7 @@ let test_fold _ =
         annotation = parse_annotation "$unknown";
         element =
           Annotated.Signature.TypedDictionaryMissingKey {
-            typed_dictionary_name = Identifier.create "Movie";
+            typed_dictionary_name = "Movie";
             missing_key = "missing";
           }
           |> Option.some
@@ -603,7 +603,7 @@ let test_fold _ =
     "Movie(title='Blade Runner', year=1982)"
     [
       {
-        annotation = parse_annotation ("typing.Type[Movie]");
+        annotation = parse_annotation "typing.Type[Movie]";
         element = Value;
       };
       {
@@ -621,7 +621,7 @@ let test_fold _ =
     "Movie(year=1982, title='Blade Runner')"
     [
       {
-        annotation = parse_annotation ("typing.Type[Movie]");
+        annotation = parse_annotation "typing.Type[Movie]";
         element = Value;
       };
       {
@@ -639,7 +639,7 @@ let test_fold _ =
     "Movie(year='Blade Runner', title=1982)"
     [
       {
-        annotation = parse_annotation ("typing.Type[Movie]");
+        annotation = parse_annotation "typing.Type[Movie]";
         element = Value;
       };
       {
@@ -648,7 +648,7 @@ let test_fold _ =
           {
             Annotated.Signature.actual = parse_annotation "str";
             expected = parse_annotation "int";
-            name = (Some (Identifier.create "$parameter$year"));
+            name = (Some "$parameter$year");
             position = 1;
           }
           |> Node.create_with_default_location
@@ -728,7 +728,7 @@ let test_fold _ =
         annotation = Type.none;
         element =
           Annotated.Signature.TypedDictionaryMissingKey {
-            typed_dictionary_name = Identifier.create "Movie";
+            typed_dictionary_name = "Movie";
             missing_key = "missing";
           }
           |> Option.some

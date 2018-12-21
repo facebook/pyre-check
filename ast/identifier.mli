@@ -5,18 +5,12 @@
 
 open Core
 
-type t
+type t = string
 [@@deriving compare, eq, sexp, show, hash]
 
 module Map : Map.S with type Key.t = t
 module Set: Set.S with type Elt.t = t
 
-val create: string -> t
-
 val sanitized: t -> t
-val pp_sanitized: Format.formatter -> t -> unit
-val show_sanitized: t -> string
 
 val remove_leading_underscores: t -> t
-
-val map: t -> f: (string -> string) -> t

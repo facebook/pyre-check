@@ -88,14 +88,14 @@ let test_register_class_definitions _ =
          return C()
     |})
   |> ignore;
-  assert_equal (parse_annotation (module Handler) (!"C")) (Type.primitive "C");
-  assert_equal (parse_annotation (module Handler) (!"D")) (Type.primitive "D");
-  assert_equal (parse_annotation (module Handler) (!"B")) (Type.primitive "B");
-  assert_equal (parse_annotation (module Handler) (!"A")) (Type.primitive "A");
+  assert_equal (parse_annotation (module Handler) (!"C")) (Type.Primitive "C");
+  assert_equal (parse_annotation (module Handler) (!"D")) (Type.Primitive "D");
+  assert_equal (parse_annotation (module Handler) (!"B")) (Type.Primitive "B");
+  assert_equal (parse_annotation (module Handler) (!"A")) (Type.Primitive "A");
   assert_equal (Handler.function_definitions (access ["foo"])) None;
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  assert_equal (TypeOrder.successors order (Type.primitive "C")) [];
-  assert_equal (TypeOrder.predecessors order (Type.primitive "C")) [];
+  assert_equal (TypeOrder.successors order (Type.Primitive "C")) [];
+  assert_equal (TypeOrder.predecessors order (Type.Primitive "C")) [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
@@ -109,7 +109,7 @@ let test_register_class_definitions _ =
   assert_equal
     ~cmp:Type.Set.equal
     ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ (Type.show next)))
-    (Type.Set.singleton (Type.primitive "C"))
+    (Type.Set.singleton (Type.Primitive "C"))
     new_annotations;
   let new_annotations =
     Environment.register_class_definitions
@@ -161,11 +161,11 @@ let test_refine_class_definitions _ =
     ~top:Type.Object
     all_annotations;
 
-  Handler.refine_class_definition (Type.primitive "A");
-  Handler.refine_class_definition (Type.primitive "B");
-  Handler.refine_class_definition (Type.primitive "C");
-  Handler.refine_class_definition (Type.primitive "D");
-  Handler.refine_class_definition (Type.primitive "E");
+  Handler.refine_class_definition (Type.Primitive "A");
+  Handler.refine_class_definition (Type.Primitive "B");
+  Handler.refine_class_definition (Type.Primitive "C");
+  Handler.refine_class_definition (Type.Primitive "D");
+  Handler.refine_class_definition (Type.Primitive "E");
   let attribute_equal
       (expected_target, expected_value)
       { Node.value = { Statement.Attribute.target; value; _ }; _ } =
@@ -174,7 +174,7 @@ let test_refine_class_definitions _ =
   in
   let assert_attribute ~implicit class_name attribute_name expected =
     let { Resolution.explicit_attributes; implicit_attributes; _ } =
-      Option.value_exn (Handler.class_definition (Type.primitive class_name))
+      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
     in
     let map =
       if implicit then
@@ -198,10 +198,10 @@ let test_refine_class_definitions _ =
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =
-      Option.value_exn (Handler.class_definition (Type.primitive class_name))
+      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
     in
     let expected =
-      List.map expected ~f:Type.primitive
+      List.map expected ~f:(fun annotation -> Type.Primitive annotation)
       |> (fun expected -> expected @ [Type.Object; Type.Deleted; Type.Top])
     in
     assert_equal
@@ -450,8 +450,8 @@ let test_connect_definition _ =
   let resolution = TypeCheck.resolution (module Handler) () in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "C");
-  TypeOrder.insert (module TypeOrderHandler) (Type.primitive "D");
+  TypeOrder.insert (module TypeOrderHandler) (Type.Primitive "C");
+  TypeOrder.insert (module TypeOrderHandler) (Type.Primitive "D");
 
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
@@ -490,7 +490,7 @@ let test_connect_definition _ =
     }
   in
   Environment.connect_definition ~resolution ~definition:class_definition;
-  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "C");
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "C");
 
   let definition =
     +(Test.parse_single_class {|
@@ -499,9 +499,9 @@ let test_connect_definition _ =
      |})
   in
   Environment.connect_definition ~resolution ~definition;
-  assert_edge ~predecessor:Type.Bottom ~successor:(Type.primitive "D");
-  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.integer;
-  assert_edge ~predecessor:(Type.primitive "D") ~successor:Type.float
+  assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "D");
+  assert_edge ~predecessor:(Type.Primitive "D") ~successor:Type.integer;
+  assert_edge ~predecessor:(Type.Primitive "D") ~successor:Type.float
 
 
 let test_register_globals _ =
@@ -539,7 +539,7 @@ let test_register_globals _ =
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
-  assert_global "qualifier.Class" (Some (Type.meta (Type.primitive "qualifier.Class")));
+  assert_global "qualifier.Class" (Some (Type.meta (Type.Primitive "qualifier.Class")));
   assert_global "qualifier.in_branch" (Some Type.integer)
 
 
@@ -576,16 +576,16 @@ let test_connect_type_order _ =
       successors
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
-  assert_successors (Type.primitive "C") [];
-  assert_successors (Type.primitive "D") [Type.primitive "C"];
+  assert_successors (Type.Primitive "C") [];
+  assert_successors (Type.Primitive "D") [Type.Primitive "C"];
 
   TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
 
-  assert_successors (Type.primitive "C") [Type.Object; Type.Deleted; Type.Top];
-  assert_successors (Type.primitive "D") [Type.primitive "C"; Type.Object; Type.Deleted; Type.Top];
+  assert_successors (Type.Primitive "C") [Type.Object; Type.Deleted; Type.Top];
+  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Object; Type.Deleted; Type.Top];
   assert_successors
-    (Type.primitive "CallMe")
-    [Type.primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
+    (Type.Primitive "CallMe")
+    [Type.Primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
 
 let test_register_functions _ =
   let environment = Environment.Builder.create () in
@@ -682,20 +682,20 @@ let test_populate _ =
   in
   assert_equal
     (parse_annotation environment !"foo.foo")
-    (Type.primitive "foo.foo");
+    (Type.Primitive "foo.foo");
   assert_equal
     (parse_annotation environment (+Access (parse_single_access "Optional[foo.foo]")))
-    (Type.parametric "Optional" [Type.primitive "foo.foo"]);
-  assert_equal (parse_annotation environment !"bar") (Type.primitive "bar");
+    (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
+  assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
-    (Type.primitive "collections.defaultdict");
+    (Type.Primitive "collections.defaultdict");
 
   (* Check custom class definitions. *)
-  assert_is_some (Handler.class_definition (Type.primitive "None"));
-  assert_is_some (Handler.class_definition (Type.primitive "typing.Optional"));
+  assert_is_some (Handler.class_definition (Type.Primitive "None"));
+  assert_is_some (Handler.class_definition (Type.Primitive "typing.Optional"));
 
   (* Check type aliases. *)
   let environment =
@@ -720,7 +720,7 @@ let test_populate _ =
     let targets =
       (Handler.TypeOrderHandler.find
          (Handler.TypeOrderHandler.edges ())
-         (index (Type.primitive base)))
+         (index (Type.Primitive base)))
     in
     let to_target annotation = {
       TypeOrder.Target.target = index annotation;
@@ -838,7 +838,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        ~original:(Some Type.Top)
-       (Type.meta (Type.primitive "Class")));
+       (Type.meta (Type.Primitive "Class")));
   assert_global
     "Class.__init__"
     (Annotation.create_immutable
@@ -877,7 +877,7 @@ let test_populate _ =
   in
   assert_global
     "A"
-    (Type.primitive "A"
+    (Type.Primitive "A"
      |> Type.meta
      |> Annotation.create_immutable ~global:true ~original:(Some Type.Top));
 
@@ -904,7 +904,7 @@ let test_populate _ =
     ~superclass_parameters:type_parameters
     ~environment
     "CallMe"
-    ~superclasses:[Type.primitive "typing.Callable"];
+    ~superclasses:[Type.Primitive "typing.Callable"];
   ()
 
 
@@ -960,20 +960,20 @@ let test_infer_protocols_edges _ =
         environment
         resolution
         ~implementing_classes
-        ~protocol:(Type.primitive "Empty")
+        ~protocol:(Type.Primitive "Empty")
     in
     assert_equal 10 (Set.length empty_edges);
     Environment.infer_implementations
       environment
       resolution
       ~implementing_classes
-      ~protocol:(Type.primitive "Sized")
+      ~protocol:(Type.Primitive "Sized")
     |> Set.union
       (Environment.infer_implementations
          environment
          resolution
          ~implementing_classes
-         ~protocol:(Type.primitive "SuperObject"))
+         ~protocol:(Type.Primitive "SuperObject"))
     |> Set.union empty_edges
   in
   let assert_edge_inferred source target =
@@ -985,12 +985,12 @@ let test_infer_protocols_edges _ =
 
   assert_equal ~printer:Int.to_string (Set.length edges) 11;
 
-  assert_edge_not_inferred (Type.primitive "List") (Type.primitive "Sized");
-  assert_edge_inferred (Type.primitive "Set") (Type.primitive "Sized");
-  assert_edge_not_inferred (Type.primitive "AlmostSet") (Type.primitive "Sized");
-  assert_edge_not_inferred (Type.Object) (Type.primitive "SuperObject");
-  assert_edge_inferred (Type.primitive "List") (Type.primitive "Empty");
-  assert_edge_not_inferred (Type.Object) (Type.primitive "Empty")
+  assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized");
+  assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized");
+  assert_edge_not_inferred (Type.Primitive "AlmostSet") (Type.Primitive "Sized");
+  assert_edge_not_inferred (Type.Object) (Type.Primitive "SuperObject");
+  assert_edge_inferred (Type.Primitive "List") (Type.Primitive "Empty");
+  assert_edge_not_inferred (Type.Object) (Type.Primitive "Empty")
 
 
 let test_less_or_equal _ =
@@ -1007,7 +1007,7 @@ let test_less_or_equal _ =
     parse_annotation
       environment
       (+Access (access ["module.super"])) in
-  assert_equal super (Type.primitive "module.super");
+  assert_equal super (Type.Primitive "module.super");
 
   let sub =
     parse_annotation
@@ -1015,7 +1015,7 @@ let test_less_or_equal _ =
       (+Access (access ["module.sub"])) in
   assert_equal
     sub
-    (Type.primitive "module.sub");
+    (Type.Primitive "module.sub");
 
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:Type.Top);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:Type.Top);
@@ -1036,7 +1036,7 @@ let test_less_or_equal _ =
     parse_annotation
       environment
       (+Access (access ["module.super"])) in
-  assert_equal super (Type.primitive "module.super");
+  assert_equal super (Type.Primitive "module.super");
 
   let sub =
     parse_annotation
@@ -1065,30 +1065,30 @@ let test_less_or_equal _ =
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (Type.primitive "A"))
-       ~right:(Type.Optional (Type.primitive "A")));
+       ~left:(Type.Optional (Type.Primitive "A"))
+       ~right:(Type.Optional (Type.Primitive "A")));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.primitive "A")
-       ~right:(Type.Optional (Type.primitive "A")));
+       ~left:(Type.Primitive "A")
+       ~right:(Type.Optional (Type.Primitive "A")));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (Type.primitive "A"))
-       ~right:(Type.primitive "A"));
+       ~left:(Type.Optional (Type.Primitive "A"))
+       ~right:(Type.Primitive "A"));
 
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Optional (Type.primitive "A"))
-       ~right:(Type.primitive "C"));
+       ~left:(Type.Optional (Type.Primitive "A"))
+       ~right:(Type.Primitive "C"));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.primitive "A")
-       ~right:(Type.primitive "C"));
+       ~left:(Type.Primitive "A")
+       ~right:(Type.Primitive "C"));
 
   (* Unions. *)
   let environment =
@@ -1103,53 +1103,53 @@ let test_less_or_equal _ =
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"])
-       ~right:(Type.Union [Type.primitive "A"]));
+       ~left:(Type.Union [Type.Primitive "A"])
+       ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "B"])
-       ~right:(Type.Union [Type.primitive "A"]));
+       ~left:(Type.Union [Type.Primitive "B"])
+       ~right:(Type.Union [Type.Primitive "A"]));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"])
-       ~right:(Type.Union [Type.primitive "B"]));
+       ~left:(Type.Union [Type.Primitive "A"])
+       ~right:(Type.Union [Type.Primitive "B"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.primitive "A")
-       ~right:(Type.Union [Type.primitive "A"]));
+       ~left:(Type.Primitive "A")
+       ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.primitive "B")
-       ~right:(Type.Union [Type.primitive "A"]));
+       ~left:(Type.Primitive "B")
+       ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.primitive "A")
-       ~right:(Type.Union [Type.primitive "A"; Type.primitive "B"]));
+       ~left:(Type.Primitive "A")
+       ~right:(Type.Union [Type.Primitive "A"; Type.Primitive "B"]));
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:Type.Object);
   assert_true
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:(Type.Union [Type.Top; Type.Object; Type.Optional Type.float]));
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
+       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:Type.float);
   assert_false
     (TypeOrder.less_or_equal
        order
-       ~left:(Type.Union [Type.primitive "A"; Type.primitive "B"; Type.integer])
-       ~right:(Type.Union [Type.float; Type.primitive "B"; Type.integer]));
+       ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
+       ~right:(Type.Union [Type.float; Type.Primitive "B"; Type.integer]));
 
   (* Special cases. *)
   assert_true (TypeOrder.less_or_equal order ~left:Type.integer ~right:Type.float)
@@ -1163,8 +1163,8 @@ let test_join _ =
     |} in
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  let foo = Type.primitive "foo" in
-  let bar = Type.primitive "bar" in
+  let foo = Type.Primitive "foo" in
+  let bar = Type.Primitive "bar" in
 
   assert_equal
     (TypeOrder.join order Type.Bottom bar)
@@ -1187,8 +1187,8 @@ let test_join _ =
     (Type.Union [Type.integer; Type.string]);
 
   assert_raises
-    (TypeOrder.Untracked (Type.primitive "durp"))
-    (fun _ -> TypeOrder.join order bar (Type.primitive "durp"));
+    (TypeOrder.Untracked (Type.Primitive "durp"))
+    (fun _ -> TypeOrder.join order bar (Type.Primitive "durp"));
 
   (* Special cases. *)
   assert_equal
@@ -1216,12 +1216,12 @@ let test_meet _ =
       (TypeOrder.meet order left right)
       expected
   in
-  let foo = Type.primitive "foo" in
-  let bar = Type.primitive "bar" in
-  let a = Type.primitive "A" in
-  let b = Type.primitive "B" in
-  let c = Type.primitive "C" in
-  let d = Type.primitive "D" in
+  let foo = Type.Primitive "foo" in
+  let bar = Type.Primitive "bar" in
+  let a = Type.Primitive "A" in
+  let b = Type.Primitive "B" in
+  let c = Type.Primitive "C" in
+  let d = Type.Primitive "D" in
 
   assert_meet Type.Bottom bar Type.Bottom;
   assert_meet Type.Top bar bar;
@@ -1283,10 +1283,10 @@ let test_supertypes _ =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
     [Type.Object; Type.Deleted; Type.Top]
-    (TypeOrder.successors order (Type.primitive "foo"));
+    (TypeOrder.successors order (Type.Primitive "foo"));
   assert_equal
-    [Type.primitive "foo"; Type.Object; Type.Deleted; Type.Top]
-    (TypeOrder.successors order (Type.primitive "bar"));
+    [Type.Primitive "foo"; Type.Object; Type.Deleted; Type.Top]
+    (TypeOrder.successors order (Type.Primitive "bar"));
 
   let environment =
     populate {|
@@ -1300,7 +1300,7 @@ let test_supertypes _ =
     ~printer:(List.to_string ~f:Type.show)
     [
       Type.Parametric {
-        name = ~~"typing.Generic";
+        name = "typing.Generic";
         parameters = [Type.integer];
       };
       Type.Object;
@@ -1322,13 +1322,13 @@ let test_class_definition _ =
       class object():
         pass
     |} in
-  assert_true (is_defined environment (Type.primitive "baz.baz"));
+  assert_true (is_defined environment (Type.Primitive "baz.baz"));
   assert_true (is_defined environment (Type.parametric "baz.baz" [Type.integer]));
-  assert_is_some (class_definition environment (Type.primitive "baz.baz"));
+  assert_is_some (class_definition environment (Type.Primitive "baz.baz"));
 
-  assert_false (is_defined environment (Type.primitive "bar.bar"));
+  assert_false (is_defined environment (Type.Primitive "bar.bar"));
   assert_false (is_defined environment (Type.parametric "bar.bar" [Type.integer]));
-  assert_is_none (class_definition environment (Type.primitive "bar.bar"));
+  assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
 
   let any =
     class_definition environment Type.Object
@@ -1351,7 +1351,7 @@ let test_protocols _ =
   assert_equal
     ~cmp:(List.equal ~equal:Type.equal)
     (Handler.protocols ())
-    ([Type.Primitive ~~"B"])
+    ([Type.Primitive "B"])
 
 
 let test_modules _ =
@@ -1455,18 +1455,18 @@ let test_purge _ =
     ~configuration
     handler
     [parse ~handle:"test.py" source];
-  assert_is_some (Handler.class_definition (Type.primitive "baz.baz"));
+  assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_some (Handler.function_definitions (Access.create "foo"));
-  assert_is_some (Handler.aliases (Type.primitive "_T"));
+  assert_is_some (Handler.aliases (Type.Primitive "_T"));
   assert_equal
     (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create "a.py")))
     (Some [File.Handle.create "test.py"]);
 
   Handler.purge [File.Handle.create "test.py"];
 
-  assert_is_none (Handler.class_definition (Type.primitive "baz.baz"));
+  assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_none (Handler.function_definitions (Access.create "foo"));
-  assert_is_none (Handler.aliases (Type.primitive "_T"));
+  assert_is_none (Handler.aliases (Type.Primitive "_T"));
   assert_equal
     (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create"a.py")))
     (Some [])
@@ -1481,8 +1481,8 @@ let test_infer_protocols _ =
     let expected_edges =
       let to_edge (source, target) =
         {
-          TypeOrder.Edge.source = Type.primitive source;
-          target = Type.primitive target
+          TypeOrder.Edge.source = Type.Primitive source;
+          target = Type.Primitive target
         }
       in
       List.map expected_edges ~f:to_edge
@@ -1506,7 +1506,7 @@ let test_infer_protocols _ =
       | None ->
           Handler.TypeOrderHandler.keys ()
       | Some classes_to_infer ->
-          List.map classes_to_infer ~f:Type.primitive
+          List.map classes_to_infer ~f:(fun to_infer -> Type.Primitive to_infer)
           |> List.filter_map
             ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
     in

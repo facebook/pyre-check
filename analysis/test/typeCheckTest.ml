@@ -102,7 +102,7 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = None;
         annotation = Some (Type.expression Type.integer);
       }
@@ -112,7 +112,7 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = Some (+Float 1.0);
         annotation = Some (Type.expression Type.integer);
       }
@@ -122,7 +122,7 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = Some (+Float 1.0);
         annotation = None;
       }
@@ -132,7 +132,7 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = None;
         annotation = Some (Type.expression Type.integer);
       }
@@ -143,12 +143,12 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = None;
         annotation = Some (Type.expression Type.float);
       };
       {
-        Parameter.name = ~~"y";
+        Parameter.name = "y";
         value = None;
         annotation = Some (Type.expression Type.string)
       };
@@ -158,7 +158,7 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"x";
+        Parameter.name = "x";
         value = None;
         annotation = None;
       };
@@ -168,17 +168,17 @@ let test_initial _ =
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"self";
+        Parameter.name = "self";
         value = None;
         annotation = None;
       };
     ]
     ~parent:"Foo"
-    (create ["self", Type.Primitive ~~"Foo"]);
+    (create ["self", Type.Primitive "Foo"]);
   assert_initial
     ~parameters:[
       {
-        Parameter.name = ~~"a";
+        Parameter.name = "a";
         value = None;
         annotation = None;
       };

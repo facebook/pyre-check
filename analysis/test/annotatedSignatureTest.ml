@@ -9,7 +9,6 @@ open OUnit2
 open Ast
 open Analysis
 open Statement
-open Pyre
 
 open Test
 open AnnotatedTest
@@ -111,22 +110,22 @@ let test_select _ =
             reason = Some (TooManyArguments { expected; provided });
           }
       | `NotFoundUnexpectedKeyword name ->
-          NotFound { callable; reason = Some (UnexpectedKeyword (Identifier.create name)) }
+          NotFound { callable; reason = Some (UnexpectedKeyword name) }
       | `NotFoundUnexpectedKeywordWithClosest (closest, name) ->
           NotFound {
             callable = parse_callable closest;
-            reason = Some (UnexpectedKeyword (Identifier.create name));
+            reason = Some (UnexpectedKeyword name);
           }
       | `NotFoundMismatch (actual, expected, name, position) ->
           let reason =
-            { actual; expected; name = name >>| Identifier.create; position }
+            { actual; expected; name; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
           NotFound { callable; reason }
       | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
           let reason =
-            { actual; expected; name = name >>| Identifier.create; position }
+            { actual; expected; name; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in

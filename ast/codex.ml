@@ -172,7 +172,7 @@ let arguments_codex_representation parameters =
   let categorize_parameters parameters =
     let names =
       List.map
-        ~f:(fun { Node.value = { Parameter.name; _ }; _ } -> Identifier.show name)
+        ~f:(fun { Node.value = { Parameter.name; _ }; _ } -> name)
         parameters
     in
     List.filter ~f:(fun name -> not (String.is_prefix ~prefix:"*" name)) names,

@@ -106,7 +106,7 @@
     let arguments =
       let argument argument =
         let none =
-          Access [Access.Identifier (Identifier.create "None")]
+          Access [Access.Identifier "None"]
           |> Node.create ~location
         in
         Option.value argument ~default:none
@@ -857,11 +857,11 @@ decorator:
 identifier:
   | identifier = IDENTIFIER {
       let start, stop = fst identifier in
-      Location.create ~start ~stop, Identifier.create (snd identifier)
+      Location.create ~start ~stop, snd identifier
     }
   | position = ASYNC {
       Location.create ~start:(fst position) ~stop:(snd position),
-      Identifier.create "async"
+      "async"
     }
   ;
 
@@ -893,7 +893,7 @@ define_parameters:
       {
         Node.location = Location.create ~start:(fst asteriks) ~stop:(snd asteriks);
         value = {
-            Parameter.name = Identifier.create "*";
+            Parameter.name = "*";
             value = None;
             annotation = None;
         };
@@ -938,12 +938,12 @@ define_parameters:
             location,
             identifier expression
             |> snd
-            |> Identifier.map ~f:(fun identifier -> "*" ^ identifier)
+            |> fun identifier -> "*" ^ identifier
         | { Node.location; value = Starred (Starred.Twice expression) } ->
             location,
             identifier expression
             |> snd
-            |> Identifier.map ~f:(fun identifier -> "**" ^ identifier)
+            |> fun identifier -> "**" ^ identifier
         | _ ->
             raise (ParserError "Unexpected parameters") in
       identifier expression

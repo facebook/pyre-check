@@ -42,14 +42,14 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
               _;
             };
           _;
-        } when Identifier.show typing = "typing" && Identifier.show new_type = "NewType" ->
+        } when typing = "typing" && new_type = "NewType" ->
           let name = (qualifier @ Access.create name) in
           let constructor =
             Define {
-              Define.name = [Access.Identifier (Identifier.create "__init__")];
+              Define.name = [Access.Identifier "__init__"];
               parameters = [
-                Parameter.create ~location ~name:(Identifier.create "self") ();
-                Parameter.create ~location ~annotation:base ~name:(Identifier.create "input") ();
+                Parameter.create ~location ~name:"self" ();
+                Parameter.create ~location ~annotation:base ~name:"input" ();
               ];
               body = [Node.create Pass ~location];
               decorators = [];

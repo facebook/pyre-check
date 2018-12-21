@@ -342,7 +342,6 @@ module Access = struct
         String.split ~on:'.' name
     in
     identifier_names name
-    |> List.map ~f:Identifier.create
     |> create_from_identifiers
 
 
@@ -350,7 +349,7 @@ module Access = struct
     let identifier (element: expression_t Record.Access.access): string =
       match element with
       | Identifier identifier ->
-          Identifier.show identifier
+          identifier
       | Call _ ->
           Format.asprintf "(...)"
       | _ ->
@@ -383,7 +382,7 @@ module Access = struct
   let pp_sanitized format access =
     let identifier (element: expression_t Record.Access.access): string =
       match element with
-      | Identifier identifier -> Identifier.show identifier
+      | Identifier identifier -> identifier
       | Call _ -> Format.asprintf "(...)"
       | _ -> "?"
     in
@@ -407,9 +406,9 @@ module Access = struct
   let delocalize access =
     match access with
     | (Identifier identifier) :: tail
-      when Identifier.show identifier |> String.is_prefix ~prefix:"$local_" ->
+      when identifier |> String.is_prefix ~prefix:"$local_" ->
         let qualifier =
-          let name = Identifier.show identifier in
+          let name = identifier in
           if Str.string_match local_qualifier_pattern name 0 then
             Str.matched_group 1 name
             |> String.substr_replace_all ~pattern:"?" ~with_:"."
@@ -421,8 +420,8 @@ module Access = struct
             end
         in
         let identifier =
-          Identifier.show_sanitized identifier
-          |> Identifier.create
+          Identifier.sanitized identifier
+
         in
         qualifier @ [Identifier identifier] @ tail
     | _ ->
@@ -476,7 +475,7 @@ module Access = struct
 
 
   let call ?(arguments = []) ~location ~name () =
-    [Identifier (Identifier.create name); Call { Node.location; value = arguments }]
+    [Identifier name; Call { Node.location; value = arguments }]
 
   type call = {
     callee: string;
@@ -502,7 +501,7 @@ module Access = struct
     | (Identifier name) :: _ ->
         (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
         begin
-          match Identifier.show name with
+          match name with
           | "__add__" -> Some "__radd__"
           | "__sub__" -> Some "__rsub__"
           | "__mul__" -> Some "__rmul__"
@@ -519,7 +518,7 @@ module Access = struct
           | "__or__" -> Some "__ror__"
           | _ -> None
         end
-        >>| fun name -> [Identifier (Identifier.create name)]
+        >>| fun name -> [Identifier name]
     | _ ->
         None
 
@@ -528,7 +527,7 @@ module Access = struct
     match name, arguments with
     | [Identifier name], [{ Argument.value; _ }] ->
         begin
-          match Identifier.show name with
+          match name with
           | "abs" -> Some "__abs__"
           | "repr" -> Some "__repr__"
           | "str" -> Some "__str__"
@@ -744,7 +743,7 @@ let exists_in_list ~expression_list target_string =
     match expected, delocalize_qualified actual with
     | (expected :: expected_tail),
       { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
-      when Identifier.show identifier = expected ->
+      when identifier = expected ->
         if List.is_empty expected_tail && List.is_empty identifiers then
           true
         else
@@ -772,7 +771,7 @@ module PrettyPrinter = struct
     | Access.Expression expression ->
         Format.fprintf formatter "%a" pp_expression_t expression
     | Access.Identifier identifier ->
-        Format.fprintf formatter "%s" @@ Identifier.show identifier
+        Format.fprintf formatter "%s" @@ identifier
 
 
   and pp_access_list formatter access_list =
@@ -783,7 +782,7 @@ module PrettyPrinter = struct
       :: Access.Identifier identifier
       :: Access.Call { Node.value = arguments; _ }
       :: access_list
-      when (Identifier.equal identifier (Identifier.create "__getitem__")) ->
+      when (Identifier.equal identifier "__getitem__") ->
         Format.fprintf
           formatter
           (if List.is_empty access_list then "%a[%a]%a" else "%a[%a].%a")
@@ -898,7 +897,7 @@ module PrettyPrinter = struct
           pp_keywords keywords
 
   and pp_parameter formatter { Node.value = { Parameter.name; value; annotation }; _ } =
-    let identifier = Identifier.show name in
+    let identifier = name in
     match value,annotation with
     | Some expression, Some annotation ->
         Format.fprintf

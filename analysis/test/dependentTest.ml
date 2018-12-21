@@ -29,7 +29,7 @@ let access names =
   List.map ~f:Expression.Access.create names |> List.concat
 
 
-let primitive name = Type.Primitive ~~name
+let primitive name = Type.Primitive name
 
 
 let test_index _ =

@@ -61,7 +61,7 @@ let create_function access =
 
 let unqualified_method_name method_access =
   match Access.last method_access with
-  | Some (Access.Identifier name) -> Identifier.show name
+  | Some (Access.Identifier name) -> name
   | _ ->
       Format.asprintf "Bad method name %a" Access.pp method_access
       |> failwith
@@ -169,7 +169,7 @@ let get_definition = function
       >>| Preprocessing.classes
       >>= List.find ~f:(class_matches class_name)
       >>| Node.value
-      >>= Class.find_define ~method_name:(Identifier.create method_name)
+      >>= Class.find_define ~method_name
 
 
 let get_override_access = function

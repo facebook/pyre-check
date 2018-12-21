@@ -223,16 +223,14 @@ let qualify_local_identifier name ~qualifier =
     Access.show qualifier
     |> String.substr_replace_all ~pattern:"." ~with_:"?"
   in
-  Identifier.show name
+  name
   |> Format.asprintf "$local_%s$%s" qualifier
-  |> Identifier.create
   |> fun identifier -> [Access.Identifier identifier]
 
 
 let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name =
-      let name = Identifier.show name in
       if String.is_prefix name ~prefix:"**" then
         "**", String.drop_prefix name 2
       else if String.is_prefix name ~prefix:"*" then
@@ -242,9 +240,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     in
     let renamed =
       Format.asprintf "$%s$%s" prefix name
-      |> Identifier.create
     in
-    let name = Identifier.create name in
     let access = [Access.Identifier name] in
     {
       scope with
@@ -348,7 +344,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       {
         parameter with
         Node.value = {
-          Parameter.name = Identifier.map renamed ~f:(fun identifier -> stars ^ identifier);
+          Parameter.name = stars ^ renamed;
           value = value >>| qualify_expression ~qualify_strings:false ~scope;
           annotation;
         };
@@ -387,7 +383,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | { Node.value = Access (Access.Identifier _ :: Access.Identifier getitem :: _); _ }
-            when Identifier.show getitem = "__getitem__" ->
+            when getitem = "__getitem__" ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ ->
               qualify_expression ~qualify_strings:false value ~scope
@@ -440,10 +436,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 | Access ([Access.Identifier name] as access) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
-                      let qualified =
-                        Identifier.show name
-                        |> String.is_prefix ~prefix:"$"
-                      in
+                      let qualified = String.is_prefix name ~prefix:"$" in
                       if not qualified &&
                          not (Set.mem locals access) &&
                          not (Set.mem immutables access) then
@@ -780,7 +773,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 let qualify_strings =
                   match reversed_lead with
                   | [ Access.Identifier type_var; Access.Identifier typing ]
-                    when Identifier.show type_var = "TypeVar" && Identifier.show typing = "typing"
+                    when type_var = "TypeVar" && typing = "typing"
                     ->
                       true
                   | _ ->
@@ -788,11 +781,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 in
                 let qualify_argument { Argument.name; value } =
                   let name =
-                    let rename identifier =
-                      Identifier.show identifier
-                      |> Format.asprintf "$parameter$%s"
-                      |> Identifier.create
-                    in
+                    let rename identifier = "$parameter$" ^ identifier in
                     name
                     >>| Node.map ~f:rename
                   in
@@ -1124,11 +1113,9 @@ let expand_type_checking_imports source =
         let is_type_checking { Node.value; _ } =
           match value with
           | Access [Access.Identifier typing; Access.Identifier type_checking]
-            when Identifier.show typing = "typing" &&
-                 Identifier.show type_checking = "TYPE_CHECKING" ->
+            when typing = "typing" && type_checking = "TYPE_CHECKING" ->
               true
-          | Access [Access.Identifier type_checking]
-            when Identifier.show type_checking = "TYPE_CHECKING" ->
+          | Access [Access.Identifier type_checking] when type_checking = "TYPE_CHECKING" ->
               true
           | _ ->
               false
@@ -1380,18 +1367,18 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         in
         let access =
           Access [
-            Access.Identifier (Identifier.create "mypy_extensions");
-            Access.Identifier (Identifier.create "TypedDict");
-            Access.Identifier (Identifier.create "__getitem__");
+            Access.Identifier ("mypy_extensions");
+            Access.Identifier ("TypedDict");
+            Access.Identifier ("__getitem__");
             Access.Call (Node.create arguments ~location);
           ];
         in
         let annotation =
           let node value = Node.create value ~location in
           Access [
-            Access.Identifier (Identifier.create "typing");
-            Access.Identifier (Identifier.create "Type");
-            Access.Identifier (Identifier.create "__getitem__");
+            Access.Identifier ("typing");
+            Access.Identifier ("Type");
+            Access.Identifier ("__getitem__");
             Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
           ]
           |> node
@@ -1406,11 +1393,11 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         };
       in
       let is_typed_dictionary ~module_name ~typed_dictionary =
-        Identifier.show module_name = "mypy_extensions" &&
-        Identifier.show typed_dictionary = "TypedDict"
+        module_name = "mypy_extensions" &&
+        typed_dictionary = "TypedDict"
       in
       let extract_totality arguments =
-        let is_total ~total = Identifier.show_sanitized total = "total" in
+        let is_total ~total = Identifier.sanitized total = "total" in
         match arguments with
         | [] ->
             Some true
@@ -1482,7 +1469,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             | _ -> None
           in
           let string_literal identifier =
-            Expression.String { value = Identifier.show identifier; kind = StringLiteral.String }
+            Expression.String { value = identifier; kind = StringLiteral.String }
             |> Node.create ~location
           in
           let fields =

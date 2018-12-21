@@ -202,12 +202,12 @@ let test_pp _ =
     (+Lambda {
        Lambda.parameters = [
          +{
-           Parameter.name = ~~"x";
+           Parameter.name = "x";
            Parameter.value = Some (+Integer 1);
            annotation = None
          };
          +{
-           Parameter.name = ~~"y";
+           Parameter.name = "y";
            Parameter.value = Some (+Integer 2);
            annotation = None
          }
@@ -218,17 +218,17 @@ let test_pp _ =
 
   assert_pp_equal
     (+Access [
-       Access.Identifier ~~"a";
-       Access.Identifier ~~"b";
-       Access.Identifier ~~"__getitem__";
+       Access.Identifier "a";
+       Access.Identifier "b";
+       Access.Identifier "__getitem__";
        Access.Call
          (+[
             {
               Argument.name = None;
               value =
                 (+Access [
-                   Access.Identifier ~~"c";
-                   Access.Identifier ~~"__getitem__";
+                   Access.Identifier "c";
+                   Access.Identifier "__getitem__";
                    Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
                  ]);
             }
@@ -238,11 +238,11 @@ let test_pp _ =
 
   assert_pp_equal
     (+Access [
-       Access.Identifier ~~"a";
-       Access.Identifier ~~"b";
-       Access.Identifier ~~"__getitem__";
+       Access.Identifier "a";
+       Access.Identifier "b";
+       Access.Identifier "__getitem__";
        Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-       Access.Identifier ~~"c";
+       Access.Identifier "c";
      ])
     "a.b[1].c"
 
@@ -399,7 +399,7 @@ let test_name_and_arguments _ =
   let argument ?name value =
     let name =
       name
-      >>| Identifier.create
+      
       >>| Ast.Node.create_with_default_location
     in
     { Argument.name; value }

@@ -108,7 +108,7 @@ let fold ~resolution ~initial ~f access =
   let access, resolution =
     match access with
     | (Access.Identifier name) :: (Access.Call _) :: tail
-      when Identifier.show name = "super" ->
+      when name = "super" ->
         (Resolution.parent resolution
          >>| (fun parent ->
              Access.expression parent
@@ -120,7 +120,7 @@ let fold ~resolution ~initial ~f access =
          >>| List.hd
          >>| function
          | Some superclass ->
-             let super = Access.Identifier (Identifier.create "$super") in
+             let super = Access.Identifier "$super" in
              let resolution =
                Resolution.set_local
                  resolution
@@ -139,8 +139,8 @@ let fold ~resolution ~initial ~f access =
   let access, resolution =
     match access with
     | (Access.Identifier name) :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ }) :: tail
-      when Identifier.show name = "type" ->
-        let access = Access.Identifier (Identifier.create "$type") in
+      when name = "type" ->
+        let access = Access.Identifier "$type" in
         let resolution =
           let annotation =
             Resolution.resolve resolution value
@@ -323,7 +323,7 @@ let fold ~resolution ~initial ~f access =
           in
           let tail_is access name =
             match List.last access with
-            | Some (Access.Identifier get_item) -> Identifier.show get_item = name
+            | Some (Access.Identifier get_item) -> get_item = name
             | _ -> false
           in
           match implicit_annotation, callable with
@@ -608,7 +608,7 @@ let fold ~resolution ~initial ~f access =
                           resolution
                           ~access:(
                             qualifier @
-                            [Access.Identifier (Identifier.create "__getattr__")]
+                            [Access.Identifier "__getattr__"]
                           )
                         >>| Annotation.annotation
                       in

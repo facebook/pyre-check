@@ -33,11 +33,10 @@ module Root = struct
         (seen_star, excluded, normalized)
         { Node.value = { Parameter.name = prefixed_name; annotation; _ }; _ }
       =
-      let prefixed_name_string = Identifier.show prefixed_name in
+      let prefixed_name_string = prefixed_name in
       if String.is_prefix ~prefix:"**" prefixed_name_string then
         let prefixed_variable_name =
           String.chop_prefix_exn prefixed_name_string ~prefix:"**"
-          |> Identifier.create
         in
         (
           true,
@@ -47,7 +46,6 @@ module Root = struct
       else if String.is_prefix ~prefix:"*" prefixed_name_string then
         let prefixed_variable_name =
           String.chop_prefix_exn prefixed_name_string ~prefix:"*"
-          |> Identifier.create
         in
         (
           true,
@@ -55,14 +53,14 @@ module Root = struct
           (StarParameter { position }, prefixed_variable_name, annotation) :: normalized
         )
       else if seen_star then
-        let normal_name = prefixed_name_string |> chop_parameter_prefix |> Identifier.create in
+        let normal_name = prefixed_name_string |> chop_parameter_prefix in
         (
           true,
           normal_name :: excluded,
           (NamedParameter { name = normal_name }, prefixed_name, annotation) :: normalized
         )
       else
-        let normal_name = prefixed_name_string |> chop_parameter_prefix |> Identifier.create in
+        let normal_name = prefixed_name_string |> chop_parameter_prefix in
         (
           false,
           normal_name :: excluded,
@@ -76,7 +74,7 @@ module Root = struct
   let parameter_name = function
     | PositionalParameter { name; _ }
     | NamedParameter { name } ->
-        Some (Identifier.show name)
+        Some (name)
     | StarParameter _ ->
         Some "*"
     | StarStarParameter _ ->
@@ -123,7 +121,7 @@ let match_actuals_to_formals arguments roots =
         }
     | `Name actual_name, StarStarParameter { excluded; }
       when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
-        let field_name = Root.chop_parameter_prefix (Identifier.show actual_name) in
+        let field_name = Root.chop_parameter_prefix actual_name in
         Some {
           root = formal;
           actual_path = [];
@@ -132,7 +130,7 @@ let match_actuals_to_formals arguments roots =
     | `StarStar, NamedParameter { name } ->
         Some {
           root = formal;
-          actual_path = [ AbstractTreeDomain.Label.Field (Identifier.show name) ];
+          actual_path = [ AbstractTreeDomain.Label.Field name ];
           formal_path = [];
         }
     | `StarStar, StarStarParameter _ ->
@@ -219,7 +217,7 @@ let match_actuals_to_formals arguments roots =
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
         (increment position, (value, formals) :: matches)
     | Some { value = name; _ }, _ ->
-        let normal_name = Identifier.show name |> chop_parameter_prefix |> Identifier.create in
+        let normal_name = chop_parameter_prefix name in
         let formals = List.filter_map roots ~f:(filter_to_named (`Name normal_name)) in
         (position, (value, formals) :: matches)
   in
@@ -240,7 +238,7 @@ let create root path = { root; path; }
 let of_access path access_element =
   match path, access_element with
   | Some path, Access.Identifier id ->
-      Some (AbstractTreeDomain.Label.Field (Identifier.show id) :: path)
+      Some (AbstractTreeDomain.Label.Field id :: path)
   | _ -> None
 
 
@@ -275,7 +273,7 @@ type normalized_expression =
 
 
 let is_get_item member =
-  Identifier.show member = "__getitem__"
+  member = "__getitem__"
 
 
 let get_index { Node.value = expression; _ } =
@@ -367,14 +365,14 @@ let to_json { root; path; } =
     | LocalResult ->
         "result"
     | PositionalParameter { position=_; name } ->
-        Format.sprintf "formal(%s)" (Identifier.show name)
+        Format.sprintf "formal(%s)" name
     | NamedParameter { name } ->
-        Format.sprintf "formal(%s)" (Identifier.show name)
+        Format.sprintf "formal(%s)" name
     | StarParameter { position } ->
         Format.sprintf "formal(*rest%d)" position
     | StarStarParameter _ ->
         "formal(**kw)"
     | Variable name ->
-        Format.sprintf "local(%s)" (Identifier.show name)
+        Format.sprintf "local(%s)" name
   in
   `String (root_name root ^ AbstractTreeDomain.Label.show_path path)

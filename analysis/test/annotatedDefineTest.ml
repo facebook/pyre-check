@@ -72,7 +72,7 @@ let test_parent_definition _ =
     | _ -> Type.Top
   in
   assert_equal ~cmp:Access.equal ~printer:Access.show (Class.name parent) (Access.create "foo");
-  assert_equal base_type (Type.Primitive ~~"superfoo")
+  assert_equal base_type (Type.Primitive "superfoo")
 
 
 let () =
