@@ -95,6 +95,8 @@ type kind =
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | Top
+  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
   | UndefinedAttribute of { attribute: Access.t; origin: origin }
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
@@ -109,8 +111,6 @@ type kind =
 
   (* Additionals errors. *)
   | UnawaitedAwaitable of Access.t
-  | TypedDictionaryAccessWithNonLiteral of string list
-  | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
 [@@deriving compare, eq, show, sexp, hash]
 
 
