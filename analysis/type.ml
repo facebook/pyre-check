@@ -675,10 +675,9 @@ let rec create ~aliases { Node.value = expression; _ } =
       let rec parse reversed_lead tail =
         let annotation =
           match tail with
-          | (Access.Identifier get_item)
+          | (Access.Identifier "__getitem__")
             :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
-            :: _
-            when get_item = "__getitem__" ->
+            :: _ ->
               let parameters =
                 match Node.value argument with
                 | Expression.Tuple elements -> elements
@@ -851,9 +850,10 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | "typing.Tuple" ->
                         let tuple: tuple =
                           match parameters with
-                          | [parameter; Primitive ellipses] when ellipses = "..." ->
+                          | [parameter; Primitive "..."] ->
                               Unbounded parameter
-                          | _ -> Bounded parameters
+                          | _ ->
+                              Bounded parameters
                         in
                         Tuple tuple
 
@@ -904,9 +904,10 @@ let rec create ~aliases { Node.value = expression; _ } =
                               { Node.value = Access name; _ } :: annotation :: tail ->
                                 let default =
                                   match tail with
-                                  | [{ Node.value = Access [Access.Identifier default]; _ }]
-                                    when default = "default" -> true
-                                  | _ -> false
+                                  | [{ Node.value = Access [Access.Identifier "default"]; _ }] ->
+                                      true
+                                  | _ ->
+                                      false
                                 in
                                 Parameter.Named {
                                   Parameter.name;
@@ -960,23 +961,20 @@ let rec create ~aliases { Node.value = expression; _ } =
                   undefined
             in
             match signatures with
-            | (Access.Identifier get_item) ::
+            | (Access.Identifier "__getitem__") ::
               (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
-              []
-              when get_item = "__getitem__" ->
+              [] ->
                 get_signature argument, []
-            | (Access.Identifier get_item) ::
+            | (Access.Identifier "__getitem__") ::
               (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }) ::
-              (Access.Identifier get_item_overloads) ::
+              (Access.Identifier "__getitem__") ::
               (Access.Call {
                   Node.value = [
                     { Argument.value = { Node.value = overloads_argument; location }; _ }
                   ];
                   _;
                 }) ::
-              []
-              when get_item = "__getitem__"
-                && get_item_overloads = "__getitem__" ->
+              [] ->
                 let rec parse_overloads overloads =
                   match overloads with
                   | Expression.List arguments ->
@@ -987,11 +985,10 @@ let rec create ~aliases { Node.value = expression; _ } =
                       get_signature (Node.create ~location (Expression.Tuple arguments))
                       :: (parse_overloads (Access tail))
                   | Expression.Access (
-                      Access.Identifier get_item
+                      Access.Identifier "__getitem__"
                       :: Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }
                       :: tail
-                    )
-                    when get_item = "__getitem__" ->
+                    ) ->
                       get_signature argument :: (parse_overloads (Access tail))
                   | Access [] ->
                       []
@@ -1006,8 +1003,8 @@ let rec create ~aliases { Node.value = expression; _ } =
         in
         match expression with
         | Access [
-            Access.Identifier typing;
-            Access.Identifier typevar;
+            Access.Identifier "typing";
+            Access.Identifier "TypeVar";
             Access.Call ({
                 Node.value = {
                   Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
@@ -1015,8 +1012,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 } :: arguments;
                 _;
               });
-          ]
-          when typing = "typing" && typevar = "TypeVar" ->
+          ] ->
             let constraints =
               let explicits =
                 let explicit = function
@@ -1071,20 +1067,18 @@ let rec create ~aliases { Node.value = expression; _ } =
             }
 
         | Access
-            ((Access.Identifier typing)
-             :: (Access.Identifier callable)
+            ((Access.Identifier "typing")
+             :: (Access.Identifier "Callable")
              :: (Access.Call { Node.value = modifiers; _ })
-             :: signatures)
-          when typing = "typing" && callable = "Callable" ->
+             :: signatures) ->
             parse_callable ~modifiers ~signatures ()
-        | Access ((Access.Identifier typing) :: (Access.Identifier callable) :: signatures)
-          when typing = "typing" && callable = "Callable" ->
+        | Access ((Access.Identifier "typing") :: (Access.Identifier "Callable") :: signatures) ->
             parse_callable ~signatures ()
 
         | Access ([
-            Access.Identifier mypy_extensions;
-            Access.Identifier typed_dictionary;
-            Access.Identifier get_item;
+            Access.Identifier "mypy_extensions";
+            Access.Identifier "TypedDict";
+            Access.Identifier "__getitem__";
             Access.Call({
                 Node.value = [{
                     Argument.name = None;
@@ -1104,10 +1098,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                   }];
                 _;
               });
-          ] as access)
-          when mypy_extensions = "mypy_extensions" &&
-               typed_dictionary = "TypedDict" &&
-               get_item  = "__getitem__" ->
+          ] as access) ->
             let total =
               match true_or_false with
               | Expression.True -> Some true
@@ -1285,8 +1276,7 @@ let rec expression annotation =
         split "None"
     | Optional parameter ->
         (Access.create "typing.Optional") @ (get_item_call [parameter])
-    | Parametric { name; parameters }
-      when name = "typing.Optional" && parameters = [Bottom] ->
+    | Parametric { name = "typing.Optional"; parameters = [Bottom] } ->
         split "None"
     | Parametric { name; parameters } ->
         (split (reverse_substitute name)) @ (get_item_call parameters)
@@ -1337,7 +1327,7 @@ let rec expression annotation =
 
   let value =
     match annotation with
-    | Primitive name when name = "..." -> Ellipses
+    | Primitive "..." -> Ellipses
     | _ -> Access (access annotation)
   in
   Node.create_with_default_location value
@@ -1481,7 +1471,7 @@ let is_deleted = function
 
 
 let is_ellipses = function
-  | Primitive primitive when primitive = "ellipses" -> true
+  | Primitive "ellipses" -> true
   | _ -> false
 
 
@@ -1634,15 +1624,14 @@ let optional_value = function
 
 
 let async_generator_value = function
-  | Parametric { name; parameters = [parameter; _] }
-    when name = "typing.AsyncGenerator" ->
+  | Parametric { name = "typing.AsyncGenerator"; parameters = [parameter; _] } ->
       generator parameter
   | _ ->
       Top
 
 
 let awaitable_value = function
-  | Parametric { name; parameters = [parameter] } when name = "typing.Awaitable" ->
+  | Parametric { name = "typing.Awaitable"; parameters = [parameter] } ->
       parameter
   | _ ->
       Top
@@ -1688,8 +1677,7 @@ let class_variable annotation =
 
 
 let class_variable_value = function
-  | Parametric { name; parameters = [parameter] }
-    when name = "typing.ClassVar" ->
+  | Parametric { name = "typing.ClassVar"; parameters = [parameter] } ->
       Some parameter
   | _ -> None
 
@@ -1971,11 +1959,9 @@ let rec mismatch_with_any left right =
         || parameters_mismatch_with_any left_parameters right_parameters
       else
         false
-  | Parametric { name; parameters = [left] }, right
-    when name = "typing.Optional" ->
+  | Parametric { name = "typing.Optional"; parameters = [left] }, right ->
       mismatch_with_any left right
-  | left, Parametric { name; parameters = [right] }
-    when name = "typing.Optional" ->
+  | left, Parametric { name = "typing.Optional"; parameters = [right] } ->
       mismatch_with_any left right
   | Optional left, Optional right
   | Optional left, right

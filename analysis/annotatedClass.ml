@@ -308,8 +308,7 @@ let immediate_superclasses definition ~resolution =
 let metaclass definition ~resolution =
   let get_metaclass { Node.value = { Class.bases; _ }; _ } =
     let get_metaclass = function
-      | { Argument.name = Some { Node.value = metaclass; _ }; value }
-        when Identifier.equal metaclass "metaclass" ->
+      | { Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
           Some (Resolution.parse_annotation resolution value)
       | _ ->
           None
@@ -993,7 +992,7 @@ let inferred_callable_type definition ~resolution =
   let explicit_callables =
     let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
       match List.last name with
-      | Some (Access.Identifier call) when Identifier.equal call "__call__" ->
+      | Some (Access.Identifier "__call__") ->
           Some define
       | _ ->
           None

@@ -1008,11 +1008,11 @@ module State = struct
     in
     match value with
     | Access [
-        Expression.Access.Identifier reveal_type;
+        Expression.Access.Identifier "reveal_type";
         Expression.Access.Call {
           Node.location;
           value = [{ Expression.Argument.value; _ }] };
-      ] when reveal_type = "reveal_type" ->
+      ] ->
         (* Special case reveal_type(). *)
         let { state; resolved = annotation } = forward_expression ~state ~expression:value in
         let state =
@@ -1024,8 +1024,8 @@ module State = struct
         in
         { state; resolved = Type.none }
     | Access [
-        Expression.Access.Identifier typing;
-        Expression.Access.Identifier cast;
+        Expression.Access.Identifier "typing";
+        Expression.Access.Identifier "cast";
         Expression.Access.Call {
           Node.value = [
             { Expression.Argument.value = cast_annotation; _ };
@@ -1033,8 +1033,7 @@ module State = struct
           ];
           location;
         }
-      ] when typing = "typing" &&
-             cast = "cast" ->
+      ] ->
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { resolved; _ } = forward_expression ~state ~expression:value in
         let state =
@@ -1049,14 +1048,14 @@ module State = struct
         in
         { state; resolved = cast_annotation }
     | Access [
-        Access.Identifier isinstance;
+        Access.Identifier "isinstance";
         Access.Call {
           Node.value = [
             { Argument.value = expression; _ };
             { Argument.value = annotations; _ };
           ];
           _;
-        }] when isinstance = "isinstance" ->
+        }] ->
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
@@ -1094,7 +1093,7 @@ module State = struct
                 ~kind:(Error.IncompatibleParameterType {
                     name = None;
                     position = 2;
-                    callee = Some [Access.Identifier isinstance];
+                    callee = Some [Access.Identifier "isinstance"];
                     mismatch = {
                       Error.actual = non_meta;
                       expected = Type.meta Type.Object;
@@ -2088,7 +2087,7 @@ module State = struct
         let resolution =
           match Node.value test with
           | Access [
-              Access.Identifier name;
+              Access.Identifier "isinstance";
               Access.Call {
                 Node.value = [
                   { Argument.name = None; value = { Node.value = Access access; _ } };
@@ -2096,7 +2095,7 @@ module State = struct
                 ];
                 _;
               }
-            ] when name = "isinstance" ->
+            ] ->
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
@@ -2127,7 +2126,7 @@ module State = struct
               operand = {
                 Node.value =
                   Access [
-                    Access.Identifier name;
+                    Access.Identifier "isinstance";
                     Access.Call {
                       Node.value = [
                         { Argument.name = None; value = { Node.value = Access access; _ } };
@@ -2137,7 +2136,7 @@ module State = struct
                   ];
                 _;
               };
-            } when name = "isinstance" ->
+            } ->
               begin
                 match Resolution.get_local resolution ~access with
                 | Some {
@@ -2268,15 +2267,15 @@ module State = struct
           | ComparisonOperator {
               ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
-              right = { Node.value = Access [Access.Identifier identifier; ]; _ };
-            } when identifier = "None" ->
+              right = { Node.value = Access [Access.Identifier "None"]; _ };
+            } ->
               let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume left) in
               resolution
           | ComparisonOperator {
               ComparisonOperator.left = { Node.value = Access access; _ };
               operator = ComparisonOperator.Is;
-              right = { Node.value = Access [Access.Identifier identifier; ]; _ };
-            } when identifier = "None" ->
+              right = { Node.value = Access [Access.Identifier "None"]; _ };
+            } ->
               let open Annotated in
               let open Access in
               let element = Access.last_element ~resolution (Access.create access) in
@@ -2408,8 +2407,7 @@ module State = struct
         let { state; resolved } = forward_expression ~state ~expression:return in
         let actual =
           match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
-          | Type.Parametric { name; parameters = [parameter] }
-            when name = "typing.Iterator" ->
+          | Type.Parametric { name = "typing.Iterator"; parameters = [parameter] } ->
               Type.generator parameter
           | annotation ->
               Type.generator annotation

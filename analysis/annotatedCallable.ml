@@ -23,8 +23,7 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
   else if Define.is_coroutine define then
     begin
       match annotation with
-      | Type.Parametric { name; parameters = [_; _; return_annotation] }
-        when name = "typing.Generator" ->
+      | Type.Parametric { name = "typing.Generator"; parameters = [_; _; return_annotation] } ->
           Type.awaitable return_annotation
       | _ ->
           Type.Top
@@ -63,7 +62,6 @@ let create ~parent ~resolution defines =
   let open Type.Callable in
   let { Define.name; _ } = List.hd_exn defines in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
-    let name = name in
     let access =
       String.lstrip ~drop:(function | '*' -> true | _ -> false) name
       |> Access.create

@@ -441,13 +441,13 @@ let register_aliases (module Handler: Handler) sources =
       let is_allowable_alias_annotation = function
         | Some {
             Node.value = Access [
-                Access.Identifier typing;
-                Access.Identifier typ;
-                Access.Identifier getitem;
+                Access.Identifier "typing";
+                Access.Identifier "Type";
+                Access.Identifier "__getitem__";
                 Access.Call _;
               ];
             _;
-          } when typing = "typing" && typ = "Type" && getitem = "__getitem__" ->
+          } ->
             true
         | None ->
             true
@@ -590,7 +590,7 @@ let register_globals
   let qualified_access access =
     let access =
       match access with
-      | (Access.Identifier builtins) :: tail when builtins = "builtins" -> tail
+      | (Access.Identifier "builtins") :: tail -> tail
       | _ -> access
     in
     Access.delocalize_qualified access

@@ -396,8 +396,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           | { Node.value = String _; _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
-          | { Node.value = Access (Access.Identifier _ :: Access.Identifier getitem :: _); _ }
-            when getitem = "__getitem__" ->
+          | {
+            Node.value = Access (Access.Identifier _ :: Access.Identifier "__getitem__" :: _);
+            _;
+          } ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ ->
               qualify_expression ~qualify_strings:false value ~scope
@@ -786,9 +788,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             | Access.Call ({ Node.value = arguments ; _ } as call) ->
                 let qualify_strings =
                   match reversed_lead with
-                  | [ Access.Identifier type_var; Access.Identifier typing ]
-                    when type_var = "TypeVar" && typing = "typing"
-                    ->
+                  | [Access.Identifier "TypeVar"; Access.Identifier "typing"] ->
                       true
                   | _ ->
                       qualify_strings
@@ -1126,10 +1126,9 @@ let expand_type_checking_imports source =
       let statement _ ({ Node.value; _ } as statement) =
         let is_type_checking { Node.value; _ } =
           match value with
-          | Access [Access.Identifier typing; Access.Identifier type_checking]
-            when typing = "typing" && type_checking = "TYPE_CHECKING" ->
+          | Access [Access.Identifier "typing"; Access.Identifier "TYPE_CHECKING"] ->
               true
-          | Access [Access.Identifier type_checking] when type_checking = "TYPE_CHECKING" ->
+          | Access [Access.Identifier "TYPE_CHECKING"] ->
               true
           | _ ->
               false
@@ -1381,18 +1380,18 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         in
         let access =
           Access [
-            Access.Identifier ("mypy_extensions");
-            Access.Identifier ("TypedDict");
-            Access.Identifier ("__getitem__");
+            Access.Identifier "mypy_extensions";
+            Access.Identifier "TypedDict";
+            Access.Identifier "__getitem__";
             Access.Call (Node.create arguments ~location);
           ];
         in
         let annotation =
           let node value = Node.create value ~location in
           Access [
-            Access.Identifier ("typing");
-            Access.Identifier ("Type");
-            Access.Identifier ("__getitem__");
+            Access.Identifier "typing";
+            Access.Identifier "Type";
+            Access.Identifier "__getitem__";
             Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
           ]
           |> node

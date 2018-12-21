@@ -107,8 +107,7 @@ let fold ~resolution ~initial ~f access =
   (* Resolve `super()` calls. *)
   let access, resolution =
     match access with
-    | (Access.Identifier name) :: (Access.Call _) :: tail
-      when name = "super" ->
+    | (Access.Identifier "super") :: (Access.Call _) :: tail ->
         (Resolution.parent resolution
          >>| (fun parent ->
              Access.expression parent
@@ -138,8 +137,9 @@ let fold ~resolution ~initial ~f access =
   (* Resolve `type()` calls. *)
   let access, resolution =
     match access with
-    | (Access.Identifier name) :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ }) :: tail
-      when name = "type" ->
+    | (Access.Identifier "type")
+      :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
+      :: tail ->
         let access = Access.Identifier "$type" in
         let resolution =
           let annotation =
