@@ -7820,13 +7820,22 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
-  (* TODO(T38210392): Any should be special-cased to be a valid type to comply with typeshed *)
+  assert_type_errors
+    {|
+      MyType = 1
+      x: MyType = 1
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` has type `int`" ^
+      " but no type is specified.";
+      "Invalid type [31]: Expression `MyType` is not a valid type."
+    ];
   assert_type_errors
     {|
       MyType: typing.Any
       x: MyType = 1
     |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."]
+    []
 
 
 let test_check_missing_type_parameters _ =

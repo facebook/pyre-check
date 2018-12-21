@@ -137,7 +137,8 @@ module State = struct
 
   let check_annotation ~resolution ~location ~define ~annotation ~resolved =
     let check_untracked_annotation errors annotation =
-      if Resolution.is_tracked resolution annotation then
+      if Resolution.is_tracked resolution annotation || Type.equal resolved Type.Object then
+        (* Special-case expressions typed as Any to be valid types. *)
         errors
       else if Type.is_unknown resolved then
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
