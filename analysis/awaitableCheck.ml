@@ -95,8 +95,11 @@ module State = struct
 
     let unawaited =
       let is_awaitable value =
-        let annotation = Resolution.resolve resolution value in
-        Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Object)
+        try
+          let annotation = Resolution.resolve resolution value in
+          Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Object)
+        with TypeOrder.Untracked _ ->
+          false
       in
       match value with
       | Assign { target = { Node.value = Access access; _ }; value; _ } when is_awaitable value ->
