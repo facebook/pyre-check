@@ -3073,13 +3073,7 @@ let test_check_function_parameters_with_backups _ =
   assert_type_errors "(1).__add__(1)" [];
   assert_type_errors "(1).__add__(1j)" [];
   assert_type_errors "(1).__add__(1.0)" [];
-  (* TODO(T38309442): extract name for backup from callable. *)
-  assert_type_errors
-    "(1).__iadd__(1.0)"
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call " ^
-      "`int.__add__` but got `float`.";
-    ]
+  assert_type_errors "(1).__iadd__(1.0)" []
 
 
 let test_check_function_parameter_errors _ =
@@ -8487,7 +8481,7 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `str` for 1st anonymous parameter to call `str.__add__` but got `int`.";
+      "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `unknown`.";
     ];
 
   assert_test_typed_dictionary

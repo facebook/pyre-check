@@ -226,9 +226,11 @@ let fold ~resolution ~initial ~f access =
             let signature = Signature.select ~arguments ~resolution ~callable in
             let backup () =
               let name, backup_argument =
-                match target, List.rev lead with
-                | Some _, (Access.Identifier _ as name) :: rest -> [name], rest
-                | _ -> [], []
+                match target, List.rev lead, callable with
+                | Some _, _ :: rest, { Type.Callable.kind = Type.Callable.Named name; _ } ->
+                    name, rest
+                | _ ->
+                    [], []
               in
               match arguments, Access.backup ~name with
               | [{ Argument.value; _ }], Some name ->
