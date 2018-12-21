@@ -147,29 +147,43 @@ let expand_format_string ({ Source.handle; _ } as source) =
       include Transform.Identity
       type t = unit
 
+      type state =
+        | Literal
+        | Expression of int * string
+
       let expression _ expression =
         match expression with
         | {
           Node.location = ({ Location.start = { Location.line; column }; _ } as location);
           value = String ({ StringLiteral.value; kind = StringLiteral.Format _; _ } as literal);
         } ->
-            let rec get_matches regular_expression input_string start_position =
-              try
-                let match_start_position =
-                  Str.search_forward regular_expression input_string start_position
+            let input_string_length = String.length value in
+            let rec expand_fstring input_string start_position state: ('a list) =
+              if start_position = input_string_length then
+                []
+              else
+                let token = String.get input_string start_position in
+                let expressions, next_state =
+                  match token, state with
+                  | '{', Literal -> [], Expression (start_position, "")
+                  | '{', Expression (_, "") -> [], Literal
+                  | '}', Literal -> [], Literal
+                  (* NOTE: this does not account for nested expressions in
+                     e.g. format specifiers. *)
+                  | '}', Expression (c, string) -> [(column + c, string)], Literal
+                  (* Ignore leading whitespace in expressions. *)
+                  | (' ' | '\t'), (Expression (_, "") as expression) -> [], expression
+                  | _, Literal -> [], Literal
+                  | _, Expression (c, string) -> [], Expression (c, string ^ (Char.to_string token))
                 in
-                let match_string = Str.matched_string input_string in
-                (match_start_position + column, match_string)
-                :: get_matches regular_expression input_string (match_start_position + 1)
-              with Not_found -> []
+                let next_expressions =
+                  expand_fstring input_string (start_position + 1) next_state
+                in
+                expressions @ next_expressions
             in
             let parse (start_column, input_string) =
               try
-                let string =
-                  (String.length input_string) - 1
-                  |> String.slice input_string 1
-                  |> fun processed_input -> processed_input ^ "\n"
-                in
+                let string = input_string ^ "\n" in
                 match Parser.parse [string ^ "\n"] ~start_line:line ~start_column ~handle with
                 | [{ Node.value = Expression expression; _ }] -> [expression]
                 | _ -> failwith "Not an expression"
@@ -186,7 +200,7 @@ let expand_format_string ({ Source.handle; _ } as source) =
                   end
             in
             let expressions =
-              get_matches (Str.regexp "{[^{^}]*}") value 0
+              expand_fstring value 0 Literal
               |> List.concat_map ~f:parse
             in
             {
