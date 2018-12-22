@@ -248,6 +248,12 @@ let assert_source_equal =
     ~pp_diff:(diff ~print:Source.pp)
 
 
+let assert_type_equal =
+  assert_equal
+    ~printer:Type.show
+    ~cmp:Type.equal
+
+
 let add_defaults_to_environment ~configuration environment_handler =
   let source =
     parse {|

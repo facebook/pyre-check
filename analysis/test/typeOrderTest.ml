@@ -483,18 +483,18 @@ let test_default _ =
   assert_false (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Real"));
 
   (* Test join. *)
-  assert_equal (join order Type.integer Type.integer) Type.integer;
-  assert_equal (join order Type.float Type.integer) Type.float;
-  assert_equal (join order Type.integer Type.float) Type.float;
-  assert_equal (join order Type.integer Type.complex) Type.complex;
-  assert_equal (join order Type.float Type.complex) Type.complex;
+  assert_type_equal (join order Type.integer Type.integer) Type.integer;
+  assert_type_equal (join order Type.float Type.integer) Type.float;
+  assert_type_equal (join order Type.integer Type.float) Type.float;
+  assert_type_equal (join order Type.integer Type.complex) Type.complex;
+  assert_type_equal (join order Type.float Type.complex) Type.complex;
 
   (* Test meet. *)
-  assert_equal (meet order Type.integer Type.integer) Type.integer;
-  assert_equal (meet order Type.float Type.integer) Type.integer;
-  assert_equal (meet order Type.integer Type.float) Type.integer;
-  assert_equal (meet order Type.integer Type.complex) Type.integer;
-  assert_equal (meet order Type.float Type.complex) Type.float
+  assert_type_equal (meet order Type.integer Type.integer) Type.integer;
+  assert_type_equal (meet order Type.float Type.integer) Type.integer;
+  assert_type_equal (meet order Type.integer Type.float) Type.integer;
+  assert_type_equal (meet order Type.integer Type.complex) Type.integer;
+  assert_type_equal (meet order Type.float Type.complex) Type.float
 
 
 let test_method_resolution_order_linearize _ =
@@ -1296,11 +1296,6 @@ let test_less_or_equal_variance _ =
 
 
 let test_join _ =
-  let assert_type_equal =
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
-  in
   let assert_join ?(order = default) ?(aliases = (fun _ -> None)) left right expected =
     let parse_annotation source =
       let integer = try Int.of_string source |> ignore; true with _ -> false in
@@ -1373,9 +1368,7 @@ let test_join _ =
   assert_join "typing.Undeclared" "int" "typing.Union[typing.Undeclared, int]";
   assert_join "int" "typing.Undeclared" "typing.Union[typing.Undeclared, int]";
   let assert_join_types ?(order = default) left right expected =
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
+    assert_type_equal
       expected
       (join order left right)
   in
@@ -1834,9 +1827,7 @@ let test_meet _ =
         parse_single_expression source
         |> Type.create ~aliases
     in
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
+    assert_type_equal
       (parse_annotation expected)
       (meet order (parse_annotation left) (parse_annotation right))
   in
@@ -1894,14 +1885,14 @@ let test_meet _ =
     "$bottom";
 
   (* Variables. *)
-  assert_equal (meet default Type.integer (Type.variable "T")) Type.integer;
-  assert_equal
+  assert_type_equal (meet default Type.integer (Type.variable "T")) Type.integer;
+  assert_type_equal
     (meet
        default
        Type.integer
        (Type.variable ~constraints:(Type.Bound Type.float) "T"))
     (Type.variable ~constraints:(Type.Bound Type.integer) "T");
-  assert_equal
+  assert_type_equal
     (meet
        default
        Type.string
@@ -1909,13 +1900,13 @@ let test_meet _ =
     Type.string;
 
   (* Variance. *)
-  assert_equal
+  assert_type_equal
     (meet
        variance_order
        (Type.parametric "LinkedList" [Type.integer])
        (Type.parametric "LinkedList" [Type.Top]))
     (Type.parametric "LinkedList" [Type.integer]);
-  assert_equal
+  assert_type_equal
     (meet
        variance_order
        (Type.parametric "LinkedList" [Type.Top])
