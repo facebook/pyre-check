@@ -71,6 +71,7 @@ module State : sig
     state: t;
     resolved: Type.t;
   }
+  val parse_and_check_annotation: state: t -> Expression.t -> t * Type.t
   val forward_expression: state: t -> expression: Expression.t -> resolved
   val forward_statement: state: t -> statement: Statement.t -> t
 

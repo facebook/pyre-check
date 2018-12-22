@@ -37,6 +37,7 @@ let create
     ?(bottom = false)
     ?(define = Test.mock_define)
     ?(expected_return = Type.Top)
+    ?(resolution = Test.resolution ())
     ?(immutables = [])
     annotations =
   let resolution =
@@ -258,6 +259,32 @@ let test_widen _ =
        ~next:(create ["x", Type.integer])
        ~iteration:(widening_threshold + 1))
     (create ["x", Type.Top])
+
+
+let test_check_annotation _ =
+  let assert_check_annotation source expression descriptions =
+    let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs) () in
+    let state = create ~resolution [] in
+    let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
+    let errors = List.map ~f:(Error.description ~detailed:false) (Map.data errors) in
+    assert_equal
+      ~cmp:(List.equal ~equal:String.equal)
+      ~printer:(String.concat ~sep:"\n")
+      descriptions
+      errors
+  in
+  assert_check_annotation
+    ""
+    "x"
+    ["Undefined type [11]: Type `x` is not defined."];
+  assert_check_annotation
+    "x: int = 1"
+    "x"
+    ["Invalid type [31]: Expression `x` is not a valid type."];
+  assert_check_annotation
+    "x: typing.Type[int] = int"
+    "x"
+    []
 
 
 let test_forward_expression _ =
@@ -8881,6 +8908,7 @@ let () =
     "less_or_equal">::test_less_or_equal;
     "join">::test_join;
     "widen">::test_widen;
+    "check_annotation">::test_check_annotation;
     "forward_expression">::test_forward_expression;
     "forward_statement">::test_forward_statement;
     "forward">::test_forward;
