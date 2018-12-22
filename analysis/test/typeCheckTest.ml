@@ -420,7 +420,7 @@ let test_forward_expression _ =
   assert_forward
     ~errors:(`Undefined 1)
     "{1: 'string', **{undefined: 1}}"
-    (Type.dictionary ~key:Type.Object ~value:Type.Object);
+    (Type.dictionary ~key:Type.Top ~value:Type.Object);
   assert_forward
     ~errors:(`Undefined 1)
     "{undefined: 1}"
@@ -8649,6 +8649,16 @@ let test_check_getattr _ =
     ]
 
 
+let test_check_variance _ =
+  assert_type_errors
+    {|
+      def narnia(): pass
+      def foo() -> None:
+        [narnia()] + [2]
+    |}
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."]
+
+
 let test_check_literal_variance _ =
   (* We special case literal lists and dicts for convenience, as they can never escape scope. *)
   assert_type_errors
@@ -8940,6 +8950,7 @@ let () =
     "check_dataclass">::test_check_data_class;
     "check_getattr">::test_check_getattr;
     "check_typed_dictionarys">::test_check_typed_dictionaries;
+    "check_variance">::test_check_variance;
     "check_literal_variance">::test_check_literal_variance;
     "check_nested_class_inheritance">::test_check_nested_class_inheritance;
   ]

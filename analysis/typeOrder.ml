@@ -512,12 +512,18 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
         | Type.Bottom, _, _ ->
             (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
             true
-        | _ , Type.Object, _ ->
-            (* T[_T2] is a subtype of T[Any], for any _T2 and regardless of its variance. *)
+        | _, Type.Top, _ ->
+            (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+            (* TODO(T38262178): this needs to be fixed. *)
             true
-        | _ , _ , Type.Variable { variance = Covariant; _ } ->
+        | Type.Top, _, _ ->
+            false
+        | _ , Type.Object, _ ->
+            (* T[_T2] is a subtype of T[Any], for any _T2 but Top and regardless of its variance. *)
+            true
+        | _, _, Type.Variable { variance = Covariant; _ } ->
             less_or_equal order ~left ~right
-        | _ , _ , Type.Variable { variance = Contravariant; _ } ->
+        | _, _, Type.Variable { variance = Contravariant; _ } ->
             less_or_equal order ~left:right ~right:left
         | _, _, Type.Variable { variance = Invariant; _ } ->
             less_or_equal order ~left ~right &&
@@ -1077,6 +1083,9 @@ and join ((module Handler: Handler) as order) left right =
                 | Type.Bottom, other, _
                 | other, Type.Bottom, _ ->
                     other
+                | Type.Top, _, _
+                | _, Type.Top, _ ->
+                    Type.Top
                 | Type.Object, _, _
                 | _, Type.Object, _ ->
                     Type.Object
@@ -1310,12 +1319,15 @@ and meet ((module Handler: Handler) as order) left right =
             let parameters =
               let meet_parameters left right variable =
                 match left, right, variable with
-                | Type.Object, other, _
-                | other, Type.Object, _ when not (Type.is_unknown other) ->
-                    other
                 | Type.Bottom, _, _
                 | _, Type.Bottom, _ ->
                     Type.Bottom
+                | Type.Top, other, _
+                | other, Type.Top, _ ->
+                    other
+                | Type.Object, other, _
+                | other, Type.Object, _ ->
+                    other
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     meet order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->

@@ -161,6 +161,7 @@ let variance_order =
   add_simple variable_t_co;
   add_simple variable_t_contra;
   insert order !"LinkedList";
+  insert order !"Map";
   insert order !"Box";
   insert order !"Sink";
   connect
@@ -168,6 +169,11 @@ let variance_order =
     ~predecessor:!"LinkedList"
     ~successor:!"typing.Generic"
     ~parameters:[variable_t];
+  connect
+    order
+    ~predecessor:!"Map"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable_t; variable_t];
   connect
     order
     ~predecessor:!"Box"
@@ -1150,6 +1156,10 @@ let test_less_or_equal_variance _ =
        variance_order
        ~left:(Type.parametric "LinkedList" [Type.float])
        ~right:(Type.parametric "LinkedList" [Type.integer]));
+  assert_strict_less
+    ~order:variance_order
+    ~left:(Type.parametric "LinkedList" [Type.integer])
+    ~right:(Type.parametric "LinkedList" [Type.Top]);
   (* Covariant. *)
   assert_true
     (less_or_equal
@@ -1286,6 +1296,11 @@ let test_less_or_equal_variance _ =
 
 
 let test_join _ =
+  let assert_type_equal =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+  in
   let assert_join ?(order = default) ?(aliases = (fun _ -> None)) left right expected =
     let parse_annotation source =
       let integer = try Int.of_string source |> ignore; true with _ -> false in
@@ -1295,9 +1310,7 @@ let test_join _ =
         parse_single_expression source
         |> Type.create ~aliases
     in
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
+    assert_type_equal
       (parse_annotation expected)
       (join order (parse_annotation left) (parse_annotation right))
   in
@@ -1642,13 +1655,13 @@ let test_join _ =
     "typing.Any";
 
   (* Variables. *)
-  assert_equal
+  assert_type_equal
     (join order Type.integer (Type.variable "T"))
     (Type.union [Type.integer; Type.variable "T"]);
-  assert_equal
+  assert_type_equal
     (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.string) "T"))
     (Type.union [Type.string; Type.integer]);
-  assert_equal
+  assert_type_equal
     (join
        order
        Type.string
@@ -1656,6 +1669,66 @@ let test_join _ =
     (Type.union [Type.float; Type.integer; Type.string]);
 
   (* Variance. *)
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.integer])
+       (Type.parametric "LinkedList" [Type.Top]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Top])
+       (Type.parametric "LinkedList" [Type.integer]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Bottom])
+       (Type.parametric "LinkedList" [Type.Top]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Top])
+       (Type.parametric "LinkedList" [Type.Bottom]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Object])
+       (Type.parametric "LinkedList" [Type.Top]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Top])
+       (Type.parametric "LinkedList" [Type.Object]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "LinkedList" [Type.Top])
+       (Type.parametric "LinkedList" [Type.Top]))
+    (Type.parametric "LinkedList" [Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "Map" [Type.integer; Type.integer])
+       (Type.parametric "Map" [Type.Top; Type.Top]))
+    (Type.parametric "Map" [Type.Top; Type.Top]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "Map" [Type.integer; Type.integer])
+       (Type.parametric "Map" [Type.Top; Type.integer]))
+    (Type.parametric "Map" [Type.Top; Type.integer]);
+  assert_type_equal
+    (join
+       variance_order
+       (Type.parametric "Map" [Type.integer; Type.integer])
+       (Type.parametric "Map" [Type.Top; Type.string]))
+    (Type.parametric "Map" [Type.Top; Type.Object]);
   let variance_aliases =
     Type.Table.of_alist_exn [
       Type.Primitive "_T", Type.variable "_T";
@@ -1836,6 +1909,18 @@ let test_meet _ =
     Type.string;
 
   (* Variance. *)
+  assert_equal
+    (meet
+       variance_order
+       (Type.parametric "LinkedList" [Type.integer])
+       (Type.parametric "LinkedList" [Type.Top]))
+    (Type.parametric "LinkedList" [Type.integer]);
+  assert_equal
+    (meet
+       variance_order
+       (Type.parametric "LinkedList" [Type.Top])
+       (Type.parametric "LinkedList" [Type.integer]))
+    (Type.parametric "LinkedList" [Type.integer]);
   assert_meet
     ~order:variance_order
     "Derived[int]"
