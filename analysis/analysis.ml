@@ -16,6 +16,7 @@ module Annotated = Annotated
 module Annotation = Annotation
 module BaseError = BaseError
 module Cfg = Cfg
+module ConstantPropagationCheck = ConstantPropagationCheck
 module Check = Check
 module Coverage = Coverage
 module Dependencies = Dependencies

@@ -21,4 +21,5 @@ end
 let additional_checks: (module Signature) list =
   [
     (module AwaitableCheck);
+    (module ConstantPropagationCheck);
   ]

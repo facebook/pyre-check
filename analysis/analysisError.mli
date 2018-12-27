@@ -95,6 +95,7 @@ type kind =
   | UnusedIgnore of int list
 
   (* Additionals errors. *)
+  | ConstantPropagation of Source.t
   | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, hash]
 

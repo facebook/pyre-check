@@ -12,6 +12,7 @@
 (tests
  (names
   AwaitableCheckTest
+  ConstantPropagationCheckTest
   abstractDomainTest
   CfgTest
   DependentTest
