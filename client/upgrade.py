@@ -18,6 +18,7 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 from .commands import ExitCode
+from .filesystem import get_filesystem
 
 
 LOG = logging.getLogger(__name__)
@@ -64,22 +65,15 @@ class Configuration:
     @staticmethod
     def gather_local_configurations(arguments) -> List["Configuration"]:
         LOG.info("Finding configurations...")
-        process = subprocess.run(
-            "hg files 'glob:**\\.pyre_configuration.local'",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        configuration_paths = process.stdout.decode("utf-8").strip()
+        configuration_paths = get_filesystem().list(".", ".pyre_configuration.local")
         if not configuration_paths:
             LOG.info("No projects with local configurations found.")
             project_configuration = Configuration.find_project_configuration()
             if project_configuration:
-                configuration_paths = project_configuration
+                configuration_paths = [project_configuration]
             else:
                 LOG.error("No project configuration found.")
                 return []
-        configuration_paths = configuration_paths.split("\n")
         configurations = []
         for configuration_path in configuration_paths:
             with open(configuration_path) as configuration_file:

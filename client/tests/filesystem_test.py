@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from contextlib import contextmanager
 from typing import Dict  # noqa
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
@@ -198,7 +198,7 @@ class FilesystemTest(unittest.TestCase):
             shutil_rmtree.assert_called_once_with("path")
 
     @patch("fcntl.lockf")
-    def test_acquire_lock(self, lock_file: unittest.mock.Mock) -> None:
+    def test_acquire_lock(self, lock_file: Mock) -> None:
         (_, path) = tempfile.mkstemp()
         lockfile_file_descriptor = None
         with acquire_lock(path, blocking=False) as file_descriptor:
