@@ -2714,19 +2714,23 @@ let check
   let results =
     let queue =
       let queue = Queue.create () in
-      let toplevel =
-        let location =
-          {
-            Location.path = File.Handle.show handle;
-            start = { Location.line = 0; column = 0 };
-            stop = { Location.line = 0; column = 0 };
-          }
-          |> Location.reference
-        in
-        Define.create_toplevel ~qualifier ~statements
-        |> Node.create ~location
-      in
-      Queue.enqueue queue (toplevel, resolution);
+      let { Source.Metadata.version; _ } = metadata in
+      if not (version < 3) then
+        begin
+          let toplevel =
+            let location =
+              {
+                Location.path = File.Handle.show handle;
+                start = { Location.line = 0; column = 0 };
+                stop = { Location.line = 0; column = 0 };
+              }
+              |> Location.reference
+            in
+            Define.create_toplevel ~qualifier ~statements
+            |> Node.create ~location
+          in
+          Queue.enqueue queue (toplevel, resolution)
+        end;
       queue
     in
     let rec results ~queue =

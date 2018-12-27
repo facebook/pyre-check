@@ -29,32 +29,12 @@ let analyze_sources
         Configuration.Analysis.project_root;
         filter_directories;
         run_additional_checks;
+        infer;
         _;
       } as configuration)
     ~environment
     ~handles =
   let open Analysis in
-  let analyze_source
-      ~configuration:({ Configuration.Analysis.infer; _ } as configuration)
-      ~environment
-      ~source:({ Source.handle; metadata; _ } as source) =
-    let open Analysis in
-    (* Override file-specific local debug configuraiton *)
-    let { Source.Metadata.version; _ } = metadata in
-
-    if version < 3 then
-      begin
-        Log.log
-          ~section:`Check
-          "Skipping `%a` (Python 2.x)"
-          File.Handle.pp handle;
-        []
-      end
-    else
-      let check = if infer then Inference.infer else TypeCheck.check in
-      check ~configuration ~environment ~source
-  in
-
   Annotated.Class.Attribute.Cache.clear ();
   let timer = Timer.start () in
   let handles =
@@ -97,7 +77,8 @@ let analyze_sources
       let analyze_source { errors; number_files } handle =
         match SharedMemory.Sources.get handle with
         | Some source ->
-            let new_errors = analyze_source ~configuration ~environment ~source in
+            let check = if infer then Inference.infer else TypeCheck.check in
+            let new_errors = check ~configuration ~environment ~source in
             {
               errors = List.append new_errors errors;
               number_files = number_files + 1;
