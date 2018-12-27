@@ -139,7 +139,54 @@ def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
     return json_to_errors(input)
 
 
-def run_fixme(arguments, result) -> None:
+def fix(
+    arguments: argparse.Namespace,
+    filename: str,
+    codes: Dict[int, str],
+    descriptions: Dict[int, str],
+) -> None:
+    custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
+    path = pathlib.Path(filename)
+    lines = path.read_text().split("\n")  # type: List[str]
+
+    # Replace lines in file.
+    new_lines = []
+    for index, line in enumerate(lines):
+        number = index + 1
+        if number in codes:
+            if list(codes[number]) == ["0"]:
+                # Handle unused ignores.
+                replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
+                if replacement != "":
+                    new_lines.append(replacement)
+                continue
+
+            sorted_codes = sorted(list(codes[number]))
+            sorted_descriptions = sorted(list(descriptions[number]))
+
+            description = ""
+            if custom_comment:
+                description = ": " + custom_comment
+            else:
+                description = ": " + ", ".join(sorted_descriptions)
+
+            full_comment = "{}# pyre-fixme[{}]{}".format(
+                line[: (len(line) - len(line.lstrip(" ")))],  # indent
+                ", ".join([str(code) for code in sorted_codes]),
+                description,
+            )
+            LOG.info("Adding `%s` on line %d", full_comment, number)
+
+            new_lines.extend([full_comment, line])
+        else:
+            new_lines.append(line)
+
+    path.write_text("\n".join(new_lines))
+
+
+def run_fixme(
+    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
+) -> None:
     for path, errors in result:
         LOG.info("Processing `%s`", path)
 
@@ -152,46 +199,11 @@ def run_fixme(arguments, result) -> None:
                 codes[error["line"]].add(match.group(1))
                 descriptions[error["line"]].add(match.group(2))
 
-        # Replace lines in file.
-        path = pathlib.Path(path)
-        lines = path.read_text().split("\n")
-
-        new_lines = []
-        for index, line in enumerate(lines):
-            number = index + 1
-            if number in codes:
-                if list(codes[number]) == ["0"]:
-                    # Handle unused ignores.
-                    replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
-                    if replacement != "":
-                        new_lines.append(replacement)
-                    continue
-
-                sorted_codes = sorted(list(codes[number]))
-                sorted_descriptions = sorted(list(descriptions[number]))
-
-                description = ""
-                if hasattr(arguments, "comment") and arguments.comment:
-                    description = ": " + arguments.comment
-                else:
-                    description = ": " + ", ".join(sorted_descriptions)
-
-                comment = "{}# pyre-fixme[{}]{}".format(
-                    line[: (len(line) - len(line.lstrip(" ")))],  # indent
-                    ", ".join([str(code) for code in sorted_codes]),
-                    description,
-                )
-                LOG.info("Adding `%s` on line %d", comment, number)
-
-                new_lines.extend([comment, line])
-            else:
-                new_lines.append(line)
-
-        path.write_text("\n".join(new_lines))
+        fix(arguments, path, codes, descriptions)
 
 
 def run_missing_overridden_return_annotations(
-    _arugments, errors: List[Tuple[str, List[Any]]]
+    _arguments, errors: List[Tuple[str, List[Any]]]
 ) -> None:
     for path, errors in result:
         LOG.info("Patching errors in `%s`.", path)
