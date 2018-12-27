@@ -972,6 +972,7 @@ let rec process
           let errors =
             Hashtbl.data errors
             |> List.concat
+            |> List.sort ~compare:Error.compare
           in
           { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
 

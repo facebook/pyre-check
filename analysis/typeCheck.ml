@@ -2611,10 +2611,26 @@ let resolution_with_key ~environment ~parent ~access ~key =
 let check
     ~configuration
     ~environment
-    ~source:({ Source.handle; qualifier; statements; _ } as source) =
+    ~source:({ Source.handle; qualifier; statements; metadata; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
 
   let resolution = resolution environment () in
+
+  let configuration =
+    (* Override file-specific local debug configuraiton *)
+    let { Source.Metadata.local_mode; debug; _ } = metadata in
+    let local_strict, declare =
+      match local_mode with
+      | Source.Strict -> true, false
+      | Source.Declare -> false, true
+      | _ -> false, false
+    in
+    Configuration.Analysis.localize
+      configuration
+      ~local_debug:debug
+      ~local_strict
+      ~declare
+  in
 
   let check
       ~define:{ Node.value = ({ Define.name; parent; _ } as define); _ }

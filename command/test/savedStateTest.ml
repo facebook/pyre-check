@@ -47,7 +47,7 @@ let test_saved_state context =
     |> Test.trim_extra_indentation
   in
   write_content ~root:local_root ~filename:"builtins.pyi" object_definition_content;
-  let configuration = Configuration.Analysis.create ~local_root () in
+  let configuration = Configuration.Analysis.create ~local_root ~debug:true () in
   let saved_state_path =
     Path.create_relative ~root:local_root ~relative:"saved_state"
     |> Path.absolute
@@ -134,7 +134,7 @@ let test_saved_state context =
   assert_equal ~printer:show_response expected_errors errors;
 
   (* The server reanalyzed changed files when they are passed in and banishes errors. *)
-  write_content ~root:local_root ~filename:"a.py" "x = 1";
+  write_content ~root:local_root ~filename:"a.py" "x: int = 1";
   let _ =
     let saved_state_action =
       let changed_files_path =
