@@ -242,6 +242,10 @@ let rec resolve_literal resolution expression =
   match Node.value expression with
   | Access access ->
       begin
+        let is_defined class_name =
+          class_definition resolution class_name
+          |> Option.is_some
+        in
         match Expression.Access.name_and_arguments ~call:access with
         | Some { Expression.Access.callee; _ } ->
             let class_name =
@@ -249,16 +253,16 @@ let rec resolve_literal resolution expression =
               |> Expression.Access.expression
               |> parse_annotation resolution
             in
-            let is_defined =
-              class_definition resolution class_name
-              |> Option.is_some
-            in
-            if is_defined then
+            if is_defined class_name then
               class_name
             else
               Type.Top
         | None ->
-            Type.Top
+            let class_name = parse_annotation resolution expression in
+            if is_defined class_name then
+              Type.meta class_name
+            else
+              Type.Top
       end
   | Await expression ->
       resolve_literal resolution expression

@@ -6302,6 +6302,16 @@ let test_check_meta _ =
       def foo(x: int) -> str:
         return type(x).__name__
     |}
+    [];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      R = C
+      def foo() -> C:
+        return R()
+    |}
     []
 
 
