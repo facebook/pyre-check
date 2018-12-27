@@ -42,6 +42,16 @@ end
 
 
 module Make (Transformer : Transformer) = struct
+  type result = {
+    state: Transformer.t;
+    source: Source.t;
+  }
+
+
+  let source { source; _ } =
+    source
+
+
   let transform state source =
     let state = ref state in
 
@@ -365,11 +375,21 @@ module Make (Transformer : Transformer) = struct
       transform_list source.Source.statements ~f:transform_statement
       |> List.concat
     in
-    !state, { source with Source.statements }
+    { state = !state; source = { source with Source.statements } }
 end
 
 
 module MakeStatementTransformer (Transformer: StatementTransformer) = struct
+  type result = {
+    state: Transformer.t;
+    source: Source.t;
+  }
+
+
+  let source { source; _ } =
+    source
+
+
   let transform state source =
     let state = ref state in
     let open Statement in
@@ -455,5 +475,5 @@ module MakeStatementTransformer (Transformer: StatementTransformer) = struct
       statements
     in
     let statements = List.concat_map ~f:transform_statement source.Source.statements in
-    !state, { source with Source.statements }
+    { state = !state; source = { source with Source.statements } }
 end

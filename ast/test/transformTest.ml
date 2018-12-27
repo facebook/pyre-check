@@ -52,9 +52,19 @@ module ShallowModifyingTransform = Transform.Make(ShallowModifyingTransformer)
 let assert_modifying_source ?(shallow=false) statements expected_statements expected_sum =
   let state, modified =
     if shallow then
-      ShallowModifyingTransform.transform 0 (Source.create statements)
+      let { ShallowModifyingTransform.state; source } =
+        ShallowModifyingTransform.transform
+          0
+          (Source.create statements)
+      in
+      state, source
     else
-      ModifyingTransform.transform 0 (Source.create statements)
+      let { ModifyingTransform.state; source } =
+        ModifyingTransform.transform
+          0
+          (Source.create statements)
+      in
+      state, source
   in
   assert_source_equal
     (Source.create expected_statements)
@@ -160,11 +170,13 @@ module ExpandingTransform = Transform.Make(ExpandingTransformer)
 module ShallowExpandingTransform = Transform.Make(ShallowExpandingTransformer)
 
 let assert_expanded_source ?(shallow=false) statements expected_statements =
-  let _, modified =
+  let modified =
     if shallow then
       ShallowExpandingTransform.transform () (Source.create statements)
+      |> ShallowExpandingTransform.source
     else
       ExpandingTransform.transform () (Source.create statements)
+      |> ExpandingTransform.source
   in
   assert_source_equal
     (Source.create expected_statements)
@@ -263,8 +275,10 @@ let test_expansion_with_stop _ =
   let module StoppingExpandingTransform = Transform.Make(StoppingExpandingTransformer) in
 
   let assert_expanded_source_with_stop source expected_source =
-    let _, modified =
-      StoppingExpandingTransform.transform () (parse source) in
+    let modified =
+      StoppingExpandingTransform.transform () (parse source)
+      |> StoppingExpandingTransform.source
+    in
     assert_source_equal
       (parse expected_source)
       modified
@@ -347,9 +361,19 @@ let test_double_count _ =
   let assert_double_count ?(shallow=false) source expected_sum =
     let state, modified =
       if shallow then
-        ShallowDoubleCounterTransform.transform 0 (parse source)
+        let { ShallowDoubleCounterTransform.state; source } =
+          ShallowDoubleCounterTransform.transform
+            0
+            (parse source)
+        in
+        state, source
       else
-        DoubleCounterTransform.transform 0 (parse source)
+        let { DoubleCounterTransform.state; source } =
+          DoubleCounterTransform.transform
+            0
+            (parse source)
+        in
+        state, source
     in
     (* expect no change in the source *)
     assert_source_equal
@@ -452,7 +476,7 @@ let test_statement_transformer _ =
   in
   let module Transform = Transform.MakeStatementTransformer(ModifyingStatementTransformer) in
   let assert_transform source expected expected_sum =
-    let state, modified = Transform.transform 0 (parse source) in
+    let { Transform.state; source = modified } = Transform.transform 0 (parse source) in
     assert_source_equal
       (parse expected)
       modified;

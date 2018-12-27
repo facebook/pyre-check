@@ -24,9 +24,21 @@ module Identity : sig
 end
 
 module Make (Transformer: Transformer) : sig
-  val transform: Transformer.t -> Source.t -> Transformer.t * Source.t
+  type result = {
+    state: Transformer.t;
+    source: Source.t;
+  }
+  val source: result -> Source.t
+
+  val transform: Transformer.t -> Source.t -> result
 end
 
 module MakeStatementTransformer(Transformer: StatementTransformer) : sig
-  val transform: Transformer.t -> Source.t -> Transformer.t * Source.t
+  type result = {
+    state: Transformer.t;
+    source: Source.t;
+  }
+  val source: result -> Source.t
+
+  val transform: Transformer.t -> Source.t -> result
 end

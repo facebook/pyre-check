@@ -109,7 +109,7 @@ module State (Context: Context) = struct
         in
         Source.create [statement]
         |> Transform.transform ()
-        |> snd
+        |> Transform.source
         |> Source.statements
         |> function
         | [statement] -> statement
@@ -191,7 +191,7 @@ let run ~configuration ~environment ~source:({ Source.qualifier; statements; _ }
       end)
     in
     Transform.transform () source
-    |> snd
+    |> Transform.source
   in
   [
     Error.create

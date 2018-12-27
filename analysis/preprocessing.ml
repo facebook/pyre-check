@@ -35,7 +35,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
     end)
   in
   Transform.transform qualifier source
-  |> snd
+  |> Transform.source
 
 
 let expand_string_annotations ({ Source.handle; _ } as source) =
@@ -139,7 +139,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 let expand_format_string ({ Source.handle; _ } as source) =
@@ -212,7 +212,7 @@ let expand_format_string ({ Source.handle; _ } as source) =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 type alias = {
@@ -1057,7 +1057,7 @@ let replace_version_specific_code source =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 let replace_platform_specific_code source =
@@ -1115,7 +1115,7 @@ let replace_platform_specific_code source =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 let expand_type_checking_imports source =
@@ -1141,7 +1141,7 @@ let expand_type_checking_imports source =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 let expand_wildcard_imports ~force source =
@@ -1172,7 +1172,7 @@ let expand_wildcard_imports ~force source =
     end)
   in
   Transform.transform () source
-  |> snd
+  |> Transform.source
 
 
 let expand_implicit_returns source =
@@ -1244,7 +1244,7 @@ let expand_implicit_returns source =
     end)
   in
   ExpandingTransform.transform () source
-  |> snd
+  |> ExpandingTransform.source
 
 
 let defines
@@ -1336,7 +1336,7 @@ let dequalify_map source =
   (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
   let map = Map.set ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty in
   ImportDequalifier.transform map source
-  |> fst
+  |> fun { ImportDequalifier.state; _ } -> state
 
 
 let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
