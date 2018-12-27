@@ -2526,20 +2526,10 @@ end
 module Fixpoint = Fixpoint.Make(State)
 
 
-module SingleSourceResult = struct
-  type t = {
-    errors: Error.t list;
-    coverage: Coverage.t;
-  }
-
-
-  let errors { errors; _ } =
-    errors
-
-
-  let coverage { coverage; _ } =
-    coverage
-end
+type result = {
+  errors: Error.t list;
+  coverage: Coverage.t;
+}
 
 
 let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.empty) () =
@@ -2705,7 +2695,7 @@ let check
       >>| State.coverage
       |> Option.value ~default:(Coverage.create ())
     in
-    { SingleSourceResult.errors; coverage }
+    { errors; coverage }
   in
 
   let results =
@@ -2763,7 +2753,7 @@ let check
                     ~define:define_node;
                 in
                 {
-                  SingleSourceResult.errors = [undefined_error];
+                  errors = [undefined_error];
                   coverage = Coverage.create ~crashes:1 ();
                 }
           in
@@ -2794,7 +2784,7 @@ let check
         in
         List.filter ~f:keep_error errors
     in
-    List.map results ~f:SingleSourceResult.errors
+    List.map results ~f:(fun { errors; _ } -> errors )
     |> List.map ~f:filter
     |> List.concat
     |> Error.join_at_source ~resolution
@@ -2803,7 +2793,7 @@ let check
   in
 
   let coverage =
-    List.map results ~f:SingleSourceResult.coverage
+    List.map results ~f:(fun { coverage; _ } -> coverage)
     |> Coverage.aggregate_over_source ~source
   in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
