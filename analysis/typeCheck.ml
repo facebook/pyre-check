@@ -2612,7 +2612,8 @@ let check
     ~configuration
     ~environment
     ~source:({ Source.handle; qualifier; statements; metadata; _ } as source) =
-  Log.debug "Checking %s..." (File.Handle.show handle);
+  let timer = Timer.start () in
+  Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
 
   let resolution = resolution environment () in
 
@@ -2811,4 +2812,14 @@ let check
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
   Coverage.put coverage ~handle;
 
+  let { Source.Metadata.number_of_lines; _ } = metadata in
+  Statistics.performance
+    ~flush:false
+    ~randomly_log_every:100
+    ~section:`Check
+    ~name:"SingleFileTypeCheck"
+    ~timer
+    ~normals:["handle", File.Handle.show handle; "request kind", "SingleFileTypeCheck"]
+    ~integers:["number of lines", number_of_lines]
+    ();
   errors
