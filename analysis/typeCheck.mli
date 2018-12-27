@@ -80,12 +80,6 @@ end
 
 module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
-val check
-  :  configuration: Configuration.Analysis.t
-  -> environment: (module Environment.Handler)
-  -> source: Source.t
-  -> Error.t list
-
 val resolution
   :  (module Environment.Handler)
   -> ?annotations: Annotation.t Access.Map.t
@@ -98,3 +92,9 @@ val resolution_with_key
   -> access: Expression.Access.t
   -> key: int option
   -> Resolution.t
+
+val check
+  :  configuration: Configuration.Analysis.t
+  -> environment: (module Environment.Handler)
+  -> source: Source.t
+  -> Error.t list
