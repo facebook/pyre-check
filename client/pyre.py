@@ -93,7 +93,10 @@ def main() -> int:
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
-        "--noninteractive", action="store_true", help="Disable interactive logging"
+        "-n",
+        "--noninteractive",
+        action="store_true",
+        help="Disable interactive logging",
     )
     parser.add_argument(
         "--show-parse-errors",
