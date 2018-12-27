@@ -2526,14 +2526,6 @@ end
 module Fixpoint = Fixpoint.Make(State)
 
 
-module Result = struct
-  type t = {
-    errors: Error.t list;
-    coverage: Coverage.t;
-  }
-end
-
-
 module SingleSourceResult = struct
   type t = {
     errors: Error.t list;
@@ -2815,5 +2807,6 @@ let check
     |> Coverage.aggregate_over_source ~source
   in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
+  Coverage.put coverage ~handle;
 
-  { Result.errors; coverage }
+  errors

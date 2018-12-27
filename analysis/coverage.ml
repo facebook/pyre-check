@@ -85,3 +85,59 @@ let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
       "crashes", crashes;
     ]
     ();
+
+
+module HandleKey = struct
+  type t = File.Handle.t
+  let to_string = File.Handle.show
+  let compare = File.Handle.compare
+end
+
+
+module CoverageValue = struct
+  type nonrec t = t
+  let prefix = Prefix.make ()
+  let description = "Coverage"
+end
+
+
+module SharedMemory = Memory.WithCache(HandleKey)(CoverageValue)
+
+
+let put coverage ~handle =
+  SharedMemory.add handle coverage
+
+
+let get ~handle =
+  SharedMemory.get handle
+
+
+type aggregate = {
+  strict_coverage: int;
+  declare_coverage: int;
+  default_coverage: int;
+  source_files: int;
+}
+
+
+let coverage ~number_of_files ~sources =
+  let strict_coverage, declare_coverage =
+    List.fold
+      ~init:(0, 0)
+      ~f:(fun (prev_strict, prev_declare) handle ->
+          match Ast.SharedMemory.Sources.get handle with
+          | Some { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
+              (
+                prev_strict + (if local_mode = Source.Strict then 1 else 0),
+                prev_declare + (if local_mode = Source.Declare then 1 else 0)
+              )
+          | None -> (prev_strict, prev_declare)
+        )
+      sources
+  in
+  {
+    strict_coverage;
+    declare_coverage;
+    default_coverage = number_of_files - strict_coverage - declare_coverage;
+    source_files = number_of_files;
+  }

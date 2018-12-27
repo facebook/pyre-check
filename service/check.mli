@@ -17,7 +17,7 @@ val analyze_sources
   -> configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> handles: File.Handle.t list
-  -> Error.t list * Coverage.t
+  -> Error.t list
 
 val check
   :  scheduler: Scheduler.t option

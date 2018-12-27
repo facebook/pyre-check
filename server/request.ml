@@ -877,7 +877,7 @@ let process_type_check_request
   |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
   |> ResolutionSharedMemory.remove;
 
-  let new_errors, _ =
+  let new_errors =
     Service.Check.analyze_sources
       ~scheduler
       ~configuration

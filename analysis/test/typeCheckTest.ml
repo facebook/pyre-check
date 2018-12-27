@@ -18,16 +18,7 @@ open Test
 
 
 let assert_type_errors =
-  let check ~configuration ~environment ~source =
-    let { TypeCheck.Result.errors; _ } =
-      TypeCheck.check
-        ~configuration
-        ~environment
-        ~source
-    in
-    errors
-  in
-  assert_errors ~check
+  assert_errors ~check:TypeCheck.check
 
 
 let resolution = Test.resolution ()
@@ -1412,12 +1403,16 @@ let test_reveal_type _ =
 
 let test_coverage _ =
   let assert_coverage source expected =
-    let { Result.coverage; _ } =
+    let coverage =
       let environment = Test.environment () in
-      Analysis.TypeCheck.check
+      let handle = "coverage_test.py" in
+      TypeCheck.check
         ~configuration:Test.mock_configuration
         ~environment
-        ~source:(parse source)
+        ~source:(parse ~handle source)
+      |> ignore;
+      Coverage.get ~handle:(File.Handle.create handle)
+      |> (fun coverage -> Option.value_exn coverage)
     in
     assert_equal ~printer:Coverage.show expected coverage
   in

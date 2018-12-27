@@ -583,10 +583,6 @@ let infer
       errors @ added_global_errors
       |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
-      |> fun errors -> {
-        TypeCheck.Result.errors;
-        coverage = Coverage.create ();
-      }
   in
 
   if configuration.recursive_infer then
@@ -608,7 +604,4 @@ let infer
     in
     Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
 
-    {
-      TypeCheck.Result.errors;
-      coverage;
-    }
+    errors

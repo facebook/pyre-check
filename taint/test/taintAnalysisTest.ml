@@ -45,8 +45,8 @@ let create_call_graph ?(path = "test.py") source =
 
   let configuration = Configuration.Analysis.create ~strict:true () in
   let errors =
-    let { TypeCheck.Result.errors; _ } = TypeCheck.check ~configuration ~environment ~source in
-    List.filter errors ~f:(fun error -> AnalysisError.code error = 11)  (* Undefined types. *)
+    TypeCheck.check ~configuration ~environment ~source
+    |> List.filter ~f:(fun error -> AnalysisError.code error = 11)  (* Undefined types. *)
   in
   if not (List.is_empty errors) then
     begin

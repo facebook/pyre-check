@@ -9,7 +9,8 @@ open Core
 open OUnit2
 
 open Pyre
-open Service
+open Analysis
+
 
 let test_coverage _ =
   let coverage =
@@ -30,7 +31,7 @@ let test_coverage _ =
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
         ]
     in
-    Service.Coverage.coverage ~number_of_files:3 ~sources:parsed
+    Coverage.coverage ~number_of_files:3 ~sources:parsed
   in
   assert_equal
     coverage

@@ -35,3 +35,15 @@ val aggregate: Annotation.t list -> t
 val aggregate_over_source: source: Source.t -> t list -> t
 
 val log: t -> total_errors: int -> path: string -> unit
+
+val put: t -> handle: File.Handle.t -> unit
+val get: handle: File.Handle.t -> t option
+
+type aggregate = {
+  strict_coverage: int;
+  declare_coverage: int;
+  default_coverage: int;
+  source_files: int;
+}
+
+val coverage: number_of_files: int -> sources: File.Handle.t list -> aggregate

@@ -80,18 +80,11 @@ end
 
 module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
-module Result : sig
-  type t = {
-    errors: Error.t list;
-    coverage: Coverage.t;
-  }
-end
-
 val check
   :  configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> source: Source.t
-  -> Result.t
+  -> Error.t list
 
 val resolution
   :  (module Environment.Handler)

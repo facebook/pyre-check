@@ -33,4 +33,4 @@ val infer
   :  configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> source: Source.t
-  -> TypeCheck.Result.t
+  -> Error.t list

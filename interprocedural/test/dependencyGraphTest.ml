@@ -30,12 +30,12 @@ let create_call_graph ?(update_environment_with = []) source_text =
       ~f:(fun { qualifier; handle; source } -> parse_source ~qualifier ~handle source)
   in
   Service.Environment.populate ~configuration environment sources;
-  let type_errors = TypeCheck.check ~configuration ~environment ~source in
-  if not (List.is_empty type_errors.errors) then
+  let errors = TypeCheck.check ~configuration ~environment ~source in
+  if not (List.is_empty errors) then
     Log.dump "Type errors in %s\n%a"
       source_text
       (Format.pp_print_list TypeCheck.Error.pp)
-      type_errors.errors;
+      errors;
   DependencyGraph.create_callgraph ~environment ~source
 
 

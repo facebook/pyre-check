@@ -281,18 +281,7 @@ let test_fixpoint_backward _ =
 
 
 let test_check_missing_parameter _ =
-  let assert_inference_errors =
-    let check ~configuration ~environment ~source =
-      let { TypeCheck.Result.errors; _ } =
-        Inference.infer
-          ~configuration
-          ~environment
-          ~source
-      in
-      errors
-    in
-    assert_errors ~infer:true ~check
-  in
+  let assert_inference_errors = assert_errors ~infer:true ~check:Inference.infer in
 
   assert_inference_errors
     {|
@@ -325,13 +314,10 @@ let assert_infer
     source
     errors =
   let check_errors configuration environment source =
-    let { TypeCheck.Result.errors; _ } =
-      Inference.infer
-        ~configuration
-        ~environment
-        ~source
-    in
-    errors
+    Inference.infer
+      ~configuration
+      ~environment
+      ~source
   in
   let fields_of_error error =
     let field_of_error field =
