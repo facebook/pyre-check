@@ -2683,23 +2683,19 @@ let check
     in
     if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
 
-    let () =
-      (* Write fixpoint type resolutions to shared memory *)
-      let dump_resolutions { State.resolution_fixpoint; _ } =
-        ResolutionSharedMemory.add name resolution_fixpoint
-      in
-      exit
-      >>| dump_resolutions
-      |> ignore
+    (* Write fixpoint type resolutions to shared memory *)
+    let dump_resolutions { State.resolution_fixpoint; _ } =
+      ResolutionSharedMemory.add name resolution_fixpoint
     in
+    exit
+    >>| dump_resolutions
+    |> ignore;
 
-    let () =
-      (* Schedule nested functions for analysis. *)
-      exit
-      >>| State.nested_defines
-      >>| List.iter ~f:(Queue.enqueue queue)
-      |> ignore
-    in
+    (* Schedule nested functions for analysis. *)
+    exit
+    >>| State.nested_defines
+    >>| List.iter ~f:(Queue.enqueue queue)
+    |> ignore;
 
     let errors =
       exit
