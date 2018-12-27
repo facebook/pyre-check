@@ -8,17 +8,141 @@ import argparse
 import itertools
 import json
 import logging
+import os
 import pathlib
 import re
+import subprocess
 import sys
 import traceback
 from collections import defaultdict
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .commands import ExitCode
 
 
 LOG = logging.getLogger(__name__)
+
+
+def json_to_errors(json) -> List[Dict[str, Any]]:
+    try:
+        return json.loads(input) if input else []
+    except json.decoder.JSONDecodeError:
+        if not input:
+            LOG.error(
+                "Recevied no input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+        else:
+            LOG.error(
+                "Recevied invalid JSON as input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+        return []
+
+
+class Configuration:
+    def __init__(self, path: str, json_contents: Dict[str, Any]):
+        if path.endswith("/.pyre_configuration.local"):
+            self.is_local = True
+        else:
+            self.is_local = False
+        self.root = os.path.dirname(path)
+        self.targets = json_contents.get("targets")
+        self.source_directories = json_contents.get("source_directories")
+        self.push_blocking = bool(json_contents.get("push_blocking"))
+
+    @staticmethod
+    def find_project_configuration() -> Optional[str]:
+        directory = os.getcwd()
+        while directory != "/":
+            configuration_path = os.path.join(directory, ".pyre_configuration")
+            if os.path.isfile(configuration_path):
+                return configuration_path
+            directory = os.path.dirname(directory)
+        return None
+
+    @staticmethod
+    def gather_local_configurations(arguments) -> List["Configuration"]:
+        LOG.info("Finding configurations...")
+        process = subprocess.run(
+            "hg files 'glob:**\\.pyre_configuration.local'",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        configuration_paths = process.stdout.decode("utf-8").strip()
+        if not configuration_paths:
+            LOG.info("No projects with local configurations found.")
+            project_configuration = Configuration.find_project_configuration()
+            if project_configuration:
+                configuration_paths = project_configuration
+            else:
+                LOG.error("No project configuration found.")
+                return []
+        configuration_paths = configuration_paths.split("\n")
+        configurations = []
+        for configuration_path in configuration_paths:
+            with open(configuration_path) as configuration_file:
+                configuration = Configuration(
+                    configuration_path, json.load(configuration_file)
+                )
+                if configuration.push_blocking or (not arguments.push_blocking_only):
+                    configurations.append(configuration)
+        return configurations
+
+    def get_errors(self) -> List[Dict[str, Any]]:
+        # TODO(T37074129): Better parallelization or truncation needed for fbcode
+        if self.targets:
+            try:
+                # If building targets, run clean or space may run out on device!
+                LOG.info("Running `buck clean`...")
+                subprocess.call(["buck", "clean"], timeout=200)
+            except subprocess.TimeoutExpired as error:
+                LOG.warning("Buck timed out. Try running `buck kill` before retrying.")
+                return []
+            except subprocess.CalledProcessError as error:
+                LOG.warning("Error calling `buck clean`: %s", str(error))
+                return []
+        try:
+            LOG.info("Checking `%s`...", self.root)
+            if self.is_local:
+                process = subprocess.run(
+                    ["pyre", "-l", self.root, "--output=json", "check"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            else:
+                process = subprocess.run(
+                    ["pyre", "--output=json", "check"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            json = process.stdout.decode().strip()
+            errors = json_to_errors(json)
+            LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
+            return errors
+        except subprocess.CalledProcessError as error:
+            LOG.warning("Error calling pyre: %s", str(error))
+            return []
+
+
+def errors_from_configurations(arguments) -> List[Dict[str, Any]]:
+    configurations = Configuration.gather_local_configurations(arguments)
+    LOG.info(
+        "Found %d %sconfiguration%s",
+        len(configurations),
+        "push-blocking " if arguments.push_blocking_only else "",
+        "s" if len(configurations) != 1 else "",
+    )
+    total_errors = []
+    for configuration in configurations:
+        total_errors += configuration.get_errors()
+    return total_errors
+
+
+def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
+    input = sys.stdin.read()
+    return json_to_errors(input)
 
 
 def run_fixme(arguments, result) -> None:
@@ -73,7 +197,7 @@ def run_fixme(arguments, result) -> None:
 
 
 def run_missing_overridden_return_annotations(
-    arugments, errors: List[Tuple[str, List[Any]]]
+    _arugments, errors: List[Tuple[str, List[Any]]]
 ) -> None:
     for path, errors in result:
         LOG.info("Patching errors in `%s`.", path)
@@ -110,24 +234,36 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
-    # Subcommands.
     commands = parser.add_subparsers()
 
+    # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
-    fixme.set_defaults(function=run_fixme)
+    fixme.set_defaults(errors=errors_from_stdin, function=run_fixme)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
 
+    # Subcommand: Add annotations according to errors inputted through stdin.
     missing_overridden_return_annotations = commands.add_parser(
         "missing-overridden-return-annotations"
     )
     missing_overridden_return_annotations.set_defaults(
-        function=run_missing_overridden_return_annotations
+        errors=errors_from_stdin, function=run_missing_overridden_return_annotations
     )
+
+    # Subcommand: Find and run pyre against all configurations,
+    # and fixme all errors in each project.
+    fixme_all = commands.add_parser("fixme-all")
+    fixme_all.set_defaults(errors=errors_from_configurations, function=run_fixme)
+    fixme_all.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
 
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
         arguments.function = run_fixme
+    if not hasattr(arguments, "errors"):
+        arguments.errors = errors_from_stdin
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
@@ -141,21 +277,10 @@ if __name__ == "__main__":
         def error_path(error):
             return error["path"]
 
-        input_string = sys.stdin.read()
-        errors = json.loads(input_string) if input_string else json.loads("{}")
-        result = itertools.groupby(sorted(errors, key=error_path), error_path)
+        result = itertools.groupby(
+            sorted(arguments.errors(arguments), key=error_path), error_path
+        )
         arguments.function(arguments, result)
-    except json.decoder.JSONDecodeError:
-        if not input_string:
-            LOG.error(
-                "Recevied no input."
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-        else:
-            LOG.error(
-                "Recevied invalid JSON as input."
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())

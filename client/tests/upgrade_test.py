@@ -4,9 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import itertools
+import json
 import pathlib
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import upgrade
 
@@ -16,6 +17,142 @@ def _result(errors):
         return error["path"]
 
     return itertools.groupby(sorted(errors, key=error_path), error_path)
+
+
+class FixmeAllTest(unittest.TestCase):
+    @patch.object(
+        upgrade.Configuration, "find_project_configuration", return_value=None
+    )
+    def test_gather_local_configurations(self, _find_project_configuration) -> None:
+        process = MagicMock()
+        arguments = MagicMock()
+        arguments.push_blocking_only = None
+
+        def configuration_lists_equal(expected_configurations, actual_configurations):
+            if len(expected_configurations) != len(actual_configurations):
+                print(
+                    "Expected {} configurations, got {} configurations".format(
+                        len(expected_configurations), len(actual_configurations)
+                    )
+                )
+                return False
+            lists_equal = True
+            for expected, actual in zip(expected_configurations, actual_configurations):
+                if expected.root != actual.root:
+                    print(
+                        "Expected configuration with root {}, got root {}".format(
+                            expected.root, actual.root
+                        )
+                    )
+                    lists_equal = False
+                elif expected.targets != actual.targets:
+                    print(
+                        "Expected configuration with targets {}, got targets {}".format(
+                            expected.targets, actual.targets
+                        )
+                    )
+                    lists_equal = False
+                elif expected.source_directories != actual.source_directories:
+                    print(
+                        "Expected configuration with source_directories {}, \
+                        got source_directories {}".format(
+                            expected.source_directories, actual.source_directories
+                        )
+                    )
+                    lists_equal = False
+                elif expected.push_blocking != actual.push_blocking:
+                    print(
+                        "Expected configuration with push_blocking {}, \
+                        got push_blocking {}".format(
+                            expected.push_blocking, actual.push_blocking
+                        )
+                    )
+                    lists_equal = False
+            return lists_equal
+
+        configurations_string = ""
+        process.stdout = configurations_string.encode()
+        with patch("subprocess.run", return_value=process):
+            configurations = upgrade.Configuration.gather_local_configurations(
+                arguments
+            )
+            self.assertEqual([], configurations)
+
+        configurations_string = "path/to/.pyre_configuration.local"
+        process.stdout = configurations_string.encode()
+        configuration_contents = '{"targets":[]}'
+        expected_configurations = [
+            upgrade.Configuration(
+                "path/to/.pyre_configuration.local", json.loads(configuration_contents)
+            )
+        ]
+        with patch("subprocess.run", return_value=process):
+            with patch("builtins.open", mock_open(read_data=configuration_contents)):
+                configurations = upgrade.Configuration.gather_local_configurations(
+                    arguments
+                )
+                self.assertTrue(
+                    configuration_lists_equal(expected_configurations, configurations)
+                )
+
+        configurations_string = (
+            "a/.pyre_configuration.local\nb/.pyre_configuration.local\n"
+        )
+        process.stdout = configurations_string.encode()
+        configuration_contents = '{"targets":[],\n"coverage":true}'
+        expected_configurations = [
+            upgrade.Configuration(
+                "a/.pyre_configuration.local", json.loads(configuration_contents)
+            ),
+            upgrade.Configuration(
+                "b/.pyre_configuration.local", json.loads(configuration_contents)
+            ),
+        ]
+        with patch("subprocess.run", return_value=process):
+            with patch("builtins.open", mock_open(read_data=configuration_contents)):
+                configurations = upgrade.Configuration.gather_local_configurations(
+                    arguments
+                )
+                self.assertTrue(
+                    configuration_lists_equal(expected_configurations, configurations)
+                )
+
+        arguments.push_blocking_only = True
+        configurations_string = (
+            "a/.pyre_configuration.local\nb/.pyre_configuration.local\n"
+        )
+        process.stdout = configurations_string.encode()
+        configuration_contents = '{"targets":[],\n"coverage":true}'
+        expected_configurations = [
+            upgrade.Configuration(
+                "a/.pyre_configuration.local", json.loads(configuration_contents)
+            ),
+            upgrade.Configuration(
+                "b/.pyre_configuration.local", json.loads(configuration_contents)
+            ),
+        ]
+        with patch("subprocess.run", return_value=process):
+            with patch("builtins.open", mock_open(read_data=configuration_contents)):
+                configurations = upgrade.Configuration.gather_local_configurations(
+                    arguments
+                )
+                self.assertEqual([], configurations)
+
+    @patch("subprocess.call")
+    @patch("subprocess.run")
+    def test_get_errors(self, run, call) -> None:
+        configuration = upgrade.Configuration("path", {})
+        configuration.get_errors()
+        call.assert_not_called()
+        assert run.call_count == 1
+
+        call.reset_mock()
+        run.reset_mock()
+
+        configuration.targets = ["//target/..."]
+        configuration.get_errors()
+        assert call.call_count == 1
+        assert run.call_count == 1
 
 
 class FixmeTest(unittest.TestCase):
