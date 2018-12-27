@@ -2611,7 +2611,13 @@ let resolution_with_key ~environment ~parent ~access ~key =
 let check
     ~configuration
     ~environment
-    ~source:({ Source.handle; qualifier; statements; metadata; _ } as source) =
+    ~source:({
+        Source.handle;
+        qualifier;
+        statements;
+        metadata = { Source.Metadata.local_mode; debug; version; number_of_lines; _ };
+        _;
+      } as source) =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
 
@@ -2619,7 +2625,6 @@ let check
 
   let configuration =
     (* Override file-specific local debug configuraiton *)
-    let { Source.Metadata.local_mode; debug; _ } = metadata in
     let local_strict, declare =
       match local_mode with
       | Source.Strict -> true, false
@@ -2714,7 +2719,6 @@ let check
   let results =
     let queue =
       let queue = Queue.create () in
-      let { Source.Metadata.version; _ } = metadata in
       if not (version < 3) then
         begin
           let toplevel =
@@ -2816,7 +2820,6 @@ let check
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
   Coverage.put coverage ~handle;
 
-  let { Source.Metadata.number_of_lines; _ } = metadata in
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100
