@@ -638,6 +638,74 @@ let test_primitives _ =
       } |> Type.primitives)
 
 
+let test_elements _ =
+  let assert_equal = assert_equal ~printer:(List.to_string ~f:Type.show) in
+  assert_equal
+    [Type.Primitive "typing.Callable"]
+    (Type.elements (Type.callable ~annotation:Type.Top ()));
+  assert_equal
+    [Type.integer; Type.Primitive "typing.Callable"]
+    (Type.elements (Type.callable ~annotation:Type.integer ()));
+  assert_equal
+    [Type.integer; Type.Primitive "typing.Optional"]
+    (Type.elements (Type.optional Type.integer));
+
+  assert_equal
+    [Type.Primitive "tuple"]
+    (Type.elements (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_equal
+    [Type.integer; Type.Primitive "tuple"]
+    (Type.elements (Type.Tuple (Type.Unbounded Type.integer)));
+
+  assert_equal
+    []
+    (Type.elements (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
+  assert_equal
+    [Type.integer]
+    (Type.elements (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
+
+  assert_equal
+    [Type.integer; Type.Primitive "parametric"]
+    (Type.elements (Type.parametric "parametric" [Type.integer; Type.Top]));
+  assert_equal
+    [Type.integer; Type.string; Type.Primitive "parametric"]
+    (Type.elements (Type.parametric "parametric" [Type.integer; Type.string]));
+
+  assert_equal
+    [Type.string; Type.Primitive "tuple"]
+    (Type.elements (Type.tuple [Type.Top; Type.string]));
+  assert_equal
+    [Type.integer; Type.string; Type.Primitive "tuple"]
+    (Type.elements (Type.tuple [Type.integer; Type.string]));
+  assert_equal
+    [Type.integer; Type.string; Type.Primitive "typing.Union"]
+    (Type.elements (Type.union [Type.integer; Type.string]));
+
+  assert_equal
+    []
+    (Type.elements Type.Top);
+  assert_equal
+    []
+    (Type.elements Type.Bottom);
+  assert_equal
+    [Type.integer]
+    (Type.elements Type.integer);
+  assert_equal
+    []
+    (Type.elements Type.Object);
+
+  assert_equal
+    [Type.integer; Type.string; Type.Primitive "TypedDictionary"]
+    (Type.TypedDictionary {
+        name = "Movie";
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+        total = true;
+      } |> Type.elements)
+
+
 let test_exists _ =
   let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
 
@@ -1323,6 +1391,7 @@ let () =
     "expression">::test_expression;
     "union">::test_union;
     "primitives">::test_primitives;
+    "elements">::test_elements;
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
     "contains_callable">::test_contains_callable;

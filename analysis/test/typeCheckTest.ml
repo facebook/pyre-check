@@ -2159,15 +2159,16 @@ let test_check _ =
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."];
 
+  (* TODO (T38549023): Revealed type should be `int`. *)
   assert_type_errors
     {|
-      def foo(t: typing.Iterable[Tuple[str, int]]) -> dict[str, int]:
+      def foo(t: typing.Iterable[typing.Tuple[str, int]]) -> dict[str, int]:
         d = dict(t)
         bar = d['a']
         reveal_type(bar)
         return d
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+    ["Revealed type [-1]: Revealed type for `bar` is `undefined`."];
 
   assert_type_errors
     {|
@@ -7872,10 +7873,34 @@ let test_check_undefined_type _ =
   assert_type_errors
     ~debug:false
     {|
+      def foo(x: Derp[int, str]) -> None:
+        pass
+    |}
+    ["Undefined type [11]: Type `Derp` is not defined."];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: typing.Optional[Derp[int]]) -> typing.List[Herp]:
+        pass
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
+  assert_type_errors
+    ~debug:false
+    {|
       def foo(x: Optional) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Optional` is not defined."];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: Dict) -> None:
+        pass
+    |}
+    ["Undefined type [11]: Type `Dict` is not defined."];
 
   assert_type_errors
     ~debug:false

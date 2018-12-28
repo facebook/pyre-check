@@ -535,7 +535,8 @@ let typeshed_stubs = (* Yo dawg... *)
           @overload
           def __init__(self, map: typing.Mapping[_T, _S], **kwargs: _S) -> None: ...
           @overload
-          def __init__(self, iterable: typing.Iterable[Tuple[_T, _S]], **kwargs: _S) -> None: ...
+          def __init__(self, iterable: typing.Iterable[typing.Tuple[_T, _S]], **kwargs: _S) -> None:
+            ...
           def add_key(self, key: _T) -> None: pass
           def add_value(self, value: _S) -> None: pass
           def add_both(self, key: _T, value: _S) -> None: pass

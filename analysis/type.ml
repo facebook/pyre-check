@@ -1596,6 +1596,41 @@ let primitives annotation =
   collect annotation ~predicate
 
 
+let elements annotation =
+  let module CollectorTransform = Transform.Make(struct
+      type state = t list
+
+      let visit_children _ _ =
+        true
+
+      let visit sofar annotation =
+        match annotation with
+        | Callable _ ->
+            Primitive "typing.Callable" :: sofar, annotation
+        | Optional _ ->
+            Primitive "typing.Optional" :: sofar, annotation
+        | Parametric { name; _ } ->
+            Primitive name :: sofar, annotation
+        | Primitive _ ->
+            annotation :: sofar, annotation
+        | Tuple _ ->
+            Primitive "tuple" :: sofar, annotation
+        | TypedDictionary _ ->
+            Primitive "TypedDictionary" :: sofar, annotation
+        | Union _ ->
+            Primitive "typing.Union" :: sofar, annotation
+        | Bottom
+        | Deleted
+        | Object
+        | Top
+        | Variable _ ->
+            sofar, annotation
+    end)
+  in
+  fst (CollectorTransform.visit [] annotation)
+  |> List.rev
+
+
 let is_resolved annotation =
   List.is_empty (variables annotation)
 
