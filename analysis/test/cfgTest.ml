@@ -457,15 +457,15 @@ let test_try _ =
     [
       node 0 Node.Entry [] [5];
       node 1 Node.Normal [8; 9] [3];
-      node 2 Node.Error [7; 10] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
       node 6 Node.Dispatch [5] [7; 11];
-      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 7 (Node.Block []) [6; 10] [2]; (* uncaught *)
       node 8 (Node.Block []) [] [1]; (* return *)
       node 9 (Node.Block []) [11] [1]; (* normal *)
-      node 10 (Node.Block [!!"body"; !!"orelse"; error]) [5] [2];
+      node 10 (Node.Block [!!"body"; !!"orelse"; error]) [5] [7];
       node 11 (Node.Block [!!"handler"]) [6] [9];
     ];
 

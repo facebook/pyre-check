@@ -359,17 +359,20 @@ let create define =
         Node.connect_option return_exit jumps.normal;
         let normal_entry, normal_exit = finally () in
 
-        let try_jumps = { jumps with error = dispatch; normal = return_entry } in
+        (* Used for all blocks but the body. *)
+        let local_jumps = { jumps with error = uncaught_entry; normal = return_entry } in
 
         (* Normal execution. *)
         let body_orelse =
-          create body try_jumps split
-          >>= create orelse jumps in
+          let body_jumps = { jumps with error = dispatch; normal = return_entry } in
+          create body body_jumps split
+          >>= create orelse local_jumps
+        in
         Node.connect_option body_orelse normal_entry;
 
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
-          create (Try.preamble handler @ handler_body) jumps dispatch
+          create (Try.preamble handler @ handler_body) local_jumps dispatch
           |> (Fn.flip Node.connect_option) normal_entry
         in
         List.iter handlers ~f:handler;
