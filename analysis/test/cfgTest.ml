@@ -307,6 +307,28 @@ let test_try _ =
 
   let block = {
     Try.body = [!!"body"];
+    handlers = [];
+    orelse = [];
+    finally = [];
+  } in
+  assert_cfg
+    [+Try block; !!"fall-through"]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 10];
+      node 6 Node.Dispatch [5] [7];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [] [1]; (* return *)
+      node 9 (Node.Block [!!"fall-through"]) [10] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+    ];
+
+  let block = {
+    Try.body = [!!"body"];
     handlers = [handler ~kind:(+Integer 1) "handler"];
     orelse = [!!"orelse"];
     finally = [!!"finally"];
@@ -498,7 +520,7 @@ let test_try _ =
     finally = [+Return { Return.expression = None; is_implicit = false }];
   } in
   assert_cfg
-    [+Try block]
+    [+Try block; !!"unreached"]
     [
       node 0 Node.Entry [] [5];
       node 1 Node.Normal [7; 8; 9] [3];
@@ -522,6 +544,29 @@ let test_try _ =
         (Node.Block [+Return { Return.expression = None; is_implicit = false }])
         [10]
         [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+    ];
+
+  let error = +Raise None in
+  let block = {
+    Try.body = [!!"body"];
+    handlers = [];
+    orelse = [];
+    finally = [error];
+  } in
+  assert_cfg
+    [+Try block; !!"unreached"]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [] [3];
+      node 2 Node.Error [7; 8; 9] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 10];
+      node 6 Node.Dispatch [5] [7];
+      node 7 (Node.Block [error]) [6] [2]; (* uncaught *)
+      node 8 (Node.Block [error]) [] [2]; (* return *)
+      node 9 (Node.Block [error]) [10] [2]; (* normal *)
       node 10 (Node.Block [!!"body"]) [5] [9];
     ];
   ()
