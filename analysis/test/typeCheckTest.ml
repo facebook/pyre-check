@@ -4604,7 +4604,96 @@ let test_check_globals _ =
     [
       "Missing global annotation [5]: Globally accessible variable `nasty_global` " ^
       "has type `int` but no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      a, b = 1, 2
+      def foo() -> str:
+        return a
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `a` has type `int` " ^
+      "but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `b` has type `int` " ^
+      "but no type is specified.";
+      "Incompatible return type [7]: Expected `str` but got `int`."
+    ];
+
+  assert_type_errors
+    {|
+      a: int
+      b: int
+      a, b = 1, 2
+      def foo() -> str:
+        return a
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`."
+    ];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = "a, b, c = 1, 2, 3"
+      };
     ]
+    {|
+      from export import a
+      def foo() -> str:
+        return a
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = "a, (b, c) = 1, (2, 3)"
+      };
+    ]
+    {|
+      from export import b
+      def foo() -> str:
+        return b
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ..."
+      };
+    ]
+    {|
+      from export import b
+      def foo() -> str:
+        return b
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = {|
+          class Foo:
+            a, b = 1, 2
+        |}
+      };
+    ]
+    {|
+      from export.Foo import a
+      def foo() -> str:
+        return a
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
 let test_check_immutables _ =

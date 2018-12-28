@@ -633,61 +633,51 @@ let register_globals
         List.iter ~f:visit body;
         List.iter ~f:visit orelse
     | _ ->
-        let global =
-          match statement with
-          | {
-            Node.location;
-            value = Assign { Assign.target; annotation = None; value; _ };
-          } ->
-              begin
-                try
-                  match target.Node.value, (Resolution.resolve_literal resolution value) with
-                  | Access access, annotation ->
-                      let global =
-                        Annotation.create_immutable
-                          ~global:true
-                          ~original:(Some Type.Top)
-                          annotation
-                        |> Node.create ~location
-                      in
-                      Some (access, global)
-                  | _ ->
-                      None
-                with _ ->
-                match target.Node.value with
-                | Access access ->
-                    (* If we have a global of the form x = os.path.join('a', 'b'), still add x. *)
-                    let global =
-                      Annotation.create_immutable ~global:true Type.Top
-                      |> Node.create ~location
-                    in
-                    Some (access, global)
-                | _ ->
-                    None
-              end
-          | {
-            Node.location;
-            value = Assign {
-                Assign.target = { Node.value = Access access; _ };
-                annotation = Some annotation;
-                _;
-              };
-          } ->
-              let global =
-                Annotation.create_immutable
-                  ~global:true
-                  (Type.create ~aliases:Handler.aliases annotation)
-                |> Node.create ~location
+        match statement with
+        | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
+            let annotation, explicit =
+              match annotation with
+              | Some annotation ->
+                  Type.create ~aliases:Handler.aliases annotation, true
+              | None ->
+                  let annotation =
+                    try
+                      Resolution.resolve_literal resolution value
+                    with _ ->
+                      Type.Top
+                  in
+                  annotation, false
+            in
+            let rec register_assign ~target ~annotation =
+              let register ~location access annotation =
+                let access = qualified_access (qualifier @ access) in
+                let global =
+                  if explicit then
+                    Annotation.create_immutable ~global:true annotation
+                  else
+                    Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
+                in
+                Handler.register_global ~handle ~access ~global:(Node.create ~location global)
               in
-              Some (access, global)
-          | _ ->
-              None
-        in
-        global
-        >>| (fun (access, global) ->
-            let access = qualified_access (qualifier @ access) in
-            Handler.register_global ~handle ~access ~global)
-        |> ignore
+              match target.Node.value, annotation with
+              | Access access, _ ->
+                  register ~location:target.Node.location access annotation
+              | Tuple elements, Type.Tuple (Type.Bounded parameters)
+                when List.length elements = List.length parameters ->
+                  List.map2_exn
+                    ~f:(fun target annotation -> register_assign ~target ~annotation)
+                    elements
+                    parameters
+                  |> ignore
+              | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
+                  List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
+                  |> ignore
+              | _ ->
+                  ()
+            in
+            register_assign ~target ~annotation
+        | _ ->
+            ()
   in
   List.iter ~f:visit statements
 
