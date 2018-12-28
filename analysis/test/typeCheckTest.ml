@@ -2159,7 +2159,6 @@ let test_check _ =
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."];
 
-  (* TODO (T38549023): Revealed type should be `int`. *)
   assert_type_errors
     {|
       def foo(t: typing.Iterable[typing.Tuple[str, int]]) -> dict[str, int]:
@@ -2168,7 +2167,7 @@ let test_check _ =
         reveal_type(bar)
         return d
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `undefined`."];
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
 
   assert_type_errors
     {|

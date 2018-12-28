@@ -244,17 +244,34 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
   in
   if List.length parameters = List.length resolved_parameters then
     let rec compute_constraints map expected instantiated =
+      let fold_constraints ~map left right =
+        List.fold2 ~init:map ~f:compute_constraints left right
+        |> function
+        | List.Or_unequal_lengths.Ok map ->
+            map
+        | _ ->
+            None
+      in
       match expected, instantiated with
       | Type.Parametric { name = left_name; parameters = left_parameters },
         Type.Parametric { name = right_name; parameters = right_parameters }
         when Identifier.equal left_name right_name ->
-          List.fold2 ~init:map ~f:compute_constraints left_parameters right_parameters
-          |>
-          (function
-            | List.Or_unequal_lengths.Ok map ->
-                map
-            | _ ->
-                None)
+          fold_constraints ~map left_parameters right_parameters
+      | Type.Tuple (Type.Bounded left_parameters),
+        Type.Tuple (Type.Bounded right_parameters) ->
+          fold_constraints ~map left_parameters right_parameters
+      | Type.Tuple (Type.Bounded left_parameters),
+        Type.Tuple (Type.Unbounded right_parameter) ->
+          let right_parameters =
+            List.init (List.length left_parameters) ~f:(fun _ -> right_parameter)
+          in
+          fold_constraints ~map left_parameters right_parameters
+      | Type.Tuple (Type.Unbounded left_parameter),
+        Type.Tuple (Type.Bounded right_parameters) ->
+          compute_constraints map left_parameter (Type.union right_parameters)
+      | Type.Tuple (Type.Unbounded left_parameter),
+        Type.Tuple (Type.Unbounded right_parameter) ->
+          compute_constraints map left_parameter right_parameter
       | Type.Variable { constraints = Type.Unconstrained; _ }, _
         when not (Type.equal instantiated Type.Bottom) ->
           map

@@ -241,6 +241,18 @@ let diff ~print format (left, right) =
   In_channel.close input
 
 
+let map_printer ~key_pp ~data_pp map =
+  let to_string (key, data) =
+    Format.asprintf
+      "    %a -> %a"
+      key_pp key
+      data_pp data
+  in
+  Map.to_alist map
+  |> List.map ~f:to_string
+  |> String.concat ~sep:"\n"
+
+
 let assert_source_equal =
   assert_equal
     ~cmp:Source.equal

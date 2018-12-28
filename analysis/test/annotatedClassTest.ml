@@ -947,6 +947,7 @@ let test_constraints _ =
       |> Class.constraints ~target ~resolution ?parameters ~instantiated
     in
     assert_equal
+      ~printer:(map_printer ~key_pp:Type.pp ~data_pp:Type.pp)
       ~cmp:(Type.Map.equal Type.equal)
       (Type.Map.of_alist_exn expected)
       constraints

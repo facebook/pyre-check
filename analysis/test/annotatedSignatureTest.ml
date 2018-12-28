@@ -360,6 +360,10 @@ let test_select _ =
     "({n: B() for n in range(5)})"
     (`Found "[[typing.Dict[int, C]], int]");
   assert_select
+    "[[typing.Iterable[typing.Tuple[_T, _S]]], typing.Dict[_T, _S]]"
+    "([('a', 1), ('b', 2)])"
+    (`Found "[[typing.Iterable[typing.Tuple[str, int]]], typing.Dict[str, int]]");
+  assert_select
     "[[typing.Sequence[_T]], int]"
     "(1)"
     (`NotFoundMismatch
