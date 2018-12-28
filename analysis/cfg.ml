@@ -317,20 +317,34 @@ let create define =
       Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block);
       _;
     } :: statements ->
-        (* -> [split] -> [body] -> [orelse] -> [normal exit] ->
-                 |                                    ^
-             [dispatch] -----> [preamble; handler] -------------|
-                 |               ...
-           [uncaught finally]
-                 |
-              [error]
+        (* We need to replicate the "finally" block three times because that block is always
+           executed, regardless of the exit path (normal, return, or error), and we need to
+           preserve the state that got us into the "finally".
 
-           [return exit] -> [normal] *)
+           I.e., even if all three "finally" blocks jump to the global error in case of errors,
+           and jump to the global return in case of a return exit, their normal exit depends on
+           whether we are executing finally after dispatch, after body/orelse, or after the
+           return block.
+
+           -> [split] -> [body] -> [orelse] -> [finally; exit node] -> next
+                 |         |            |           ^                  statements
+                 |  -------/            | (on       |
+                 |  | (on error)        | error)    |
+                 V  V                   |           |
+             [dispatch] --> [handler1] -+-----------|
+                 |      --> [handler2] -+-----------/
+                 |              |       |
+                 |  ------------/       |     (from all nodes on normal exit)
+                 V  V  (on error)       |               |
+             [uncaught; finally] <------/          [finally; return exit]
+                 |                                      |
+             [global error exit]                   [global normal exit]
+        *)
         let finally () =
-          let node =
-            Node.empty graph (Node.Block []) in
-          create finally jumps node |> ignore;
-          node
+          let entry =
+            Node.empty graph (Node.Block [])
+          in
+          entry, create finally jumps entry
         in
 
         (* Scaffolding. *)
@@ -338,28 +352,32 @@ let create define =
         Node.connect predecessor split;
         let dispatch = Node.empty graph Node.Dispatch in
         Node.connect split dispatch;
-        let normal = finally () in
-        let uncaught = finally () in
-        Node.connect dispatch uncaught;
-        Node.connect uncaught jumps.error;
-        let return = finally () in
-        Node.connect return jumps.normal;
+        let uncaught_entry, uncaught_exit = finally () in
+        Node.connect dispatch uncaught_entry;
+        Node.connect_option uncaught_exit jumps.error;
+        let return_entry, return_exit = finally () in
+        Node.connect_option return_exit jumps.normal;
+        let normal_entry, normal_exit = finally () in
 
-        let try_jumps = { jumps with error = dispatch; normal = return } in
+        let try_jumps = { jumps with error = dispatch; normal = return_entry } in
 
         (* Normal execution. *)
         let body_orelse =
           create body try_jumps split
           >>= create orelse jumps in
-        Node.connect_option body_orelse normal;
+        Node.connect_option body_orelse normal_entry;
 
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
           create (Try.preamble handler @ handler_body) jumps dispatch
-          |> (Fn.flip Node.connect_option) normal in
+          |> (Fn.flip Node.connect_option) normal_entry
+        in
         List.iter handlers ~f:handler;
 
-        create statements jumps normal
+        (* `normal` might legitimately not have an exit point if there
+           is a return in the `finally` clause. *)
+        normal_exit
+        >>= create statements jumps
 
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)

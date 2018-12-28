@@ -315,17 +315,17 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
-      node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5] [8; 11];
-      node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
-      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-      node 10 (Node.Block [!!"body"; !!"orelse"]) [5] [7];
-      node 11 (Node.Block [+Expression (+Integer 1); !!"handler"]) [6] [7];
+      node 5 (Node.Try block)  [0] [6; 10]; (* split *)
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 8 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 9 (Node.Block [!!"finally"]) [10; 11] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"; !!"orelse"]) [5] [9];
+      node 11 (Node.Block [+Expression (+Integer 1); !!"handler"]) [6] [9];
     ];
 
   let block = {
@@ -338,17 +338,17 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5] [8; 11];
-      node 7 (Node.Block [!!"finally"]) [10; 11] [1]; (* finally *)
-      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-      node 10 (Node.Block [!!"body"]) [5] [7];
-      node 11 (Node.Block [!!"handler"]) [6] [7];
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 8 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 9 (Node.Block [!!"finally"]) [10; 11] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+      node 11 (Node.Block [!!"handler"]) [6] [9];
     ];
 
   let block = {
@@ -361,17 +361,17 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5] [8; 11];
-      node 7 (Node.Block []) [10; 11] [1]; (* finally *)
-      node 8 (Node.Block []) [6] [2]; (* uncaught *)
-      node 9 (Node.Block []) [] [1]; (* return *)
-      node 10 (Node.Block [!!"body"]) [5] [7];
-      node 11 (Node.Block [!!"handler"]) [6] [7];
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [] [1]; (* return *)
+      node 9 (Node.Block []) [10; 11] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+      node 11 (Node.Block [!!"handler"]) [6] [9];
     ];
 
   let block = {
@@ -384,18 +384,18 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5] [8; 11; 12];
-      node 7 (Node.Block []) [10; 11; 12] [1]; (* finally *)
-      node 8 (Node.Block []) [6] [2]; (* uncaught *)
-      node 9 (Node.Block []) [] [1]; (* return *)
-      node 10 (Node.Block [!!"body"]) [5] [7];
-      node 11 (Node.Block [!!"handler 1"]) [6] [7];
-      node 12 (Node.Block [!!"handler 2"]) [6] [7];
+      node 6 Node.Dispatch [5] [7; 11; 12];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [] [1]; (* return *)
+      node 9 (Node.Block []) [10; 11; 12] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+      node 11 (Node.Block [!!"handler 1"]) [6] [9];
+      node 12 (Node.Block [!!"handler 2"]) [6] [9];
     ];
 
   let return = +Return { Return.expression = None; is_implicit = false } in
@@ -409,17 +409,17 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5] [8; 11];
-      node 7 (Node.Block []) [11] [1]; (* finally *)
-      node 8 (Node.Block []) [6] [2]; (* uncaught *)
-      node 9 (Node.Block []) [10] [1]; (* return *)
-      node 10 (Node.Block [!!"body"; return]) [5] [9];
-      node 11 (Node.Block [!!"handler"]) [6] [7];
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [10] [1]; (* return *)
+      node 9 (Node.Block []) [11] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"; return]) [5] [8];
+      node 11 (Node.Block [!!"handler"]) [6] [9];
     ];
 
   let error = +Raise None in
@@ -433,17 +433,40 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block)  [0] [6; 10];
-      node 6 Node.Dispatch [5; 10] [8; 11];
-      node 7 (Node.Block []) [11] [1]; (* finally *)
-      node 8 (Node.Block []) [6] [2]; (* uncaught *)
-      node 9 (Node.Block []) [] [1]; (* return *)
+      node 6 Node.Dispatch [5; 10] [7; 11];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [] [1]; (* return *)
+      node 9 (Node.Block []) [11] [1]; (* normal *)
       node 10 (Node.Block [!!"body"; error]) [5] [6];
-      node 11 (Node.Block [!!"handler"]) [6] [7];
+      node 11 (Node.Block [!!"handler"]) [6] [9];
+    ];
+
+  let block = {
+    Try.body = [!!"body"];
+    handlers = [handler "handler"];
+    orelse = [!!"orelse"; error; !!"unreached"];
+    finally = [];
+  } in
+  assert_cfg
+    [+Try block]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7; 10] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block)  [0] [6; 10];
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block []) [6] [2]; (* uncaught *)
+      node 8 (Node.Block []) [] [1]; (* return *)
+      node 9 (Node.Block []) [11] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"; !!"orelse"; error]) [5] [2];
+      node 11 (Node.Block [!!"handler"]) [6] [9];
     ];
 
   let block = {
@@ -456,16 +479,16 @@ let test_try _ =
     [+Try block]
     [
       node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block) [0] [6; 10];
-      node 6 Node.Dispatch [5] [8];
-      node 7 (Node.Block [!!"finally"]) [10] [1]; (* finally *)
-      node 8 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
-      node 9 (Node.Block [!!"finally"]) [] [1]; (* return *)
-      node 10 (Node.Block [!!"body"]) [5] [7];
+      node 6 Node.Dispatch [5] [7];
+      node 7 (Node.Block [!!"finally"]) [6] [2]; (* uncaught *)
+      node 8 (Node.Block [!!"finally"]) [] [1]; (* return *)
+      node 9 (Node.Block [!!"finally"]) [10] [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
     ];
 
   let block = {
@@ -479,28 +502,29 @@ let test_try _ =
     [
       node 0 Node.Entry [] [5];
       node 1 Node.Normal [7; 8; 9] [3];
-      node 2 Node.Error [8] [3];
+      node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
       node 4 Node.Yield [] [];
       node 5 (Node.Try block) [0] [6; 10];
-      node 6 Node.Dispatch [5] [8];
+      node 6 Node.Dispatch [5] [7];
       node
         7
         (Node.Block [+Return { Return.expression = None; is_implicit = false }])
-        [10]
-        [1]; (* finally *)
+        [6]
+        [1]; (* uncaught *)
       node
         8
         (Node.Block [+Return { Return.expression = None; is_implicit = false }])
-        [6]
-        [1; 2]; (* uncaught *)
+        []
+        [1]; (* return *)
       node
         9
         (Node.Block [+Return { Return.expression = None; is_implicit = false }])
-        []
-        [1]; (* return *)
-      node 10 (Node.Block [!!"body"]) [5] [7];
-    ]
+        [10]
+        [1]; (* normal *)
+      node 10 (Node.Block [!!"body"]) [5] [9];
+    ];
+  ()
 
 
 let test_with _ =

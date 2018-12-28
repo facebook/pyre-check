@@ -6431,7 +6431,21 @@ let test_check_excepts _ =
         else:
           return x
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def use(i: int) -> None: pass
+      def foo(x: bool) -> None:
+        try:
+          pass
+        finally:
+          if x:
+            use("error")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` " ^
+      "but got `str`."
+    ]
 
 
 let test_check_async _ =
