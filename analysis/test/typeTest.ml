@@ -166,29 +166,28 @@ let test_create _ =
     | _ ->
         None
   in
-  assert_create ~aliases "A" (Type.list (Type.list (Type.Primitive "A")));
+  assert_create ~aliases "A" (Type.list (Type.Primitive "A"));
 
   (* Nested aliasing. *)
   let aliases = function
-    | Type.Primitive name when name = "A" -> Some (Type.list (Type.Primitive "B"))
-    | Type.Primitive name when name = "B" -> Some (Type.Primitive "C")
-    | Type.Primitive name when name = "module.R" ->
-        Some (Type.Primitive "module.R.R")
+    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.list (Type.Primitive "B"))
+    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.Primitive "C")
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
   (* Aliasing of subclasses through imports. *)
   let aliases = function
-    | Type.Primitive name when name = "A" ->
+    | Type.Primitive name when Identifier.show name = "A" ->
         Some (Type.Primitive "B")
+    | Type.Primitive name when Identifier.show name = "module.R" ->
+        Some (Type.Primitive "module.R.R")
     | _ ->
         None
   in
   assert_create ~aliases "A" (Type.Primitive "B");
   assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
-  (* Known limitation: We're not following parametric types here. *)
-  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "A.InnerClass" [Type.integer]);
-  assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R");
+  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" [Type.integer]);
+  assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R.R");
   assert_create
     ~aliases
     "A.InnerClass.InnerInnerClass"

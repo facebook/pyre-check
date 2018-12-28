@@ -667,166 +667,332 @@ let parametric_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
+let rec expression annotation =
+  let split name =
+    match name with
+    | "..." ->
+        [Access.Identifier "..."]
+    | name ->
+        String.split name ~on:'.'
+        |> List.map ~f:Access.create
+        |> List.concat
+  in
+
+  let get_item_call ?call_parameters parameters =
+    let parameter =
+      match parameters with
+      | _ when List.length parameters > 1 || Option.is_some call_parameters ->
+          let tuple =
+            let call_parameters =
+              call_parameters
+              >>| (fun call_parameters -> [call_parameters])
+              |> Option.value ~default:[]
+            in
+            List.map parameters ~f:expression
+            |> (fun elements -> Expression.Tuple (call_parameters @ elements))
+            |> Node.create_with_default_location
+          in
+          [{ Argument.name = None; value = tuple }]
+      | [parameter] ->
+          [{ Argument.name = None; value = expression parameter }]
+      | _ ->
+          []
+    in
+    [
+      Access.Identifier "__getitem__";
+      Access.Call (Node.create_with_default_location parameter);
+    ]
+  in
+
+  let rec access annotation =
+    match annotation with
+    | Bottom -> Access.create "$bottom"
+    | Callable { implementation; overloads; _ } ->
+        let convert { annotation; parameters } =
+          let call_parameters =
+            match parameters with
+            | Defined parameters ->
+                let parameter parameter =
+                  let call ?(default = false) name argument annotation =
+                    let annotation =
+                      annotation
+                      >>| (fun annotation ->
+                          [{
+                            Argument.name = None;
+                            value = expression annotation;
+                          }])
+                      |> Option.value ~default:[]
+                    in
+                    let arguments =
+                      let default =
+                        if default then
+                          [
+                            {
+                              Argument.name = None;
+                              value = Access.expression (Access.create "default");
+                            };
+                          ]
+                        else
+                          []
+                      in
+                      [{ Argument.name = None; value = Access.expression argument }]
+                      @ annotation @ default
+                    in
+                    Access.expression
+                      (Access.call ~arguments ~location:Location.Reference.any ~name ())
+                  in
+                  match parameter with
+                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
+                      call "Keywords" name (Some annotation)
+                  | Parameter.Named { Parameter.name; annotation; default } ->
+                      call "Named" ~default name (Some annotation)
+                  | Parameter.Variable { Parameter.name; annotation; _ } ->
+                      call "Variable" name (Some annotation)
+                in
+                List (List.map parameters ~f:parameter)
+                |> Node.create_with_default_location
+            | Undefined ->
+                Node.create_with_default_location Ellipses
+          in
+          get_item_call ~call_parameters [annotation]
+        in
+        let overloads =
+          let overloads = List.concat_map overloads ~f:convert in
+          if List.is_empty overloads then
+            []
+          else
+            [
+              Access.Identifier "__getitem__";
+              Access.Call
+                (Node.create_with_default_location [
+                    {
+                      Argument.name = None;
+                      value = Node.create_with_default_location (Access overloads);
+                    }
+                  ]);
+            ]
+        in
+        (Access.create "typing.Callable") @ (convert implementation) @ overloads
+    | Deleted -> Access.create "$deleted"
+    | Object -> Access.create "object"
+    | Optional Bottom ->
+        split "None"
+    | Optional parameter ->
+        (Access.create "typing.Optional") @ (get_item_call [parameter])
+    | Parametric { name = "typing.Optional"; parameters = [Bottom] } ->
+        split "None"
+    | Parametric { name; parameters } ->
+        (split (reverse_substitute name)) @ (get_item_call parameters)
+    | Primitive name ->
+        split name
+    | Top -> Access.create "$unknown"
+    | Tuple elements ->
+        let parameters =
+          match elements with
+          | Bounded parameters -> parameters
+          | Unbounded parameter -> [parameter; Primitive "..."]
+        in
+        (Access.create "typing.Tuple") @ (get_item_call parameters)
+    | TypedDictionary { name; fields; total } ->
+        let argument =
+          let tuple =
+            let tail =
+              let field_to_tuple { name; annotation } =
+                Node.create_with_default_location (Expression.Tuple [
+                    Node.create_with_default_location (Expression.String {
+                        value = name;
+                        kind = StringLiteral.String;
+                      });
+                    expression annotation;
+                  ])
+              in
+              List.map fields ~f:field_to_tuple
+            in
+            let totality =
+              (if total then Expression.True else Expression.False)
+              |> Node.create_with_default_location
+            in
+            Expression.String { value = name; kind = StringLiteral.String }
+            |> Node.create_with_default_location
+            |> (fun name -> Expression.Tuple(name :: totality :: tail))
+            |> Node.create_with_default_location
+          in
+          { Argument.name = None; value = tuple; }
+        in
+        (Access.create "mypy_extensions.TypedDict") @ [
+          Access.Identifier "__getitem__";
+          Access.Call (Node.create_with_default_location ([argument]));
+        ]
+    | Union parameters ->
+        (Access.create "typing.Union") @ (get_item_call parameters)
+    | Variable { variable; _ } -> split variable
+  in
+
+  let value =
+    match annotation with
+    | Primitive "..." -> Ellipses
+    | _ -> Access (access annotation)
+  in
+  Node.create_with_default_location value
+
+
+let access annotation =
+  match expression annotation with
+  | { Node.value = Access access; _ } -> access
+  | _ -> failwith "Annotation expression is not an access"
+
+
 let rec create ~aliases { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result ->
       result
   | _ ->
-      let rec parse reversed_lead tail =
-        let annotation =
-          match tail with
-          | (Access.Identifier "__getitem__")
-            :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
-            :: _ ->
-              let parameters =
-                match Node.value argument with
-                | Expression.Tuple elements -> elements
-                | _ -> [argument]
-              in
-              let name =
-                List.rev reversed_lead
-                |> Access.show
-              in
-              Parametric { name; parameters = List.map parameters ~f:(create ~aliases) }
-          | (Access.Identifier _ as access) :: tail ->
-              parse (access :: reversed_lead) tail
-          | [] ->
-              let name =
-                let sanitized =
-                  match reversed_lead with
-                  | (Access.Identifier name) :: tail ->
-                      let name = Identifier.sanitized name in
-                      (Access.Identifier name) :: tail
-                  | _ ->
-                      reversed_lead
-                in
-                List.rev sanitized
-                |> Access.show
-              in
-              if name = "None" then
-                none
-              else
-                Primitive name
-          | _ ->
-              Top
-        in
-
-        (* Resolve aliases. *)
+      let parse_access type_access =
         let resolved =
-          let rec resolve visited annotation =
-            if Set.mem visited annotation then
-              annotation
-            else
-              let visited = Set.add visited annotation in
-              let alias annotation =
-                let apply_aliases name =
-                  let rec try_resolving tail reversed_lead =
-                    match reversed_lead with
-                    | [] ->
-                        None
-                    | current :: rest ->
-                        let annotation =
-                          reversed_lead
-                          |> List.rev
-                          |> Access.show
-                          |> fun primitive -> Primitive primitive
-                        in
-                        match aliases annotation with
-                        | Some (Primitive alias) ->
-                            Format.sprintf
-                              "%s.%s"
-                              (alias)
-                              (Access.show tail)
-                            |> fun primitive -> Primitive primitive
-                            |> Option.some
-                        | _ ->
-                            try_resolving (current :: tail) rest
-                  in
-                  name
-                  |> Access.create
-                  |> List.rev
-                  |> try_resolving []
-                in
-                match aliases annotation, annotation with
-                | Some alias, _ ->
+          let resolve_aliases annotation =
+            let rec resolve visited annotation =
+              if Set.mem visited annotation then
+                annotation
+              else
+                let visited = Set.add visited annotation in
+                match aliases annotation with
+                | Some alias ->
                     resolve visited alias
-                    |> Option.some
-                | None, Primitive name ->
-                    (* Don't apply the fixpoint if we're folding over the type. It can lead
-                       to infinite loops in the case where you have module c define class c,
-                       the `c.c` alias would loop forever. *)
-                    apply_aliases name
                 | _ ->
-                    None
-              in
-              match alias annotation with
-              | Some alias ->
-                  alias
-              | _ ->
-                  begin
-                    match annotation with
-                    | Optional annotation ->
-                        Optional (resolve visited annotation)
-                    | Tuple (Bounded elements) ->
-                        Tuple (Bounded (List.map elements ~f:(resolve visited)))
-                    | Tuple (Unbounded annotation) ->
-                        Tuple (Unbounded (resolve visited annotation))
-                    | Parametric { name; parameters } ->
-                        begin
-                          let parametric name =
-                            Parametric {
-                              name;
-                              parameters = List.map parameters ~f:(resolve visited);
-                            }
+                    begin
+                      match annotation with
+                      | Optional annotation ->
+                          Optional (resolve visited annotation)
+                      | Tuple (Bounded elements) ->
+                          Tuple (Bounded (List.map elements ~f:(resolve visited)))
+                      | Tuple (Unbounded annotation) ->
+                          Tuple (Unbounded (resolve visited annotation))
+                      | Parametric { name; parameters } ->
+                          begin
+                            let parametric name =
+                              Parametric {
+                                name;
+                                parameters = List.map parameters ~f:(resolve visited);
+                              }
+                            in
+                            match aliases (Primitive name) with
+                            | Some (Primitive name) ->
+                                parametric name
+                            | Some (Parametric { name; _ }) ->
+                                (* Ignore parameters for now. *)
+                                parametric name
+                            | Some (Union elements) ->
+                                let replace_parameters = function
+                                  | Parametric parametric ->
+                                      Parametric { parametric with parameters }
+                                  | annotation ->
+                                      annotation
+                                in
+                                Union (List.map elements ~f:replace_parameters)
+                            | _ ->
+                                parametric name
+                          end
+                      | Variable ({ constraints; _ } as variable) ->
+                          let constraints =
+                            match constraints with
+                            | Bound bound ->
+                                Bound (resolve visited bound)
+                            | Explicit constraints ->
+                                Explicit (List.map constraints ~f:(resolve visited))
+                            | Unconstrained ->
+                                Unconstrained
                           in
-                          match aliases (Primitive name) with
-                          | Some (Primitive name) ->
-                              parametric name
-                          | Some (Parametric { name; _ }) ->
-                              (* Ignore parameters for now. *)
-                              parametric name
-                          | Some (Union elements) ->
-                              let replace_parameters = function
-                                | Parametric parametric -> Parametric { parametric with parameters }
-                                | annotation -> annotation
-                              in
-                              Union (List.map elements ~f:replace_parameters)
-                          | _ ->
-                              parametric name
-                        end
-                    | Variable ({ constraints; _ } as variable) ->
-                        let constraints =
-                          match constraints with
-                          | Bound bound ->
-                              Bound (resolve visited bound)
-                          | Explicit constraints ->
-                              Explicit (List.map constraints ~f:(resolve visited))
-                          | Unconstrained ->
-                              Unconstrained
-                        in
-                        Variable { variable with constraints }
-                    | TypedDictionary { fields; name; total } ->
-                        let fields =
-                          let resolve_field_annotation { name; annotation } =
-                            { name; annotation = resolve visited annotation }
+                          Variable { variable with constraints }
+                      | TypedDictionary { fields; name; total } ->
+                          let fields =
+                            let resolve_field_annotation { name; annotation } =
+                              { name; annotation = resolve visited annotation }
+                            in
+                            List.map fields ~f:resolve_field_annotation;
                           in
-                          List.map fields ~f:resolve_field_annotation;
-                        in
-                        TypedDictionary { name; fields; total }
-                    | Union elements ->
-                        Union (List.map elements ~f:(resolve visited))
-                    | Bottom
-                    | Callable _
-                    | Deleted
-                    | Object
-                    | Primitive _
-                    | Top ->
-                        annotation
-                  end
+                          TypedDictionary { name; fields; total }
+                      | Union elements ->
+                          Union (List.map elements ~f:(resolve visited))
+                      | Bottom
+                      | Callable _
+                      | Deleted
+                      | Object
+                      | Primitive _
+                      | Top ->
+                          annotation
+                    end
+            in
+            resolve Set.empty annotation
           in
-          resolve Set.empty annotation
-        in
 
+          let type_access_fold type_access =
+            let fold accumulator current =
+              match current, accumulator with
+              | _, Some Top ->
+                  Some Top
+              | Access.Identifier current, _ ->
+                  let current =
+                    Identifier.sanitized current
+                    |> fun name -> Access.Identifier name
+                  in
+                  let state =
+                    match accumulator with
+                    | Some accumulator ->
+                        (access accumulator) @ [current]
+                    | None ->
+                        [current]
+                  in
+                  let name = Access.show state in
+                  let annotation =
+                    if name = "None" then
+                      none
+                    else
+                      Primitive name
+                  in
+                  annotation
+                  |> resolve_aliases
+                  |> Option.some
+              | _, _ ->
+                  Some Top
+            in
+            List.fold type_access ~f:fold ~init:None
+            |> Option.value ~default:Top
+          in
+          let rec handle_access reversed_lead tail =
+            match tail with
+            |  (Access.Identifier get_item)
+               :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
+               :: _
+              when Identifier.show get_item = "__getitem__" ->
+                begin
+                  let parameters =
+                    match Node.value argument with
+                    | Expression.Tuple elements -> elements
+                    | _ -> [argument]
+                  in
+                  let parametric name =
+                    let parameters = List.map parameters ~f:(create ~aliases) in
+                    Parametric { name; parameters }
+                    |> resolve_aliases
+                  in
+                  match type_access_fold (List.rev reversed_lead) with
+                  | Primitive name ->
+                      parametric name
+                  | Top ->
+                      Top
+                  | _ ->
+                      List.rev reversed_lead
+                      |> Access.show
+                      |> parametric
+
+                end
+            | [] ->
+                type_access_fold type_access
+            | head :: tail ->
+                handle_access (head :: reversed_lead) tail
+          in
+          handle_access [] type_access
+        in
         (* Substitutions. *)
         match resolved with
         | Primitive name ->
@@ -869,6 +1035,7 @@ let rec create ~aliases { Node.value = expression; _ } =
         | _ ->
             resolved
       in
+
       let result =
         let parse_callable ?modifiers ~(signatures: Access.t) () =
           let kind =
@@ -1131,10 +1298,10 @@ let rec create ~aliases { Node.value = expression; _ } =
             in
             total
             >>| parse_typed_dictionary
-            |> Option.value ~default:(parse [] access)
+            |> Option.value ~default:(parse_access access)
 
         | Access access ->
-            parse [] access
+            parse_access access
 
         | Ellipses ->
             Primitive "..."
@@ -1156,187 +1323,13 @@ let rec create ~aliases { Node.value = expression; _ } =
               with _ ->
                 Access.create value
             in
-            parse [] access
+            parse_access access
+
         | _ ->
             Top
       in
       Cache.set ~key:expression ~data:result;
       result
-
-
-let rec expression annotation =
-  let split name =
-    match name with
-    | "..." ->
-        [Access.Identifier "..."]
-    | name ->
-        String.split name ~on:'.'
-        |> List.map ~f:Access.create
-        |> List.concat
-  in
-
-  let get_item_call ?call_parameters parameters =
-    let parameter =
-      match parameters with
-      | _ when List.length parameters > 1 || Option.is_some call_parameters ->
-          let tuple =
-            let call_parameters =
-              call_parameters
-              >>| (fun call_parameters -> [call_parameters])
-              |> Option.value ~default:[]
-            in
-            List.map parameters ~f:expression
-            |> (fun elements -> Expression.Tuple (call_parameters @ elements))
-            |> Node.create_with_default_location
-          in
-          [{ Argument.name = None; value = tuple }]
-      | [parameter] ->
-          [{ Argument.name = None; value = expression parameter }]
-      | _ ->
-          []
-    in
-    [
-      Access.Identifier "__getitem__";
-      Access.Call (Node.create_with_default_location parameter);
-    ]
-  in
-
-  let rec access annotation =
-    match annotation with
-    | Bottom -> Access.create "$bottom"
-    | Callable { implementation; overloads; _ } ->
-        let convert { annotation; parameters } =
-          let call_parameters =
-            match parameters with
-            | Defined parameters ->
-                let parameter parameter =
-                  let call ?(default = false) name argument annotation =
-                    let annotation =
-                      annotation
-                      >>| (fun annotation ->
-                          [{
-                            Argument.name = None;
-                            value = expression annotation;
-                          }])
-                      |> Option.value ~default:[]
-                    in
-                    let arguments =
-                      let default =
-                        if default then
-                          [
-                            {
-                              Argument.name = None;
-                              value = Access.expression (Access.create "default");
-                            };
-                          ]
-                        else
-                          []
-                      in
-                      [{ Argument.name = None; value = Access.expression argument }]
-                      @ annotation @ default
-                    in
-                    Access.expression
-                      (Access.call ~arguments ~location:Location.Reference.any ~name ())
-                  in
-                  match parameter with
-                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                      call "Keywords" name (Some annotation)
-                  | Parameter.Named { Parameter.name; annotation; default } ->
-                      call "Named" ~default name (Some annotation)
-                  | Parameter.Variable { Parameter.name; annotation; _ } ->
-                      call "Variable" name (Some annotation)
-                in
-                List (List.map parameters ~f:parameter)
-                |> Node.create_with_default_location
-            | Undefined ->
-                Node.create_with_default_location Ellipses
-          in
-          get_item_call ~call_parameters [annotation]
-        in
-        let overloads =
-          let overloads = List.concat_map overloads ~f:convert in
-          if List.is_empty overloads then
-            []
-          else
-            [
-              Access.Identifier "__getitem__";
-              Access.Call
-                (Node.create_with_default_location [
-                    {
-                      Argument.name = None;
-                      value = Node.create_with_default_location (Access overloads);
-                    }
-                  ]);
-            ]
-        in
-        (Access.create "typing.Callable") @ (convert implementation) @ overloads
-    | Deleted -> Access.create "$deleted"
-    | Object -> Access.create "object"
-    | Optional Bottom ->
-        split "None"
-    | Optional parameter ->
-        (Access.create "typing.Optional") @ (get_item_call [parameter])
-    | Parametric { name = "typing.Optional"; parameters = [Bottom] } ->
-        split "None"
-    | Parametric { name; parameters } ->
-        (split (reverse_substitute name)) @ (get_item_call parameters)
-    | Primitive name ->
-        split name
-    | Top -> Access.create "$unknown"
-    | Tuple elements ->
-        let parameters =
-          match elements with
-          | Bounded parameters -> parameters
-          | Unbounded parameter -> [parameter; Primitive "..."]
-        in
-        (Access.create "typing.Tuple") @ (get_item_call parameters)
-    | TypedDictionary { name; fields; total } ->
-        let argument =
-          let tuple =
-            let tail =
-              let field_to_tuple { name; annotation } =
-                Node.create_with_default_location (Expression.Tuple [
-                    Node.create_with_default_location (Expression.String {
-                        value = name;
-                        kind = StringLiteral.String;
-                      });
-                    expression annotation;
-                  ])
-              in
-              List.map fields ~f:field_to_tuple
-            in
-            let totality =
-              (if total then Expression.True else Expression.False)
-              |> Node.create_with_default_location
-            in
-            Expression.String { value = name; kind = StringLiteral.String }
-            |> Node.create_with_default_location
-            |> (fun name -> Expression.Tuple(name :: totality :: tail))
-            |> Node.create_with_default_location
-          in
-          { Argument.name = None; value = tuple; }
-        in
-        (Access.create "mypy_extensions.TypedDict") @ [
-          Access.Identifier "__getitem__";
-          Access.Call (Node.create_with_default_location ([argument]));
-        ]
-    | Union parameters ->
-        (Access.create "typing.Union") @ (get_item_call parameters)
-    | Variable { variable; _ } -> split variable
-  in
-
-  let value =
-    match annotation with
-    | Primitive "..." -> Ellipses
-    | _ -> Access (access annotation)
-  in
-  Node.create_with_default_location value
-
-
-let access annotation =
-  match expression annotation with
-  | { Node.value = Access access; _ } -> access
-  | _ -> failwith "Annotation expression is not an access"
 
 
 module Transform = struct
