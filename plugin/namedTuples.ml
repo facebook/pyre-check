@@ -12,110 +12,110 @@ open Statement
 
 
 let transform_ast ({ Source.statements; _ } as source) =
-  let extract_attributes expression =
-    match expression with
-    | {
-      Node.location;
-      value =
-        Access [
-          Access.Identifier module_name;
-          Access.Identifier named_tuple;
-          Access.Call { Node.value = arguments; _ };
-        ];
-    } when (module_name = "typing" &&
-            named_tuple = "NamedTuple") ||
-           (module_name = "collections" &&
-            named_tuple = "namedtuple") ->
-        let any_annotation = Node.create ~location (Access (Access.create "typing.Any")) in
-        let attributes =
-          match arguments with
-          | [
-            _;
-            {
-              Argument.value = {
-                value = String { StringLiteral.value = serialized; _ };
-                _
-              };
+  let rec expand_named_tuples ({ Node.location; value } as statement) =
+    let extract_attributes expression =
+      match expression with
+      | {
+        Node.location;
+        value =
+          Access [
+            Access.Identifier module_name;
+            Access.Identifier named_tuple;
+            Access.Call { Node.value = arguments; _ };
+          ];
+      } when (module_name = "typing" &&
+              named_tuple = "NamedTuple") ||
+             (module_name = "collections" &&
+              named_tuple = "namedtuple") ->
+          let any_annotation = Node.create ~location (Access (Access.create "typing.Any")) in
+          let attributes =
+            match arguments with
+            | [
               _;
-            };
-          ] ->
-              String.split serialized ~on:' '
-              |> List.map ~f:(fun name -> name, any_annotation, None)
-          | [_; { Argument.value = { Node.value = List arguments; _ }; _ }]
-          | [_; { Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
-              let accessify ({ Node.value; _ } as expression) =
-                match value with
-                | String { StringLiteral.value = name; _ } ->
-                    name, any_annotation, None
-                | Tuple [
-                    { Node.value = String { StringLiteral.value = name; _ }; _ };
-                    annotation;
-                  ] ->
-                    name, annotation, None
-                | _ ->
-                    Expression.show expression, any_annotation, None
-              in
-              List.map arguments ~f:accessify
-          | _ ->
-              []
-        in
-        Some attributes
-    | _ ->
-        None
-  in
-  let tuple_attributes ~parent ~location attributes =
-    let attribute_statements =
-      let attribute (name, annotation, value) =
-        let target =
-          Access (parent @ (Access.create name))
+              {
+                Argument.value = {
+                  value = String { StringLiteral.value = serialized; _ };
+                  _
+                };
+                _;
+              };
+            ] ->
+                String.split serialized ~on:' '
+                |> List.map ~f:(fun name -> name, any_annotation, None)
+            | [_; { Argument.value = { Node.value = List arguments; _ }; _ }]
+            | [_; { Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
+                let accessify ({ Node.value; _ } as expression) =
+                  match value with
+                  | String { StringLiteral.value = name; _ } ->
+                      name, any_annotation, None
+                  | Tuple [
+                      { Node.value = String { StringLiteral.value = name; _ }; _ };
+                      annotation;
+                    ] ->
+                      name, annotation, None
+                  | _ ->
+                      Expression.show expression, any_annotation, None
+                in
+                List.map arguments ~f:accessify
+            | _ ->
+                []
+          in
+          Some attributes
+      | _ ->
+          None
+    in
+    let tuple_attributes ~parent ~location attributes =
+      let attribute_statements =
+        let attribute (name, annotation, value) =
+          let target =
+            Access (parent @ (Access.create name))
+            |> Node.create ~location
+          in
+          Assign {
+            Assign.target;
+            annotation = Some annotation;
+            value = Option.value value ~default:(Node.create Ellipses ~location);
+            parent = Some parent;
+          }
           |> Node.create ~location
         in
-        Assign {
-          Assign.target;
-          annotation = Some annotation;
-          value = Option.value value ~default:(Node.create Ellipses ~location);
-          parent = Some parent;
-        }
-        |> Node.create ~location
+        List.map attributes ~f:attribute
       in
-      List.map attributes ~f:attribute
+      attribute_statements
     in
-    attribute_statements
-  in
-  let tuple_constructor ~parent ~location attributes =
-    let parameters =
-      let self_parameter = Parameter.create ~name:("self") () in
-      let to_parameter (name, annotation, value) =
-        let value =
-          match value with
-          | Some { Node.value = Ellipses; _ } -> None
-          | _ -> value
+    let tuple_constructor ~parent ~location attributes =
+      let parameters =
+        let self_parameter = Parameter.create ~name:"self" () in
+        let to_parameter (name, annotation, value) =
+          let value =
+            match value with
+            | Some { Node.value = Ellipses; _ } -> None
+            | _ -> value
+          in
+          Parameter.create ?value ~annotation ~name:("$parameter$" ^ name) ()
         in
-        Parameter.create ?value ~annotation ~name:("$parameter$" ^ name) ()
+        self_parameter :: List.map attributes ~f:to_parameter
       in
-      self_parameter :: List.map attributes ~f:to_parameter
+      Statement.Define {
+        Define.name = parent @ Access.create "__init__";
+        parameters;
+        body = [
+          Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
+        ];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = Some parent;
+      }
+      |> Node.create ~location
     in
-    Statement.Define {
-      Define.name = parent @ Access.create "__init__";
-      parameters;
-      body = [
-        Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
-      ];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = Some parent;
-    }
-    |> Node.create ~location
-  in
-  let tuple_base ~location =
-    {
-      Argument.name = None;
-      value = Node.create ~location (Access (Access.create "typing.NamedTuple"));
-    }
-  in
-  let rec expand_named_tuples ({ Node.location; value } as statement) =
+    let tuple_base ~location =
+      {
+        Argument.name = None;
+        value = Node.create ~location (Access (Access.create "typing.NamedTuple"));
+      }
+    in
     let value =
       match value with
       | Assign {
@@ -191,6 +191,8 @@ let transform_ast ({ Source.statements; _ } as source) =
               Class.bases = List.rev reversed_bases;
               body = attributes @ (List.map ~f:expand_named_tuples body);
             }
+      | Define ({ Define.body; _ } as define) ->
+          Define { define with Define.body = (List.map ~f:expand_named_tuples body) }
       | _ ->
           value
     in

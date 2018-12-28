@@ -139,7 +139,6 @@ let test_transform_ast _ =
           T.b: typing.Any
     |};
 
-  (* Don't transform namedtuples nested in functions. *)
   assert_expand
     {|
       def foo():
@@ -147,7 +146,8 @@ let test_transform_ast _ =
     |}
     {|
       def foo():
-        T = typing.NamedTuple('T')
+        class T(typing.NamedTuple):
+          def T.__init__(self): ...
     |}
 
 
