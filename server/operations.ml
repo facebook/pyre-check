@@ -136,7 +136,7 @@ let start
       } as server_configuration)
     () =
   let ({ State.errors; _ } as state) =
-    let matches_configuration_version =  Some (Version.version ()) = expected_version in
+    let matches_configuration_version = Some (Version.version ()) = expected_version in
     match saved_state_action, matches_configuration_version with
     | Some (Load (LoadFromProject _)), true
     | Some (Load (LoadFromFiles _)), _ ->

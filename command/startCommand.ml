@@ -561,6 +561,7 @@ let run_start_command
     save_state_to
     changed_files_path
     saved_state_project
+    configuration_file_hash
     verbose
     expected_version
     sections
@@ -597,6 +598,7 @@ let run_start_command
       ~infer
       ~recursive_infer
       ~run_additional_checks
+      ?configuration_file_hash
       ~strict
       ~declare
       ~show_error_traces
@@ -678,5 +680,9 @@ let command =
         "-saved-state-project"
         (optional string)
         ~doc:"Pyre will attempt to fetch the project's saved state from the project name."
+      +> flag
+        "-configuration-file-hash"
+        (optional string)
+        ~doc:"SHA1 of the .pyre_configuration used to initialize this server."
       ++ Specification.base_command_line_arguments)
     run_start_command

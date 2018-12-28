@@ -19,6 +19,7 @@ let load
     Configuration.Server.configuration = ({
         Configuration.Analysis.expected_version;
         project_root;
+        configuration_file_hash;
         _;
       } as configuration);
     saved_state_action;
@@ -59,6 +60,7 @@ let load
           FetchSavedState.load
             ~watchman_root
             ~project_name
+            ~configuration_file_hash
             ~version:(Option.value_exn expected_version)
             ~target_path
         in

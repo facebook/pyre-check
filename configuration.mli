@@ -11,6 +11,7 @@ module Analysis: sig
     infer: bool;
     recursive_infer: bool;
     run_additional_checks: bool;
+    configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
     number_of_workers: int;
@@ -36,6 +37,7 @@ module Analysis: sig
     -> ?infer: bool
     -> ?recursive_infer: bool
     -> ?run_additional_checks: bool
+    -> ?configuration_file_hash: string
     -> ?parallel: bool
     -> ?filter_directories: Path.t list
     -> ?number_of_workers: int

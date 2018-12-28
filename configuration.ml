@@ -14,6 +14,7 @@ module Analysis = struct
     infer: bool;
     recursive_infer: bool;
     run_additional_checks: bool;
+    configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
     number_of_workers: int;
@@ -50,6 +51,7 @@ module Analysis = struct
       ?(infer = false)
       ?(recursive_infer = false)
       ?(run_additional_checks = false)
+      ?configuration_file_hash
       ?(parallel = true)
       ?filter_directories
       ?(number_of_workers = 4)
@@ -73,6 +75,7 @@ module Analysis = struct
       infer;
       recursive_infer;
       run_additional_checks;
+      configuration_file_hash;
       parallel;
       filter_directories;
       number_of_workers;
