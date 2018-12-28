@@ -135,7 +135,7 @@ val infer_protocols
   -> unit
   -> unit
 
-val propagate_nested_classes: (module Handler) -> Resolution.t -> Source.t -> unit
+val propagate_nested_classes: (module Handler) -> Resolution.t -> Type.t -> unit
 
 module Builder : sig
   val create: unit -> t

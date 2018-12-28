@@ -978,58 +978,51 @@ let infer_protocols
   Statistics.performance ~name:"inferred protocol implementations" ~timer ()
 
 
-let propagate_nested_classes (module Handler: Handler) resolution source =
-  let module Visit = Visit.MakeStatementVisitor(struct
-      type t = unit
-
-      let visit_children _ =
-        true
-
-      let statement { Source.handle; _ } _ = function
-        | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
-            let primitive name =
-              Access.expression name
-              |> Type.create ~aliases:Handler.aliases
-              |> Type.split
-              |> fst
-            in
-            let nested_class_names { Statement.Class.name; body; _ } =
-              let extract_classes = function
-                | { Node.value = Class { name = nested_name; _ }; _ } ->
-                    Some (Access.drop_prefix nested_name ~prefix:name, nested_name)
-                | _ ->
-                    None
-              in
-              List.filter_map ~f:extract_classes body
-            in
-            let create_alias added_sofar (stripped_name, full_name) =
-              let alias = name @ stripped_name in
-              if List.exists added_sofar ~f:(Access.equal alias) then
-                added_sofar
-              else
-                begin
-                  Handler.register_alias ~handle ~key:(primitive alias) ~data:(primitive full_name);
-                  stripped_name :: added_sofar
-                end
-            in
-            let own_nested_classes =
-              nested_class_names definition
-              |> List.map ~f:snd
-            in
-            primitive name
-            |> TypeOrder.successors (module Handler.TypeOrderHandler)
-            |> List.filter_map ~f:(Resolution.class_definition resolution)
-            |> List.map ~f:Node.value
-            |> List.concat_map ~f:nested_class_names
-            |> List.fold ~f:create_alias ~init:own_nested_classes
-            |> ignore
+let propagate_nested_classes (module Handler: Handler) resolution annotation =
+  let propagate
+      {
+        Resolution.class_definition = { Node.location; value = ({ name; _ } as definition) };
+        successors;
+        _;
+      }
+    =
+    let handle =
+      Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
+      |> fun { Location.path; _ } -> File.Handle.create path
+    in
+    let nested_class_names { Statement.Class.name; body; _ } =
+      let extract_classes = function
+        | { Node.value = Class { name = nested_name; _ }; _ } ->
+            Some (Access.drop_prefix nested_name ~prefix:name, nested_name)
         | _ ->
-            ()
-    end)
+            None
+      in
+      List.filter_map ~f:extract_classes body
+    in
+    let create_alias added_sofar (stripped_name, full_name) =
+      let alias = name @ stripped_name in
+      if List.exists added_sofar ~f:(Access.equal alias) then
+        added_sofar
+      else
+        begin
+          let primitive access = Type.Primitive (Access.show access) in
+          Handler.register_alias ~handle ~key:(primitive alias) ~data:(primitive full_name);
+          alias :: added_sofar
+        end
+    in
+    let own_nested_classes =
+      nested_class_names definition
+      |> List.map ~f:snd
+    in
+    successors
+    |> List.filter_map ~f:(Resolution.class_definition resolution)
+    |> List.map ~f:Node.value
+    |> List.concat_map ~f:nested_class_names
+    |> List.fold ~f:create_alias ~init:own_nested_classes
   in
-  Type.Cache.disable ();
-  Visit.visit () source;
-  Type.Cache.enable ();
+  Handler.class_definition annotation
+  >>| propagate
+  |> ignore
 
 
 module Builder = struct

@@ -8904,6 +8904,20 @@ let test_check_nested_class_inheritance _ =
       def foo() -> Y.N.NN.NNN:
           return Y.N.NN.NNN()
     |}
+    [];
+  assert_type_errors
+    {|
+      class B1:
+        class N:
+          pass
+      class B2:
+        class N:
+          pass
+      class C(B1, B2):
+        pass
+      def foo() -> C.N:
+        return C.N()
+    |}
     []
 
 

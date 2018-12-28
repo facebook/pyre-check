@@ -1602,17 +1602,11 @@ let test_propagate_nested_classes _ =
     Type.Cache.disable ();
     Type.Cache.enable ();
     let sources = List.map sources ~f:Preprocessing.preprocess in
-    let environment = Environment.Builder.create () in
-    let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-    let resolution = TypeCheck.resolution (module Handler) () in
-    let _ = List.map ~f:(Environment.register_class_definitions (module Handler)) sources in
-    Environment.register_aliases (module Handler) sources;
-    List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
+    let handler = populate_with_sources sources in
 
-    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources;
     let assert_alias (alias, target) =
       parse_single_expression alias
-      |> parse_annotation (module Handler)
+      |> parse_annotation handler
       |> Type.show
       |> assert_equal  ~printer:(fun string -> string) target
     in

@@ -294,7 +294,7 @@ let test_constructors _ =
       class tuple(typing.Generic[_T]):
         def tuple.__init__(self) -> None: ...
     |}
-    (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[_T, ...]]");
+    (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[typing.TypeVar('_T'), ...]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor

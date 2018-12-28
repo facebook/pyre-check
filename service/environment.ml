@@ -36,7 +36,6 @@ let populate
   (* Build type order. *)
   List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-  List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources;
 
   if debug then
     (* Validate integrity of the type order built so far before moving forward.
@@ -57,6 +56,9 @@ let populate
   List.iter ~f:(Environment.register_globals (module Handler) resolution) sources;
   (* TODO(T30713406): Merge with class registration. *)
   List.iter ~f:Handler.refine_class_definition all_annotations;
+  Type.Cache.disable ();
+  List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations;
+  Type.Cache.enable ();
 
   List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
