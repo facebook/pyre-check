@@ -4,28 +4,52 @@
     "next": "Next",
     "previous": "Previous",
     "tagline": "A performant type-checker for Python 3",
-    "configuration": "Configuring Pyre",
-    "Configuring Pyre": "Configuring Pyre",
-    "error-suppression": "Error Suppression",
-    "Error Suppression": "Error Suppression",
-    "error-types": "Pyre Errors",
-    "Error Types": "Error Types",
-    "gradual-typing": "Gradual Typing",
-    "Gradual Typing": "Gradual Typing",
-    "guided-tour": "Guided Tour",
-    "Guided Tour": "Guided Tour",
-    "installation": "Installing Pyre",
-    "Installation": "Installation",
-    "lsp-integration": "See Pyre Errors In Your Editor",
-    "Editor Integration": "Editor Integration",
-    "overview": "Overview",
-    "Overview": "Overview",
-    "watchman-integration": "Watchman Integration",
-    "Watchman Integration": "Watchman Integration",
-    "Getting Started": "Getting Started",
-    "Documentation": "Documentation",
-    "GitHub": "GitHub",
-    "Contents": "Contents"
+    "docs": {
+      "configuration": {
+        "title": "Configuring Pyre",
+        "sidebar_label": "Configuring Pyre"
+      },
+      "error-suppression": {
+        "title": "Error Suppression",
+        "sidebar_label": "Error Suppression"
+      },
+      "error-types": {
+        "title": "Pyre Errors",
+        "sidebar_label": "Error Types"
+      },
+      "gradual-typing": {
+        "title": "Gradual Typing",
+        "sidebar_label": "Gradual Typing"
+      },
+      "guided-tour": {
+        "title": "Guided Tour",
+        "sidebar_label": "Guided Tour"
+      },
+      "installation": {
+        "title": "Installing Pyre",
+        "sidebar_label": "Installation"
+      },
+      "lsp-integration": {
+        "title": "See Pyre Errors In Your Editor",
+        "sidebar_label": "Editor Integration"
+      },
+      "overview": {
+        "title": "Overview",
+        "sidebar_label": "Overview"
+      },
+      "watchman-integration": {
+        "title": "Watchman Integration",
+        "sidebar_label": "Watchman Integration"
+      }
+    },
+    "links": {
+      "Getting Started": "Getting Started",
+      "Documentation": "Documentation",
+      "GitHub": "GitHub"
+    },
+    "categories": {
+      "Contents": "Contents"
+    }
   },
   "pages-strings": {
     "Help Translate|recruit community translators for your project": "Help Translate",
