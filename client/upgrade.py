@@ -139,6 +139,74 @@ def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
     return json_to_errors(input)
 
 
+def partition_on_any_delimiter(
+    string: str, delimiters: List[str]
+) -> Tuple[str, str, str]:
+    prefix = ""
+    delimiter = ""
+    suffix = ""
+    for index, char in enumerate(string):
+        if char in delimiters:
+            delimiter = str(char)
+            suffix = string[index + 1 :]
+            break
+        prefix += char
+
+    return prefix, delimiter, suffix
+
+
+def generate_full_comment(
+    max_line_length: Optional[int], indent: str, codes: List[str], description: str
+) -> List[str]:
+    prefix = "{}# pyre-fixme[{}]: ".format(indent, ", ".join(codes))
+    comment = prefix + description
+
+    if (
+        not max_line_length
+        or len(comment) <= max_line_length
+        # If the prefix is too long, there is no way we can split this description.
+        or len(prefix) > max_line_length
+    ):
+        return [comment]
+
+    preamble_prefix = indent + "# pyre: "
+    # Even if the preamble prefix is definitely shorter than the prefix, use the
+    # length of the prefix to determine the available columns for ease of
+    # implementation.
+    available_columns = max_line_length - len(prefix)
+
+    buffered_line = ""
+    result = []
+    while len(description):
+        token, delimiter, remaining = partition_on_any_delimiter(
+            description, delimiters=[" ", "."]
+        )
+
+        if buffered_line and (
+            len(buffered_line) + len(token) + len(delimiter) > available_columns
+        ):
+            # This new token would make the line exceed the limit,
+            # hence terminate what we have accumulated.
+            result.append((preamble_prefix + buffered_line).rstrip())
+            buffered_line = ""
+
+        buffered_line = buffered_line + token + delimiter
+        description = remaining
+
+    result.append((prefix + buffered_line).rstrip())
+    return result
+
+
+def remove_comment_preamble(lines: List[str]) -> None:
+    while lines:
+        old_line = lines.pop()
+        new_line = re.sub(r"# pyre: .*$", "", old_line).rstrip()
+        if old_line == "" or new_line != "":
+            # The preamble has ended.
+            lines.append(new_line)
+            return
+
+
 def fix(
     arguments: argparse.Namespace,
     filename: str,
@@ -146,6 +214,9 @@ def fix(
     descriptions: Dict[int, str],
 ) -> None:
     custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
+    max_line_length = (
+        arguments.max_line_length if arguments.max_line_length > 0 else None
+    )
     path = pathlib.Path(filename)
     lines = path.read_text().split("\n")  # type: List[str]
 
@@ -157,29 +228,29 @@ def fix(
             if list(codes[number]) == ["0"]:
                 # Handle unused ignores.
                 replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
-                if replacement != "":
+                if replacement == "":
+                    remove_comment_preamble(new_lines)
+                else:
                     new_lines.append(replacement)
                 continue
 
             sorted_codes = sorted(list(codes[number]))
             sorted_descriptions = sorted(list(descriptions[number]))
 
-            description = ""
-            if custom_comment:
-                description = ": " + custom_comment
-            else:
-                description = ": " + ", ".join(sorted_descriptions)
+            description = (
+                custom_comment if custom_comment else ", ".join(sorted_descriptions)
+            )
 
-            full_comment = "{}# pyre-fixme[{}]{}".format(
+            full_comment = generate_full_comment(
+                max_line_length,
                 line[: (len(line) - len(line.lstrip(" ")))],  # indent
-                ", ".join([str(code) for code in sorted_codes]),
+                sorted_codes,
                 description,
             )
-            LOG.info("Adding `%s` on line %d", full_comment, number)
+            LOG.info("Adding comment on line %d: %s", number, "\n".join(full_comment))
+            new_lines.extend(full_comment)
 
-            new_lines.extend([full_comment, line])
-        else:
-            new_lines.append(line)
+        new_lines.append(line)
 
     path.write_text("\n".join(new_lines))
 
@@ -239,6 +310,13 @@ def run_missing_overridden_return_annotations(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument(
+        "--max-line-length",
+        default=88,
+        type=int,
+        help="Enforce maximum line length on new comments "
+        + "(default: %(default)s, use 0 to disable)",
+    )
 
     commands = parser.add_subparsers()
 

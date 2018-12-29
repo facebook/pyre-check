@@ -160,6 +160,7 @@ class FixmeTest(unittest.TestCase):
     def test_fixme(self, path_read_text) -> None:
         arguments = MagicMock()
         arguments.comment = None
+        arguments.max_line_length = 88
 
         upgrade.run_fixme(arguments, {})
 
@@ -280,3 +281,106 @@ class FixmeTest(unittest.TestCase):
             upgrade.run_fixme(arguments, result)
             arguments.comment = None
             path_write_text.assert_called_once_with("1\n2")
+
+        # Test wrapping of long lines.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            arguments_short = MagicMock()
+            arguments_short.comment = None
+            arguments_short.max_line_length = 35
+
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 1,
+                        "description": "Error [1]: description one, "
+                        + "that has a pretty verbose text",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "description": "Error [2]: description-that-will-not-break-"
+                        + "even-when-facing-adversities",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 3,
+                        "description": "Error [3]: description.with "
+                        + "mixed.separators.that should.also.break",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 4,
+                        "description": "Error [4]: description starts short, "
+                        + "but-then-has-a-very-long-type-name-or-similar "
+                        + "that does not break",
+                    },
+                ]
+            )
+            path_read_text.return_value = "line 1\nline 2\nline 3\nline 4"
+            upgrade.run_fixme(arguments_short, result)
+            path_write_text.assert_called_once_with(
+                """# pyre: description one,
+# pyre: that has a pretty
+# pyre-fixme[1]: verbose text
+line 1
+# pyre-fixme[2]: description-that-will-not-break-even-when-facing-adversities
+line 2
+# pyre: description.with
+# pyre: mixed.separators.
+# pyre: that should.also.
+# pyre-fixme[3]: break
+line 3
+# pyre: description
+# pyre: starts short,
+# pyre: but-then-has-a-very-long-type-name-or-similar
+# pyre: that does not
+# pyre-fixme[4]: break
+line 4"""
+            )
+
+        # Test removal of extraneous ignores (wrapping lines).
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 3,
+                        "description": "Error [0]: extraneous ignore",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 9,
+                        "description": "Error [0]: extraneous ignore",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 13,
+                        "description": "Error [0]: extraneous ignore",
+                    },
+                ]
+            )
+            path_read_text.return_value = """# pyre: description one,
+# pyre: that has a pretty
+# pyre-fixme[1]: verbose text
+line 1
+# pyre: other description with
+# pyre-fixme[2]: wrapping lines
+line 2
+# pyre: yet other description with
+# pyre-fixme[3]: wrapping lines
+line 3
+
+# pyre: long description
+# pyre-fixme[4]: preceded by whitespace
+line 4"""
+            upgrade.run_fixme(arguments, result)
+            path_write_text.assert_called_once_with(
+                """line 1
+# pyre: other description with
+# pyre-fixme[2]: wrapping lines
+line 2
+line 3
+
+line 4"""
+            )
