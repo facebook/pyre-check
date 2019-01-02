@@ -11,6 +11,7 @@
 
 (tests
  (names
+  annotationTest
   assertTest
   attributeTest
   dataClassTest
