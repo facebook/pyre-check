@@ -8,6 +8,13 @@ open OUnit2
 open IntegrationTest
 
 
+let test_check_function_parameters_with_backups _ =
+  assert_type_errors "(1).__add__(1)" [];
+  assert_type_errors "(1).__add__(1j)" [];
+  assert_type_errors "(1).__add__(1.0)" [];
+  assert_type_errors "(1).__iadd__(1.0)" []
+
+
 let test_check_function_parameters _ =
   assert_type_errors
     {|
@@ -260,9 +267,244 @@ let test_check_function_parameter_errors _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
+
+let test_check_function_overloads _ =
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; all @overload stubs must be followed by implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str) -> str:
+          pass
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  (* Technically invalid; @overload stubs must comprehensively cover implementation *)
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int) -> int:
+          pass
+        def derp(self, x: typing.Union[int, str]) -> typing.Union[int, str]:
+          if isinstance(x, int):
+            return 0
+          else:
+            return ""
+
+      def herp(x: Foo) -> int:
+        return x.derp(5)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      @overload
+      def derp(x: str) -> str: ...
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[[Named(x, str)], str][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      @overload
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  (* The overloaded stub will override the implementation *)
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+      @overload
+      def derp(x: str) -> str: ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
+    ];
+
+  assert_type_errors
+    {|
+      @overload
+      def derp(x: int) -> int: ...
+      def derp(x: str) -> str: ...
+      def derp(): ...
+
+      reveal_type(derp)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `derp` is " ^
+      "`typing.Callable(derp)[[], unknown][[[Named(x, int)], int]]`."
+    ]
+
+
+let test_check_constructor_overloads _ =
+  assert_type_errors
+    {|
+      class Class:
+        @overload
+        def __init__(self, i: int) -> None: ...
+        @overload
+        def __init__(self, s: str) -> None: ...
+      def construct() -> None:
+        Class(1)
+        Class('asdf')
+    |}
+    []
+
+
+let test_check_variable_arguments _ =
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b) -> str:
+        return foo ( *b )
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `b` has no type specified.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.Any) -> int:
+        return foo ( *b )
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[str]) -> int:
+        return foo ( *b )
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[str]) -> None:
+        foo('asdf', *b)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[str]) -> None:
+        foo ( *b, 'asdf' )
+    |}
+    [
+      "Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: str) -> int:
+        return 1
+      def bar(b: typing.List[str]) -> None:
+        foo ( *b, 1, 'asdf' )
+    |}
+    ["Too many arguments [19]: Call `foo` expects 2 arguments, 4 were provided."];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: str) -> int:
+        return 1
+      def bar(b: typing.List[int]) -> None:
+        foo ( *b, 'asdf' )
+    |}
+    ["Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided."];
+
+  assert_type_errors
+    {|
+      def durp(a: int, b: str) -> int:
+        return 1
+      def bar(b: typing.List[int]) -> None:
+        durp( *b, 1.0 )
+    |}
+    [
+      "Too many arguments [19]: Call `durp` expects 2 arguments, 3 were provided.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[str]) -> int:
+        return foo('asdf', *b)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";]
+
+
 let () =
-  "functionParameters">:::[
+  "signatureSelection">:::[
+    "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameter_errors">::test_check_function_parameter_errors;
+    "check_function_overloads">::test_check_function_overloads;
+    "check_constructor_overloads">::test_check_constructor_overloads;
+    "check_variable_arguments">::test_check_variable_arguments;
   ]
   |> Test.run

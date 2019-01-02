@@ -11,8 +11,8 @@
 
 (tests
  (names
-  unionTest
-  functionParameterTest)
+  signatureSelectionTest
+  unionTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps
