@@ -168,7 +168,6 @@ let test_check_function_parameters _ =
     |}
     [];
 
-
   assert_type_errors
     {|
       def foo(x) -> None:
@@ -274,7 +273,72 @@ let test_check_function_parameters _ =
       def foo() -> typing.List[int]:
         return x.__getitem__(slice(0, 1, None))
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo(1,2)
+    |}
+    ["Too many arguments [19]: Call `foo` expects 1 argument, 2 were provided."];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo()
+    |}
+    ["Missing argument [20]: Call `foo` expects argument `x`."];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return ""
+      def f() -> None:
+        a = foo(y=4)
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `y` to call `foo`."];
+
+  assert_type_errors
+    {|
+      class C:
+        def f(self, x: str) -> None:
+          ...
+      def f(c: C) -> None:
+        a = c.f()
+    |}
+    ["Missing argument [20]: Call `C.f` expects argument `x`."];
+
+  assert_type_errors
+    {|
+      class C:
+        def f(self, x: str) -> None:
+          ...
+      def f(c: C) -> None:
+        a = c.f("", "")
+    |}
+    ["Too many arguments [19]: Call `C.f` expects 1 argument, 2 were provided."];
+
+  assert_type_errors
+    {|
+      def foo(x: int, y: str) -> str:
+        return ""
+      def f() -> None:
+        a = foo()
+    |}
+    ["Missing argument [20]: Call `foo` expects argument `x`."];
+
+  assert_type_errors
+    {|
+      def foo() -> str:
+        return ""
+      def f() -> None:
+        a = foo(1,2,3,4)
+    |}
+    ["Too many arguments [19]: Call `foo` expects 0 arguments, 4 were provided."]
 
 
 let test_check_function_parameter_errors _ =

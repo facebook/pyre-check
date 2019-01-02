@@ -15,6 +15,7 @@
   assertTest
   attributeTest
   dataClassTest
+  decoratorTest
   formatStringTest
   globalTest
   signatureSelectionTest

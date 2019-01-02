@@ -1228,26 +1228,69 @@ let test_reveal_type _ =
       def foo(x) -> None:
         reveal_type(x)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `undefined`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `x` is `undefined`."];
   assert_type_errors
     {|
       def foo(x: int, y: int) -> None:
         reveal_type(x + y)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x.__add__.(...)` is `int`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `x.__add__.(...)` is `int`."];
   assert_type_errors
     {|
       def foo(x: int) -> None:
 
         reveal_type(int_to_str(x))
     |}
-    [
-      "Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`.";
-    ]
+    ["Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`."];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        bar, baz = list(range(2))
+        reveal_type(bar)
+        return bar
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(s: typing.Sequence[float]) -> list[float]:
+        l = list(s)
+        bar, baz = l
+        reveal_type(bar)
+        return l
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `float`."];
+
+  assert_type_errors
+    {|
+      def foo() -> dict[str, int]:
+        d = dict(a = 1, b = 2)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(map: typing.Mapping[str, int]) -> dict[str, int]:
+        d = dict(map)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+
+  assert_type_errors
+    {|
+      def foo(t: typing.Iterable[typing.Tuple[str, int]]) -> dict[str, int]:
+        d = dict(t)
+        bar = d['a']
+        reveal_type(bar)
+        return d
+    |}
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."]
 
 
 let test_coverage _ =
@@ -1297,14 +1340,6 @@ let test_coverage _ =
 
 
 let test_check _ =
-  assert_type_errors
-    {|
-      def f(l: typing.List[int]) -> int:
-        [a, b] = l
-        return a + b
-    |}
-    [];
-
   assert_type_errors
     {|
       x: typing.List[int]
@@ -1388,44 +1423,6 @@ let test_check _ =
 
   assert_type_errors
     {|
-      def derp()->int:
-          a, b = return_tuple()
-          return a+b
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      @typing.overload
-      def overloaded()->int:
-        pass
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      from typing import overload
-      @overload
-      def overloaded()->int:
-        pass
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Derp:
-        @property
-        async def get_int(self) -> int:
-          return 5
-
-        def test(self) -> int:
-          x = await self.get_int
-          return x
-    |}
-    [];
-
-  assert_type_errors
-    {|
       def f(x: int) -> None:
         x: str = int_to_str(x)
     |}
@@ -1469,107 +1466,6 @@ let test_check _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."];
-
-  assert_type_errors
-    {|
-      def foo(x: int) -> str:
-        return ""
-      def f() -> None:
-        a = foo(1,2)
-    |}
-    ["Too many arguments [19]: Call `foo` expects 1 argument, 2 were provided."];
-
-  assert_type_errors
-    {|
-      def foo(x: int) -> str:
-        return ""
-      def f() -> None:
-        a = foo()
-    |}
-    ["Missing argument [20]: Call `foo` expects argument `x`."];
-
-  assert_type_errors
-    {|
-      def foo(x: int) -> str:
-        return ""
-      def f() -> None:
-        a = foo(y=4)
-    |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `y` to call `foo`."];
-
-  assert_type_errors
-    {|
-      class C:
-        def f(self, x: str) -> None:
-          ...
-      def f(c: C) -> None:
-        a = c.f()
-    |}
-    ["Missing argument [20]: Call `C.f` expects argument `x`."];
-
-  assert_type_errors
-    {|
-      class C:
-        def f(self, x: str) -> None:
-          ...
-      def f(c: C) -> None:
-        a = c.f("", "")
-    |}
-    ["Too many arguments [19]: Call `C.f` expects 1 argument, 2 were provided."];
-
-  assert_type_errors
-    {|
-      def foo(x: int, y: str) -> str:
-        return ""
-      def f() -> None:
-        a = foo()
-    |}
-    ["Missing argument [20]: Call `foo` expects argument `x`."];
-
-  assert_type_errors
-    {|
-      def foo() -> str:
-        return ""
-      def f() -> None:
-        a = foo(1,2,3,4)
-    |}
-    ["Too many arguments [19]: Call `foo` expects 0 arguments, 4 were provided."];
-
-  assert_type_errors
-    {|
-      class C:
-        def __init__(self, x: int) -> None:
-          self.a = x
-        def a(self) -> int:
-          return self.a
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def identity(x: int) -> int:
-        return x
-      class C:
-        def __init__(self, x: int) -> None:
-          self.a = identity(x)
-        def a(self) -> int:
-          return self.a
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `a`" ^
-      " of class `C` has type `int` but no type is specified.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`."
-    ];
-
-  assert_type_errors
-    {|
-      def foo( *args: int) -> typing.Iterable[str]:
-        return args
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Iterable[str]` but " ^
-      "got `typing.Tuple[int, ...]`.";
-    ];
 
   assert_type_errors
     {|
@@ -1626,6 +1522,20 @@ let test_check _ =
     |}
     ["Incompatible return type [7]: Expected `int` but got `unknown`."];
 
+  (* object methods are picked up for optionals. *)
+  assert_type_errors
+    {|
+      def f() -> int:
+        return None.__sizeof__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def f(x: typing.List[int]) -> typing.Set[str]:
+        return {1, *x}
+    |}
+    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
   assert_type_errors
     {|
       def f(meta: typing.Type[int]) -> type[int]:
@@ -1656,71 +1566,7 @@ let test_check _ =
         pass
       expect_type_float(int)
     |}
-    [];
-
-  (* object methods are picked up for optionals. *)
-  assert_type_errors
-    {|
-      def f() -> int:
-        return None.__sizeof__()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f(x: typing.List[int]) -> typing.Set[str]:
-        return {1, *x}
-    |}
-    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
-
-  assert_type_errors
-    {|
-      def foo() -> int:
-        bar, baz = list(range(2))
-        reveal_type(bar)
-        return bar
-    |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
-
-  assert_type_errors
-    {|
-      def foo(s: typing.Sequence[float]) -> list[float]:
-        l = list(s)
-        bar, baz = l
-        reveal_type(bar)
-        return l
-    |}
-    ["Revealed type [-1]: Revealed type for `bar` is `float`."];
-
-  assert_type_errors
-    {|
-      def foo() -> dict[str, int]:
-        d = dict(a = 1, b = 2)
-        bar = d['a']
-        reveal_type(bar)
-        return d
-    |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
-
-  assert_type_errors
-    {|
-      def foo(map: typing.Mapping[str, int]) -> dict[str, int]:
-        d = dict(map)
-        bar = d['a']
-        reveal_type(bar)
-        return d
-    |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
-
-  assert_type_errors
-    {|
-      def foo(t: typing.Iterable[typing.Tuple[str, int]]) -> dict[str, int]:
-        d = dict(t)
-        bar = d['a']
-        reveal_type(bar)
-        return d
-    |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."]
+    []
 
 
 let test_check_in _ =
@@ -2625,6 +2471,22 @@ let test_check_toplevel _ =
 let test_check_tuple _ =
   assert_type_errors
     {|
+      def derp()->int:
+          a, b = return_tuple()
+          return a+b
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def f(l: typing.List[int]) -> int:
+        [a, b] = l
+        return a + b
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(a: typing.Tuple[int, int]) -> None:
         a.tuple_method(1.0)
     |}
@@ -2788,6 +2650,16 @@ let test_check_tuple _ =
           return 1, int_to_int(z) if z is not None else None
     |}
     [];
+
+  assert_type_errors
+    {|
+      def foo( *args: int) -> typing.Iterable[str]:
+        return args
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Iterable[str]` but " ^
+      "got `typing.Tuple[int, ...]`.";
+    ];
 
   assert_type_errors
     {|
@@ -3024,73 +2896,6 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
-let test_check_contextmanager _ =
-  assert_type_errors
-    {|
-      @contextlib.contextmanager
-      def f()->typing.Iterator[int]:
-        yield 1
-
-      def g()->int:
-        with f() as number:
-          return number
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      @contextlib.contextmanager
-      def f()->typing.Iterator[int]:
-        yield 1
-
-      def g()->str:
-        with f() as number:
-          return number
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-
-  assert_type_errors
-    {|
-      @contextlib.contextmanager
-      def f() -> typing.Iterable[int]:
-        yield 1
-
-      def g() -> int:
-        with f() as number:
-          return number
-    |}
-    [
-      (* TODO(T27138096): Iterable should have attribute `__enter__`. *)
-      "Undefined attribute [16]: `typing.Iterable[typing.Any]` has no attribute `__enter__`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-
-  assert_type_errors
-    {|
-      @contextlib.contextmanager
-      def f() -> typing.Generator[int, None, None]:
-        yield 1
-
-      def g() -> int:
-        with f() as number:
-          return number
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class C:
-        @contextlib.contextmanager
-        def f(self) -> typing.Iterator[int]:
-          yield 1
-      def foo(c: C) -> str:
-        with c.f() as manager:
-          return manager
-        return ""
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
-
-
 let test_environment _ =
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
@@ -3234,7 +3039,6 @@ let () =
     "check_excepts">::test_check_excepts;
     "check_async">::test_check_async;
     "check_unbound_variables">::test_check_unbound_variables;
-    "check_contextmanager">::test_check_contextmanager;
     "environment">::test_environment;
     "scheduling">::test_scheduling;
   ]

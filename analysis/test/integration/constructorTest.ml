@@ -249,6 +249,32 @@ let test_check_init _ =
 
   assert_type_errors
     {|
+      class C:
+        def __init__(self, x: int) -> None:
+          self.a = x
+        def a(self) -> int:
+          return self.a
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def identity(x: int) -> int:
+        return x
+      class C:
+        def __init__(self, x: int) -> None:
+          self.a = identity(x)
+        def a(self) -> int:
+          return self.a
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a`" ^
+      " of class `C` has type `int` but no type is specified.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`."
+    ];
+
+  assert_type_errors
+    {|
        alias = int
     |}
     [];
