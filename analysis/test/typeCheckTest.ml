@@ -4914,79 +4914,6 @@ let test_format_string _ =
     ["Undefined name [18]: Global name `x` is undefined."]
 
 
-let test_check_nested_class_inheritance _ =
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      def foo() -> Y.Q:
-          return Y.Q()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      def foo() -> Y.Q:
-          return X.Q()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      class Z():
-          class Q():
-              pass
-
-      def foo() -> Y.Q:
-          return Z.Q()
-    |}
-    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
-  assert_type_errors
-    {|
-      class X:
-        class N:
-          class NN:
-            class NNN:
-              pass
-      class Y(X):
-        pass
-      def foo() -> Y.N.NN.NNN:
-          return Y.N.NN.NNN()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class B1:
-        class N:
-          pass
-      class B2:
-        class N:
-          pass
-      class C(B1, B2):
-        pass
-      def foo() -> C.N:
-        return C.N()
-    |}
-    []
-
-
 let test_check_variable_bindings _ =
   assert_type_errors
     {|
@@ -5069,6 +4996,5 @@ let () =
     "environment">::test_environment;
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;
-    "check_nested_class_inheritance">::test_check_nested_class_inheritance;
   ]
   |> Test.run

@@ -464,6 +464,79 @@ let test_check_explicit_method_call _ =
     []
 
 
+let test_check_nested_class_inheritance _ =
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return Y.Q()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return X.Q()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      class Z():
+          class Q():
+              pass
+
+      def foo() -> Y.Q:
+          return Z.Q()
+    |}
+    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
+  assert_type_errors
+    {|
+      class X:
+        class N:
+          class NN:
+            class NNN:
+              pass
+      class Y(X):
+        pass
+      def foo() -> Y.N.NN.NNN:
+          return Y.N.NN.NNN()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class B1:
+        class N:
+          pass
+      class B2:
+        class N:
+          pass
+      class C(B1, B2):
+        pass
+      def foo() -> C.N:
+        return C.N()
+    |}
+    []
+
+
 let () =
   "method">:::[
     "check_callable_protocols">::test_check_callable_protocols;
@@ -474,5 +547,6 @@ let () =
     "check_self">::test_check_self;
     "check_setitem">::test_check_setitem;
     "check_static">::test_check_static;
+    "check_nested_class_inheritance">::test_check_nested_class_inheritance;
   ]
   |> Test.run
