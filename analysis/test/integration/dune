@@ -15,6 +15,7 @@
   signatureSelectionTest
   constructorTest
   methodTest
+  varianceTest
   unionTest)
  (modules :standard \ integrationTest)
  (preprocess
