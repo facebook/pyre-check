@@ -2116,112 +2116,6 @@ let test_check_nested _ =
     []
 
 
-let test_check_refinement _ =
-  assert_type_errors
-    {|
-      def takes_int(a: int) -> None: pass
-      def foo() -> None:
-        x: float
-        x = 1
-        takes_int(x)
-        x = 1.0
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        l: typing.List[typing.Any] = []
-        l = [1]
-        l.append('asdf')
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        l: typing.List[int] = []
-        l.append('a')
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        l: typing.List[int] = None
-        l.append('a')
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
-
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if not x:
-          return 1
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if not x:
-          y = x
-        return x
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
-  assert_type_errors
-    {|
-      class A:
-          a: typing.Optional[int] = None
-          def foo(self) -> None:
-              if self.a is None:
-                  self.a = 5
-    |}
-    [];
-  assert_type_errors
-    {|
-      class A:
-          a: typing.Optional[int] = None
-          def bar(self) -> int:
-              if self.a is not None:
-                  return self.a
-              else:
-                  return 1
-    |}
-    [];
-  assert_type_errors
-    {|
-      def bar(x: typing.Optional[int]) -> None:
-          if x and int_to_int(x) < 0:
-              y = 1
-    |}
-    [];
-  assert_type_errors
-    {|
-      def bar(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
-          if not input:
-            input = set()
-          return input
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def bar(input: typing.Optional[int]) -> int:
-          if not input:
-            input = not_annotated()
-          return input
-    |}
-    [
-      "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` " ^
-      "but is used as type `unknown`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ]
-
-
 let test_check_toplevel _ =
   assert_type_errors
     "int_to_int(1.0)"
@@ -2662,7 +2556,6 @@ let () =
     "check_imports">::test_check_imports;
     "check_yield">::test_check_generators;
     "check_nested">::test_check_nested;
-    "check_refinement">::test_check_refinement;
     "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
     "check_redundant_cast">::test_check_redundant_cast;

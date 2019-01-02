@@ -613,8 +613,112 @@ let test_check_immutable_annotations _ =
         def __init__(self) -> None:
           self.name: int = 1
     |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+
+
+let test_check_refinement _ =
+  assert_type_errors
+    {|
+      def takes_int(a: int) -> None: pass
+      def foo() -> None:
+        x: float
+        x = 1
+        takes_int(x)
+        x = 1.0
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[typing.Any] = []
+        l = [1]
+        l.append('asdf')
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[int] = []
+        l.append('a')
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        l: typing.List[int] = None
+        l.append('a')
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if not x:
+          return 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if not x:
+          y = x
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+  assert_type_errors
+    {|
+      class A:
+          a: typing.Optional[int] = None
+          def foo(self) -> None:
+              if self.a is None:
+                  self.a = 5
+    |}
+    [];
+  assert_type_errors
+    {|
+      class A:
+          a: typing.Optional[int] = None
+          def bar(self) -> int:
+              if self.a is not None:
+                  return self.a
+              else:
+                  return 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      def bar(x: typing.Optional[int]) -> None:
+          if x and int_to_int(x) < 0:
+              y = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      def bar(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
+          if not input:
+            input = set()
+          return input
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def bar(input: typing.Optional[int]) -> int:
+          if not input:
+            input = not_annotated()
+          return input
+    |}
     [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible variable type [9]: input is declared to have type `typing.Optional[int]` " ^
+      "but is used as type `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
 
@@ -625,5 +729,6 @@ let () =
     "check_invalid_type">::test_check_invalid_type;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "check_immutable_annotations">::test_check_immutable_annotations;
+    "check_refinement">::test_check_refinement;
   ]
   |> Test.run
