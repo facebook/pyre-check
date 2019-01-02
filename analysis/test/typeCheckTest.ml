@@ -1166,6 +1166,52 @@ let test_show_error_traces _ =
     ]
 
 
+let test_coverage _ =
+  let assert_coverage source expected =
+    let coverage =
+      let environment = Test.environment () in
+      let handle = "coverage_test.py" in
+      TypeCheck.check
+        ~configuration:Test.mock_configuration
+        ~environment
+        ~source:(parse ~handle source)
+      |> ignore;
+      Coverage.get ~handle:(File.Handle.create handle)
+      |> (fun coverage -> Option.value_exn coverage)
+    in
+    assert_equal ~printer:Coverage.show expected coverage
+  in
+  assert_coverage
+    {| def foo(): pass |}
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
+  assert_coverage
+    {|
+      def foo(y: int):
+        if condition():
+          x = y
+        else:
+          x = z
+    |}
+    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
+  assert_coverage
+    {|
+      def foo(y: asdf):
+        if condition():
+          x = y
+        else:
+          x = 1
+    |}
+    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
+
+  assert_coverage
+    {|
+      def foo(y) -> int:
+        x = returns_undefined()
+        return x
+    |}
+    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
+
+
 let test_check_imports _ =
   assert_type_errors
     {|
@@ -1291,52 +1337,6 @@ let test_reveal_type _ =
         return d
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."]
-
-
-let test_coverage _ =
-  let assert_coverage source expected =
-    let coverage =
-      let environment = Test.environment () in
-      let handle = "coverage_test.py" in
-      TypeCheck.check
-        ~configuration:Test.mock_configuration
-        ~environment
-        ~source:(parse ~handle source)
-      |> ignore;
-      Coverage.get ~handle:(File.Handle.create handle)
-      |> (fun coverage -> Option.value_exn coverage)
-    in
-    assert_equal ~printer:Coverage.show expected coverage
-  in
-  assert_coverage
-    {| def foo(): pass |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 0 };
-  assert_coverage
-    {|
-      def foo(y: int):
-        if condition():
-          x = y
-        else:
-          x = z
-    |}
-    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 };
-  assert_coverage
-    {|
-      def foo(y: asdf):
-        if condition():
-          x = y
-        else:
-          x = 1
-    |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
-
-  assert_coverage
-    {|
-      def foo(y) -> int:
-        x = returns_undefined()
-        return x
-    |}
-    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
 
 
 let test_check _ =
@@ -1685,153 +1685,6 @@ let test_check_assign _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
-
-
-let test_check_coverage _ =
-  let preprocess source =
-    trim_extra_indentation source
-    |> String.lstrip
-    |> String.split ~on:'\n'
-    |> List.map ~f:(fun line -> "    " ^ line)
-    |> String.concat ~sep:"\n"
-    |> String.substr_replace_all ~pattern:"ERROR" ~with_:"a.undefined"
-    |> Format.asprintf "def foo(a: A) -> None:\n%s\n"
-  in
-  let assert_covered ?(additional_errors = []) source =
-    assert_type_errors
-      (preprocess source)
-      (additional_errors @ ["Undefined attribute [16]: `A` has no attribute `undefined`."])
-  in
-  let assert_not_covered ?(additional_errors = []) source =
-    assert_type_errors (preprocess source) additional_errors
-  in
-
-  (* Return statement. *)
-  assert_covered
-    ~additional_errors:["Incompatible return type [7]: Expected `None` but got `unknown`."]
-    "return ERROR";
-
-  (* Assignment. *)
-  assert_covered "b = ERROR";
-
-  (* Assertion. *)
-  assert_covered "assert ERROR";
-
-  (* Nested definitions. *)
-  assert_covered "class B: ERROR";
-  assert_covered
-    ~additional_errors:[]
-    "def nested() -> None: ERROR";
-
-  (* Expressions. *)
-  assert_covered "ERROR";
-
-  (* Yield. *)
-  assert_covered
-    ~additional_errors:[
-      "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Generator[unknown, None, None]`.";
-    ]
-    "yield ERROR";
-  assert_not_covered
-    ~additional_errors:[
-      "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Generator[unknown, None, None]`.";
-    ]
-    "yield from ERROR";
-
-  (* Control statements. *)
-  assert_covered
-    "for i in ERROR: pass";
-  assert_covered "while ERROR: pass";
-  assert_covered "if ERROR: pass";
-
-  (* Raise. *)
-  assert_covered "raise ERROR";
-
-  assert_covered
-    {|
-      try:
-        pass
-      except ERROR:
-        pass
-    |};
-
-  assert_covered
-    {|
-      with ERROR:
-        pass
-    |};
-  assert_covered
-    {|
-      with ERROR as derp:
-        pass
-    |};
-
-  (* Await. *)
-  assert_covered
-    ~additional_errors:[
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-    ]
-    "await ERROR";
-
-  (* Binary operator. *)
-  assert_covered "ERROR | 1";
-  assert_covered "1 % ERROR";
-
-  (* Boolean operator. *)
-  assert_covered "ERROR or False";
-  (* True or UNDEFINED evaluates to True in python. *)
-  assert_not_covered "True or ERROR";
-  assert_covered "ERROR and False";
-  assert_covered "True and ERROR";
-
-  (* Comparison operator. *)
-  assert_covered "1 == ERROR";
-  assert_covered "ERROR < 1";
-
-  (* Dictionaries. *)
-  assert_covered "{ ERROR: 1 }";
-  assert_covered "{ 1: ERROR }";
-  assert_covered "{ ERROR: i for i in dict() }";
-  assert_covered "{ i: ERROR for i in dict() }";
-  assert_covered "{ i: 1 for i in ERROR }";
-
-  (* Format string. *)
-  assert_covered {|f"format{ERROR}"|};
-
-  (* Generator. *)
-  assert_covered "(ERROR for i in list())";
-
-  (* Lambdas. *)
-  assert_covered "lambda x: ERROR";
-
-  (* Lists. *)
-  assert_covered "[1, ERROR]";
-  assert_covered "[ERROR for i in list()]";
-  assert_covered "[i for i in ERROR]";
-
-  (* Sets. *)
-  assert_covered "{1, ERROR}";
-  assert_covered "{ERROR for i in list()}";
-  assert_covered "{i for i in ERROR}";
-
-  (* Starred. *)
-  assert_covered "*ERROR";
-  assert_covered "**ERROR";
-
-  (* Ternary. *)
-  assert_covered "ERROR if True else 1";
-  assert_covered "True if ERROR else 1";
-  assert_covered "True if True else ERROR";
-
-  (* Tuples. *)
-  assert_covered "ERROR, True";
-  assert_covered "True, ERROR";
-
-  (* Unary operators. *)
-  assert_covered "not ERROR";
-  assert_covered "-ERROR"
 
 
 let test_check_comprehensions _ =
@@ -3025,7 +2878,6 @@ let () =
     "coverage">::test_coverage;
     "check">::test_check;
     "check_assign">::test_check_assign;
-    "check_coverage">::test_check_coverage;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
     "check_imports">::test_check_imports;
