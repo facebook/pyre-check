@@ -10,7 +10,9 @@
 
 
 (tests
- (names unionTest)
+ (names
+  unionTest
+  functionParameterTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps
