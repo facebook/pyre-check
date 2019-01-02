@@ -131,7 +131,24 @@ let test_check_union _ =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `Bar` has no attribute `derp`.";
-    ]
+    ];
+
+  (* We require that all elements in a union have the same method for `in`. *)
+  assert_type_errors
+    {|
+      class Equal:
+        def __eq__(self, other: object) -> typing.List[int]:
+          ...
+      class GetItem:
+        def __getitem__(self, x: int) -> Equal:
+          ...
+      class Contains:
+        def __contains__(self, a: object) -> bool:
+          ...
+      def foo(a: typing.Union[GetItem, Contains]) -> None:
+        5 in a
+    |}
+    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."]
 
 
 let () =

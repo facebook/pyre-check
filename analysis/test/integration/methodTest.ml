@@ -301,12 +301,52 @@ let test_check_static _ =
     []
 
 
+let test_check_setitem _ =
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, int]) -> None:
+        x["foo"] = "bar"
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`."];
+
+  assert_type_errors
+    {|
+      class A:
+        pass
+      def foo(x: typing.Dict[str, int], y: A) -> None:
+        x["foo"] = y["bar"] = "baz"
+    |}
+    [
+      "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, typing.Dict[str, int]]) -> None:
+        x["foo"]["bar"] = "baz"
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 2nd anonymous parameter to call `dict.__setitem__` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[str, int]) -> None:
+        x[7] = 7
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`."]
+
+
 let () =
   "method">:::[
     "check_method_returns">::test_check_method_returns;
     "check_method_parameters">::test_check_method_parameters;
     "check_method_resolution">::test_check_method_resolution;
     "check_self">::test_check_self;
+    "check_setitem">::test_check_setitem;
     "check_static">::test_check_static;
   ]
   |> Test.run
