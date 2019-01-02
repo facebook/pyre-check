@@ -399,7 +399,6 @@ let test_name_and_arguments _ =
   let argument ?name value =
     let name =
       name
-      
       >>| Ast.Node.create_with_default_location
     in
     { Argument.name; value }
