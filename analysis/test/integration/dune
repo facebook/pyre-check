@@ -15,6 +15,7 @@
   assertTest
   attributeTest
   coverageTest
+  controlFlowTest
   dataClassTest
   decoratorTest
   formatStringTest
