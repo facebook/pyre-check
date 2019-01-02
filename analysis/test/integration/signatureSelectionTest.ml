@@ -8,6 +8,15 @@ open OUnit2
 open IntegrationTest
 
 
+let test_check_function_redirects _ =
+  assert_type_errors
+    {|
+      def foo(a: float) -> float:
+        return abs(a)
+    |}
+    []
+
+
 let test_check_function_parameters_with_backups _ =
   assert_type_errors "(1).__add__(1)" [];
   assert_type_errors "(1).__add__(1j)" [];
@@ -500,6 +509,7 @@ let test_check_variable_arguments _ =
 
 let () =
   "signatureSelection">:::[
+    "check_function_redirects">::test_check_function_redirects;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_function_parameters">::test_check_function_parameters;
     "check_function_parameter_errors">::test_check_function_parameter_errors;

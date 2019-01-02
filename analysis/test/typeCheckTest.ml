@@ -2703,15 +2703,6 @@ let test_check_optional _ =
     ]
 
 
-let test_check_function_redirects _ =
-  assert_type_errors
-    {|
-      def foo(a: float) -> float:
-        return abs(a)
-    |}
-    []
-
-
 let test_check_globals _ =
   assert_type_errors
     {|
@@ -6556,7 +6547,6 @@ let () =
     "check_coverage">::test_check_coverage;
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
-    "check_function_redirects">::test_check_function_redirects;
     "check_globals">::test_check_globals;
     "check_immutables">::test_check_immutables;
     "check_imports">::test_check_imports;
