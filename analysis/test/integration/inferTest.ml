@@ -1,0 +1,299 @@
+(** Copyright (c) 2016-present, Facebook, Inc.
+
+    This source code is licensed under the MIT license found in the
+    LICENSE file in the root directory of this source tree. *)
+
+open OUnit2
+open IntegrationTest
+
+
+let test_check_missing_parameter _ =
+  assert_type_errors
+    ~debug:false
+    ~strict:false
+    {|
+      def foo(x):
+        return 1
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x = 1) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x: typing.Any) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x: typing.Any = unknown) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+
+
+let test_check_missing_return _ =
+  assert_type_errors
+    {|
+      def foo():
+        return 1
+    |}
+    ["Missing return annotation [3]: Returning `int` but no return type is specified."];
+
+  assert_type_errors
+    {|
+      def foo() -> typing.Any:
+        return 1
+    |}
+    ["Missing return annotation [3]: Returning `int` but type `Any` is specified."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        return 1
+    |}
+    ["Incompatible return type [7]: Expected `None` but got `int`."];
+
+  assert_type_errors
+    {|
+      def foo():
+        return
+    |}
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+
+  assert_type_errors
+    {|
+      def foo():
+        return None
+    |}
+    ["Missing return annotation [3]: Returning `None` but no return type is specified.";];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        return None
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(a: int):
+        if a > 10:
+          return None
+        else:
+          return 1
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[int]` but no return type is " ^
+      "specified."
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        if a > 10:
+          return None
+        else:
+          return 1
+    |}
+    [
+      "Undefined name [18]: Global name `a` is undefined.";
+      "Incompatible return type [7]: Expected `None` but got `int`."
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x) -> typing.Any:
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x):
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type is not specified.";
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+    ];
+
+  assert_type_errors
+    {|
+      def unknown_call():
+        pass
+      def foo():
+        x = unknown_call()
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Returning `None` but no return type is specified.";
+      "Missing return annotation [3]: Return type is not specified.";
+    ];
+
+  assert_type_errors
+    {|
+       def foo(x: typing.Any) -> typing.Any:
+         return x
+     |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."
+    ];
+
+  (* Don't report in non-debug mode. *)
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo():
+        return 1
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo():
+        pass
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x):
+        return x
+    |}
+    [];
+  assert_type_errors
+    ~debug:false
+    {|
+      1 + 'asdf'  # report in top-level function
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo() -> typing.Any:
+        if condition():
+          return 1
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[int]` but " ^
+      "type `Any` is specified."
+    ];
+
+  assert_type_errors
+    {|
+      def foo(optional: typing.Optional[int]) -> typing.Any:
+        return optional or int_to_bool(optional)
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Union[bool, int]` " ^
+      "but type `Any` is specified.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_bool` but got " ^
+      "`typing.Optional[int]`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(optional: typing.Optional[int]) -> typing.Any:
+        return optional and int_to_bool(optional)
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[bool]` but " ^
+      "type `Any` is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> typing.Any:
+        yield
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` " ^
+      "but type `Any` is specified."
+    ];
+
+  assert_type_errors
+    {|
+      def foo():
+        yield
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` " ^
+      "but no return type is specified."
+    ];
+
+  (* Joining. *)
+  assert_type_errors
+    {|
+      def foo():
+        if condition():
+          return 1
+        else:
+          return 'asdf'
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Union[int, str]` but no return type is " ^
+      "specified."
+    ];
+  assert_type_errors
+    {|
+      def foo():
+        if condition():
+          return 1
+        else:
+          return 2.0
+    |}
+    ["Missing return annotation [3]: Returning `float` but no return type is specified."];
+  assert_type_errors
+    {|
+      def foo():
+        if condition():
+          return None
+        else:
+          return 'asdf'
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[str]` but no return type is " ^
+      "specified."
+    ];
+  assert_type_errors
+    {|
+      def foo():
+        if condition():
+          return A()
+        else:
+          return B()
+    |}
+    ["Missing return annotation [3]: Returning `A` but no return type is specified."]
+
+
+let () =
+  "infer">:::[
+    "check_missing_parameter">::test_check_missing_parameter;
+    "check_missing_return">::test_check_missing_return;
+  ]
+  |> Test.run

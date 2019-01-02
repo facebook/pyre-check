@@ -16,6 +16,7 @@
   dataClassTest
   signatureSelectionTest
   constructorTest
+  inferTest
   methodTest
   varianceTest
   typedDictionaryTest
