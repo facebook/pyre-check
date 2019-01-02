@@ -5481,62 +5481,6 @@ let test_format_string _ =
     ["Undefined name [18]: Global name `x` is undefined."]
 
 
-let test_check_data_class _ =
-  assert_type_errors
-    {|
-      @dataclass
-      class Foo():
-        x: int = 1
-      def boo() -> None:
-          b = Foo('a')
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`."];
-  assert_type_errors
-    {|
-      @dataclass
-      class Foo():
-        x: int = 1
-      def boo() -> None:
-          b = Foo(4,5)
-    |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
-     "2 were provided."];
-  assert_type_errors
-    {|
-      @dataclasses.dataclass
-      class Foo():
-        x: int = 1
-      def boo() -> None:
-          b = Foo(4,5)
-    |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
-     "2 were provided."];
-  assert_type_errors
-    {|
-      @dataclass
-      class Foo():
-        x = 1
-      def boo() -> None:
-          b = Foo(2)
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
-      "no type is specified.";
-      "Too many arguments [19]: Call `Foo.__init__` expects 0 arguments, 1 was" ^
-      " provided.";
-    ];
-  assert_type_errors
-    {|
-      @dataclass
-      class Foo():
-        x: int = 1
-      def boo() -> None:
-          b = Foo()
-    |}
-    []
-
-
 let test_check_nested_class_inheritance _ =
   assert_type_errors
     {|
@@ -5701,7 +5645,6 @@ let () =
     "environment">::test_environment;
     "scheduling">::test_scheduling;
     "check_format_string">::test_format_string;
-    "check_dataclass">::test_check_data_class;
     "check_nested_class_inheritance">::test_check_nested_class_inheritance;
   ]
   |> Test.run

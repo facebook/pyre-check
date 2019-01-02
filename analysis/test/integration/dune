@@ -13,6 +13,7 @@
  (names
   assertTest
   attributeTest
+  dataClassTest
   signatureSelectionTest
   constructorTest
   methodTest
