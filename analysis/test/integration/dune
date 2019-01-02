@@ -17,6 +17,7 @@
   constructorTest
   methodTest
   varianceTest
+  typedDictionaryTest
   unionTest)
  (modules :standard \ integrationTest)
  (preprocess
