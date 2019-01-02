@@ -12,6 +12,7 @@
 (tests
  (names
   signatureSelectionTest
+  constructorTest
   methodTest
   unionTest)
  (modules :standard \ integrationTest)
