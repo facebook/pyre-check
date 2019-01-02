@@ -31,6 +31,24 @@ let test_check_method_returns _ =
     ["Incompatible return type [7]: Expected `int` but got `str`."]
 
 
+let test_check_abstract_methods _ =
+  assert_type_errors
+    {|
+      @abstractmethod
+      def abstract()->int:
+        pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @abc.abstractproperty
+      def abstract()->int:
+        pass
+    |}
+    []
+
+
 let test_check_method_parameters _ =
   assert_type_errors
     {|
@@ -670,6 +688,7 @@ let test_check_meta_self _ =
 
 let () =
   "method">:::[
+    "check_abstract_methods">::test_check_abstract_methods;
     "check_callable_protocols">::test_check_callable_protocols;
     "check_explicit_method_call">::test_check_explicit_method_call;
     "check_method_returns">::test_check_method_returns;

@@ -106,10 +106,36 @@ let test_check_return _ =
       def x()->int:
         return None
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `None`."
-    ];
+    ["Incompatible return type [7]: Expected `int` but got `None`."];
+  assert_type_errors
+    {|
+      def derp()->typing.Set[int]:
+        return {1}
+    |}
+    [];
 
+  assert_type_errors
+    {|
+      def derp()->typing.Set[int]:
+        return {""}
+    |}
+    ["Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."];
+
+  assert_type_errors
+    {|
+      def foo() -> str:
+        if condition():
+          return 1
+        else:
+          return 2
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ]
+
+
+let test_check_return_control_flow _ =
   assert_type_errors
     {|
       def x() -> int:
@@ -138,6 +164,55 @@ let test_check_return _ =
     {|
       x: typing.List[int]
       def foo() -> list:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, str]) -> int:
+        if isinstance(x, str):
+          return 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if x is None:
+          return 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if x is None:
+          raise
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if x is None:
+          x = 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> int:
+        if x is None:
+          continue
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[float]) -> typing.Optional[int]:
+        if x is not None:
+          return int(x)
         return x
     |}
     []
@@ -233,5 +308,6 @@ let () =
     "check_collections">::test_check_collections;
     "check_meta_annotations">::test_check_meta_annotations;
     "check_noreturn">::test_check_noreturn;
+    "check_return_control_flow">::test_check_return_control_flow;
   ]
   |> Test.run

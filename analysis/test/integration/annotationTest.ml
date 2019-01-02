@@ -90,6 +90,19 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
+
+  (* Don't crash when returning a bad type. *)
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(a: gurbage) -> None:
+        return a
+    |}
+    [
+      "Undefined type [11]: Type `gurbage` is not defined.";
+      "Incompatible return type [7]: Expected `None` but got `gurbage`.";
+    ];
+
   assert_type_errors
     ~debug:false
     {|

@@ -215,7 +215,66 @@ let test_check_function_parameters _ =
       foo(1, 1)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`."]
+     "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`."];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def f(d: typing.Dict[int, int], x) -> None:
+        d.update({ 1: x })
+    |}
+    [];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def f(d: typing.Dict[int, str], x) -> str:
+        return d.get(x, "")
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        a = {"key": set()}
+        b = a.get("key", set())
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        for x in [1,2,3]:
+          if x > 0:
+            return x
+          x = 15
+        return 0
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: str
+      def foo() -> str:
+        return x.__getitem__(0)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: typing.List[int]
+      def foo() -> int:
+        return x.__getitem__(0)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: typing.List[int]
+      def foo() -> typing.List[int]:
+        return x.__getitem__(slice(0, 1, None))
+    |}
+    []
 
 
 let test_check_function_parameter_errors _ =

@@ -1298,69 +1298,10 @@ let test_coverage _ =
 
 let test_check _ =
   assert_type_errors
-    ~debug:false
-    {|
-      def f(d: typing.Dict[int, int], x) -> None:
-        d.update({ 1: x })
-    |}
-    [];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def f(d: typing.Dict[int, str], x) -> str:
-        return d.get(x, "")
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        a = {"key": set()}
-        b = a.get("key", set())
-    |}
-    [];
-
-  assert_type_errors
     {|
       def f(l: typing.List[int]) -> int:
         [a, b] = l
         return a + b
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> int:
-        for x in [1,2,3]:
-          if x > 0:
-            return x
-          x = 15
-        return 0
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: str
-      def foo() -> str:
-        return x.__getitem__(0)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
-      def foo() -> int:
-        return x.__getitem__(0)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
-      def foo() -> typing.List[int]:
-        return x.__getitem__(slice(0, 1, None))
     |}
     [];
 
@@ -1429,14 +1370,6 @@ let test_check _ =
 
   assert_type_errors
     {|
-      x: typing.Generator[int, int, int]
-      def foo() -> typing.Generator:
-        return x
-    |}
-    [];
-
-  assert_type_errors
-    {|
       def foo(a:typing.Optional[int])->str:
         return int_to_str(a) if a else ""
     |}
@@ -1458,41 +1391,6 @@ let test_check _ =
       def derp()->int:
           a, b = return_tuple()
           return a+b
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def derp() -> int:
-        a, b = [1,2,3]
-        return a + b
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> int:
-        (x, y), z = 0
-        return x + y + z
-    |}
-    [
-      "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-
-  assert_type_errors
-    {|
-      @abstractmethod
-      def abstract()->int:
-        pass
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      @abc.abstractproperty
-      def abstract()->int:
-        pass
     |}
     [];
 
@@ -1539,66 +1437,6 @@ let test_check _ =
           return None
     |}
     [];
-
-  assert_type_errors
-    {|
-      def foo(l: typing.List[int])->typing.Generator[int, None, None]:
-        return (x for x in l)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[int, None, None]:
-        return (x for x in l if x)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
-        return (x for x in l if x is not None)
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` " ^
-      "but got `typing.Generator[int, None, None]`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
-        return (x for x in l)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def derp()->typing.Set[int]:
-        return {1}
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def derp()->typing.Set[int]:
-        return {""}
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."
-    ];
-
-  assert_type_errors
-    {|
-      def foo() -> str:
-        if condition():
-          return 1
-        else:
-          return 2
-    |}
-    [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-    ];
 
   assert_type_errors
     {|
@@ -1882,8 +1720,10 @@ let test_check _ =
         reveal_type(bar)
         return d
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."]
 
+
+let test_check_in _ =
   assert_type_errors
     {|
       class WeirdContains:
@@ -1954,18 +1794,7 @@ let test_check _ =
       def foo(a: typing.Union[GetItemA, GetItemB]) -> None:
         5 in a
     |}
-    [];
-  (* Don't crash when filtering on returning a bad type *)
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo(a: gurbage) -> None:
-        return a
-    |}
-    [
-      "Undefined type [11]: Type `gurbage` is not defined.";
-      "Incompatible return type [7]: Expected `None` but got `gurbage`.";
-    ]
+    []
 
 
 let test_check_assign _ =
@@ -2001,19 +1830,6 @@ let test_check_assign _ =
     |}
     ["Unable to unpack [23]: Unable to unpack `int` into 2 values."];
 
-
-  assert_type_errors
-    {|
-      class Foo:
-        def __init__(self, coord: typing.Tuple[int, int]) -> None:
-            self.xxx, self.yyy = coord
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `xxx` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `yyy` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-    ];
 
   assert_type_errors
     {|
@@ -2384,7 +2200,46 @@ let test_check_optional _ =
     []
 
 
-let test_check_yield _ =
+let test_check_generators _ =
+  assert_type_errors
+    {|
+      x: typing.Generator[int, int, int]
+      def foo() -> typing.Generator:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(l: typing.List[int])->typing.Generator[int, None, None]:
+        return (x for x in l)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[int, None, None]:
+        return (x for x in l if x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(l: typing.List[typing.Optional[int]])->typing.Generator[str, None, None]:
+        return (x for x in l if x is not None)
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Generator[str, None, None]` " ^
+      "but got `typing.Generator[int, None, None]`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
+        return (x for x in l)
+    |}
+    [];
+
   assert_type_errors
     {|
       def foo() -> typing.Generator[int, None, None]:
@@ -2474,7 +2329,36 @@ let test_check_yield _ =
           return
         yield 1
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      @asyncio.coroutines.coroutine
+      def get() -> typing.Generator[typing.Any, None, int]: ...
+      async def foo() -> int:
+        awaited = await get()
+        return awaited
+    |}
+    [];
+  assert_type_errors
+    {|
+      async def foo() -> typing.AsyncGenerator[int, None]:
+        yield 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def takes_int(x: int) -> int:
+        return x
+      async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
+        async for item in g:
+          yield takes_int(item)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `takes_int` but got `str`.";
+    ]
 
 
 let test_check_ternary _ =
@@ -2675,54 +2559,6 @@ let test_check_refinement _ =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
-      def foo(x: typing.Union[int, str]) -> int:
-        if isinstance(x, str):
-          return 1
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if x is None:
-          return 1
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if x is None:
-          raise
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if x is None:
-          x = 1
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[int]) -> int:
-        if x is None:
-          continue
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: typing.Optional[float]) -> typing.Optional[int]:
-        if x is not None:
-          return int(x)
-        return x
-    |}
-    [];
-  assert_type_errors
-    {|
       class A:
           a: typing.Optional[int] = None
           def foo(self) -> None:
@@ -2869,6 +2705,38 @@ let test_check_tuple _ =
     [
       "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got " ^
       "`typing.List[typing.Union[int, str]]`.";
+    ];
+
+  assert_type_errors
+    {|
+      def derp() -> int:
+        a, b = [1,2,3]
+        return a + b
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        (x, y), z = 0
+        return x + y + z
+    |}
+    [
+      "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, coord: typing.Tuple[int, int]) -> None:
+            self.xxx, self.yyy = coord
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `xxx` of class `Foo` " ^
+      "has type `int` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `yyy` of class `Foo` " ^
+      "has type `int` but no type is specified.";
     ];
 
   assert_type_errors
@@ -3079,34 +2947,6 @@ let test_check_async _ =
         await a
     |}
     [];
-  assert_type_errors
-    {|
-      @asyncio.coroutines.coroutine
-      def get() -> typing.Generator[typing.Any, None, int]: ...
-      async def foo() -> int:
-        awaited = await get()
-        return awaited
-    |}
-    [];
-  assert_type_errors
-    {|
-      async def foo() -> typing.AsyncGenerator[int, None]:
-        yield 1
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def takes_int(x: int) -> int:
-        return x
-      async def loop(g: typing.AsyncGenerator[str, None]) -> typing.AsyncGenerator[int, None]:
-        async for item in g:
-          yield takes_int(item)
-    |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-       `takes_int` but got `str`.";
-    ];
 
   assert_type_errors
     {|
@@ -3853,7 +3693,7 @@ let () =
     "check_comprehensions">::test_check_comprehensions;
     "check_optional">::test_check_optional;
     "check_imports">::test_check_imports;
-    "check_yield">::test_check_yield;
+    "check_yield">::test_check_generators;
     "check_ternary">::test_check_ternary;
     "check_nested">::test_check_nested;
     "check_refinement">::test_check_refinement;
