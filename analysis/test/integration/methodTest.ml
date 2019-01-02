@@ -537,6 +537,137 @@ let test_check_nested_class_inheritance _ =
     []
 
 
+let test_check_meta_self _ =
+  assert_type_errors
+    ~debug:false
+    {|
+      T = typing.TypeVar('T')
+      S = typing.TypeVar('S')
+      class C(typing.Generic[T]): pass
+      def foo(input: typing.Any) -> None:
+        typing.cast(C[int], input)
+      class D(typing.Generic[T, S]): pass
+      def foo(input: typing.Any) -> None:
+        typing.cast(D[int, float], input)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> C:
+        return C.__construct__()
+      def boo() -> Subclass:
+        return Subclass.__construct__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo() -> C:
+        return Subclass.__construct__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> Subclass:
+        return C.__construct__()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(s: Subclass) -> Subclass:
+        to_call = s.f
+        return to_call()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(c: C)-> Subclass:
+        to_call = c.f
+        return to_call()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
+
+  assert_type_errors
+    {|
+      class Foo:
+        def foo(self) -> typing.Type[Foo]:
+          return type(self)
+        def bar(self) -> typing.Type[int]:
+          return type(1)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        ATTRIBUTE: typing.ClassVar[int] = 1
+        def foo(self) -> int:
+          return type(self).ATTRIBUTE
+    |}
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(t: T) -> str:
+        return type(t).__name__
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return type(x).__name__
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      R = C
+      def foo() -> C:
+        return R()
+    |}
+    []
+
+
 let () =
   "method">:::[
     "check_callable_protocols">::test_check_callable_protocols;
@@ -545,6 +676,7 @@ let () =
     "check_method_parameters">::test_check_method_parameters;
     "check_method_resolution">::test_check_method_resolution;
     "check_self">::test_check_self;
+    "check_meta_self">::test_check_meta_self;
     "check_setitem">::test_check_setitem;
     "check_static">::test_check_static;
     "check_nested_class_inheritance">::test_check_nested_class_inheritance;
