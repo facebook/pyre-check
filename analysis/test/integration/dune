@@ -16,6 +16,7 @@
   attributeTest
   dataClassTest
   formatStringTest
+  globalTest
   signatureSelectionTest
   constructorTest
   inferTest
