@@ -3016,32 +3016,7 @@ let test_check_function_parameters _ =
     |}
     [];
 
-  assert_type_errors
-    {|
-      def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
-        return x.int_attribute
-    |}
-    [];
 
-  assert_type_errors
-    {|
-      def foo(x: typing.Union[Attributes, OtherAttributes]) -> int:
-        return x.str_attribute
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo(x: typing.Union[OtherAttributes, Attributes]) -> int:
-        return x.str_attribute
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
-    ];
   assert_type_errors
     {|
       def foo(x) -> None:
@@ -3380,35 +3355,13 @@ let test_check_method_resolution _ =
         bar().baz()
     |}
     ["Undefined name [18]: Global name `bar` is undefined."];
+
   assert_type_errors
     {|
       def foo(input: str) -> None:
         input.lower()
     |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
-        def derp(self) -> int: ...
-      class Bar:
-        def derp(self) -> int: ...
-      def baz(x: typing.Union[Foo, Bar]) -> int:
-        return x.derp()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
-        def derp(self) -> int: ...
-      class Bar:
-        def herp(self) -> int: ...
-      def baz(x: typing.Union[Foo, Bar]) -> int:
-        return x.derp()
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Bar` has no attribute `derp`.";
-    ]
+    []
 
 
 let test_check_self _ =
@@ -5611,81 +5564,6 @@ let test_check_ternary _ =
       foo(x=a if isinstance(a, bytes) else None)
     |}
     []
-
-
-let test_check_union _ =
-  assert_type_errors
-    {|
-      def foo() -> typing.Union[str, int]:
-        return 1.0
-    |}
-    ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
-
-  assert_type_errors
-    {|
-      def foo() -> typing.Union[str, int]:
-        if condition():
-          return 1
-        else:
-          return 'foo'
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def takes_int(a: int) -> None: ...
-      def takes_str(a: str) -> None: ...
-
-      def foo(a: typing.Union[str, int]) -> None:
-        if isinstance(a, str):
-          takes_str(a)
-        else:
-          takes_int(a)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo(a: typing.Union[str, int, float]) -> int:
-        if isinstance(a, int):
-          return a
-        else:
-          return a
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `typing.Union[float, str]`."
-    ];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', int, str)
-      def foo(a: T) -> float:
-        return a
-    |}
-    [
-      "Incompatible return type [7]: Expected `float` but got `typing.Union[int, str]`."
-    ];
-
-  assert_type_errors
-    {|
-      variable: typing.Union[typing.Optional[int], typing.Optional[str]] = None
-      def ret_opt_int() -> typing.Optional[int]:
-          return None
-      variable = ret_opt_int()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo(x: typing.Union[int, Undefined]) -> None:
-        pass
-      foo(1)
-    |}
-    [
-      "Undefined type [11]: Type `Undefined` is not defined.";
-      "Incompatible parameter type [6]: Expected `typing.Union[Undefined, int]` " ^
-      "for 1st anonymous parameter to call `foo` but got `int`.";
-    ]
 
 
 let test_check_return_joining _ =
@@ -9090,7 +8968,6 @@ let () =
     "check_missing_attribute">::test_check_missing_attribute;
     "check_yield">::test_check_yield;
     "check_ternary">::test_check_ternary;
-    "check_union">::test_check_union;
     "check_return_joining">::test_check_return_joining;
     "check_nested">::test_check_nested;
     "check_unbounded_variables">::test_check_unbounded_variables;
