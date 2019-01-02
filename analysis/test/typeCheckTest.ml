@@ -3760,87 +3760,6 @@ let test_check_unbounded_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `Variable[T]`."]
 
 
-let test_check_variable_restrictions _ =
-  assert_type_errors
-    {|
-       def f(x: str) -> int:
-         return variable_restricted_identity(x)
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
-  assert_type_errors
-    {|
-       def f(x: str) -> str:
-         return variable_restricted_identity(x)
-    |}
-    [];
-  assert_type_errors
-    {|
-       def f(x: float) -> str:
-         return variable_restricted_identity(x)
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', int, str)
-      def foo(t: T) -> None: ...
-      def bar(t: T) -> None:
-        foo(t)
-    |}
-    [];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', 'C', 'X')
-      class C():
-        def baz(self) -> int:
-          return 7
-      class X():
-        def baz(self) -> str:
-          return "A"
-      def foo(t: T) -> int:
-        return t.baz()
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
-
-
-let test_check_variable_bindings _ =
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', bound=int)
-      def foo(t: T) -> None:
-        str_to_int(t)
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 1st anonymous parameter to call `str_to_int` but got " ^
-     "`Variable[T (bound to int)]`."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', bound=int)
-      def foo() -> T:
-        return 1.0
-    |}
-    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T', bound=int)
-      def foo(t: T) -> None:
-        int_to_str(t)
-      def bar(x: str) -> None:
-        foo(x)
-    |}
-    ["Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st anonymous " ^
-     "parameter to call `foo` but got `str`."];
-  assert_type_errors
-    {|
-      class C():
-        def baz(self) -> int:
-          return 7
-      T = typing.TypeVar('T', bound=C)
-      def foo(t: T) -> int:
-        return t.baz()
-    |}
-    []
-
-
 let test_check_refinement _ =
   assert_type_errors
     {|
@@ -5691,6 +5610,45 @@ let test_check_nested_class_inheritance _ =
     []
 
 
+let test_check_variable_bindings _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo(t: T) -> None:
+        str_to_int(t)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `str_to_int` but got " ^
+     "`Variable[T (bound to int)]`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo() -> T:
+        return 1.0
+    |}
+    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      def foo(t: T) -> None:
+        int_to_str(t)
+      def bar(x: str) -> None:
+        foo(x)
+    |}
+    ["Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st anonymous " ^
+     "parameter to call `foo` but got `str`."];
+  assert_type_errors
+    {|
+      class C():
+        def baz(self) -> int:
+          return 7
+      T = typing.TypeVar('T', bound=C)
+      def foo(t: T) -> int:
+        return t.baz()
+    |}
+    []
+
+
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -5721,7 +5679,6 @@ let () =
     "check_return_joining">::test_check_return_joining;
     "check_nested">::test_check_nested;
     "check_unbounded_variables">::test_check_unbounded_variables;
-    "check_variable_restrictions">::test_check_variable_restrictions;
     "check_variable_bindings">::test_check_variable_bindings;
     "check_refinement">::test_check_refinement;
     "check_toplevel">::test_check_toplevel;

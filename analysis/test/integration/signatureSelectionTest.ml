@@ -681,6 +681,48 @@ let test_check_callables _ =
     []
 
 
+let test_check_variable_restrictions _ =
+  assert_type_errors
+    {|
+       def f(x: str) -> int:
+         return variable_restricted_identity(x)
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+       def f(x: str) -> str:
+         return variable_restricted_identity(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+       def f(x: float) -> str:
+         return variable_restricted_identity(x)
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', int, str)
+      def foo(t: T) -> None: ...
+      def bar(t: T) -> None:
+        foo(t)
+    |}
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', 'C', 'X')
+      class C():
+        def baz(self) -> int:
+          return 7
+      class X():
+        def baz(self) -> str:
+          return "A"
+      def foo(t: T) -> int:
+        return t.baz()
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
+
+
 let () =
   "signatureSelection">:::[
     "check_callables">::test_check_callables;
@@ -691,5 +733,6 @@ let () =
     "check_function_overloads">::test_check_function_overloads;
     "check_constructor_overloads">::test_check_constructor_overloads;
     "check_variable_arguments">::test_check_variable_arguments;
+    "check_variable_restrictions">::test_check_variable_restrictions;
   ]
   |> Test.run
