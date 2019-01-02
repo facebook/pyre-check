@@ -507,8 +507,183 @@ let test_check_variable_arguments _ =
      "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";]
 
 
+let test_check_callables _ =
+  (* Callable parameter checks. *)
+  assert_type_errors
+    {|
+      def foo(callable: typing.Callable[[str], None]) -> None:
+        callable(1)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to anoynmous call but got `int`."];
+
+  (* Type variables & callables. *)
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(x: str) -> int:
+        return 0
+      def takes_parameter(f: typing.Callable[[T], int]) -> T:
+        ...
+      def takes_return(f: typing.Callable[[str], T]) -> T:
+        ...
+      def f() -> str:
+        return takes_parameter(foo)
+      def g() -> int:
+        return takes_return(foo)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(f: typing.Callable[..., int]) -> None:
+        ...
+      def i2i(x: int) -> int:
+        return x
+      foo(i2i)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(f: typing.Callable[..., int]) -> None:
+        ...
+      def i2s(x: int) -> str:
+        return ""
+      foo(i2s)
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[..., int]` for 1st anonymous parameter to call `foo` but got " ^
+      "`typing.Callable(i2s)[[Named(x, int)], str]`.";
+    ];
+
+  (* Classes with __call__ are callables. *)
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x:int) -> str:
+          ...
+      class CallMeToo(CallMe):
+        pass
+
+      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+        ...
+      def apply(x: CallMe, y: CallMeToo) -> None:
+        map(x, [])
+        map(y, [])
+    |}
+    [];
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x: str) -> str:
+          ...
+      class CallMeToo(CallMe):
+        pass
+
+      def map(f: typing.Callable[[int], str], l: typing.List[int]) -> typing.List[str]:
+        ...
+      def apply(x: CallMe, y: CallMeToo) -> None:
+        map(x, [])
+        map(y, [])
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got " ^
+      "`CallMe`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got " ^
+      "`CallMeToo`.";
+    ];
+
+  (* Sanity check: Callables do not subclass classes. *)
+  assert_type_errors
+    {|
+      class CallMe:
+        def __call__(self, x: int) -> str:
+          ...
+      def map(callable_object: CallMe, x: int) -> None:
+         callable_object(x)
+      def apply(f: typing.Callable[[int], str]) -> None:
+        map(f, 1)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `CallMe` for 1st anonymous parameter to call `map` but got " ^
+     "`typing.Callable[[int], str]`."];
+
+  (* The annotation for callable gets expanded automatically. *)
+  assert_type_errors
+    {|
+      def i2i(x: int) -> int:
+        return 0
+      def hof(c: typing.Callable) -> None:
+        return
+      hof(i2i)
+      hof(1)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Callable[..., unknown]` for 1st anonymous parameter to call `hof` but got " ^
+     "`int`."];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def foo(x: typing.Callable[[], T]) -> T:
+        ...
+      def f(x: int = 1) -> str:
+        return ""
+      reveal_type(foo(f))
+    |}
+    ["Revealed type [-1]: Revealed type for `foo.(...)` is `str`."];
+
+  (* Lambdas. *)
+  assert_type_errors
+    {|
+      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+        return 0
+      takes_callable(lambda y: 0)
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
+      "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`.";
+    ];
+  assert_type_errors
+    {|
+      def takes_callable(f: typing.Callable[[Named(x, typing.Any)], int]) -> int:
+        return 0
+      takes_callable(lambda y: "")
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
+      "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def exec(f: typing.Callable[[], int]) -> int:
+        return f()
+      def with_default(x: int = 0) -> int:
+        return x
+      def with_kwargs( **kwargs: int) -> int:
+        return 0
+      def with_varargs( *varargs: int) -> int:
+        return 0
+      def with_everything( *varargs: int, **kwargs: int) -> int:
+        return 0
+      exec(with_default)
+      exec(with_kwargs)
+      exec(with_varargs)
+      exec(with_everything)
+    |}
+    []
+
+
 let () =
   "signatureSelection">:::[
+    "check_callables">::test_check_callables;
     "check_function_redirects">::test_check_function_redirects;
     "check_function_parameters_with_backups">::test_check_function_parameters_with_backups;
     "check_function_parameters">::test_check_function_parameters;

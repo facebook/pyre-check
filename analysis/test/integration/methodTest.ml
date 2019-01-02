@@ -340,8 +340,122 @@ let test_check_setitem _ =
      "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`."]
 
 
+let test_check_callable_protocols _ =
+  (* Objects with a `__call__` method are callables. *)
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [];
+
+  (* We handle subclassing. *)
+  assert_type_errors
+    {|
+      class BaseClass:
+        def __call__(self, val: typing.Optional[str] = None) -> "BaseClass":
+          ...
+      class SubClass(BaseClass):
+        pass
+      def f(sc: SubClass) -> None:
+        sc('foo')
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Call error [29]: `Call` is not a function.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(call) -> int:
+        return call()
+    |}
+    [];
+
+  (* Test for terminating fixpoint *)
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(x: int, call: Call) -> int:
+        for x in range(0, 7):
+          call()
+        return 7
+    |}
+    [
+      "Call error [29]: `Call` is not a function.";
+    ];
+
+  assert_type_errors
+    {|
+      class patch:
+        def __call__(self) -> int: ...
+
+      unittest.mock.patch: patch = ...
+
+      def foo() -> None:
+        unittest.mock.patch()
+        unittest.mock.patch()  # subequent calls should not modify annotation map
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(self, x: int) -> str:
+          return ""
+
+      def bar() -> None:
+        return Foo.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar(self, x: int) -> str:
+          return ""
+
+      def bar() -> None:
+        return Foo.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self, x: int) -> int: ...
+      def foo(call: Call) -> int:
+        return call("")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Call.__call__` but got `str`.";
+    ]
+
+
 let () =
   "method">:::[
+    "check_callable_protocols">::test_check_callable_protocols;
     "check_method_returns">::test_check_method_returns;
     "check_method_parameters">::test_check_method_parameters;
     "check_method_resolution">::test_check_method_resolution;
