@@ -453,9 +453,21 @@ let test_check_callable_protocols _ =
     ]
 
 
+let test_check_explicit_method_call _ =
+  assert_type_errors
+    {|
+      class Class:
+        def method(self, i: int) -> None:
+          pass
+      Class.method(object(), 1)
+    |}
+    []
+
+
 let () =
   "method">:::[
     "check_callable_protocols">::test_check_callable_protocols;
+    "check_explicit_method_call">::test_check_explicit_method_call;
     "check_method_returns">::test_check_method_returns;
     "check_method_parameters">::test_check_method_parameters;
     "check_method_resolution">::test_check_method_resolution;

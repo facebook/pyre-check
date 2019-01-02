@@ -4551,17 +4551,6 @@ let test_check_collections _ =
     []
 
 
-let test_check_explicit_method_call _ =
-  assert_type_errors
-    {|
-      class Class:
-        def method(self, i: int) -> None:
-          pass
-      Class.method(object(), 1)
-    |}
-    []
-
-
 let test_check_meta_annotations _ =
   assert_type_errors
     {|
@@ -5073,7 +5062,6 @@ let () =
     "check_async">::test_check_async;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
     "check_collections">::test_check_collections;
-    "check_explicit_method_call">::test_check_explicit_method_call;
     "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
     "check_noreturn">::test_check_noreturn;
