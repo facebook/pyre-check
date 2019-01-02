@@ -4355,71 +4355,6 @@ let test_check_redundant_cast _ =
     []
 
 
-let test_check_assert _ =
-  assert_type_errors
-    {|
-      def foo(optional: typing.Optional[str]) -> None:
-        if optional or len(optional) > 0:
-          pass
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Sized` for 1st anonymous parameter to call `len` but got " ^
-     "`typing.Optional[str]`."];
-  assert_type_errors
-    {|
-      def foo(optional: typing.Optional[str]) -> None:
-        if optional is None or len(optional) > 0:
-          pass
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(optional: typing.Optional[str]) -> None:
-        if optional and len(optional) > 0:
-          pass
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo() -> int:
-        if 1 > 2:
-          x = 2
-        else:
-          assert False
-        return int_to_int(x)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo() -> int:
-        if 1 > 2:
-          x = 2
-        else:
-          assert False, "unreachable, surely"
-        return int_to_int(x)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo() -> int:
-        if 1 > 2:
-          x = 2
-        else:
-          assert not True
-        return int_to_int(x)
-    |}
-    ["Undefined name [18]: Global name `x` is undefined."];
-  assert_type_errors
-    {|
-      def foo() -> int:
-        if True:
-          return 0
-        else:
-          return int_to_int("monkey news")
-    |}
-    []
-
-
 let test_check_excepts _ =
   assert_type_errors
     {|
@@ -5535,62 +5470,6 @@ let test_check_callables _ =
     []
 
 
-let test_check_assert_functions _ =
-  assert_type_errors
-    ~debug:false
-    {|
-      class One:
-          a: int
-
-      # The actual content of this function does not really matter.
-      def pyretestassert(x: typing.Any) -> None:
-          pass
-
-      def f(o: typing.Optional[One]) -> int:
-          assert o
-          return o.a
-
-      def f2(o: typing.Optional[One]) -> int:
-          pyretestassert(o)
-          return o.a
-    |}
-    [];
-  assert_type_errors
-    ~debug:false
-    ~qualifier:(Access.create "foo")
-    {|
-      class One:
-          a: int
-
-      # The actual content of this function does not really matter.
-      def pyretestassert(x: typing.Any) -> None:
-          pass
-
-      def f(o: typing.Optional[One]) -> int:
-          assert o
-          return o.a
-
-      def f2(o: typing.Optional[One]) -> int:
-          pyretestassert(o)
-          return o.a
-    |}
-    [];
-  assert_type_errors
-    {|
-      class One:
-          a: int = 1
-
-      def f(o: typing.Optional[One]) -> int:
-          assert o
-          return o.a
-
-      def f2(o: typing.Optional[One]) -> int:
-          pyretestassert(o)
-          return o.a
-    |}
-    []
-
-
 let test_check_undefined_type _ =
   assert_type_errors
     ~debug:false
@@ -6565,7 +6444,6 @@ let () =
     "check_tuple">::test_check_tuple;
     "check_meta">::test_check_meta;
     "check_redundant_cast">::test_check_redundant_cast;
-    "check_assert">::test_check_assert;
     "check_excepts">::test_check_excepts;
     "check_async">::test_check_async;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
@@ -6576,7 +6454,6 @@ let () =
     "check_noreturn">::test_check_noreturn;
     "check_contextmanager">::test_check_contextmanager;
     "check_callables">::test_check_callables;
-    "check_assert_functions">::test_check_assert_functions;
     "check_undefined_type">::test_check_undefined_type;
     "check_analysis_failure">::test_check_analysis_failure;
     "check_invalid_type">::test_check_invalid_type;

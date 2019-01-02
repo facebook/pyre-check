@@ -11,6 +11,7 @@
 
 (tests
  (names
+  assertTest
   attributeTest
   signatureSelectionTest
   constructorTest
