@@ -224,7 +224,7 @@ let messages ~detailed:_ ~define location kind =
           Type.pp annotation
       ]
   | ConstantPropagation source ->
-      [Format.asprintf "Constant propgation: %a." Source.pp source]
+      [Format.asprintf "Constant propagation: %a." Source.pp source]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
       [
