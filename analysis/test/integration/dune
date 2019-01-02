@@ -12,6 +12,7 @@
 (tests
  (names
   signatureSelectionTest
+  methodTest
   unionTest)
  (modules :standard \ integrationTest)
  (preprocess
