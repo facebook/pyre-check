@@ -3168,52 +3168,6 @@ let test_check_immutables _ =
     ]
 
 
-let test_check_named_arguments _ =
-  assert_type_errors
-    {|
-      def bar()->int:
-        return str_float_to_int(i="",f=2.0) + str_float_to_int(f=1.0,i="bar")
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Bar:
-        @classmethod
-        def bar(cls, a: str, b: int): ...
-
-      Bar.bar("asdf", 10)
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Bar:
-        @classmethod
-        def bar(cls, a: str, b: int = 10): ...
-
-      Bar.bar("asdf", 10)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def bar()->int:
-        return str_float_to_int(i="")
-    |}
-    ["Missing argument [20]: Call `str_float_to_int` expects argument `f`."];
-  assert_type_errors
-    {|
-      def bar()->int:
-        return 1 + str_float_to_int(i=2.0,f=1)
-      def foo()->int:
-        return str_float_to_int(f="No",i="Hi")
-    |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `str` for 1st parameter `i` to call `str_float_to_int` but got `float`.";
-      "Incompatible parameter type [6]: " ^
-      "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`.";
-    ]
-
-
 let test_check_yield _ =
   assert_type_errors
     {|
@@ -3810,21 +3764,6 @@ let test_check_tuple _ =
 
 
 let test_check_meta _ =
-  assert_type_errors
-    {|
-      def foo(input: str) -> typing.List[int]:
-        return typing.cast(typing.List[float], input)
-    |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
-  assert_type_errors
-    {|
-      def foo(input) -> typing.List[int]:
-        return typing.cast(typing.List[unknown], input)
-    |}
-    [
-      "Missing parameter annotation [2]: Parameter `input` has no type specified.";
-      "Undefined type [11]: Type `unknown` is not defined.";
-    ];
   assert_type_errors
     ~debug:false
     {|
@@ -5120,7 +5059,6 @@ let () =
     "check_globals">::test_check_globals;
     "check_immutables">::test_check_immutables;
     "check_imports">::test_check_imports;
-    "check_named_arguments">::test_check_named_arguments;
     "check_yield">::test_check_yield;
     "check_ternary">::test_check_ternary;
     "check_nested">::test_check_nested;

@@ -15,7 +15,22 @@ let test_check_variance _ =
       def foo() -> None:
         [narnia()] + [2]
     |}
-    ["Missing return annotation [3]: Returning `None` but no return type is specified."]
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+  assert_type_errors
+    {|
+      def foo(input: str) -> typing.List[int]:
+        return typing.cast(typing.List[float], input)
+    |}
+    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
+  assert_type_errors
+    {|
+      def foo(input) -> typing.List[int]:
+        return typing.cast(typing.List[unknown], input)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `input` has no type specified.";
+      "Undefined type [11]: Type `unknown` is not defined.";
+    ]
 
 
 let test_check_literal_variance _ =

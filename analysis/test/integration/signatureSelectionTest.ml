@@ -723,6 +723,52 @@ let test_check_variable_restrictions _ =
     ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
 
 
+let test_check_named_arguments _ =
+  assert_type_errors
+    {|
+      def bar()->int:
+        return str_float_to_int(i="",f=2.0) + str_float_to_int(f=1.0,i="bar")
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Bar:
+        @classmethod
+        def bar(cls, a: str, b: int): ...
+
+      Bar.bar("asdf", 10)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Bar:
+        @classmethod
+        def bar(cls, a: str, b: int = 10): ...
+
+      Bar.bar("asdf", 10)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def bar()->int:
+        return str_float_to_int(i="")
+    |}
+    ["Missing argument [20]: Call `str_float_to_int` expects argument `f`."];
+  assert_type_errors
+    {|
+      def bar()->int:
+        return 1 + str_float_to_int(i=2.0,f=1)
+      def foo()->int:
+        return str_float_to_int(f="No",i="Hi")
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 1st parameter `i` to call `str_float_to_int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`.";
+    ]
+
+
 let () =
   "signatureSelection">:::[
     "check_callables">::test_check_callables;
@@ -732,6 +778,7 @@ let () =
     "check_function_parameter_errors">::test_check_function_parameter_errors;
     "check_function_overloads">::test_check_function_overloads;
     "check_constructor_overloads">::test_check_constructor_overloads;
+    "check_named_arguments">::test_check_named_arguments;
     "check_variable_arguments">::test_check_variable_arguments;
     "check_variable_restrictions">::test_check_variable_restrictions;
   ]
