@@ -15,7 +15,7 @@ open Test
 
 
 let parse_source ?(qualifier=[]) ?handle source =
-  parse ~qualifier source ?handle
+  parse ~qualifier ~debug:false source ?handle
   |> Preprocessing.preprocess
 
 
@@ -32,10 +32,11 @@ let create_call_graph ?(update_environment_with = []) source_text =
   Service.Environment.populate ~configuration environment sources;
   let errors = TypeCheck.check ~configuration ~environment ~source in
   if not (List.is_empty errors) then
-    Log.dump "Type errors in %s\n%a"
+    Format.asprintf "Type errors in %s\n%a"
       source_text
       (Format.pp_print_list TypeCheck.Error.pp)
-      errors;
+      errors
+    |> failwith;
   DependencyGraph.create_callgraph ~environment ~source
 
 
