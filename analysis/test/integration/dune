@@ -21,6 +21,7 @@
   constructorTest
   inferTest
   methodTest
+  returnTest
   varianceTest
   typeVariableTest
   typedDictionaryTest

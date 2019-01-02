@@ -1298,84 +1298,6 @@ let test_coverage _ =
 
 let test_check _ =
   assert_type_errors
-    "def foo() -> None: pass"
-    [];
-
-  assert_type_errors
-    "def foo() -> None: return"
-    [];
-
-  assert_type_errors
-    "def foo() -> float: return 1.0"
-    [];
-
-  assert_type_errors
-    "def foo() -> float: return 1"
-    [];
-
-  assert_type_errors
-    "def foo() -> int: return 1.0"
-    ["Incompatible return type [7]: Expected `int` but got `float`."];
-
-  assert_type_errors
-    "def foo() -> str: return 1.0"
-    ["Incompatible return type [7]: Expected `str` but got `float`."];
-
-  assert_type_errors
-    "def foo() -> str: return"
-    ["Incompatible return type [7]: Expected `str` but got `None`."];
-
-  assert_type_errors
-    "def foo() -> typing.List[str]: return 1"
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
-
-  assert_type_errors
-    ~debug:false
-    "def foo() -> int: return"
-    ["Incompatible return type [7]: Expected `int` but got `None`."];
-
-  assert_type_errors
-    "def foo() -> typing.List[str]: return []"
-    [];
-
-  assert_type_errors
-    "def foo() -> typing.Dict[str, int]: return {}"
-    [];
-
-  assert_type_errors
-    {|
-      def f() -> dict: return {}
-      def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f() -> dict: return {}
-      def foo() -> typing.Dict[typing.Any]: return f()
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[typing.Any]` but got " ^
-      "`typing.Dict[typing.Any, typing.Any]`."
-    ];
-
-  assert_type_errors
-    {|
-      x: typing.Type
-      def foo() -> typing.Type[typing.Any]:
-        return x
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
-      def foo() -> list:
-        return x
-    |}
-    [];
-
-  assert_type_errors
     ~debug:false
     {|
       def f(d: typing.Dict[int, int], x) -> None:
@@ -1521,29 +1443,6 @@ let test_check _ =
     [];
 
   assert_type_errors
-    "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
-    [
-      "Incompatible return type [7]: Expected `str` but got `float`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
-
-  assert_type_errors
-    "class A: pass\ndef foo() -> A: return A()"
-    [];
-
-  assert_type_errors
-    "class A: pass\ndef foo() -> A: return 1"
-    ["Incompatible return type [7]: Expected `A` but got `int`."];
-
-  assert_type_errors
-    "def bar() -> str: return ''\ndef foo() -> str: return bar()"
-    [];
-
-  assert_type_errors
-    "def foo() -> str: return not_annotated()"
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
-
-  assert_type_errors
     {|
       class other(): pass
       def foo() -> other:
@@ -1626,39 +1525,6 @@ let test_check _ =
           return x
     |}
     [];
-
-  assert_type_errors
-    {|
-      def x()->int:
-        return None
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `None`."
-    ];
-
-  assert_type_errors
-    {|
-      def x() -> int:
-        if unknown_condition:
-          return 1
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is undefined.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo() -> int:
-        if unknown_condition:
-          return 1
-        else:
-          x = 1
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is undefined.";
-    ];
 
   assert_type_errors
     {|
@@ -3721,38 +3587,6 @@ let test_check_behavioral_subtyping _ =
     []
 
 
-let test_check_collections _ =
-  assert_type_errors
-    {|
-      def foo(input: typing.Optional[typing.List[int]]) -> typing.List[int]:
-        return input or []
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(input: typing.Optional[typing.Set[int]]) -> typing.Set[int]:
-        return input or set()
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(input: typing.Optional[typing.Dict[int, str]]) -> typing.Dict[int, str]:
-        return input or {}
-    |}
-    []
-
-
-let test_check_meta_annotations _ =
-  assert_type_errors
-    {|
-      class Class:
-        pass
-      def foo() -> typing.Type[Class]:
-        return Class
-    |}
-    []
-
-
 let test_check_unbound_variables _ =
   assert_type_errors
     {|
@@ -3817,58 +3651,6 @@ let test_check_unbound_variables _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
-
-
-let test_check_noreturn _ =
-  assert_type_errors
-    {|
-      def no_return() -> typing.NoReturn:
-        return 0
-    |}
-    ["Incompatible return type [7]: Expected `typing.NoReturn` but got `int`."];
-  assert_type_errors
-    {|
-      def no_return() -> typing.NoReturn:
-        # We implicitly return None, so have to accept this.
-        return None
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def no_return(input: typing.Optional[int]) -> int:
-        if input is None:
-          sys.exit(-1)
-        return input
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def no_return() -> str:
-        sys.exit(0)  # once control flow terminates, we know input won't be returned.
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def may_not_return() -> str:
-        if condition():
-          sys.exit(0)
-        else:
-          return ""
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def no_return() -> int:
-        if condition():
-          return 1
-        else:
-          sys.exit(0)
-    |}
-    []
 
 
 let test_check_contextmanager _ =
@@ -4081,10 +3863,7 @@ let () =
     "check_excepts">::test_check_excepts;
     "check_async">::test_check_async;
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
-    "check_collections">::test_check_collections;
-    "check_meta_annotations">::test_check_meta_annotations;
     "check_unbound_variables">::test_check_unbound_variables;
-    "check_noreturn">::test_check_noreturn;
     "check_contextmanager">::test_check_contextmanager;
     "environment">::test_environment;
     "scheduling">::test_scheduling;
