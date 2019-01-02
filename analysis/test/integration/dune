@@ -19,6 +19,7 @@
   dataClassTest
   decoratorTest
   formatStringTest
+  generatorTest
   globalTest
   signatureSelectionTest
   constructorTest
