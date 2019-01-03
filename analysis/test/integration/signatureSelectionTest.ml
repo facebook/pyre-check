@@ -418,8 +418,17 @@ let test_check_function_parameter_errors _ =
       def foo(o: other) -> str:
         return o.attribute
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
+  assert_type_errors
+    {|
+      _T = typing.TypeVar("_T")
+      def meta(x: typing.Type[_T]) -> None: ...
+      meta(typing.Dict)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got " ^
+     "`typing.TypeAlias`."]
 
 
 let test_check_function_overloads _ =

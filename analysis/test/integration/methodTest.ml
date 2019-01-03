@@ -1231,6 +1231,40 @@ let test_check_in _ =
     []
 
 
+let test_check_enter _ =
+  assert_type_errors
+    {|
+      class WithClass():
+        def __enter__(self) -> str:
+          return ''
+
+      def expect_string(x: str) -> None:
+        pass
+
+      def test() -> None:
+        with WithClass() as x:
+          expect_string(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class WithClass():
+        def __enter__(self) -> int:
+          return 5
+
+      def expect_string(x: str) -> None:
+        pass
+
+      def test() -> None:
+        with WithClass() as x:
+          expect_string(x)
+
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
+
+
 let () =
   "method">:::[
     "check_abstract_methods">::test_check_abstract_methods;
@@ -1246,5 +1280,6 @@ let () =
     "check_static">::test_check_static;
     "check_nested_class_inheritance">::test_check_nested_class_inheritance;
     "check_in">::test_check_in;
+    "check_enter">::test_check_enter;
   ]
   |> Test.run

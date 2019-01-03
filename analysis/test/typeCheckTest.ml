@@ -17,10 +17,6 @@ open TypeCheck
 open Test
 
 
-let assert_type_errors =
-  assert_errors ~check:TypeCheck.check
-
-
 let resolution = Test.resolution ()
 
 
@@ -1011,111 +1007,6 @@ let test_coverage _ =
     { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
 
 
-let test_check _ =
-  assert_type_errors
-    {|
-      _T = typing.TypeVar("_T")
-      def meta(x: typing.Type[_T]) -> None: ...
-      meta(typing.Dict)
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got " ^
-     "`typing.TypeAlias`."];
-
-  assert_type_errors
-    {|
-      class other(): pass
-      def foo() -> other:
-        result = 0
-        if True:
-          result = not_annotated()
-        return result
-    |}
-    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
-
-  assert_type_errors
-    {|
-      def f(x: int) -> None:
-        x: str = int_to_str(x)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def derp()->typing.Union[str, None]:
-          return None
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class WithClass():
-        def __enter__(self) -> str:
-          return ''
-
-      def expect_string(x: str) -> None:
-        pass
-
-      def test() -> None:
-        with WithClass() as x:
-          expect_string(x)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class WithClass():
-        def __enter__(self) -> int:
-          return 5
-
-      def expect_string(x: str) -> None:
-        pass
-
-      def test() -> None:
-        with WithClass() as x:
-          expect_string(x)
-
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
-
-
-let test_check_assign _ =
-  assert_type_errors
-    {|
-      def foo() -> None:
-        x = 1
-        x = 'string'  # Reassignment is okay.
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        x: int = 1
-        x = 'string'
-    |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."
-    ];
-
-  assert_type_errors
-    {|
-      def foo(input: typing.Tuple[int, str]) -> None:
-        x = input
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        x = 1
-        x += 'asdf'
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
-
-
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -1127,7 +1018,5 @@ let () =
     "forward_statement">::test_forward_statement;
     "forward">::test_forward;
     "coverage">::test_coverage;
-    "check">::test_check;
-    "check_assign">::test_check_assign;
   ]
   |> Test.run

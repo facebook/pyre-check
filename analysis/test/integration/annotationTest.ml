@@ -728,7 +728,23 @@ let test_explicit_annotation _ =
       def foobar() -> None:
           b: int = None
     |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = 1
+        x = 'string'
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."
+    ];
+  assert_type_errors
+    {|
+      def f(x: int) -> None:
+        x: str = int_to_str(x)
+    |}
     []
+
 
 
 let () =

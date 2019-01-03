@@ -79,6 +79,13 @@ let test_check_return _ =
     [];
 
   assert_type_errors
+    {|
+      def derp()->typing.Union[str, None]:
+          return None
+    |}
+    [];
+
+  assert_type_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
     [
       "Incompatible return type [7]: Expected `str` but got `float`.";
@@ -327,7 +334,18 @@ let test_check_return_control_flow _ =
     [
       "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
       "`typing.Type[typing.Any]`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      class other(): pass
+      def foo() -> other:
+        result = 0
+        if True:
+          result = not_annotated()
+        return result
+    |}
+    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
 
 
 
