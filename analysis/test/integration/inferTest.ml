@@ -264,6 +264,20 @@ let test_check_missing_return _ =
       def foo():
         if condition():
           return 1
+        elif condition():
+          return 'asdf'
+        else:
+          return None
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Optional[typing.Union[int, str]]` " ^
+      "but no return type is specified."
+    ];
+  assert_type_errors
+    {|
+      def foo():
+        if condition():
+          return 1
         else:
           return 2.0
     |}
