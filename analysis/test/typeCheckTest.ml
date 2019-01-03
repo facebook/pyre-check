@@ -1417,40 +1417,6 @@ let test_check_assign _ =
      "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
 
 
-let test_check_redundant_cast _ =
-  assert_type_errors
-    {|
-      def foo(x: int) -> None:
-        typing.cast(int, x)
-    |}
-    ["Redundant cast [22]: The value being cast is already of type `int`."];
-  assert_type_errors
-    {|
-      def foo(x: str) -> None:
-        typing.cast(int, x)
-    |}
-    [];
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo(x: typing.Any) -> None:
-        typing.cast(int, x)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo(x: dict[int, int]) -> None:
-        typing.cast(dict[int, int], x)
-    |}
-    ["Redundant cast [22]: The value being cast is already of type `typing.Dict[int, int]`."];
-  assert_type_errors
-    {|
-      def foo(x: dict[int, int]) -> None:
-        typing.cast(dict[int, str], x)
-    |}
-    []
-
-
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -1465,6 +1431,5 @@ let () =
     "coverage">::test_coverage;
     "check">::test_check;
     "check_assign">::test_check_assign;
-    "check_redundant_cast">::test_check_redundant_cast;
   ]
   |> Test.run

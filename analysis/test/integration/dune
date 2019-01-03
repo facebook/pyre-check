@@ -27,6 +27,7 @@
   importTest
   inferTest
   methodTest
+  redundantCastTest
   revealTypeTest
   returnTest
   varianceTest
