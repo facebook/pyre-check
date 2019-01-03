@@ -27,6 +27,7 @@
   importTest
   inferTest
   methodTest
+  revealTypeTest
   returnTest
   varianceTest
   tupleTest
