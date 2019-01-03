@@ -1531,80 +1531,6 @@ let test_check _ =
     []
 
 
-let test_check_in _ =
-  assert_type_errors
-    {|
-      class WeirdContains:
-        def __contains__(self, x: int) -> int:
-          ...
-      reveal_type(1 in WeirdContains())
-    |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdContains()` is `int`."];
-
-  assert_type_errors
-    {|
-      class WeirdIterator:
-        def __eq__(self, other) -> str:
-          ...
-        def __iter__(self) -> typing.Iterator[WeirdIterator]:
-          ...
-      reveal_type(1 in WeirdIterator())
-    |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdIterator()` is `str`."];
-  assert_type_errors
-    {|
-      class WeirdEqual:
-        def __eq__(self, other: object) -> typing.List[int]:
-          ...
-      class WeirdGetItem:
-        def __getitem__(self, x: int) -> WeirdEqual:
-          ...
-      reveal_type(1 in WeirdGetItem())
-    |}
-    ["Revealed type [-1]: Revealed type for `1 in WeirdGetItem()` is `typing.List[int]`."];
-  assert_type_errors
-    {|
-      class Equal:
-        def __eq__(self, other: object) -> str:
-          ...
-      class Multiple:
-        def __iter__(self, x: int) -> typing.Iterator[Equal]:
-          ...
-        def __contains__(self, a: object) -> bool:
-          ...
-      reveal_type(1 in Multiple())
-    |}
-    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `bool`."];
-  assert_type_errors
-    {|
-      class Equal:
-        def __eq__(self, other: object) -> str:
-          ...
-      class Multiple:
-        def __getitem__(self, x: int) -> Equal:
-          ...
-        def __contains__(self, a: object) -> int:
-          ...
-      reveal_type(1 in Multiple())
-    |}
-    ["Revealed type [-1]: Revealed type for `1 in Multiple()` is `int`."];
-  assert_type_errors
-    {|
-      class Equal:
-        def __eq__(self, other: object) -> typing.List[int]:
-          ...
-      class GetItemA:
-        def __getitem__(self, x: int) -> Equal:
-          ...
-      class GetItemB:
-        def __getitem__(self, x: int) -> Equal:
-          ...
-      def foo(a: typing.Union[GetItemA, GetItemB]) -> None:
-        5 in a
-    |}
-    []
-
-
 let test_check_assign _ =
   assert_type_errors
     {|
@@ -1739,72 +1665,6 @@ let test_check_redundant_cast _ =
     []
 
 
-let test_check_unbound_variables _ =
-  assert_type_errors
-    {|
-      def foo(flag: bool) -> int:
-        if flag:
-          result = 1
-        else:
-          other = 1
-        return result
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got " ^
-      "`typing.Union[int, typing.Undeclared]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
-    ];
-  assert_type_errors
-    {|
-      def foo(flag: bool) -> int:
-        if flag:
-          result = narnia()
-        return result
-    |}
-    [
-      "Undefined name [18]: Global name `narnia` is undefined.";
-      "Incompatible return type [7]: Expected `int` but got " ^
-      "`typing.Union[typing.Undeclared, unknown]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
-    ];
-  assert_type_errors
-    {|
-      def foo(flag: bool) -> int:
-        if flag:
-          result = narnia()
-        else:
-          other = 1
-        return result
-    |}
-    [
-      "Undefined name [18]: Global name `narnia` is undefined.";
-      "Incompatible return type [7]: Expected `int` but got " ^
-      "`typing.Union[typing.Undeclared, unknown]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo() -> int:
-        assert unknown is None or 1
-        return unknown
-    |}
-    [
-      "Undefined name [18]: Global name `unknown` is undefined.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-  assert_type_errors
-    {|
-      class Foo:
-        attribute: bool = False
-        def foo(self) -> int:
-          if not self.attribute:
-            self.attribute = True
-          return self.attribute
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `bool`."]
-
-
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -1819,10 +1679,8 @@ let () =
     "check_error_traces">::test_show_error_traces;
     "coverage">::test_coverage;
     "check">::test_check;
-    "check_in">::test_check_in;
     "check_assign">::test_check_assign;
     "check_nested">::test_check_nested;
     "check_redundant_cast">::test_check_redundant_cast;
-    "check_unbound_variables">::test_check_unbound_variables;
   ]
   |> Test.run

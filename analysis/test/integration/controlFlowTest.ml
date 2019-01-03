@@ -226,10 +226,77 @@ let test_check_ternary _ =
     []
 
 
+let test_check_unbound_variables _ =
+  assert_type_errors
+    {|
+      def foo(flag: bool) -> int:
+        if flag:
+          result = 1
+        else:
+          other = 1
+        return result
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[int, typing.Undeclared]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
+    ];
+  assert_type_errors
+    {|
+      def foo(flag: bool) -> int:
+        if flag:
+          result = narnia()
+        return result
+    |}
+    [
+      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[typing.Undeclared, unknown]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
+    ];
+  assert_type_errors
+    {|
+      def foo(flag: bool) -> int:
+        if flag:
+          result = narnia()
+        else:
+          other = 1
+        return result
+    |}
+    [
+      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Incompatible return type [7]: Expected `int` but got " ^
+      "`typing.Union[typing.Undeclared, unknown]`.";
+      "Undefined name [18]: Global name `result` is undefined.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> int:
+        assert unknown is None or 1
+        return unknown
+    |}
+    [
+      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: bool = False
+        def foo(self) -> int:
+          if not self.attribute:
+            self.attribute = True
+          return self.attribute
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `bool`."]
+
+
 let () =
   "controlFlow">:::[
     "scheduling">::test_scheduling;
     "check_excepts">::test_check_excepts;
     "check_ternary">::test_check_ternary;
+    "check_unbound_variables">::test_check_unbound_variables;
   ]
   |> Test.run
