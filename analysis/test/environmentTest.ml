@@ -49,16 +49,16 @@ let populate_with_sources ?(environment = create_environment ()) sources =
   |> Environment.handler ~configuration
 
 
-let populate ?(environment = create_environment ()) source =
-  populate_with_sources ~environment [parse source]
+let populate ?(environment = create_environment ()) ?handle ?qualifier source =
+  populate_with_sources ~environment [parse ?handle ?qualifier source]
 
 
-let populate_preprocess ?(environment = create_environment ()) source =
+let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifier source =
   populate_with_sources
     ~environment
     [
       source
-      |> parse
+      |> parse ?handle ?qualifier
       |> Preprocessing.preprocess
     ]
 
@@ -525,6 +525,21 @@ let test_register_globals _ =
     Environment.handler ~configuration (create_environment ())
   in
   let resolution = TypeCheck.resolution (module Handler) () in
+
+  let assert_global access expected =
+    let actual =
+      Access.create access
+      |> Handler.globals
+      >>| Node.value
+      >>| Annotation.annotation
+    in
+    assert_equal
+      ~printer:(function | Some annotation -> Type.show annotation | _ -> "(none)")
+      ~cmp:(Option.equal Type.equal)
+      expected
+      actual
+  in
+
   let source =
     parse
       {|
@@ -540,24 +555,30 @@ let test_register_globals _ =
       |}
   in
   Environment.register_globals (module Handler) resolution source;
-
-  let assert_global access expected =
-    let actual =
-      Access.create access
-      |> Handler.globals
-      >>| Node.value
-      >>| Annotation.annotation
-    in
-    assert_equal ~cmp:(Option.equal Type.equal) expected actual
-  in
-
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some Type.Top);
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
   assert_global "qualifier.Class" (Some (Type.meta (Type.Primitive "qualifier.Class")));
-  assert_global "qualifier.in_branch" (Some Type.integer)
+  assert_global "qualifier.in_branch" (Some Type.integer);
+
+  let source =
+    parse
+      ~handle:"test.py"
+      ~qualifier:(Access.create "test")
+      {|
+        class Class: ...
+        alias = Class
+
+        GLOBAL: Class = ...
+        GLOBAL2: alias = ...
+      |}
+    |> Preprocessing.preprocess
+  in
+  Environment.register_globals (module Handler) resolution source;
+  assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
+  assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"))
 
 
 let test_connect_type_order _ =
@@ -823,16 +844,31 @@ let test_populate _ =
       A: int = 0
       B = 0
       C = ... # type: int
+
+      class Foo(): pass
+      alias = Foo
+      G: Foo = ...
+      H: alias = ...
     |}
-    |> populate
+    |> populate_preprocess ~handle:"test.py" ~qualifier:(Access.create "test")
     |> assert_global_with_environment
   in
 
-  assert_global "A" (Annotation.create_immutable ~global:true Type.integer);
   assert_global
-    "B"
+    "test.A"
+    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
+  assert_global
+    "test.B"
     (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
-  assert_global "C" (Annotation.create_immutable ~global:true Type.integer);
+  assert_global
+    "test.C"
+    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
+  assert_global
+    "test.G"
+    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.Foo"));
+  assert_global
+    "test.H"
+    (Annotation.create_immutable ~global:true (parse_annotation environment !"test.Foo"));
 
   let assert_global =
     {|

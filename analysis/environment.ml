@@ -637,7 +637,16 @@ let register_globals
         | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
             let annotation, explicit =
               match annotation with
-              | Some annotation ->
+              | Some ({ Node.location; value } as annotation) ->
+                  let annotation =
+                    match value with
+                    | Access access ->
+                        (* Local names don't make sense when used globally. *)
+                        Access.delocalize access
+                        |> Access.expression ~location
+                    | _ ->
+                        annotation
+                  in
                   Type.create ~aliases:Handler.aliases annotation, true
               | None ->
                   let annotation =
