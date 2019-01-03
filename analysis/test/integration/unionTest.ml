@@ -78,8 +78,6 @@ let test_check_union _ =
     |}
     [
       "Undefined type [11]: Type `Undefined` is not defined.";
-      "Incompatible parameter type [6]: Expected `typing.Union[Undefined, int]` " ^
-      "for 1st anonymous parameter to call `foo` but got `int`.";
     ];
 
   assert_type_errors

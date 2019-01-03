@@ -1004,7 +1004,7 @@ let test_coverage _ =
         x = returns_undefined()
         return x
     |}
-    { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
+    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
 
 
 let () =

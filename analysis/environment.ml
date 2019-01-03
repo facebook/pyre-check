@@ -749,7 +749,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
 
           (* Register callable global. *)
           let callable =
-            (* Only omit `self` for class methods in the environment.When accessed globally,
+            (* Only omit `self` for class methods in the environment. When accessed globally,
                Instance methods require the calling class to be passed in. *)
             let parent =
               if Define.is_class_method define then

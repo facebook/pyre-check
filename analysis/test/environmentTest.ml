@@ -29,27 +29,39 @@ let value option =
 let configuration = Configuration.Analysis.create ~infer:true ()
 
 
-let plain_populate sources =
+let create_environment ?(include_helpers = false) () =
   let environment = Environment.Builder.create () in
+  Service.Environment.populate
+    ~configuration
+    (Environment.handler ~configuration environment)
+    (typeshed_stubs ~include_helper_builtins:include_helpers ());
+  environment
+
+
+let plain_populate ~environment sources =
   let handler = Environment.handler ~configuration environment in
   Service.Environment.populate ~configuration handler sources;
   environment
 
 
-let populate_with_sources sources =
-  plain_populate sources
+let populate_with_sources ?(environment = create_environment ()) sources =
+  plain_populate ~environment sources
   |> Environment.handler ~configuration
 
 
-let populate source =
-  populate_with_sources [parse source]
+let populate ?(environment = create_environment ()) source =
+  populate_with_sources ~environment [parse source]
 
-let populate_preprocess source =
-  populate_with_sources [
-    source
-    |> parse
-    |> Preprocessing.preprocess
-  ]
+
+let populate_preprocess ?(environment = create_environment ()) source =
+  populate_with_sources
+    ~environment
+    [
+      source
+      |> parse
+      |> Preprocessing.preprocess
+    ]
+
 
 let global environment =
   TypeCheck.resolution environment ()
@@ -73,8 +85,9 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_definitions _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ())
+  in
   Environment.register_class_definitions
     (module Handler)
     (parse {|
@@ -127,8 +140,9 @@ let test_register_class_definitions _ =
 
 
 let test_refine_class_definitions _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ~include_helpers:false ())
+  in
   let source =
     parse
       {|
@@ -220,8 +234,9 @@ let test_refine_class_definitions _ =
 let test_register_aliases _ =
   let assert_resolved sources aliases =
     let (module Handler) =
-      let environment = Environment.Builder.create () in
-      let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+      let (module Handler: Environment.Handler) =
+        Environment.handler ~configuration (create_environment ())
+      in
       let sources = List.map sources ~f:Preprocessing.preprocess in
       let register
           ({
@@ -445,8 +460,9 @@ let test_register_aliases _ =
 
 
 let test_connect_definition _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ())
+  in
   let resolution = TypeCheck.resolution (module Handler) () in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
@@ -505,8 +521,9 @@ let test_connect_definition _ =
 
 
 let test_register_globals _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ())
+  in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse
@@ -544,8 +561,9 @@ let test_register_globals _ =
 
 
 let test_connect_type_order _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ~include_helpers:false ())
+  in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse {|
@@ -558,7 +576,7 @@ let test_connect_type_order _ =
            ...
        B = D
        A = B
-       def foo()->A:
+       def foo() -> A:
          return D()
     |}
   in
@@ -572,8 +590,8 @@ let test_connect_type_order _ =
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.show)
-      (TypeOrder.successors order annotation)
       successors
+      (TypeOrder.successors order annotation)
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors (Type.Primitive "C") [];
@@ -587,9 +605,11 @@ let test_connect_type_order _ =
     (Type.Primitive "CallMe")
     [Type.Primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
 
+
 let test_register_functions _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ())
+  in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse {|
@@ -621,6 +641,10 @@ let test_register_functions _ =
        def wrapper() -> None:
          def wrapper.nested_in_function() -> None:
            pass
+
+       def function_with_undefined_parameter(x: Undefined) -> None: ...
+       def function_with_undefined_parameter_parametric(x: typing.List[Undefined]) -> None: ...
+       def function_with_undefined_return(x: int) -> Undefined: ...
     |}
   in
   Environment.register_functions (module Handler) resolution source;
@@ -669,7 +693,17 @@ let test_register_functions _ =
     "ClassWithOverloadedConstructor.__init__"
     ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
      "[[Named(self, $unknown), Named(i, int)], None]" ^
-     "[[[Named(self, $unknown), Named(s, str)], None]]")
+     "[[[Named(self, $unknown), Named(s, str)], None]]");
+
+  assert_global
+    "function_with_undefined_parameter"
+    "typing.Callable('function_with_undefined_parameter')[[Named(x, $unknown)], None]";
+  assert_global
+    "function_with_undefined_parameter_parametric"
+    "typing.Callable('function_with_undefined_parameter_parametric')[[Named(x, $unknown)], None]";
+  assert_global
+    "function_with_undefined_return"
+    "typing.Callable('function_with_undefined_return')[[Named(x, int)], $unknown]"
 
 
 let test_populate _ =
@@ -752,21 +786,25 @@ let test_populate _ =
   in
   (* Metaclasses aren't superclasses. *)
   let environment =
-    populate {|
-      class abc.ABCMeta: ...
-      class C(metaclass=abc.ABCMeta): ...
-    |}
+    populate
+      ~environment:(create_environment ~include_helpers:false ())
+      {|
+        class abc.ABCMeta: ...
+        class C(metaclass=abc.ABCMeta): ...
+      |}
   in
   assert_superclasses ~environment "C" ~superclasses:[Type.Object];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
-    populate {|
-      def foo() -> int:
-        return 1
-      class C(foo()):
-        pass
-    |}
+    populate
+      ~environment:(create_environment ~include_helpers:false ())
+      {|
+        def foo() -> int:
+          return 1
+        class C(foo()):
+          pass
+      |}
   in
   assert_superclasses ~environment "C" ~superclasses:[Type.Object];
 
@@ -911,31 +949,33 @@ let test_populate _ =
 let test_infer_protocols_edges _ =
   let edges =
     let environment =
-      populate_preprocess {|
-        class Empty(typing.Protocol):
-          pass
-        class Sized(typing.Protocol):
-          def empty(self) -> bool: pass
-          def len(self) -> int: pass
-        class Supersized(typing.Protocol):
-          def empty(self) -> bool: pass
-          def len(self) -> int: pass
-        class List():
-          def empty(self) -> bool: pass
-          def length(self) -> int: pass
-        class Set():
-          def empty(self) -> bool: pass
-          def len(self) -> int: pass
-        class Subset(Set): pass
-        class AlmostSet():
-          def empty(self, a) -> bool: pass
-          def len(self) -> int: pass
-        class object:
-          def __hash__(self) -> int: ...
-        class SuperObject(typing.Protocol):
-            @abstractmethod
+      populate_preprocess
+        ~environment:(Environment.Builder.create ())
+        {|
+          class Empty(typing.Protocol):
+            pass
+          class Sized(typing.Protocol):
+            def empty(self) -> bool: pass
+            def len(self) -> int: pass
+          class Supersized(typing.Protocol):
+            def empty(self) -> bool: pass
+            def len(self) -> int: pass
+          class List():
+            def empty(self) -> bool: pass
+            def length(self) -> int: pass
+          class Set():
+            def empty(self) -> bool: pass
+            def len(self) -> int: pass
+          class Subset(Set): pass
+          class AlmostSet():
+            def empty(self, a) -> bool: pass
+            def len(self) -> int: pass
+          class object:
             def __hash__(self) -> int: ...
-      |}
+          class SuperObject(typing.Protocol):
+              @abstractmethod
+              def __hash__(self) -> int: ...
+        |}
     in
     let resolution = TypeCheck.resolution environment () in
 
@@ -1241,38 +1281,6 @@ let test_meet _ =
   assert_meet Type.integer Type.float Type.integer
 
 
-let environment =
-  populate {|
-    _T = typing.TypeVar('_T')
-    def foo.foo(): ...
-    def bar.bar(): pass
-    def bar(): ...
-
-    def untyped(a, b): pass
-    def typed(a: str, b: int, c: int): pass
-
-    class list(): ...
-    class baz.baz(): pass
-  |}
-
-
-let base_environment =
-  {|
-    _T = typing.TypeVar('_T')
-    class typing.Generic(): pass
-    class typing.Iterable(typing.Generic[_T]): pass
-    _T2 = typing.TypeVar('_T2')
-    _T3 = typing.TypeVar('_T3')
-    class typing.Generator(typing.Generic[_T, _T2, _T3], typing.Iterable[_T]): pass
-    class typing.List(): pass
-    class str(): ...
-    class int(): ...
-    class list(typing.Iterable[_T], typing.Generic[_T]): ...
-    # implicitly subclasses generic.
-    class typing.Collection(typing.Iterable[_T]): ...
-  |}
-
-
 let test_supertypes _ =
   let environment =
     (populate {|
@@ -1414,8 +1422,9 @@ let test_import_dependencies context =
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
 let test_register_dependencies _ =
-  let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) =
+    Environment.handler ~configuration (create_environment ())
+  in
   let source = {|
          import a # a is added here
          from subdirectory.b import c # subdirectory.b is added here
@@ -1475,7 +1484,6 @@ let test_purge _ =
 let test_infer_protocols _ =
   let open Analysis in
   let configuration = Configuration.Analysis.create () in
-  let type_sources = Test.typeshed_stubs () in
   let assert_protocols ?classes_to_infer source expected_edges =
     Annotated.Class.Attribute.Cache.clear ();
     let expected_edges =
@@ -1492,14 +1500,9 @@ let test_infer_protocols _ =
       Test.parse source
       |> Preprocessing.preprocess
     in
-    let environment = Environment.Builder.create () in
-    Service.Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment)
-      (source :: type_sources);
-    let ((module Handler: Environment.Handler) as handler) =
-      Environment.handler environment ~configuration
-    in
+    let environment = Environment.handler ~configuration (create_environment ()) in
+    Service.Environment.populate ~configuration environment [source];
+    let ((module Handler: Environment.Handler) as handler) = environment in
     let resolution = TypeCheck.resolution (module Handler) () in
     let classes_to_infer =
       match classes_to_infer with
@@ -1602,7 +1605,11 @@ let test_propagate_nested_classes _ =
     Type.Cache.disable ();
     Type.Cache.enable ();
     let sources = List.map sources ~f:Preprocessing.preprocess in
-    let handler = populate_with_sources sources in
+    let handler =
+      populate_with_sources
+        ~environment:(create_environment ~include_helpers:false ())
+        sources
+    in
 
     let assert_alias (alias, target) =
       parse_single_expression alias

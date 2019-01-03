@@ -29,8 +29,8 @@ let test_check_typed_dictionaries _ =
         qualifier = Access.create "mypy_extensions";
         handle = "mypy_extensions.pyi";
         source =
-          "def TypedDict(typename: str, fields: Dict[str, Type[_T]], total: bool = ...) -> \
-           Type[dict]: ..."
+          "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], \
+           total: bool = ...) -> typing.Type[dict]: ..."
       }
     in
     let typed_dictionary_for_import =
@@ -436,7 +436,7 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` has type " ^
-      "`Type[typing.Dict[typing.Any, typing.Any]]` but no type is specified.";
+      "`typing.Type[typing.Dict[typing.Any, typing.Any]]` but no type is specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
       "Invalid type [31]: Expression `NamelessTypedDict` is not a valid type.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^

@@ -54,7 +54,7 @@ let test_fold _ =
       parse
         ~qualifier:(Access.create "has_getattr")
         ~handle:"has_getattr.pyi"
-        "def __getattr__(name: str) -> Any: ..."
+        "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess;
       parse
         {|
@@ -509,7 +509,7 @@ let test_fold _ =
   assert_fold "empty.stub.any_attribute" [{ annotation = Type.Top; element = Value }];
   assert_fold
     "has_getattr.any_attribute"
-    [{ annotation = parse_annotation "Any"; element = Value }];
+    [{ annotation = parse_annotation "typing.Any"; element = Value }];
 
   (* Typed dictionaries. *)
   let movie_typed_dictionary = {
