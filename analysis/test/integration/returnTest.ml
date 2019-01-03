@@ -345,9 +345,7 @@ let test_check_return_control_flow _ =
           result = not_annotated()
         return result
     |}
-    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
-
-
+    ["Incompatible return type [7]: Expected `other` but got `unknown`."]
 
 
 let test_check_collections _ =
