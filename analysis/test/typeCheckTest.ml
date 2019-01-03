@@ -1785,70 +1785,6 @@ let test_check_redundant_cast _ =
     []
 
 
-let test_check_async _ =
-  assert_type_errors
-    {|
-      async def foo() -> int: return 1
-      def bar() -> None:
-        await foo()
-    |}
-    [];
-  assert_type_errors
-    {|
-      def bar(a: typing.Awaitable[int]) -> int:
-        return await a
-    |}
-    [];
-  assert_type_errors
-    {|
-      def bar(a: IsAwaitable) -> int:
-        await a
-        return 0
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar("T")
-      class C(typing.Awaitable[T]): ...
-
-      def foo(c: C) -> int:
-        return (await c)
-    |}
-    [
-      "Missing type parameters [24]: Generic type `C` expects 1 type parameter.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-
-  assert_type_errors
-    {|
-      def bar(a: IsAwaitable) -> int:
-        return (await a)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def bar(a: int) -> None:
-        await a
-    |}
-    ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
-  assert_type_errors
-    ~debug:false
-    {|
-      def bar(a: typing.Any) -> None:
-        await a
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      async def read(file: typing.AsyncIterable[str]) -> typing.List[str]:
-        return [data async for data in file]
-    |}
-    []
-
-
 let test_check_unbound_variables _ =
   assert_type_errors
     {|
@@ -1929,11 +1865,11 @@ let () =
     "check_error_traces">::test_show_error_traces;
     "coverage">::test_coverage;
     "check">::test_check;
+    "check_in">::test_check_in;
     "check_assign">::test_check_assign;
     "check_imports">::test_check_imports;
     "check_nested">::test_check_nested;
     "check_redundant_cast">::test_check_redundant_cast;
-    "check_async">::test_check_async;
     "check_unbound_variables">::test_check_unbound_variables;
   ]
   |> Test.run

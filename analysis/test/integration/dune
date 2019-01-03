@@ -13,6 +13,7 @@
  (names
   annotationTest
   assertTest
+  asyncTest
   attributeTest
   coverageTest
   controlFlowTest
