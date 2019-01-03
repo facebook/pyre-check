@@ -302,7 +302,34 @@ let test_check_return_control_flow _ =
       def f() -> int:
         return builtins.__name__
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."]
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+
+  (* Meta. *)
+  assert_type_errors
+    {|
+      def f(meta: typing.Type[int]) -> type[int]:
+        return meta
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def f(meta: type[int]) -> typing.Type[int]:
+        return meta
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def f(meta: type) -> typing.Type[int]:
+        return meta
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
+      "`typing.Type[typing.Any]`.";
+    ]
+
+
 
 
 let test_check_collections _ =

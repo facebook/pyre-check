@@ -1215,67 +1215,6 @@ let test_coverage _ =
 let test_check _ =
   assert_type_errors
     {|
-      a: int = None
-      def foobar() -> None:
-          b: int = None
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
-      def foo() -> int:
-        return x[0]
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      x: typing.List[int]
-      def foo() -> typing.List[int]:
-        return x[0:1]
-    |}
-    [];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def f(x) -> int:
-        class Stub:
-          ...
-        class Actual:
-          def f() -> int:
-            return 0
-        if isinstance(x, Stub):
-          return -1
-        elif isinstance(x, Actual):
-          return 0
-        else:
-          return 1
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      isinstance(1, NonexistentClass)
-    |}
-    ["Undefined name [18]: Global name `NonexistentClass` is undefined."];
-
-  assert_type_errors "isinstance(1, (int, str))" [];
-  assert_type_errors "isinstance(1, (int, (int, str)))" [];
-  assert_type_errors
-    "isinstance(str, '')"
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` " ^
-     "but got `str`."];
-  assert_type_errors
-    "isinstance(1, (int, ('', str)))"
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Type[typing.Any]` for 2nd anonymous parameter to call `isinstance` " ^
-     "but got `str`."];
-
-  assert_type_errors
-    {|
       _T = typing.TypeVar("_T")
       def meta(x: typing.Type[_T]) -> None: ...
       meta(typing.Dict)
@@ -1283,13 +1222,6 @@ let test_check _ =
     ["Incompatible parameter type [6]: " ^
      "Expected `typing.Type[Variable[_T]]` for 1st anonymous parameter to call `meta` but got " ^
      "`typing.TypeAlias`."];
-
-  assert_type_errors
-    {|
-      def foo(a:typing.Optional[int])->str:
-        return int_to_str(a) if a else ""
-    |}
-    [];
 
   assert_type_errors
     {|
@@ -1346,39 +1278,7 @@ let test_check _ =
 
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."];
-
-  assert_type_errors
-    {|
-      def f(meta: typing.Type[int]) -> type[int]:
-        return meta
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f(meta: type[int]) -> typing.Type[int]:
-        return meta
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f(meta: type) -> typing.Type[int]:
-        return meta
-    |}
-    [
-      "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
-      "`typing.Type[typing.Any]`.";
-    ];
-
-  assert_type_errors
-    {|
-      def expect_type_float(meta: typing.Type[float]) -> None:
-        pass
-      expect_type_float(int)
-    |}
-    []
+     "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
 
 
 let test_check_assign _ =

@@ -721,6 +721,15 @@ let test_check_refinement _ =
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
+let test_explicit_annotation _ =
+  assert_type_errors
+    {|
+      a: int = None
+      def foobar() -> None:
+          b: int = None
+    |}
+    []
+
 
 let () =
   "annotation">:::[
@@ -730,5 +739,6 @@ let () =
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "check_immutable_annotations">::test_check_immutable_annotations;
     "check_refinement">::test_check_refinement;
+    "explicit_annotation">::test_explicit_annotation;
   ]
   |> Test.run

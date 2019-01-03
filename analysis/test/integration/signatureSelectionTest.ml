@@ -155,6 +155,14 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
+      def expect_type_float(meta: typing.Type[float]) -> None:
+        pass
+      expect_type_float(int)
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(a: int) -> int:
         return a
       x: typing.Optional[int]
@@ -662,7 +670,7 @@ let test_check_variable_arguments _ =
         return foo('asdf', *b)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";]
+     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`."]
 
 
 let test_check_callables _ =

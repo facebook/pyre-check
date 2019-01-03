@@ -182,6 +182,13 @@ let test_check_ternary _ =
     ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
   assert_type_errors
     {|
+      def foo(a:typing.Optional[int])->str:
+        return int_to_str(a) if a else ""
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(x: typing.Optional[int]) -> None:
           int_to_int(x) if x else 0
     |}

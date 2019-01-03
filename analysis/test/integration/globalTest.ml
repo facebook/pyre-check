@@ -208,6 +208,22 @@ let test_check_globals _ =
     ];
 
   assert_type_errors
+    {|
+      x: typing.List[int]
+      def foo() -> int:
+        return x[0]
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      x: typing.List[int]
+      def foo() -> typing.List[int]:
+        return x[0:1]
+    |}
+    [];
+
+  assert_type_errors
     ~update_environment_with:[
       {
         qualifier = Access.create "export";
