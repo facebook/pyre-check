@@ -1350,75 +1350,6 @@ let test_check _ =
 
   assert_type_errors
     {|
-      def foo( **kwargs: int) -> None:
-        return kwargs
-    |}
-    ["Incompatible return type [7]: Expected `None` but got `typing.Dict[str, int]`."];
-
-  assert_type_errors
-    {|
-      def f( *args: int) -> None:
-       pass
-      def g( *args: int) -> None:
-        return f( *args)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def f(a: int, b: int) -> None:
-       pass
-      def g(collection: typing.Collection[str]) -> None:
-        return f( *collection)
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `f` but got `str`."];
-  assert_type_errors
-    {|
-      class C(typing.Iterable[int]):
-        ...
-      def f(a: int, b: int) -> None:
-       pass
-      def g(c: C) -> None:
-        return f( *c)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f() -> str:
-        return __name__
-      def g() -> str:
-        return __file__
-      def h() -> str:
-        return typing.__name__
-      def i() -> str:
-        return ...
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `ellipses`."];
-
-  assert_type_errors
-    {|
-      def f() -> int:
-        return builtins.__name__
-    |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
-
-  (* object methods are picked up for optionals. *)
-  assert_type_errors
-    {|
-      def f() -> int:
-        return None.__sizeof__()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def f(x: typing.List[int]) -> typing.Set[str]:
-        return {1, *x}
-    |}
-    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
-  assert_type_errors
-    {|
       def f(meta: typing.Type[int]) -> type[int]:
         return meta
     |}
@@ -1478,76 +1409,12 @@ let test_check_assign _ =
 
   assert_type_errors
     {|
-      def foo(input: int) -> None:
-        x, y = input
-    |}
-    ["Unable to unpack [23]: Unable to unpack `int` into 2 values."];
-
-
-  assert_type_errors
-    {|
       def foo() -> None:
         x = 1
         x += 'asdf'
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
-
-
-let test_check_nested _ =
-  assert_type_errors
-    {|
-      def foo() -> None:
-        def nested() -> None:
-          int_to_int(1.0)
-        int_to_int(1.0)
-    |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo() -> None:
-        def g() -> None:
-          return
-        a = g()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Derp:
-          Word = collections.namedtuple("word", ("verb", "noun"))
-      def foo() -> Derp.Word: pass
-    |}
-    ["Incompatible return type [7]: Expected `Derp.Word` but got implicit return value of `None`."];
-
-  (* Nesting behaves differently for the toplevel function. *)
-  assert_type_errors
-    ~qualifier:(Access.create "shadowing")
-    {|
-      def shadowing(i: int) -> None: ...
-      shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `shadowing.shadowing` but got `str`."];
-
-  assert_type_errors
-    {|
-      def can_fail() -> None:
-        try:
-          x = 3
-        except:
-          pass
-        always_declared = 4
-        def bar() -> int:
-          return always_declared
-    |}
-    []
 
 
 let test_check_redundant_cast _ =
@@ -1598,7 +1465,6 @@ let () =
     "coverage">::test_coverage;
     "check">::test_check;
     "check_assign">::test_check_assign;
-    "check_nested">::test_check_nested;
     "check_redundant_cast">::test_check_redundant_cast;
   ]
   |> Test.run

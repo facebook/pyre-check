@@ -548,6 +548,27 @@ let test_check_constructor_overloads _ =
 let test_check_variable_arguments _ =
   assert_type_errors
     {|
+      class C(typing.Iterable[int]):
+        ...
+      def f(a: int, b: int) -> None:
+       pass
+      def g(c: C) -> None:
+        return f( *c)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def f(a: int, b: int) -> None:
+       pass
+      def g(collection: typing.Collection[str]) -> None:
+        return f( *collection)
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `f` but got `str`."];
+
+  assert_type_errors
+    {|
       def foo(a: int, b: int) -> int:
         return 1
       def bar(b) -> str:

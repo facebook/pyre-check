@@ -6,6 +6,8 @@
 open OUnit2
 open IntegrationTest
 
+open Ast.Expression
+
 
 let test_check_excepts _ =
   assert_type_errors
@@ -292,11 +294,68 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
+let test_check_nested _ =
+  assert_type_errors
+    {|
+      def foo() -> None:
+        def nested() -> None:
+          int_to_int(1.0)
+        int_to_int(1.0)
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        def g() -> None:
+          return
+        a = g()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Derp:
+          Word = collections.namedtuple("word", ("verb", "noun"))
+      def foo() -> Derp.Word: pass
+    |}
+    ["Incompatible return type [7]: Expected `Derp.Word` but got implicit return value of `None`."];
+
+  (* Nesting behaves differently for the toplevel function. *)
+  assert_type_errors
+    ~qualifier:(Access.create "shadowing")
+    {|
+      def shadowing(i: int) -> None: ...
+      shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `shadowing.shadowing` but got `str`."];
+
+  assert_type_errors
+    {|
+      def can_fail() -> None:
+        try:
+          x = 3
+        except:
+          pass
+        always_declared = 4
+        def bar() -> int:
+          return always_declared
+    |}
+    []
+
+
 let () =
   "controlFlow">:::[
     "scheduling">::test_scheduling;
     "check_excepts">::test_check_excepts;
     "check_ternary">::test_check_ternary;
     "check_unbound_variables">::test_check_unbound_variables;
+    "check_nested">::test_check_nested;
   ]
   |> Test.run

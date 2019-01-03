@@ -258,10 +258,61 @@ let test_check_return_control_flow _ =
           else:
             return -1
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def foo( **kwargs: int) -> None:
+        return kwargs
+    |}
+    ["Incompatible return type [7]: Expected `None` but got `typing.Dict[str, int]`."];
+
+  assert_type_errors
+    {|
+      def f( *args: int) -> None:
+       pass
+      def g( *args: int) -> None:
+        return f( *args)
+    |}
+    [];
+
+  (* Object methods are picked up for optionals. *)
+  assert_type_errors
+    {|
+      def f() -> int:
+        return None.__sizeof__()
+    |}
+    [];
+
+  (* Builtins. *)
+  assert_type_errors
+    {|
+      def f() -> str:
+        return __name__
+      def g() -> str:
+        return __file__
+      def h() -> str:
+        return typing.__name__
+      def i() -> str:
+        return ...
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `ellipses`."];
+
+  assert_type_errors
+    {|
+      def f() -> int:
+        return builtins.__name__
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `unknown`."]
 
 
 let test_check_collections _ =
+  assert_type_errors
+    {|
+      def f(x: typing.List[int]) -> typing.Set[str]:
+        return {1, *x}
+    |}
+    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
+
   assert_type_errors
     {|
       def foo(input: typing.Optional[typing.List[int]]) -> typing.List[int]:

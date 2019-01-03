@@ -227,7 +227,15 @@ let test_check_tuple _ =
       def foo() -> None:
         T(a=2)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      def foo(input: int) -> None:
+        x, y = input
+    |}
+    ["Unable to unpack [23]: Unable to unpack `int` into 2 values."]
+
+
 
 
 let () =
