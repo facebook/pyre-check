@@ -215,6 +215,14 @@ let test_check_return_control_flow _ =
           return int(x)
         return x
     |}
+    [];
+  (* Type aliases in the class hierarchy are resolved. I.e. we follow the conditional `Collection`
+     indirection in typeshed. *)
+  assert_type_errors
+    {|
+      def foo(input: typing.Sequence[int]) -> typing.Iterable[int]:
+        return input
+    |}
     []
 
 

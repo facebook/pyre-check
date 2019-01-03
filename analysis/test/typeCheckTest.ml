@@ -1342,6 +1342,14 @@ let test_reveal_type _ =
 let test_check _ =
   assert_type_errors
     {|
+      a: int = None
+      def foobar() -> None:
+          b: int = None
+    |}
+    [];
+
+  assert_type_errors
+    {|
       x: typing.List[int]
       def foo() -> int:
         return x[0]
@@ -1777,21 +1785,6 @@ let test_check_nested _ =
         always_declared = 4
         def bar() -> int:
           return always_declared
-  |}
-    []
-
-
-let test_check_toplevel _ =
-  assert_type_errors
-    "int_to_int(1.0)"
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int_to_int` but got `float`."];
-
-  assert_type_errors
-    {|
-      a: int = None
-      def foobar() -> None:
-          b: int = None
     |}
     []
 
@@ -2183,24 +2176,6 @@ let test_check_unbound_variables _ =
     ["Incompatible return type [7]: Expected `int` but got `bool`."]
 
 
-let test_environment _ =
-  (* Type aliases in signatures are resolved. *)
-  assert_type_errors
-    "hashlib.md5(1.0)"
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Union[int, str]` for 1st anonymous parameter to call `hashlib.md5` " ^
-     "but got `float`."];
-
-  (* Type aliases in the class hierarchy are resolved. I.e. we follow the conditional `Collection`
-     indirection in typeshed. *)
-  assert_type_errors
-    {|
-      def foo(input: typing.Sequence[int]) -> typing.Iterable[int]:
-        return input
-    |}
-    []
-
-
 let () =
   "type">:::[
     "initial">::test_initial;
@@ -2219,11 +2194,9 @@ let () =
     "check_optional">::test_check_optional;
     "check_imports">::test_check_imports;
     "check_nested">::test_check_nested;
-    "check_toplevel">::test_check_toplevel;
     "check_tuple">::test_check_tuple;
     "check_redundant_cast">::test_check_redundant_cast;
     "check_async">::test_check_async;
     "check_unbound_variables">::test_check_unbound_variables;
-    "environment">::test_environment;
   ]
   |> Test.run

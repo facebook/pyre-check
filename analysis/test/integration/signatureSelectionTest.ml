@@ -33,6 +33,13 @@ let test_check_function_parameters _ =
     [];
 
   assert_type_errors
+    "int_to_int(1.0)"
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `int_to_int` but got `float`.";
+    ];
+
+  assert_type_errors
     {|
       def foo() -> None:
         int_to_int(1.0)
@@ -69,6 +76,13 @@ let test_check_function_parameters _ =
         int_to_int(i)
     |}
     ["Missing parameter annotation [2]: Parameter `i` has no type specified."];
+
+  (* Type aliases in signatures are resolved. *)
+  assert_type_errors
+    "hashlib.md5(1.0)"
+    ["Incompatible parameter type [6]: " ^
+     "Expected `typing.Union[int, str]` for 1st anonymous parameter to call `hashlib.md5` " ^
+     "but got `float`."];
 
   assert_type_errors
     {|
