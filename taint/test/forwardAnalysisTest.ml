@@ -31,7 +31,9 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
       >>| (fun model -> [Test.parse model])
       |> Option.value ~default:[]
     in
-    let environment = Test.environment ~sources:(Test.typeshed_stubs @ models) ~configuration () in
+    let environment =
+      Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
+    in
     Service.Environment.populate ~configuration environment [source];
     environment
   in

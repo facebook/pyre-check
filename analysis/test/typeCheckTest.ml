@@ -250,7 +250,7 @@ let test_widen _ =
 
 let test_check_annotation _ =
   let assert_check_annotation source expression descriptions =
-    let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs) () in
+    let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) () in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
     let errors = List.map ~f:(Error.description ~detailed:false) (Map.data errors) in

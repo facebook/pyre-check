@@ -94,7 +94,7 @@ let test_fold _ =
         |}
       |> Preprocessing.preprocess;
     ] in
-    populate_with_sources (sources @ Test.typeshed_stubs)
+    populate_with_sources (sources @ Test.typeshed_stubs ())
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let parse_annotation annotation =
@@ -753,7 +753,7 @@ let test_fold _ =
 
 let assert_resolved sources access expected =
   let resolution =
-    populate_with_sources (sources @ typeshed_stubs)
+    populate_with_sources (sources @ typeshed_stubs ())
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =

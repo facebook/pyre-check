@@ -441,7 +441,7 @@ let test_implements _ =
     Service.Environment.populate
       ~configuration
       (Environment.handler ~configuration environment)
-      (definition :: protocol :: Test.typeshed_stubs);
+      (definition :: protocol :: Test.typeshed_stubs ());
     let ((module Handler: Environment.Handler) as handler) =
       Environment.handler environment ~configuration
     in

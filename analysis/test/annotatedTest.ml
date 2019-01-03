@@ -32,7 +32,7 @@ let populate source =
     Service.Environment.populate
       ~configuration
       (Environment.handler ~configuration environment)
-      (parse source :: typeshed_stubs);
+      (parse source :: typeshed_stubs ());
     environment
   in
   Environment.handler ~configuration environment

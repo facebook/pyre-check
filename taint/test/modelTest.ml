@@ -15,7 +15,7 @@ open TestHelper
 let assert_model ~model_source ~expect =
   let resolution =
     Test.resolution
-      ~sources:(Test.typeshed_stubs @ [Test.parse model_source])
+      ~sources:(Test.typeshed_stubs () @ [Test.parse model_source])
       ()
   in
   let models =

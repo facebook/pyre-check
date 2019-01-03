@@ -20,7 +20,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
       Service.Environment.populate
         ~configuration
         (Analysis.Environment.handler ~configuration environment)
-        (typeshed_stubs @ sources);
+        (typeshed_stubs () @ sources);
       environment
     in
     Analysis.Environment.handler ~configuration environment
