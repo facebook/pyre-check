@@ -31,6 +31,92 @@ let test_check_method_returns _ =
     ["Incompatible return type [7]: Expected `int` but got `str`."]
 
 
+let test_check_method_parameters _ =
+  assert_type_errors
+    {|
+      def foo(input: str) -> None:
+        input.substr(1)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(input: str) -> None:
+        input.substr('asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: str, b: str) -> None:
+        pass
+      def bar() -> None:
+        foo(1, 2)
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(input: str) -> str:
+        return input.substr('asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(input: str) -> None:
+        input.substr('asdf').substr('asdf')
+    |}
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(input: str) -> None:
+        input + 1
+    |}
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
+
+  assert_type_errors
+    {|
+      def foo(input: str) -> str:
+        return input.__sizeof__()
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(self) -> None:
+          def baz(x: int) -> int:
+            return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(x: int) -> int:
+          return x
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
+      "Incompatible return type [7]: Expected `int` but got `Foo`.";
+    ]
+
+
 let test_check_abstract_methods _ =
   assert_type_errors
     {|
@@ -520,90 +606,77 @@ let test_check_behavioral_subtyping _ =
     []
 
 
-let test_check_method_parameters _ =
+let test_check_nested_class_inheritance _ =
   assert_type_errors
     {|
-      def foo(input: str) -> None:
-        input.substr(1)
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return Y.Q()
     |}
     [];
-
   assert_type_errors
     {|
-      def foo(input: str) -> None:
-        input.substr('asdf')
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      def foo() -> Y.Q:
+          return X.Q()
     |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
-    ];
-
+    [];
   assert_type_errors
     {|
-      def foo(a: str, b: str) -> None:
+      class X():
+          class Q():
+              pass
+
+      class Y(X):
+          pass
+
+      class Z():
+          class Q():
+              pass
+
+      def foo() -> Y.Q:
+          return Z.Q()
+    |}
+    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
+  assert_type_errors
+    {|
+      class X:
+        class N:
+          class NN:
+            class NNN:
+              pass
+      class Y(X):
         pass
-      def bar() -> None:
-        foo(1, 2)
-    |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo(input: str) -> str:
-        return input.substr('asdf')
-    |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo(input: str) -> None:
-        input.substr('asdf').substr('asdf')
-    |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
-    ];
-
-  assert_type_errors
-    {|
-      def foo(input: str) -> None:
-        input + 1
-    |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
-
-  assert_type_errors
-    {|
-      def foo(input: str) -> str:
-        return input.__sizeof__()
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
-
-  assert_type_errors
-    {|
-      class Foo:
-        def bar(self) -> None:
-          def baz(x: int) -> int:
-            return x
+      def foo() -> Y.N.NN.NNN:
+          return Y.N.NN.NNN()
     |}
     [];
-
   assert_type_errors
     {|
-      class Foo:
-        def bar(x: int) -> int:
-          return x
+      class B1:
+        class N:
+          pass
+      class B2:
+        class N:
+          pass
+      class C(B1, B2):
+        pass
+      def foo() -> C.N:
+        return C.N()
     |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
-      "Incompatible return type [7]: Expected `int` but got `Foo`.";
-    ]
+    []
 
 
 let test_check_method_resolution _ =
@@ -618,6 +691,130 @@ let test_check_method_resolution _ =
     {|
       def foo(input: str) -> None:
         input.lower()
+    |}
+    []
+
+
+let test_check_callable_protocols _ =
+  (* Objects with a `__call__` method are callables. *)
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [];
+
+  (* We handle subclassing. *)
+  assert_type_errors
+    {|
+      class BaseClass:
+        def __call__(self, val: typing.Optional[str] = None) -> "BaseClass":
+          ...
+      class SubClass(BaseClass):
+        pass
+      def f(sc: SubClass) -> None:
+        sc('foo')
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(call: Call) -> int:
+        return call()
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Call error [29]: `Call` is not a function.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(call) -> int:
+        return call()
+    |}
+    [];
+
+  (* Test for terminating fixpoint *)
+  assert_type_errors
+    {|
+      class Call:
+        def not_call(self) -> int: ...
+      def foo(x: int, call: Call) -> int:
+        for x in range(0, 7):
+          call()
+        return 7
+    |}
+    [
+      "Call error [29]: `Call` is not a function.";
+    ];
+
+  assert_type_errors
+    {|
+      class patch:
+        def __call__(self) -> int: ...
+
+      unittest.mock.patch: patch = ...
+
+      def foo() -> None:
+        unittest.mock.patch()
+        unittest.mock.patch()  # subequent calls should not modify annotation map
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(self, x: int) -> str:
+          return ""
+
+      def bar() -> None:
+        return Foo.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar(self, x: int) -> str:
+          return ""
+
+      def bar() -> None:
+        return Foo.bar
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got " ^
+      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Call:
+        def __call__(self, x: int) -> int: ...
+      def foo(call: Call) -> int:
+        return call("")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
+       `Call.__call__` but got `str`.";
+    ]
+
+
+let test_check_explicit_method_call _ =
+  assert_type_errors
+    {|
+      class Class:
+        def method(self, i: int) -> None:
+          pass
+      Class.method(object(), 1)
     |}
     []
 
@@ -663,6 +860,137 @@ let test_check_self _ =
         a = Subclass()
         b = a.f
         return b(1)
+    |}
+    []
+
+
+let test_check_meta_self _ =
+  assert_type_errors
+    ~debug:false
+    {|
+      T = typing.TypeVar('T')
+      S = typing.TypeVar('S')
+      class C(typing.Generic[T]): pass
+      def foo(input: typing.Any) -> None:
+        typing.cast(C[int], input)
+      class D(typing.Generic[T, S]): pass
+      def foo(input: typing.Any) -> None:
+        typing.cast(D[int, float], input)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> C:
+        return C.__construct__()
+      def boo() -> Subclass:
+        return Subclass.__construct__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo() -> C:
+        return Subclass.__construct__()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        @classmethod
+        def __construct__(cls: typing.Type[T]) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo()-> Subclass:
+        return C.__construct__()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(s: Subclass) -> Subclass:
+        to_call = s.f
+        return to_call()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      class C:
+        def f(self: T) -> T:
+          ...
+      class Subclass(C):
+        ...
+      def foo(c: C)-> Subclass:
+        to_call = c.f
+        return to_call()
+    |}
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+
+
+  assert_type_errors
+    {|
+      class Foo:
+        def foo(self) -> typing.Type[Foo]:
+          return type(self)
+        def bar(self) -> typing.Type[int]:
+          return type(1)
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        ATTRIBUTE: typing.ClassVar[int] = 1
+        def foo(self) -> int:
+          return type(self).ATTRIBUTE
+    |}
+    [];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(t: T) -> str:
+        return type(t).__name__
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
+        return type(x).__name__
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      R = C
+      def foo() -> C:
+        return R()
     |}
     []
 
@@ -829,334 +1157,6 @@ let test_check_setitem _ =
      "Expected `str` for 1st anonymous parameter to call `dict.__setitem__` but got `int`."]
 
 
-let test_check_callable_protocols _ =
-  (* Objects with a `__call__` method are callables. *)
-  assert_type_errors
-    {|
-      class Call:
-        def __call__(self) -> int: ...
-      def foo(call: Call) -> int:
-        return call()
-    |}
-    [];
-
-  (* We handle subclassing. *)
-  assert_type_errors
-    {|
-      class BaseClass:
-        def __call__(self, val: typing.Optional[str] = None) -> "BaseClass":
-          ...
-      class SubClass(BaseClass):
-        pass
-      def f(sc: SubClass) -> None:
-        sc('foo')
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Call:
-        def not_call(self) -> int: ...
-      def foo(call: Call) -> int:
-        return call()
-    |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Call error [29]: `Call` is not a function.";
-    ];
-
-  assert_type_errors
-    ~debug:false
-    {|
-      def foo(call) -> int:
-        return call()
-    |}
-    [];
-
-  (* Test for terminating fixpoint *)
-  assert_type_errors
-    {|
-      class Call:
-        def not_call(self) -> int: ...
-      def foo(x: int, call: Call) -> int:
-        for x in range(0, 7):
-          call()
-        return 7
-    |}
-    [
-      "Call error [29]: `Call` is not a function.";
-    ];
-
-  assert_type_errors
-    {|
-      class patch:
-        def __call__(self) -> int: ...
-
-      unittest.mock.patch: patch = ...
-
-      def foo() -> None:
-        unittest.mock.patch()
-        unittest.mock.patch()  # subequent calls should not modify annotation map
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Foo:
-        def bar(self, x: int) -> str:
-          return ""
-
-      def bar() -> None:
-        return Foo.bar
-    |}
-    [
-      "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Callable(Foo.bar)[[Named(self, unknown), Named(x, int)], str]`.";
-    ];
-
-  assert_type_errors
-    {|
-      class Foo:
-        @classmethod
-        def bar(self, x: int) -> str:
-          return ""
-
-      def bar() -> None:
-        return Foo.bar
-    |}
-    [
-      "Incompatible return type [7]: Expected `None` but got " ^
-      "`typing.Callable(Foo.bar)[[Named(x, int)], str]`.";
-    ];
-
-  assert_type_errors
-    {|
-      class Call:
-        def __call__(self, x: int) -> int: ...
-      def foo(call: Call) -> int:
-        return call("")
-    |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-       `Call.__call__` but got `str`.";
-    ]
-
-
-let test_check_explicit_method_call _ =
-  assert_type_errors
-    {|
-      class Class:
-        def method(self, i: int) -> None:
-          pass
-      Class.method(object(), 1)
-    |}
-    []
-
-
-let test_check_nested_class_inheritance _ =
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      def foo() -> Y.Q:
-          return Y.Q()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      def foo() -> Y.Q:
-          return X.Q()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class X():
-          class Q():
-              pass
-
-      class Y(X):
-          pass
-
-      class Z():
-          class Q():
-              pass
-
-      def foo() -> Y.Q:
-          return Z.Q()
-    |}
-    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
-  assert_type_errors
-    {|
-      class X:
-        class N:
-          class NN:
-            class NNN:
-              pass
-      class Y(X):
-        pass
-      def foo() -> Y.N.NN.NNN:
-          return Y.N.NN.NNN()
-    |}
-    [];
-  assert_type_errors
-    {|
-      class B1:
-        class N:
-          pass
-      class B2:
-        class N:
-          pass
-      class C(B1, B2):
-        pass
-      def foo() -> C.N:
-        return C.N()
-    |}
-    []
-
-
-let test_check_meta_self _ =
-  assert_type_errors
-    ~debug:false
-    {|
-      T = typing.TypeVar('T')
-      S = typing.TypeVar('S')
-      class C(typing.Generic[T]): pass
-      def foo(input: typing.Any) -> None:
-        typing.cast(C[int], input)
-      class D(typing.Generic[T, S]): pass
-      def foo(input: typing.Any) -> None:
-        typing.cast(D[int, float], input)
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      class C:
-        @classmethod
-        def __construct__(cls: typing.Type[T]) -> T:
-          ...
-      class Subclass(C):
-        ...
-      def foo()-> C:
-        return C.__construct__()
-      def boo() -> Subclass:
-        return Subclass.__construct__()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      class C:
-        @classmethod
-        def __construct__(cls: typing.Type[T]) -> T:
-          ...
-      class Subclass(C):
-        ...
-      def foo() -> C:
-        return Subclass.__construct__()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      class C:
-        @classmethod
-        def __construct__(cls: typing.Type[T]) -> T:
-          ...
-      class Subclass(C):
-        ...
-      def foo()-> Subclass:
-        return C.__construct__()
-    |}
-    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      class C:
-        def f(self: T) -> T:
-          ...
-      class Subclass(C):
-        ...
-      def foo(s: Subclass) -> Subclass:
-        to_call = s.f
-        return to_call()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      class C:
-        def f(self: T) -> T:
-          ...
-      class Subclass(C):
-        ...
-      def foo(c: C)-> Subclass:
-        to_call = c.f
-        return to_call()
-    |}
-    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
-
-
-  assert_type_errors
-    {|
-      class Foo:
-        def foo(self) -> typing.Type[Foo]:
-          return type(self)
-        def bar(self) -> typing.Type[int]:
-          return type(1)
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
-        ATTRIBUTE: typing.ClassVar[int] = 1
-        def foo(self) -> int:
-          return type(self).ATTRIBUTE
-    |}
-    [];
-  assert_type_errors
-    {|
-      T = typing.TypeVar('T')
-      def foo(t: T) -> str:
-        return type(t).__name__
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      def foo(x: int) -> str:
-        return type(x).__name__
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class C:
-        pass
-      R = C
-      def foo() -> C:
-        return R()
-    |}
-    []
-
-
 let test_check_in _ =
   assert_type_errors
     {|
@@ -1267,18 +1267,18 @@ let test_check_enter _ =
 
 let () =
   "method">:::[
-    "check_abstract_methods">::test_check_abstract_methods;
-    "check_behavioral_subtyping">::test_check_behavioral_subtyping;
-    "check_callable_protocols">::test_check_callable_protocols;
-    "check_explicit_method_call">::test_check_explicit_method_call;
     "check_method_returns">::test_check_method_returns;
     "check_method_parameters">::test_check_method_parameters;
+    "check_abstract_methods">::test_check_abstract_methods;
+    "check_behavioral_subtyping">::test_check_behavioral_subtyping;
+    "check_nested_class_inheritance">::test_check_nested_class_inheritance;
     "check_method_resolution">::test_check_method_resolution;
+    "check_callable_protocols">::test_check_callable_protocols;
+    "check_explicit_method_call">::test_check_explicit_method_call;
     "check_self">::test_check_self;
     "check_meta_self">::test_check_meta_self;
     "check_setitem">::test_check_setitem;
     "check_static">::test_check_static;
-    "check_nested_class_inheritance">::test_check_nested_class_inheritance;
     "check_in">::test_check_in;
     "check_enter">::test_check_enter;
   ]

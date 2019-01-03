@@ -9,45 +9,6 @@ open IntegrationTest
 open Ast.Expression
 
 
-let test_check_excepts _ =
-  assert_type_errors
-    {|
-      class Exception: pass
-      def takes_exception(e: Exception) -> None: pass
-      def foo() -> None:
-        try:
-          pass
-        except Exception as e:
-          takes_exception(e)
-    |}
-    [];
-  assert_type_errors
-    {|
-      def foo() -> typing.Optional[int]:
-        try:
-          x = 1
-        except:
-          return None
-        else:
-          return x
-    |}
-    [];
-  assert_type_errors
-    {|
-      def use(i: int) -> None: pass
-      def foo(x: bool) -> None:
-        try:
-          pass
-        finally:
-          if x:
-            use("error")
-    |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` " ^
-      "but got `str`."
-    ]
-
-
 let test_scheduling _ =
   (* Top-level is scheduled. *)
   assert_type_errors
@@ -142,6 +103,45 @@ let test_scheduling _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
+
+
+let test_check_excepts _ =
+  assert_type_errors
+    {|
+      class Exception: pass
+      def takes_exception(e: Exception) -> None: pass
+      def foo() -> None:
+        try:
+          pass
+        except Exception as e:
+          takes_exception(e)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> typing.Optional[int]:
+        try:
+          x = 1
+        except:
+          return None
+        else:
+          return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      def use(i: int) -> None: pass
+      def foo(x: bool) -> None:
+        try:
+          pass
+        finally:
+          if x:
+            use("error")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `use` " ^
+      "but got `str`."
+    ]
 
 
 let test_check_ternary _ =

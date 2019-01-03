@@ -87,6 +87,7 @@ let test_reveal_type _ =
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."]
 
+
 let () =
   "revealType">:::[
     "reveal_type">::test_reveal_type;

@@ -690,8 +690,6 @@ let test_check_attributes _ =
     []
 
 
-
-
 let test_check_missing_attribute _ =
   assert_type_errors
     {|

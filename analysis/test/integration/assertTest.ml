@@ -129,7 +129,6 @@ let test_check_assert_functions _ =
     []
 
 
-
 let () =
   "assert">:::[
     "check_assert">::test_check_assert;

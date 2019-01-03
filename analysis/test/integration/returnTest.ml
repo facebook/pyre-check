@@ -442,9 +442,9 @@ let test_check_noreturn _ =
 let () =
   "return">:::[
     "check_return">::test_check_return;
+    "check_return_control_flow">::test_check_return_control_flow;
     "check_collections">::test_check_collections;
     "check_meta_annotations">::test_check_meta_annotations;
     "check_noreturn">::test_check_noreturn;
-    "check_return_control_flow">::test_check_return_control_flow;
   ]
   |> Test.run

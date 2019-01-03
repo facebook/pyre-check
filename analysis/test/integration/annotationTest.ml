@@ -7,78 +7,6 @@ open OUnit2
 open IntegrationTest
 
 
-let test_check_missing_type_parameters _ =
-  assert_type_errors
-    {|
-      T = typing.TypeVar("_T")
-      class C(typing.Generic[T]): ...
-      def f(c: C) -> None:
-        return None
-    |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar("_T")
-      class C(typing.Generic[T]): ...
-      def f(c: typing.List[C]) -> None:
-        return None
-    |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar("_T")
-      class C(typing.Generic[T]): ...
-      def f() -> typing.List[C]:
-        return []
-    |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
-  assert_type_errors
-    {|
-      T = typing.TypeVar("_T")
-      S = typing.TypeVar("_S")
-      class C(typing.Generic[T, S]): ...
-      def f() -> typing.List[C]:
-        return []
-    |}
-    ["Missing type parameters [24]: Generic type `C` expects 2 type parameters."]
-
-
-let test_check_invalid_type _ =
-  assert_type_errors
-    {|
-      MyType: typing.Type[int] = int
-      x: MyType = 1
-    |}
-    [];
-  assert_type_errors
-    {|
-      x: MyType = 1
-    |}
-    ["Undefined type [11]: Type `MyType` is not defined."];
-  assert_type_errors
-    {|
-      MyType: int
-      x: MyType = 1
-    |}
-    ["Invalid type [31]: Expression `MyType` is not a valid type."];
-  assert_type_errors
-    {|
-      MyType = 1
-      x: MyType = 1
-    |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `MyType` has type `int`" ^
-      " but no type is specified.";
-      "Invalid type [31]: Expression `MyType` is not a valid type."
-    ];
-  assert_type_errors
-    {|
-      MyType: typing.Any
-      x: MyType = 1
-    |}
-    []
-
-
 let test_check_undefined_type _ =
   assert_type_errors
     ~debug:false
@@ -218,6 +146,78 @@ let test_check_undefined_type _ =
     ]
 
 
+let test_check_invalid_type _ =
+  assert_type_errors
+    {|
+      MyType: typing.Type[int] = int
+      x: MyType = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      x: MyType = 1
+    |}
+    ["Undefined type [11]: Type `MyType` is not defined."];
+  assert_type_errors
+    {|
+      MyType: int
+      x: MyType = 1
+    |}
+    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+  assert_type_errors
+    {|
+      MyType = 1
+      x: MyType = 1
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` has type `int`" ^
+      " but no type is specified.";
+      "Invalid type [31]: Expression `MyType` is not a valid type."
+    ];
+  assert_type_errors
+    {|
+      MyType: typing.Any
+      x: MyType = 1
+    |}
+    []
+
+
+let test_check_missing_type_parameters _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f(c: C) -> None:
+        return None
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f(c: typing.List[C]) -> None:
+        return None
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      class C(typing.Generic[T]): ...
+      def f() -> typing.List[C]:
+        return []
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("_T")
+      S = typing.TypeVar("_S")
+      class C(typing.Generic[T, S]): ...
+      def f() -> typing.List[C]:
+        return []
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 2 type parameters."]
+
+
 let test_check_analysis_failure _ =
   assert_type_errors
     {|
@@ -236,6 +236,33 @@ let test_check_analysis_failure _ =
 
 
 let test_check_immutable_annotations _ =
+  assert_type_errors
+    {|
+      a: int = None
+      def foobar() -> None:
+          b: int = None
+    |}
+    [
+      "Incompatible variable type [9]: a is declared to have type `int` " ^
+      "but is used as type `None`.";
+      "Incompatible variable type [9]: b is declared to have type `int` " ^
+      "but is used as type `None`."
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = 1
+        x = 'string'
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."
+    ];
+  assert_type_errors
+    {|
+      def f(x: int) -> None:
+        x: str = int_to_str(x)
+    |}
+    [];
   assert_type_errors
     {|
     constant: int
@@ -728,45 +755,14 @@ let test_check_refinement _ =
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ]
 
-let test_explicit_annotation _ =
-  assert_type_errors
-    {|
-      a: int = None
-      def foobar() -> None:
-          b: int = None
-    |}
-    [
-      "Incompatible variable type [9]: a is declared to have type `int` " ^
-      "but is used as type `None`.";
-      "Incompatible variable type [9]: b is declared to have type `int` " ^
-      "but is used as type `None`."
-    ];
-  assert_type_errors
-    {|
-      def foo() -> None:
-        x: int = 1
-        x = 'string'
-    |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `str`."
-    ];
-  assert_type_errors
-    {|
-      def f(x: int) -> None:
-        x: str = int_to_str(x)
-    |}
-    []
-
-
 
 let () =
   "annotation">:::[
     "check_undefined_type">::test_check_undefined_type;
-    "check_analysis_failure">::test_check_analysis_failure;
     "check_invalid_type">::test_check_invalid_type;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
+    "check_analysis_failure">::test_check_analysis_failure;
     "check_immutable_annotations">::test_check_immutable_annotations;
     "check_refinement">::test_check_refinement;
-    "explicit_annotation">::test_explicit_annotation;
   ]
   |> Test.run

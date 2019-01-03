@@ -6,6 +6,7 @@
 open OUnit2
 open IntegrationTest
 
+
 let test_show_error_traces _ =
   assert_type_errors ~show_error_traces:true
     "def foo() -> int: return 1.0"

@@ -236,8 +236,6 @@ let test_check_tuple _ =
     ["Unable to unpack [23]: Unable to unpack `int` into 2 values."]
 
 
-
-
 let () =
   "tuple">:::[
     "check_tuple">::test_check_tuple;
