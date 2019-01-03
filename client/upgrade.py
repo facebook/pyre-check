@@ -24,21 +24,21 @@ from .filesystem import get_filesystem
 LOG = logging.getLogger(__name__)
 
 
-def json_to_errors(json) -> List[Dict[str, Any]]:
-    try:
-        return json.loads(input) if input else []
-    except json.decoder.JSONDecodeError:
-        if not input:
-            LOG.error(
-                "Recevied no input."
-                "If piping from `pyre check` be sure to use `--output=json`."
-            )
-        else:
+def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
+    if json_string:
+        try:
+            return json.loads(json_string)
+        except json.decoder.JSONDecodeError:
             LOG.error(
                 "Recevied invalid JSON as input."
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
-        return []
+    else:
+        LOG.error(
+            "Recevied no input."
+            "If piping from `pyre check` be sure to use `--output=json`."
+        )
+    return []
 
 
 class Configuration:
@@ -111,8 +111,8 @@ class Configuration:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
-            json = process.stdout.decode().strip()
-            errors = json_to_errors(json)
+            json_string = process.stdout.decode().strip()
+            errors = json_to_errors(json_string)
             LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
             return errors
         except subprocess.CalledProcessError as error:

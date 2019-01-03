@@ -138,8 +138,11 @@ class FixmeAllTest(unittest.TestCase):
                 )
                 self.assertEqual([], configurations)
 
+    mock_completed_process = MagicMock()
+    mock_completed_process.stdout.decode = MagicMock(return_value="[]")
+
     @patch("subprocess.call")
-    @patch("subprocess.run")
+    @patch("subprocess.run", return_value=mock_completed_process)
     def test_get_errors(self, run, call) -> None:
         configuration = upgrade.Configuration("path", {})
         configuration.get_errors()
@@ -384,3 +387,27 @@ line 3
 
 line 4"""
             )
+
+
+class DecodeTest(unittest.TestCase):
+    def test_json_to_errors(self) -> None:
+        with patch.object(upgrade.LOG, "error") as mock_error:
+            self.assertEqual(
+                upgrade.json_to_errors('[{ "key": "value" }]'), [{"key": "value"}]
+            )
+            mock_error.assert_not_called()
+            mock_error.reset_mock()
+
+            self.assertEqual(upgrade.json_to_errors(None), [])
+            mock_error.assert_called_once_with(
+                "Recevied no input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+            mock_error.reset_mock()
+
+            self.assertEqual(upgrade.json_to_errors('[{ "key": "value" }'), [])
+            mock_error.assert_called_once_with(
+                "Recevied invalid JSON as input."
+                "If piping from `pyre check` be sure to use `--output=json`."
+            )
+            mock_error.reset_mock()
