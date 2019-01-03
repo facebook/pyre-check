@@ -24,6 +24,7 @@
   globalTest
   signatureSelectionTest
   constructorTest
+  importTest
   inferTest
   methodTest
   returnTest

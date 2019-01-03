@@ -1212,52 +1212,6 @@ let test_coverage _ =
     { Coverage.full = 1; partial = 0; untyped = 1; ignore = 0; crashes = 0 }
 
 
-let test_check_imports _ =
-  assert_type_errors
-    {|
-      import durp
-    |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  assert_type_errors
-    {|
-      import typing
-    |}
-    [];
-  assert_type_errors
-    {|
-      import typing, durp
-    |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  assert_type_errors
-    {|
-      from typing import durp
-    |}
-    [];
-  assert_type_errors
-    {|
-      from durp import typing
-    |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  (* Ensure we don't double-error. *)
-  assert_type_errors
-    {|
-      a = durp.x
-    |}
-    ["Undefined name [18]: Global name `durp` is undefined."];
-  assert_type_errors
-    {|
-      import durp
-      a = durp.x
-    |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  assert_type_errors
-    {|
-      from typing import Optional
-      def foo() -> None: return 1
-    |}
-    ["Incompatible return type [7]: Expected `None` but got `int`."]
-
-
 let test_reveal_type _ =
   assert_type_errors
     {|
@@ -1867,7 +1821,6 @@ let () =
     "check">::test_check;
     "check_in">::test_check_in;
     "check_assign">::test_check_assign;
-    "check_imports">::test_check_imports;
     "check_nested">::test_check_nested;
     "check_redundant_cast">::test_check_redundant_cast;
     "check_unbound_variables">::test_check_unbound_variables;
