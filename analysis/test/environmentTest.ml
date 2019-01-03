@@ -1033,7 +1033,7 @@ let test_infer_protocols_edges _ =
   assert_edge_not_inferred (Type.Object) (Type.Primitive "Empty")
 
 
-let test_less_or_equal _ =
+let test_less_or_equal_type_order _ =
   let environment =
     populate {|
       class module.super(): ...
@@ -1195,7 +1195,7 @@ let test_less_or_equal _ =
   assert_true (TypeOrder.less_or_equal order ~left:Type.integer ~right:Type.float)
 
 
-let test_join _ =
+let test_join_type_order _ =
   let environment =
     populate {|
       class foo(): ...
@@ -1236,7 +1236,7 @@ let test_join _ =
     Type.float
 
 
-let test_meet _ =
+let test_meet_type_order _ =
   let environment =
     populate {|
       class foo(): ...
@@ -1281,7 +1281,7 @@ let test_meet _ =
   assert_meet Type.integer Type.float Type.integer
 
 
-let test_supertypes _ =
+let test_supertypes_type_order _ =
   let environment =
     (populate {|
       class foo(): pass
@@ -1695,15 +1695,12 @@ let test_propagate_nested_classes _ =
 
 
 let () =
-  "environment_type_order">:::[
-    "connect_type_order">::test_connect_type_order;
-    "join">::test_join;
-    "less_or_equal">::test_less_or_equal;
-    "meet">::test_meet;
-    "supertypes">::test_supertypes;
-  ]
-  |> Test.run;
   "environment">:::[
+    "connect_type_order">::test_connect_type_order;
+    "join_type_order">::test_join_type_order;
+    "less_or_equal_type_order">::test_less_or_equal_type_order;
+    "meet_type_order">::test_meet_type_order;
+    "supertypes_type_order">::test_supertypes_type_order;
     "class_definition">::test_class_definition;
     "connect_definition">::test_connect_definition;
     "import_dependencies">::test_import_dependencies;
