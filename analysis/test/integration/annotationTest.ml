@@ -228,10 +228,10 @@ let test_check_analysis_failure _ =
         return x
     |}
     [
-    "Undefined type [11]: Type `Derp` is not defined.";
-    "Incompatible return type [7]: Expected `Derp` but got implicit return value of `None`.";
-    "Incompatible variable type [9]: x is declared to have type `int` " ^
-    "but is used as type `unknown`.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Incompatible return type [7]: Expected `Derp` but got implicit return value of `None`.";
+      "Incompatible variable type [9]: x is declared to have type `int` " ^
+      "but is used as type `unknown`.";
     ]
 
 
