@@ -19,6 +19,7 @@
   controlFlowTest
   dataClassTest
   decoratorTest
+  errorTracesTest
   formatStringTest
   generatorTest
   globalTest
