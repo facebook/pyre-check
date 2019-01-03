@@ -204,6 +204,12 @@ let is_tracked { order; _ } annotation =
   TypeOrder.contains order annotation
 
 
+let contains_untracked resolution annotation =
+  List.exists
+    ~f:(fun annotation -> not (is_tracked resolution annotation))
+    (Type.elements annotation)
+
+
 let is_invariance_mismatch { order; _ } ~left ~right =
   match left, right with
   | Type.Parametric { name = left_name; parameters = left_parameters },

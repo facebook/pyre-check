@@ -62,7 +62,11 @@ let test_check_attributes _ =
         def f(self) -> str:
             return self.bar
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
+    [
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` " ^
+      "has type `int` but is used as type `None`.";
+      "Incompatible return type [7]: Expected `str` but got `int`."
+    ];
 
 
   assert_type_errors

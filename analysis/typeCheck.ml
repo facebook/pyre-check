@@ -1657,6 +1657,7 @@ module State = struct
           (* This is the annotation determining how we recursively break up the assignment. *)
           annotation
           >>| Resolution.parse_annotation resolution
+          |> Option.filter ~f:(fun annotation -> not (contains_untracked annotation))
           |> Option.value ~default:resolved
         in
         let explicit = Option.is_some annotation in
@@ -1730,7 +1731,13 @@ module State = struct
                     ~resolution
                     ~initial:(Annotation.create Type.Top, Access.Value)
                 in
-                if element = Annotated.Access.Value && explicit then
+                let can_override_with_explicit =
+                  match element with
+                  | Annotated.Access.Value -> true
+                  | Annotated.Access.Attribute { origin = Annotated.Access.Module []; _ } -> true
+                  | _ -> false
+                in
+                if can_override_with_explicit && explicit then
                   Annotation.create_immutable ~global:false guide, element
                 else
                   annotation, element
@@ -1740,12 +1747,22 @@ module State = struct
                 Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
               in
               (* Check if assignment is valid. *)
+              let is_typed_dictionary_initialization =
+                (* Special-casing to avoid throwing errors *)
+                let open Type in
+                match expected with
+                | Parametric { name = "type"; parameters = [parameter] }
+                  when is_typed_dictionary parameter ->
+                    is_unknown resolved
+                | _ ->
+                    false
+              in
               let state =
                 let error =
-                  if not explicit &&
-                     not (Type.equal resolved Type.ellipses) &&
+                  if not (Type.equal resolved Type.ellipses) &&
                      Annotation.is_immutable annotation &&
-                     not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) then
+                     not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
+                     not is_typed_dictionary_initialization then
                     let kind =
                       let open Annotated in
                       let open Access in

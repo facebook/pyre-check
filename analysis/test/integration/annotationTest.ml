@@ -259,8 +259,6 @@ let test_check_immutable_annotations _ =
         expects_str(x)
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
-      "type `typing.Any`.";
       "Incompatible parameter type [6]: " ^
       "Expected `str` for 1st anonymous parameter to call `expects_str` but got `int`."
     ];
@@ -658,8 +656,12 @@ let test_check_refinement _ =
         l: typing.List[int] = None
         l.append('a')
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
+    [
+      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` " ^
+      "but is used as type `None`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."
+    ];
 
   assert_type_errors
     {|
@@ -733,7 +735,12 @@ let test_explicit_annotation _ =
       def foobar() -> None:
           b: int = None
     |}
-    [];
+    [
+      "Incompatible variable type [9]: a is declared to have type `int` " ^
+      "but is used as type `None`.";
+      "Incompatible variable type [9]: b is declared to have type `int` " ^
+      "but is used as type `None`."
+    ];
   assert_type_errors
     {|
       def foo() -> None:

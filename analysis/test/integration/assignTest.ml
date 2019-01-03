@@ -19,6 +19,29 @@ let test_check_assign _ =
   assert_type_errors
     {|
       def foo() -> None:
+        x: str = 1
+        reveal_type(x)
+        x = 1
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` " ^
+      "but is used as type `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Incompatible variable type [9]: x is declared to have type `str` " ^
+      "but is used as type `int`.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: typing.Any) -> None:
+        y: int = x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
         x = 1
         x += 'asdf'
     |}

@@ -436,7 +436,8 @@ let fold ~resolution ~initial ~f access =
             else
               annotation, false
           in
-          Resolution.class_definition resolution instantiated
+          Option.some_if (not (Type.equal instantiated Type.ellipses)) instantiated
+          >>= Resolution.class_definition resolution
           >>| Class.create
           >>| (fun definition ->
               let attribute =

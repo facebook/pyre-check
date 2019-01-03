@@ -61,11 +61,6 @@ let apply_decorators ~define ~resolution =
 let create ~parent ~resolution defines =
   let open Type.Callable in
   let { Define.name; _ } = List.hd_exn defines in
-  let contains_untracked annotation =
-    List.exists
-      ~f:(fun annotation -> not (Resolution.is_tracked resolution annotation))
-      (Type.elements annotation)
-  in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let access =
       String.lstrip ~drop:(function | '*' -> true | _ -> false) name
@@ -74,7 +69,8 @@ let create ~parent ~resolution defines =
     let annotation =
       annotation
       >>| Resolution.parse_annotation resolution
-      |> Option.filter ~f:(fun annotation -> not (contains_untracked annotation))
+      |> Option.filter
+        ~f:(fun annotation -> not (Resolution.contains_untracked resolution annotation))
       |> Option.value ~default:Type.Top
     in
     if String.is_prefix ~prefix:"**" name then
@@ -88,7 +84,7 @@ let create ~parent ~resolution defines =
     let to_signature (implementation, overloads) ({ Define.parameters; _ } as define) =
       let return_annotation =
         let annotation = return_annotation ~define ~resolution in
-        if contains_untracked annotation then Type.Top else annotation
+        if Resolution.contains_untracked resolution annotation then Type.Top else annotation
       in
       let signature =
         {

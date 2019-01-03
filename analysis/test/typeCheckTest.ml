@@ -753,7 +753,11 @@ let test_forward_statement _ =
   assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
   assert_forward ~postcondition_immutables:["y", false] [] "y: int" ["y", Type.integer];
   assert_forward
-    ~errors:(`Specific [ "Undefined name [18]: Global name `x` is undefined."])
+    ~errors:(`Specific [
+        "Incompatible variable type [9]: y is declared to have type `int` " ^
+        "but is used as type `unknown`.";
+        "Undefined name [18]: Global name `x` is undefined.";
+      ])
     ~postcondition_immutables:["y", false]
     []
     "y: int = x"
