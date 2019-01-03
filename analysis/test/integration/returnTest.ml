@@ -223,16 +223,40 @@ let test_check_return_control_flow _ =
       def foo(input: typing.Sequence[int]) -> typing.Iterable[int]:
         return input
     |}
-    []
+    [];
 
+  assert_type_errors
+    "def foo() -> str: return None"
+    ["Incompatible return type [7]: Expected `str` but got `None`."];
 
-let test_check_meta_annotations _ =
+  assert_type_errors
+    "def foo() -> typing.Optional[str]: return None"
+    [];
+
+  assert_type_errors
+    "def foo() -> typing.Optional[int]: return 1"
+    [];
+
   assert_type_errors
     {|
-      class Class:
-        pass
-      def foo() -> typing.Type[Class]:
-        return Class
+      def foo(flag: bool) -> typing.Optional[float]:
+          a = 1.0
+          if flag:
+            a = None
+          return a
+    |}
+    [];
+  assert_type_errors
+    "def foo() -> typing.Optional[int]: return 1.0"
+    ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `float`."];
+
+  assert_type_errors
+    {|
+      def foo(optional: typing.Optional[int]) -> int:
+          if optional:
+            return optional
+          else:
+            return -1
     |}
     []
 
@@ -254,6 +278,17 @@ let test_check_collections _ =
     {|
       def foo(input: typing.Optional[typing.Dict[int, str]]) -> typing.Dict[int, str]:
         return input or {}
+    |}
+    []
+
+
+let test_check_meta_annotations _ =
+  assert_type_errors
+    {|
+      class Class:
+        pass
+      def foo() -> typing.Type[Class]:
+        return Class
     |}
     []
 

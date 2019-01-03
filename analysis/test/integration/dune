@@ -27,6 +27,7 @@
   methodTest
   returnTest
   varianceTest
+  tupleTest
   typeVariableTest
   typedDictionaryTest
   unionTest)
