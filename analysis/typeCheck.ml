@@ -1657,7 +1657,8 @@ module State = struct
           (* This is the annotation determining how we recursively break up the assignment. *)
           annotation
           >>| Resolution.parse_annotation resolution
-          |> Option.filter ~f:(fun annotation -> not (contains_untracked annotation))
+          |> Option.filter
+            ~f:(fun annotation -> not (Resolution.contains_untracked resolution annotation))
           |> Option.value ~default:resolved
         in
         let explicit = Option.is_some annotation in
