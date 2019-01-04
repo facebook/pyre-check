@@ -232,7 +232,17 @@ let test_check_analysis_failure _ =
       "Incompatible return type [7]: Expected `Derp` but got implicit return value of `None`.";
       "Incompatible variable type [9]: x is declared to have type `int` " ^
       "but is used as type `unknown`.";
-    ]
+    ];
+  (* Crashes because we make direct comparison between Derp and Mapping when unwrapping `**x` *)
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        pass
+
+      def bar(x: Derp) -> None:
+        test = foo( **x )
+    |}
+    ["Analysis failure [30]: Terminating analysis because type `Derp` is not defined."]
 
 
 let test_check_immutable_annotations _ =
