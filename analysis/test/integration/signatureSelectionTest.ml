@@ -803,7 +803,7 @@ let test_check_variable_arguments _ =
         foo('asdf', *b)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`.";];
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`.";];
 
   assert_type_errors
     {|
@@ -853,7 +853,7 @@ let test_check_variable_arguments _ =
         return foo('asdf', *b)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 2nd anonymous parameter to call `foo` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`."]
 
 
 let test_check_variable_restrictions _ =
@@ -896,6 +896,21 @@ let test_check_variable_restrictions _ =
         return t.baz()
     |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
+
+
+let test_check_keyword_arguments _ =
+  assert_type_errors
+    {|
+      def foo(x: int, y: str) -> None:
+          pass
+
+      def bar(x: typing.Dict[str, str]) -> None:
+          test = foo( **x )
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `foo` but got `typing.Dict[str, str]`."
+    ]
 
 
 let test_check_named_arguments _ =
@@ -955,6 +970,7 @@ let () =
     "check_constructor_overloads">::test_check_constructor_overloads;
     "check_variable_arguments">::test_check_variable_arguments;
     "check_variable_restrictions">::test_check_variable_restrictions;
+    "check_keyword_arguments">::test_check_keyword_arguments;
     "check_named_arguments">::test_check_named_arguments;
   ]
   |> Test.run

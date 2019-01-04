@@ -58,7 +58,7 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`.";
+      "Expected `str` for 1st anonymous parameter to call `foo` but got `int`.";
     ];
 
   assert_type_errors

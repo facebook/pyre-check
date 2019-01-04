@@ -646,10 +646,10 @@ let test_fold _ =
         annotation = parse_annotation "Movie";
         element =
           {
-            Annotated.Signature.actual = parse_annotation "str";
-            expected = parse_annotation "int";
-            name = (Some "$parameter$year");
-            position = 1;
+            Annotated.Signature.actual = parse_annotation "int";
+            expected = parse_annotation "str";
+            name = (Some "$parameter$title");
+            position = 2;
           }
           |> Node.create_with_default_location
           |> (fun node -> Annotated.Signature.Mismatch node)
@@ -667,7 +667,7 @@ let test_fold _ =
       {
         annotation = parse_annotation "Movie";
         element =
-          Annotated.Signature.TooManyArguments { expected = 3; provided = 5 }
+          Annotated.Signature.TooManyArguments { expected = 3; provided = 4 }
           |> Option.some
           |> signature_not_found;
       };

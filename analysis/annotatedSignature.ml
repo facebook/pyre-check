@@ -211,7 +211,7 @@ let select
             | Some matching_parameter ->
                 update_mapping matching_parameter (Argument argument), reasons
             | None ->
-                argument_mapping, { reasons with arity = arity @ [UnexpectedKeyword name] }
+                argument_mapping, { reasons with arity = (UnexpectedKeyword name) :: arity }
           in
           consume
             ~arguments:arguments_tail
@@ -347,7 +347,7 @@ let select
           let reasons =
             {
               reasons with
-              arity =  arity @ [(MissingArgument parameter_name)]
+              arity = (MissingArgument parameter_name) :: arity
             }
           in
           { signature_match with reasons }
@@ -638,7 +638,8 @@ let select
             List.fold unbound_variables ~f:remaining_to_bottom ~init:constraints
             |> (fun constraints -> { signature_match with constraints })
           in
-          check signature_match arguments
+          List.rev arguments
+          |> check signature_match
           |> instantiate_unbound_constraints
     in
     Map.fold ~init:signature_match ~f:update argument_mapping
@@ -680,7 +681,7 @@ let select
     in
     let determine_reason
         { callable; constraints; reasons = { arity; annotation; _ }; _ } =
-      match arity, annotation with
+      match List.rev arity, List.rev annotation with
       | [], [] ->
           Type.Callable.map
             ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
@@ -690,9 +691,24 @@ let select
                   Found { callable; constraints }
               | _ ->
                   failwith "Instantiate did not return a callable")
-      | reason :: _, _
-      | [], reason :: _ ->
-          NotFound { callable; reason = Some reason }
+      | reason :: reasons, _
+      | [], reason :: reasons ->
+          let importance = function
+            | Mismatch _ -> 0
+            | MissingArgument _ -> 1
+            | TooManyArguments _ -> 1
+            | TypedDictionaryAccessWithNonLiteral _ -> 0
+            | TypedDictionaryMissingKey _ -> 0
+            | UnexpectedKeyword _ -> 1
+          in
+          let get_most_important best_reason reason =
+            if importance reason > importance best_reason then
+              reason
+            else
+              best_reason
+          in
+          let reason = Some (List.fold ~init:reason ~f:get_most_important reasons) in
+          NotFound { callable; reason }
     in
     signature_matches
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank

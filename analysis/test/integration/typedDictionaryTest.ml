@@ -282,8 +282,8 @@ let test_check_typed_dictionaries _ =
         return movie['year']
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 2nd parameter `year` to call \
-       `__init__` but got `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` " ^
+      "to call `__init__` but got `int`.";
     ];
 
   assert_test_typed_dictionary
@@ -293,7 +293,7 @@ let test_check_typed_dictionaries _ =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Too many arguments [19]: Call `__init__` expects 3 arguments, 5 were provided."];
+    ["Too many arguments [19]: Call `__init__` expects 3 arguments, 4 were provided."];
 
   assert_test_typed_dictionary
     {|
