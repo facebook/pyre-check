@@ -167,7 +167,7 @@ let select
       match arguments, parameters with
       | [], [] ->
           (* Both empty *)
-          Some signature_match
+          signature_match
       | Argument {
           argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
           _;
@@ -182,7 +182,7 @@ let select
           consume ~arguments:arguments_tail ~parameters signature_match
       | _, [] ->
           (* Arguments; parameters empty *)
-          Some { signature_match with reasons = arity_mismatch ~arguments reasons }
+          { signature_match with reasons = arity_mismatch ~arguments reasons }
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
           let argument_mapping = update_mapping parameter Default in
@@ -356,7 +356,7 @@ let select
         in
         consume base_signature_match ~arguments:ordered_arguments ~parameters
     | Undefined ->
-        Some base_signature_match
+        base_signature_match
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _; } as signature_match) =
@@ -770,7 +770,7 @@ let select
   in
   let get_match signatures =
     signatures
-    |> List.filter_map ~f:match_arity
+    |> List.map ~f:match_arity
     |> List.map ~f:check_annotations
     |> List.map ~f:calculate_rank
     |> find_closest
