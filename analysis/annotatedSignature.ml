@@ -135,14 +135,26 @@ let select
       let update_mapping parameter argument =
         Map.add_multi argument_mapping ~key:parameter ~data:argument
       in
-      let arity_mismatch reasons ~parameters ~arguments =
+      let arity_mismatch ~parameters ?(unreachable_parameters = []) ~arguments reasons =
         match parameters with
         | Defined parameters ->
-            let expected = List.length parameters in
-            let provided = expected + List.length arguments in
+            let parameter_count = List.length parameters - List.length unreachable_parameters in
+            let unmatched_positional_arguments, _ =
+              let is_positional = function
+              | Argument { argument = { Argument.name = None; _ }; _ } -> true
+              | _ -> false
+              in
+              List.partition_tf ~f:is_positional arguments
+            in
+            let provided_positional_count =
+              parameter_count + List.length unmatched_positional_arguments
+            in
+            let error =
+              TooManyArguments { expected = parameter_count; provided = provided_positional_count }
+            in
             {
               reasons with
-              arity = arity @ [TooManyArguments { expected; provided }]
+              arity = error :: arity
             }
         | _ ->
             reasons
@@ -165,7 +177,7 @@ let select
           consume ~arguments:arguments_tail ~parameters signature_match
       | _, [] ->
           (* Arguments; parameters empty *)
-          let reasons = arity_mismatch reasons ~parameters:all_parameters ~arguments in
+          let reasons = arity_mismatch ~parameters:all_parameters ~arguments reasons in
           Some { signature_match with reasons }
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
@@ -272,13 +284,20 @@ let select
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
       | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
-        (Parameter.Variable _ as parameter) :: _ ->
+        (Parameter.Variable _ as parameter) :: parameters_tail ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
             if Identifier.sanitized (Parameter.name parameter) = "*" then
+              let reasons =
+                arity_mismatch
+                  reasons
+                  ~parameters:all_parameters
+                  ~unreachable_parameters:(parameter :: parameters_tail)
+                  ~arguments
+              in
               {
                 signature_match with
-                reasons = arity_mismatch reasons ~parameters:all_parameters ~arguments;
+                reasons;
               }
             else
               let argument_mapping = update_mapping parameter (Argument argument) in

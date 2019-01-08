@@ -232,7 +232,7 @@ let test_select _ =
   assert_select
     "[[Variable($parameter$, int), Named(i, int)], int]"
     "(2, i=1)"
-    (`NotFoundTooManyArguments (2, 3));
+    (`NotFoundTooManyArguments (1, 2));
 
   (* Named arguments. *)
   assert_select

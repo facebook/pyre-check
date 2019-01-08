@@ -523,7 +523,7 @@ let test_infer_constructor_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
       " specified.";
-      "Too many arguments [19]: Call `object.__init__` expects 0 arguments, 4 were" ^
+      "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were" ^
       " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`."]
 

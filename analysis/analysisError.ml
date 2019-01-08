@@ -637,7 +637,7 @@ let messages ~detailed:_ ~define location kind =
             "Anonymous call"
       in
       [
-        Format.asprintf "%s expects %d argument%s, %d %s provided."
+        Format.asprintf "%s expects %d positional argument%s, %d %s provided."
           callee
           expected
           (if expected <> 1 then "s" else "")

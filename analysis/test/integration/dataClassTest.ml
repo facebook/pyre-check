@@ -26,7 +26,7 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
+    ["Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, " ^
      "2 were provided."];
   assert_type_errors
     {|
@@ -36,7 +36,7 @@ let test_check_data_class _ =
       def boo() -> None:
           b = Foo(4,5)
     |}
-    ["Too many arguments [19]: Call `Foo.__init__` expects 1 argument, " ^
+    ["Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, " ^
      "2 were provided."];
   assert_type_errors
     {|
@@ -49,7 +49,7 @@ let test_check_data_class _ =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
       "no type is specified.";
-      "Too many arguments [19]: Call `Foo.__init__` expects 0 arguments, 1 was" ^
+      "Too many arguments [19]: Call `Foo.__init__` expects 0 positional arguments, 1 was" ^
       " provided.";
     ];
   assert_type_errors

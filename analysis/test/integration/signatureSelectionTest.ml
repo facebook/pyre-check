@@ -478,7 +478,7 @@ let test_check_function_parameters _ =
       def f() -> None:
         a = foo(1,2)
     |}
-    ["Too many arguments [19]: Call `foo` expects 1 argument, 2 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 1 positional argument, 2 were provided."];
 
   assert_type_errors
     {|
@@ -516,7 +516,7 @@ let test_check_function_parameters _ =
       def f(c: C) -> None:
         a = c.f("", "")
     |}
-    ["Too many arguments [19]: Call `C.f` expects 1 argument, 2 were provided."];
+    ["Too many arguments [19]: Call `C.f` expects 1 positional argument, 2 were provided."];
 
   assert_type_errors
     {|
@@ -534,7 +534,7 @@ let test_check_function_parameters _ =
       def f() -> None:
         a = foo(1,2,3,4)
     |}
-    ["Too many arguments [19]: Call `foo` expects 0 arguments, 4 were provided."]
+    ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."]
 
 
 let test_check_function_parameter_errors _ =
@@ -811,7 +811,7 @@ let test_check_variable_arguments _ =
         foo ( *b, 'asdf' )
     |}
     [
-      "Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided.";
+      "Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
@@ -821,7 +821,7 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[str]) -> None:
         foo ( *b, 1, 'asdf' )
     |}
-    ["Too many arguments [19]: Call `foo` expects 2 arguments, 4 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 4 were provided."];
 
   assert_type_errors
     {|
@@ -830,7 +830,7 @@ let test_check_variable_arguments _ =
       def bar(b: typing.List[int]) -> None:
         foo ( *b, 'asdf' )
     |}
-    ["Too many arguments [19]: Call `foo` expects 2 arguments, 3 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 2 positional arguments, 3 were provided."];
 
   assert_type_errors
     {|
@@ -840,7 +840,7 @@ let test_check_variable_arguments _ =
         durp( *b, 1.0 )
     |}
     [
-      "Too many arguments [19]: Call `durp` expects 2 arguments, 3 were provided.";
+      "Too many arguments [19]: Call `durp` expects 2 positional arguments, 3 were provided.";
     ];
 
   assert_type_errors
