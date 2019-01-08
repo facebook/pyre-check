@@ -1090,6 +1090,14 @@ let pp formatter expression =
 let show expression = Format.asprintf "%a" pp expression
 
 
+let show_sanitized { Node.location; value } =
+  match value with
+  | Access access ->
+      Access.show_sanitized access
+  | _ ->
+      show { Node.location; value }
+
+
 let pp_expression_list formatter expression_list =
   Format.fprintf
     formatter

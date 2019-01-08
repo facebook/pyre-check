@@ -1143,6 +1143,22 @@ module State = struct
                             None
                       in
                       match reason with
+                      | InvalidKeywordArgument {
+                          Node.location;
+                          value = { expression; annotation }
+                        } ->
+                          let kind =
+                            Error.InvalidArgument (Error.Keyword { expression; annotation })
+                          in
+                          Error.create ~location ~kind ~define
+                      | InvalidVariableArgument {
+                          Node.location;
+                          value = { expression; annotation }
+                        } ->
+                          let kind =
+                            Error.InvalidArgument (Error.Variable { expression; annotation })
+                          in
+                          Error.create ~location ~kind ~define
                       | Mismatch mismatch ->
                           let mismatch, name, position, location =
                             let { Annotated.Signature.actual; expected; name; position } =

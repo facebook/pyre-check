@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Pyre
 open Statement
 
@@ -39,6 +38,12 @@ type incompatible_type = {
   mismatch: mismatch;
   declare_location: Location.Instantiated.t;
 }
+[@@deriving compare, eq, show, sexp, hash]
+
+
+type invalid_argument =
+  | Keyword of { expression: Expression.t; annotation: Type.t }
+  | Variable of { expression: Expression.t; annotation: Type.t }
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -76,6 +81,7 @@ type kind =
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidType of Type.t
+  | InvalidArgument of invalid_argument
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
       parent: Type.t;
@@ -153,6 +159,7 @@ let code = function
   | NotCallable _ -> 29
   | AnalysisFailure _ -> 30
   | InvalidType _ -> 31
+  | InvalidArgument _ -> 32
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -170,6 +177,7 @@ let name = function
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
+  | InvalidArgument _ -> "Invalid argument"
   | InvalidType _ -> "Invalid type"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
@@ -585,6 +593,24 @@ let messages ~detailed:_ ~define location kind =
           Access.pp parent
           detail
       ]
+  | InvalidArgument argument ->
+      begin
+        match argument with
+        | Keyword { expression; annotation } ->
+            [
+              Format.asprintf
+                "Keyword argument `%s` has type `%a` but must be a mapping with string keys."
+                (Expression.show_sanitized expression)
+                Type.pp annotation
+            ]
+        | Variable { expression; annotation } ->
+            [
+              Format.asprintf
+                "Variable argument `%s` has type `%a` but must be an iterable."
+                (Expression.show_sanitized expression)
+                Type.pp annotation
+            ]
+      end
   | InvalidType annotation ->
       [
         Format.asprintf
@@ -663,17 +689,10 @@ let messages ~detailed:_ ~define location kind =
           Type.pp annotation;
       ]
   | RevealedType { expression; annotation } ->
-      let show_sanitized { Node.location; value } =
-        match value with
-        | Access access ->
-            Access.show_sanitized access
-        | _ ->
-            Expression.show { Node.location; value }
-      in
       [
         Format.asprintf
           "Revealed type for `%s` is `%s`."
-          (show_sanitized expression)
+          (Expression.show_sanitized expression)
           (Type.show annotation);
       ]
   | UnawaitedAwaitable name ->
@@ -911,6 +930,8 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
+  | InvalidArgument (Keyword { annotation = actual; _ })
+  | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType actual
   | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
   | MissingGlobalAnnotation { annotation = Some actual; _ }
@@ -996,6 +1017,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | RevealedType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | InvalidArgument _
   | InvalidType _
   | Top
   | TypedDictionaryAccessWithNonLiteral _
@@ -1086,6 +1108,12 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
+    | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
+      when Expression.equal left.expression right.expression ->
+        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+    | InvalidArgument (Variable left), InvalidArgument (Variable right)
+      when Expression.equal left.expression right.expression ->
+        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
     | TooManyArguments left, TooManyArguments right ->
@@ -1258,6 +1286,18 @@ let join ~resolution left right =
         InconsistentOverride {
           left with override = WeakenedPostcondition (join_mismatch left_mismatch right_mismatch);
         }
+    | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
+      when Expression.equal left.expression right.expression ->
+        InvalidArgument (
+          Keyword {
+            left with annotation = Resolution.join resolution left.annotation right.annotation
+          })
+    | InvalidArgument (Variable left), InvalidArgument (Variable right)
+      when Expression.equal left.expression right.expression ->
+        InvalidArgument (
+          Variable {
+            left with annotation = Resolution.join resolution left.annotation right.annotation
+          })
     | InvalidType left, InvalidType right when Type.equal left right ->
         InvalidType left
     | TooManyArguments left, TooManyArguments right ->
@@ -1516,6 +1556,7 @@ let suppress ~mode error =
       | IncompatibleParameterType _
       | IncompatibleReturnType _
       | IncompatibleConstructorAnnotation _
+      | InvalidArgument _
       | InvalidType _
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
@@ -1647,6 +1688,10 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | InvalidArgument (Keyword { expression; annotation }) ->
+        InvalidArgument (Keyword { expression; annotation = dequalify annotation })
+    | InvalidArgument (Variable { expression; annotation }) ->
+        InvalidArgument (Variable { expression; annotation = dequalify annotation })
     | InvalidType annotation ->
         InvalidType (dequalify annotation)
     | TooManyArguments extra_argument ->

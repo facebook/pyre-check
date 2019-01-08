@@ -22,7 +22,16 @@ type mismatch = {
 [@@deriving eq, show, compare]
 
 
+type invalid_argument = {
+  expression: Expression.t;
+  annotation: Type.t;
+}
+[@@deriving eq, show, compare]
+
+
 type reason =
+  | InvalidKeywordArgument of invalid_argument Node.t
+  | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
   | MissingArgument of Access.t
   | TooManyArguments of { expected: int; provided: int }
@@ -545,41 +554,64 @@ let select
                 (* Parameter default value was used. Assume it is correct. *)
                 check signature_match tail
             | Argument { argument; position } :: tail ->
-                let get_argument_annotation = function
+                let set_constraints_and_reasons argument_annotation =
+                  set_constraints_and_reasons
+                    ~resolution
+                    ~position
+                    ~argument
+                    ~argument_annotation
+                    signature_match
+                  |> (fun signature_match -> check signature_match tail)
+                in
+                let add_annotation_error
+                    ({ reasons = { annotation; _ }; _ } as signature_match)
+                    error =
+                  {
+                    signature_match with
+                    reasons = { reasons with annotation = error :: annotation }
+                  }
+                in
+                begin
+                  match argument with
                   | {
-                    Argument.value = { Node.value = Starred (Starred.Twice expression); _ };
+                    Argument.value = { Node.value = Starred (Starred.Twice expression); location };
                     _;
                   } ->
-                      let mapping_value_parameter annotation =
-                        let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
-                        if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
-                          (* Try to extract second parameter. *)
-                          Type.parameters annotation
-                          |> (fun parameters -> List.nth parameters 1)
-                          |> Option.value ~default:Type.Top
-                        else
-                          annotation
-                      in
-                      Resolution.resolve resolution expression
-                      |> mapping_value_parameter
-                  | { Argument.value = { Node.value = Starred (Starred.Once expression); _ }; _ } ->
-                      let sequence_parameter annotation =
-                        let iterable =
-                          (* Unannotated parameters are assigned a type of Bottom for inference,
-                             in which case we should avoid joining with an iterable, as doing so
-                             would suppress errors. *)
-                          if Type.equal annotation Type.Bottom then
-                            Type.Top
-                          else
-                            Resolution.join resolution annotation (Type.iterable Type.Bottom)
-                        in
-                        if Type.is_iterable iterable then
-                          Type.single_parameter iterable
-                        else
+                      let annotation = Resolution.resolve resolution expression in
+                      let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+                      if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
+                        (* Try to extract second parameter. *)
+                        Type.parameters annotation
+                        |> (fun parameters -> List.nth parameters 1)
+                        |> Option.value ~default:Type.Top
+                        |> set_constraints_and_reasons
+                      else
+                        { expression; annotation }
+                        |> Node.create ~location
+                        |> fun error -> InvalidKeywordArgument error
+                        |> add_annotation_error signature_match
+                  | {
+                      Argument.value = { Node.value = Starred (Starred.Once expression); location };
+                      _;
+                    } ->
+                      let annotation = Resolution.resolve resolution expression in
+                      let iterable =
+                        (* Unannotated parameters are assigned a type of Bottom for inference,
+                           in which case we should avoid joining with an iterable, as doing so
+                           would suppress errors. *)
+                        if Type.equal annotation Type.Bottom then
                           Type.Top
+                        else
+                          Resolution.join resolution annotation (Type.iterable Type.Bottom)
                       in
-                      Resolution.resolve resolution expression
-                      |> sequence_parameter
+                      if Type.is_iterable iterable then
+                        Type.single_parameter iterable
+                        |> set_constraints_and_reasons
+                      else
+                        { expression; annotation }
+                        |> Node.create ~location
+                        |> fun error -> InvalidVariableArgument error
+                        |> add_annotation_error signature_match
                   | { Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in
                       let argument_annotation =
@@ -596,16 +628,11 @@ let select
                          Type.equal argument_annotation Type.Top then
                         Resolution.parse_annotation resolution expression
                         |> Type.meta
+                        |> set_constraints_and_reasons
                       else
                         argument_annotation
-                in
-                set_constraints_and_reasons
-                  ~resolution
-                  ~position
-                  ~argument
-                  ~argument_annotation:(get_argument_annotation argument)
-                  signature_match
-                |> (fun signature_match -> check signature_match tail)
+                        |> set_constraints_and_reasons
+                end
           in
           let instantiate_unbound_constraints
               ({
@@ -694,6 +721,8 @@ let select
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function
+            | InvalidKeywordArgument _ -> 0
+            | InvalidVariableArgument _ -> 0
             | Mismatch _ -> 0
             | MissingArgument _ -> 1
             | TooManyArguments _ -> 1

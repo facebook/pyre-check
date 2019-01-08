@@ -34,6 +34,11 @@ type incompatible_type = {
 }
 [@@deriving compare, eq, show, sexp, hash]
 
+type invalid_argument =
+  | Keyword of { expression: Expression.t; annotation: Type.t }
+  | Variable of { expression: Expression.t; annotation: Type.t }
+[@@deriving compare, eq, show, sexp, hash]
+
 type precondition_mismatch =
   | Found of mismatch
   | NotFound of Access.t
@@ -65,6 +70,7 @@ type kind =
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidType of Type.t
+  | InvalidArgument of invalid_argument
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of {
       parent: Type.t;

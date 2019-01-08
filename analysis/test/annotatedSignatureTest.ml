@@ -45,6 +45,7 @@ let resolution =
 
       meta: typing.Type[typing.List[int]] = ...
       union: typing.Union[int, str] = ...
+      int_to_int_dictionary: typing.Dict[int, int] = ...
 
       unknown: $unknown = ...
     |}
@@ -92,6 +93,20 @@ let test_select _ =
           Found { callable = parse_callable expected; constraints = Type.Map.empty }
       | `NotFoundNoReason ->
           NotFound { callable; reason = None }
+      | `NotFoundInvalidKeywordArgument (expression, annotation) ->
+          let reason =
+            { expression; annotation }
+            |> Node.create_with_default_location
+            |> fun invalid_argument -> Some (InvalidKeywordArgument invalid_argument)
+          in
+          NotFound { callable; reason }
+      | `NotFoundInvalidVariableArgument (expression, annotation) ->
+          let reason =
+            { expression; annotation }
+            |> Node.create_with_default_location
+            |> fun invalid_argument -> Some (InvalidVariableArgument invalid_argument)
+          in
+          NotFound { callable; reason }
       | `NotFoundMissingArgument name ->
           NotFound { callable; reason = Some (MissingArgument (Access.create name)) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
@@ -266,7 +281,11 @@ let test_select _ =
     (`NotFoundMismatch (Type.string, Type.integer, None, 1));
   assert_select
     "[[int], int]" "(**a)"
-    (`NotFoundMismatch (Type.Top, Type.integer, None, 1));
+    (`NotFoundInvalidKeywordArgument (!"a", Type.Top));
+  assert_select
+    "[[int], int]" "(**int_to_int_dictionary)"
+    (`NotFoundInvalidKeywordArgument
+      (!"int_to_int_dictionary", Type.dictionary ~key:Type.integer ~value:Type.integer));
   assert_select
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"

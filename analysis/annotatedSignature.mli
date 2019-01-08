@@ -15,7 +15,15 @@ type mismatch = {
 }
 [@@deriving eq, show, compare]
 
+type invalid_argument = {
+  expression: Expression.t;
+  annotation: Type.t;
+}
+[@@deriving eq, show, compare]
+
 type reason =
+  | InvalidKeywordArgument of invalid_argument Node.t
+  | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
   | MissingArgument of Access.t
   | TooManyArguments of { expected: int; provided: int }

@@ -768,8 +768,7 @@ let test_check_variable_arguments _ =
     [
       "Missing parameter annotation [2]: Parameter `b` has no type specified.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
+      "Invalid argument [32]: Variable argument `b` has type `undefined` but must be an iterable.";
     ];
 
   assert_type_errors
@@ -781,8 +780,7 @@ let test_check_variable_arguments _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
-      "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `foo` but got `unknown`.";
+      "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
     ];
 
   assert_type_errors
@@ -902,14 +900,50 @@ let test_check_keyword_arguments _ =
   assert_type_errors
     {|
       def foo(x: int, y: str) -> None:
-          pass
+        pass
 
       def bar(x: typing.Dict[str, str]) -> None:
-          test = foo( **x )
+        test = foo( **x )
     |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `foo` but got `typing.Dict[str, str]`."
+      "to call `foo` but got `str`."
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int, y: str) -> None:
+        pass
+
+      def bar(x: typing.Dict[typing.Any, str]) -> None:
+        test = foo( **x )
+    |}
+    [
+      "Invalid argument [32]: Keyword argument `x` has type `typing.Dict[typing.Any, str]` " ^
+      "but must be a mapping with string keys."
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int, y: str) -> None:
+        pass
+
+      def bar(x: int) -> None:
+        test = foo( **x )
+    |}
+    [
+      "Invalid argument [32]: Keyword argument `x` has type `int` " ^
+      "but must be a mapping with string keys."
+    ];
+  assert_type_errors
+    {|
+      def foo(x: int, y: int) -> None:
+        pass
+
+      def bar(x: typing.Dict[str, typing.Union[int, str]]) -> None:
+        test = foo( **x )
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `foo` but got `str`."
     ]
 
 
