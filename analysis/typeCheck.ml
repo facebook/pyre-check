@@ -2026,79 +2026,16 @@ module State = struct
         forward_assign ~state ~target ~guide ~resolved ~expression:(Some value)
 
     | Assert { Assert.test; _ } ->
-        let { resolution; _ } as state =
-          forward_expression ~state ~expression:test
-          |> fun { state; _ } -> state
-        in
-        let contradiction_error =
+        begin
+          let { resolution; _ } as state =
+            forward_expression ~state ~expression:test
+            |> fun { state; _ } -> state
+          in
           match Node.value test with
-          | UnaryOperator {
-              UnaryOperator.operator = UnaryOperator.Not;
-              operand = {
-                Node.value =
-                  Access [
-                    Access.Identifier name;
-                    Access.Call {
-                      Node.value = [
-                        { Argument.name = None; value };
-                        { Argument.name = None; value = annotation };
-                      ];
-                      _;
-                    };
-                  ];
-                _;
-              };
-            } when name = "isinstance" ->
-              begin
-                match Resolution.parse_meta_annotation resolution annotation with
-                | Some expected ->
-                    let { resolved; _ } = forward_expression ~state ~expression:value in
-                    if (Type.equal resolved Type.Bottom
-                        || Type.is_unknown resolved
-                        || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
-                    then
-                      None
-                    else
-                      Some
-                        (Error.create
-                           ~location:(Node.location test)
-                           ~kind:(Error.ImpossibleIsinstance {
-                               mismatch =
-                                 (Error.create_mismatch
-                                    ~resolution
-                                    ~expected
-                                    ~actual:resolved
-                                    ~covariant:true);
-                               expression = value;
-                             })
-                           ~define)
-                | None ->
-                    let { resolved; _ } = forward_expression ~state ~expression:annotation in
-                    Some
-                      (Error.create
-                         ~location:(Node.location test)
-                         ~kind:(Error.IncompatibleParameterType {
-                             name = None;
-                             position = 1;
-                             callee = Some (Access.create "isinstance");
-                             mismatch = {
-                               Error.expected = Type.meta (Type.variable "T");
-                               actual = resolved;
-                               due_to_invariance = false;
-                             }
-                           })
-                         ~define)
-              end
-          | _ ->
-              None
-        in
-        let explicit_bottom =
-          match Node.value test with
-          | False -> true
-          | _ -> false
-        in
-        let resolution =
-          match Node.value test with
+          | False ->
+              (* Explicit bottom. *)
+              { state with bottom = true }
+
           | Access [
               Access.Identifier "isinstance";
               Access.Call {
@@ -2130,10 +2067,14 @@ module State = struct
                 | _ ->
                     Annotation.create annotation
               in
-              Resolution.set_local
-                resolution
-                ~access
-                ~annotation:updated_annotation
+              let resolution =
+                Resolution.set_local
+                  resolution
+                  ~access
+                  ~annotation:updated_annotation
+              in
+              { state with resolution }
+
           | UnaryOperator {
               UnaryOperator.operator = UnaryOperator.Not;
               operand = {
@@ -2142,8 +2083,9 @@ module State = struct
                     Access.Identifier "isinstance";
                     Access.Call {
                       Node.value = [
-                        { Argument.name = None; value = { Node.value = Access access; _ } };
-                        { Argument.name = None; value = annotation };];
+                        { Argument.name = None; value };
+                        { Argument.name = None; value = annotation };
+                      ];
                       _;
                     };
                   ];
@@ -2151,50 +2093,99 @@ module State = struct
               };
             } ->
               begin
-                match Resolution.get_local resolution ~access with
-                | Some {
-                    Annotation.annotation = (Type.Optional (Type.Union parameters)) as unrefined;
-                    _;
-                  }
-                | Some { Annotation.annotation = (Type.Union parameters) as unrefined; _ } ->
-                    let parameters =
-                      match unrefined with
-                      | Type.Optional _ ->
-                          Type.Set.of_list (Type.none :: parameters)
-                      | _ ->
-                          Type.Set.of_list parameters
-                    in
-                    let constraints =
-                      begin
-                        match annotation with
-                        | { Node.value = Tuple elements; _ } ->
-                            List.filter_map
-                              elements
-                              ~f:(Resolution.parse_meta_annotation resolution)
+                let contradiction_error =
+                  match Resolution.parse_meta_annotation resolution annotation with
+                  | Some expected ->
+                      let { resolved; _ } = forward_expression ~state ~expression:value in
+                      if (Type.equal resolved Type.Bottom
+                          || Type.is_unknown resolved
+                          || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
+                      then
+                        None
+                      else
+                        Some
+                          (Error.create
+                             ~location:(Node.location test)
+                             ~kind:(Error.ImpossibleIsinstance {
+                                 mismatch =
+                                   (Error.create_mismatch
+                                      ~resolution
+                                      ~expected
+                                      ~actual:resolved
+                                      ~covariant:true);
+                                 expression = value;
+                               })
+                             ~define)
+                  | None ->
+                      let { resolved; _ } = forward_expression ~state ~expression:annotation in
+                      Some
+                        (Error.create
+                           ~location:(Node.location test)
+                           ~kind:(Error.IncompatibleParameterType {
+                               name = None;
+                               position = 1;
+                               callee = Some (Access.create "isinstance");
+                               mismatch = {
+                                 Error.expected = Type.meta (Type.variable "T");
+                                 actual = resolved;
+                                 due_to_invariance = false;
+                               }
+                             })
+                           ~define)
+                in
+                let resolve ~access =
+                  match Resolution.get_local resolution ~access with
+                  | Some {
+                      Annotation.annotation = (Type.Optional (Type.Union parameters)) as unrefined;
+                      _;
+                    }
+                  | Some { Annotation.annotation = (Type.Union parameters) as unrefined; _ } ->
+                      let parameters =
+                        match unrefined with
+                        | Type.Optional _ ->
+                            Type.Set.of_list (Type.none :: parameters)
                         | _ ->
-                            Resolution.parse_meta_annotation resolution annotation
-                            |> Option.to_list
-                      end
-                      |> Type.Set.of_list
-                    in
-                    let constrained =
-                      Set.diff parameters constraints
-                      |> Set.to_list
-                      |> Type.union
-                    in
-                    Resolution.set_local
+                            Type.Set.of_list parameters
+                      in
+                      let constraints =
+                        begin
+                          match annotation with
+                          | { Node.value = Tuple elements; _ } ->
+                              List.filter_map
+                                elements
+                                ~f:(Resolution.parse_meta_annotation resolution)
+                          | _ ->
+                              Resolution.parse_meta_annotation resolution annotation
+                              |> Option.to_list
+                        end
+                        |> Type.Set.of_list
+                      in
+                      let constrained =
+                        Set.diff parameters constraints
+                        |> Set.to_list
+                        |> Type.union
+                      in
+                      Resolution.set_local
+                        resolution
+                        ~access
+                        ~annotation:(Annotation.create constrained)
+                  | _ ->
                       resolution
-                      ~access
-                      ~annotation:(Annotation.create constrained)
+                in
+                match contradiction_error, value with
+                | Some error, _ ->
+                    add_error ~state:{ state with bottom = true } error
+                | _, { Node.value = Access access; _ } ->
+                    { state with resolution = resolve ~access }
                 | _ ->
-                    resolution
+                    state
               end
 
           | Access access ->
               let open Annotated in
               let open Access in
               let element = Access.last_element ~resolution (Access.create access) in
-              begin
+              let resolution =
                 match Resolution.get_local resolution ~access, element with
                 | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
                     Resolution.set_local
@@ -2231,10 +2222,11 @@ module State = struct
                     end
                 | _ ->
                     resolution
-              end
+              in
+              { state with resolution }
 
           | BooleanOperator { BooleanOperator.left; operator; right } ->
-              let { resolution; _ } =
+              begin
                 let update state expression =
                   forward_statement ~state ~statement:(Statement.assume expression)
                   |> fun { resolution; _ } -> Resolution.annotations resolution
@@ -2275,15 +2267,15 @@ module State = struct
                         state with
                         resolution = Resolution.with_annotations resolution ~annotations:right;
                       }
-              in
-              resolution
+              end
+
           | ComparisonOperator {
               ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
               right = { Node.value = Access [Access.Identifier "None"]; _ };
             } ->
-              let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume left) in
-              resolution
+              forward_statement ~state ~statement:(Statement.assume left)
+
           | ComparisonOperator {
               ComparisonOperator.left = { Node.value = Access access; _ };
               operator = ComparisonOperator.Is;
@@ -2302,18 +2294,10 @@ module State = struct
                 | _ ->
                     Annotation.create (Type.Optional Type.Bottom)
               in
-              Resolution.set_local resolution ~access ~annotation:refined
-          | _ ->
-              resolution
-        in
-        begin
-          match contradiction_error, explicit_bottom with
-          | Some error, _ ->
-              add_error ~state:{ state with bottom = true } error
-          | None, true ->
-              { state with bottom = true }
-          | None, false ->
+              let resolution = Resolution.set_local resolution ~access ~annotation:refined in
               { state with resolution }
+          | _ ->
+              state
         end
 
     | Expression { Node.value = Access access; _ } when Access.is_assert_function access ->
