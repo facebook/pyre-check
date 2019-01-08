@@ -1160,6 +1160,10 @@ and join ((module Handler: Handler) as order) left right =
     | (Type.Parametric _ as annotation), (Type.Tuple (Type.Unbounded parameter))
     | (Type.Primitive _ as annotation), (Type.Tuple (Type.Unbounded parameter)) ->
         join order (Type.parametric "tuple" [parameter]) annotation
+    | Type.Tuple (Type.Bounded parameters), (Type.Parametric _ as annotation) ->
+        (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+        let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
+        join order (Type.parametric "tuple" [parameter]) annotation
     | Type.Tuple _, _
     | _, Type.Tuple _ ->
         Type.union [left; right]

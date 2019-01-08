@@ -1324,6 +1324,7 @@ let test_join _ =
   assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
   assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
   assert_join "typing.List[float]" "float[int]" "typing.Any";
+  assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
 
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";

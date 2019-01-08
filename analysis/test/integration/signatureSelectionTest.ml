@@ -851,7 +851,16 @@ let test_check_variable_arguments _ =
         return foo('asdf', *b)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `foo` but got `str`."];
+
+   assert_type_errors
+     {|
+       def foo(a: int, b: int) -> int:
+         return 1
+       def bar(b: typing.Tuple[int, int]) -> int:
+         return foo( *b )
+     |}
+     []
 
 
 let test_check_variable_restrictions _ =
