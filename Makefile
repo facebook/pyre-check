@@ -40,3 +40,7 @@ clean:
 .PHONY: hack_parallel
 hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
+
+.PHONY: lint
+lint:
+	find -name "*.ml" | grep -v build | grep -v hack | xargs ocp-indent -i
