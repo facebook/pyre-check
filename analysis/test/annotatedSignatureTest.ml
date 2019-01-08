@@ -192,6 +192,7 @@ let test_select _ =
 
   assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
   assert_select "[[int], None]" "(union)" (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+  assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
   assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
@@ -232,7 +233,7 @@ let test_select _ =
   assert_select
     "[[Variable($parameter$, int), Named(i, int)], int]"
     "(2, i=1)"
-    (`NotFoundTooManyArguments (1, 2));
+    (`NotFoundTooManyArguments (0, 1));
 
   (* Named arguments. *)
   assert_select

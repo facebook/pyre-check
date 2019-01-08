@@ -113,6 +113,7 @@ let select
     ~callable:({ Type.Callable.implementation; overloads; _ } as callable) =
   let open Type.Callable in
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
+    let all_arguments = arguments in
     let base_signature_match =
       {
         callable = { callable with Type.Callable.implementation; overloads = [] };
@@ -135,22 +136,26 @@ let select
       let update_mapping parameter argument =
         Map.add_multi argument_mapping ~key:parameter ~data:argument
       in
-      let arity_mismatch ~parameters ?(unreachable_parameters = []) ~arguments reasons =
-        match parameters with
-        | Defined parameters ->
-            let parameter_count = List.length parameters - List.length unreachable_parameters in
-            let unmatched_positional_arguments, _ =
-              let is_positional = function
-              | Argument { argument = { Argument.name = None; _ }; _ } -> true
+      let arity_mismatch ?(unreachable_parameters = []) ~arguments reasons =
+        match all_parameters with
+        | Defined all_parameters ->
+            let matched_keyword_arguments =
+              let is_keyword_argument = function
+              | { Argument.name = Some _; _ } -> true
               | _ -> false
               in
-              List.partition_tf ~f:is_positional arguments
+              List.filter ~f:is_keyword_argument all_arguments
             in
-            let provided_positional_count =
-              parameter_count + List.length unmatched_positional_arguments
+            let positional_parameter_count =
+              List.length all_parameters
+              - List.length unreachable_parameters
+              - List.length matched_keyword_arguments
             in
             let error =
-              TooManyArguments { expected = parameter_count; provided = provided_positional_count }
+              TooManyArguments {
+                expected = positional_parameter_count;
+                provided = positional_parameter_count + List.length arguments;
+              }
             in
             {
               reasons with
@@ -177,8 +182,7 @@ let select
           consume ~arguments:arguments_tail ~parameters signature_match
       | _, [] ->
           (* Arguments; parameters empty *)
-          let reasons = arity_mismatch ~parameters:all_parameters ~arguments reasons in
-          Some { signature_match with reasons }
+          Some { signature_match with reasons = arity_mismatch ~arguments reasons }
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
           let argument_mapping = update_mapping parameter Default in
@@ -291,7 +295,6 @@ let select
               let reasons =
                 arity_mismatch
                   reasons
-                  ~parameters:all_parameters
                   ~unreachable_parameters:(parameter :: parameters_tail)
                   ~arguments
               in
