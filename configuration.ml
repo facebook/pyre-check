@@ -13,7 +13,7 @@ module Analysis = struct
     start_time: float;
     infer: bool;
     recursive_infer: bool;
-    run_additional_checks: bool;
+    additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
@@ -39,7 +39,7 @@ module Analysis = struct
   let equal first second =
     first.infer = second.infer &&
     first.recursive_infer = second.recursive_infer &&
-    first.run_additional_checks = second.run_additional_checks &&
+    first.additional_checks = second.additional_checks &&
     first.debug = second.debug &&
     first.expected_version = second.expected_version &&
     first.strict = second.strict &&
@@ -50,7 +50,7 @@ module Analysis = struct
       ?(start_time = Unix.time())
       ?(infer = false)
       ?(recursive_infer = false)
-      ?(run_additional_checks = false)
+      ?(additional_checks = [])
       ?configuration_file_hash
       ?(parallel = true)
       ?filter_directories
@@ -74,7 +74,7 @@ module Analysis = struct
       start_time;
       infer;
       recursive_infer;
-      run_additional_checks;
+      additional_checks;
       configuration_file_hash;
       parallel;
       filter_directories;

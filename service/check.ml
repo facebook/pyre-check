@@ -28,7 +28,6 @@ let analyze_sources
     ~configuration:({
         Configuration.Analysis.project_root;
         filter_directories;
-        run_additional_checks;
         infer;
         _;
       } as configuration)
@@ -116,48 +115,45 @@ let analyze_sources
   Statistics.performance ~name:"postprocessed" ~timer ();
 
   let additional_errors =
-    if run_additional_checks then
-      begin
+    begin
+      let timer = Timer.start () in
+      Log.info "Running additional checks...";
+      let run_additional_check (module Check: Analysis.Check.Signature) =
+        Log.info "Running check `%s`..." Check.name;
         let timer = Timer.start () in
-        Log.info "Running additional checks...";
-        let run_additional_check (module Check: Analysis.Check.Signature) =
-          Log.info "Running check `%s`..." Check.name;
-          let timer = Timer.start () in
-          let map _ handles =
-            let analyze_source errors handle =
-              match SharedMemory.Sources.get handle with
-              | Some source ->
-                  Check.run ~configuration ~environment ~source
-                  |> List.rev_append errors
-              | _ ->
-                  Log.warning "Unable to load source for `%a`" File.Handle.pp handle;
-                  errors
-            in
-            List.fold handles ~init:[] ~f:analyze_source
+        let map _ handles =
+          let analyze_source errors handle =
+            match SharedMemory.Sources.get handle with
+            | Some source ->
+                Check.run ~configuration ~environment ~source
+                |> List.rev_append errors
+            | _ ->
+                Log.warning "Unable to load source for `%a`" File.Handle.pp handle;
+                errors
           in
-          let errors =
-            Scheduler.map_reduce
-              scheduler
-              ~configuration
-              ~bucket_size:75
-              ~initial:[]
-              ~map
-              ~reduce:List.append
-              ~inputs:handles
-              ()
-          in
-          Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
-          errors
+          List.fold handles ~init:[] ~f:analyze_source
         in
-        let additional_errors =
-          List.map Analysis.Check.additional_checks ~f:run_additional_check
-          |> List.concat
+        let errors =
+          Scheduler.map_reduce
+            scheduler
+            ~configuration
+            ~bucket_size:75
+            ~initial:[]
+            ~map
+            ~reduce:List.append
+            ~inputs:handles
+            ()
         in
-        Statistics.performance ~name:"additional checks" ~timer ();
-        additional_errors
-      end
-    else
-      []
+        Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
+        errors
+      in
+      let additional_errors =
+        List.map (Analysis.Check.additional_checks ~configuration) ~f:run_additional_check
+        |> List.concat
+      in
+      Statistics.performance ~name:"additional checks" ~timer ();
+      additional_errors
+    end
   in
   errors @ additional_errors
 

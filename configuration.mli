@@ -10,7 +10,7 @@ module Analysis: sig
     start_time: float;
     infer: bool;
     recursive_infer: bool;
-    run_additional_checks: bool;
+    additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
@@ -36,7 +36,7 @@ module Analysis: sig
     :  ?start_time: float
     -> ?infer: bool
     -> ?recursive_infer: bool
-    -> ?run_additional_checks: bool
+    -> ?additional_checks: string list
     -> ?configuration_file_hash: string
     -> ?parallel: bool
     -> ?filter_directories: Path.t list

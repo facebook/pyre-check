@@ -571,7 +571,7 @@ let run_start_command
     show_error_traces
     infer
     recursive_infer
-    run_additional_checks
+    additional_checks
     sequential
     filter_directories
     number_of_workers
@@ -597,7 +597,7 @@ let run_start_command
       ~debug
       ~infer
       ~recursive_infer
-      ~run_additional_checks
+      ~additional_checks
       ?configuration_file_hash
       ~strict
       ~declare

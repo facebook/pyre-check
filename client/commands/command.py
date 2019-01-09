@@ -72,7 +72,7 @@ class Command:
         self._debug = arguments.debug
         self._sequential = arguments.sequential
         self._strict = arguments.strict
-        self._run_additional_checks = arguments.run_additional_checks
+        self._additional_checks = arguments.additional_check
         self._show_error_traces = arguments.show_error_traces
         self._verbose = arguments.verbose
         self._show_parse_errors = arguments.show_parse_errors
@@ -112,8 +112,9 @@ class Command:
             flags.extend(["-sequential"])
         if self._strict:
             flags.extend(["-strict"])
-        if self._run_additional_checks:
-            flags.extend(["-run-additional-checks"])
+        if self._additional_checks:
+            flags.append("-additional-checks")
+            flags.append(",".join(self._additional_checks))
         if self._show_error_traces:
             flags.append("-show-error-traces")
         if self._verbose:

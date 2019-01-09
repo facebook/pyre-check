@@ -500,7 +500,7 @@ def mock_arguments() -> MagicMock:
     arguments = MagicMock()
 
     arguments.debug = False
-    arguments.run_additional_checks = False
+    arguments.additional_check = []
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.verbose = False

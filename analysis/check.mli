@@ -18,4 +18,4 @@ module type Signature = sig
 end
 
 
-val additional_checks: (module Signature) list
+val additional_checks: configuration: Configuration.Analysis.t ->  (module Signature) list

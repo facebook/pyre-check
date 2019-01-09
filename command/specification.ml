@@ -28,7 +28,10 @@ let base_command_line_arguments =
       "-recursive-infer"
       no_arg
       ~doc:"Recursively run infer until no new annotations are generated."
-    +> flag "-run-additional-checks" no_arg ~doc:"Run additional checks after type checking"
+    +> flag
+      "-additional-checks"
+      (optional_with_default [] (Arg_type.comma_separated string))
+      ~doc:"Run additional checks after type checking"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
     (* Delete -filter-directories once there are no callers *)
     +> flag
