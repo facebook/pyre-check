@@ -1735,8 +1735,8 @@ module State = struct
                 parameters minimum_length
           in
 
-          match value, guide with
-          | Access access, guide ->
+          match value with
+          | Access access ->
               let annotation, element =
                 let annotation, element =
                   let open Annotated in
@@ -1914,8 +1914,8 @@ module State = struct
                 { state with resolution }
               in
               state
-          | List elements, guide
-          | Tuple elements, guide
+          | List elements
+          | Tuple elements
             when is_uniform_sequence guide ->
               let propagate state element =
                 match Node.value element with
@@ -1927,8 +1927,8 @@ module State = struct
                     forward_assign ~state ~target:element ~guide ~resolved ~expression:None
               in
               List.fold elements ~init:state ~f:propagate
-          | List elements, guide
-          | Tuple elements, guide
+          | List elements
+          | Tuple elements
             when is_nonuniform_sequence ~minimum_length:(List.length elements) guide ->
               let left, starred, right =
                 let is_starred { Node.value; _ } =
@@ -2003,8 +2003,8 @@ module State = struct
                 ~init:state
                 ~f:(fun state (resolved, (target, guide)) ->
                     forward_assign ~state ~target ~guide ~resolved ~expression:None)
-          | List elements, guide
-          | Tuple elements, guide ->
+          | List elements
+          | Tuple elements ->
               let kind =
                 match guide with
                 | Type.Tuple (Type.Bounded parameters) ->
