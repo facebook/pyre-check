@@ -1165,15 +1165,8 @@ let join ~resolution left right =
   let join_missing_annotation
       (left: missing_annotation)  (* Ohcaml... *)
       (right: missing_annotation): missing_annotation =
-    let join_annotation_options left_annotation right_annotation =
-      match left_annotation, right_annotation with
-      | Some left, Some right ->
-          Some (Resolution.join resolution left right)
-      | None, Some annotation
-      | Some annotation, None ->
-          Some annotation
-      | None, None ->
-          None
+    let join_annotation_options =
+      Option.merge ~f:(Resolution.join resolution)
     in
     {
       left with
