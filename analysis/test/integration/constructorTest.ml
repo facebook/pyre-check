@@ -115,8 +115,10 @@ let test_check_init _ =
     {|
       class Foo:
         attribute: int
-        def __enter__(self) -> None:
+        def __init__(self) -> None:
           self.attribute = 0
+        def __enter__(self) -> "Foo":
+          return self
     |}
     [];
 

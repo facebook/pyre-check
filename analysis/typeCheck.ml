@@ -201,8 +201,7 @@ module State = struct
         _;
       } =
     let constructor_errors errors =
-      if not (Statement.Define.is_constructor define) ||
-         String.is_suffix (Access.show name) ~suffix:"__enter__" then  (* Yikes... *)
+      if not (Statement.Define.is_constructor define) then
         errors
       else
         (* Return errors. *)
