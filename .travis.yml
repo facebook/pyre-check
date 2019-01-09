@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.6"
+
+dist: xenial
+
+jobs:
+  include:
+    - stage: "Run tests"
+      name: "Lint"
+      install: scripts/travis_install_lint_dependencies.sh
+      script:
+        - scripts/travis_pyre_on_pyre.sh
+        - black --check --diff .
+    - name: "Build"
+      install: scripts/travis_install_build_dependencies.sh
+      script: ./scripts/setup.sh --local
