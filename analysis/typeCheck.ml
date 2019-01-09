@@ -254,7 +254,7 @@ module State = struct
                             Error.name = access;
                             annotation = None;
                             evidence_locations = [];
-                            due_to_any = false;
+                            given_annotation = None;
                           };
                         })
                       ~define:define_node
@@ -616,7 +616,7 @@ module State = struct
                 ~define:define_node
               |> add_error ~state
           in
-          let add_missing_parameter_annotation_error ~state ~due_to_any annotation =
+          let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
             let sanitized_access =
               name
               |> Identifier.sanitized
@@ -631,7 +631,7 @@ module State = struct
                     name = sanitized_access;
                     annotation;
                     evidence_locations = [];
-                    due_to_any;
+                    given_annotation;
                   })
                 ~define:define_node
               |> add_error ~state
@@ -685,14 +685,17 @@ module State = struct
                 match annotation, value with
                 | Some annotation, Some value
                   when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    let { resolved = annotation; _ } =
+                    let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_annotation_error ~state ~due_to_any:true (Some annotation),
-                    Annotation.create annotation
+                    add_missing_parameter_annotation_error
+                      ~state
+                      ~given_annotation:(Some Type.Object)
+                      (Some value_annotation),
+                    Annotation.create value_annotation
                 | Some annotation, None
                   when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    add_missing_parameter_annotation_error ~state ~due_to_any:true None,
+                    add_missing_parameter_annotation_error ~state ~given_annotation:(Some Type.Object) None,
                     Annotation.create_immutable ~global:false Type.Object
                 | Some annotation, value ->
                     let state, annotation = parse_and_check_annotation ~state annotation in
@@ -715,10 +718,10 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_annotation_error ~state ~due_to_any:false (Some annotation),
+                    add_missing_parameter_annotation_error ~state ~given_annotation:None (Some annotation),
                     Annotation.create annotation
                 | None, None ->
-                    add_missing_parameter_annotation_error ~state ~due_to_any:false None,
+                    add_missing_parameter_annotation_error ~state ~given_annotation:None None,
                     Annotation.create Type.Bottom
           in
           let annotation =
@@ -1649,7 +1652,7 @@ module State = struct
                   name = Access.create "$return_annotation";
                   annotation = Some actual;
                   evidence_locations = [instantiate location];
-                  due_to_any = Type.equal return_annotation Type.Object;
+                  given_annotation = Some return_annotation;
                 })
               ~define
           in
@@ -1670,12 +1673,15 @@ module State = struct
         let { state = { resolution; _ } as state; resolved } =
           forward_expression ~state ~expression:value
         in
-        let guide =
-          (* This is the annotation determining how we recursively break up the assignment. *)
+        let original_annotation =
           annotation
           >>| Resolution.parse_annotation resolution
           |> Option.filter
             ~f:(fun annotation -> not (Resolution.contains_untracked resolution annotation))
+        in
+        let guide =
+          (* This is the annotation determining how we recursively break up the assignment. *)
+          original_annotation
           |> Option.value ~default:resolved
         in
         let explicit = Option.is_some annotation in
@@ -1842,7 +1848,7 @@ module State = struct
                                 Error.name = access;
                                 annotation = Some resolved;
                                 evidence_locations = [instantiate location];
-                                due_to_any = Type.equal expected Type.Object;
+                                given_annotation = Some expected;
                               })
                             ~define
                         )
@@ -1859,7 +1865,7 @@ module State = struct
                                   Error.name = access;
                                   annotation = Some resolved;
                                   evidence_locations = [instantiate location];
-                                  due_to_any = Type.equal expected Type.Object;
+                                  given_annotation = Some expected;
                                 };
                               })
                             ~define
@@ -1881,7 +1887,7 @@ module State = struct
                                 Error.name = access;
                                 annotation = Some resolved;
                                 evidence_locations = [instantiate location];
-                                due_to_any = Type.equal expected Type.Object;
+                                given_annotation = Some expected;
                               })
                             ~define
                         )

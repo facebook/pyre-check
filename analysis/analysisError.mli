@@ -23,7 +23,7 @@ type missing_annotation = {
   name: Access.t;
   annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
-  due_to_any: bool;
+  given_annotation: Type.t option;
 }
 [@@deriving compare, eq, sexp, hash]
 

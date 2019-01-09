@@ -28,7 +28,7 @@ type missing_annotation = {
   name: Access.t;
   annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
-  due_to_any: bool;
+  given_annotation: Type.t option;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -250,12 +250,12 @@ let messages ~detailed:_ ~define location kind =
   | MissingAttributeAnnotation { parent; missing_annotation } ->
       begin
         match missing_annotation with
-        | { name; annotation = Some annotation; due_to_any; _ }
+        | { name; annotation = Some annotation; given_annotation; _ }
           when Type.equal annotation Type.Bottom ||
                Type.equal annotation Type.Object ||
                Type.is_unknown annotation ->
             begin
-              if due_to_any then
+              if Option.equal Type.equal given_annotation (Some Type.Object) then
                 [
                   Format.asprintf
                     "Attribute `%a` of class `%a` must have a type other than `Any`."
@@ -270,7 +270,7 @@ let messages ~detailed:_ ~define location kind =
                     Type.pp parent;
                 ]
             end
-        | { name; annotation = Some annotation; evidence_locations; due_to_any } ->
+        | { name; annotation = Some annotation; evidence_locations; given_annotation } ->
             let detail =
               let evidence_string =
                 evidence_locations
@@ -285,7 +285,7 @@ let messages ~detailed:_ ~define location kind =
                 evidence_string
             in
             begin
-              if due_to_any then
+              if Option.equal Type.equal given_annotation (Some Type.Object) then
                 [
                   Format.asprintf
                     "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
@@ -311,10 +311,10 @@ let messages ~detailed:_ ~define location kind =
                 Type.pp parent;
             ]
       end
-  | MissingParameterAnnotation { name; annotation = Some annotation; due_to_any; _ }
+  | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
       when Type.is_concrete annotation ->
       begin
-        if due_to_any then
+        if Option.equal Type.equal given_annotation (Some Type.Object) then
           [
             Format.asprintf
               "Parameter `%s` has type `%a` but type `Any` is specified."
@@ -329,9 +329,9 @@ let messages ~detailed:_ ~define location kind =
               Type.pp annotation
           ]
       end
-  | MissingParameterAnnotation { name; due_to_any; _ } ->
+  | MissingParameterAnnotation { name; given_annotation; _ } ->
       begin
-        if due_to_any then
+        if Option.equal Type.equal given_annotation (Some Type.Object) then
           [
             Format.asprintf
               "Parameter `%s` must have a type other than `Any`."
@@ -344,7 +344,12 @@ let messages ~detailed:_ ~define location kind =
               (Access.show_sanitized name)
           ]
       end
-  | MissingReturnAnnotation { annotation = Some annotation; evidence_locations; due_to_any; _ }
+  | MissingReturnAnnotation {
+      annotation = Some annotation;
+      evidence_locations;
+      given_annotation;
+      _;
+    }
     when Type.is_concrete annotation ->
       let detail =
         let evidence_string =
@@ -360,7 +365,7 @@ let messages ~detailed:_ ~define location kind =
           start_line
       in
       begin
-        if due_to_any then
+        if Option.equal Type.equal given_annotation (Some Type.Object) then
           [
             (Format.asprintf
                "Returning `%a` but type `Any` is specified."
@@ -375,9 +380,9 @@ let messages ~detailed:_ ~define location kind =
             detail;
           ]
       end
-  | MissingReturnAnnotation { due_to_any; _ } ->
+  | MissingReturnAnnotation { given_annotation; _ } ->
       begin
-        if due_to_any then
+        if Option.equal Type.equal given_annotation (Some Type.Object) then
           ["Return type must be specified as type other than `Any`."]
         else
           ["Return type is not specified."]
@@ -386,7 +391,7 @@ let messages ~detailed:_ ~define location kind =
       name;
       annotation = Some annotation;
       evidence_locations;
-      due_to_any;
+      given_annotation;
     } ->
       begin
         let evidence_string =
@@ -394,7 +399,7 @@ let messages ~detailed:_ ~define location kind =
           |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
           |> String.concat ~sep:", "
         in
-        if due_to_any then
+        if Option.equal Type.equal given_annotation (Some Type.Object) then
           [
             Format.asprintf
               "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
@@ -1062,7 +1067,7 @@ let less_or_equal ~resolution left right =
     | MissingAttributeAnnotation { missing_annotation = left; _ },
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when (Access.equal left.name right.name) && left.due_to_any = right.due_to_any ->
+      when (Access.equal left.name right.name) ->
         begin
           match left.annotation, right.annotation with
           | Some left, Some right ->
@@ -1160,8 +1165,8 @@ let join ~resolution left right =
   let join_missing_annotation
       (left: missing_annotation)  (* Ohcaml... *)
       (right: missing_annotation): missing_annotation =
-    let annotation =
-      match left.annotation, right.annotation with
+    let join_annotation_options left_annotation right_annotation =
+      match left_annotation, right_annotation with
       | Some left, Some right ->
           Some (Resolution.join resolution left right)
       | None, Some annotation
@@ -1172,12 +1177,12 @@ let join ~resolution left right =
     in
     {
       left with
-      annotation;
+      annotation = join_annotation_options left.annotation right.annotation;
       evidence_locations =
         List.dedup_and_sort
           ~compare:Location.Instantiated.compare
           (left.evidence_locations @ right.evidence_locations);
-      due_to_any = left.due_to_any && right.due_to_any;
+      given_annotation = join_annotation_options left.given_annotation right.given_annotation;
     }
   in
   let kind =

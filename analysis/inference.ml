@@ -89,7 +89,7 @@ module State = struct
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
       let access = [Access.Identifier name] in
-      let add_missing_parameter_error ~due_to_any =
+      let add_missing_parameter_error ~given_annotation =
         Resolution.get_local resolution ~access
         >>| (fun { Annotation.annotation; _ } ->
             let name = Access.create_from_identifiers [name] in
@@ -100,7 +100,7 @@ module State = struct
                   name;
                   annotation = Some annotation;
                   evidence_locations = [];
-                  due_to_any;
+                  given_annotation;
                 })
                 ~define:define_node
             in
@@ -109,10 +109,10 @@ module State = struct
       in
       match annotation with
       | None ->
-          add_missing_parameter_error ~due_to_any:false
+          add_missing_parameter_error ~given_annotation:None
       | Some annotation
         when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-          add_missing_parameter_error ~due_to_any:true
+          add_missing_parameter_error ~given_annotation:(Some Type.Object)
       | _ -> errors
     in
     let parameters =
