@@ -318,7 +318,9 @@ def main() -> int:
         translate_arguments(commands, arguments)
         log.initialize(arguments)
 
-        if arguments.command not in [commands.Initialize]:
+        if arguments.command in [commands.Initialize]:
+            analysis_directory = AnalysisDirectory(".")
+        else:
             configuration = Configuration(
                 local_configuration=arguments.local_configuration,
                 search_path=arguments.search_path,
