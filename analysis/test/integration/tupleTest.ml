@@ -123,6 +123,7 @@ let test_check_tuple _ =
         return x + y + z
     |}
     [
+      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
       "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
@@ -207,6 +208,9 @@ let test_check_tuple _ =
         a = d.a + d.d
     |}
     [
+      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
       "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
@@ -219,7 +223,11 @@ let test_check_tuple _ =
         x, y, z = t
         x, y, z, other = t
     |}
-    [];
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
+    ];
   assert_type_errors
     {|
       T = collections.namedtuple('T', 'a')
@@ -227,7 +235,7 @@ let test_check_tuple _ =
       def foo() -> None:
         T(a=2)
     |}
-    [];
+    ["Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified."];
   assert_type_errors
     {|
       def foo(input: int) -> None:

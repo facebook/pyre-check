@@ -616,6 +616,7 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
+          "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
           "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
         ])
     []

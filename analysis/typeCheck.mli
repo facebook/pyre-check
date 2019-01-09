@@ -38,7 +38,7 @@ module State : sig
   and t = {
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
-    errors: Error.t Location.Reference.Map.t;
+    errors: Error.t Int.Map.t;
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;

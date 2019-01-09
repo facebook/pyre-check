@@ -28,7 +28,7 @@ module State = struct
   and t = {
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
-    errors: Error.t Location.Reference.Map.t;
+    errors: Error.t Int.Map.t;
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
@@ -79,11 +79,10 @@ module State = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string (location, error) =
+      let error_to_string (hash, error) =
         Format.asprintf
-          "    %a -> %s"
-          Location.Instantiated.pp
-          (Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location)
+          "    %d -> %s"
+          hash
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
@@ -127,7 +126,7 @@ module State = struct
     {
       configuration;
       resolution;
-      errors = Location.Reference.Map.empty;
+      errors = Int.Map.empty;
       define;
       nested_defines = Location.Reference.Map.empty;
       bottom;
@@ -184,7 +183,7 @@ module State = struct
       check_annotation ~resolution ~location ~define ~annotation ~resolved
       |> List.fold
         ~init:errors
-        ~f:(fun errors error -> Map.set ~key:location ~data:error errors)
+        ~f:(fun errors error -> Map.set ~key:(Error.hash error) ~data:error errors)
     in
     { state with errors }, annotation
 
@@ -195,8 +194,8 @@ module State = struct
         resolution;
         errors;
         define = ({
-            Node.location;
-            value = { Define.name; return_annotation; body; _ } as define;
+            Node.value = { Define.name; return_annotation; body; _ } as define;
+            _;
           } as define_node);
         _;
       } =
@@ -229,7 +228,7 @@ module State = struct
             let untyped_assignment_error errors { Node.location; value } =
               match value with
               | Assign {
-                  Assign.annotation = None;
+                  Assign.annotation = assign_annotation;
                   target = {
                     Node.value = Access ((Expression.Access.Identifier self) :: ([_] as access));
                     _;
@@ -246,6 +245,10 @@ module State = struct
                     |> Annotation.annotation
                   in
                   if Type.equal attribute_annotation Type.Object then
+                    let given_annotation =
+                      assign_annotation
+                      >>| Resolution.parse_annotation resolution
+                    in
                     Error.create
                       ~location
                       ~kind:(Error.MissingAttributeAnnotation {
@@ -254,7 +257,7 @@ module State = struct
                             Error.name = access;
                             annotation = None;
                             evidence_locations = [];
-                            given_annotation = None;
+                            given_annotation;
                           };
                         })
                       ~define:define_node
@@ -342,10 +345,6 @@ module State = struct
     Map.data errors
     |> Error.join_at_define
       ~resolution
-      ~location:(
-        Location.instantiate
-          location
-          ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash))
     |> class_initialization_errors
     |> constructor_errors
     |> Error.filter ~configuration ~resolution
@@ -558,7 +557,7 @@ module State = struct
   let add_error ~state:({ errors; _ } as state) error =
     {
       state with
-      errors = Map.set errors ~key:(Location.reference (Error.location error)) ~data:error;
+      errors = Map.set errors ~key:(Error.hash error) ~data:error;
     }
 
   type resolved = {
@@ -803,7 +802,7 @@ module State = struct
                            })
                          ~define:define_node
                      in
-                     Map.set ~key:location ~data:error errors
+                     Map.set ~key:(Error.hash error) ~data:error errors
                    else
                      errors
                  in
@@ -851,7 +850,7 @@ module State = struct
                                    })
                                  ~define:define_node
                              in
-                             Map.set ~key:location ~data:error errors
+                             Map.set ~key:(Error.hash error) ~data:error errors
                            else
                              errors
                          with TypeOrder.Untracked _ ->
@@ -898,7 +897,7 @@ module State = struct
                                })
                              ~define:define_node
                          in
-                         Map.set ~key:location ~data:error errors
+                         Map.set ~key:(Error.hash error) ~data:error errors
                  in
                  Type.Callable.Overload.parameters implementation
                  |> Option.value ~default:[]
@@ -1590,8 +1589,8 @@ module State = struct
       ~state:({
           resolution;
           define = ({
-              Node.value = { Define.async; _ } as define_without_location;
-              _;
+              Node.location = define_location;
+              value = { Define.async; _ } as define_without_location;
             } as define);
           _;
         } as state)
@@ -1647,7 +1646,7 @@ module State = struct
                 Type.equal return_annotation Type.Object then
           let error =
             Error.create
-              ~location
+              ~location:define_location
               ~kind:(Error.MissingReturnAnnotation {
                   name = Access.create "$return_annotation";
                   annotation = Some actual;
@@ -1686,7 +1685,7 @@ module State = struct
         in
         let explicit = Option.is_some annotation in
         let rec forward_assign
-            ~state:({ resolution; errors; _ } as state)
+            ~state:({ resolution; _ } as state)
             ~target:{ Node.location; value }
             ~guide
             ~resolved
@@ -1829,8 +1828,13 @@ module State = struct
                     let open Annotated in
                     let open Access in
                     let insufficiently_annotated =
-                      (Type.equal expected Type.Top || Type.equal expected Type.Object) &&
-                      not (Type.equal resolved Type.Top || Type.equal resolved Type.ellipses)
+                      Type.equal expected Type.Top || Type.equal expected Type.Object
+                    in
+                    let actual_annotation, evidence_locations =
+                      if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
+                        None, []
+                      else
+                        Some resolved, [instantiate location]
                     in
                     let is_type_alias access =
                       Expression.Access.expression access
@@ -1841,14 +1845,13 @@ module State = struct
                     | Attribute { attribute = access; origin = Module _; defined }
                       when defined && insufficiently_annotated ->
                         Some (
-                          location,
                           Error.create
                             ~location
                             ~kind:(Error.MissingGlobalAnnotation {
                                 Error.name = access;
-                                annotation = Some resolved;
-                                evidence_locations = [instantiate location];
-                                given_annotation = Some expected;
+                                annotation = actual_annotation;
+                                evidence_locations;
+                                given_annotation = original_annotation;
                               })
                             ~define
                         )
@@ -1856,16 +1859,15 @@ module State = struct
                       when defined && insufficiently_annotated ->
                         let attribute_location = Attribute.location attribute in
                         Some (
-                          attribute_location,
                           Error.create
                             ~location:attribute_location
                             ~kind:(Error.MissingAttributeAnnotation {
                                 parent = Attribute.parent attribute;
                                 missing_annotation = {
                                   Error.name = access;
-                                  annotation = Some resolved;
-                                  evidence_locations = [instantiate location];
-                                  given_annotation = Some expected;
+                                  annotation = actual_annotation;
+                                  evidence_locations;
+                                  given_annotation = original_annotation;
                                 };
                               })
                             ~define
@@ -1880,26 +1882,20 @@ module State = struct
                           |> Option.value ~default:location
                         in
                         Some (
-                          global_location,
                           Error.create
                             ~location:global_location
                             ~kind:(Error.MissingGlobalAnnotation {
                                 Error.name = access;
-                                annotation = Some resolved;
-                                evidence_locations = [instantiate location];
-                                given_annotation = Some expected;
+                                annotation = actual_annotation;
+                                evidence_locations;
+                                given_annotation = original_annotation;
                               })
                             ~define
                         )
                     | _ ->
                         None
                   in
-                  (* Join errors on their declaration location to suggest annotations. *)
                   error
-                  >>| fun (location, error) ->
-                  Map.find errors location
-                  >>| (Error.join ~resolution error)
-                  |> Option.value ~default:error
                 in
                 error >>| add_error ~state |> Option.value ~default:state
               in
@@ -2582,7 +2578,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     in
     {
       State.configuration = Configuration.Analysis.create ();
-      errors = Location.Reference.Map.empty;
+      errors = Int.Map.empty;
       define =
         Define.create_toplevel ~qualifier:[] ~statements:[]
         |> Node.create_with_default_location;

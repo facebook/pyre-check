@@ -92,7 +92,11 @@ let test_check_typed_dictionaries _ =
         movie: Movie
         a = foo(movie['yar'])
     |}
-    ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `foo` but got `unknown`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`."
+    ];
 
   assert_test_typed_dictionary
     {|
@@ -105,6 +109,8 @@ let test_check_typed_dictionaries _ =
         a = foo(movie[key])
     |}
     [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `foo` but got `unknown`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal; " ^
       "expected one of ('name', 'year')."
     ];
@@ -397,6 +403,8 @@ let test_check_typed_dictionaries _ =
     [
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `unknown`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter " ^
+      "to call `TypedDictionary.__setitem__` but got `int`.";
     ];
 
   assert_test_typed_dictionary

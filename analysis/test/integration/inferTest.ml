@@ -159,7 +159,7 @@ let test_check_missing_return _ =
      |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
     ];
 
   (* Don't report in non-debug mode. *)

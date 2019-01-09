@@ -330,7 +330,8 @@ let assert_infer
       in
       List.fold
         ~init:(Error.to_json ~detailed:show_error_traces error)
-        ~f:access_field (String.split ~on:'.' field)
+        ~f:access_field
+        (String.split ~on:'.' field)
     in
     List.map fields ~f:field_of_error
   in

@@ -814,7 +814,7 @@ let inference_information
             annotation = Some parameter_annotation;
             _;
           }
-          when Access.create_from_identifiers [name] = parameter_name ->
+          when Access.equal_sanitized (Access.create_from_identifiers [name]) parameter_name ->
             parameter_annotation
             |> print_annotation
             |> (fun string -> `String string)
@@ -1067,7 +1067,7 @@ let less_or_equal ~resolution left right =
     | MissingAttributeAnnotation { missing_annotation = left; _ },
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when (Access.equal left.name right.name) ->
+      when (Access.equal_sanitized left.name right.name) ->
         begin
           match left.annotation, right.annotation with
           | Some left, Some right ->
@@ -1085,7 +1085,7 @@ let less_or_equal ~resolution left right =
         Expression.equal left.expression right.expression &&
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Access.equal left.name right.name ->
+      when Option.equal Access.equal_sanitized left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         Resolution.less_or_equal resolution ~left ~right
@@ -1198,12 +1198,12 @@ let join ~resolution left right =
            Access.equal left.name right.name ->
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
-      when left.name = right.name ->
+      when Access.equal_sanitized left.name right.name ->
         MissingParameterAnnotation (join_missing_annotation left right)
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
         MissingReturnAnnotation (join_missing_annotation left right)
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
-      when (Access.equal left.missing_annotation.name right.missing_annotation.name) &&
+      when (Access.equal_sanitized left.missing_annotation.name right.missing_annotation.name) &&
            Type.equal left.parent right.parent ->
         MissingAttributeAnnotation {
           parent = left.parent;
@@ -1372,31 +1372,40 @@ let widen ~resolution ~previous ~next ~iteration:_ =
   join ~resolution previous next
 
 
-let join_at_define ~resolution ~location errors =
-  let return_errors, other_errors =
-    List.partition_tf
-      ~f:(function | { kind = MissingReturnAnnotation _; _ } -> true | _ -> false)
-      errors
+let join_at_define ~resolution errors =
+  let key = function
+    | { kind = MissingParameterAnnotation { name; _ }; _ }
+    | { kind = MissingReturnAnnotation { name; _ }; _ } ->
+        Access.show_sanitized name
+    | error ->
+        show error
   in
-  match return_errors with
-  | [] ->
-      other_errors
-  | error :: errors ->
-      List.fold ~init:error ~f:(join ~resolution) errors
-      |> fun return_error -> { return_error with location } :: other_errors
+  let add_error errors error =
+    let key = key error in
+    match Map.find errors key with
+    | Some existing_error ->
+        let joined_error = join ~resolution existing_error error in
+        if joined_error.kind <> Top then
+          Map.set ~key ~data:joined_error errors
+        else
+          errors
+    | _ ->
+        Map.set ~key ~data:error errors
+  in
+  List.fold ~init:String.Map.empty ~f:add_error errors
+  |> Map.data
 
 
 let join_at_source ~resolution errors =
-  let key error =
-    match error with
+  let key = function
     | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
-        Type.show parent ^ Access.show name
+        Type.show parent ^ Access.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
-        Access.show name
+        Access.show_sanitized name
     | { kind = UndefinedImport name; _ }
     | { kind = UndefinedName name; _ } ->
         Format.asprintf "Unknown[%a]" Access.pp name
-    | _ ->
+    | error ->
         show error
   in
   let joined_missing_annotations =
@@ -1405,7 +1414,7 @@ let join_at_source ~resolution errors =
         try
           match Map.find errors key with
           | Some existing_error ->
-              let joined_error = join ~resolution error existing_error in
+              let joined_error = join ~resolution existing_error error in
               if joined_error.kind <> Top then
                 Map.change ~f:(fun _ -> Some joined_error) errors key
               else
@@ -1427,29 +1436,29 @@ let join_at_source ~resolution errors =
     List.fold ~init:String.Map.empty ~f:filter errors
   in
   let add_joins errors error =
-    let joined ~key =
-      match Map.find joined_missing_annotations key with
-      | Some { kind; _ } ->
-          begin
-            match error.kind, kind with
-            | UndefinedName _, UndefinedImport _ ->
-                (* Swallow up UndefinedName errors when the Import error already exists. *)
-                errors
-            | _ ->
-                let new_error = { error with kind } in
-                Map.set ~key:(show new_error) ~data:new_error errors
-          end
-      | _ -> Map.set ~key:(show error) ~data:error errors
-    in
     match error with
     | { kind = MissingAttributeAnnotation _; _ }
     | { kind = MissingGlobalAnnotation _; _ }
     | { kind = UndefinedImport _; _ }
     | { kind = UndefinedName _; _ }
-      when not (due_to_analysis_limitations error) ->
+        when not (due_to_analysis_limitations error) ->
+        let joined ~key =
+          match Map.find joined_missing_annotations key with
+          | Some { kind; _ } ->
+              begin
+                match error.kind, kind with
+                | UndefinedName _, UndefinedImport _ ->
+                    (* Swallow up UndefinedName errors when the Import error already exists. *)
+                    errors
+                | _ ->
+                    let new_error = { error with kind } in
+                    Map.set ~key ~data:new_error errors
+              end
+          | _ -> Map.set ~key:(show error) ~data:error errors
+        in
         joined ~key:(key error)
     | _ ->
-        Map.set ~key:(show error) ~data:error errors
+        Map.set ~key:(key error) ~data:error errors
   in
   List.fold ~init:String.Map.empty ~f:add_joins errors
   |> Map.data

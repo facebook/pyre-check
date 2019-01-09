@@ -104,7 +104,7 @@ module State = struct
                 })
                 ~define:define_node
             in
-            Map.set errors ~key:location ~data:error)
+            Map.set errors ~key:(Error.hash error) ~data:error)
         |> Option.value ~default:errors
       in
       match annotation with

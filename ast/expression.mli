@@ -204,6 +204,7 @@ module Access : sig
   val expression: ?location: Location.t -> t -> expression_t
 
   val sanitized: t -> t
+  val equal_sanitized: t -> t -> bool
   val pp_sanitized: Format.formatter -> t -> unit
   val show_sanitized: t -> string
 

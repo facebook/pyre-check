@@ -281,7 +281,11 @@ let test_check_function_parameters _ =
         def foo(self) -> None:
           int_to_int(self.attribute)
     |}
-    ["Undefined attribute [16]: `A` has no attribute `attribute`."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `int_to_int` but got `unknown`.";
+      "Undefined attribute [16]: `A` has no attribute `attribute`.";
+    ];
   assert_type_errors
     {|
       class C:
@@ -545,7 +549,11 @@ let test_check_function_parameter_errors _ =
       def foo(input: Foo) -> None:
         str_float_to_int(input.attribute, input.undefined)
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `undefined`."];
+    [
+      "Incompatible parameter type [6]: Expected `float` for 2nd anonymous parameter " ^
+      "to call `str_float_to_int` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`."
+    ];
   assert_type_errors
     {|
       class Foo:
@@ -555,6 +563,8 @@ let test_check_function_parameter_errors _ =
     |}
     [
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
+      "Incompatible parameter type [6]: Expected `float` for 2nd anonymous parameter " ^
+      "to call `str_float_to_int` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
     ];
 

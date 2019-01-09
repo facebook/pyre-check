@@ -57,6 +57,7 @@ let test_check_undefined_type _ =
     [
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
     ];
   assert_type_errors
     ~debug:false
@@ -543,8 +544,6 @@ let test_check_immutable_annotations _ =
     [
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
-      "Union[int, str]` but no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
 
@@ -560,8 +559,6 @@ let test_check_immutable_annotations _ =
     |}
     [
       "Undefined name [18]: Global name `constant` is undefined.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
-      "Optional[int]` but no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
@@ -579,8 +576,6 @@ let test_check_immutable_annotations _ =
     [
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `float` " ^
-      "but no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` " ^
       "but no type is specified."
     ];
 
@@ -596,8 +591,6 @@ let test_check_immutable_annotations _ =
     |}
     [
       "Undefined name [18]: Global name `constant` is undefined.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but " ^
-      "no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but " ^
       "no type is specified."
     ];
@@ -615,7 +608,6 @@ let test_check_immutable_annotations _ =
         constant = "hi"
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";

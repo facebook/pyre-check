@@ -61,7 +61,11 @@ let test_check_assert _ =
           assert not True
         return int_to_int(x)
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
+      "to call `int_to_int` but got `typing.Undeclared`.";
+      "Undefined name [18]: Global name `x` is undefined.";
+    ];
   assert_type_errors
     {|
       def foo() -> int:

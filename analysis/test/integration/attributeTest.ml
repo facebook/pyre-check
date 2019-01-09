@@ -145,6 +145,17 @@ let test_check_attributes _ =
     {|
       class Foo:
         bar: typing.Any
+    |}
+  [
+    "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
+    "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
+    "non-optional type `typing.Any` but is never initialized."
+  ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        bar: typing.Any
         def foo(self) -> int:
           self.bar = 'foo'
           return self.bar
@@ -305,7 +316,8 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
       "has type `int` but no type is specified.";
-      "Undefined error [1]: Problem with analysis.";
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` " ^
+      "has type `int` but no type is specified.";
     ];
 
   assert_type_errors
@@ -320,7 +332,8 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
       "has type `int` but no type is specified.";
-      "Undefined error [1]: Problem with analysis.";
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` " ^
+      "has type `int` but no type is specified.";
     ];
 
   assert_type_errors
@@ -729,6 +742,7 @@ let test_check_missing_attribute _ =
         a = unknown
     |}
     [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
       "Undefined name [18]: Global name `unknown` is undefined.";
     ];
 
@@ -753,8 +767,7 @@ let test_check_missing_attribute _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type " ^
-      "other than `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
     ];
 
   assert_type_errors

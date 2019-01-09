@@ -379,6 +379,10 @@ module Access = struct
     List.map access ~f:sanitized
 
 
+  let equal_sanitized left_access right_access =
+    equal (sanitized left_access) (sanitized right_access)
+
+
   let pp_sanitized format access =
     let identifier (element: expression_t Record.Access.access): string =
       match element with

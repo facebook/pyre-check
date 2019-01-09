@@ -174,12 +174,8 @@ let test_show_error_traces _ =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
-      "declared on line 4, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
-      "test.py:7:2.";
-      "Missing global annotation [5]: Globally accessible variable `x` has type " ^
-      "`typing.Union[int, str]` but no type is specified. Global variable `x` " ^
       "declared on line 7, type `typing.Union[int, str]` deduced from test.py:4:2, " ^
-      "test.py:7:2."
+      "test.py:7:2.";
     ];
 
   assert_type_errors ~show_error_traces:true

@@ -113,7 +113,6 @@ val widen: resolution: Resolution.t -> previous: t -> next: t -> iteration: int 
 
 val join_at_define
   :  resolution: Resolution.t
-  -> location: Location.Instantiated.t
   -> t list
   -> t list
 
