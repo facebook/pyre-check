@@ -6,12 +6,13 @@ dist: xenial
 
 jobs:
   include:
-    - stage: "Run tests"
-      name: "Lint"
+    - stage: "Build, run tests and linters"
+      name: "Lint: Pyre"
       install: scripts/travis_install_lint_dependencies.sh
-      script:
-        - scripts/travis_pyre_on_pyre.sh
-        - black --check --diff .
-    - name: "Build"
+      script: scripts/travis_pyre_on_pyre.sh
+    - name: "Lint: Black"
+      install: scripts/travis_install_lint_dependencies.sh
+      script: black --check --diff .
+    - name: "Build and run tests"
       install: scripts/travis_install_build_dependencies.sh
       script: ./scripts/setup.sh --local
