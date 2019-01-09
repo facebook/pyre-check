@@ -630,6 +630,7 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation {
                     name = sanitized_access;
                     annotation;
+                    evidence_locations = [];
                     due_to_any;
                   })
                 ~define:define_node
@@ -687,11 +688,11 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_annotation_error ~state ~due_to_any:true annotation,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:true (Some annotation),
                     Annotation.create annotation
                 | Some annotation, None
                   when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    add_missing_parameter_annotation_error ~state ~due_to_any:true Type.Bottom,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:true None,
                     Annotation.create_immutable ~global:false Type.Object
                 | Some annotation, value ->
                     let state, annotation = parse_and_check_annotation ~state annotation in
@@ -714,10 +715,10 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_annotation_error ~state ~due_to_any:false annotation,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:false (Some annotation),
                     Annotation.create annotation
                 | None, None ->
-                    add_missing_parameter_annotation_error ~state ~due_to_any:false Type.Bottom,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:false None,
                     Annotation.create Type.Bottom
           in
           let annotation =
@@ -1592,6 +1593,9 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
+    let instantiate location =
+      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
+    in
     (* We weaken type inference of mutable literals for assignments and returns
        to get around the invariance of containers when we can prove that casting to
        a supertype is safe. *)
@@ -1642,8 +1646,9 @@ module State = struct
             Error.create
               ~location
               ~kind:(Error.MissingReturnAnnotation {
-                  annotation = actual;
-                  evidence_locations = [location.Location.start.Location.line];
+                  name = Access.create "$return_annotation";
+                  annotation = Some actual;
+                  evidence_locations = [instantiate location];
                   due_to_any = Type.equal return_annotation Type.Object;
                 })
               ~define
@@ -1653,9 +1658,6 @@ module State = struct
           state
       with TypeOrder.Untracked _ ->
         state
-    in
-    let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
     match value with
     | Assign { Assign.target; annotation; value; _ } ->

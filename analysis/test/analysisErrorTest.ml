@@ -54,7 +54,8 @@ let revealed_type access annotation =
 
 let missing_return annotation =
   Error.MissingReturnAnnotation {
-    annotation;
+    name = Access.create "$return_annotation";
+    annotation = Some annotation;
     evidence_locations = [];
     due_to_any = false;
   }
@@ -167,7 +168,8 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingParameterAnnotation {
               name = (Access.create "");
-              annotation = Type.Top;
+              annotation = Some Type.Top;
+              evidence_locations = [];
               due_to_any = false;
             })));
   assert_false
@@ -175,7 +177,8 @@ let test_due_to_analysis_limitations _ =
        (error
           (Error.MissingParameterAnnotation {
               name = (Access.create "");
-              annotation = Type.string;
+              annotation = Some Type.string;
+              evidence_locations = [];
               due_to_any = false;
             })));
 
@@ -184,7 +187,8 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              annotation = Type.Top;
+              name = (Access.create "$return_annotation");
+              annotation = Some Type.Top;
               evidence_locations = [];
               due_to_any = false;
             })));
@@ -192,7 +196,8 @@ let test_due_to_analysis_limitations _ =
     (Error.due_to_analysis_limitations
        (error
           (Error.MissingReturnAnnotation {
-              annotation = Type.string;
+              name = (Access.create "$return_annotation");
+              annotation = Some Type.string;
               evidence_locations = [];
               due_to_any = false;
             })));

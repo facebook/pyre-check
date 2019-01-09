@@ -117,6 +117,16 @@ module Instantiated = struct
     Format.fprintf format "%s:%d:%d" path start.line start.column
 
 
+  let pp_line format { start; stop; _ } =
+    let stop_line =
+      if start.line = stop.line then
+        ""
+      else
+        Format.asprintf "-%d" stop.line
+    in
+    Format.fprintf format "%d%s" start.line stop_line
+
+
   let show =
     show String.pp
 

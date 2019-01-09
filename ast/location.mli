@@ -43,6 +43,7 @@ module Instantiated : sig
   val synthetic: t
 
   val pp_start: Format.formatter -> t -> unit
+  val pp_line: Format.formatter -> t -> unit
 end
 
 val instantiate: Reference.t -> lookup: (int -> string option) -> Instantiated.t

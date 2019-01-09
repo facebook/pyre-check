@@ -1458,6 +1458,21 @@ let is_callable = function
   | _ -> false
 
 
+let is_concrete annotation =
+  match annotation with
+  | Bottom -> false
+  | _ ->
+    let predicate = function
+    | Top
+    | Deleted
+    | Object ->
+        true
+    | _ ->
+        false
+    in
+    not (exists annotation ~predicate)
+
+
 let is_deleted = function
   | Deleted -> true
   | _ -> false

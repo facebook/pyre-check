@@ -77,12 +77,8 @@ type kind =
       missing_annotation: missing_annotation;
     }
   | MissingGlobalAnnotation of missing_annotation
-  | MissingParameterAnnotation of { name: Access.t; annotation: Type.t; due_to_any: bool }
-  | MissingReturnAnnotation of {
-      annotation: Type.t;
-      evidence_locations: int list;
-      due_to_any: bool;
-    }
+  | MissingParameterAnnotation of missing_annotation
+  | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | NotCallable of Type.t
   | RedundantCast of Type.t

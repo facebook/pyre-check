@@ -96,7 +96,12 @@ module State = struct
             let error =
               Error.create
                 ~location
-                ~kind:(Error.MissingParameterAnnotation { name; annotation; due_to_any })
+                ~kind:(Error.MissingParameterAnnotation {
+                  name;
+                  annotation = Some annotation;
+                  evidence_locations = [];
+                  due_to_any;
+                })
                 ~define:define_node
             in
             Map.set errors ~key:location ~data:error)
@@ -467,7 +472,7 @@ let run
         in
         match error with
         | {
-          Error.kind = Error.MissingReturnAnnotation { annotation; _ };
+          Error.kind = Error.MissingReturnAnnotation { annotation = Some annotation; _ };
           define = ({ Node.value = define; location } as define_node);
           _;
         } ->
@@ -493,7 +498,7 @@ let run
                   true, globals_added_sofar
             end
         | {
-          Error.kind = Error.MissingParameterAnnotation { name; annotation; _ };
+          Error.kind = Error.MissingParameterAnnotation { name; annotation = Some annotation; _ };
           define = ({ Node.value = define; location } as define_node);
           _;
         } ->

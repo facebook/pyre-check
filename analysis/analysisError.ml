@@ -88,12 +88,8 @@ type kind =
       missing_annotation: missing_annotation;
     }
   | MissingGlobalAnnotation of missing_annotation
-  | MissingParameterAnnotation of { name: Access.t; annotation: Type.t; due_to_any: bool }
-  | MissingReturnAnnotation of {
-      annotation: Type.t;
-      evidence_locations: int list;
-      due_to_any: bool;
-    }
+  | MissingParameterAnnotation of missing_annotation
+  | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | NotCallable of Type.t
   | RedundantCast of Type.t
@@ -315,25 +311,8 @@ let messages ~detailed:_ ~define location kind =
                 Type.pp parent;
             ]
       end
-  | MissingParameterAnnotation { name; annotation; due_to_any }
-    when Type.equal annotation Type.Bottom ||
-         Type.equal annotation Type.Object ||
-         Type.is_unknown annotation ->
-      begin
-        if due_to_any then
-          [
-            Format.asprintf
-              "Parameter `%s` must have a type other than `Any`."
-              (Access.show_sanitized name)
-          ]
-        else
-          [
-            Format.asprintf
-              "Parameter `%s` has no type specified."
-              (Access.show_sanitized name)
-          ]
-      end
-  | MissingParameterAnnotation { name; annotation; due_to_any } ->
+  | MissingParameterAnnotation { name; annotation = Some annotation; due_to_any; _ }
+      when Type.is_concrete annotation ->
       begin
         if due_to_any then
           [
@@ -350,26 +329,34 @@ let messages ~detailed:_ ~define location kind =
               Type.pp annotation
           ]
       end
-  | MissingReturnAnnotation { annotation; due_to_any; _ }
-    when Type.equal annotation Type.Bottom ||
-         Type.equal annotation Type.Object ||
-         Type.is_unknown annotation ->
+  | MissingParameterAnnotation { name; due_to_any; _ } ->
       begin
         if due_to_any then
-          ["Return type must be specified as type other than `Any`."]
+          [
+            Format.asprintf
+              "Parameter `%s` must have a type other than `Any`."
+              (Access.show_sanitized name)
+          ]
         else
-          ["Return type is not specified."]
+          [
+            Format.asprintf
+              "Parameter `%s` has no type specified."
+              (Access.show_sanitized name)
+          ]
       end
-  | MissingReturnAnnotation { annotation; evidence_locations; due_to_any } ->
+  | MissingReturnAnnotation { annotation = Some annotation; evidence_locations; due_to_any; _ }
+    when Type.is_concrete annotation ->
       let detail =
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_line)
+          |> String.concat ~sep:", "
+        in
         Format.asprintf
           "Type `%a` was returned on %s %s, return type should be specified on line %d."
           Type.pp annotation
           (if (List.length evidence_locations) > 1 then "lines" else "line")
-          (evidence_locations
-           |> List.map
-             ~f:Int.to_string
-           |> String.concat ~sep:", ")
+          evidence_string
           start_line
       in
       begin
@@ -387,6 +374,13 @@ let messages ~detailed:_ ~define location kind =
                Type.pp annotation);
             detail;
           ]
+      end
+  | MissingReturnAnnotation { due_to_any; _ } ->
+      begin
+        if due_to_any then
+          ["Return type must be specified as type other than `Any`."]
+        else
+          ["Return type is not specified."]
       end
   | MissingGlobalAnnotation {
       name;
@@ -810,7 +804,11 @@ let inference_information
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
       let annotation =
         match kind with
-        | MissingParameterAnnotation { name = parameter_name; annotation = parameter_annotation; _ }
+        | MissingParameterAnnotation {
+            name = parameter_name;
+            annotation = Some parameter_annotation;
+            _;
+          }
           when Access.create_from_identifiers [name] = parameter_name ->
             parameter_annotation
             |> print_annotation
@@ -847,7 +845,7 @@ let inference_information
   in
   let function_name = Access.show_sanitized name in
   match kind with
-  | MissingReturnAnnotation { annotation; _ } ->
+  | MissingReturnAnnotation { annotation = Some annotation; _ } ->
       `Assoc [
         "annotation", `String (print_annotation annotation);
         "parent", print_parent parent;
@@ -935,8 +933,8 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidType actual
   | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
   | MissingGlobalAnnotation { annotation = Some actual; _ }
-  | MissingParameterAnnotation { annotation = actual; _ }
-  | MissingReturnAnnotation { annotation = actual; _ }
+  | MissingParameterAnnotation { annotation = Some actual; _ }
+  | MissingReturnAnnotation { annotation = Some actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | RedundantCast actual
@@ -954,6 +952,8 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
+  | MissingParameterAnnotation _
+  | MissingReturnAnnotation _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
@@ -1058,10 +1058,7 @@ let less_or_equal ~resolution left right =
         Option.equal Access.equal left.callee right.callee &&
         Access.equal left.name right.name
     | MissingParameterAnnotation left, MissingParameterAnnotation right
-      when left.name = right.name ->
-        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
-    | MissingReturnAnnotation left, MissingReturnAnnotation right ->
-        Resolution.less_or_equal resolution ~left: left.annotation ~right: right.annotation
+    | MissingReturnAnnotation left, MissingReturnAnnotation right
     | MissingAttributeAnnotation { missing_annotation = left; _ },
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
@@ -1197,16 +1194,9 @@ let join ~resolution left right =
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when left.name = right.name ->
-        let annotation = Resolution.join resolution left.annotation right.annotation in
-        MissingParameterAnnotation { left with annotation }
+        MissingParameterAnnotation (join_missing_annotation left right)
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
-        MissingReturnAnnotation {
-          annotation = Resolution.join resolution left.annotation right.annotation;
-          evidence_locations =
-            Int.Set.of_list (left.evidence_locations @ right.evidence_locations)
-            |> Set.to_list;
-          due_to_any = left.due_to_any && right.due_to_any;
-        }
+        MissingReturnAnnotation (join_missing_annotation left right)
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
       when (Access.equal left.missing_annotation.name right.missing_annotation.name) &&
            Type.equal left.parent right.parent ->
@@ -1630,8 +1620,8 @@ let suppress ~mode error =
 
   let suppress_in_infer ({ kind; _ } as error) =
     match kind with
-    | MissingReturnAnnotation { annotation = actual; _ }
-    | MissingParameterAnnotation { annotation = actual; _ }
+    | MissingReturnAnnotation { annotation = Some actual; _ }
+    | MissingParameterAnnotation { annotation = Some actual; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
         due_to_analysis_limitations error ||
@@ -1698,10 +1688,10 @@ let dequalify
         TooManyArguments extra_argument
     | Top ->
         Top
-    | MissingParameterAnnotation { name; annotation; due_to_any; } ->
-        MissingParameterAnnotation { annotation = dequalify annotation; name; due_to_any; }
+    | MissingParameterAnnotation ({ annotation; _ } as missing_annotation) ->
+        MissingParameterAnnotation { missing_annotation with annotation = annotation >>| dequalify }
     | MissingReturnAnnotation ({ annotation; _ } as missing_return) ->
-        MissingReturnAnnotation { missing_return with annotation = dequalify annotation; }
+        MissingReturnAnnotation { missing_return with annotation = annotation >>| dequalify; }
     | MissingAttributeAnnotation {
         parent;
         missing_annotation = { annotation; _ } as missing_annotation;
