@@ -76,7 +76,7 @@ let analyze_sources
       let analyze_source { errors; number_files } handle =
         match SharedMemory.Sources.get handle with
         | Some source ->
-            let check = if infer then Inference.infer else TypeCheck.check in
+            let check = if infer then Inference.run else TypeCheck.run in
             let new_errors = check ~configuration ~environment ~source in
             {
               errors = List.append new_errors errors;

@@ -349,7 +349,11 @@ module SingleSourceResult = struct
 end
 
 
-let infer
+let name =
+  "Inference"
+
+
+let run
     ~configuration
     ~environment
     ~source:({ Source.handle; _ } as source) =

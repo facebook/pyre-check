@@ -12,7 +12,7 @@ open Test
 
 let assert_awaitable_errors =
   let check ~configuration ~environment ~source =
-    TypeCheck.check ~configuration ~environment ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
     AwaitableCheck.run ~configuration ~environment ~source
   in
   assert_errors ~check

@@ -5,4 +5,4 @@
 
 
 let assert_type_errors =
-  Test.assert_errors ~check:Analysis.TypeCheck.check
+  Test.assert_errors ~check:Analysis.TypeCheck.run

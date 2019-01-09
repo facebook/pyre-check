@@ -25,6 +25,8 @@ let checks: (module Signature) String.Map.t =
     [
       "awaitable", (module AwaitableCheck);
       "constantPropagation", (module ConstantPropagationCheck);
+      "inference", (module Inference);
+      "typeCheck", (module TypeCheck);
     ]
   in
   String.Map.of_alist_exn checks

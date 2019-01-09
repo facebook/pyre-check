@@ -181,7 +181,7 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let environment = Environment.handler ~configuration (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
   Service.Environment.populate ~configuration environment [source];
-  TypeCheck.check ~configuration ~environment ~source
+  TypeCheck.run ~configuration ~environment ~source
 
 
 let mock_server_state

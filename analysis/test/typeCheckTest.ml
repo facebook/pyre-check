@@ -903,7 +903,7 @@ let test_coverage _ =
     let coverage =
       let environment = Test.environment () in
       let handle = "coverage_test.py" in
-      TypeCheck.check
+      TypeCheck.run
         ~configuration:Test.mock_configuration
         ~environment
         ~source:(parse ~handle source)

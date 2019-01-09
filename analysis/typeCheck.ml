@@ -2619,7 +2619,11 @@ let resolution_with_key ~environment ~parent ~access ~key =
   |> Resolution.with_parent ~parent
 
 
-let check
+let name =
+  "TypeCheck"
+
+
+let run
     ~configuration
     ~environment
     ~source:({

@@ -29,7 +29,9 @@ val backward_fixpoint
   -> initialize_backward: (forward: State.t -> State.t)
   -> Fixpoint.t
 
-val infer
+val name: string
+
+val run
   :  configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> source: Source.t

@@ -93,7 +93,9 @@ val resolution_with_key
   -> key: int option
   -> Resolution.t
 
-val check
+val name: string
+
+val run
   :  configuration: Configuration.Analysis.t
   -> environment: (module Environment.Handler)
   -> source: Source.t

@@ -30,7 +30,7 @@ let create_call_graph ?(update_environment_with = []) source_text =
       ~f:(fun { qualifier; handle; source } -> parse_source ~qualifier ~handle source)
   in
   Service.Environment.populate ~configuration environment sources;
-  let errors = TypeCheck.check ~configuration ~environment ~source in
+  let errors = TypeCheck.run ~configuration ~environment ~source in
   if not (List.is_empty errors) then
     Format.asprintf "Type errors in %s\n%a"
       source_text
@@ -213,7 +213,7 @@ let test_type_collection _ =
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate ~configuration environment [source];
-    TypeCheck.check ~configuration ~environment ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines source ~extract_into_toplevel:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
@@ -355,7 +355,7 @@ let test_strongly_connected_components _ =
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Service.Environment.populate ~configuration environment [source];
-    TypeCheck.check ~configuration ~environment ~source |> ignore;
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges =
         DependencyGraph.create_callgraph ~environment ~source

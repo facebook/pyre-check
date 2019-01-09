@@ -43,7 +43,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
   >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment ~model_source)
   |> ignore;
 
-  TypeCheck.check ~configuration ~environment ~source |> ignore;
+  TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source
     |> Preprocessing.defines

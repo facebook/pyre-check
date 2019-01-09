@@ -70,7 +70,7 @@ let make_errors ?handle ?qualifier source =
   let environment = Environment.handler ~configuration (environment ()) in
   Service.Environment.populate environment ~configuration [source];
   let configuration = mock_analysis_configuration () in
-  TypeCheck.check ~configuration ~environment ~source
+  TypeCheck.run ~configuration ~environment ~source
 
 
 let associate_errors_and_filenames error_list =
