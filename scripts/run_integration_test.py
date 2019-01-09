@@ -221,6 +221,10 @@ class Repository:
 
 
 def run_integration_test(repository_path) -> int:
+    if not shutil.which("watchman"):
+        LOG.error("The integration test cannot work if watchman is not installed!")
+        return 1
+
     with tempfile.TemporaryDirectory() as base_directory:
         discrepancies = {}
         repository = Repository(base_directory, repository_path)
