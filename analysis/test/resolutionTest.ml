@@ -101,6 +101,7 @@ let test_resolve_literal _ =
       j = foo()
       s = 'asdf'
       t = 1, 1.0
+      none = None
       awaitable: typing.Awaitable[int]
     |}
   in
@@ -121,7 +122,8 @@ let test_resolve_literal _ =
   assert_resolve_literal "j" Type.Top;
   assert_resolve_literal "foo()" Type.Top;
   assert_resolve_literal "C()" (Type.Primitive "C");
-  assert_resolve_literal "C" (Type.meta (Type.Primitive "C"))
+  assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
+  assert_resolve_literal "none" Type.none
 
 
 let test_resolve_mutable_literals _ =

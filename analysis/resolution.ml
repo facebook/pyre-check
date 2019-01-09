@@ -265,7 +265,10 @@ let rec resolve_literal resolution expression =
               Type.Top
         | None ->
             let class_name = parse_annotation resolution expression in
-            if is_defined class_name then
+            (* None is a special type that doesn't have a constructor. *)
+            if Type.equal class_name Type.none then
+              Type.none
+            else if is_defined class_name then
               Type.meta class_name
             else
               Type.Top
