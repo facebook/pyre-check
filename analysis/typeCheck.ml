@@ -617,7 +617,7 @@ module State = struct
                 ~define:define_node
               |> add_error ~state
           in
-          let add_missing_parameter_error ~state ~due_to_any annotation =
+          let add_missing_parameter_annotation_error ~state ~due_to_any annotation =
             let sanitized_access =
               name
               |> Identifier.sanitized
@@ -688,11 +688,11 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_error ~state ~due_to_any:true annotation,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:true annotation,
                     Annotation.create annotation
                 | Some annotation, None
                   when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    add_missing_parameter_error ~state ~due_to_any:true Type.Bottom,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:true Type.Bottom,
                     Annotation.create_immutable ~global:false Type.Object
                 | Some annotation, value ->
                     let state, annotation = parse_and_check_annotation ~state annotation in
@@ -715,10 +715,10 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_error ~state ~due_to_any:false annotation,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:false annotation,
                     Annotation.create annotation
                 | None, None ->
-                    add_missing_parameter_error ~state ~due_to_any:false Type.Bottom,
+                    add_missing_parameter_annotation_error ~state ~due_to_any:false Type.Bottom,
                     Annotation.create Type.Bottom
           in
           let annotation =
