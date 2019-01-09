@@ -37,6 +37,10 @@
         "title": "Overview",
         "sidebar_label": "Overview"
       },
+      "querying-pyre": {
+        "title": "Querying Pyre",
+        "sidebar_label": "Querying Pyre"
+      },
       "watchman-integration": {
         "title": "Watchman Integration",
         "sidebar_label": "Watchman Integration"

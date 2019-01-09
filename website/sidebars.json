@@ -9,7 +9,8 @@
       "error-suppression",
       "error-types",
       "lsp-integration",
-      "watchman-integration"
+      "watchman-integration",
+      "querying-pyre"
     ]
   }
 }
