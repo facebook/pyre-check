@@ -33,5 +33,14 @@ let checks: (module Signature) String.Map.t =
 
 
 let additional_checks
-    ~configuration:{ Configuration.Analysis.additional_checks; _ }: (module Signature) list =
-  List.filter_map additional_checks ~f:(Map.find checks)
+    ~configuration:{ Configuration.Analysis.infer; additional_checks; _ }: (module Signature) list =
+  let checks_to_run = if infer then ["inference"] else "typeCheck" :: additional_checks in
+  let find name =
+    match Map.find checks name with
+    | Some check ->
+        Some check
+    | None ->
+        Log.warning "Could not find check `%s`." name;
+        None
+  in
+  List.filter_map checks_to_run ~f:find

@@ -28,7 +28,6 @@ let analyze_sources
     ~configuration:({
         Configuration.Analysis.project_root;
         filter_directories;
-        infer;
         _;
       } as configuration)
     ~environment
@@ -67,95 +66,66 @@ let analyze_sources
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
 
-  Log.info "Checking %d sources..." (List.length handles);
-  let timer = Timer.start () in
-  let empty_result = { errors = []; number_files = 0 } in
-  let { errors; _ } =
-    let map _ handles =
-      Annotated.Class.Attribute.Cache.clear ();
-      let analyze_source { errors; number_files } handle =
-        match SharedMemory.Sources.get handle with
-        | Some source ->
-            let check = if infer then Inference.run else TypeCheck.run in
-            let new_errors = check ~configuration ~environment ~source in
-            {
-              errors = List.append new_errors errors;
-              number_files = number_files + 1;
-            }
-        | None ->
-            {
-              errors;
-              number_files = number_files + 1;
-            }
+  let errors =
+    let timer = Timer.start () in
+    let empty_result = { errors = []; number_files = 0 } in
+    Log.info "Checking %d sources..." (List.length handles);
+    let run_additional_check (module Check: Analysis.Check.Signature) =
+      Log.info "Running check `%s`..." Check.name;
+      let timer = Timer.start () in
+      let map _ handles =
+        Annotated.Class.Attribute.Cache.clear ();
+        let analyze_source { errors; number_files } handle =
+          match SharedMemory.Sources.get handle with
+          | Some source ->
+              let new_errors = Check.run ~configuration ~environment ~source in
+              {
+                errors = List.append new_errors errors;
+                number_files = number_files + 1;
+              }
+          | _ ->
+              {
+                errors;
+                number_files = number_files + 1;
+              }
+        in
+        List.fold handles ~init:empty_result ~f:analyze_source
       in
-      List.fold handles ~init:empty_result ~f:analyze_source
+      let reduce left right =
+        let number_files = left.number_files + right.number_files in
+        Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
+        {
+          errors = List.append left.errors right.errors;
+          number_files;
+        }
+      in
+      let { errors; _ } =
+        Scheduler.map_reduce
+          scheduler
+          ~configuration
+          ~bucket_size:75
+          ~initial:empty_result
+          ~map
+          ~reduce
+          ~inputs:handles
+          ()
+      in
+      Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
+      errors
     in
-    let reduce left right =
-      let number_files = left.number_files + right.number_files in
-      Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
-      {
-        errors = List.append left.errors right.errors;
-        number_files;
-      }
+    let errors =
+      List.map (Analysis.Check.additional_checks ~configuration) ~f:run_additional_check
+      |> List.concat
     in
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~bucket_size:75
-      ~initial:empty_result
-      ~map
-      ~reduce
-      ~inputs:handles
-      ()
+    Statistics.performance ~name:"analyzed sources" ~timer ();
+    errors
   in
-  Statistics.performance ~name:"analyzed sources" ~timer ();
 
   let timer = Timer.start () in
   let errors = Postprocess.ignore ~configuration scheduler handles errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
 
-  let additional_errors =
-    begin
-      let timer = Timer.start () in
-      Log.info "Running additional checks...";
-      let run_additional_check (module Check: Analysis.Check.Signature) =
-        Log.info "Running check `%s`..." Check.name;
-        let timer = Timer.start () in
-        let map _ handles =
-          let analyze_source errors handle =
-            match SharedMemory.Sources.get handle with
-            | Some source ->
-                Check.run ~configuration ~environment ~source
-                |> List.rev_append errors
-            | _ ->
-                Log.warning "Unable to load source for `%a`" File.Handle.pp handle;
-                errors
-          in
-          List.fold handles ~init:[] ~f:analyze_source
-        in
-        let errors =
-          Scheduler.map_reduce
-            scheduler
-            ~configuration
-            ~bucket_size:75
-            ~initial:[]
-            ~map
-            ~reduce:List.append
-            ~inputs:handles
-            ()
-        in
-        Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
-        errors
-      in
-      let additional_errors =
-        List.map (Analysis.Check.additional_checks ~configuration) ~f:run_additional_check
-        |> List.concat
-      in
-      Statistics.performance ~name:"additional checks" ~timer ();
-      additional_errors
-    end
-  in
-  errors @ additional_errors
+  errors
 
 
 let check
