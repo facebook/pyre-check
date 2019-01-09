@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Querying Pyre · Pyre</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="&lt;h1&gt;&lt;a class=&quot;anchor&quot; aria-hidden=&quot;true&quot; id=&quot;overview&quot;&gt;&lt;/a&gt;&lt;a href=&quot;#overview&quot; aria-hidden=&quot;true&quot; class=&quot;hash-link&quot;&gt;&lt;svg class=&quot;hash-link-icon&quot; aria-hidden=&quot;true&quot; height=&quot;16&quot; version=&quot;1.1&quot; viewBox=&quot;0 0 16 16&quot; width=&quot;16&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; d=&quot;M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z&quot;&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/a&gt;Overview&lt;/h1&gt;
+"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Querying Pyre · Pyre"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pyre-check.org/index.html"/><meta property="og:description" content="&lt;h1&gt;&lt;a class=&quot;anchor&quot; aria-hidden=&quot;true&quot; id=&quot;overview&quot;&gt;&lt;/a&gt;&lt;a href=&quot;#overview&quot; aria-hidden=&quot;true&quot; class=&quot;hash-link&quot;&gt;&lt;svg class=&quot;hash-link-icon&quot; aria-hidden=&quot;true&quot; height=&quot;16&quot; version=&quot;1.1&quot; viewBox=&quot;0 0 16 16&quot; width=&quot;16&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; d=&quot;M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z&quot;&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/a&gt;Overview&lt;/h1&gt;
+"/><meta name="twitter:card" content="summary"/><link rel="shortcut icon" href="/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/css/main.css"/></head><body class="sideNavVisible"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/integrated_logo_light.png" alt="Pyre"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/docs/installation.html" target="_self">Getting Started</a></li><li class="siteNavGroupActive"><a href="/docs/overview.html" target="_self">Documentation</a></li><li class=""><a href="https://github.com/facebook/pyre-check" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><i></i></div><h2><i>›</i><span>Contents</span></h2></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Contents</h3><ul><li class="navListItem"><a class="navItem" href="/docs/overview.html">Overview</a></li><li class="navListItem"><a class="navItem" href="/docs/installation.html">Installation</a></li><li class="navListItem"><a class="navItem" href="/docs/guided-tour.html">Guided Tour</a></li><li class="navListItem"><a class="navItem" href="/docs/configuration.html">Configuring Pyre</a></li><li class="navListItem"><a class="navItem" href="/docs/gradual-typing.html">Gradual Typing</a></li><li class="navListItem"><a class="navItem" href="/docs/error-suppression.html">Error Suppression</a></li><li class="navListItem"><a class="navItem" href="/docs/error-types.html">Error Types</a></li><li class="navListItem"><a class="navItem" href="/docs/lsp-integration.html">Editor Integration</a></li><li class="navListItem"><a class="navItem" href="/docs/watchman-integration.html">Watchman Integration</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/docs/querying-pyre.html">Querying Pyre</a></li></ul></div></div></section></div><script>
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              const headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                if (event.target.tagName === 'A') {
+                  document.body.classList.remove('tocActive');
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">Querying Pyre</h1></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="overview"></a><a href="#overview" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Overview</h1>
+<p>Pyre has a subcommand called <code>query</code> allows you to hook into a Pyre server and get type-related
+information without having to run a full type check. This allows you, for instance, to get the type of an expression at a certain line and column, check whether a type is a subtype or the other or get the list of methods for a class. The rest of this page goes through the various query options with examples.</p>
+<p>Note: The responses in the examples are prettified using the <code>pyre query &lt;query&gt; | python -m json.tool</code> pattern.</p>
+<h2><a class="anchor" aria-hidden="true" id="attributes"></a><a href="#attributes" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Attributes</h2>
+<p>This command gives you the list of attributes for a class.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
+    <span class="hljs-symbol">a:</span> int = <span class="hljs-number">2</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">foo</span><span class="hljs-params">(<span class="hljs-keyword">self</span>)</span></span> -&gt; <span class="hljs-symbol">str:</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>
+</code></pre>
+<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"attributes(a.C)"</span>
+{
+    <span class="hljs-comment">"response"</span>: {
+        <span class="hljs-comment">"attributes"</span>: [
+            {
+                <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"int"</span>,
+                <span class="hljs-comment">"name"</span>: <span class="hljs-comment">"a"</span>
+            },
+            {
+                <span class="hljs-comment">"annotation"</span>: <span class="hljs-comment">"typing.Callable(a.C.foo)[[], str]"</span>,
+                <span class="hljs-comment">"name"</span>: <span class="hljs-comment">"foo"</span>
+            }
+        ]
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="join"></a><a href="#join" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Join</h2>
+<p>This command uses Pyre's type engine to find a common superclass for two types.</p>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"join(typing.Iterable[int], typing.Iterable[str])"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.Iterable[typing.Union[int, str]]"</span>
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="less-or-equal"></a><a href="#less-or-equal" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Less or equal</h2>
+<p>This command returns whether the type on the left can be used when the type on the right is expected.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
+  <span class="hljs-keyword">pass</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">D</span><span class="hljs-params">(C)</span>:</span>
+  <span class="hljs-keyword">pass</span>
+</code></pre>
+<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"less_or_equal(a.D, a.C)"</span>
+{<span class="hljs-comment">"response"</span>:{<span class="hljs-comment">"boolean"</span>:<span class="hljs-keyword">true</span>}}
+
+<span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"less_or_equal(a.C, a.D)"</span>
+{<span class="hljs-comment">"response"</span>:{<span class="hljs-comment">"boolean"</span>:<span class="hljs-keyword">true</span>}}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="meet"></a><a href="#meet" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Meet</h2>
+<p>This command uses Pyre's type engine to find a common subclass for two types.</p>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"meet(typing.Iterable[int], typing.Iterable[typing.Union[int, str]])"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.Iterable[int]"</span>
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="methods"></a><a href="#methods" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Methods</h2>
+<p>This command returns the list of methods for a type, excluding inherited ones.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
+  <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(<span class="hljs-keyword">self</span>, <span class="hljs-symbol">x:</span> int)</span></span> -&gt; <span class="hljs-symbol">str:</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>
+</code></pre>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"methods(a.C)"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"methods"</span>: [
+            {
+                <span class="hljs-string">"name"</span>: <span class="hljs-string">"foo"</span>,
+                <span class="hljs-string">"parameters"</span>: [
+                    <span class="hljs-string">"self"</span>,
+                    <span class="hljs-string">"int"</span>
+                ],
+                <span class="hljs-string">"return_annotation"</span>: <span class="hljs-string">"str"</span>
+            }
+        ]
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="normalize-type"></a><a href="#normalize-type" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Normalize type</h2>
+<p>This command resolves type aliases for a given type.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-attr">A</span> = typing.Union[int, str]
+<span class="hljs-attr">B</span> = typing.Union[A, typing.List[str]]
+</code></pre>
+<pre><code class="hljs"><span class="hljs-string">$ </span>pyre query <span class="hljs-comment">"normalize_type(a.B)"</span>
+{
+    <span class="hljs-comment">"response"</span>: {
+        <span class="hljs-comment">"type"</span>: <span class="hljs-comment">"typing.Union[typing.List[int], int, str]"</span>
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="signature"></a><a href="#signature" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Signature</h2>
+<p>Returns the type signature of a function.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">foo</span><span class="hljs-params">(x: int)</span> -&gt; str:</span>
+  ...
+</code></pre>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"signature(a.foo)"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"signature"</span>: [
+            {
+                <span class="hljs-string">"parameters"</span>: [
+                    {
+                        <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"int"</span>,
+                        <span class="hljs-string">"parameter_name"</span>: <span class="hljs-string">"x"</span>
+                    }
+                ],
+                <span class="hljs-string">"return_type"</span>: <span class="hljs-string">"str"</span>
+            }
+        ]
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="superclasses"></a><a href="#superclasses" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Superclasses</h2>
+<p>Displays the superclasses of a given class name.</p>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"superclasses(int)"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"superclasses"</span>: [
+            <span class="hljs-string">"float"</span>,
+            <span class="hljs-string">"complex"</span>,
+            <span class="hljs-string">"numbers.Integral"</span>,
+            <span class="hljs-string">"numbers.Rational"</span>,
+            <span class="hljs-string">"numbers.Real"</span>,
+            <span class="hljs-string">"numbers.Complex"</span>,
+            <span class="hljs-string">"numbers.Number"</span>,
+            <span class="hljs-string">"typing.SupportsFloat"</span>,
+            <span class="hljs-string">"typing.Any"</span>
+        ]
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="type"></a><a href="#type" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Type</h2>
+<p>Evaluates the type of the given expression.</p>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"type([1 + 2, ''])"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"type"</span>: <span class="hljs-string">"typing.List[typing.Union[int, str]]"</span>
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="type-at-position"></a><a href="#type-at-position" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Type at position</h2>
+<p>This command returns the type of the symbol at the provided position.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-attr">variable</span> = <span class="hljs-number">2</span>
+</code></pre>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"type_at_position('a.py', 1, 2)"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"int"</span>,
+        <span class="hljs-string">"location"</span>: {
+            <span class="hljs-string">"path"</span>: <span class="hljs-string">"a.py"</span>,
+            <span class="hljs-string">"start"</span>: {
+                <span class="hljs-string">"column"</span>: <span class="hljs-number">0</span>,
+                <span class="hljs-string">"line"</span>: <span class="hljs-number">1</span>
+            },
+            <span class="hljs-string">"stop"</span>: {
+                <span class="hljs-string">"column"</span>: <span class="hljs-number">8</span>,
+                <span class="hljs-string">"line"</span>: <span class="hljs-number">1</span>
+            }
+        }
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="types-in-file"></a><a href="#types-in-file" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Types in file</h2>
+<p>This command returns all the types for a file that Pyre has been able to resolve.</p>
+<pre><code class="hljs"><span class="hljs-comment"># a.py</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">C</span>:</span>
+  attribute = <span class="hljs-string">""</span>
+</code></pre>
+<pre><code class="hljs">$ pyre query <span class="hljs-string">"types_in_file('a.py')"</span>
+{
+    <span class="hljs-string">"response"</span>: {
+        <span class="hljs-string">"types"</span>: [
+            {
+                <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"str"</span>,
+                <span class="hljs-string">"location"</span>: {
+                    <span class="hljs-string">"path"</span>: <span class="hljs-string">"a.py"</span>,
+                    <span class="hljs-string">"start"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">16</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    },
+                    <span class="hljs-string">"stop"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">18</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    }
+                }
+            },
+            {
+                <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"str"</span>,
+                <span class="hljs-string">"location"</span>: {
+                    <span class="hljs-string">"path"</span>: <span class="hljs-string">"a.py"</span>,
+                    <span class="hljs-string">"start"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">4</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    },
+                    <span class="hljs-string">"stop"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">13</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    }
+                }
+            },
+            {
+                <span class="hljs-string">"annotation"</span>: <span class="hljs-string">"typing.Type[a.C]"</span>,
+                <span class="hljs-string">"location"</span>: {
+                    <span class="hljs-string">"path"</span>: <span class="hljs-string">"a.py"</span>,
+                    <span class="hljs-string">"start"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">4</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    },
+                    <span class="hljs-string">"stop"</span>: {
+                        <span class="hljs-string">"column"</span>: <span class="hljs-number">13</span>,
+                        <span class="hljs-string">"line"</span>: <span class="hljs-number">2</span>
+                    }
+                }
+            }
+        ]
+    }
+}
+</code></pre>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/watchman-integration.html"><span class="arrow-prev">← </span><span>Watchman Integration</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
