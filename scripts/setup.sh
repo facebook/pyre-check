@@ -192,4 +192,10 @@ jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 make ${MAKE_ARGUMENTS} --jobs "$jobs" || die 'Could not build pyre'
 make --jobs "$jobs" test || die 'Pyre tests failed'
 make python_tests || die 'Python tests for Pyre failed'
-make server_integration_test || die 'Server integration test failed'
+if [[ "${BUILD}" == 'external' ]] && ! which watchman; then
+  echo 'Skipping integration test in external mode, since watchman is not installed'
+else
+  make server_integration_test || die 'Server integration test failed'
+fi
+
+exit 0
