@@ -10,9 +10,9 @@
           {
             "root": {
               "filename": "test_dictionary.py",
-              "line": 13,
-              "start": 24,
-              "end": 27
+              "line": 10,
+              "start": 30,
+              "end": 33
             },
             "leaves": [ { "kind": "Test", "name": "__testSink" } ]
           }
@@ -33,9 +33,9 @@
           {
             "root": {
               "filename": "test_dictionary.py",
-              "line": 6,
-              "start": 25,
-              "end": 27
+              "line": 5,
+              "start": 31,
+              "end": 33
             },
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }

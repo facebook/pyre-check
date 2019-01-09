@@ -6,41 +6,48 @@ def source_field():
     result.a = __testSource()
     return result
 
+
 def sink_field(arg):
     __testSink(arg.a)
+
 
 def match_flows():
     x = source_field()
     sink_field(x)
 
+
 def star_arg(x, *data, **kwargs):
     sink_field(data[1])
+
 
 def star_arg_wrapper(x, *data, **kwargs):
     star_arg(x, *data, **kwargs)
 
+
 def match_star_arg_with_star():
     data = [0, source_field(), 2]
-    star_arg_wrapper('a', *data)
+    star_arg_wrapper("a", *data)
+
 
 def match_star_arg_directly():
-    star_arg_wrapper('a', 'b', source_field(), 'd')
+    star_arg_wrapper("a", "b", source_field(), "d")
+
 
 def star_star_arg(x, **kwargs):
-    sink_field(kwargs['arg'])
+    sink_field(kwargs["arg"])
+
 
 def star_star_arg_wrapper(x, **kwargs):
     star_star_arg(x, **kwargs)
 
+
 def match_star_star_arg_with_star():
-    data = {
-        'a': 0,
-        'arg': source_field(),
-    }
-    star_star_arg_wrapper('a', **data)
+    data = {"a": 0, "arg": source_field()}
+    star_star_arg_wrapper("a", **data)
+
 
 def match_star_star_arg_directly():
-    star_star_arg_wrapper('a', 'b', arg=source_field())
+    star_star_arg_wrapper("a", "b", arg=source_field())
 
 
 class Foo:

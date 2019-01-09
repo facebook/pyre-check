@@ -5,7 +5,7 @@ import ast
 import json
 import os
 import subprocess
-from typing import Dict, Mapping # noqa
+from typing import Dict, Mapping  # noqa
 
 from tools.pyre.client import find_configuration_root
 from tools.pyre.client.commands.command import ExitCode

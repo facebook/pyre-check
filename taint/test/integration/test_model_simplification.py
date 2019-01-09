@@ -2,7 +2,10 @@
 
 from typing import Any, Dict
 
-class RecordSchema: pass
+
+class RecordSchema:
+    pass
+
 
 def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
     """Return the fields of a RecordSchema instance as a new dictionary mapping

@@ -2,9 +2,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.match_flows",
-    "callable_line": 12,
+    "callable_line": 14,
     "code": 5002,
-    "line": 14,
+    "line": 16,
     "start": 15,
     "end": 16,
     "filename": "test_port.py",
@@ -18,7 +18,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 13,
+                "line": 15,
                 "start": 20,
                 "end": 22
               },
@@ -37,7 +37,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 14,
+                "line": 16,
                 "start": 15,
                 "end": 16
               },
@@ -56,9 +56,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.match_star_arg_directly",
-    "callable_line": 26,
+    "callable_line": 32,
     "code": 5002,
-    "line": 27,
+    "line": 33,
     "start": 31,
     "end": 43,
     "filename": "test_port.py",
@@ -72,7 +72,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 27,
+                "line": 33,
                 "start": 43,
                 "end": 45
               },
@@ -91,7 +91,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 27,
+                "line": 33,
                 "start": 31,
                 "end": 43
               },
@@ -110,9 +110,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.match_star_arg_with_star",
-    "callable_line": 22,
+    "callable_line": 27,
     "code": 5002,
-    "line": 24,
+    "line": 29,
     "start": 26,
     "end": 31,
     "filename": "test_port.py",
@@ -126,7 +126,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 23,
+                "line": 28,
                 "start": 27,
                 "end": 29
               },
@@ -145,7 +145,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 24,
+                "line": 29,
                 "start": 26,
                 "end": 31
               },
@@ -164,9 +164,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.match_star_star_arg_directly",
-    "callable_line": 42,
+    "callable_line": 49,
     "code": 5002,
-    "line": 43,
+    "line": 50,
     "start": 40,
     "end": 52,
     "filename": "test_port.py",
@@ -180,7 +180,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 43,
+                "line": 50,
                 "start": 52,
                 "end": 54
               },
@@ -199,7 +199,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 43,
+                "line": 50,
                 "start": 40,
                 "end": 52
               },
@@ -218,9 +218,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.match_star_star_arg_with_star",
-    "callable_line": 35,
+    "callable_line": 44,
     "code": 5002,
-    "line": 40,
+    "line": 46,
     "start": 31,
     "end": 37,
     "filename": "test_port.py",
@@ -234,9 +234,9 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 38,
-                "start": 27,
-                "end": 29
+                "line": 45,
+                "start": 39,
+                "end": 41
               },
               "resolves_to": [ "qualifier.source_field" ],
               "port": "result[a]",
@@ -253,7 +253,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 40,
+                "line": 46,
                 "start": 31,
                 "end": 37
               },
@@ -279,7 +279,7 @@
           {
             "root": {
               "filename": "test_port.py",
-              "line": 49,
+              "line": 56,
               "start": 27,
               "end": 29
             },
@@ -304,7 +304,7 @@
           {
             "root": {
               "filename": "test_port.py",
-              "line": 55,
+              "line": 62,
               "start": 15,
               "end": 20
             },
@@ -320,9 +320,9 @@
   "kind": "issue",
   "data": {
     "callable": "qualifier.refer_to_method_as_field",
-    "callable_line": 52,
+    "callable_line": 59,
     "code": 5002,
-    "line": 55,
+    "line": 62,
     "start": 15,
     "end": 20,
     "filename": "test_port.py",
@@ -336,7 +336,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 54,
+                "line": 61,
                 "start": 12,
                 "end": 27
               },
@@ -354,7 +354,7 @@
           {
             "root": {
               "filename": "test_port.py",
-              "line": 55,
+              "line": 62,
               "start": 15,
               "end": 20
             },
@@ -377,7 +377,7 @@
           {
             "root": {
               "filename": "test_port.py",
-              "line": 10,
+              "line": 11,
               "start": 15,
               "end": 20
             },
@@ -426,7 +426,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 17,
+                "line": 20,
                 "start": 15,
                 "end": 19
               },
@@ -455,7 +455,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 20,
+                "line": 24,
                 "start": 16,
                 "end": 21
               },
@@ -484,7 +484,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 30,
+                "line": 37,
                 "start": 15,
                 "end": 21
               },
@@ -513,7 +513,7 @@
             "call": {
               "position": {
                 "filename": "test_port.py",
-                "line": 33,
+                "line": 41,
                 "start": 21,
                 "end": 29
               },

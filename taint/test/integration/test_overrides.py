@@ -1,8 +1,9 @@
 # @nolint
 
+
 class Base:
-    q: str = 'q'
-    r: str = 'r'
+    q: str = "q"
+    r: str = "r"
 
     def __init__(self):
         pass
@@ -19,7 +20,7 @@ class Base:
 
 
 class A(Base):
-    q: str = 'q'
+    q: str = "q"
 
     def __init__(self):
         super(Base, self).__init__()
@@ -29,7 +30,7 @@ class A(Base):
 
 
 class B(Base):
-    r: str = 'r'
+    r: str = "r"
 
     def __init__(self):
         super(Base, self).__init__()
@@ -43,7 +44,7 @@ class B(Base):
 
 
 class C(B):
-    q: str = 'q'
+    q: str = "q"
 
     def __init__(self):
         super(B, self).__init__()
@@ -57,7 +58,6 @@ class C(B):
 
 
 class D(C):
-
     def __init__(self):
         super(C, self).__init__()
 
@@ -65,7 +65,7 @@ class D(C):
         __testSink(arg)
 
     def methodB(self):
-        return __testSource();
+        return __testSource()
 
 
 def testBase(o: Base, cls: typing.Type[Base]):

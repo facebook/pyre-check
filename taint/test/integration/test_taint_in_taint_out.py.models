@@ -141,7 +141,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 37, "start": 24, "end": 25 } ],
+            "tito": [ { "line": 33, "start": 24, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ]
           }
         ]
@@ -160,11 +160,11 @@
           {
             "root": {
               "filename": "test_taint_in_taint_out.py",
-              "line": 40,
+              "line": 37,
               "start": 44,
               "end": 46
             },
-            "tito": [ { "line": 40, "start": 32, "end": 44 } ],
+            "tito": [ { "line": 37, "start": 32, "end": 44 } ],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ]
           }
         ]
