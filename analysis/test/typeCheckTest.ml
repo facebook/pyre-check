@@ -8,7 +8,6 @@ open OUnit2
 
 open Ast
 open Analysis
-open Expression
 open Pyre
 open Statement
 open TypeCheck
@@ -63,116 +62,50 @@ let assert_state_equal =
 
 
 let test_initial _ =
-  let assert_initial
-      ~parameters
-      ?parent
-      ?return_annotation
-      ?(decorators = [])
-      ?(initial = (fun resolution define ->
-          State.initial ~resolution define))
-      expected =
-    let define = {
-      Define.name = Access.create "foo";
-      parameters = List.map parameters ~f:(~+);
-      body = [];
-      decorators;
-      docstring = None;
-      return_annotation;
-      async = false;
-      parent = parent >>| Access.create;
-    }
+  let assert_initial ?parent define expected =
+    let define =
+      match parse_single_statement define with
+      | { Node.value = Define define; _ } ->
+          { define with Define.parent = parent >>| Access.create }
+      | _ ->
+          failwith "Unable to parse define."
     in
     assert_state_equal
       expected
-      (initial resolution (+define))
+      (State.initial ~resolution (+define))
   in
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = None;
-        annotation = Some (Type.expression Type.integer);
-      }
-    ]
+    "def foo(x: int): ..."
     (create ~immutables:["x", false] ["x", Type.integer]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = Some (+Float 1.0);
-        annotation = Some (Type.expression Type.integer);
-      }
-    ]
+    "def foo(x: int = 1.0): ..."
     (create ~immutables:["x", false] ["x", Type.integer]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = Some (+Float 1.0);
-        annotation = None;
-      }
-    ]
+    "def foo(x = 1.0): ..."
     (create ["x", Type.float]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = None;
-        annotation = Some (Type.expression Type.integer);
-      }
-    ]
-    ~return_annotation:!"int"
+    "def foo(x: int) -> int: ..."
     (create ~immutables:["x", false] ~expected_return:Type.integer ["x", Type.integer]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = None;
-        annotation = Some (Type.expression Type.float);
-      };
-      {
-        Parameter.name = "y";
-        value = None;
-        annotation = Some (Type.expression Type.string)
-      };
-    ]
+    "def foo(x: float, y: str): ..."
     (create ~immutables:["x", false; "y", false] ["x", Type.float; "y", Type.string]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "x";
-        value = None;
-        annotation = None;
-      };
-    ]
+    "def foo(x): ..."
     (create ["x", Type.Bottom]);
 
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "self";
-        value = None;
-        annotation = None;
-      };
-    ]
     ~parent:"Foo"
+    "def foo(self): ..."
     (create ["self", Type.Primitive "Foo"]);
   assert_initial
-    ~parameters:[
-      {
-        Parameter.name = "a";
-        value = None;
-        annotation = None;
-      };
-    ]
-    ~decorators:[!"staticmethod"]
     ~parent:"Foo"
+    "@staticmethod\ndef foo(a): ..."
     (create ["a", Type.Bottom])
 
 
