@@ -1775,31 +1775,18 @@ module State = struct
                     false
               in
               let state =
-                let error =
-                  if not (Type.equal resolved Type.ellipses) &&
-                     Annotation.is_immutable annotation &&
-                     not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
-                     not is_typed_dictionary_initialization then
-                    let kind =
-                      let open Annotated in
-                      let open Access in
-                      match element with
-                      | Attribute { attribute = access; origin = Instance attribute; _ } ->
-                          Error.IncompatibleAttributeType {
-                            parent = Attribute.parent attribute;
-                            incompatible_type = {
-                              Error.name = access;
-                              mismatch =
-                                (Error.create_mismatch
-                                   ~resolution
-                                   ~actual:resolved
-                                   ~expected
-                                   ~covariant:true);
-                              declare_location = instantiate (Attribute.location attribute);
-                            };
-                          }
-                      | _ ->
-                          Error.IncompatibleVariableType {
+                if not (Type.equal resolved Type.ellipses) &&
+                   Annotation.is_immutable annotation &&
+                   not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
+                   not is_typed_dictionary_initialization then
+                  let kind =
+                    let open Annotated in
+                    let open Access in
+                    match element with
+                    | Attribute { attribute = access; origin = Instance attribute; _ } ->
+                        Error.IncompatibleAttributeType {
+                          parent = Attribute.parent attribute;
+                          incompatible_type = {
                             Error.name = access;
                             mismatch =
                               (Error.create_mismatch
@@ -1807,14 +1794,25 @@ module State = struct
                                  ~actual:resolved
                                  ~expected
                                  ~covariant:true);
-                            declare_location = instantiate location;
-                          }
-                    in
-                    Some (Error.create ~location ~kind ~define)
-                  else
-                    None
-                in
-                error >>| add_error ~state |> Option.value ~default:state
+                            declare_location = instantiate (Attribute.location attribute);
+                          };
+                        }
+                    | _ ->
+                        Error.IncompatibleVariableType {
+                          Error.name = access;
+                          mismatch =
+                            (Error.create_mismatch
+                               ~resolution
+                               ~actual:resolved
+                               ~expected
+                               ~covariant:true);
+                          declare_location = instantiate location;
+                        }
+                  in
+                  Error.create ~location ~kind ~define
+                  |> add_error ~state
+                else
+                  state
               in
 
               (* Check for missing annotations. *)
