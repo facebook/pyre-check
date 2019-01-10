@@ -44,7 +44,7 @@ class Reporting(Command):
             LOG.log(log.SUCCESS, "No type errors found")
 
         if self._output == TEXT:
-            log.stdout.write("\n".join([repr(error) for error in errors]))
+            log.stdout.write("\n".join([error.repr_with_color() for error in errors]))
         else:
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 

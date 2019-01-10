@@ -3,6 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from . import is_capable_terminal
+from .log import Color, Format
+
 
 class Error:
     ignore_error = False  # type: bool
@@ -24,8 +27,29 @@ class Error:
     def __repr__(self):
         return self.__key() + " " + self.description
 
+    def repr_with_color(self):
+        return self.__key_with_color() + " " + self.description
+
     def __key(self):
         return self.path + ":" + str(self.line) + ":" + str(self.column)
+
+    def __key_with_color(self):
+        if not is_capable_terminal():
+            return self.__key()
+
+        return (
+            Color.RED
+            + self.path
+            + Format.CLEAR
+            + ":"
+            + Color.YELLOW
+            + str(self.line)
+            + Format.CLEAR
+            + ":"
+            + Color.YELLOW
+            + str(self.column)
+            + Format.CLEAR
+        )
 
     def __eq__(self, other):
         return self.__key() == other.__key()
