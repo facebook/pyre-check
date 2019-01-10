@@ -814,6 +814,7 @@ let test_class_attributes _ =
       defined = true;
       class_attribute = false;
       async = false;
+      initialized = false;
     }
   in
   assert_attribute

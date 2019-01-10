@@ -1765,7 +1765,18 @@ module State = struct
                 else
                   annotation, element
               in
-              let expected = Annotation.original annotation in
+              let expected =
+                (* If original_annotation is not None, use it instead of the actual postprocessed
+                   annotation - since Pyre only keeps around the annotation after all enum,
+                   ClassVar, etc. transformations are applied, this is the only way we can retain
+                   the user-given annotation. *)
+                match original_annotation with
+                | Some original ->
+                    Type.class_variable_value original
+                    |> Option.value ~default:original
+                | None ->
+                    Annotation.original annotation
+              in
               let resolved =
                 Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
               in

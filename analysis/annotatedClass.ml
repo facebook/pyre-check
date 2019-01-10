@@ -368,6 +368,7 @@ module Attribute = struct
     defined: bool;
     class_attribute: bool;
     async: bool;
+    initialized: bool;
   }
   [@@deriving eq, show]
 
@@ -395,6 +396,14 @@ module Attribute = struct
         };
       } =
     let class_annotation = annotation parent ~resolution in
+    let initialized =
+      match value with
+      | Some { Node.value = Ellipses; _ }
+      | None ->
+          false
+      | _ ->
+          true
+    in
 
     (* Account for class attributes. *)
     let annotation, class_attribute =
@@ -516,6 +525,7 @@ module Attribute = struct
         defined;
         class_attribute;
         async;
+        initialized;
       };
 
     }
@@ -548,10 +558,8 @@ module Attribute = struct
     value
 
 
-  let initialized { Node.value = { value = { Node.value; _ }; _ }; _ } =
-    match value with
-    | Ellipses -> false
-    | _ -> true
+  let initialized { Node.value = { initialized; _ }; _ } =
+    initialized
 
 
   let location { Node.location; _ } =

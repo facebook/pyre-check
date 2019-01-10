@@ -700,7 +700,32 @@ let test_check_attributes _ =
         foo = Foo()
         return foo.y
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class C(enum.IntEnum):
+        a: int = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      class C(enum.IntEnum):
+        a: int
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have non-optional \
+       type `C` but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+      class C(enum.IntEnum):
+        a: str = 1
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type `str` but is \
+       used as type `int`.";
+    ]
 
 
 let test_check_missing_attribute _ =

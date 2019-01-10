@@ -696,6 +696,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_output(command, shell): ...
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "enum")
+      ~handle:"enum.pyi"
+      {|
+        class Enum:
+          pass
+        class IntEnum(int, Enum):
+          value = ...  # type: int
+      |}
+    |> Preprocessing.qualify;
   ]
 
 
