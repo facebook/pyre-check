@@ -33,6 +33,7 @@ class Monitor:
             ],
             "fields": ["name"],
         }
+        # pyre-fixme[16]: Optional type has no attribute `query`.
         self.watchman_client.query("subscribe", root, name, subscription)
 
     def _run(self) -> None:
@@ -70,6 +71,7 @@ class Monitor:
 
             while True:
                 # This call is blocking, which prevents this loop from burning CPU.
+                # pyre-fixme[16]: Optional type has no attribute `receive`.
                 response = self.watchman_client.recvConn.receive()
                 try:
                     if response["is_fresh_instance"]:

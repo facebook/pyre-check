@@ -1,8 +1,11 @@
 {
-  "targets": ["//tools/pyre/..."],
-  "ignore_all_errors": ["client/tests/upgrade_test.py"],
   "coverage": true,
-  "push_blocking": true,
   "differential": true,
-  "version": "ef2c5ee607f1f91da81803fce065050b0a0725c1"
+  "ignore_all_errors": [
+    "client/tests/upgrade_test.py"
+  ],
+  "push_blocking": true,
+  "targets": [
+    "//tools/pyre/..."
+  ]
 }

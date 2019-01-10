@@ -5,7 +5,7 @@ import ast
 import os
 import unittest
 from tempfile import NamedTemporaryFile
-from typing import Any, List, Dict, Mapping, Optional, Tuple  # noqa
+from typing import Any, Dict, List, Mapping, Optional, Tuple  # noqa
 from unittest.mock import Mock, patch
 
 from tools.pyre.python_ast.pyre import (
@@ -78,6 +78,9 @@ class TypedAstTestCase(unittest.TestCase):
 
         file_types: Mapping[Location, Annotation] = {}
         for annotation in annotation_list:
+            # pyre: Expected `str` for 2nd anonymous parameter to call `tools.
+            # pyre: pyre.python_ast.tests.pyre_tests.TypedAstTestCase.
+            # pyre-fixme[6]: create_file_types.add_file_type` but got `int`.
             file_types = add_file_type(file_types, *annotation)
         return file_types
 

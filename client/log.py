@@ -154,6 +154,7 @@ class TimedStreamHandler(logging.StreamHandler):
 
     def terminate(self) -> None:
         last_record = self._last_record
+        # pyre-fixme[16]: Optional type has no attribute `levelname`.
         if last_record and last_record.levelname not in self.LINE_BREAKING_LEVELS:
             sys.stderr.write("\n")
 

@@ -382,6 +382,9 @@ def main() -> int:
                 configuration=configuration,
                 integers={
                     "exit_code": exit_code,
+                    # pyre: Expected `float` for 1st anonymous parameter to
+                    # pyre: call `float.__sub__` but got `argparse.
+                    # pyre-fixme[6]: ArgumentParser`.
                     "runtime": int((time.time() - start) * 1000),
                 },
             )
