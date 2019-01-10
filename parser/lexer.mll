@@ -155,7 +155,8 @@ let complex = (float | digipart) ('j' | 'J')
 
 let kind = 'b' | 'B' | 'f' | 'F'
 let encoding = 'u' | 'U' | 'r' | 'R'
-let stringprefix = (encoding | kind | (encoding kind) | (kind encoding))?
+(* (encoding encoding) for python2 legacy support *)
+let stringprefix = (encoding | kind | (encoding kind) | (kind encoding) | (encoding encoding))?
 let escape = '\\' _
 
 rule read state = parse

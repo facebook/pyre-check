@@ -2424,6 +2424,10 @@ let test_string _ =
   assert_parsed_equal "ub'foo'" [+Expression (+String (StringLiteral.create ~bytes:true "foo"))];
   assert_parsed_equal "bR'foo'" [+Expression (+String (StringLiteral.create ~bytes:true "foo"))];
   assert_parsed_equal "'foo' 'bar'" [+Expression (+String (StringLiteral.create "foobar"))];
+  assert_parsed_equal "ur'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "uR'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "Ur'foo'" [+Expression (+String (StringLiteral.create "foo"))];
+  assert_parsed_equal "UR'foo'" [+Expression (+String (StringLiteral.create "foo"))];
 
   assert_parsed_equal
     "f'foo'"
