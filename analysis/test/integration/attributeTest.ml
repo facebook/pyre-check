@@ -826,7 +826,19 @@ let test_check_missing_attribute _ =
         a: typing.Any
       Foo.a = 1
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class Foo(enum.IntEnum):
+        A: int = 1
+      class Bar:
+        A = Foo.A.value
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `A` of class `Bar` has type `int` but no type \
+       is specified.";
+    ]
 
 
 let test_check_getattr _ =

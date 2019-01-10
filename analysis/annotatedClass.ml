@@ -423,7 +423,8 @@ module Attribute = struct
         |> List.map ~f:(fun definition -> name definition |> Access.show)
         |> String.Set.of_list
       in
-      if not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
+      if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
+         not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
          primitive then
         Some class_annotation, None, true  (* Enums override values. *)
       else
