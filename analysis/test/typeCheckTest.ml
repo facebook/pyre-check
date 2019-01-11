@@ -1402,6 +1402,11 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "1 if undefined else 1" Type.integer;
   assert_forward ~errors:(`Undefined 1) "1 if True else undefined" Type.Top;
   assert_forward ~errors:(`Undefined 3) "undefined if undefined else undefined" Type.Top;
+  assert_forward
+    ~precondition:["x", Type.integer]
+    ~postcondition:["x", Type.integer]
+    "x if x is not None else 32"
+    Type.integer;
 
   (* True literal. *)
   assert_forward "True" Type.bool;

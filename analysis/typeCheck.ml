@@ -2208,7 +2208,10 @@ module State = struct
           forward_statement ~state ~statement:(Statement.assume (Expression.negate test))
           |> fun state -> forward_expression ~state ~expression:alternative
         in
-        join_resolved ~resolution target alternative
+        let { state; resolved } = join_resolved ~resolution target alternative in
+        (* The resolution is local to the ternary expression and
+           should not be propagated out. *)
+        { state = { state with resolution }; resolved }
 
     | True ->
         { state; resolved = Type.bool }
@@ -2961,19 +2964,35 @@ module State = struct
               operator = ComparisonOperator.Is;
               right = { Node.value = Access [Access.Identifier "None"]; _ };
             } ->
-              let element = last_element ~resolution access in
-              let refined =
-                match element with
-                | Attribute { origin = Instance attribute; defined; _ } when defined ->
-                    Refinement.refine
-                      ~resolution
-                      (Annotated.Attribute.annotation attribute)
-                      (Type.Optional Type.Bottom)
-                | _ ->
-                    Annotation.create (Type.Optional Type.Bottom)
-              in
-              let resolution = Resolution.set_local resolution ~access ~annotation:refined in
-              { state with resolution }
+              begin
+                let refined =
+                  let element = last_element ~resolution access in
+                  match element with
+                  | Attribute { origin = Instance attribute; defined; _ } when defined ->
+                      Refinement.refine
+                        ~resolution
+                        (Annotated.Attribute.annotation attribute)
+                        (Type.Optional Type.Bottom)
+                  | _ ->
+                      Annotation.create (Type.Optional Type.Bottom)
+                in
+                match Resolution.get_local ~global_fallback:false resolution ~access with
+                | Some previous ->
+                    if Refinement.less_or_equal ~resolution refined previous then
+                      let resolution =
+                        Resolution.set_local resolution ~access ~annotation:refined
+                      in
+                      { state with resolution }
+                    else
+                      (* Keeping previous state, since it is more refined. *)
+                      (* TODO: once T38750424 is done, we should really return bottom if
+                         previous is not <= refined and refined is not <= previous, as
+                         this is an obvious contradiction. *)
+                      state
+                | None ->
+                    let resolution = Resolution.set_local resolution ~access ~annotation:refined in
+                    { state with resolution }
+              end
           | _ ->
               state
         end

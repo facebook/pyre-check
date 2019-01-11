@@ -74,6 +74,76 @@ let test_check_assert _ =
         else:
           return int_to_int("monkey news")
     |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is not None:
+          expect_int(x)
+          y = x if x is not None else 32
+          expect_int(y)
+          expect_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is not None:
+          expect_int(x)
+          y = 32 if x is None else x
+          expect_int(y)
+          expect_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is not None:
+          expect_int(x)
+          if x is not None:
+            y = 12
+          else:
+            y = 34
+          expect_int(y)
+          expect_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is not None:
+          expect_int(x)
+          if x is None:
+            y = 56
+          else:
+            y = 78
+          expect_int(y)
+          expect_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is None:
+          pass
+        else:
+          expect_int(x)
+          y = x if x is not None else 32
+          expect_int(y)
+          expect_int(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: typing.Optional[int]) -> None:
+        if x is None:
+          pass
+        else:
+          expect_int(x)
+          y = 32 if x is None else x
+          expect_int(y)
+          expect_int(x)
+    |}
     []
 
 
