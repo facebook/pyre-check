@@ -3,6 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+from typing import Any
+
 from . import is_capable_terminal
 from .log import Color, Format
 
@@ -12,28 +16,31 @@ class Error:
     external_to_global_root = False  # type: bool
 
     def __init__(
-        self, ignore_error: bool = False, external_to_global_root: bool = False, **error
+        self,
+        ignore_error: bool = False,
+        external_to_global_root: bool = False,
+        **error: Any  # pyre-ignore
     ) -> None:
-        self.line = error["line"]
-        self.column = error["column"]
-        self.path = error["path"]
-        self.code = error["code"]
-        self.name = error["name"]
-        self.description = error["description"]
-        self.inference = error["inference"]
-        self.ignore_error = ignore_error
-        self.external_to_global_root = external_to_global_root
+        self.line = error["line"]  # type: int
+        self.column = error["column"]  # type: int
+        self.path = error["path"]  # type: str
+        self.code = error["code"]  # type: int
+        self.name = error["name"]  # type: str
+        self.description = error["description"]  # type: str
+        self.inference = error["inference"]  # type: str
+        self.ignore_error = ignore_error  # type: bool
+        self.external_to_global_root = external_to_global_root  # type: bool
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__key() + " " + self.description
 
-    def repr_with_color(self):
+    def repr_with_color(self) -> str:
         return self.__key_with_color() + " " + self.description
 
-    def __key(self):
+    def __key(self) -> str:
         return self.path + ":" + str(self.line) + ":" + str(self.column)
 
-    def __key_with_color(self):
+    def __key_with_color(self) -> str:
         if not is_capable_terminal():
             return self.__key()
 
@@ -51,10 +58,14 @@ class Error:
             + Format.CLEAR
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:  # pyre-ignore: T38904361
+        if not isinstance(other, Error):
+            return False
         return self.__key() == other.__key()
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:  # pyre-ignore: T38904361
+        if not isinstance(other, Error):
+            return False
         return self.__key() < other.__key()
 
     def __hash__(self) -> int:
