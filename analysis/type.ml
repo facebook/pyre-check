@@ -1950,24 +1950,8 @@ let rec mismatch_with_any left right =
   in
 
   match left, right with
-  | Object, Bottom
-  | Bottom, Object
-  | Object, Optional _
-  | Optional _, Object
-  | Object, Parametric _
-  | Parametric _, Object
-  | Object, Primitive _
-  | Primitive _, Object
-  | Object, Callable _
-  | Callable _, Object
-  | Object, Top
-  | Top, Object
-  | Object, Tuple _
-  | Tuple _, Object
-  | Object, Union _
-  | Union _, Object
-  | Object, Variable _
-  | Variable _, Object ->
+  | Object, _
+  | _, Object ->
       true
   | Callable {
       Callable.implementation = {
