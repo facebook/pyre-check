@@ -78,10 +78,10 @@ class TypedAstTestCase(unittest.TestCase):
 
         file_types: Mapping[Location, Annotation] = {}
         for annotation in annotation_list:
-            # pyre: Expected `str` for 2nd anonymous parameter to call `tools.
-            # pyre: pyre.python_ast.tests.pyre_tests.TypedAstTestCase.
-            # pyre-fixme[6]: create_file_types.add_file_type` but got `int`.
-            file_types = add_file_type(file_types, *annotation)
+            file_types = add_file_type(
+                file_types, *annotation  # pyre-ignore: T38897553
+            )
+
         return file_types
 
     def print_file_types(self, file_types: Mapping[Location, Annotation]) -> str:

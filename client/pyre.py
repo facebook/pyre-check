@@ -305,9 +305,8 @@ def main() -> int:
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
+    start = time.time()
     try:
-        start = time.time()
-
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
             arguments.noninteractive = True
@@ -382,9 +381,6 @@ def main() -> int:
                 configuration=configuration,
                 integers={
                     "exit_code": exit_code,
-                    # pyre: Expected `float` for 1st anonymous parameter to
-                    # pyre: call `float.__sub__` but got `argparse.
-                    # pyre-fixme[6]: ArgumentParser`.
                     "runtime": int((time.time() - start) * 1000),
                 },
             )

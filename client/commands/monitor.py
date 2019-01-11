@@ -2,6 +2,8 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+
+import functools
 import logging
 import os
 import sys
@@ -20,7 +22,17 @@ class Monitor:
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory.get_root()
-        self.watchman_client = None
+
+    @property
+    @functools.lru_cache(1)
+    def _watchman_client(self):
+        try:
+            import pywatchman  # noqa
+
+            return pywatchman.client(timeout=3600.0)
+        except ImportError as exception:
+            LOG.info("Not starting monitor due to %s", str(exception))
+            sys.exit(1)
 
     def _subscribe_to_watchman(self, root: str) -> None:
         name = "pyre_monitor_{}".format(os.path.basename(root))
@@ -33,17 +45,9 @@ class Monitor:
             ],
             "fields": ["name"],
         }
-        # pyre-fixme[16]: Optional type has no attribute `query`.
-        self.watchman_client.query("subscribe", root, name, subscription)
+        self._watchman_client.query("subscribe", root, name, subscription)
 
     def _run(self) -> None:
-        try:
-            import pywatchman  # noqa
-
-            self.watchman_client = pywatchman.client(timeout=3600.0)
-        except ImportError as exception:
-            LOG.info("Not starting monitor due to %s", str(exception))
-            sys.exit(1)
         try:
             os.makedirs(os.path.join(self.analysis_directory, ".pyre/monitor"))
         except OSError:
@@ -65,14 +69,13 @@ class Monitor:
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
 
-            watched_roots = self.watchman_client.query("watch-list")["roots"]
+            watched_roots = self._watchman_client.query("watch-list")["roots"]
             for root in watched_roots:
                 self._subscribe_to_watchman(root)
 
             while True:
                 # This call is blocking, which prevents this loop from burning CPU.
-                # pyre-fixme[16]: Optional type has no attribute `receive`.
-                response = self.watchman_client.recvConn.receive()
+                response = self._watchman_client.recvConn.receive()
                 try:
                     if response["is_fresh_instance"]:
                         LOG.info(
