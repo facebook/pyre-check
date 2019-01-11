@@ -1352,23 +1352,24 @@ module State = struct
                       state, Annotation.create resolved
                 end
             | _ ->
-                match annotation, value with
-                | Some annotation, Some value
-                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
+                let annotation_and_state = annotation >>| parse_and_check_annotation ~state in
+                match annotation_and_state, value with
+                | Some (_, annotation), Some value when Type.contains_any annotation ->
                     let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
                     add_missing_parameter_annotation_error
                       ~state
-                      ~given_annotation:(Some Type.Object)
+                      ~given_annotation:(Some annotation)
                       (Some value_annotation),
                     Annotation.create value_annotation
-                | Some annotation, None
-                  when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-                    add_missing_parameter_annotation_error ~state ~given_annotation:(Some Type.Object) None,
-                    Annotation.create_immutable ~global:false Type.Object
-                | Some annotation, value ->
-                    let state, annotation = parse_and_check_annotation ~state annotation in
+                | Some (_, annotation), None when Type.contains_any annotation ->
+                    add_missing_parameter_annotation_error
+                      ~state
+                      ~given_annotation:(Some annotation)
+                      None,
+                    Annotation.create_immutable ~global:false annotation
+                | Some (state, annotation), value ->
                     let state =
                       value
                       >>| (fun value -> forward_expression ~state ~expression:value)
@@ -1388,7 +1389,10 @@ module State = struct
                     let { resolved = annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
-                    add_missing_parameter_annotation_error ~state ~given_annotation:None (Some annotation),
+                    add_missing_parameter_annotation_error
+                      ~state
+                      ~given_annotation:None
+                      (Some annotation),
                     Annotation.create annotation
                 | None, None ->
                     add_missing_parameter_annotation_error ~state ~given_annotation:None None,

@@ -219,7 +219,10 @@ let test_check_generators _ =
       def foo(l: typing.Iterable[typing.Any])->typing.Generator[typing.Any, None, None]:
         return (x for x in l)
     |}
-    [];
+    [
+      "Missing parameter annotation [2]: Parameter `l` must have a type " ^
+      "that does not contain `Any`."
+    ];
 
   assert_type_errors
     {|

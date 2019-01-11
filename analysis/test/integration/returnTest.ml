@@ -332,6 +332,8 @@ let test_check_return_control_flow _ =
         return meta
     |}
     [
+      "Missing parameter annotation [2]: Parameter `meta` must have a type " ^
+      "that does not contain `Any`.";
       "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
       "`typing.Type[typing.Any]`.";
     ];

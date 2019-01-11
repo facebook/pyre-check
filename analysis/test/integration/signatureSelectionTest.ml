@@ -145,6 +145,8 @@ let test_check_callables _ =
       takes_callable(lambda y: 0)
     |}
     [
+      "Missing parameter annotation [2]: Parameter `f` must have a type " ^
+      "that does not contain `Any`.";
       "Incompatible parameter type [6]: " ^
       "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
       "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], int]`.";
@@ -156,6 +158,8 @@ let test_check_callables _ =
       takes_callable(lambda y: "")
     |}
     [
+      "Missing parameter annotation [2]: Parameter `f` must have a type " ^
+      "that does not contain `Any`.";
       "Incompatible parameter type [6]: " ^
       "Expected `typing.Callable[[Named(x, typing.Any)], int]` for 1st anonymous parameter " ^
       "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
@@ -933,11 +937,11 @@ let test_check_keyword_arguments _ =
       def foo(x: int, y: str) -> None:
         pass
 
-      def bar(x: typing.Dict[typing.Any, str]) -> None:
+      def bar(x: typing.Dict[int, str]) -> None:
         test = foo( **x )
     |}
     [
-      "Invalid argument [32]: Keyword argument `x` has type `typing.Dict[typing.Any, str]` " ^
+      "Invalid argument [32]: Keyword argument `x` has type `typing.Dict[int, str]` " ^
       "but must be a mapping with string keys."
     ];
   assert_type_errors

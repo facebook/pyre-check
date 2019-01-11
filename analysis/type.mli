@@ -237,6 +237,7 @@ val is_tuple: t -> bool
 val is_typed_dictionary: t -> bool
 val is_unbound: t -> bool
 val is_unknown: t -> bool
+val contains_any: t -> bool
 val is_type_alias: t -> bool
 
 (* Contains `Bottom` or variables. *)

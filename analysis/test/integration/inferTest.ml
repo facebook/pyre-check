@@ -47,7 +47,18 @@ let test_check_missing_parameter _ =
       def foo(x: typing.Any = unknown) -> int:
         return 1
     |}
-    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(x: typing.Dict[typing.Any, str]) -> int:
+        return 1
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type " ^
+      "that does not contain `Any`."
+    ]
 
 
 let test_check_missing_return _ =
