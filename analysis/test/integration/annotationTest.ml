@@ -313,6 +313,57 @@ let test_check_immutable_annotations _ =
 
   assert_type_errors
     {|
+      T = typing.TypeVar('T')
+      def foo(x: T = 1) -> T:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', int, float)
+      def foo(x: T = 1) -> T:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', int, float)
+      def foo(x: T = "str") -> T:
+        return x
+    |}
+    [
+      "Incompatible variable type [9]: " ^
+      "x is declared to have type `Variable[T <: [int, float]]` but is used as type `str`."
+    ];
+
+  assert_type_errors
+    {|
+      class B: pass
+      class C(B): pass
+      T = typing.TypeVar('T', bound=B)
+      def foo(x: T = C()) -> T:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class O: pass
+      class B: pass
+      class C(B): pass
+      T = typing.TypeVar('T', bound=B)
+      def foo(x: T = O()) -> T:
+        return x
+    |}
+    [
+      "Incompatible variable type [9]: " ^
+      "x is declared to have type `Variable[T (bound to B)]` but is used as type `O`."
+    ];
+
+  assert_type_errors
+    {|
       def bar() -> typing.Any:
         ...
       def foo(x: str = bar()) -> str:

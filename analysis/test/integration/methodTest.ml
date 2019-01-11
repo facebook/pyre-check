@@ -113,7 +113,6 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
-      "Incompatible return type [7]: Expected `int` but got `Foo`.";
     ]
 
 
@@ -860,6 +859,36 @@ let test_check_self _ =
         a = Subclass()
         b = a.f
         return b(1)
+      def f() -> Subclass:
+        a = Subclass()
+        b = a.f
+        return b(1)
+    |}
+    [];
+
+  (* Make sure the SelfType pattern works *)
+  assert_type_errors
+    {|
+      TSelf = typing.TypeVar('TSelf', bound="C")
+      class C:
+        def inner(self, x: int) -> None:
+          pass
+        def verbose(self: TSelf, x: int) -> TSelf:
+          self.inner(x)
+          return self
+      SubTSelf = typing.TypeVar('SubTSelf', bound="Subclass")
+      class Subclass(C):
+        def subinner(self, x:str) -> None:
+          pass
+        def interface(self: SubTSelf, x: str) -> SubTSelf:
+          self.inner(7)
+          self.subinner(x)
+          return self
+      class SubSubclass(Subclass): pass
+      def f() -> SubSubclass:
+        return SubSubclass().verbose(7).interface("A")
+      def g() -> SubSubclass:
+        return SubSubclass().interface("A").verbose(7)
     |}
     []
 

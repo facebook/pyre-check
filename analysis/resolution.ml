@@ -361,3 +361,18 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
 
   | _ ->
       resolved
+
+
+let can_be_bound ~variable ~target resolution =
+  match variable with
+  | Type.Variable { constraints = Type.Explicit constraints; _ } ->
+      let in_constraint bound =
+        less_or_equal resolution ~left:target ~right:bound
+      in
+      List.exists ~f:in_constraint constraints
+  | Type.Variable { constraints = Type.Bound bound; _ } ->
+      less_or_equal resolution ~left:target ~right:bound
+  | Type.Variable _ ->
+      true
+  | _ ->
+      false

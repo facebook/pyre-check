@@ -207,6 +207,41 @@ let test_resolve_mutable_literals _ =
     ~against:"typing.Set[Q]"
 
 
+let test_can_be_bound _ =
+  let resolution =
+    make_resolution
+      {|
+      class C: ...
+      class D(C): ...
+      class Q: ...
+    |}
+  in
+  let assert_resolve_mutable_literals variable target expected =
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> Resolution.parse_annotation resolution
+    in
+    let variable = parse_annotation variable in
+    let target = parse_annotation target in
+    assert_equal
+      expected
+      (Resolution.can_be_bound resolution ~variable ~target)
+  in
+  assert_resolve_mutable_literals "typing.TypeVar('_T')" "C" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T')" "D" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T')" "Q" true;
+
+  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "C" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "D" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "Q" false;
+  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='D')" "C" false;
+
+  assert_resolve_mutable_literals "typing.TypeVar('_T', C, Q)" "C" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T', C, Q)" "D" true;
+  assert_resolve_mutable_literals "typing.TypeVar('_T', D, Q)" "C" false;
+  ()
+
 
 let () =
   "resolution">:::[
@@ -214,5 +249,6 @@ let () =
     "parse_annotation">::test_parse_annotation;
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
+    "can_be_bound">::test_can_be_bound;
   ]
   |> Test.run

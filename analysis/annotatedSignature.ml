@@ -141,8 +141,8 @@ let select
         | Defined all_parameters ->
             let matched_keyword_arguments =
               let is_keyword_argument = function
-              | { Argument.name = Some _; _ } -> true
-              | _ -> false
+                | { Argument.name = Some _; _ } -> true
+                | _ -> false
               in
               List.filter ~f:is_keyword_argument all_arguments
             in
@@ -457,19 +457,7 @@ let select
                           >>| (fun existing -> Resolution.join resolution existing resolved)
                           |> Option.value ~default:resolved
                         in
-                        let in_constraints =
-                          match variable with
-                          | Type.Variable { constraints = Type.Explicit constraints; _ } ->
-                              let in_constraint bound =
-                                Resolution.less_or_equal resolution ~left:resolved ~right:bound
-                              in
-                              List.exists ~f:in_constraint constraints
-                          | Type.Variable { constraints = Type.Bound bound; _ } ->
-                              Resolution.less_or_equal resolution ~left:resolved ~right:bound
-                          | _ ->
-                              true
-                        in
-                        if in_constraints then
+                        if Resolution.can_be_bound resolution ~variable ~target:resolved then
                           Some (Map.set ~key:variable ~data:resolved constraints)
                         else if less_or_equal then
                           Some constraints
@@ -610,12 +598,12 @@ let select
                       else
                         { expression; annotation }
                         |> Node.create ~location
-                        |> fun error -> InvalidKeywordArgument error
+                        |> (fun error -> InvalidKeywordArgument error)
                         |> add_annotation_error signature_match
                   | {
-                      Argument.value = { Node.value = Starred (Starred.Once expression); location };
-                      _;
-                    } ->
+                    Argument.value = { Node.value = Starred (Starred.Once expression); location };
+                    _;
+                  } ->
                       let annotation = Resolution.resolve resolution expression in
                       let iterable =
                         (* Unannotated parameters are assigned a type of Bottom for inference,
@@ -632,7 +620,7 @@ let select
                       else
                         { expression; annotation }
                         |> Node.create ~location
-                        |> fun error -> InvalidVariableArgument error
+                        |> (fun error -> InvalidVariableArgument error)
                         |> add_annotation_error signature_match
                   | { Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in

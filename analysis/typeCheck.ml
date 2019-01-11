@@ -1249,7 +1249,8 @@ module State = struct
           in
           let add_incompatible_variable_error ~state annotation default =
             if Type.equal default Type.Object ||
-               Resolution.less_or_equal resolution ~left:default ~right:annotation then
+               Resolution.less_or_equal resolution ~left:default ~right:annotation ||
+               Resolution.can_be_bound resolution ~variable:annotation ~target:default then
               state
             else
               let instantiate location =
@@ -1343,7 +1344,7 @@ module State = struct
                       let state =
                         add_incompatible_variable_error ~state annotation resolved
                       in
-                      state, Annotation.create resolved
+                      state, Annotation.create annotation
                   | None ->
                       state, Annotation.create resolved
                 end
