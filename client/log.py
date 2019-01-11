@@ -3,6 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+import argparse
 import copy
 import io
 import logging
@@ -11,39 +14,39 @@ import re
 import sys
 import threading
 import time
-from typing import List  # noqa
+from typing import List, Optional, Sequence  # noqa
 
 
-LOG = logging.getLogger(__name__)
-PERFORMANCE = 15
-PROMPT = 50
-SUCCESS = 60
+LOG = logging.getLogger(__name__)  # type: logging.Logger
+PERFORMANCE = 15  # type: int
+PROMPT = 50  # type: int
+SUCCESS = 60  # type: int
 
 
-stdout = io.StringIO(newline="")
+stdout = io.StringIO(newline="")  # type: io.StringIO
 
 
 class Color:
-    YELLOW = "\033[33m"
-    RED = "\033[31m"
+    YELLOW = "\033[33m"  # type: str
+    RED = "\033[31m"  # type: str
 
 
 class Format:
-    BOLD = "\033[1m"
+    BOLD = "\033[1m"  # type: str
 
-    CLEAR_LINE = "\x1b[0G\x1b[K"
-    CLEAR = "\033[0m"
-    TRUNCATE_OVERFLOW = "\033[?7l"
-    WRAP_OVERFLOW = "\033[?7h"
-    NEWLINE = "\n"
+    CLEAR_LINE = "\x1b[0G\x1b[K"  # type: str
+    CLEAR = "\033[0m"  # type: str
+    TRUNCATE_OVERFLOW = "\033[?7l"  # type: str
+    WRAP_OVERFLOW = "\033[?7h"  # type: str
+    NEWLINE = "\n"  # type: str
 
-    CURSOR_UP_LINE = "\x1b[1A"
-    HIDE_CURSOR = "\x1b[?25l"
-    SHOW_CURSOR = "\x1b[?25h"
+    CURSOR_UP_LINE = "\x1b[1A"  # type: str
+    HIDE_CURSOR = "\x1b[?25l"  # type: str
+    SHOW_CURSOR = "\x1b[?25h"  # type: str
 
 
 class Character:
-    LAMBDA = "ƛ"
+    LAMBDA = "ƛ"  # type: str
 
 
 class SectionFormatter(logging.Formatter):
@@ -56,8 +59,8 @@ class SectionFormatter(logging.Formatter):
 
 
 class TimedStreamHandler(logging.StreamHandler):
-    THRESHOLD = 0.5
-    LINE_BREAKING_LEVELS = ["ERROR", "WARNING", "SUCCESS"]
+    THRESHOLD = 0.5  # type: float
+    LINE_BREAKING_LEVELS = ["ERROR", "WARNING", "SUCCESS"]  # type: Sequence[str]
 
     _terminate = False  # type: bool
     _last_update = 0.0  # type: float
@@ -65,12 +68,12 @@ class TimedStreamHandler(logging.StreamHandler):
     def __init__(self) -> None:
         super(TimedStreamHandler, self).__init__()
         self.setFormatter(logging.Formatter("%(message)s"))
-        self.terminator = ""
+        self.terminator = ""  # type: str
         self.setLevel(logging.INFO)
 
-        self._record = None
-        self._last_record = None
-        self._active_lines = 0
+        self._record = None  # type: Optional[logging.LogRecord]
+        self._last_record = None  # type: Optional[logging.LogRecord]
+        self._active_lines = 0  # type: int
 
         # Preamble preparing terminal.
         sys.stderr.write(
@@ -95,7 +98,7 @@ class TimedStreamHandler(logging.StreamHandler):
             ]
         )
 
-    def emit(self, record, age=None) -> None:
+    def emit(self, record: logging.LogRecord, age: Optional[float] = None) -> None:
         self._last_record = record
         suffix = ""
         color = ""
@@ -163,7 +166,7 @@ class TimedStreamHandler(logging.StreamHandler):
         self._terminate = True
 
 
-def initialize(arguments) -> None:
+def initialize(arguments: argparse.Namespace) -> None:
     if arguments.noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
@@ -191,7 +194,7 @@ def initialize(arguments) -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=handlers)
 
 
-def cleanup(arguments) -> None:
+def cleanup(arguments: argparse.Namespace) -> None:
     if arguments.timed_stream_handler:
         arguments.timed_stream_handler.terminate()
 
@@ -201,19 +204,19 @@ def cleanup(arguments) -> None:
 
 
 class Buffer:
-    THRESHOLD = 0.1
+    THRESHOLD = 0.1  # type: float
 
     _flushed = False  # type: bool
 
-    def __init__(self, section, data) -> None:
-        self._section = section
-        self._data = data
-        self._lock = threading.RLock()
+    def __init__(self, section: str, data: List[str]) -> None:
+        self._section = section  # type: str
+        self._data = data  # type: List[str]
+        self._lock = threading.RLock()  # type: threading.RLock
         thread = threading.Thread(target=self._thread)
         thread.daemon = True
         thread.start()
 
-    def append(self, line) -> None:
+    def append(self, line: str) -> None:
         self._data.append(line)
 
     def flush(self) -> None:
