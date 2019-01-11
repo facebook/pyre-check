@@ -188,9 +188,8 @@ module State = struct
               resolution
         in
         let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
-          let open Annotated.Access in
           match element with
-          | Signature {
+          | TypeCheck.AccessState.Signature {
               signature = Annotated.Signature.Found { callable; _ };
               arguments;
               _;
@@ -209,11 +208,11 @@ module State = struct
           | _ ->
               type_accumulator
         in
-        Annotated.Access.fold
+        TypeCheck.State.forward_access
           ~resolution
           ~initial:resolution
           ~f:propagate_access
-          (Annotated.Access.create access)
+          access
       in
       Visit.collect_accesses statement
       |> List.fold ~init:resolution ~f:propagate

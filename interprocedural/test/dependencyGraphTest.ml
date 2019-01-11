@@ -238,16 +238,11 @@ let test_type_collection _ =
       |> List.hd_exn
       |> fun { Node.value = access; _ } ->
       if String.equal (Access.show access) (Access.show test_access) then
-        let open Annotated in
-        let open Access in
-        let last_element =
-          Annotated.Access.create access
-          |> Annotated.Access.last_element ~resolution
-        in
+        let last_element = TypeCheck.State.last_element ~resolution access in
         match last_element with
         | Signature {
             signature =
-              Signature.Found {
+              Annotated.Signature.Found {
                 callable = { Type.Callable.kind = Type.Callable.Named callable_type; _ };
                 _;
               };

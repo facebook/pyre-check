@@ -14,6 +14,79 @@ open Statement
 module Error = AnalysisError
 
 
+module AccessState = struct
+  (* Keep track of objects whose type might be determined later on or that might serve as implicit
+     argument to a call. *)
+  type target = {
+    access: Access.t;
+    annotation: Type.t;
+  }
+
+  type origin =
+    | Instance of Annotated.Attribute.t
+    | Module of Access.t
+  [@@deriving show]
+
+  type element =
+    | Signature of {
+        signature: AnnotatedSignature.t;
+        callees: Type.Callable.t list;
+        arguments: Argument.t list;
+      }
+    | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+    | NotCallable of Type.t
+    | Value
+  [@@deriving show]
+
+  type 'accumulator t = {
+    resolution: Resolution.t;
+    accumulator: 'accumulator;
+    f: 'accumulator
+      -> resolution: Resolution.t
+      -> resolved: Annotation.t
+      -> element: element
+      -> lead: Access.t
+      -> 'accumulator;
+    resolved: Annotation.t option;
+    target: target option;
+    continue: bool;
+  }
+
+
+  let create ~resolution ~accumulator ~f ?resolved ?target ?(continue = true) () =
+    { resolution; accumulator; f; resolved; target; continue }
+
+
+  let step
+      ({ resolution; accumulator; f; _ } as state)
+      ?element
+      ?resolved
+      ?target
+      ?(continue = true)
+      ~lead
+      () =
+    let accumulator =
+      let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
+      let element = Option.value element ~default:Value in
+      f accumulator ~resolution ~resolved ~element ~lead
+    in
+    {
+      state with
+      accumulator;
+      resolved;
+      target;
+      continue;
+    }
+
+
+  let abort state ?element ~lead () =
+    step state ?element ~continue:false ~lead ()
+
+
+  let annotation { annotation; _ } =
+    annotation
+end
+
 module State = struct
   type nested_define_state = {
     nested_resolution: Resolution.t;
@@ -565,6 +638,609 @@ module State = struct
     resolved: Type.t;
   }
 
+  (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
+     `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
+     we're currently folding over. *)
+  let forward_access ~resolution ~initial ~f access =
+    (* Resolve `super()` calls. *)
+    let access, resolution =
+      match access with
+      | (Access.Identifier "super") :: (Access.Call _) :: tail ->
+          (Resolution.parent resolution
+           >>| (fun parent ->
+               Access.expression parent
+               |> Resolution.parse_annotation resolution)
+           >>= Resolution.class_representation resolution
+           >>| (fun { Resolution.successors; _ } -> successors)
+           >>|  List.filter
+             ~f:(fun name -> Option.is_some (Resolution.class_definition resolution name))
+           >>| List.hd
+           >>| function
+           | Some superclass ->
+               let super = Access.Identifier "$super" in
+               let resolution =
+                 Resolution.set_local
+                   resolution
+                   ~access:[super]
+                   ~annotation:(Annotation.create superclass)
+               in
+               super :: tail, resolution
+           | None ->
+               access, resolution)
+          |> Option.value ~default:(access, resolution)
+      | _ ->
+          access, resolution
+    in
+
+    (* Resolve `type()` calls. *)
+    let access, resolution =
+      match access with
+      | (Access.Identifier "type")
+        :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
+        :: tail ->
+          let access = Access.Identifier "$type" in
+          let resolution =
+            let annotation =
+              Resolution.resolve resolution value
+              |> Type.meta
+              |> Annotation.create
+            in
+            Resolution.set_local resolution ~access:[access] ~annotation
+          in
+          access :: tail, resolution
+      | _ ->
+          access, resolution
+    in
+
+    (* Resolve function redirects. E.g. resolve `abs(x)` to `x.__abs__()`. *)
+    let access =
+      match access with
+      | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
+          Access.redirect ~arguments ~location ~name:[Access.Identifier name]
+          >>| (fun redirect -> redirect @ tail)
+          |> Option.value ~default:access
+      | _ ->
+          access
+    in
+
+    (* Resolve module exports. *)
+    let access =
+      (* This is necessary due to export/module name conflicts: P59503092 *)
+      let widening_threshold = 25 in
+      let rec resolve_exports_fixpoint ~access ~visited ~count =
+        if Set.mem visited access || count > widening_threshold then
+          access
+        else
+          let rec resolve_exports ~lead ~tail =
+            match tail with
+            | head :: tail ->
+                Resolution.module_definition resolution lead
+                >>| (fun definition ->
+                    match
+                      Module.aliased_export definition [head] with
+                    | Some export ->
+                        export @ tail
+                    | _ ->
+                        resolve_exports ~lead:(lead @ [head]) ~tail)
+                |> Option.value ~default:access
+            | _ ->
+                access
+          in
+          match access with
+          | head :: tail ->
+              resolve_exports_fixpoint
+                ~access:(resolve_exports ~lead:[head] ~tail)
+                ~visited:(Set.add visited access)
+                ~count:(count + 1)
+          | _ ->
+              access
+      in
+      resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0
+    in
+
+    let rec fold ~state ~lead ~tail =
+      let { AccessState.accumulator; resolved; target; resolution; _ } = state in
+      let find_method ~parent ~name =
+        parent
+        |> Resolution.class_definition resolution
+        >>| Annotated.Class.create
+        >>| Annotated.Class.attribute ~resolution ~name ~instantiated:parent ~transitive:true
+        >>= fun attribute -> Option.some_if (Annotated.Attribute.defined attribute) attribute
+        >>| Annotated.Attribute.annotation
+        >>| Annotation.annotation
+        >>= function
+        | Type.Callable callable ->
+            Some callable
+        | _ ->
+            None
+      in
+      let resolve_callables
+          ~implicit_parameter_annotation
+          ~callables
+          ~arguments:{ Node.location; value = arguments } =
+        let signatures =
+          let signature callable =
+            let resolve_independent_callable () =
+              let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
+              let backup () =
+                let name, backup_argument =
+                  match target, List.rev lead, callable with
+                  | Some _, _ :: rest, { Type.Callable.kind = Type.Callable.Named name; _ } ->
+                      name, rest
+                  | _ ->
+                      [], []
+                in
+                match arguments, Access.backup ~name with
+                | [{ Argument.value; _ }], Some name ->
+                    let arguments = [{
+                        Argument.value = {
+                          Node.location;
+                          value = Expression.Access backup_argument;
+                        };
+                        name = None;
+                      }]
+                    in
+                    Resolution.resolve resolution value
+                    |> fun annotation -> find_method ~parent:annotation ~name
+                    >>| fun callable -> Annotated.Signature.select ~arguments ~resolution ~callable
+                | _ ->
+                    None
+              in
+
+              match signature, target with
+              | Annotated.Signature.NotFound _, Some _ ->
+                  backup ()
+                  |> Option.value ~default:signature
+              | _ ->
+                  signature
+            in
+            let resolve_typed_dictionary_get_item_callable ~fields ~name =
+              match arguments with
+              | {
+                Argument.value = {
+                  Node.value = Expression.String { value = key; _ };
+                  _;
+                };
+                _;
+              } :: [] ->
+                  begin
+                    match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+                    | Some { annotation; _ } ->
+                        Annotated.Signature.Found {
+                          callable = Type.Callable.with_return_annotation callable ~annotation;
+                          constraints = Type.Map.empty;
+                        }
+                    | None ->
+                        Annotated.Signature.NotFound {
+                          callable =
+                            Type.Callable.with_return_annotation
+                              callable
+                              ~annotation:Type.Top;
+                          reason =
+                            Some (Annotated.Signature.TypedDictionaryMissingKey {
+                                typed_dictionary_name = name;
+                                missing_key = key;
+                              });
+                        }
+                  end
+              | _ ->
+                  let keys = List.map fields ~f:(fun { name; _ } -> name) in
+                  Annotated.Signature.NotFound {
+                    callable = Type.Callable.with_return_annotation callable ~annotation:Type.Top;
+                    reason = Some (Annotated.Signature.TypedDictionaryAccessWithNonLiteral keys);
+                  }
+            in
+            let resolve_typed_dictionary_set_item_callable ~fields ~name =
+              match arguments with
+              | { Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
+                :: _value :: [] ->
+                  begin
+                    let annotation =
+                      match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
+                      | Some { annotation; _ } -> Some annotation
+                      | _ -> None
+                    in
+                    match annotation with
+                    | Some annotation ->
+                        Type.TypedDictionary.setter ~callable ~annotation
+                        |> fun callable ->
+                        Annotated.Signature.select
+                          ~arguments
+                          ~resolution
+                          ~callable
+                    | None ->
+                        Annotated.Signature.NotFound {
+                          callable;
+                          reason =
+                            Some (Annotated.Signature.TypedDictionaryMissingKey {
+                                typed_dictionary_name = name;
+                                missing_key = key;
+                              });
+                        }
+                  end
+              | _ ->
+                  let keys = List.map fields ~f:(fun { name; _ } -> name) in
+                  Annotated.Signature.NotFound {
+                    callable;
+                    reason = Some (Annotated.Signature.TypedDictionaryAccessWithNonLiteral keys);
+                  }
+            in
+            let tail_is access name =
+              match List.last access with
+              | Some (Access.Identifier get_item) -> get_item = name
+              | _ -> false
+            in
+            match implicit_parameter_annotation, callable with
+            | Some (Type.TypedDictionary { fields; name; _ }),
+              { Type.Record.Callable.kind = Named access; _ }
+              when tail_is access "__getitem__" ->
+                resolve_typed_dictionary_get_item_callable ~fields ~name
+            | Some (Type.TypedDictionary { fields; name; _ }),
+              { Type.Record.Callable.kind = Named access; _ }
+              when tail_is access "__setitem__" ->
+                resolve_typed_dictionary_set_item_callable ~fields ~name
+            | _ ->
+                resolve_independent_callable ()
+          in
+          List.map callables ~f:signature
+        in
+
+        (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
+        let resolution =
+          let update_resolution resolution signature =
+            target
+            >>= (fun { AccessState.access; annotation } ->
+                Annotated.Signature.determine signature ~resolution ~annotation
+                >>| (fun determined ->
+                    match access with
+                    | [Access.Identifier _] ->
+                        Resolution.set_local
+                          resolution
+                          ~access
+                          ~annotation:(Annotation.create determined)
+                    | _ ->
+                        resolution))
+            |> Option.value ~default:resolution
+          in
+          List.fold signatures ~init:resolution ~f:update_resolution
+        in
+
+        let signature, callees =
+          let not_found = function | Annotated.Signature.NotFound _ -> true | _ -> false in
+          match List.partition_tf signatures ~f:not_found with
+          | [], [] ->
+              None, []
+          | not_found :: _, _ ->
+              Some not_found, []
+          | [], (Annotated.Signature.Found { callable; constraints } ) :: found ->
+              let callables, all_constraints =
+                let extract = function
+                  | Annotated.Signature.Found { callable; constraints } -> callable, constraints
+                  | _ -> failwith "Not all sigantures were found."
+                in
+                List.map found ~f:extract
+                |> List.unzip
+              in
+              let callees = callable :: callables in
+              let signature =
+                let constraints =
+                  let join_constraints left right =
+                    let merge ~key:_ = function
+                      | `Left value -> Some value
+                      | `Right value -> Some value
+                      | `Both (left, right) -> Some (Resolution.join resolution left right)
+                    in
+                    Map.merge left right ~f:merge
+                  in
+                  List.fold all_constraints ~init:constraints ~f:join_constraints
+                in
+                let joined_callable =
+                  List.map callables ~f:(fun callable -> Type.Callable callable)
+                  |> List.fold ~init:(Type.Callable callable) ~f:(Resolution.join resolution)
+                in
+                match joined_callable with
+                | Type.Callable callable ->
+                    Annotated.Signature.Found { callable; constraints }
+                | _ ->
+                    Annotated.Signature.NotFound { callable; reason = None }
+              in
+              Some signature, callees
+          | _ ->
+              None, []
+        in
+
+        match signature with
+        | Some
+            (Annotated.Signature.Found {
+                callable = { implementation = { annotation; _ }; _ };
+                _;
+              } as signature)
+        | Some
+            (Annotated.Signature.NotFound {
+                callable = { implementation = { annotation; _ }; _ };
+                _;
+              } as signature)
+          when Type.is_resolved annotation ->
+            AccessState.step
+              { state with AccessState.resolution }
+              ~element:(AccessState.Signature { signature; callees; arguments })
+              ~resolved:(Annotation.create annotation)
+              ~lead
+              ()
+        | _ ->
+            AccessState.abort state ~lead ()
+      in
+
+      let local_attributes ~resolved ~lead ~name =
+        let annotation = Annotation.annotation resolved in
+        let attributes =
+          let find_attribute annotation =
+            let instantiated, class_attributes =
+              if Type.is_meta annotation then
+                Type.single_parameter annotation, true
+              else
+                annotation, false
+            in
+            Option.some_if (not (Type.equal instantiated Type.ellipses)) instantiated
+            >>= Resolution.class_definition resolution
+            >>| Annotated.Class.create
+            >>| (fun definition ->
+                let attribute =
+                  Annotated.Class.attribute
+                    definition
+                    ~transitive:true
+                    ~class_attributes
+                    ~resolution
+                    ~name
+                    ~instantiated
+                in
+                if not (Annotated.Attribute.defined attribute) then
+                  Annotated.Class.fallback_attribute definition ~resolution ~name
+                  |> Option.value ~default:attribute
+                else
+                  attribute)
+            |> Option.to_list
+          in
+          match annotation with
+          | Type.Variable { constraints = Explicit annotations; _ }
+          | Type.Union annotations ->
+              List.map annotations ~f:find_attribute
+              |> List.concat
+          | Type.Variable { constraints = Bound annotation; _ }
+          | annotation ->
+              find_attribute annotation
+        in
+        let resolved =
+          match attributes with
+          | [attribute] ->
+              begin
+                let is_class = Type.is_meta annotation in
+                match Resolution.get_local resolution ~access:lead ~global_fallback:is_class with
+                | Some ({
+                    Annotation.mutability = Immutable { Annotation.scope = Global; original };
+                    _;
+                  } as local) when Type.is_unknown original ->
+                    let original = Annotation.original (Annotated.Attribute.annotation attribute) in
+                    { local with mutability = Immutable { Annotation.scope = Global; original } }
+                | Some local ->
+                    local
+                | None ->
+                    Annotated.Attribute.annotation attribute
+              end
+          | _ ->
+              attributes
+              |> List.map ~f:Annotated.Attribute.annotation
+              |> List.map ~f:Annotation.annotation
+              |> Type.union
+              |> Annotation.create
+        in
+        resolved, attributes
+      in
+
+      match tail with
+      | head :: tail ->
+          let qualifier = lead in
+          let lead = lead @ [head] in
+
+          let ({ AccessState.continue; accumulator; _ } as state) =
+            match resolved, head with
+            (* Typed context: operations are on a class definition. *)
+            | Some resolved, Access.Call arguments ->
+                (* Callable invocation. *)
+                let resolved = Annotation.annotation resolved in
+                let target =
+                  if Type.is_meta resolved then
+                    Some { AccessState.access = lead; annotation = Type.single_parameter resolved }
+                  else
+                    target
+                in
+                let implicit_parameter_annotation, callables =
+                  match resolved with
+                  | meta when Type.is_meta resolved ->
+                      let callable =
+                        match Type.single_parameter meta with
+                        | TypedDictionary { name; fields; total } ->
+                            Type.TypedDictionary.constructor ~name ~fields ~total
+                            |> Option.some
+                        | Variable { constraints = Type.Unconstrained; _ } ->
+                            find_method ~parent:resolved ~name:(Access.create "__call__")
+                        | Variable { constraints = Type.Explicit constraints; _ }
+                          when List.length constraints > 1 ->
+                            find_method ~parent:resolved ~name:(Access.create "__call__")
+                        | meta_parameter ->
+                            let class_definition =
+                              let parent =
+                                match meta_parameter with
+                                | Variable { constraints = Type.Explicit [parent]; _ } ->
+                                    parent
+                                | Variable { constraints = Type.Bound parent; _ } ->
+                                    parent
+                                | _ ->
+                                    meta_parameter
+                              in
+                              Resolution.class_definition resolution parent
+                              >>| Annotated.Class.create
+                            in
+                            match class_definition >>| Annotated.Class.constructor ~resolution with
+                            | Some (Type.Callable callable) -> Some callable
+                            | _ -> None
+                      in
+                      target >>| AccessState.annotation,
+                      Option.to_list callable
+                  | Type.Callable callable ->
+                      target >>| AccessState.annotation,
+                      [callable]
+                  | Type.Union annotations when List.for_all annotations ~f:Type.is_callable ->
+                      let extract_callable = function
+                        | Type.Callable callable -> callable
+                        | _ -> failwith "Not a callable"
+                      in
+                      target >>| AccessState.annotation,
+                      List.map annotations ~f:extract_callable
+                  | _ ->
+                      let callable =
+                        find_method ~parent:resolved ~name:(Access.create "__call__")
+                      in
+                      Some resolved,
+                      Option.to_list callable
+                in
+                if List.is_empty callables then
+                  AccessState.abort state ~element:(NotCallable resolved) ~lead ()
+                else
+                  resolve_callables ~implicit_parameter_annotation ~callables ~arguments
+
+            | Some resolved, Access.Identifier _
+              when Type.is_callable (Annotation.annotation resolved) ->
+                (* Nested function. *)
+                Resolution.get_local resolution ~access:lead
+                >>| (fun resolved -> AccessState.step state ~resolved ~lead ())
+                |> Option.value ~default:(AccessState.abort ~lead state ())
+
+            | Some resolved, Access.Identifier _ ->
+                (* Attribute access. *)
+                let target =
+                  {
+                    AccessState.access = qualifier;
+                    annotation = Annotation.annotation resolved;
+                  }
+                in
+                let resolved, attributes = local_attributes ~resolved ~lead ~name:[head] in
+                if List.is_empty attributes then
+                  AccessState.abort ~lead state ()
+                else
+                  let defined = List.for_all attributes ~f:Annotated.Attribute.defined in
+                  let element =
+                    AccessState.Attribute {
+                      attribute = [head];
+                      (* TODO(T37504097): pass attributes to client. *)
+                      origin = Instance (List.hd_exn attributes);
+                      defined;
+                    }
+                  in
+                  AccessState.step state ~resolved ~target ~element ~continue:defined ~lead ()
+
+            | None, Access.Expression expression ->
+                (* Arbitrary expression. *)
+                let resolved = Annotation.create (Resolution.resolve resolution expression) in
+                AccessState.step state ~resolved ~lead ()
+
+            | None, _ ->
+                (* Module or global variable. *)
+                begin
+                  let annotation =
+                    match Resolution.get_local resolution ~access:lead with
+                    | Some annotation ->
+                        Some annotation
+                    | _ ->
+                        (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
+                        let getattr =
+                          Resolution.get_local
+                            resolution
+                            ~access:(
+                              qualifier @
+                              [Access.Identifier "__getattr__"]
+                            )
+                          >>| Annotation.annotation
+                        in
+                        let correct_getattr_arity signature =
+                          Type.Callable.Overload.parameters signature
+                          >>| (fun parameters -> List.length parameters == 1)
+                          |> Option.value ~default:false
+                        in
+                        match getattr with
+                        | Some (Callable { overloads = [signature]; _ })
+                        | Some (Callable { implementation = signature; _ })
+                          when correct_getattr_arity signature ->
+                            Some (
+                              Annotation.create_immutable
+                                ~global:true
+                                ~original:(Some Type.Top)
+                                (Type.Callable.Overload.return_annotation signature)
+                            )
+                        | _ ->
+                            None
+                  in
+                  match annotation with
+                  | Some resolved ->
+                      (* Locally known variable (either local or global). *)
+                      let suppressed =
+                        let rec suppressed lead = function
+                          | head :: tail ->
+                              begin
+                                let lead = lead @ [head] in
+                                match Resolution.module_definition resolution lead with
+                                | Some definition when Module.empty_stub definition -> true
+                                | _ -> suppressed lead tail
+                              end
+                          | [] ->
+                              false
+                        in
+                        Annotation.annotation resolved
+                        |> Type.class_name
+                        |> suppressed []
+                      in
+                      if not suppressed then
+                        AccessState.step state ~resolved ~lead ()
+                      else
+                        AccessState.abort state ~lead ()
+                  | None ->
+                      begin
+                        match Resolution.module_definition resolution lead with
+                        | Some definition when Module.empty_stub definition ->
+                            AccessState.abort state ~lead ()
+                        | Some _ ->
+                            AccessState.create ~resolution ~accumulator ~f ()
+                        | None ->
+                            let element =
+                              AccessState.Attribute {
+                                attribute = [head];
+                                origin = Module qualifier;
+                                defined = false;
+                              }
+                            in
+                            AccessState.abort state ~element ~lead ()
+                      end
+                end
+
+            | _ ->
+                AccessState.abort state ~lead ()
+          in
+          if continue then
+            fold ~state ~lead ~tail
+          else
+            accumulator
+      | _ ->
+          accumulator
+    in
+    fold ~state:(AccessState.create ~accumulator:initial ~f ~resolution ()) ~lead:[] ~tail:access
+
+
+  let last_element ~resolution access =
+    forward_access
+      ~resolution
+      ~initial:AccessState.Value
+      ~f:(fun _ ~resolution:_ ~resolved:_ ~element ~lead:_ -> element)
+      access
 
   let rec initial
       ?(configuration = Configuration.Analysis.create ())
@@ -920,8 +1596,6 @@ module State = struct
     |> check_parameter_annotations
     |> check_behavioral_subtyping
 
-
-
   and forward_expression
       ~state:({ resolution; define; _ } as state)
       ~expression:{ Node.location; value } =
@@ -1107,9 +1781,7 @@ module State = struct
     | Access access ->
         (* Walk through the access. *)
         let _, state, resolved =
-          let open Annotated in
-          let open Access in
-          let forward_access (found_error, state, _) ~resolution ~resolved ~element ~lead =
+          let forward (found_error, state, _) ~resolution ~resolved ~element ~lead =
             let state = { state with resolution } in
             if found_error then
               found_error, state, Annotation.annotation resolved
@@ -1126,16 +1798,16 @@ module State = struct
             else
               let error =
                 match element with
-                | Signature {
+                | AccessState.Signature {
                     signature =
-                      (Signature.NotFound {
+                      (Annotated.Signature.NotFound {
                           callable = { Type.Callable.kind; _ };
                           reason = Some reason;
                           _;
                         });
                     _;
                   } ->
-                    let open Signature in
+                    let open Annotated.Signature in
                     let error =
                       let callee =
                         match kind with
@@ -1262,11 +1934,11 @@ module State = struct
               error >>| add_error ~state |> Option.value ~default:state,
               Annotation.annotation resolved
           in
-          Access.fold
-            (Access.create access)
+          forward_access
+            access
             ~resolution
             ~initial:(false, state, Type.Top)
-            ~f:forward_access
+            ~f:forward
         in
 
         (* Check arguments and nested expressions. *)
@@ -1744,20 +2416,19 @@ module State = struct
           | Access access ->
               let annotation, element =
                 let annotation, element =
-                  let open Annotated in
                   let fold _ ~resolution:_ ~resolved ~element ~lead:_ =
                     resolved, element
                   in
-                  Access.create access
-                  |> Access.fold
+                  forward_access
                     ~f:fold
                     ~resolution
-                    ~initial:(Annotation.create Type.Top, Access.Value)
+                    ~initial:(Annotation.create Type.Top, AccessState.Value)
+                    access
                 in
                 let can_override_with_explicit =
                   match element with
-                  | Annotated.Access.Value -> true
-                  | Annotated.Access.Attribute { origin = Annotated.Access.Module []; _ } -> true
+                  | AccessState.Value -> true
+                  | AccessState.Attribute { origin = AccessState.Module []; _ } -> true
                   | _ -> false
                 in
                 if can_override_with_explicit && explicit then
@@ -1798,7 +2469,6 @@ module State = struct
                    not is_typed_dictionary_initialization then
                   let kind =
                     let open Annotated in
-                    let open Access in
                     match element with
                     | Attribute { attribute = access; origin = Instance attribute; _ } ->
                         Error.IncompatibleAttributeType {
@@ -1836,8 +2506,6 @@ module State = struct
               let state =
                 let error =
                   let error =
-                    let open Annotated in
-                    let open Access in
                     let insufficiently_annotated =
                       Type.equal expected Type.Top || Type.equal expected Type.Object
                     in
@@ -1868,12 +2536,12 @@ module State = struct
                         )
                     | Attribute { attribute = access; origin = Instance attribute; defined }
                       when defined && insufficiently_annotated ->
-                        let attribute_location = Attribute.location attribute in
+                        let attribute_location = Annotated.Attribute.location attribute in
                         Some (
                           Error.create
                             ~location:attribute_location
                             ~kind:(Error.MissingAttributeAnnotation {
-                                parent = Attribute.parent attribute;
+                                parent = Annotated.Attribute.parent attribute;
                                 missing_annotation = {
                                   Error.name = access;
                                   annotation = actual_annotation;
@@ -2210,9 +2878,7 @@ module State = struct
               end
 
           | Access access ->
-              let open Annotated in
-              let open Access in
-              let element = Access.last_element ~resolution (Access.create access) in
+              let element = last_element ~resolution access in
               let resolution =
                 match Resolution.get_local resolution ~access, element with
                 | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
@@ -2223,7 +2889,7 @@ module State = struct
                 | _, Attribute { origin = Instance attribute; defined; _ }
                   when defined ->
                     begin
-                      match Attribute.annotation attribute with
+                      match Annotated.Attribute.annotation attribute with
                       | {
                         Annotation.annotation = Type.Optional parameter;
                         mutability = Annotation.Mutable
@@ -2238,7 +2904,7 @@ module State = struct
                           let refined =
                             Refinement.refine
                               ~resolution
-                              (Attribute.annotation attribute)
+                              (Annotated.Attribute.annotation attribute)
                               parameter
                           in
                           Resolution.set_local
@@ -2309,15 +2975,13 @@ module State = struct
               operator = ComparisonOperator.Is;
               right = { Node.value = Access [Access.Identifier "None"]; _ };
             } ->
-              let open Annotated in
-              let open Access in
-              let element = Access.last_element ~resolution (Access.create access) in
+              let element = last_element ~resolution access in
               let refined =
                 match element with
                 | Attribute { origin = Instance attribute; defined; _ } when defined ->
                     Refinement.refine
                       ~resolution
-                      (Attribute.annotation attribute)
+                      (Annotated.Attribute.annotation attribute)
                       (Type.Optional Type.Bottom)
                 | _ ->
                     Annotation.create (Type.Optional Type.Bottom)
@@ -2379,9 +3043,8 @@ module State = struct
         in
         let to_import_error import =
           let add_import_error errors ~resolution:_ ~resolved:_ ~element ~lead:_ =
-            let open Annotated.Access in
             match element with
-            | Attribute { origin = Module _; defined = false; _ } ->
+            | AccessState.Attribute { origin = Module _; defined = false; _ } ->
                 Error.create
                   ~location
                   ~kind:(Error.UndefinedImport import)
@@ -2390,11 +3053,7 @@ module State = struct
             | _ ->
                 errors
           in
-          Annotated.Access.fold
-            ~f:add_import_error
-            ~resolution
-            ~initial:[]
-            (Annotated.Access.create import)
+          forward_access ~f:add_import_error ~resolution ~initial:[] import
         in
         List.concat_map ~f:to_import_error imports
         |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)

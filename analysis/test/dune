@@ -28,7 +28,6 @@
   TypeCheckTest
   TypeOrderTest
   TypeTest
-  annotatedAccessTest
   annotatedCallableTest
   annotatedClassTest
   annotatedDefineTest

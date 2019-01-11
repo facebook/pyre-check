@@ -9,6 +9,30 @@ open Ast
 open Statement
 
 module Error = AnalysisError
+module AccessState: sig
+  (* Keep track of objects whose type might be determined later on or that might serve as implicit
+     argument to a call. *)
+  type target = {
+    access: Access.t;
+    annotation: Type.t;
+  }
+
+  type origin =
+    | Instance of Annotated.Attribute.t
+    | Module of Access.t
+  [@@deriving show]
+
+  type element =
+    | Signature of {
+        signature: AnnotatedSignature.t;
+        callees: Type.Callable.t list;
+        arguments: Argument.t list;
+      }
+    | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+    | NotCallable of Type.t
+    | Value
+  [@@deriving show]
+end
 
 
 module State : sig
@@ -71,6 +95,19 @@ module State : sig
     state: t;
     resolved: Type.t;
   }
+  val forward_access
+    :  resolution: Resolution.t
+    -> initial: 'a
+    -> f:('a
+          -> resolution: Resolution.t
+          -> resolved: Annotation.t
+          -> element: AccessState.element
+          -> lead: Access.t
+          -> 'a)
+    -> Expression.t Access.access sexp_list
+    -> 'a
+  val last_element: resolution: Resolution.t -> Access.t -> AccessState.element
+
   val parse_and_check_annotation: state: t -> Expression.t -> t * Type.t
   val forward_expression: state: t -> expression: Expression.t -> resolved
   val forward_statement: state: t -> statement: Statement.t -> t

@@ -8,5 +8,4 @@ module Class = AnnotatedClass
 module Attribute = Class.Attribute
 module Method = Class.Method
 module Define = AnnotatedDefine
-module Access = AnnotatedAccess
 module Signature = AnnotatedSignature
