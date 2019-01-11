@@ -112,6 +112,15 @@ let test_initial _ =
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     "def foo(x): ..."
     (create ["x", Type.Bottom]);
+  assert_initial
+    ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+    "def foo(x: typing.Any): ..."
+    (create ~immutables:["x", false] ["x", Type.Object]);
+  assert_initial
+    ~parent:"Foo"
+    ~errors:[]
+    "def __eq__(self, other: typing.Any): ..."
+    (create ~immutables:["other", false] ["self", Type.Primitive "Foo"; "other", Type.Object]);
 
   assert_initial
     ~parent:"Foo"
