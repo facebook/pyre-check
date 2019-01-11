@@ -28,7 +28,8 @@ module State = struct
 
   let show { unawaited; _ } =
     Map.to_alist unawaited
-    |> List.map ~f:(fun (access, state) -> Format.asprintf "%a -> %a" Access.pp access pp_state state)
+    |> List.map
+      ~f:(fun (access, state) -> Format.asprintf "%a -> %a" Access.pp access pp_state state)
     |> String.concat ~sep:", "
 
 
