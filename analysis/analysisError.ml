@@ -255,26 +255,26 @@ let messages ~detailed:_ ~define location kind =
             begin
               match given_annotation with
               | Some given_annotation when Type.equal given_annotation Type.Object ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` must have a type other than `Any`."
-                    Access.pp name
-                    Type.pp parent;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` must have a type other than `Any`."
+                      Access.pp name
+                      Type.pp parent;
+                  ]
               | Some given_annotation when Type.contains_any given_annotation ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
-                    Access.pp name
-                    Type.pp parent;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
+                      Access.pp name
+                      Type.pp parent;
+                  ]
               | _ ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` has no type specified."
-                    Access.pp name
-                    Type.pp parent;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has no type specified."
+                      Access.pp name
+                      Type.pp parent;
+                  ]
             end
         | { name; annotation = Some annotation; evidence_locations; given_annotation } ->
             let detail =
@@ -293,33 +293,33 @@ let messages ~detailed:_ ~define location kind =
             begin
               match given_annotation with
               | Some given_annotation when Type.equal given_annotation Type.Object ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                    Access.pp name
-                    Type.pp parent
-                    Type.pp annotation;
-                  detail;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+                      Access.pp name
+                      Type.pp parent
+                      Type.pp annotation;
+                    detail;
+                  ]
               | Some given_annotation when Type.contains_any given_annotation ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` is used as type `%a` \
-                     and must have a type that does not contain `Any`."
-                    Access.pp name
-                    Type.pp parent
-                    Type.pp annotation;
-                  detail;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` is used as type `%a` \
+                       and must have a type that does not contain `Any`."
+                      Access.pp name
+                      Type.pp parent
+                      Type.pp annotation;
+                    detail;
+                  ]
               | _ ->
-                [
-                  Format.asprintf
-                    "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                    Access.pp name
-                    Type.pp parent
-                    Type.pp annotation;
-                  detail;
-                ]
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+                      Access.pp name
+                      Type.pp parent
+                      Type.pp annotation;
+                    detail;
+                  ]
             end
         | { name; annotation = None; _ } ->
             [
@@ -329,53 +329,53 @@ let messages ~detailed:_ ~define location kind =
             ]
       end
   | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
-      when Type.is_concrete annotation ->
+    when Type.is_concrete annotation ->
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
-          [
-            Format.asprintf
-              "Parameter `%s` has type `%a` but type `Any` is specified."
-              (Access.show_sanitized name)
-              Type.pp annotation
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` has type `%a` but type `Any` is specified."
+                (Access.show_sanitized name)
+                Type.pp annotation
+            ]
         | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            Format.asprintf
-              "Parameter `%s` is usde as type `%a` \
-              and must have a type that does not contain `Any`"
-              (Access.show_sanitized name)
-              Type.pp annotation
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` is usde as type `%a` \
+                 and must have a type that does not contain `Any`"
+                (Access.show_sanitized name)
+                Type.pp annotation
+            ]
         | _ ->
-          [
-            Format.asprintf
-              "Parameter `%s` has type `%a` but no type is specified."
-              (Access.show_sanitized name)
-              Type.pp annotation
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` has type `%a` but no type is specified."
+                (Access.show_sanitized name)
+                Type.pp annotation
+            ]
       end
   | MissingParameterAnnotation { name; given_annotation; _ } ->
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
-          [
-            Format.asprintf
-              "Parameter `%s` must have a type other than `Any`."
-              (Access.show_sanitized name)
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` must have a type other than `Any`."
+                (Access.show_sanitized name)
+            ]
         | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            Format.asprintf
-              "Parameter `%s` must have a type that does not contain `Any`."
-              (Access.show_sanitized name)
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` must have a type that does not contain `Any`."
+                (Access.show_sanitized name)
+            ]
         | _ ->
-          [
-            Format.asprintf
-              "Parameter `%s` has no type specified."
-              (Access.show_sanitized name)
-          ]
+            [
+              Format.asprintf
+                "Parameter `%s` has no type specified."
+                (Access.show_sanitized name)
+            ]
       end
   | MissingReturnAnnotation {
       annotation = Some annotation;
@@ -400,37 +400,37 @@ let messages ~detailed:_ ~define location kind =
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
-          [
-            (Format.asprintf
-               "Returning `%a` but type `Any` is specified."
-               Type.pp annotation);
-            detail;
-          ]
+            [
+              (Format.asprintf
+                 "Returning `%a` but type `Any` is specified."
+                 Type.pp annotation);
+              detail;
+            ]
         | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            (Format.asprintf
-               "Returning `%a` but return type must be specified as type \
-               that does not contain `Any`."
-               Type.pp annotation);
-            detail;
-          ]
+            [
+              (Format.asprintf
+                 "Returning `%a` but return type must be specified as type \
+                  that does not contain `Any`."
+                 Type.pp annotation);
+              detail;
+            ]
         | _ ->
-          [
-            (Format.asprintf
-               "Returning `%a` but no return type is specified."
-               Type.pp annotation);
-            detail;
-          ]
+            [
+              (Format.asprintf
+                 "Returning `%a` but no return type is specified."
+                 Type.pp annotation);
+              detail;
+            ]
       end
   | MissingReturnAnnotation { given_annotation; _ } ->
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
-          ["Return type must be specified as type other than `Any`."]
+            ["Return type must be specified as type other than `Any`."]
         | Some given_annotation when Type.contains_any given_annotation ->
-          ["Return type must be specified as type that does not contain `Any`."]
+            ["Return type must be specified as type that does not contain `Any`."]
         | _ ->
-          ["Return type is not specified."]
+            ["Return type is not specified."]
       end
   | MissingGlobalAnnotation {
       name;
@@ -446,45 +446,45 @@ let messages ~detailed:_ ~define location kind =
         in
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
-              (Access.show_sanitized name)
-              Type.pp annotation;
-            Format.asprintf
-              "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-              (Access.show_sanitized name)
-              start_line
-              Type.pp annotation
-              evidence_string
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
+                (Access.show_sanitized name)
+                Type.pp annotation;
+              Format.asprintf
+                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
+                (Access.show_sanitized name)
+                start_line
+                Type.pp annotation
+                evidence_string
+            ]
         | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%s` has type `%a` a type must be specified \
-              that does not contain `Any`."
-              (Access.show_sanitized name)
-              Type.pp annotation;
-            Format.asprintf
-              "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-              (Access.show_sanitized name)
-              start_line
-              Type.pp annotation
-              evidence_string
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%s` has type `%a` a type must be specified \
+                 that does not contain `Any`."
+                (Access.show_sanitized name)
+                Type.pp annotation;
+              Format.asprintf
+                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
+                (Access.show_sanitized name)
+                start_line
+                Type.pp annotation
+                evidence_string
+            ]
         | _ ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%s` has type `%a` but no type is specified."
-              (Access.show_sanitized name)
-              Type.pp annotation;
-            Format.asprintf
-              "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-              (Access.show_sanitized name)
-              start_line
-              Type.pp annotation
-              evidence_string
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%s` has type `%a` but no type is specified."
+                (Access.show_sanitized name)
+                Type.pp annotation;
+              Format.asprintf
+                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
+                (Access.show_sanitized name)
+                start_line
+                Type.pp annotation
+                evidence_string
+            ]
       end
   | MissingGlobalAnnotation {
       name;
