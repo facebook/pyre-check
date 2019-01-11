@@ -890,8 +890,7 @@ module State = struct
         let signature, callees =
           let not_found = function | Annotated.Signature.NotFound _ -> true | _ -> false in
           match List.partition_tf signatures ~f:not_found with
-          | [], [] ->
-              None, []
+          (* Prioritize missing signatures for union type checking. *)
           | not_found :: _, _ ->
               Some not_found, []
           | [], (Annotated.Signature.Found { callable; constraints } ) :: found ->
