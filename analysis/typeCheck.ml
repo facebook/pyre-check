@@ -57,32 +57,6 @@ module AccessState = struct
     { resolution; accumulator; f; resolved; target; continue }
 
 
-  let step
-      ({ resolution; accumulator; f; _ } as state)
-      ?element
-      ?resolved
-      ?target
-      ?(continue = true)
-      ~lead
-      () =
-    let accumulator =
-      let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
-      let element = Option.value element ~default:Value in
-      f accumulator ~resolution ~resolved ~element ~lead
-    in
-    {
-      state with
-      accumulator;
-      resolved;
-      target;
-      continue;
-    }
-
-
-  let abort state ?element ~lead () =
-    step state ?element ~continue:false ~lead ()
-
-
   let annotation { annotation; _ } =
     annotation
 end
@@ -611,8 +585,7 @@ module State = struct
         | `Right next_resolution
         | `Both (_, next_resolution) -> Some next_resolution
       in
-      let resolution_fixpoint =
-        Int.Map.Tree.merge
+      let resolution_fixpoint = Int.Map.Tree.merge
           ~f:join_resolution_fixpoints
           previous.resolution_fixpoint
           next.resolution_fixpoint
@@ -642,6 +615,7 @@ module State = struct
      `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
      we're currently folding over. *)
   let forward_access ~resolution ~initial ~f access =
+    let open AccessState in
     (* Resolve `super()` calls. *)
     let access, resolution =
       match access with
@@ -671,7 +645,28 @@ module State = struct
       | _ ->
           access, resolution
     in
-
+    let step
+        ({ resolution; accumulator; f; _ } as state)
+        ?element
+        ?resolved
+        ?target
+        ?(continue = true)
+        ~lead
+        () =
+      let accumulator =
+        let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
+        let element = Option.value element ~default:Value in
+        f accumulator ~resolution ~resolved ~element ~lead
+      in
+      {
+        state with
+        accumulator;
+        resolved;
+        target;
+        continue;
+      }
+    in
+    let abort state ?element ~lead () = step state ?element ~continue:false ~lead () in
     (* Resolve `type()` calls. *)
     let access, resolution =
       match access with
@@ -961,14 +956,14 @@ module State = struct
                 _;
               } as signature)
           when Type.is_resolved annotation ->
-            AccessState.step
+            step
               { state with AccessState.resolution }
               ~element:(AccessState.Signature { signature; callees; arguments })
               ~resolved:(Annotation.create annotation)
               ~lead
               ()
         | _ ->
-            AccessState.abort state ~lead ()
+            abort state ~lead ()
       in
 
       let local_attributes ~resolved ~lead ~name =
@@ -1105,7 +1100,7 @@ module State = struct
                       Option.to_list callable
                 in
                 if List.is_empty callables then
-                  AccessState.abort state ~element:(NotCallable resolved) ~lead ()
+                  abort state ~element:(NotCallable resolved) ~lead ()
                 else
                   resolve_callables ~implicit_parameter_annotation ~callables ~arguments
 
@@ -1113,8 +1108,8 @@ module State = struct
               when Type.is_callable (Annotation.annotation resolved) ->
                 (* Nested function. *)
                 Resolution.get_local resolution ~access:lead
-                >>| (fun resolved -> AccessState.step state ~resolved ~lead ())
-                |> Option.value ~default:(AccessState.abort ~lead state ())
+                >>| (fun resolved -> step state ~resolved ~lead ())
+                |> Option.value ~default:(abort ~lead state ())
 
             | Some resolved, Access.Identifier _ ->
                 (* Attribute access. *)
@@ -1126,7 +1121,7 @@ module State = struct
                 in
                 let resolved, attributes = local_attributes ~resolved ~lead ~name:[head] in
                 if List.is_empty attributes then
-                  AccessState.abort ~lead state ()
+                  abort ~lead state ()
                 else
                   let defined = List.for_all attributes ~f:Annotated.Attribute.defined in
                   let element =
@@ -1137,12 +1132,12 @@ module State = struct
                       defined;
                     }
                   in
-                  AccessState.step state ~resolved ~target ~element ~continue:defined ~lead ()
+                  step state ~resolved ~target ~element ~continue:defined ~lead ()
 
             | None, Access.Expression expression ->
                 (* Arbitrary expression. *)
                 let resolved = Annotation.create (Resolution.resolve resolution expression) in
-                AccessState.step state ~resolved ~lead ()
+                step state ~resolved ~lead ()
 
             | None, _ ->
                 (* Module or global variable. *)
@@ -1200,14 +1195,14 @@ module State = struct
                         |> suppressed []
                       in
                       if not suppressed then
-                        AccessState.step state ~resolved ~lead ()
+                        step state ~resolved ~lead ()
                       else
-                        AccessState.abort state ~lead ()
+                        abort state ~lead ()
                   | None ->
                       begin
                         match Resolution.module_definition resolution lead with
                         | Some definition when Module.empty_stub definition ->
-                            AccessState.abort state ~lead ()
+                            abort state ~lead ()
                         | Some _ ->
                             AccessState.create ~resolution ~accumulator ~f ()
                         | None ->
@@ -1218,12 +1213,12 @@ module State = struct
                                 defined = false;
                               }
                             in
-                            AccessState.abort state ~element ~lead ()
+                            abort state ~element ~lead ()
                       end
                 end
 
             | _ ->
-                AccessState.abort state ~lead ()
+                abort state ~lead ()
           in
           if continue then
             fold ~state ~lead ~tail
