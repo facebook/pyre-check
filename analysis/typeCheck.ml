@@ -898,7 +898,7 @@ module State = struct
               let callables, all_constraints =
                 let extract = function
                   | Annotated.Signature.Found { callable; constraints } -> callable, constraints
-                  | _ -> failwith "Not all sigantures were found."
+                  | _ -> failwith "Not all signatures were found."
                 in
                 List.map found ~f:extract
                 |> List.unzip
