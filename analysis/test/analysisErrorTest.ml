@@ -334,7 +334,21 @@ let test_due_to_analysis_limitations _ =
   assert_false
     (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.Top)));
   assert_false
-    (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.string)))
+    (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.string)));
+
+  (* Unpack. *)
+  assert_false
+    (Error.due_to_analysis_limitations
+      (error (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 }))
+    );
+  assert_false
+    (Error.due_to_analysis_limitations
+      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer }))
+    );
+  assert_true
+    (Error.due_to_analysis_limitations
+      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top }))
+    )
 
 
 let test_join _ =

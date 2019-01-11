@@ -1003,7 +1003,8 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | RedundantCast actual
-  | UninitializedAttribute { mismatch = {actual; _ }; _ } ->
+  | UninitializedAttribute { mismatch = {actual; _ }; _ }
+  | Unpack { unpack_problem = UnacceptableType actual; _ } ->
       Type.is_unknown actual ||
       Type.is_unbound actual ||
       Type.is_type_alias actual
