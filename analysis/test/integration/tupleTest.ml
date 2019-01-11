@@ -159,7 +159,10 @@ let test_check_tuple _ =
       def foo() -> typing.Tuple:
         return ()
     |}
-    [];
+    [
+      "Missing return annotation [3]: Returning `typing.Tuple[]` but return type " ^
+      "must be specified as type that does not contain `Any`."
+    ];
   assert_type_errors
     {|
       def foo() -> typing.Tuple[()]:

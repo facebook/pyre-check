@@ -188,7 +188,10 @@ let test_check_generators _ =
       def foo() -> typing.Generator:
         return x
     |}
-    [];
+    [
+      "Missing return annotation [3]: Returning `typing.Generator[int, int, int]` but " ^
+      "return type must be specified as type that does not contain `Any`."
+    ];
 
   assert_type_errors
     {|
@@ -220,8 +223,10 @@ let test_check_generators _ =
         return (x for x in l)
     |}
     [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
       "Missing parameter annotation [2]: Parameter `l` must have a type " ^
-      "that does not contain `Any`."
+      "that does not contain `Any`.";
     ];
 
   assert_type_errors

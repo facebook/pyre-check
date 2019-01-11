@@ -58,7 +58,12 @@ let test_check_return _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [];
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+    ];
 
   assert_type_errors
     {|
@@ -66,8 +71,10 @@ let test_check_return _ =
       def foo() -> typing.Dict[typing.Any]: return f()
     |}
     [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
       "Incompatible return type [7]: Expected `typing.Dict[typing.Any]` but got " ^
-      "`typing.Dict[typing.Any, typing.Any]`."
+      "`typing.Dict[typing.Any, typing.Any]`.";
     ];
 
   assert_type_errors
@@ -76,7 +83,10 @@ let test_check_return _ =
       def foo() -> typing.Type[typing.Any]:
         return x
     |}
-    [];
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+    ];
 
   assert_type_errors
     {|
@@ -173,7 +183,10 @@ let test_check_return_control_flow _ =
       def foo() -> list:
         return x
     |}
-    [];
+    [
+      "Missing return annotation [3]: Returning `typing.List[int]` but return type "
+      ^ "must be specified as type that does not contain `Any`."
+    ];
 
   assert_type_errors
     {|

@@ -34,7 +34,13 @@ let test_show_error_traces _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [];
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+    ];
+
 
   assert_type_errors ~show_error_traces:true
     "def foo(): pass"

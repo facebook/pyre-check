@@ -2315,7 +2315,7 @@ module State = struct
           in
           add_error ~state error
         else if Type.equal return_annotation Type.Top ||
-                Type.equal return_annotation Type.Object then
+                Type.contains_any return_annotation then
           let error =
             Error.create
               ~location:define_location

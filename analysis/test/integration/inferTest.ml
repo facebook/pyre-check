@@ -173,6 +173,26 @@ let test_check_missing_return _ =
       "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
     ];
 
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[int, typing.Any]:
+        return (1, 2)
+    |}
+    [
+      "Missing return annotation [3]: Returning `typing.Tuple[int, int]` but " ^
+      "return type must be specified as type that does not contain `Any`."
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> list:
+        return []
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`."
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_type_errors
     ~debug:false
