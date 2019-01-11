@@ -1060,8 +1060,8 @@ let less_or_equal ~resolution left right =
       when left_parameters = right_parameters ->
         Resolution.less_or_equal resolution ~left ~right
     | MissingArgument left, MissingArgument right ->
-        Option.equal Access.equal left.callee right.callee &&
-        Access.equal left.name right.name
+        Option.equal Access.equal_sanitized left.callee right.callee &&
+        Access.equal_sanitized left.name right.name
     | MissingParameterAnnotation left, MissingParameterAnnotation right
     | MissingReturnAnnotation left, MissingReturnAnnotation right
     | MissingAttributeAnnotation { missing_annotation = left; _ },
@@ -1102,7 +1102,7 @@ let less_or_equal ~resolution left right =
           match left.override, right.override with
           | StrengthenedPrecondition (NotFound left_access),
             StrengthenedPrecondition (NotFound right_access) ->
-              Access.equal left_access right_access
+              Access.equal_sanitized left_access right_access
           | StrengthenedPrecondition (Found left_mismatch),
             StrengthenedPrecondition (Found right_mismatch)
           | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
@@ -1119,33 +1119,33 @@ let less_or_equal ~resolution left right =
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
     | TooManyArguments left, TooManyArguments right ->
-        Option.equal Access.equal left.callee right.callee &&
+        Option.equal Access.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
         left.provided = right.provided
     | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | UnawaitedAwaitable left, UnawaitedAwaitable right ->
-        Access.equal left right
+        Access.equal_sanitized left right
     | UndefinedAttribute left, UndefinedAttribute right
-      when Access.equal left.attribute right.attribute ->
+      when Access.equal_sanitized left.attribute right.attribute ->
         begin
           match left.origin, right.origin with
           | Class left, Class right when left.class_attribute = right.class_attribute ->
               Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
           | Module left, Module right ->
-              Access.equal left right
+              Access.equal_sanitized left right
           | _ ->
               false
         end
-    | UndefinedName left, UndefinedName right when Access.equal left right ->
+    | UndefinedName left, UndefinedName right when Access.equal_sanitized left right ->
         true
     | UndefinedType left, UndefinedType right ->
         Type.equal left right
     | UnexpectedKeyword left, UnexpectedKeyword right ->
-        Option.equal Access.equal left.callee right.callee &&
+        Option.equal Access.equal_sanitized left.callee right.callee &&
         Identifier.equal left.name right.name
     | UndefinedImport left, UndefinedImport right ->
-        Access.equal left right
+        Access.equal_sanitized left right
     | UnusedIgnore left, UnusedIgnore right ->
         Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
     | _, Top -> true
@@ -1187,8 +1187,8 @@ let join ~resolution left right =
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
-      when Option.equal Access.equal left.callee right.callee &&
-           Access.equal left.name right.name ->
+      when Option.equal Access.equal_sanitized left.callee right.callee &&
+           Access.equal_sanitized left.name right.name ->
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when Access.equal_sanitized left.name right.name ->
@@ -1206,7 +1206,7 @@ let join ~resolution left right =
               right.missing_annotation;
         }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when Access.equal left.name right.name ->
+      when Access.equal_sanitized left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
     | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
       MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
@@ -1226,9 +1226,9 @@ let join ~resolution left right =
           annotation = Resolution.join resolution left.annotation right.annotation;
         }
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Access.equal left.name right.name &&
+      when Option.equal Access.equal_sanitized left.name right.name &&
            left.position = right.position &&
-           Option.equal Access.equal left.callee right.callee ->
+           Option.equal Access.equal_sanitized left.callee right.callee ->
         IncompatibleParameterType {
           left with mismatch = join_mismatch left.mismatch right.mismatch
         }
@@ -1289,7 +1289,7 @@ let join ~resolution left right =
     | InvalidType left, InvalidType right when Type.equal left right ->
         InvalidType left
     | TooManyArguments left, TooManyArguments right ->
-        if Option.equal Access.equal left.callee right.callee &&
+        if Option.equal Access.equal_sanitized left.callee right.callee &&
            left.expected = right.expected &&
            left.provided = right.provided then
           TooManyArguments left
@@ -1298,16 +1298,16 @@ let join ~resolution left right =
     | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal left right ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal_sanitized left right ->
         UnawaitedAwaitable left
     | UndefinedAttribute left, UndefinedAttribute right
-      when Access.equal left.attribute right.attribute ->
+      when Access.equal_sanitized left.attribute right.attribute ->
         let origin: origin option =
           match left.origin, right.origin with
           | Class left, Class right when left.class_attribute = right.class_attribute ->
               let annotation = Resolution.join resolution left.annotation right.annotation in
               Some (Class { left with annotation })
-          | Module left, Module right when Access.equal left right ->
+          | Module left, Module right when Access.equal_sanitized left right ->
               Some (Module left)
           | _ ->
               None
@@ -1315,24 +1315,24 @@ let join ~resolution left right =
         origin
         >>| (fun origin -> UndefinedAttribute { left with origin })
         |> Option.value ~default:Top
-    | UndefinedName left, UndefinedName right when Access.equal left right ->
+    | UndefinedName left, UndefinedName right when Access.equal_sanitized left right ->
         UndefinedName left
     | UndefinedType left, UndefinedType right when Type.equal left right ->
         UndefinedType left
     | UnexpectedKeyword left, UnexpectedKeyword right ->
-        if Option.equal Access.equal left.callee right.callee &&
+        if Option.equal Access.equal_sanitized left.callee right.callee &&
            Identifier.equal left.name right.name then
           UnexpectedKeyword left
         else
           Top
-    | UndefinedImport left, UndefinedImport right when Access.equal left right ->
+    | UndefinedImport left, UndefinedImport right when Access.equal_sanitized left right ->
         UndefinedImport left
 
     (* Join UndefinedImport/Name pairs into an undefined import, as the missing name is due to us
        being unable to resolve the import. *)
-    | UndefinedImport left, UndefinedName right when Access.equal left right ->
+    | UndefinedImport left, UndefinedName right when Access.equal_sanitized left right ->
         UndefinedImport left
-    | UndefinedName left, UndefinedImport right when Access.equal left right ->
+    | UndefinedName left, UndefinedImport right when Access.equal_sanitized left right ->
         UndefinedImport right
 
     | UnusedIgnore left, UnusedIgnore right ->
