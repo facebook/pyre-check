@@ -167,7 +167,7 @@ def _resolve_filter_paths(arguments, configuration):
 
 def resolve_analysis_directory(
     arguments, commands, configuration, isolate: bool = False, prompt: bool = True
-):
+) -> AnalysisDirectory:
     source_directories = _resolve_source_directories(
         arguments, commands, configuration, prompt
     )

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import logging
 import os
@@ -24,13 +26,13 @@ from . import (
     switch_root,
     translate_arguments,
 )
-from .commands import ExitCode
+from .commands import Command, ExitCode  # noqa
 from .configuration import Configuration
 from .filesystem import AnalysisDirectory
 from .version import __version__
 
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 def main() -> int:
@@ -348,11 +350,9 @@ def main() -> int:
                     arguments, commands, configuration, isolate=isolate, prompt=prompt
                 )
 
+        command = arguments.command  # type: Type[Command]
         exit_code = (
-            # pyre-fixme: commands.Initialize doesn't take an analysis_directory
-            arguments.command(arguments, configuration, analysis_directory)
-            .run()
-            .exit_code()
+            command(arguments, configuration, analysis_directory).run().exit_code()
         )
     except (buck.BuckException, EnvironmentException) as error:
         LOG.error(str(error))
