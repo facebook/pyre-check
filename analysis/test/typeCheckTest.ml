@@ -62,17 +62,23 @@ let assert_state_equal =
 
 
 let test_initial _ =
-  let assert_initial ?parent define expected =
-    let define =
-      match parse_single_statement define with
-      | { Node.value = Define define; _ } ->
-          { define with Define.parent = parent >>| Access.create }
-      | _ ->
-          failwith "Unable to parse define."
+  let assert_initial ?parent ?(errors = []) define state =
+    let initial =
+      let define =
+        match parse_single_statement define with
+        | { Node.value = Define define; _ } ->
+            { define with Define.parent = parent >>| Access.create }
+        | _ ->
+            failwith "Unable to parse define."
+      in
+      State.initial ~resolution (+define)
     in
-    assert_state_equal
-      expected
-      (State.initial ~resolution (+define))
+    assert_state_equal state initial;
+    assert_equal
+      ~cmp:(List.equal ~equal:String.equal)
+      ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
+      (List.map (State.errors initial) ~f:(Error.description ~detailed:false))
+      errors
   in
 
   assert_initial
@@ -80,10 +86,17 @@ let test_initial _ =
     (create ~immutables:["x", false] ["x", Type.integer]);
 
   assert_initial
+    ~errors:[
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type " ^
+      "`float`.";
+    ]
     "def foo(x: int = 1.0): ..."
     (create ~immutables:["x", false] ["x", Type.integer]);
 
   assert_initial
+    ~errors:[
+      "Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified.";
+    ]
     "def foo(x = 1.0): ..."
     (create ["x", Type.float]);
 
@@ -96,6 +109,7 @@ let test_initial _ =
     (create ~immutables:["x", false; "y", false] ["x", Type.float; "y", Type.string]);
 
   assert_initial
+    ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     "def foo(x): ..."
     (create ["x", Type.Bottom]);
 
@@ -105,6 +119,7 @@ let test_initial _ =
     (create ["self", Type.Primitive "Foo"]);
   assert_initial
     ~parent:"Foo"
+    ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
     (create ["a", Type.Bottom])
 
