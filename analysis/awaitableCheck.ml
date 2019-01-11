@@ -12,7 +12,13 @@ open Pyre
 module Error = AnalysisError
 
 
-module State = struct
+module type Context = sig
+  val define: Define.t Node.t
+  val environment: (module Environment.Handler)
+end
+
+
+module State (Context: Context) = struct
   type state =
     | Unawaited
     | Awaited
@@ -20,8 +26,6 @@ module State = struct
 
 
   type t = {
-    define: Define.t Node.t;
-    environment: (module Environment.Handler);
     unawaited: state Access.Map.t;
   }
 
@@ -37,23 +41,19 @@ module State = struct
     Format.fprintf format "%s" (show state)
 
 
-  let initial ~environment ~define =
-    {
-      define;
-      environment;
-      unawaited = Access.Map.empty;
-    }
+  let initial =
+    { unawaited = Access.Map.empty }
 
 
-  let errors { define; unawaited; _ } =
+  let errors { unawaited; _ } =
     let error (access, state) =
       match state with
       | Unawaited ->
           [
             Error.create
-              ~location:(Node.location define)
+              ~location:(Node.location Context.define)
               ~kind:(Error.UnawaitedAwaitable (Access.delocalize access))
-              ~define:define;
+              ~define:Context.define;
           ]
       | _ ->
           []
@@ -90,9 +90,16 @@ module State = struct
 
   let forward
       ?key
-      ({ define = { Node.value = { Define.name; parent; _ }; _ }; environment; unawaited } as state)
+      ({ unawaited } as state)
       ~statement:{ Node.value; _ } =
-    let resolution = TypeCheck.resolution_with_key ~environment ~parent ~access:name ~key in
+    let { Node.value = { Define.name; parent; _ }; _ } = Context.define in
+    let resolution =
+      TypeCheck.resolution_with_key
+        ~environment:Context.environment
+        ~parent
+        ~access:name
+        ~key
+    in
 
     let unawaited =
       let is_awaitable value =
@@ -125,18 +132,23 @@ module State = struct
 end
 
 
-module Fixpoint = Fixpoint.Make(State)
-
-
 let name =
   "Awaitable"
 
 
 let run ~configuration:_ ~environment ~source =
   let check define =
+    let module Context =
+    struct
+      let define = define
+      let environment = environment
+    end
+    in
+    let module State = State(Context) in
+    let module Fixpoint = Fixpoint.Make(State) in
     Fixpoint.forward
       ~cfg:(Cfg.create (Node.value define))
-      ~initial:(State.initial ~environment ~define)
+      ~initial:State.initial
     |> Fixpoint.exit
     >>| State.errors
     |> Option.value ~default:[]
