@@ -1397,63 +1397,28 @@ let join_at_source ~resolution errors =
         Access.show_sanitized name
     | { kind = UndefinedImport name; _ }
     | { kind = UndefinedName name; _ } ->
-        Format.asprintf "Unknown[%a]" Access.pp name
+        Format.asprintf "Unknown[%a]" Access.pp_sanitized name
     | error ->
         show error
   in
-  let joined_missing_annotations =
-    let filter errors error =
-      let filtered ~key =
-        try
-          match Map.find errors key with
-          | Some existing_error ->
-              let joined_error = join ~resolution existing_error error in
-              if joined_error.kind <> Top then
-                Map.change ~f:(fun _ -> Some joined_error) errors key
-              else
-                Map.set ~key ~data:error errors
-          | _ ->
-              Map.set ~key ~data:error errors
-        with TypeOrder.Untracked _ ->
+  let add_error errors error =
+    let key = key error in
+    match Map.find errors key, error.kind with
+    | Some { kind = UndefinedImport _; _ }, UndefinedName _ ->
+        (* Swallow up UndefinedName errors when the Import error already exists. *)
+        errors
+    | Some { kind = UndefinedName _; _ }, UndefinedImport _ ->
+        Map.set ~key ~data:error errors
+    | Some existing_error, _ ->
+        let joined_error = join ~resolution existing_error error in
+        if joined_error.kind <> Top then
+          Map.set ~key ~data:joined_error errors
+        else
           errors
-      in
-      match error with
-      | { kind = MissingAttributeAnnotation _; _ }
-      | { kind = MissingGlobalAnnotation _; _ }
-      | { kind = UndefinedImport _; _ }
-      | { kind = UndefinedName _; _ } ->
-          filtered ~key:(key error)
-      | _ ->
-          errors
-    in
-    List.fold ~init:String.Map.empty ~f:filter errors
-  in
-  let add_joins errors error =
-    match error with
-    | { kind = MissingAttributeAnnotation _; _ }
-    | { kind = MissingGlobalAnnotation _; _ }
-    | { kind = UndefinedImport _; _ }
-    | { kind = UndefinedName _; _ }
-        when not (due_to_analysis_limitations error) ->
-        let joined ~key =
-          match Map.find joined_missing_annotations key with
-          | Some { kind; _ } ->
-              begin
-                match error.kind, kind with
-                | UndefinedName _, UndefinedImport _ ->
-                    (* Swallow up UndefinedName errors when the Import error already exists. *)
-                    errors
-                | _ ->
-                    let new_error = { error with kind } in
-                    Map.set ~key ~data:new_error errors
-              end
-          | _ -> Map.set ~key:(show error) ~data:error errors
-        in
-        joined ~key:(key error)
     | _ ->
-        Map.set ~key:(key error) ~data:error errors
+        Map.set ~key ~data:error errors
   in
-  List.fold ~init:String.Map.empty ~f:add_joins errors
+  List.fold ~init:String.Map.empty ~f:add_error errors
   |> Map.data
 
 
