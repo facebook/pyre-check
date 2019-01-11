@@ -1936,23 +1936,24 @@ module State = struct
             ~f:forward
         in
 
-        (* Check arguments and nested expressions. *)
-        let forward_access state access =
-          match access with
-          | Access.Identifier _ ->
-              state
-          | Access.Call { Node.value = arguments; _ } ->
-              let forward_argument state { Argument.value; _ } =
-                forward_expression ~state ~expression:value
+        let state =
+          (* Check arguments and nested expressions. *)
+          let forward_access state access =
+            match access with
+            | Access.Identifier _ ->
+                state
+            | Access.Call { Node.value = arguments; _ } ->
+                let forward_argument state { Argument.value; _ } =
+                  forward_expression ~state ~expression:value
+                  |> fun { state; _ } -> state
+                in
+                List.fold arguments ~f:forward_argument ~init:state
+            | Access.Expression expression ->
+                forward_expression ~state ~expression
                 |> fun { state; _ } -> state
-              in
-              List.fold arguments ~f:forward_argument ~init:state
-          | Access.Expression expression ->
-              forward_expression ~state ~expression
-              |> fun { state; _ } -> state
+          in
+          List.fold access ~f:forward_access ~init:state
         in
-        let state = List.fold access ~f:forward_access ~init:state in
-
         { state; resolved }
 
     | Await expression ->
