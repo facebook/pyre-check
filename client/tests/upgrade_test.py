@@ -227,6 +227,26 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with(
                 "# pyre-fixme[1]: description\n1\n# pyre-fixme[1, 2]: description\n2"
             )
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "description": "Error [10]: Description one.",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "description": "Error [11]: Description two.",
+                    },
+                ]
+            )
+            path_read_text.return_value = "1\n2"
+            upgrade.run_fixme(arguments, result)
+            path_write_text.assert_called_once_with(
+                "1\n# pyre-fixme[10, 11]: Description one. Description two.\n2"
+            )
 
         # Test errors in multiple files.
         with patch.object(pathlib.Path, "write_text") as path_write_text:

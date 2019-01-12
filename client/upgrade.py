@@ -238,7 +238,7 @@ def fix(
             sorted_descriptions = sorted(list(descriptions[number]))
 
             description = (
-                custom_comment if custom_comment else ", ".join(sorted_descriptions)
+                custom_comment if custom_comment else " ".join(sorted_descriptions)
             )
 
             full_comment = generate_full_comment(
