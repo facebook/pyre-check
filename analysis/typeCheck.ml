@@ -204,10 +204,11 @@ module State = struct
       |> String.concat ~sep:"\n"
     in
     let errors =
-      let error_to_string (hash, error) =
+      let error_to_string (_, error) =
         Format.asprintf
-          "    %d -> %s"
-          hash
+          "    %a -> %s"
+          Location.Instantiated.pp
+          (Error.location error)
           (Error.description error ~detailed:true)
       in
       List.map (Map.to_alist errors) ~f:error_to_string
