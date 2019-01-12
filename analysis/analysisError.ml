@@ -1058,6 +1058,8 @@ let due_to_builtin_import { kind; _ } =
 let due_to_mismatch_with_any { kind; _ } =
   match kind with
   | IncompatibleAwaitableType actual
+  | InvalidArgument (Keyword { annotation = actual; _ })
+  | InvalidArgument (Variable { annotation = actual; _ })
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
@@ -1084,7 +1086,6 @@ let due_to_mismatch_with_any { kind; _ } =
   | RevealedType _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
-  | InvalidArgument _
   | InvalidType _
   | Top
   | TypedDictionaryAccessWithNonLiteral _

@@ -523,6 +523,44 @@ let test_due_to_mismatch_with_any _ =
                    }));
             })));
 
+  (* InvalidArgument *)
+  assert_false
+    (Error.due_to_mismatch_with_any
+       (error
+          (InvalidArgument (
+              Keyword {
+                expression = !"name";
+                annotation = Type.integer;
+              }
+            ))));
+  assert_false
+    (Error.due_to_mismatch_with_any
+       (error
+          (InvalidArgument (
+              Variable {
+                expression = !"name";
+                annotation = Type.integer;
+              }
+            ))));
+  assert_true
+    (Error.due_to_mismatch_with_any
+       (error
+          (InvalidArgument (
+              Keyword {
+                expression = !"name";
+                annotation = Type.Object;
+              }
+            ))));
+  assert_true
+    (Error.due_to_mismatch_with_any
+       (error
+          (InvalidArgument (
+              Variable {
+                expression = !"name";
+                annotation = Type.Object;
+              }
+            ))));
+
   (* NotCallable *)
   assert_true (Error.due_to_mismatch_with_any (error (Error.NotCallable Type.Object)));
   assert_false (Error.due_to_mismatch_with_any (error (Error.NotCallable Type.Top)));
