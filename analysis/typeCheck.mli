@@ -32,6 +32,8 @@ module AccessState: sig
     | NotCallable of Type.t
     | Value
   [@@deriving show]
+
+  val redirect: resolution: Resolution.t -> Access.t -> Access.t * Resolution.t
 end
 
 

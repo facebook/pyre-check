@@ -59,6 +59,58 @@ module AccessState = struct
 
   let annotation { annotation; _ } =
     annotation
+
+
+  let redirect ~resolution access =
+    (* Resolve special-cased calls. *)
+    match access with
+    (* Resolve `super()` calls. *)
+    | (Access.Identifier "super") :: (Access.Call _) :: tail ->
+        (Resolution.parent resolution
+         >>| (fun parent ->
+             Access.expression parent
+             |> Resolution.parse_annotation resolution)
+         >>= Resolution.class_representation resolution
+         >>| (fun { Resolution.successors; _ } -> successors)
+         >>|  List.filter
+           ~f:(fun name -> Option.is_some (Resolution.class_definition resolution name))
+         >>| List.hd
+         >>| function
+         | Some superclass ->
+             let super = Access.Identifier "$super" in
+             let resolution =
+               Resolution.set_local
+                 resolution
+                 ~access:[super]
+                 ~annotation:(Annotation.create superclass)
+             in
+             super :: tail, resolution
+         | None ->
+             access, resolution)
+        |> Option.value ~default:(access, resolution)
+    (* Resolve `type()` calls. *)
+    | (Access.Identifier "type")
+      :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
+      :: tail ->
+        let access = Access.Identifier "$type" in
+        let resolution =
+          let annotation =
+            Resolution.resolve resolution value
+            |> Type.meta
+            |> Annotation.create
+          in
+          Resolution.set_local resolution ~access:[access] ~annotation
+        in
+        access :: tail, resolution
+    (* Resolve function redirects. *)
+    | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
+        Access.redirect ~arguments ~location ~name:[Access.Identifier name]
+        >>| (fun redirect -> redirect @ tail)
+        |> Option.value ~default:access,
+        resolution
+
+    | _ ->
+        access, resolution
 end
 
 module State = struct
@@ -616,87 +668,40 @@ module State = struct
      we're currently folding over. *)
   let forward_access ~resolution ~initial ~f access =
     let open AccessState in
-    (* Resolve special-cased calls. *)
-    let access, resolution =
-      match access with
-      (* Resolve `super()` calls. *)
-      | (Access.Identifier "super") :: (Access.Call _) :: tail ->
-          (Resolution.parent resolution
-           >>| (fun parent ->
-               Access.expression parent
-               |> Resolution.parse_annotation resolution)
-           >>= Resolution.class_representation resolution
-           >>| (fun { Resolution.successors; _ } -> successors)
-           >>|  List.filter
-             ~f:(fun name -> Option.is_some (Resolution.class_definition resolution name))
-           >>| List.hd
-           >>| function
-           | Some superclass ->
-               let super = Access.Identifier "$super" in
-               let resolution =
-                 Resolution.set_local
-                   resolution
-                   ~access:[super]
-                   ~annotation:(Annotation.create superclass)
-               in
-               super :: tail, resolution
-           | None ->
-               access, resolution)
-          |> Option.value ~default:(access, resolution)
-      (* Resolve `type()` calls. *)
-      | (Access.Identifier "type")
-        :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
-        :: tail ->
-          let access = Access.Identifier "$type" in
-          let resolution =
-            let annotation =
-              Resolution.resolve resolution value
-              |> Type.meta
-              |> Annotation.create
-            in
-            Resolution.set_local resolution ~access:[access] ~annotation
+    let access, resolution = redirect ~resolution access in
+    (* Resolve module exports. *)
+    let access =
+      (* This is necessary due to export/module name conflicts: P59503092 *)
+      let widening_threshold = 25 in
+      let rec resolve_exports_fixpoint ~access ~visited ~count =
+        if Set.mem visited access || count > widening_threshold then
+          access
+        else
+          let rec resolve_exports ~lead ~tail =
+            match tail with
+            | head :: tail ->
+                Resolution.module_definition resolution lead
+                >>| (fun definition ->
+                    match
+                      Module.aliased_export definition [head] with
+                    | Some export ->
+                        export @ tail
+                    | _ ->
+                        resolve_exports ~lead:(lead @ [head]) ~tail)
+                |> Option.value ~default:access
+            | _ ->
+                access
           in
-          access :: tail, resolution
-      (* Resolve function redirects. *)
-      | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
-          Access.redirect ~arguments ~location ~name:[Access.Identifier name]
-          >>| (fun redirect -> redirect @ tail)
-          |> Option.value ~default:access,
-          resolution
-
-      (* Resolve module exports. *)
-      | _ ->
-          (* This is necessary due to export/module name conflicts: P59503092 *)
-          let widening_threshold = 25 in
-          let rec resolve_exports_fixpoint ~access ~visited ~count =
-            if Set.mem visited access || count > widening_threshold then
+          match access with
+          | head :: tail ->
+              resolve_exports_fixpoint
+                ~access:(resolve_exports ~lead:[head] ~tail)
+                ~visited:(Set.add visited access)
+                ~count:(count + 1)
+          | _ ->
               access
-            else
-              let rec resolve_exports ~lead ~tail =
-                match tail with
-                | head :: tail ->
-                    Resolution.module_definition resolution lead
-                    >>| (fun definition ->
-                        match
-                          Module.aliased_export definition [head] with
-                        | Some export ->
-                            export @ tail
-                        | _ ->
-                            resolve_exports ~lead:(lead @ [head]) ~tail)
-                    |> Option.value ~default:access
-                | _ ->
-                    access
-              in
-              match access with
-              | head :: tail ->
-                  resolve_exports_fixpoint
-                    ~access:(resolve_exports ~lead:[head] ~tail)
-                    ~visited:(Set.add visited access)
-                    ~count:(count + 1)
-              | _ ->
-                  access
-          in
-          resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0, resolution
+      in
+      resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0
     in
     let step
         ({ resolution; accumulator; f; _ } as state)

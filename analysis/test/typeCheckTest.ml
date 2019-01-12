@@ -253,6 +253,99 @@ and step = {
 [@@deriving compare, eq, show]
 
 
+let test_redirect _ =
+  let assert_redirect ?parent ?source access (expected_access, expected_locals) =
+    let resolution =
+      let sources =
+        match source with
+        | Some source ->
+            [
+              parse
+                ~qualifier:[]
+                ~handle:"source.pyi"
+                source
+              |> Preprocessing.preprocess;
+            ]
+        | None ->
+            []
+      in
+      AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
+      |> (fun environment -> TypeCheck.resolution environment ())
+      |> Resolution.with_parent ~parent
+    in
+    let parse_access unparsed =
+      match parse_single_expression unparsed with
+      | { Node.value = Access access; _ } ->
+          access
+      | _ ->
+          failwith "expected access"
+    in
+    let access = parse_access access in
+    let access, resolution = AccessState.redirect ~resolution access in
+    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_access expected_access);
+    let assert_in_scope (expected_name, expected_type) =
+      Access.create expected_name
+      |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
+      |> Annotation.annotation
+      |> assert_equal ~printer:Type.show expected_type
+    in
+    List.iter expected_locals ~f:assert_in_scope
+  in
+  assert_redirect ~source:"a = 1" "a" ("a", []);
+  assert_redirect
+    ~parent:(Access.create "Subclass")
+    ~source:
+      {|
+        class Superclass: pass
+        class Subclass(Superclass): pass
+      |}
+    "super()"
+    ("$super", ["$super", Type.Primitive "Superclass"]);
+  assert_redirect
+    ~parent:(Access.create "Superclass")
+    ~source:
+      {|
+        class Superclass: pass
+        class Subclass(Superclass): pass
+      |}
+    "super().foo()"
+    ("$super.foo()", ["$super", Type.Object]);
+
+  assert_redirect
+    ~parent:(Access.create "Superclass")
+    ~source:
+      {|
+        class Superclass: pass
+        class Subclass(Superclass): pass
+      |}
+    "Subclass.super().foo()"
+    ("Subclass.super().foo()", []);
+
+  assert_redirect
+    ~source:
+      {|
+        a = 1
+      |}
+    "type(a)"
+    ("$type", ["$type", Type.meta Type.integer]);
+
+  assert_redirect
+    ~source:
+      {|
+        a = 1
+      |}
+    "type(type(a))"
+    ("$type", ["$type", Type.meta (Type.meta Type.integer)]);
+
+   assert_redirect
+    ~source:
+      {|
+        a = 1
+      |}
+    "type(type(a))"
+    ("$type", ["$type", Type.meta (Type.meta Type.integer)])
+
+
 let test_forward_access _ =
   let resolution =
     let sources = [
@@ -1883,6 +1976,7 @@ let () =
     "join">::test_join;
     "widen">::test_widen;
     "check_annotation">::test_check_annotation;
+    "redirect">::test_redirect;
     "forward_access">::test_forward_access;
     "forward_expression">::test_forward_expression;
     "forward_statement">::test_forward_statement;
