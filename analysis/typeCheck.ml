@@ -111,6 +111,32 @@ module AccessState = struct
 
     | _ ->
         access, resolution
+
+
+    let step
+        ({ resolution; accumulator; f; _ } as state)
+        ?element
+        ?resolved
+        ?target
+        ?(continue = true)
+        ~lead
+        () =
+      let accumulator =
+        let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
+        let element = Option.value element ~default:Value in
+        f accumulator ~resolution ~resolved ~element ~lead
+      in
+      {
+        state with
+        accumulator;
+        resolved;
+        target;
+        continue;
+      }
+
+
+    let abort state ?element ~lead () =
+      step state ?element ~continue:false ~lead ()
 end
 
 module State = struct
@@ -703,28 +729,6 @@ module State = struct
       in
       resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0
     in
-    let step
-        ({ resolution; accumulator; f; _ } as state)
-        ?element
-        ?resolved
-        ?target
-        ?(continue = true)
-        ~lead
-        () =
-      let accumulator =
-        let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
-        let element = Option.value element ~default:Value in
-        f accumulator ~resolution ~resolved ~element ~lead
-      in
-      {
-        state with
-        accumulator;
-        resolved;
-        target;
-        continue;
-      }
-    in
-    let abort state ?element ~lead () = step state ?element ~continue:false ~lead () in
     let rec fold ~state ~lead ~tail =
       let { AccessState.accumulator; resolved; target; resolution; _ } = state in
       let find_method ~parent ~name =
