@@ -497,10 +497,17 @@ let register_aliases (module Handler: Handler) sources =
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
-              | None -> Access.expression (qualifier @ name)
-              | Some alias -> Access.expression (qualifier @ alias)
+              | None -> qualifier @ name
+              | Some alias -> qualifier @ alias
             in
-            [handle, qualified_name, Access.expression (from @ name)]
+            let original_name = from @ name in
+            match qualified_name, original_name with
+            | Identifier single_identifier :: [], (Identifier typing) :: [Identifier identifier]
+              when typing = "typing" && single_identifier = identifier ->
+                (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
+                []
+            | _ ->
+                [handle, Access.expression qualified_name, Access.expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->

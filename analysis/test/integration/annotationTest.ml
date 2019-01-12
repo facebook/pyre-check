@@ -93,6 +93,16 @@ let test_check_undefined_type _ =
   assert_type_errors
     ~debug:false
     {|
+      def foo(x: Optional[Any]) -> None:
+        pass
+    |}
+    [
+      "Undefined type [11]: Type `Any` is not defined.";
+      "Undefined type [11]: Type `Optional` is not defined.";
+    ];
+  assert_type_errors
+    ~debug:false
+    {|
       def foo(x: Dict) -> None:
         pass
     |}
