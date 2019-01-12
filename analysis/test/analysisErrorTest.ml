@@ -576,6 +576,20 @@ let test_due_to_mismatch_with_any _ =
               };
             })));
 
+  (* Unpack *)
+  assert_false
+    (Error.due_to_mismatch_with_any
+      (error (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 }))
+    );
+  assert_false
+    (Error.due_to_mismatch_with_any
+      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer }))
+    );
+  assert_true
+    (Error.due_to_mismatch_with_any
+      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Object }))
+    );
+
   (* Missing X errors *)
   assert_false
     (Error.due_to_mismatch_with_any

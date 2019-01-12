@@ -1059,7 +1059,8 @@ let due_to_mismatch_with_any { kind; _ } =
   match kind with
   | IncompatibleAwaitableType actual
   | NotCallable actual
-  | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
+  | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
+  | Unpack { unpack_problem = UnacceptableType actual; _ } ->
       Type.equal actual Type.Object
   | ImpossibleIsinstance { mismatch = { actual; expected; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected; _ }); _ }
