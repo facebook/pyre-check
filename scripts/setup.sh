@@ -172,6 +172,8 @@ opam install --yes \
 test "$opam_install_dependencies_succeeded" = 1 \
   || die 'Could not install dependencies'
 
+make clean
+
 # Build and install hack parallel.
 (cd hack_parallel \
   && OCAMLPARAM=_,annot=1,bin-annot=1,g=1 make \
