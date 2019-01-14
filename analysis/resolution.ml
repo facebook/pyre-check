@@ -280,6 +280,21 @@ let rec resolve_literal resolution expression =
   | Complex _ ->
       Type.complex
 
+  | Dictionary { Dictionary.entries; keywords = [] } ->
+      let key_annotation, value_annotation =
+        let join_entry (key_annotation, value_annotation) { Dictionary.key; value } =
+          (
+            join resolution key_annotation (resolve_literal resolution key),
+            join resolution value_annotation (resolve_literal resolution value)
+          )
+        in
+        List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
+      in
+      if Type.is_concrete key_annotation && Type.is_concrete value_annotation then
+        Type.dictionary ~key:key_annotation ~value:value_annotation
+      else
+        Type.Top
+
   | False ->
       Type.bool
 

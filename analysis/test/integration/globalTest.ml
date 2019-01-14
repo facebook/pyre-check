@@ -284,7 +284,24 @@ let test_check_globals _ =
       def foo() -> str:
         return a
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = {|
+          str_to_int_dictionary = {"a": 1}
+        |}
+      };
+    ]
+    {|
+      from export import str_to_int_dictionary
+      def foo() -> str:
+        return str_to_int_dictionary
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."]
 
 
 let () =
