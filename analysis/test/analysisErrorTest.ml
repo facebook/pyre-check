@@ -88,579 +88,487 @@ let configuration = Configuration.Analysis.create ()
 
 
 let test_due_to_analysis_limitations _ =
+  let assert_due_to_analysis_limitaitons kind =
+    assert_true (Error.due_to_analysis_limitations (error kind))
+  in
+  let assert_not_due_to_analysis_limitations kind =
+    assert_false (Error.due_to_analysis_limitations (error kind))
+  in
+
   (* IncompatibleAttributeType. *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleAttributeType {
-              parent = mock_parent;
-              incompatible_type = {
-                Error.name = [Access.Identifier ""];
-                mismatch = {
-                  Error.actual = Type.Top;
-                  expected = Type.Top;
-                  due_to_invariance = false;
-                };
-                declare_location = Location.Instantiated.any;
-              };
-            })));
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleAttributeType {
-              parent = mock_parent;
-              incompatible_type = {
-                Error.name = [Access.Identifier ""];
-                mismatch = {
-                  Error.actual = Type.Top;
-                  expected = Type.string;
-                  due_to_invariance = false;
-                };
-                declare_location = Location.Instantiated.any;
-              };
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleAttributeType {
-              parent = mock_parent;
-              incompatible_type = {
-                Error.name = [Access.Identifier ""];
-                mismatch = {
-                  Error.actual = Type.string;
-                  expected = Type.Top;
-                  due_to_invariance = false;
-                };
-                declare_location = Location.Instantiated.any;
-              };
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleAttributeType {
+        parent = mock_parent;
+        incompatible_type = {
+          Error.name = [Access.Identifier ""];
+          mismatch = {
+            Error.actual = Type.Top;
+            expected = Type.Top;
+            due_to_invariance = false;
+          };
+          declare_location = Location.Instantiated.any;
+        };
+      });
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleAttributeType {
+        parent = mock_parent;
+        incompatible_type = {
+          Error.name = [Access.Identifier ""];
+          mismatch = {
+            Error.actual = Type.Top;
+            expected = Type.string;
+            due_to_invariance = false;
+          };
+          declare_location = Location.Instantiated.any;
+        };
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.IncompatibleAttributeType {
+        parent = mock_parent;
+        incompatible_type = {
+          Error.name = [Access.Identifier ""];
+          mismatch = {
+            Error.actual = Type.string;
+            expected = Type.Top;
+            due_to_invariance = false;
+          };
+          declare_location = Location.Instantiated.any;
+        };
+      });
 
   (* Initialization *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.UninitializedAttribute {
-              name = [Access.Identifier ""];
-              parent = mock_parent;
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.Optional Type.Top;
-                due_to_invariance = false;
-              };
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.UninitializedAttribute {
+        name = [Access.Identifier ""];
+        parent = mock_parent;
+        mismatch = {
+          Error.actual = Type.Top;
+          expected = Type.Optional Type.Top;
+          due_to_invariance = false;
+        };
+      });
 
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.UninitializedAttribute {
-              name = [Access.Identifier ""];
-              parent = mock_parent;
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Optional Type.string;
-                due_to_invariance = false;
-              };
-            })));
+  assert_not_due_to_analysis_limitations
+    (Error.UninitializedAttribute {
+        name = [Access.Identifier ""];
+        parent = mock_parent;
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Optional Type.string;
+          due_to_invariance = false;
+        };
+      });
 
   (* MissingParameterAnnotation. *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingParameterAnnotation {
-              name = (Access.create "");
-              annotation = Some Type.Top;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingParameterAnnotation {
-              name = (Access.create "");
-              annotation = Some Type.string;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.MissingParameterAnnotation {
+        name = (Access.create "");
+        annotation = Some Type.Top;
+        evidence_locations = [];
+        given_annotation = None;
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.MissingParameterAnnotation {
+        name = (Access.create "");
+        annotation = Some Type.string;
+        evidence_locations = [];
+        given_annotation = None;
+      });
 
   (* MissingReturnAnnotation. *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingReturnAnnotation {
-              name = (Access.create "$return_annotation");
-              annotation = Some Type.Top;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingReturnAnnotation {
-              name = (Access.create "$return_annotation");
-              annotation = Some Type.string;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.MissingReturnAnnotation {
+        name = (Access.create "$return_annotation");
+        annotation = Some Type.Top;
+        evidence_locations = [];
+        given_annotation = None;
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.MissingReturnAnnotation {
+        name = (Access.create "$return_annotation");
+        annotation = Some Type.string;
+        evidence_locations = [];
+        given_annotation = None;
+      });
 
   (* MissingAttributeAnnotation *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingAttributeAnnotation {
-              parent = mock_parent;
-              missing_annotation = {
-                Error.name = [Access.Identifier ""];
-                annotation = Some Type.Top;
-                given_annotation = None;
-                evidence_locations = [];
-              };
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingAttributeAnnotation {
-              parent = mock_parent;
-              missing_annotation = {
-                Error.name = [Access.Identifier ""];
-                annotation = Some Type.string;
-                given_annotation = None;
-                evidence_locations = [];
-              };
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.MissingAttributeAnnotation {
-              parent = mock_parent;
-              missing_annotation = {
-                Error.name = [Access.Identifier ""];
-                annotation = None;
-                given_annotation = None;
-                evidence_locations = [];
-              };
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.MissingAttributeAnnotation {
+        parent = mock_parent;
+        missing_annotation = {
+          Error.name = [Access.Identifier ""];
+          annotation = Some Type.Top;
+          given_annotation = None;
+          evidence_locations = [];
+        };
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.MissingAttributeAnnotation {
+        parent = mock_parent;
+        missing_annotation = {
+          Error.name = [Access.Identifier ""];
+          annotation = Some Type.string;
+          given_annotation = None;
+          evidence_locations = [];
+        };
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.MissingAttributeAnnotation {
+        parent = mock_parent;
+        missing_annotation = {
+          Error.name = [Access.Identifier ""];
+          annotation = None;
+          given_annotation = None;
+          evidence_locations = [];
+        };
+      });
 
   (* Parameter. *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-            })));
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.string;
-                due_to_invariance = false;
-              };
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.Top;
+          expected = Type.Top;
+          due_to_invariance = false;
+        };
+      });
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.Top;
+          expected = Type.string;
+          due_to_invariance = false;
+        };
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Top;
+          due_to_invariance = false;
+        };
+      });
 
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.Primitive "typing.TypeAlias";
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.Primitive "typing.TypeAlias";
+          expected = Type.Top;
+          due_to_invariance = false;
+        };
+      });
 
   (* Return. *)
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
-  assert_true
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.Top;
-                expected = Type.string;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
-  assert_false
-    (Error.due_to_analysis_limitations
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Top;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.Top;
+          expected = Type.Top;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
+  assert_due_to_analysis_limitaitons
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.Top;
+          expected = Type.string;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
+  assert_not_due_to_analysis_limitations
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Top;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
 
   (* UndefinedType. *)
-  assert_false
-    (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.Top)));
-  assert_false
-    (Error.due_to_analysis_limitations (error (Error.UndefinedType Type.string)));
+  assert_not_due_to_analysis_limitations (Error.UndefinedType Type.Top);
+  assert_not_due_to_analysis_limitations (Error.UndefinedType Type.string);
 
   (* Unpack. *)
-  assert_false
-    (Error.due_to_analysis_limitations
-      (error (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 }))
-    );
-  assert_false
-    (Error.due_to_analysis_limitations
-      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer }))
-    );
-  assert_true
-    (Error.due_to_analysis_limitations
-      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top }))
-    )
+  assert_not_due_to_analysis_limitations
+    (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
+  assert_not_due_to_analysis_limitations
+    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
+  assert_due_to_analysis_limitaitons
+    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top })
 
 
 let test_due_to_mismatch_with_any _ =
+  let assert_due_to_mismatch_with_any kind =
+    assert_true (Error.due_to_mismatch_with_any (error kind))
+  in
+  let assert_not_due_to_mismatch_with_any kind =
+    assert_false (Error.due_to_mismatch_with_any (error kind))
+  in
   (* ImpossibleIsinstance *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.ImpossibleIsinstance {
-            expression = !"expression";
-            mismatch = {
-              Error.actual = Type.Object;
-              expected = Type.Object;
-              due_to_invariance = false;
-            };
-          })));
+  assert_due_to_mismatch_with_any
+    (Error.ImpossibleIsinstance {
+      expression = !"expression";
+      mismatch = {
+        Error.actual = Type.Object;
+        expected = Type.Object;
+        due_to_invariance = false;
+      };
+    });
 
   (* IncompatibleAttributeType. *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleAttributeType {
-              parent = mock_parent;
-              incompatible_type = {
-                Error.name = [Access.Identifier ""];
-                mismatch = {
-                  Error.actual = Type.Object;
-                  expected = Type.Object;
-                  due_to_invariance = false;
-                };
-                declare_location = Location.Instantiated.any;
-              };
-            })));
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleAttributeType {
+        parent = mock_parent;
+        incompatible_type = {
+          Error.name = [Access.Identifier ""];
+          mismatch = {
+            Error.actual = Type.Object;
+            expected = Type.Object;
+            due_to_invariance = false;
+          };
+          declare_location = Location.Instantiated.any;
+        };
+      });
 
   (* IncompatibleAwaitableType *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleAwaitableType Type.Object)));
+  assert_due_to_mismatch_with_any (Error.IncompatibleAwaitableType Type.Object);
 
   (* IncompatibleParameterType *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.Object;
-                expected = Type.Object;
-                due_to_invariance = false;
-              };
-            })));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleParameterType {
-              name = Some ((Access.create ""));
-              position = 1;
-              callee = Some (Access.create "callee");
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Object;
-                due_to_invariance = false;
-              };
-            })));
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.Object;
+          expected = Type.Object;
+          due_to_invariance = false;
+        };
+      });
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleParameterType {
+        name = Some ((Access.create ""));
+        position = 1;
+        callee = Some (Access.create "callee");
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Object;
+          due_to_invariance = false;
+        };
+      });
 
   (* IncompatibleReturnType *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.Object;
-                expected = Type.Object;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.Object;
-                expected = Type.string;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleReturnType {
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.integer;
-                due_to_invariance = false;
-              };
-              is_implicit = false;
-            })));
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.Object;
+          expected = Type.Object;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.Object;
+          expected = Type.string;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
+  assert_not_due_to_mismatch_with_any
+    (Error.IncompatibleReturnType {
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.integer;
+          due_to_invariance = false;
+        };
+        is_implicit = false;
+      });
 
   (* IncompatibleVariableType *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.IncompatibleVariableType {
-              name = [Expression.Access.Identifier "name"];
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Object;
-                due_to_invariance = false;
-              };
-              declare_location = Location.Instantiated.any;
-            })));
+  assert_due_to_mismatch_with_any
+    (Error.IncompatibleVariableType {
+        name = [Expression.Access.Identifier "name"];
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Object;
+          due_to_invariance = false;
+        };
+        declare_location = Location.Instantiated.any;
+      });
 
   (* InconsistentOverride *)
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (InconsistentOverride {
-                overridden_method = Access.create "foo";
-                parent = Access.create (Type.show mock_parent);
-                override = (StrengthenedPrecondition (NotFound (Access.create "x")));
-            })));
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (InconsistentOverride {
-                overridden_method = Access.create "foo";
-                parent = Access.create (Type.show mock_parent);
-                override = (WeakenedPostcondition {
-                    actual = Type.Top;
-                    expected = Type.integer;
-                    due_to_invariance = false;
-                  });
-            })));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (InconsistentOverride {
-                overridden_method = Access.create "foo";
-                parent = Access.create (Type.show mock_parent);
-                override = (WeakenedPostcondition {
-                    actual = Type.Object;
-                    expected = Type.integer;
-                    due_to_invariance = false;
-                  });
-            })));
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (InconsistentOverride {
-                overridden_method = Access.create "foo";
-                parent = Access.create (Type.show mock_parent);
-                override = (StrengthenedPrecondition (Found {
-                     actual = Type.none;
-                     expected = Type.integer;
-                     due_to_invariance = false;
-                   }));
-            })));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (InconsistentOverride {
-                overridden_method = Access.create "foo";
-                parent = Access.create (Type.show mock_parent);
-                override = (StrengthenedPrecondition (Found {
-                     actual = Type.none;
-                     expected = Type.Object;
-                     due_to_invariance = false;
-                   }));
-            })));
+  assert_not_due_to_mismatch_with_any
+    (InconsistentOverride {
+          overridden_method = Access.create "foo";
+          parent = Access.create (Type.show mock_parent);
+          override = (StrengthenedPrecondition (NotFound (Access.create "x")));
+      });
+  assert_not_due_to_mismatch_with_any
+    (InconsistentOverride {
+          overridden_method = Access.create "foo";
+          parent = Access.create (Type.show mock_parent);
+          override = (WeakenedPostcondition {
+              actual = Type.Top;
+              expected = Type.integer;
+              due_to_invariance = false;
+            });
+      });
+  assert_due_to_mismatch_with_any
+    (InconsistentOverride {
+          overridden_method = Access.create "foo";
+          parent = Access.create (Type.show mock_parent);
+          override = (WeakenedPostcondition {
+              actual = Type.Object;
+              expected = Type.integer;
+              due_to_invariance = false;
+            });
+      });
+  assert_not_due_to_mismatch_with_any
+    (InconsistentOverride {
+          overridden_method = Access.create "foo";
+          parent = Access.create (Type.show mock_parent);
+          override = (StrengthenedPrecondition (Found {
+               actual = Type.none;
+               expected = Type.integer;
+               due_to_invariance = false;
+             }));
+      });
+  assert_due_to_mismatch_with_any
+    (InconsistentOverride {
+          overridden_method = Access.create "foo";
+          parent = Access.create (Type.show mock_parent);
+          override = (StrengthenedPrecondition (Found {
+               actual = Type.none;
+               expected = Type.Object;
+               due_to_invariance = false;
+             }));
+      });
 
   (* InvalidArgument *)
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (InvalidArgument (
-              Keyword {
-                expression = !"name";
-                annotation = Type.integer;
-              }
-            ))));
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (InvalidArgument (
-              Variable {
-                expression = !"name";
-                annotation = Type.integer;
-              }
-            ))));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (InvalidArgument (
-              Keyword {
-                expression = !"name";
-                annotation = Type.Object;
-              }
-            ))));
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (InvalidArgument (
-              Variable {
-                expression = !"name";
-                annotation = Type.Object;
-              }
-            ))));
+  assert_not_due_to_mismatch_with_any
+    (InvalidArgument (
+        Keyword {
+          expression = !"name";
+          annotation = Type.integer;
+        }
+      ));
+  assert_not_due_to_mismatch_with_any
+    (InvalidArgument (
+        Variable {
+          expression = !"name";
+          annotation = Type.integer;
+        }
+      ));
+  assert_due_to_mismatch_with_any
+    (InvalidArgument (
+        Keyword {
+          expression = !"name";
+          annotation = Type.Object;
+        }
+      ));
+  assert_due_to_mismatch_with_any
+    (InvalidArgument (
+        Variable {
+          expression = !"name";
+          annotation = Type.Object;
+        }
+      ));
 
   (* NotCallable *)
-  assert_true (Error.due_to_mismatch_with_any (error (Error.NotCallable Type.Object)));
-  assert_false (Error.due_to_mismatch_with_any (error (Error.NotCallable Type.Top)));
+  assert_due_to_mismatch_with_any (Error.NotCallable Type.Object);
+  assert_not_due_to_mismatch_with_any (Error.NotCallable Type.Top);
 
   (* UndefinedAttribute *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.UndefinedAttribute {
-              attribute = Access.create "foo";
-              origin = Error.Class {
-                  annotation = Type.Object;
-                  class_attribute = false;
-                };
-            }
-        )));
+  assert_due_to_mismatch_with_any
+    (Error.UndefinedAttribute {
+        attribute = Access.create "foo";
+        origin = Error.Class {
+            annotation = Type.Object;
+            class_attribute = false;
+          };
+      });
 
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.UndefinedAttribute {
-              attribute = Access.create "foo";
-              origin = Error.Module (Access.create "module");
-            }
-        )));
+  assert_not_due_to_mismatch_with_any
+    (Error.UndefinedAttribute {
+        attribute = Access.create "foo";
+        origin = Error.Module (Access.create "module");
+      });
 
   (* Uninitialized Attribute *)
-  assert_true
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.UninitializedAttribute {
-              name = [Access.Identifier ""];
-              parent = mock_parent;
-              mismatch = {
-                Error.actual = Type.Object;
-                expected = Type.Optional Type.integer;
-                due_to_invariance = false;
-              };
-            })));
+  assert_due_to_mismatch_with_any
+    (Error.UninitializedAttribute {
+        name = [Access.Identifier ""];
+        parent = mock_parent;
+        mismatch = {
+          Error.actual = Type.Object;
+          expected = Type.Optional Type.integer;
+          due_to_invariance = false;
+        };
+      });
 
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.UninitializedAttribute {
-              name = [Access.Identifier ""];
-              parent = mock_parent;
-              mismatch = {
-                Error.actual = Type.string;
-                expected = Type.Optional Type.string;
-                due_to_invariance = false;
-              };
-            })));
+  assert_not_due_to_mismatch_with_any
+    (Error.UninitializedAttribute {
+        name = [Access.Identifier ""];
+        parent = mock_parent;
+        mismatch = {
+          Error.actual = Type.string;
+          expected = Type.Optional Type.string;
+          due_to_invariance = false;
+        };
+      });
 
   (* Unpack *)
-  assert_false
-    (Error.due_to_mismatch_with_any
-      (error (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 }))
-    );
-  assert_false
-    (Error.due_to_mismatch_with_any
-      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer }))
-    );
-  assert_true
-    (Error.due_to_mismatch_with_any
-      (error (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Object }))
-    );
+  assert_not_due_to_mismatch_with_any
+    (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
+  assert_not_due_to_mismatch_with_any
+    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
+  assert_due_to_mismatch_with_any
+    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Object });
 
   (* Missing X errors *)
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.MissingParameterAnnotation {
-              name = (Access.create "");
-              annotation = Some Type.Object;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
+  assert_not_due_to_mismatch_with_any
+    (Error.MissingParameterAnnotation {
+        name = (Access.create "");
+        annotation = Some Type.Object;
+        evidence_locations = [];
+        given_annotation = None;
+      });
 
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.MissingReturnAnnotation {
-              name = (Access.create "$return_annotation");
-              annotation = Some Type.Top;
-              evidence_locations = [];
-              given_annotation = None;
-            })));
+  assert_not_due_to_mismatch_with_any
+    (Error.MissingReturnAnnotation {
+        name = (Access.create "$return_annotation");
+        annotation = Some Type.Top;
+        evidence_locations = [];
+        given_annotation = None;
+      });
 
-  assert_false
-    (Error.due_to_mismatch_with_any
-       (error
-          (Error.MissingAttributeAnnotation {
-              parent = mock_parent;
-              missing_annotation = {
-                Error.name = [Access.Identifier ""];
-                annotation = Some Type.Object;
-                given_annotation = None;
-                evidence_locations = [];
-              };
-            })))
+  assert_not_due_to_mismatch_with_any
+    (Error.MissingAttributeAnnotation {
+        parent = mock_parent;
+        missing_annotation = {
+          Error.name = [Access.Identifier ""];
+          annotation = Some Type.Object;
+          given_annotation = None;
+          evidence_locations = [];
+        };
+      })
 
 
 let test_join _ =
