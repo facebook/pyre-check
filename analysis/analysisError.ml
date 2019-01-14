@@ -1620,11 +1620,6 @@ let suppress ~mode error =
 
   let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
     match kind with
-    | IncompatibleVariableType _ ->
-        due_to_analysis_limitations error ||
-        due_to_mismatch_with_any error ||
-        due_to_unsupported_calls error ||
-        (Define.is_untyped define && not (Define.is_toplevel define))
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
     | InconsistentOverride {
