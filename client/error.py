@@ -20,6 +20,7 @@ class Error:
         ignore_error: bool = False,
         external_to_global_root: bool = False,
         **error: Any  # pyre-ignore
+        # note: adding a comma after `Any` above creates a SyntaxError
     ) -> None:
         self.line = error["line"]  # type: int
         self.column = error["column"]  # type: int
@@ -32,18 +33,15 @@ class Error:
         self.external_to_global_root = external_to_global_root  # type: bool
 
     def __repr__(self) -> str:
-        return self.__key() + " " + self.description
-
-    def repr_with_color(self) -> str:
-        return self.__key_with_color() + " " + self.description
+        key = self.__key()
+        if is_capable_terminal():
+            key = self._key_with_color()
+        return key + " " + self.description
 
     def __key(self) -> str:
         return self.path + ":" + str(self.line) + ":" + str(self.column)
 
-    def __key_with_color(self) -> str:
-        if not is_capable_terminal():
-            return self.__key()
-
+    def _key_with_color(self) -> str:
         return (
             Color.RED
             + self.path
