@@ -297,6 +297,7 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
 
 
 let analyze_callable analyses step callable environment =
+  let resolution = Analysis.TypeCheck.resolution environment () in
   let () = (* Verify invariants *)
     let open Fixpoint in
     match Fixpoint.get_meta_data callable with
@@ -316,7 +317,7 @@ let analyze_callable analyses step callable environment =
   match callable with
   | #Callable.real_target as callable ->
       begin
-        match Callable.get_definition callable with
+        match Callable.get_definition callable ~resolution with
         | None ->
             let () =
               Log.error

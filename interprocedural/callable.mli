@@ -86,7 +86,7 @@ module Set : Caml.Set.S with type elt = t
 (* Shared heap access to top-level definitions. *)
 val add_function_definition: Access.t -> File.Handle.t -> unit
 val add_class_definition: Access.t -> File.Handle.t -> unit
-val get_definition: [< real_target ] -> Define.t Node.t option
+val get_definition: resolution: Analysis.Resolution.t -> [< real_target ] -> Define.t Node.t option
 
 
 module Map : Core.Map.S with type Key.t = t

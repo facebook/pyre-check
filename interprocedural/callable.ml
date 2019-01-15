@@ -157,17 +157,15 @@ let class_matches search { Node.value = { Class.name; _ } ; _ } =
   search = Access.show name
 
 
-let get_definition = function
+let get_definition ~resolution = function
   | `Function name ->
       FileOfDefinition.get name
       >>= Ast.SharedMemory.Sources.get
       >>| Preprocessing.defines
       >>= List.find ~f:(define_matches name)
   | `Method { class_name; method_name; } ->
-      FileOfDefinition.get class_name
-      >>= Ast.SharedMemory.Sources.get
-      >>| Preprocessing.classes
-      >>= List.find ~f:(class_matches class_name)
+      Type.Primitive class_name
+      |> Resolution.class_definition resolution
       >>| Node.value
       >>= Class.find_define ~method_name
 
