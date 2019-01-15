@@ -786,6 +786,17 @@ let rec expression annotation =
     | Primitive name ->
         split name
     | Top -> Access.create "$unknown"
+    | Tuple (Bounded []) ->
+        let parameters =
+          Expression.Tuple []
+          |> Node.create_with_default_location
+          |> (fun tuple -> [{ Argument.name = None; value = tuple }])
+          |> Node.create_with_default_location
+        in
+        (Access.create "typing.Tuple") @ [
+          Access.Identifier "__getitem__";
+          Access.Call parameters;
+        ]
     | Tuple elements ->
         let parameters =
           match elements with

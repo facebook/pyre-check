@@ -9,6 +9,7 @@ open Ast
 open Expression
 open Pyre
 open Statement
+open Analysis
 
 
 let transform_ast ({ Source.statements; _ } as source) =
@@ -64,6 +65,27 @@ let transform_ast ({ Source.statements; _ } as source) =
       | _ ->
           None
     in
+    let fields_attribute ~parent ~location attributes =
+      let node = Node.create ~location in
+      let value =
+        attributes
+        |> List.map ~f:(fun (name, _, _) -> String (StringLiteral.create name) |> node)
+        |> (fun parameters -> Tuple parameters)
+        |> node
+      in
+      let annotation =
+        List.init (List.length attributes) ~f:(fun _ -> Type.string)
+        |> Type.tuple
+        |> Type.expression
+      in
+      Assign {
+        Assign.target = Access (parent @ (Access.create "_fields")) |> node;
+        annotation = Some annotation;
+        value;
+        parent = Some parent;
+      }
+      |> Node.create ~location
+    in
     let tuple_attributes ~parent ~location attributes =
       let attribute_statements =
         let attribute (name, annotation, value) =
@@ -81,7 +103,8 @@ let transform_ast ({ Source.statements; _ } as source) =
         in
         List.map attributes ~f:attribute
       in
-      attribute_statements
+      let fields_attribute = fields_attribute ~parent ~location attributes in
+      fields_attribute :: attribute_statements
     in
     let tuple_constructor ~parent ~location attributes =
       let parameters =
@@ -152,7 +175,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           if List.exists ~f:is_named_tuple_primitive bases then
             let extract_assign = function
               | {
-                Node.value = Assign {
+                  Node.value = Assign {
                     Assign.target = { Node.value = Access target; _ };
                     value;
                     annotation;
@@ -170,9 +193,10 @@ let transform_ast ({ Source.statements; _ } as source) =
               | _ ->
                   None
             in
-            List.filter_map body ~f:extract_assign
-            |> tuple_constructor ~parent:name ~location
-            |> fun constructor -> Class { original with Class.body = constructor :: body }
+            let attributes = List.filter_map body ~f:extract_assign in
+            let constructor = tuple_constructor ~parent:name ~location attributes in
+            let fields_attribute = fields_attribute ~parent:name ~location attributes in
+            Class { original with Class.body = constructor :: fields_attribute :: body }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
               match extract_attributes value with

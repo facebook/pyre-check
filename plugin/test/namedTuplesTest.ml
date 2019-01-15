@@ -29,6 +29,7 @@ let test_transform_ast _ =
     {|
       class qualifier.T(typing.NamedTuple):
         def qualifier.T.__init__(self): ...
+        qualifier.T._fields: typing.Tuple[()] = ()
     |};
   assert_expand
     {|
@@ -37,6 +38,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def T.__init__(self, $parameter$a: typing.Any): ...
+        T._fields: typing.Tuple[str] = ('a',)
         T.a: typing.Any
     |};
   assert_expand
@@ -46,6 +48,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def T.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
+        T._fields: typing.Tuple[str, str] = ('one', 'two')
         T.one: typing.Any
         T.two: typing.Any
     |};
@@ -56,6 +59,7 @@ let test_transform_ast _ =
     {|
       class T(typing.NamedTuple):
         def T.__init__(self, $parameter$one: int, $parameter$two: str): ...
+        T._fields: typing.Tuple[str, str] = ('one', 'two')
         T.one: int
         T.two: str
     |};
@@ -70,6 +74,7 @@ let test_transform_ast _ =
           $parameter$a: typing.Any,
           $parameter$b: typing.Any,
           $parameter$c: typing.Any): ...
+        T._fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         T.a: typing.Any
         T.b: typing.Any
         T.c: typing.Any
@@ -83,6 +88,7 @@ let test_transform_ast _ =
     {|
       class Foo(Bar, typing.NamedTuple):
         def Foo.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
+        Foo._fields: typing.Tuple[str, str] = ('one', 'two')
         Foo.one: typing.Any
         Foo.two: typing.Any
         Foo.three: int = 1
@@ -98,6 +104,7 @@ let test_transform_ast _ =
     {|
       class Foo(typing.NamedTuple):
         def Foo.__init__(self, $parameter$a: int, $parameter$b: str, $parameter$c: int = 3): ...
+        Foo._fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         Foo.a: int
         Foo.b: str
         Foo.c: int = 3
@@ -118,6 +125,7 @@ let test_transform_ast _ =
            $parameter$ts: typing.Any,
            $parameter$lazy: typing.Any):
            ...
+         Foo._fields: typing.Tuple[str, str, str, str, str] = ('op', 'path', 'value', 'ts', 'lazy')
          Foo.op: typing.Any
          Foo.path: typing.Any
          Foo.value: typing.Any
@@ -135,6 +143,7 @@ let test_transform_ast _ =
       class Foo:
         class T(typing.NamedTuple):
           def T.__init__(self, $parameter$a: typing.Any, $parameter$b: typing.Any): ...
+          T._fields: typing.Tuple[str, str] = ('a', 'b')
           T.a: typing.Any
           T.b: typing.Any
     |};
@@ -148,6 +157,7 @@ let test_transform_ast _ =
       def foo():
         class T(typing.NamedTuple):
           def T.__init__(self): ...
+          T._fields: typing.Tuple[()] = ()
     |}
 
 
