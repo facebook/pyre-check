@@ -341,7 +341,10 @@ def main() -> int:
             if arguments.command in [commands.Kill]:
                 analysis_directory = AnalysisDirectory(".")
             else:
-                prompt = arguments.command not in [commands.Incremental, commands.Check]
+                prompt = (
+                    arguments.command not in [commands.Incremental, commands.Check]
+                    and not arguments.noninteractive
+                )
                 isolate = (
                     arguments.command in [commands.Check]
                     and not arguments.use_global_shared_analysis_directory

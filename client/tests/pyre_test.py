@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import json
+import os
 import shutil
 import sys
 import unittest
@@ -33,16 +34,29 @@ class PyreTest(unittest.TestCase):
             self.assertEqual(pyre.main(), 2)
             run_null_server.assert_has_calls([call(timeout=3600 * 12)])
 
+    @patch.object(os, "getenv")
+    @patch.object(os, "isatty")
     @patch.object(json, "dump")
     @patch.object(json, "load")
     @patch.object(configuration.Configuration, "_read")
     @patch.object(configuration.Configuration, "_validate")
     @patch.object(buck, "generate_source_directories", return_value=["."])
     def test_buck_build_prompting(
-        self, generate_source_directories, validate, read, _json_load, _json_dump
+        self,
+        generate_source_directories,
+        validate,
+        read,
+        _json_load,
+        _json_dump,
+        _os_isatty,
+        _os_getenv,
     ) -> None:
         mock_success = MagicMock()
         mock_success.exit_code = lambda: 0
+
+        # Pretend that all CI jobs are running attached to a terminal, in a tty.
+        _os_isatty.return_value = True
+        _os_getenv.return_value = "term"
 
         with patch.object(commands.Check, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "check"]):
@@ -63,5 +77,17 @@ class PyreTest(unittest.TestCase):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_called_with(
-                    set(), build=False, prompt=True
+                    set(), build=False, prompt=False
+                )
+        with patch.object(commands.Start, "run", return_value=mock_success):
+            with patch.object(sys, "argv", ["pyre", "start"]):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_called_with(
+                    set(), build=True, prompt=True
+                )
+        with patch.object(commands.Start, "run", return_value=mock_success):
+            with patch.object(sys, "argv", ["pyre", "--noninteractive", "start"]):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_called_with(
+                    set(), build=True, prompt=False
                 )
