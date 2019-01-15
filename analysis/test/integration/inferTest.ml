@@ -165,6 +165,18 @@ let test_check_missing_return _ =
 
   assert_type_errors
     {|
+      def foo() -> typing.Any:
+        x = unknown_call()
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Undefined name [18]: Global name `unknown_call` is undefined.";
+      "Incompatible return type [7]: Expected `typing.Any` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
        def foo(x: typing.Any) -> typing.Any:
          return x
      |}

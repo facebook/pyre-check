@@ -73,6 +73,8 @@ let test_check_return _ =
     [
       "Missing return annotation [3]: Return type must be specified as type " ^
       "that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
       "Incompatible return type [7]: Expected `typing.Dict[typing.Any]` but got " ^
       "`typing.Dict[typing.Any, typing.Any]`.";
     ];

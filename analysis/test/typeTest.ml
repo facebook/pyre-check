@@ -751,6 +751,10 @@ let test_contains_callable _ =
   assert_false (Type.contains_callable (Type.Primitive "foo"))
 
 
+let test_contains_any _ =
+  assert_true (Type.contains_any (Type.Object))
+
+
 let test_is_not_instantiated _ =
   assert_true (Type.is_not_instantiated Type.Bottom);
   assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
@@ -1395,6 +1399,7 @@ let () =
     "exists">::test_exists;
     "is_async_generator">::test_is_generator;
     "contains_callable">::test_contains_callable;
+    "contains_any">::test_contains_any;
     "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;
