@@ -591,7 +591,6 @@ let test_check_immutable_annotations _ =
     |}
     [];
 
-  (* TODO(T25072735): error on typing.Any (incompatible usage) rather than suggest it *)
   assert_type_errors
     {|
       constant

@@ -2812,9 +2812,10 @@ module State = struct
                   match Resolution.parse_meta_annotation resolution annotation with
                   | Some expected ->
                       let { resolved; _ } = forward_expression ~state ~expression:value in
-                      if (Type.equal resolved Type.Bottom
-                          || Type.is_unknown resolved
-                          || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected))
+                      if
+                        Type.equal resolved Type.Bottom
+                        || Type.is_unknown resolved
+                        || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected)
                       then
                         None
                       else
