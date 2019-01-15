@@ -17,7 +17,6 @@
   languageServerTest
   persistentClientTest
   queryTest
-  savedStateTest
   serverProtocolTest
   serverTest
   WatchmanTest)
