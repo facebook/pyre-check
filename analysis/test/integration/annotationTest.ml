@@ -527,6 +527,28 @@ let test_check_immutable_annotations _ =
 
   assert_type_errors
     {|
+      def foo(any: typing.Any) -> None:
+        x: int = any
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
+      "Incompatible variable type [9]: x is declared to have type `int` " ^
+      "but is used as type `typing.Any`.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo(any: typing.Any) -> None:
+        x: int = any
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
+    ];
+
+  assert_type_errors
+    {|
       def foo(x: int) -> None:
         if x > 10:
           y: int
