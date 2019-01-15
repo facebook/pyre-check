@@ -202,10 +202,70 @@ let test_check_assert_functions _ =
     |}
     []
 
+let test_check_all _ =
+  assert_type_errors
+    {|
+      def foo(x: typing.List[typing.Optional[str]]) -> typing.Optional[str]:
+        if all(x):
+          return ','.join(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
+        if all( x):
+          return ','.join(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
+        if not all(x):
+          return ','.join(x)
+    |}
+    [
+      "Incompatible parameter type [6]: \
+       Expected `typing.Iterable[str]` for 1st anonymous parameter to call \
+       `str.join` but got `typing.Iterable[typing.Optional[str]]`."
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Iterable[typing.Union[str, None]]) -> typing.Optional[str]:
+        if all(x):
+          return ','.join(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Iterable[typing.Union[str, int, None]]) -> \
+          typing.Iterable[typing.Union[str, int]]:
+        if all(x):
+          return x
+        return []
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: typing.Dict[typing.Optional[int], _T]) -> typing.Dict[int, _T]:
+        if all(x):
+          return x
+        return {}
+    |}
+    [
+      "Incompatible return type [7]: \
+       Expected `typing.Dict[int, Variable[_T]]` but got \
+       `typing.Dict[typing.Optional[int], Variable[_T]]`."
+    ]
 
 let () =
   "assert">:::[
     "check_assert">::test_check_assert;
     "check_assert_functions">::test_check_assert_functions;
+    "check_all">::test_check_all;
   ]
   |> Test.run

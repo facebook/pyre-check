@@ -1768,6 +1768,23 @@ let test_forward_statement _ =
     "assert (not x) or 1"
     ["x", Type.optional Type.integer];
 
+  assert_forward
+    ["x", Type.list (Type.optional Type.integer)]
+    "assert all(x)"
+    ["x", Type.list Type.integer];
+  assert_forward
+    ["x", Type.iterable (Type.optional Type.integer)]
+    "assert all(x)"
+    ["x", Type.iterable Type.integer];
+  assert_forward
+    ["x", Type.list (Type.union [Type.none; Type.integer; Type.string])]
+    "assert all(x)"
+    ["x", Type.list (Type.union [Type.integer; Type.string])];
+  assert_forward
+    ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer]
+    "assert all(x)"
+    ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer];
+
   (* Isinstance. *)
   assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward

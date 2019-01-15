@@ -652,7 +652,7 @@ let test_lookup_definitions _ =
       "test.py:2:16-2:19 -> builtins.pyi:61:0-75:34";
       "test.py:5:14-5:17 -> builtins.pyi:61:0-75:34";
       "test.py:8:10-8:13 -> builtins.pyi:61:0-75:34";
-      "test.py:8:17-8:20 -> builtins.pyi:80:0-95:42";
+      "test.py:8:17-8:20 -> builtins.pyi:80:0-96:42";
     ];
   assert_definition
     ~position:{ Location.line = 12; column = 0 }

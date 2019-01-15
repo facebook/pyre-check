@@ -2887,6 +2887,41 @@ module State = struct
                     state
               end
 
+          | Access [
+              Access.Identifier "all";
+              Access.Call {
+                Node.value = [
+                  { Argument.name = None; value = { Node.value = Access access; _ } };
+                ];
+                _;
+              }
+            ] ->
+              let resolution =
+                match Resolution.get_local resolution ~access with
+                | Some {
+                    Annotation.annotation =
+                      (Type.Parametric { name; parameters = [Type.Optional parameter] })
+                        as annotation;
+                    _
+                  } when Resolution.less_or_equal
+                      resolution
+                      ~left:annotation
+                      ~right:(Type.iterable (Type.Optional parameter)) ->
+                    Resolution.set_local
+                      resolution
+                      ~access
+                      ~annotation:(
+                        Annotation.create
+                          (Type.Parametric {
+                            name;
+                            parameters = [parameter]
+                          })
+                      )
+                | _ ->
+                    resolution
+              in
+              { state with resolution }
+
           | Access access ->
               let element = last_element ~resolution access in
               let resolution =
