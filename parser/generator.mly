@@ -87,7 +87,7 @@
       value = Access access
     }
 
-  let slice ~lower ~upper ~step =
+  let slice ~lower ~upper ~step ~colon =
     let location =
       let expression =
         match lower with
@@ -104,7 +104,8 @@
                   end
             end
       in
-      expression >>| Node.location |> Option.value ~default:Location.Reference.any
+      let anchor = Location.create ~start:colon ~stop:colon in
+      expression >>| Node.location |> Option.value ~default:anchor
     in
     let arguments =
       let argument argument =
@@ -126,6 +127,9 @@
   let create_ellipses (start, stop) =
     let location = Location.create ~start ~stop in
     Node.create Ellipses ~location
+
+  let create_ellipses_after { Node.location; _ } =
+    Node.create Ellipses ~location:{ location with start = location.stop }
 
   let subscript_argument ~subscripts ~location =
     let value =
@@ -368,7 +372,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = Node.create_with_default_location Ellipses;
+          value = create_ellipses_after annotation;
           parent = None;
         };
       }]
@@ -380,7 +384,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = Node.create_with_default_location Ellipses;
+          value = create_ellipses_after annotation;
           parent = None;
         };
       }]
@@ -643,7 +647,7 @@ compound_statement:
                     Node.value = {
                       parameter with
                         Parameter.annotation = Some {
-                          Node.location = Location.Reference.any;
+                          Node.location;
                           value = String (StringLiteral.create annotation);
                         };
                       }
@@ -1544,11 +1548,11 @@ argument:
 
 subscript_key:
   | index = test { index }
-  | lower = test?; COLON; upper = test? {
-      slice ~lower ~upper ~step:None
+  | lower = test?; colon = COLON; upper = test? {
+      slice ~lower ~upper ~step:None ~colon
     }
-  | lower = test?; COLON; upper = test?; COLON; step = test? {
-      slice ~lower ~upper ~step
+  | lower = test?; colon = COLON; upper = test?; COLON; step = test? {
+      slice ~lower ~upper ~step ~colon
     }
   ;
 
