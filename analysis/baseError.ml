@@ -9,7 +9,7 @@ open Ast
 open Statement
 
 
-module type KIND = sig
+module type Kind = sig
 
   type t
   [@@deriving compare, eq, show, sexp, hash]
@@ -29,7 +29,7 @@ module type KIND = sig
 end
 
 
-module type ERROR = sig
+module type Error = sig
   type kind
 
   type t = {
@@ -53,7 +53,7 @@ module type ERROR = sig
 end
 
 
-module Make(Kind : KIND) = struct
+module Make(Kind: Kind) = struct
 
   type kind = Kind.t
 

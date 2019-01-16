@@ -9,7 +9,7 @@ open Ast
 open Statement
 
 
-module type KIND = sig
+module type Kind = sig
   type t
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -27,8 +27,7 @@ module type KIND = sig
     -> Yojson.Safe.json
 end
 
-
-module type ERROR = sig
+module type Error = sig
   type kind
 
   type t = {
@@ -51,6 +50,4 @@ module type ERROR = sig
   val to_json: detailed: bool -> t -> Yojson.Safe.json
 end
 
-
-module Make(Kind : KIND): ERROR
-  with type kind := Kind.t
+module Make(Kind: Kind): Error with type kind := Kind.t

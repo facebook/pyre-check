@@ -12,4 +12,4 @@ type kind = {
 [@@deriving compare, eq, show, sexp, hash]
 
 
-include Analysis.BaseError.ERROR with type kind := kind
+include Analysis.BaseError.Error with type kind := kind

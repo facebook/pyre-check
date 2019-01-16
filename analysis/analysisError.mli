@@ -101,7 +101,7 @@ type kind =
   | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, hash]
 
-include BaseError.ERROR with type kind := kind
+include BaseError.Error with type kind := kind
 
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: t -> bool
