@@ -274,7 +274,7 @@ def run_fixme(
 
 
 def run_missing_overridden_return_annotations(
-    _arguments, errors: List[Tuple[str, List[Any]]]
+    _arguments, result: List[Tuple[str, List[Any]]]
 ) -> None:
     for path, errors in result:
         LOG.info("Patching errors in `%s`.", path)

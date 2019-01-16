@@ -206,7 +206,8 @@ class Configuration:
                     "Binary at `{}` does not exist.".format(self.binary)
                 )
 
-            if self.number_of_workers < 1:
+            number_of_workers = self.number_of_workers
+            if number_of_workers and number_of_workers < 1:
                 raise InvalidConfiguration("Number of workers must be greater than 0.")
 
             # Validate typeshed path and sub-elements.

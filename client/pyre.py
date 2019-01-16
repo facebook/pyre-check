@@ -12,6 +12,7 @@ import shutil
 import sys
 import time
 import traceback
+from typing import Type  # noqa
 
 from . import (
     EnvironmentException,

@@ -56,12 +56,12 @@ class Error:
             + Format.CLEAR
         )
 
-    def __eq__(self, other: Any) -> bool:  # pyre-ignore: T38904361
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Error):
             return False
         return self.__key() == other.__key()
 
-    def __lt__(self, other: Any) -> bool:  # pyre-ignore: T38904361
+    def __lt__(self, other: Any) -> bool:
         if not isinstance(other, Error):
             return False
         return self.__key() < other.__key()
