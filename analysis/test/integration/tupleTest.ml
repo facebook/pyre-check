@@ -230,6 +230,8 @@ let test_check_tuple _ =
       "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
+      "Unable to unpack [23]: Unable to unpack 3 values, 2 were expected.";
+      "Unable to unpack [23]: Unable to unpack 3 values, 4 were expected.";
     ];
   assert_type_errors
     {|
@@ -239,6 +241,20 @@ let test_check_tuple _ =
         T(a=2)
     |}
     ["Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified."];
+  assert_type_errors
+    {|
+      T = typing.NamedTuple('T', [('a', str), ('b', int)])
+      def takes_int(x: int) -> None: pass
+      def foo(x: T) -> None:
+          takes_int(x.b)
+          a, b = x
+          reveal_type(a)
+          reveal_type(b)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `str`.";
+      "Revealed type [-1]: Revealed type for `b` is `int`.";
+    ];
   assert_type_errors
     {|
       def foo(input: int) -> None:

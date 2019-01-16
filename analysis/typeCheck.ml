@@ -2381,7 +2381,45 @@ module State = struct
             ~guide
             ~resolved
             ~expression =
-
+          let is_named_tuple annotation =
+            Resolution.less_or_equal
+              resolution
+              ~left:annotation
+              ~right:Type.named_tuple
+          in
+          let get_named_tuple_parameters annotation =
+            let namedtuple_attribute_annotations attributes =
+              let open Annotated.Class.Attribute in
+              let filter_attribute { Node.value = { annotation; name; _ }; _ } =
+                let fields =
+                  let is_fields = function
+                    | { Node.value = { name = Access name; _ }; _ } -> Access.show name = "_fields"
+                    | _ -> false
+                  in
+                  match List.find ~f:is_fields attributes >>| Node.value with
+                  | Some { value = { Node.value = Tuple fields; _ }; _ } -> fields
+                  | _ -> []
+                in
+                let equals name field =
+                  match name, Node.value field with
+                  | Access name, String { StringLiteral.value; _ } -> Access.show name = value
+                  | _ -> false
+                in
+                if List.exists ~f:(equals name) fields then
+                  Some (Annotation.annotation annotation)
+                else
+                  None
+              in
+              List.filter_map ~f:filter_attribute attributes
+            in
+            annotation
+            |> Option.some_if (is_named_tuple annotation)
+            >>= Resolution.class_definition resolution
+            >>| Annotated.Class.create
+            >>| Annotated.Class.attributes ~resolution
+            >>| namedtuple_attribute_annotations
+            |> Option.value ~default:[]
+          in
           let is_uniform_sequence annotation =
             match annotation with
             | Type.Tuple (Type.Unbounded _) ->
@@ -2393,11 +2431,7 @@ module State = struct
                 Resolution.less_or_equal
                   resolution
                   ~left:annotation
-                  ~right:(Type.iterable Type.Top) ||
-                Resolution.less_or_equal
-                  resolution
-                  ~left:annotation
-                  ~right:Type.named_tuple
+                  ~right:(Type.iterable Type.Top)
           in
           let uniform_sequence_parameter annotation =
             match annotation with
@@ -2410,25 +2444,23 @@ module State = struct
                 | _ -> Type.Top
           in
           let is_nonuniform_sequence ~minimum_length annotation =
-            (* TODO(32692300): this should support tuple subclasses (e.g. named tuples) as well. *)
+            (* TODO(32692300): this should support tuple subclasses as well. *)
             match annotation with
             | Type.Tuple (Type.Bounded parameters)
               when minimum_length <= List.length parameters ->
                 true
+            | annotation
+              when is_named_tuple annotation &&
+                minimum_length <= List.length (get_named_tuple_parameters annotation) ->
+                true
             | _ ->
                 false
           in
-          let nonuniform_sequence_parameters ~minimum_length annotation =
-            match annotation with
-            | Type.Tuple (Type.Bounded parameters)
-              when minimum_length <= List.length parameters ->
-                parameters
-            | _ ->
-                let rec parameters = function
-                  | count when count > 0 -> Type.Top :: (parameters (count - 1))
-                  | _ -> []
-                in
-                parameters minimum_length
+          let nonuniform_sequence_parameters annotation =
+           match annotation with
+           | Type.Tuple (Type.Bounded parameters) -> parameters
+           | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
+           | _ -> []
           in
 
           match value with
@@ -2667,11 +2699,7 @@ module State = struct
                 left, starred, right
               in
               let annotations =
-                let annotations =
-                  nonuniform_sequence_parameters
-                    ~minimum_length:(List.length elements)
-                    guide
-                in
+                let annotations = nonuniform_sequence_parameters guide in
                 let left, tail = List.split_n annotations (List.length left) in
                 let starred, right = List.split_n tail (List.length tail - List.length right) in
                 let starred =
@@ -2725,6 +2753,13 @@ module State = struct
                     (Error.Unpack {
                         expected_count = List.length elements;
                         unpack_problem = CountMismatch (List.length parameters);
+                      })
+                | annotation when is_named_tuple annotation ->
+                    (Error.Unpack {
+                        expected_count = List.length elements;
+                        unpack_problem = CountMismatch (
+                          List.length (get_named_tuple_parameters annotation)
+                        );
                       })
                 | _ ->
                     (Error.Unpack {
