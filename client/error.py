@@ -28,6 +28,7 @@ class Error:
         self.code = error["code"]  # type: int
         self.name = error["name"]  # type: str
         self.description = error["description"]  # type: str
+        self.long_description = error.get("long_description", "")  # type: str
         self.inference = error["inference"]  # type: str
         self.ignore_error = ignore_error  # type: bool
         self.external_to_global_root = external_to_global_root  # type: bool

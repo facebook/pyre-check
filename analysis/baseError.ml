@@ -47,7 +47,7 @@ module type ERROR = sig
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t
   val code: t -> int
-  val description: t -> detailed:bool -> string
+  val description: ?separator:string -> t -> detailed:bool -> string
 
   val to_json: detailed: bool -> t -> Yojson.Safe.json
 end
@@ -99,6 +99,7 @@ module Make(Kind : KIND) = struct
 
 
   let description
+      ?(separator = " ")
       ({
         kind;
         location;
@@ -113,7 +114,7 @@ module Make(Kind : KIND) = struct
       (Kind.code kind)
       (
         if detailed then
-          String.concat ~sep:" " messages
+          String.concat ~sep:separator messages
         else
           List.nth_exn messages 0
       )
@@ -139,6 +140,7 @@ module Make(Kind : KIND) = struct
         "code", `Int (Kind.code kind);
         "name", `String (Kind.name kind);
         "description", `String (description error ~detailed);
+        "long_description", `String (description error ~detailed:true ~separator:"\n");
         "inference", (Kind.inference_information ~define:define_node kind);
         "define", `String (Access.show_sanitized define.Define.name);
       ])

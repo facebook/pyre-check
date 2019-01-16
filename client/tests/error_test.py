@@ -41,3 +41,16 @@ class ErrorTest(unittest.TestCase):
             error._key_with_color(),
             "\x1b[31mc.py\x1b[0m:\x1b[33m4\x1b[0m:\x1b[33m11\x1b[0m",
         )
+
+    def test_long_description(self) -> None:
+        error = Error(**self.fake_error)
+        self.assertEqual(error.long_description, "")
+
+        error_with_long_description = self.fake_error
+        error_with_long_description[
+            "long_description"
+        ] = "Fake error.\nAnd this is why this is an error."
+        error = Error(**error_with_long_description)
+        self.assertEqual(
+            error.long_description, "Fake error.\nAnd this is why this is an error."
+        )

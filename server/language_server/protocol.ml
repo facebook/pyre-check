@@ -38,7 +38,7 @@ module PublishDiagnostics = struct
           severity = Some DiagnosticSeverity.Error;
           code = None;
           source = Some "Pyre";
-          message = TypeCheck.Error.description error ~detailed:true;
+          message = TypeCheck.Error.description error ~detailed:true ~separator:"\n";
         })
     in
     let failed_response =
