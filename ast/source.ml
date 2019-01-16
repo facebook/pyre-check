@@ -208,6 +208,17 @@ type t = {
 [@@deriving compare, eq, hash, show, sexp]
 
 
+let pp format { statements; _ } =
+  let print_statement statement =
+    Format.fprintf format "%a\n" Statement.pp statement
+  in
+  List.iter statements ~f:print_statement
+
+
+let show source =
+  Format.asprintf "%a" pp source
+
+
 let mode ~configuration ~local_mode =
   match configuration, local_mode with
   | { Configuration.Analysis.infer = true; _ }, _ ->
