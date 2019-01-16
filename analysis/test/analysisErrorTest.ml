@@ -322,13 +322,13 @@ let test_due_to_mismatch_with_any _ =
   (* ImpossibleIsinstance *)
   assert_due_to_mismatch_with_any
     (Error.ImpossibleIsinstance {
-      expression = !"expression";
-      mismatch = {
-        Error.actual = Type.Object;
-        expected = Type.Object;
-        due_to_invariance = false;
-      };
-    });
+        expression = !"expression";
+        mismatch = {
+          Error.actual = Type.Object;
+          expected = Type.Object;
+          due_to_invariance = false;
+        };
+      });
 
   (* IncompatibleAttributeType. *)
   assert_due_to_mismatch_with_any
@@ -416,49 +416,49 @@ let test_due_to_mismatch_with_any _ =
   (* InconsistentOverride *)
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-          overridden_method = Access.create "foo";
-          parent = Access.create (Type.show mock_parent);
-          override = (StrengthenedPrecondition (NotFound (Access.create "x")));
+        overridden_method = Access.create "foo";
+        parent = Access.create (Type.show mock_parent);
+        override = (StrengthenedPrecondition (NotFound (Access.create "x")));
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-          overridden_method = Access.create "foo";
-          parent = Access.create (Type.show mock_parent);
-          override = (WeakenedPostcondition {
-              actual = Type.Top;
-              expected = Type.integer;
-              due_to_invariance = false;
-            });
+        overridden_method = Access.create "foo";
+        parent = Access.create (Type.show mock_parent);
+        override = (WeakenedPostcondition {
+            actual = Type.Top;
+            expected = Type.integer;
+            due_to_invariance = false;
+          });
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
-          overridden_method = Access.create "foo";
-          parent = Access.create (Type.show mock_parent);
-          override = (WeakenedPostcondition {
-              actual = Type.Object;
-              expected = Type.integer;
-              due_to_invariance = false;
-            });
+        overridden_method = Access.create "foo";
+        parent = Access.create (Type.show mock_parent);
+        override = (WeakenedPostcondition {
+            actual = Type.Object;
+            expected = Type.integer;
+            due_to_invariance = false;
+          });
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-          overridden_method = Access.create "foo";
-          parent = Access.create (Type.show mock_parent);
-          override = (StrengthenedPrecondition (Found {
-               actual = Type.none;
-               expected = Type.integer;
-               due_to_invariance = false;
-             }));
+        overridden_method = Access.create "foo";
+        parent = Access.create (Type.show mock_parent);
+        override = (StrengthenedPrecondition (Found {
+            actual = Type.none;
+            expected = Type.integer;
+            due_to_invariance = false;
+          }));
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
-          overridden_method = Access.create "foo";
-          parent = Access.create (Type.show mock_parent);
-          override = (StrengthenedPrecondition (Found {
-               actual = Type.none;
-               expected = Type.Object;
-               due_to_invariance = false;
-             }));
+        overridden_method = Access.create "foo";
+        parent = Access.create (Type.show mock_parent);
+        override = (StrengthenedPrecondition (Found {
+            actual = Type.none;
+            expected = Type.Object;
+            due_to_invariance = false;
+          }));
       });
 
   (* InvalidArgument *)

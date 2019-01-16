@@ -798,8 +798,8 @@ let test_check_variable_arguments _ =
     ];
 
   assert_type_errors
-   ~debug:false
-   ~strict:true
+    ~debug:false
+    ~strict:true
     {|
       def foo(a: int, b: int) -> int:
         return 1
@@ -879,13 +879,13 @@ let test_check_variable_arguments _ =
      "Expected `int` for 1st anonymous parameter to call `foo` but got `str`."];
 
   assert_type_errors
-   {|
+    {|
      def foo(a: int, b: int) -> int:
        return 1
      def bar(b: typing.Tuple[int, int]) -> int:
        return foo( *b )
    |}
-   []
+    []
 
 
 let test_check_variable_restrictions _ =

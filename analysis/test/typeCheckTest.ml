@@ -337,7 +337,7 @@ let test_redirect _ =
     "type(type(a))"
     ("$type", ["$type", Type.meta (Type.meta Type.integer)]);
 
-   assert_redirect
+  assert_redirect
     ~source:
       {|
         a = 1

@@ -146,11 +146,11 @@ let test_check_attributes _ =
       class Foo:
         bar: typing.Any
     |}
-  [
-    "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
-    "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-    "non-optional type `typing.Any` but is never initialized."
-  ];
+    [
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
+      "non-optional type `typing.Any` but is never initialized."
+    ];
 
   assert_type_errors
     {|

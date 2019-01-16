@@ -286,7 +286,7 @@ let test_select _ =
   assert_select
     "[[int], int]" "(**int_to_int_dictionary)"
     (`NotFoundInvalidKeywordArgument
-      (!"int_to_int_dictionary", Type.dictionary ~key:Type.integer ~value:Type.integer));
+       (!"int_to_int_dictionary", Type.dictionary ~key:Type.integer ~value:Type.integer));
   assert_select
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"

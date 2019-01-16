@@ -113,30 +113,30 @@ module AccessState = struct
         access, resolution
 
 
-    let step
-        ({ resolution; accumulator; f; _ } as state)
-        ?element
-        ?resolved
-        ?target
-        ?(continue = true)
-        ~lead
-        () =
-      let accumulator =
-        let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
-        let element = Option.value element ~default:Value in
-        f accumulator ~resolution ~resolved ~element ~lead
-      in
-      {
-        state with
-        accumulator;
-        resolved;
-        target;
-        continue;
-      }
+  let step
+      ({ resolution; accumulator; f; _ } as state)
+      ?element
+      ?resolved
+      ?target
+      ?(continue = true)
+      ~lead
+      () =
+    let accumulator =
+      let resolved = Option.value resolved ~default:(Annotation.create Type.Top) in
+      let element = Option.value element ~default:Value in
+      f accumulator ~resolution ~resolved ~element ~lead
+    in
+    {
+      state with
+      accumulator;
+      resolved;
+      target;
+      continue;
+    }
 
 
-    let abort state ?element ~lead () =
-      step state ?element ~continue:false ~lead ()
+  let abort state ?element ~lead () =
+    step state ?element ~continue:false ~lead ()
 end
 
 module State = struct
@@ -2925,7 +2925,7 @@ module State = struct
                 | Some {
                     Annotation.annotation =
                       (Type.Parametric { name; parameters = [Type.Optional parameter] })
-                        as annotation;
+                      as annotation;
                     _
                   } when Resolution.less_or_equal
                       resolution
@@ -2937,9 +2937,9 @@ module State = struct
                       ~annotation:(
                         Annotation.create
                           (Type.Parametric {
-                            name;
-                            parameters = [parameter]
-                          })
+                              name;
+                              parameters = [parameter]
+                            })
                       )
                 | _ ->
                     resolution

@@ -97,11 +97,11 @@ module State = struct
               Error.create
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
-                  name;
-                  annotation = Some annotation;
-                  evidence_locations = [];
-                  given_annotation;
-                })
+                    name;
+                    annotation = Some annotation;
+                    evidence_locations = [];
+                    given_annotation;
+                  })
                 ~define:define_node
             in
             Map.set errors ~key:(Error.hash error) ~data:error)

@@ -175,7 +175,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           if List.exists ~f:is_named_tuple_primitive bases then
             let extract_assign = function
               | {
-                  Node.value = Assign {
+                Node.value = Assign {
                     Assign.target = { Node.value = Access target; _ };
                     value;
                     annotation;
