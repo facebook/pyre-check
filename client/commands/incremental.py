@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 import sys
-from typing import List
+from typing import IO, List, cast
 
 from .command import ClientException, ExitCode, State
 from .reporting import Reporting
@@ -73,14 +73,14 @@ class Incremental(Reporting):
 
         return flags
 
-    def _read_stderr(self, _stream, analysis_directory) -> None:
-        stderr_file = os.path.join(analysis_directory, ".pyre/server/server.stdout")
+    def _read_stderr(self, _stream) -> None:
+        stderr_file = os.path.join(
+            self._analysis_directory.get_root(), ".pyre/server/server.stdout"
+        )
         with subprocess.Popen(
             ["tail", "-f", stderr_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
         ) as stderr_tail:
             atexit.register(stderr_tail.terminate)
-            super(Incremental, self)._read_stderr(
-                stderr_tail.stdout, analysis_directory
-            )
+            super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
