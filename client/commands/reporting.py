@@ -1,30 +1,45 @@
+# Copyright (c) 2016-present, Facebook, Inc.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# pyre-strict
+
+import argparse
 import fnmatch
 import json
 import logging
 import os
-from typing import Set
+from typing import Any, Dict, Iterable, List, Set  # noqa
 
 from .. import log
+from ..configuration import Configuration
 from ..error import Error
-from .command import ClientException, Command
+from ..filesystem import AnalysisDirectory
+from .command import ClientException, Command, Result
 
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 TEXT = "text"  # type: str
 JSON = "json"  # type: str
 
 
 class Reporting(Command):
-    def __init__(self, arguments, configuration, analysis_directory) -> None:
+    def __init__(
+        self,
+        arguments: argparse.Namespace,
+        configuration: Configuration,
+        analysis_directory: AnalysisDirectory,
+    ) -> None:
         super().__init__(arguments, configuration, analysis_directory)
-        self._verbose = arguments.verbose
-        self._output = arguments.output
-        self._ignore_all_errors_paths = configuration.ignore_all_errors
-        self._discovered_source_directories = [self._local_root]
-        self._local_configuration = arguments.local_configuration
+        self._verbose = arguments.verbose  # type: bool
+        self._output = arguments.output  # type: str
+        self._ignore_all_errors_paths = (
+            configuration.ignore_all_errors
+        )  # type: Iterable[str]
 
-    def _print(self, errors) -> None:
+    def _print(self, errors: Iterable[Error]) -> None:
         errors = [
             error
             for error in errors
@@ -56,10 +71,12 @@ class Reporting(Command):
         }
         return directories_to_analyze
 
-    def _get_errors(self, result) -> Set[Error]:
+    def _get_errors(self, result: Result) -> Set[Error]:
         result.check()
 
         errors = set()
+        # pyre-ignore: T39175181
+        results = {}  # type: List[Dict[str, Any]]
         try:
             results = json.loads(result.output)
         except (json.JSONDecodeError, ValueError):
