@@ -32,7 +32,7 @@ let checks: (module Signature) String.Map.t =
   String.Map.of_alist_exn checks
 
 
-let additional_checks
+let checks
     ~configuration:{ Configuration.Analysis.infer; additional_checks; _ }: (module Signature) list =
   let checks_to_run = if infer then ["inference"] else "typeCheck" :: additional_checks in
   let find name =

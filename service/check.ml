@@ -70,7 +70,7 @@ let analyze_sources
     let timer = Timer.start () in
     let empty_result = { errors = []; number_files = 0 } in
     Log.info "Checking %d sources..." (List.length handles);
-    let run_additional_check (module Check: Analysis.Check.Signature) =
+    let run (module Check: Analysis.Check.Signature) =
       Log.info "Running check `%s`..." Check.name;
       let timer = Timer.start () in
       let map _ handles =
@@ -110,11 +110,11 @@ let analyze_sources
           ~inputs:handles
           ()
       in
-      Statistics.performance ~name:(Format.asprintf "additional_check_%s" Check.name) ~timer ();
+      Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
       errors
     in
     let errors =
-      List.map (Analysis.Check.additional_checks ~configuration) ~f:run_additional_check
+      List.map (Analysis.Check.checks ~configuration) ~f:run
       |> List.concat
     in
     Statistics.performance ~name:"analyzed sources" ~timer ();
