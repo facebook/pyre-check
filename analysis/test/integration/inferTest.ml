@@ -58,7 +58,22 @@ let test_check_missing_parameter _ =
     [
       "Missing parameter annotation [2]: Parameter `x` must have a type " ^
       "that does not contain `Any`."
-    ]
+    ];
+  assert_type_errors
+    {|
+      def foo(x, *, force_named) -> int:
+        return 1
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+      "Missing parameter annotation [2]: Parameter `force_named` has no type specified.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: UnknownType) -> int:
+        return 1
+    |}
+    ["Undefined type [11]: Type `UnknownType` is not defined."]
 
 
 let test_check_missing_return _ =
