@@ -2353,7 +2353,7 @@ module State = struct
         state
     in
     match value with
-    | Assign { Assign.target; annotation; value; _ } ->
+    | Assign { Assign.target; annotation; value; parent } ->
         let state =
           annotation
           >>| parse_and_check_annotation ~state
@@ -2482,10 +2482,24 @@ module State = struct
                     false
               in
               let state =
+                let is_valid_enumeration_assignment =
+                  let parent_annotation =
+                    parent
+                    >>| Access.expression
+                    >>| Resolution.parse_annotation resolution
+                    |> (fun annotation -> Option.value annotation ~default:Type.Top)
+                  in
+                  Resolution.less_or_equal
+                    resolution
+                    ~left:parent_annotation
+                    ~right:Type.enumeration &&
+                  Resolution.less_or_equal resolution ~left:expected ~right:resolved
+                in
                 if not (Type.equal resolved Type.ellipses) &&
                    Annotation.is_immutable annotation &&
                    not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
-                   not is_typed_dictionary_initialization then
+                   not is_typed_dictionary_initialization &&
+                   not is_valid_enumeration_assignment then
                   let kind =
                     let open Annotated in
                     match element with

@@ -174,6 +174,7 @@ val callable
 val complex: t
 val dictionary: key: t -> value: t -> t
 val ellipses: t
+val enumeration: t
 val float: t
 val generator: ?async: bool -> t -> t
 val generic: t

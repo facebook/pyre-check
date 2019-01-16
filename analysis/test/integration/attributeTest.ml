@@ -711,6 +711,12 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class C(enum.IntEnum):
+        a = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      class C(enum.IntEnum):
         a: int
     |}
     [

@@ -410,6 +410,10 @@ let ellipses =
   Primitive "ellipses"
 
 
+let enumeration =
+  Primitive "enum.Enum"
+
+
 let float =
   Primitive "float"
 
