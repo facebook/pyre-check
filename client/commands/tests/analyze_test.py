@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ... import commands  # noqa
+from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -28,7 +29,7 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, ".")
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
                 [
@@ -50,7 +51,7 @@ class AnalyzeTest(unittest.TestCase):
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = "taint_models"
-            command = commands.Analyze(arguments, configuration, ".")
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
                 [
@@ -75,7 +76,7 @@ class AnalyzeTest(unittest.TestCase):
         ) as call_client, patch("json.loads", return_value=[]):
             configuration.taint_models_path = "taint_models"
             arguments.taint_models_path = "overriding_models"
-            command = commands.Analyze(arguments, configuration, ".")
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
                 [
@@ -100,7 +101,7 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(arguments, configuration, ".")
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
                 [

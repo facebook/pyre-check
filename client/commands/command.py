@@ -45,7 +45,7 @@ class ExitCode(enum.IntEnum):
 class Result:
     def __init__(self, code: int, output: str) -> None:
         self.code = code
-        self.output = output
+        self.output = output  # type: str
 
     def check(self) -> None:
         if self.code != ExitCode.SUCCESS:
