@@ -1383,7 +1383,7 @@ module PrettyPrinter = struct
 
     | Import { Import.from; imports } ->
         let pp_from formatter access_list =
-          pp_option ~prefix:"from " formatter access_list pp_access_list
+          pp_option ~prefix:"from " ~suffix:" " formatter access_list pp_access_list
         in
         let pp_import formatter { Import.name; alias } =
           let pp_alias_option formatter access_list =
@@ -1400,7 +1400,7 @@ module PrettyPrinter = struct
         in
         Format.fprintf
           formatter
-          "@[<v>%a import %a@]"
+          "@[<v>%aimport %a@]"
           pp_from from
           pp_imports imports
 
