@@ -1255,19 +1255,15 @@ module PrettyPrinter = struct
     pp' formatter list
 
 
-  let pp_option formatter option pp =
-    Option.value_map option ~default:() ~f:(Format.fprintf formatter "%a" pp)
-
-
-  let pp_option_with_prefix formatter (prefix,option) pp =
+  let pp_option ?(prefix = "") ?(suffix = "") formatter option pp =
     Option.value_map
       option
       ~default:()
-      ~f:(Format.fprintf formatter (prefix^^"%a") pp)
+      ~f:(fun value -> Format.fprintf formatter "%s%a%s" prefix pp value suffix)
 
 
   let pp_expression_option formatter (prefix,option) =
-    pp_option_with_prefix formatter (prefix,option) Expression.pp
+    pp_option ~prefix formatter option Expression.pp
 
 
   let pp_async formatter =
@@ -1387,11 +1383,11 @@ module PrettyPrinter = struct
 
     | Import { Import.from; imports } ->
         let pp_from formatter access_list =
-          pp_option_with_prefix formatter ("from ", access_list) pp_access_list
+          pp_option ~prefix:"from " formatter access_list pp_access_list
         in
         let pp_import formatter { Import.name; alias } =
           let pp_alias_option formatter access_list =
-            pp_option_with_prefix formatter (" as ", access_list) pp_access_list
+            pp_option ~prefix:" as " formatter access_list pp_access_list
           in
           Format.fprintf
             formatter
@@ -1435,7 +1431,7 @@ module PrettyPrinter = struct
         in
         let pp_except_block formatter handlers =
           let pp_as formatter name =
-            pp_option_with_prefix formatter (" as ", name) String.pp
+            pp_option ~prefix:" as " formatter name String.pp
           in
           let pp_handler formatter { Record.Try.kind; name; handler_body } =
             Format.fprintf
