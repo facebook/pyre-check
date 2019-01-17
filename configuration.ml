@@ -32,6 +32,7 @@ module Analysis = struct
     log_identifier: string;
     logger: string option;
     excludes: Str.regexp list [@opaque];
+    extensions: string list;
   }
   [@@deriving show]
 
@@ -69,6 +70,7 @@ module Analysis = struct
       ?(log_identifier = "")
       ?logger
       ?(excludes = [])
+      ?(extensions = [])
       () =
     {
       start_time;
@@ -93,6 +95,7 @@ module Analysis = struct
       log_identifier;
       logger;
       excludes = List.map excludes ~f:Str.regexp;
+      extensions;
     }
 
 

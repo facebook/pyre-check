@@ -29,6 +29,7 @@ module Analysis: sig
     log_identifier: string;
     logger: string option;
     excludes: Str.regexp list;
+    extensions: string list;
   }
   [@@deriving show, eq]
 
@@ -55,6 +56,7 @@ module Analysis: sig
     -> ?log_identifier: string
     -> ?logger: string
     -> ?excludes: string list
+    -> ?extensions: string list
     -> unit
     -> t
 

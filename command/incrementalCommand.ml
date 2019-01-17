@@ -29,6 +29,7 @@ let run
     search_path
     typeshed
     excludes
+    extensions
     local_root
     () =
   try
@@ -59,6 +60,7 @@ let run
         ?typeshed:(typeshed >>| Path.create_absolute)
         ~project_root:(Path.create_absolute project_root)
         ~excludes
+        ~extensions
         ~local_root:(Path.create_absolute local_root)
         ()
     in

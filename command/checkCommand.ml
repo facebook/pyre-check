@@ -32,6 +32,7 @@ let run_check
     search_path
     typeshed
     excludes
+    extensions
     local_root
     () =
   let filter_directories =
@@ -61,6 +62,7 @@ let run_check
       ~search_path:(List.map search_path ~f:(Path.SearchPath.create))
       ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
+      ~extensions
       ~local_root:(Path.create_absolute local_root)
       ()
   in

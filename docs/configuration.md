@@ -51,6 +51,8 @@ provides typed stubs for library functions.
 
 `exclude`: List of regular expressions for files and directories that should not be parsed.
 
+`extensions`: List of file extensions to type check as python, in addition to `.py` and `.pyi`.
+
 
 # Local Configuration
 If you have sub-projects within your project root that you would like to run Pyre on, you

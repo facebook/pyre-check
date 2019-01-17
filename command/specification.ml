@@ -66,4 +66,8 @@ let base_command_line_arguments =
       "-exclude"
       (listed string)
       ~doc:"REGEXP Do not parse relative paths (files and directories) matching this regexp."
+    +> flag
+      "-extension"
+      (listed string)
+      ~doc:".EXT Consider extensions in this list equivalent to `.py` for type checking."
     +> anon (maybe_with_default "." ("source-root" %: string)))

@@ -137,6 +137,52 @@ let test_find_stubs context =
     handles
 
 
+let test_find_sources context =
+  let handles =
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let module_root = Path.create_absolute (bracket_tmpdir context) in
+    let virtual_root = Path.create_absolute (bracket_tmpdir context) in
+    Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
+    let write_file root relative =
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    write_file local_root "a.py";
+    write_file local_root "b.py";
+    write_file local_root "b.pyi";
+    write_file module_root "a.pyi";
+
+    write_file local_root "ttypes.py";
+    write_file local_root "ttypes.pyi";
+    write_file local_root "dir/legit.py";
+    write_file local_root "excluded.py";
+    write_file local_root "nested/excluded.py";
+    write_file local_root "a.cconf";
+    write_file local_root "nested/a.cconf";
+    write_file local_root "a.jpg";
+    write_file local_root "nested/a.jpg";
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.py"]
+        ~extensions:[".cconf"]
+        ~search_path:[Path.SearchPath.Root module_root]
+        ()
+    in
+    Service.Parser.find_sources configuration
+    |> List.map ~f:File.create
+    |> List.map ~f:(File.handle ~configuration)
+    |> List.map ~f:File.Handle.show
+    |> List.sort ~compare:String.compare
+  in
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:(String.concat ~sep:", ")
+    ["a.cconf"; "a.py"; "b.py"; "nested/a.cconf"; "ttypes.py"]
+    handles
+
+
 let test_parse_typeshed context =
   let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
   let handles =
@@ -402,6 +448,7 @@ let () =
   "parser">:::[
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "find_stubs">::test_find_stubs;
+    "find_sources">::test_find_sources;
     "parse_typeshed">::test_parse_typeshed;
     "parse_source">::test_parse_source;
     "parse_sources">::test_parse_sources;
