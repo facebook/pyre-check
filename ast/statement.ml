@@ -1374,12 +1374,19 @@ module PrettyPrinter = struct
         pp_list formatter String.pp "," global_list
 
     | If { If.test; body; orelse } ->
-        Format.fprintf
-          formatter
-          "@[<v>@[<v 2>if %a:@;%a@]@]@;@[<v 2>else:@;%a@]"
-          Expression.pp test
-          pp_statement_list body
-          pp_statement_list orelse
+        if List.is_empty orelse then
+          Format.fprintf
+            formatter
+            "@[<v>@[<v 2>if %a:@;%a@]@]@;"
+            Expression.pp test
+            pp_statement_list body
+        else
+          Format.fprintf
+            formatter
+            "@[<v>@[<v 2>if %a:@;%a@]@]@;@[<v 2>else:@;%a@]"
+            Expression.pp test
+            pp_statement_list body
+            pp_statement_list orelse
 
     | Import { Import.from; imports } ->
         let pp_from formatter access_list =
