@@ -131,6 +131,24 @@ let test_forward _ =
     {|
       a = len
       len
+    |};
+  assert_constant_propagation
+    {|
+      a = len
+      a(b)
+    |}
+    {|
+      a = len
+      len(b)
+    |};
+  assert_constant_propagation
+    {|
+      a = len
+      a(b).imag
+    |}
+    {|
+      a = len
+      len(b).imag
     |}
 
 
