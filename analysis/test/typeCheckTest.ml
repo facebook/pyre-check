@@ -818,6 +818,24 @@ let test_forward_access _ =
     "has_getattr.any_attribute"
     [{ annotation = parse_annotation "typing.Any"; element = Value }];
 
+  assert_fold
+    "instance.attribute + 1.0"
+    [
+      { annotation = Type.Primitive "Class"; element = Value };
+      { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
+      {
+        annotation = parse_annotation "typing.Callable('int.__add__')[[Named(other, int)], int]";
+        element = Attribute { name = "__add__"; defined = true };
+      };
+      {
+        annotation = Type.float;
+        element = SignatureFound {
+            callable = "typing.Callable(float.__radd__)[[Named(other, float)], float]";
+            callees = ["float.__radd__"];
+          };
+      };
+    ];
+
   (* Typed dictionaries. *)
   let movie_typed_dictionary = {
     annotation = Type.TypedDictionary {

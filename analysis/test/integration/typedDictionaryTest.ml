@@ -405,7 +405,7 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `unknown`.";
+      "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`.";
       "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter " ^
       "to call `TypedDictionary.__setitem__` but got `int`.";
     ];

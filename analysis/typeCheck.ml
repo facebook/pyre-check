@@ -723,7 +723,7 @@ module State = struct
                 let name, backup_argument =
                   match target, List.rev lead, callable with
                   | Some _, _ :: rest, { Type.Callable.kind = Type.Callable.Named name; _ } ->
-                      name, rest
+                      name, List.rev rest
                   | _ ->
                       [], []
                 in
