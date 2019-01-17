@@ -25,7 +25,7 @@ let test_parse _ =
   assert_mode " # pyre-strict" Source.Strict;
   assert_mode " # pyre-durp" Source.Default;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);
-  (* prevent typos from being hidden as do-not-checks *)
+  (* Prevent typos from being treated as error suppressors. *)
   assert_mode " # pyre-ignore-all-errors[42, 7,   15" Source.Default;
 
   let assert_ignore lines expected_ignore_lines =

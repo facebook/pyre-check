@@ -74,19 +74,13 @@ module Metadata = struct
     (* We do not fall back to declarative mode on a typo when attempting to only
        suppress certain errors. *)
     let is_declare line =
-      Str.string_match (Str.regexp "^[ \t]*# *pyre-ignore-all-errors *$") line 0 ||
-      (* Deprecated. *)
-      Str.string_match (Str.regexp "^[ \t]*# *pyre-do-not-check *$") line 0
+      Str.string_match (Str.regexp "^[ \t]*# *pyre-ignore-all-errors *$") line 0
     in
     let is_default_with_suppress line =
       let default_with_suppress_regex =
         Str.regexp "^[ \t]*# *pyre-ignore-all-errors\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
       in
-      let deprecated_default_with_suppress_regex =
-        Str.regexp "^[ \t]*# *pyre-do-not-check\\[\\([0-9]+, *\\)*\\([0-9]+\\)\\] *$"
-      in
-      Str.string_match default_with_suppress_regex line 0 ||
-      Str.string_match deprecated_default_with_suppress_regex line 0
+      Str.string_match default_with_suppress_regex line 0
     in
     let is_placeholder_stub = is_pyre_comment "pyre-placeholder-stub" in
     let parse_ignore index line ignored_lines =
