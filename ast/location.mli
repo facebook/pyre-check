@@ -30,6 +30,8 @@ module Reference : sig
   include Hashable with type t := t
 
   val create: start: Lexing.position -> stop: Lexing.position -> t
+  val create_with_handle: handle: File.Handle.t -> t
+
   val any: t
   val synthetic: t
 end

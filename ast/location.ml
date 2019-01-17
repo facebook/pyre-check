@@ -96,6 +96,15 @@ module Reference = struct
     }
 
 
+  let create_with_handle ~handle =
+    let position = { line = 0; column = 1 } in
+    {
+      path = String.hash (File.Handle.show handle);
+      start = position;
+      stop = position;
+    }
+
+
   let any =
     { path = -1; start = any_position; stop = any_position }
 

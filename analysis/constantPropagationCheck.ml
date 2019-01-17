@@ -155,11 +155,14 @@ module State (Context: Context) = struct
 end
 
 
-let run ~configuration ~environment ~source:({ Source.qualifier; statements; _ } as source) =
+let run
+    ~configuration
+    ~environment
+    ~source:({ Source.qualifier; statements; handle; _ } as source) =
   let define =
     (* TODO(T38205782): run this on all defines. Limiting this to the toplevel for now. *)
     Define.create_toplevel ~qualifier ~statements
-    |> Node.create_with_default_location
+    |> Node.create ~location:(Location.Reference.create_with_handle ~handle)
   in
   let module Context =
   struct
