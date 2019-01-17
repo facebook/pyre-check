@@ -149,6 +149,19 @@ let test_forward _ =
     {|
       a = len
       len(b).imag
+    |};
+
+  (* Constructors. *)
+  assert_constant_propagation
+    {|
+      import threading
+      t = threading.Thread
+      t()
+    |}
+    {|
+      import threading
+      t = threading.Thread
+      threading.Thread()
     |}
 
 

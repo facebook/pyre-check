@@ -719,6 +719,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           value = ...  # type: int
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "threading")
+      ~handle:"threading.pyi"
+      {|
+        class Thread:
+          pass
+      |}
+    |> Preprocessing.qualify;
   ]
 
 

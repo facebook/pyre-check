@@ -167,7 +167,7 @@ module State (Context: Context) = struct
             in
             let is_callable =
               Resolution.resolve resolution expression
-              |> Type.is_callable
+              |> (fun annotation -> Type.is_callable annotation || Type.is_meta annotation)
             in
             is_literal || is_callable
           in
