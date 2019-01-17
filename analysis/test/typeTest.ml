@@ -78,6 +78,20 @@ let test_create _ =
            Type.tuple [Type.integer; Type.string];
          ]
        ));
+  assert_create "typing.Union[typing.Optional[int], typing.Optional[str]]"
+    (Type.optional
+       (Type.union [
+           Type.integer;
+           Type.string
+          ]
+       ));
+  assert_create "typing.Union[typing.Optional[int], str]"
+    (Type.optional
+       (Type.union [
+           Type.integer;
+           Type.string
+         ]
+       ));
 
   (* Nested renaming. *)
   assert_create "typing.Set[typing.Any]" (Type.set Type.Object);
@@ -547,10 +561,10 @@ let test_union _ =
     (Type.Union [Type.float; Type.string]);
   assert_equal
     (Type.union [Type.optional Type.string; Type.float])
-    (Type.Union [Type.optional Type.string; Type.float]);
+    (Type.Optional (Type.Union [Type.string; Type.float]));
   assert_equal
     (Type.union [Type.float; Type.string; Type.optional Type.float])
-    (Type.Union [Type.optional Type.float; Type.string]);
+    (Type.Optional (Type.Union [Type.float; Type.string]));
 
   assert_true (Type.equal (Type.union [Type.float; Type.Object]) Type.Object);
   assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);

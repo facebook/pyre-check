@@ -590,12 +590,20 @@ let union parameters =
       | [parameter] -> parameter
       | parameters -> Union parameters
     in
-    if List.exists parameters ~f:(fun parameter -> equal parameter (Optional Bottom)) then
-      Optional
-        (normalize
-           (List.filter
-              parameters
-              ~f:(fun parameter -> not (equal parameter (Optional Bottom)))))
+    let is_optional = function
+      | Optional _ -> true
+      | _ -> false
+    in
+    let extract_optional_parameter = function
+      | Optional parameter -> parameter
+      | parameter -> parameter
+    in
+    if (List.exists parameters ~f:is_optional) then
+      parameters
+      |> List.filter ~f:(fun parameter -> not (equal none parameter))
+      |> List.map ~f:extract_optional_parameter
+      |> normalize
+      |> (fun union -> Optional union)
     else
       normalize parameters
 

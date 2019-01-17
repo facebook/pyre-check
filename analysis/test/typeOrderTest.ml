@@ -1844,7 +1844,11 @@ let test_meet _ =
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
-  assert_meet "typing.Union[int, str]" "typing.Union[int, typing.Optional[str]]" "int";
+  (* TODO(T39185893): current implementation of meet has some limitations which need to be fixed *)
+  assert_meet
+    "typing.Union[int, str]"
+    "typing.Union[int, typing.Optional[str]]"
+    "typing.Union[int, str]";
   assert_meet
     "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]"

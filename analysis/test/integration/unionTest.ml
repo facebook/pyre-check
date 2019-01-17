@@ -146,8 +146,83 @@ let test_check_union _ =
       def foo(a: typing.Union[GetItem, Contains]) -> None:
         5 in a
     |}
-    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."]
+    ["Undefined attribute [16]: `Contains` has no attribute `__getitem__`."];
 
+  assert_type_errors
+    {|
+      def f(x: typing.Optional[typing.Union[int, str]]) -> None:
+        return g(x)
+
+      def g(x: typing.Union[typing.Optional[int], typing.Optional[str]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[int, typing.Tuple[int, int], typing.Optional[str]]) -> None:
+        return g(x)
+
+      def g(x: typing.Optional[typing.Union[int, str, typing.Tuple[int, int]]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[typing.Optional[int], typing.Tuple[int, int], typing.Optional[str]]) \
+          -> None:
+        return g(x)
+
+      def g(x: typing.Optional[typing.Union[int, str, typing.Tuple[int, int]]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[typing.Optional[int]]) -> None:
+        return g(x)
+
+      def g(x: typing.Optional[int]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[int, str, None]) -> None:
+        return g(x)
+
+      def g(x: typing.Optional[typing.Union[int, str]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[int, typing.Union[str, typing.Optional[typing.Tuple[int, int]]]]) -> \
+          None:
+        return g(x)
+
+      def g(x: typing.Optional[typing.Union[int, str, typing.Tuple[int, int]]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[int, typing.Optional[str]]) -> None:
+        return g(x)
+
+      def g(x: typing.Union[str, typing.Optional[int]]) -> None:
+        return f(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def f(x: typing.Union[int, str, typing.Tuple[int, int]]) -> None:
+        pass
+
+      x: typing.Union[int, typing.Optional[str]] = ...
+      f(x)
+    |}
+    ["Incompatible parameter type [6]: Expected `typing.Union[int, str, typing.Tuple[int, int]]` \
+      for 1st anonymous parameter to call `f` but got `typing.Optional[typing.Union[int, str]]`."]
 
 let () =
   "union">:::[
