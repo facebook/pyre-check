@@ -1380,7 +1380,7 @@ module PrettyPrinter = struct
     | If { If.test; body; orelse } ->
         Format.fprintf
           formatter
-          "@[<v>@[<v 2>if %a:@;%a@]@;@[<v 2>else:@;%a@]@]"
+          "@[<v>@[<v 2>if %a:@;%a@]@]@;@[<v 2>else:@;%a@]"
           Expression.pp test
           pp_statement_list body
           pp_statement_list orelse
