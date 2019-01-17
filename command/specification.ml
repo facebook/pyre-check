@@ -33,7 +33,6 @@ let base_command_line_arguments =
       (optional_with_default [] (Arg_type.comma_separated string))
       ~doc:"Run additional checks after type checking"
     +> flag "-sequential" no_arg ~doc:"Turn off parallel processing (parallel on by default)."
-    (* Delete -filter-directories once there are no callers *)
     +> flag
       "-filter-directories"
       (optional string)
