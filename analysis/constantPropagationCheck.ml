@@ -19,6 +19,7 @@ let name =
 
 module type Context = sig
   val configuration: Configuration.Analysis.t
+  val define: Define.t Node.t
   val environment: (module Environment.Handler)
   val transformations: Statement.t Location.Reference.Table.t
 end
@@ -81,7 +82,16 @@ module State (Context: Context) = struct
     join previous next
 
 
-  let forward ?key:_ ({ constants; _ } as state) ~statement =
+  let forward ?key ({ constants; _ } as state) ~statement =
+    let { Node.value = { Define.name; parent;_ }; _ } = Context.define in
+    let resolution =
+      TypeCheck.resolution_with_key
+        ~environment:Context.environment
+        ~parent
+        ~access:name
+        ~key
+    in
+
     (* Update transformations. *)
     let transformed =
       let transform statement =
@@ -135,14 +145,23 @@ module State (Context: Context) = struct
     (* Find new constants. *)
     let constants =
       match Node.value transformed with
-      | Assign {
-          target = { Node.value = Access access; _ };
-          value = { Node.value = (Integer _ | String _ | True | False); _ } as expression;
-          _;
-        } ->
-          Map.set constants ~key:access ~data:(Constant expression)
-      | Assign { target = { Node.value = Access access; _ }; _ } ->
-          Map.remove constants access
+      | Assign { target = { Node.value = Access access; _ }; value = expression; _ }  ->
+          let propagate =
+            let is_literal =
+              match Node.value expression with
+              | Integer _ | String _ | True | False -> true
+              | _ -> false
+            in
+            let is_callable =
+              Resolution.resolve resolution expression
+              |> Type.is_callable
+            in
+            is_literal || is_callable
+          in
+          if propagate then
+            Map.set constants ~key:access ~data:(Constant expression)
+          else
+            Map.remove constants access
       | _ ->
           constants
     in
@@ -167,6 +186,7 @@ let run
   let module Context =
   struct
     let configuration = configuration
+    let define = define
     let environment = environment
     let transformations = Location.Reference.Table.create ()
   end

@@ -16,7 +16,9 @@ let test_forward _ =
     let environment = environment () in
     let configuration = mock_configuration in
     let actual =
-      ConstantPropagationCheck.run ~configuration ~environment ~source:(parse source)
+      let source = parse source in
+      TypeCheck.run ~configuration ~environment ~source |> ignore;
+      ConstantPropagationCheck.run ~configuration ~environment ~source
       |> function
       | [{ Error.kind = Error.ConstantPropagation actual; _ }] -> actual
       | _ -> failwith "Did not generate a source"
@@ -118,6 +120,17 @@ let test_forward _ =
       else:
         a = 1
       b = 1
+    |};
+
+  (* Functions. *)
+  assert_constant_propagation
+    {|
+      a = len
+      a
+    |}
+    {|
+      a = len
+      len
     |}
 
 
