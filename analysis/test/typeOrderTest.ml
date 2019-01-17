@@ -1848,11 +1848,11 @@ let test_meet _ =
   assert_meet
     "typing.Union[int, str]"
     "typing.Union[int, typing.Optional[str]]"
-    "typing.Union[int, str]";
+    "$bottom";
   assert_meet
     "typing.Union[int, typing.Optional[str]]"
     "typing.Optional[str]"
-    "typing.Optional[str]";
+    "$bottom";
 
   (* Parametric types. *)
   assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
