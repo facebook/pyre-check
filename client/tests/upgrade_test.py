@@ -157,6 +157,79 @@ class FixmeAllTest(unittest.TestCase):
         assert call.call_count == 1
         assert run.call_count == 1
 
+    @patch("subprocess.call")
+    @patch.object(
+        upgrade.Configuration,
+        "gather_local_configurations",
+        return_value=[upgrade.Configuration("local/.pyre_configuration.local", {})],
+    )
+    @patch.object(upgrade.Configuration, "remove_version")
+    @patch.object(upgrade.Configuration, "get_errors")
+    @patch("%s.run_fixme" % upgrade.__name__)
+    def test_run_fixme_all(
+        self, run_fixme, get_errors, remove_version, gather, call
+    ) -> None:
+        arguments = MagicMock()
+        get_errors.return_value = []
+        upgrade.run_fixme_all(arguments, [])
+        run_fixme.assert_not_called()
+        call.assert_not_called()
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = errors
+        upgrade.run_fixme_all(arguments, [])
+        run_fixme.called_once_with(arguments, _result(errors))
+        call.assert_called_once_with(
+            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+        )
+
+    @patch("subprocess.call")
+    @patch.object(upgrade.Configuration, "remove_version")
+    @patch.object(upgrade.Configuration, "get_errors")
+    @patch("%s.run_fixme" % upgrade.__name__)
+    def test_upgrade_configuration(
+        self, run_fixme, get_errors, remove_version, call
+    ) -> None:
+        arguments = MagicMock()
+        get_errors.return_value = []
+        upgrade.run_fixme_all(arguments, [])
+        run_fixme.assert_not_called()
+        call.assert_not_called()
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = errors
+        configuration = upgrade.Configuration(
+            "/root/local/.pyre_configuration.local", {}
+        )
+        configuration.get_path()
+        upgrade._upgrade_configuration(arguments, configuration, "/root")
+        run_fixme.called_once_with(arguments, _result(errors))
+        call.assert_called_once_with(
+            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+        )
+
 
 class FixmeTest(unittest.TestCase):
     @patch.object(pathlib.Path, "read_text")

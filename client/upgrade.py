@@ -88,6 +88,16 @@ class Configuration:
     def get_path(self) -> str:
         return self._path
 
+    def remove_version(self) -> None:
+        with open(self._path) as configuration_file:
+            contents = json.load(configuration_file)
+        if "version" not in contents:
+            LOG.info("Version not found in configuration.")
+            return
+        del contents["version"]
+        with open(self._path, "w") as configuration_file:
+            json.dump(contents, configuration_file, sort_keys=True, indent=2)
+
     def get_errors(self) -> List[Dict[str, Any]]:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
         if self.targets:
@@ -259,6 +269,32 @@ def fix(
     path.write_text("\n".join(new_lines))
 
 
+# Exposed for testing.
+def _upgrade_configuration(
+    arguments: argparse.Namespace, configuration: Configuration, root: str
+) -> None:
+    LOG.info("Processing %s", configuration.get_path())
+    if not configuration.is_local:
+        return
+    configuration.remove_version()
+    errors = configuration.get_errors()
+    if len(errors) == 0:
+        return
+
+    def error_path(error):
+        return error["path"]
+
+    errors = itertools.groupby(sorted(errors, key=error_path), error_path)
+    run_fixme(arguments, errors)
+    try:
+        LOG.info("Committing changes.")
+        directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
+        commit_message = "[typing] Update pyre version for {}".format(directory)
+        subprocess.call(["hg", "commit", "--message", commit_message])
+    except subprocess.CalledProcessError:
+        LOG.info("Error while running hg.")
+
+
 def run_fixme(
     arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
 ) -> None:
@@ -359,6 +395,27 @@ def run_missing_overridden_return_annotations(
         path.write_text("\n".join(lines))
 
 
+def run_fixme_all(
+    arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
+) -> None:
+    configurations = Configuration.gather_local_configurations(arguments)
+    LOG.info(
+        "Found %d %sconfiguration%s",
+        len(configurations),
+        "push-blocking " if arguments.push_blocking_only else "",
+        "s" if len(configurations) != 1 else "",
+    )
+    root = Configuration.find_project_configuration()
+    if root is None:
+        LOG.info("No project configuration found for the current directory.")
+        return
+    else:
+        root = os.path.dirname(root)
+
+    for configuration in configurations:
+        _upgrade_configuration(arguments, configuration, root)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -388,7 +445,7 @@ if __name__ == "__main__":
     # Subcommand: Find and run pyre against all configurations,
     # and fixme all errors in each project.
     fixme_all = commands.add_parser("fixme-all")
-    fixme_all.set_defaults(errors=errors_from_configurations, function=run_fixme)
+    fixme_all.set_defaults(errors=lambda _arguments: [], function=run_fixme_all)
     fixme_all.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
