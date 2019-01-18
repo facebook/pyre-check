@@ -430,22 +430,18 @@ let select
             in
             match argument_annotation with
             | Type.Union elements when not less_or_equal ->
-                let rec check_elements ~signature_match = function
-                  | element :: elements ->
-                      let access = Access.create "$argument" in
-                      let annotation = Annotation.create element in
-                      let resolution = Resolution.set_local resolution ~access ~annotation in
-                      set_constraints_and_reasons
-                        ~resolution
-                        ~position
-                        ~argument
-                        ~argument_annotation:(Annotation.annotation annotation)
-                        signature_match
-                      |> (fun signature_match -> check_elements ~signature_match elements)
-                  | _ ->
+                let check_element signature_match element =
+                    let access = Access.create "$argument" in
+                    let annotation = Annotation.create element in
+                    let resolution = Resolution.set_local resolution ~access ~annotation in
+                    set_constraints_and_reasons
+                      ~resolution
+                      ~position
+                      ~argument
+                      ~argument_annotation:(Annotation.annotation annotation)
                       signature_match
                 in
-                check_elements ~signature_match elements
+                List.fold elements ~f:check_element ~init:signature_match
             | _ ->
                 let parameters_to_infer = Type.variables parameter_annotation |> List.length in
                 if parameters_to_infer > 0 then
