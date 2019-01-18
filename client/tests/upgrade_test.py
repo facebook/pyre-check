@@ -437,3 +437,89 @@ class DecodeTest(unittest.TestCase):
                 "If piping from `pyre check` be sure to use `--output=json`."
             )
             mock_error.reset_mock()
+
+
+class UpdateGlobalVersionTest(unittest.TestCase):
+    @patch.object(
+        upgrade.Configuration, "find_project_configuration", return_value="/root"
+    )
+    @patch.object(
+        upgrade.Configuration,
+        "gather_local_configurations",
+        return_value=[
+            upgrade.Configuration(
+                "/root/a/.pyre_configuration.local", {"push_blocking": False}
+            ),
+            upgrade.Configuration(
+                "/root/b/.pyre_configuration.local", {"push_blocking": True}
+            ),
+        ],
+    )
+    @patch("builtins.open")
+    def test_run_global_version_update(
+        self, open_mock, gather_local_configurations, find_project_configuration
+    ) -> None:
+        arguments = MagicMock()
+        arguments.hash = "abcd"
+        arguments.push_blocking_only = False
+        with patch("json.dump") as dump:
+            mocks = [
+                mock_open(read_data='{"version": "old"}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": false}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": true}').return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+
+            upgrade.run_global_version_update(arguments, {})
+            dump.assert_has_calls(
+                [
+                    call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
+                    call(
+                        {"push_blocking": False, "version": "old"},
+                        mocks[3],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                    call(
+                        {"push_blocking": True, "version": "old"},
+                        mocks[5],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                ]
+            )
+        # Push blocking argument: Since the push blocking only argument is only used when
+        # gathering local configurations (mocked here), this is a no-op. Documents it.
+        arguments.push_blocking_only = True
+        with patch("json.dump") as dump:
+            mocks = [
+                mock_open(read_data='{"version": "old"}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": false}').return_value,
+                mock_open(read_data="{}").return_value,
+                mock_open(read_data='{"push_blocking": true}').return_value,
+                mock_open(read_data="{}").return_value,
+            ]
+            open_mock.side_effect = mocks
+
+            upgrade.run_global_version_update(arguments, {})
+            dump.assert_has_calls(
+                [
+                    call({"version": "abcd"}, mocks[1], indent=2, sort_keys=True),
+                    call(
+                        {"push_blocking": False, "version": "old"},
+                        mocks[3],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                    call(
+                        {"push_blocking": True, "version": "old"},
+                        mocks[5],
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                ]
+            )

@@ -43,6 +43,7 @@ def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
 
 class Configuration:
     def __init__(self, path: str, json_contents: Dict[str, Any]):
+        self._path = path
         if path.endswith("/.pyre_configuration.local"):
             self.is_local = True
         else:
@@ -83,6 +84,9 @@ class Configuration:
                 if configuration.push_blocking or (not arguments.push_blocking_only):
                     configurations.append(configuration)
         return configurations
+
+    def get_path(self) -> str:
+        return self._path
 
     def get_errors(self) -> List[Dict[str, Any]]:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
@@ -273,6 +277,54 @@ def run_fixme(
         fix(arguments, path, codes, descriptions)
 
 
+def run_global_version_update(
+    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
+) -> None:
+    global_configuration = Configuration.find_project_configuration()
+    if global_configuration is None:
+        LOG.error("No global configuration file found.")
+        return
+
+    local_configurations = [
+        configuration
+        for configuration in Configuration.gather_local_configurations(arguments)
+        if configuration.is_local
+    ]
+
+    with open(global_configuration, "r") as global_configuration_file:
+        configuration = json.load(global_configuration_file)
+        if "version" not in configuration:
+            LOG.error(
+                "Global configuration at %s has no version field.", global_configuration
+            )
+            return
+
+        old_version = configuration["version"]
+
+    # Rewrite.
+    with open(global_configuration, "w") as global_configuration_file:
+        configuration["version"] = arguments.hash
+
+        # This will sort the keys in the configuration - we won't be clobbering comments
+        # since Python's JSON parser disallows comments either way.
+        json.dump(configuration, global_configuration_file, sort_keys=True, indent=2)
+
+    for configuration in local_configurations:
+        path = configuration.get_path()
+        if "mock_repository" in path:
+            # Skip local configurations we have for testing.
+            continue
+        with open(path) as configuration_file:
+            contents = json.load(configuration_file)
+            if "version" in contents:
+                LOG.info("Skipping %s as it already has a custom version field.", path)
+                continue
+            contents["version"] = old_version
+
+        with open(path, "w") as configuration_file:
+            json.dump(contents, configuration_file, sort_keys=True, indent=2)
+
+
 def run_missing_overridden_return_annotations(
     _arguments, result: List[Tuple[str, List[Any]]]
 ) -> None:
@@ -342,6 +394,14 @@ if __name__ == "__main__":
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
 
+    update_global_version = commands.add_parser("update-global-version")
+    update_global_version.set_defaults(
+        errors=(lambda arguments: []), function=run_global_version_update
+    )
+    update_global_version.add_argument("hash", help="Hash of new Pyre version.")
+    update_global_version.add_argument(
+        "-p", "--push-blocking-only", action="store_true"
+    )
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
