@@ -362,7 +362,22 @@ let test_check_return_control_flow _ =
           result = not_annotated()
         return result
     |}
-    ["Incompatible return type [7]: Expected `other` but got `unknown`."]
+    ["Incompatible return type [7]: Expected `other` but got `unknown`."];
+
+  assert_type_errors
+    {|
+      def derp(x) -> None:
+        y = {
+            "a": x,
+            "b": True,
+            "c": False
+        }
+        return y
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`.";
+    ]
 
 
 let test_check_collections _ =

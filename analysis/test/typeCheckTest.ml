@@ -111,7 +111,7 @@ let test_initial _ =
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     "def foo(x): ..."
-    (create ["x", Type.Bottom]);
+    (create ["x", Type.Object]);
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     "def foo(x: typing.Any): ..."
@@ -130,7 +130,7 @@ let test_initial _ =
     ~parent:"Foo"
     ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
-    (create ["a", Type.Bottom])
+    (create ["a", Type.Object])
 
 
 let test_less_or_equal _ =

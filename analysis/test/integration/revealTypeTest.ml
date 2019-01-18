@@ -23,7 +23,7 @@ let test_reveal_type _ =
       def foo(x) -> None:
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `undefined`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   assert_type_errors
     {|
       def foo(x: int, y: int) -> None:

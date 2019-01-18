@@ -281,7 +281,7 @@ let test_fixpoint_backward _ =
 
 
 let test_check_missing_parameter _ =
-  let assert_inference_errors = assert_errors ~infer:true ~check:Inference.run in
+  let assert_inference_errors = assert_errors ~debug:false ~infer:true ~check:Inference.run in
 
   assert_inference_errors
     {|

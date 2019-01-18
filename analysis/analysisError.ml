@@ -1660,6 +1660,7 @@ let suppress ~mode error =
     | _ ->
         true
   in
+
   if Location.Instantiated.equal (Location.Instantiated.synthetic) (location error) then
     true
   else

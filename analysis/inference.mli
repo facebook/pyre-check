@@ -11,6 +11,12 @@ module Error = AnalysisError
 module State : sig
   include module type of struct include TypeCheck.State end
 
+  val initial_forward
+    :  configuration: Configuration.Analysis.t
+    -> resolution: Resolution.t
+    -> Statement.Define.t Node.t
+    -> t
+
   val initial_backward
     :  ?configuration: Configuration.Analysis.t
     -> Statement.Define.t Node.t

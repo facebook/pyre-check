@@ -1255,11 +1255,14 @@ let test_incremental_lookups _ =
   assert_equal
     ~printer:(String.concat ~sep:", ")
     [
+      ":2:8-2:9/typing.Any";
       ":3:11-3:12/int";
+      ":4:8-4:9/typing.Any";
       Format.sprintf
         ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
         (Source.qualifier ~handle
          |> Access.show);
+      ":5:8-5:9/typing.Any";
       ":6:11-6:12/int";
     ]
     annotations

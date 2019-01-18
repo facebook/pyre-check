@@ -21,6 +21,36 @@ module State = struct
   let return_access = Access.create "$return"
 
 
+  let initial_forward
+    ~configuration
+    ~resolution
+    ({ Node.value = ({ Define.parameters; parent; _ } as define); _ } as define_node) =
+    let state = State.initial ~configuration ~resolution define_node in
+    let annotations =
+      let reset_parameter
+          index
+          annotations
+          { Node.value = { Parameter.name; value; annotation }; _ } =
+        match index, parent with
+        | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
+            annotations
+        | _ ->
+            match annotation, value with
+            | None, None ->
+                let access =
+                  name
+                  |> String.filter ~f:(fun character -> character <> '*')
+                  |> fun name -> [Access.Identifier name]
+                in
+                Map.set annotations ~key:access ~data:(Annotation.create Type.Bottom)
+            | _ ->
+                annotations
+      in
+      List.foldi ~init:(Resolution.annotations resolution) ~f:reset_parameter parameters
+    in
+    { state with resolution = Resolution.with_annotations resolution ~annotations }
+
+
   let initial_backward
       ?(configuration = Configuration.Analysis.create ())
       define
@@ -386,16 +416,10 @@ let run
 
     try
       let cfg = Cfg.create define in
-      let initial_forward =
-        State.initial
-          ~configuration
-          ~resolution
-          { Node.location; value = define }
-      in
       let exit =
         backward_fixpoint
           cfg
-          ~initial_forward
+          ~initial_forward:(State.initial_forward ~configuration ~resolution define_node)
           ~initialize_backward:(State.initial_backward ~configuration define_node)
         |> Fixpoint.entry
         >>| print_state "Entry"

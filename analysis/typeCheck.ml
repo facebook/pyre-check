@@ -1403,7 +1403,7 @@ module State = struct
                     Annotation.create annotation
                 | None, None ->
                     add_missing_parameter_annotation_error ~state ~given_annotation:None None,
-                    Annotation.create Type.Bottom
+                    Annotation.create Type.Object
           in
           let annotation =
             if String.is_prefix ~prefix:"**" name then
