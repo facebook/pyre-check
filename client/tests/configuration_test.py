@@ -230,6 +230,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
 
+        # Test excludes
         json_load.side_effect = [{"exclude": "regexp"}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.excludes, ["regexp"])
@@ -243,6 +244,11 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(
             configuration.excludes, ["regexp3", "regexp4", "regexp1", "regexp2"]
         )
+
+        # Test extensions
+        json_load.side_effect = [{"extensions": [".a", ".b"]}, {}]
+        configuration = Configuration()
+        self.assertEqual(configuration.extensions, [".a", ".b"])
 
     @patch("os.path.isfile")
     @patch("os.path.isdir")
@@ -408,3 +414,4 @@ class ConfigurationTest(unittest.TestCase):
             self.assertFalse(configuration.disabled)
             self.assertEqual(configuration._typeshed, None)
             self.assertEqual(configuration.excludes, [])
+            self.assertEqual(configuration.extensions, [])

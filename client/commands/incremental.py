@@ -71,6 +71,10 @@ class Incremental(Reporting):
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
 
+        extensions = self._configuration.extensions
+        for extension in extensions:
+            flags.extend(["-extension", extension])
+
         return flags
 
     def _read_stderr(self, _stream) -> None:

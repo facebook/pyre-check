@@ -125,6 +125,7 @@ class Configuration:
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = None
+        self.extensions = []  # type: List[str]
 
         self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
@@ -199,6 +200,15 @@ class Configuration:
             if not is_list_of_strings(self.ignore_all_errors):
                 raise InvalidConfiguration(
                     "`ignore_all_errors` field must be a list of strings."
+                )
+
+            if not is_list_of_strings(self.extensions):
+                raise InvalidConfiguration(
+                    "`extensions` field must be a list of strings."
+                )
+            if not all(extension.startswith(".") for extension in self.extensions):
+                raise InvalidConfiguration(
+                    "`extensions` must only contain strings formatted as `.EXT`"
                 )
 
             if not os.path.exists(self.binary):
@@ -411,6 +421,9 @@ class Configuration:
                     self.excludes.extend(excludes)
                 else:
                     self.excludes.append(excludes)
+
+                extensions = configuration.consume("extensions", default=[])
+                self.extensions.extend(extensions)
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()

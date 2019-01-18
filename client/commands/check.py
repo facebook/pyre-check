@@ -35,6 +35,9 @@ class Check(Reporting):
         excludes = self._configuration.excludes
         for exclude in excludes:
             flags.extend(["-exclude", exclude])
+        extensions = self._configuration.extensions
+        for extension in extensions:
+            flags.extend(["-extension", extension])
         return flags
 
     def _run(self, retries: int = 1) -> None:
