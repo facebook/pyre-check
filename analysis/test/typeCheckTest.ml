@@ -346,6 +346,56 @@ let test_redirect _ =
     ("$type", ["$type", Type.meta (Type.meta Type.integer)])
 
 
+let test_resolve_exports _ =
+  let assert_resolve ~sources access expected_access =
+    let resolution =
+      let sources =
+        let to_source (qualifier, source) =
+          parse
+            ~qualifier:(Access.create qualifier)
+            ~handle:(qualifier ^ ".pyi")
+            source
+          |> Preprocessing.preprocess
+        in
+        List.map sources ~f:to_source
+      in
+      AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
+      |> (fun environment -> TypeCheck.resolution environment ())
+    in
+    let parse_access unparsed =
+      match parse_single_expression unparsed with
+      | { Node.value = Access access; _ } ->
+          access
+      | _ ->
+          failwith "expected access"
+    in
+    let access =
+      parse_access access
+      |> AccessState.resolve_exports ~resolution
+    in
+    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_access expected_access)
+  in
+  assert_resolve
+    ~sources:[]
+    "a.b"
+    "a.b";
+  assert_resolve
+    ~sources:[
+      "a", "from b import foo";
+      "b", "foo = 1";
+    ]
+    "a.foo"
+    "b.foo";
+  assert_resolve
+    ~sources:[
+      "a", "from b import foo";
+      "b", "from c import bar as foo";
+      "c", "from d import cow as bar";
+      "d", "cow = 1"
+    ]
+    "a.foo"
+    "d.cow"
+
 let test_forward_access _ =
   let resolution =
     let sources = [
@@ -2012,6 +2062,7 @@ let () =
     "widen">::test_widen;
     "check_annotation">::test_check_annotation;
     "redirect">::test_redirect;
+    "resolve_exports">::test_resolve_exports;
     "forward_access">::test_forward_access;
     "forward_expression">::test_forward_expression;
     "forward_statement">::test_forward_statement;

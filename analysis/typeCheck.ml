@@ -113,6 +113,40 @@ module AccessState = struct
         access, resolution
 
 
+  let resolve_exports ~resolution access =
+    (* This is necessary due to export/module name conflicts: P59503092 *)
+    let widening_threshold = 25 in
+    let rec resolve_exports_fixpoint ~access ~visited ~count =
+      if Set.mem visited access || count > widening_threshold then
+        access
+      else
+        let rec resolve_exports ~lead ~tail =
+          match tail with
+          | head :: tail ->
+              Resolution.module_definition resolution lead
+              >>| (fun definition ->
+                  match
+                    Module.aliased_export definition [head] with
+                  | Some export ->
+                      export @ tail
+                  | _ ->
+                      resolve_exports ~lead:(lead @ [head]) ~tail)
+              |> Option.value ~default:access
+          | _ ->
+              access
+        in
+        match access with
+        | head :: tail ->
+            resolve_exports_fixpoint
+              ~access:(resolve_exports ~lead:[head] ~tail)
+              ~visited:(Set.add visited access)
+              ~count:(count + 1)
+        | _ ->
+            access
+    in
+    resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0
+
+
   let step
       ({ resolution; accumulator; f; _ } as state)
       ?element
@@ -1189,40 +1223,7 @@ module State = struct
           accumulator
     in
     let access, resolution = redirect ~resolution access in
-    (* Resolve module exports. *)
-    let access =
-      (* This is necessary due to export/module name conflicts: P59503092 *)
-      let widening_threshold = 25 in
-      let rec resolve_exports_fixpoint ~access ~visited ~count =
-        if Set.mem visited access || count > widening_threshold then
-          access
-        else
-          let rec resolve_exports ~lead ~tail =
-            match tail with
-            | head :: tail ->
-                Resolution.module_definition resolution lead
-                >>| (fun definition ->
-                    match
-                      Module.aliased_export definition [head] with
-                    | Some export ->
-                        export @ tail
-                    | _ ->
-                        resolve_exports ~lead:(lead @ [head]) ~tail)
-                |> Option.value ~default:access
-            | _ ->
-                access
-          in
-          match access with
-          | head :: tail ->
-              resolve_exports_fixpoint
-                ~access:(resolve_exports ~lead:[head] ~tail)
-                ~visited:(Set.add visited access)
-                ~count:(count + 1)
-          | _ ->
-              access
-      in
-      resolve_exports_fixpoint ~access ~visited:Access.Set.empty ~count:0
-    in
+    let access = resolve_exports ~resolution access in
     fold ~state:(AccessState.create ~accumulator:initial ~f ~resolution ()) ~lead:[] ~tail:access
 
 
