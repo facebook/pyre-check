@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
 """Abstract Parser for Zoncolan like output"""
 
-from enum import Enum
 import logging
 import os
 import pprint
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    TextIO,
-    Optional,
-)
-import xxhash  # pyre-ignore
+from enum import Enum
+from typing import Any, Dict, Iterable, TextIO
 
+import xxhash  # pyre-ignore
 from tools.sapp.analysis_output import AnalysisOutput
+
 
 log = logging.getLogger()
 
 
 class ParseType(Enum):
-    ISSUE = 'issue'
-    PRECONDITION = 'precondition'
-    POSTCONDITION = 'postcondition'
+    ISSUE = "issue"
+    PRECONDITION = "precondition"
+    POSTCONDITION = "postcondition"
 
 
 def log_trace_keyerror(func):
@@ -34,10 +29,10 @@ def log_trace_keyerror(func):
             # a field you expect, so we'll catch those and log them, but move
             # on.
             log.exception(
-                'Unable to parse trace for the following:\n%s',
-                pprint.pformat(json),
+                "Unable to parse trace for the following:\n%s", pprint.pformat(json)
             )
             return ([], {})
+
     return wrapper
 
 
@@ -50,11 +45,11 @@ def log_trace_keyerror_in_generator(func):
             # a field you expect, so we'll catch those and log them, but move
             # on.
             log.exception(
-                'Unable to parse trace for the following:\n%s',
-                pprint.pformat(json),
+                "Unable to parse trace for the following:\n%s", pprint.pformat(json)
             )
             return
             yield
+
     return wrapper
 
 
@@ -87,15 +82,10 @@ class BaseParser(object):
         return
         yield
 
-
     @staticmethod
     def compute_master_handle(callable, line, start, end, code):
-        key = '{callable}:{line}|{start}|{end}:{code}'.format(
-            callable=callable,
-            line=line,
-            start=start,
-            end=end,
-            code=code,
+        key = "{callable}:{line}|{start}|{end}:{code}".format(
+            callable=callable, line=line, start=start, end=end, code=code
         )
         return BaseParser.compute_handle_from_key(key)
 
@@ -104,10 +94,8 @@ class BaseParser(object):
         """Uses the absolute line and ignores the callable/character offsets.
         Used only in determining whether new issues are old issues.
         """
-        key = '{filename}:{old_line}:{code}'.format(
-            filename=filename,
-            old_line=old_line,
-            code=code,
+        key = "{filename}:{old_line}:{code}".format(
+            filename=filename, old_line=old_line, code=code
         )
         return BaseParser.compute_handle_from_key(key)
 
@@ -116,4 +104,4 @@ class BaseParser(object):
         hash_gen = xxhash.xxh64()
         hash_gen.update(key)
         hash_ = hash_gen.hexdigest()
-        return key[:255 - len(hash_) - 1] + ':' + hash_
+        return key[: 255 - len(hash_) - 1] + ":" + hash_

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from multiprocessing import Pool
 import logging
+from multiprocessing import Pool
 
 from tools.sapp.base_parser import BaseParser
 
 
 log: logging.Logger = logging.getLogger()
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s")
 
 # We are going to call this per process, so we need to pass in and return
 # serializable data. And as a single arg, as far as I can tell. Which is why the

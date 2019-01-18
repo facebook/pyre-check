@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-from typing import (
-    Optional,
-)
 from argparse import ArgumentTypeError
+from typing import Optional
+
 from tools.sapp.lib.sharded_files import ShardedFile
 
 
@@ -33,23 +32,21 @@ class AnalysisOutput(object):
             try:
                 result.file_shards = ShardedFile(file_name)
             except ValueError as e:
-                raise ArgumentTypeError("can't open '{}': {}"
-                                        .format(file_name, e))
+                raise ArgumentTypeError("can't open '{}': {}".format(file_name, e))
         else:
             result.single_file = file_name
             try:
-                with open(file_name, 'r'):
+                with open(file_name, "r"):
                     # Just check validity.
                     pass
             except OSError as e:
-                raise ArgumentTypeError("can't open '{}': {}"
-                                        .format(file_name, e))
+                raise ArgumentTypeError("can't open '{}': {}".format(file_name, e))
         return result
 
     @classmethod
     def from_handle(cls, file_handle):
         result = cls()
-        result.name = file_handle.name if hasattr(file_handle, 'name') else None
+        result.name = file_handle.name if hasattr(file_handle, "name") else None
         result.file_handle = file_handle
         return result
 
@@ -62,11 +59,11 @@ class AnalysisOutput(object):
             yield self.file_handle
             self.file_handle.close()
         elif self.single_file:
-            with open(self.single_file, 'r') as f:
+            with open(self.single_file, "r") as f:
                 yield f
         elif self.file_shards:
             for shard in self.file_shards.get_filenames():
-                with open(shard, 'r') as f:
+                with open(shard, "r") as f:
                     yield f
 
     def file_names(self):
