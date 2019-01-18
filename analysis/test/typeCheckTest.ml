@@ -396,70 +396,26 @@ let test_resolve_exports _ =
     "a.foo"
     "d.cow"
 
+
 let test_forward_access _ =
-  let resolution =
-    let sources = [
-      parse
-        ~qualifier:(Access.create "empty.stub")
-        ~local_mode:Source.PlaceholderStub
-        ~handle:"empty/stub.pyi"
-        "";
-      parse
-        ~qualifier:(Access.create "empty.stub.submodule")
-        ~handle:"empty/stub/submodule.py"
-        "class Suppressed: ...";
-      parse
-        ~qualifier:(Access.create "has_getattr")
-        ~handle:"has_getattr.pyi"
-        "def __getattr__(name: str) -> typing.Any: ..."
-      |> Preprocessing.preprocess;
-      parse
-        {|
-          integer: int = 1
-          string: str = 'string'
-
-          union: typing.Union[str, int] = 1
-
-          class Super: pass
-          class Class(Super):
-            attribute: int = 1
-            def method(self) -> int: ...
-          class Other():
-            attribute: str = "A"
-            def method(self) -> str: ...
-          instance: Class
-          TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
-          TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
-          v_instance: TV_Bound
-          v_explicit_instance: TV_Explicit
-
-          def function() -> str:
-            def nested() -> str: ...
-
-          suppressed: empty.stub.submodule.Suppressed = ...
-        |}
-      |> Preprocessing.preprocess;
-      parse
-        ~qualifier:(Access.create "os")
-        {|
-          sep: str = '/'
-        |};
-      parse
-        {|
-          Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
-          movie: Movie
-        |}
-      |> Preprocessing.preprocess;
-    ] in
+  let to_resolution sources =
     AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
-    |> fun environment -> TypeCheck.resolution environment ()
+    |> (fun environment -> TypeCheck.resolution environment ())
   in
-  let parse_annotation annotation =
+  let parse_annotation ~resolution annotation =
     annotation
     |> parse_single_expression
     |> Resolution.parse_annotation resolution
   in
-  let assert_fold ?parent access expected =
+  let assert_fold ?(additional_sources = []) ?parent ~source access expected =
+    let resolution =
+      let source =
+        parse source
+        |> Preprocessing.preprocess
+      in
+      to_resolution (source :: additional_sources)
+      |> Resolution.with_parent ~parent
+    in
     let steps =
       let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
@@ -509,24 +465,34 @@ let test_forward_access _ =
       expected
       steps
   in
-
   let signature_not_found signature = SignatureNotFound signature in
 
-  assert_fold "unknown" [{ annotation = Type.Top; element = Unknown }];
-  assert_fold "unknown.unknown" [{ annotation = Type.Top; element = Unknown }];
+  assert_fold ~source:"" "unknown" [{ annotation = Type.Top; element = Unknown }];
+  assert_fold ~source:"" "unknown.unknown" [{ annotation = Type.Top; element = Unknown }];
 
-  assert_fold "integer" [{ annotation = Type.integer; element = Value }];
-  assert_fold "string" [{ annotation = Type.string; element = Value }];
+  assert_fold
+    ~source:"integer: int = 1"
+    "integer"
+    [{ annotation = Type.integer; element = Value }];
+  assert_fold
+    ~source:"string: str = \"\""
+    "string"
+    [{ annotation = Type.string; element = Value }];
 
   (* Unions. *)
-  assert_fold "union" [{ annotation = Type.union [Type.string; Type.integer]; element = Value }];
   assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
+    "union"
+    [{ annotation = Type.union [Type.string; Type.integer]; element = Value }];
+  assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
     "union.__doc__"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
       { annotation = Type.string; element = Attribute { name = "__doc__"; defined = true } };
     ];
   assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
     "union.__lt__"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
@@ -544,11 +510,12 @@ let test_forward_access _ =
               ],
             ]
           |}
-          |> parse_annotation;
+          |> parse_annotation ~resolution;
         element = Attribute { name = "__lt__"; defined = true };
       };
     ];
   assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
     "union.__lt__(1)"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
@@ -566,7 +533,7 @@ let test_forward_access _ =
               ],
             ]
           |}
-          |> parse_annotation;
+          |> parse_annotation ~resolution;
         element = Attribute { name = "__lt__"; defined = true };
       };
       {
@@ -581,6 +548,7 @@ let test_forward_access _ =
     ];
   (* Passing the wrong type. *)
   assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
     "union.__add__('string')"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
@@ -598,7 +566,7 @@ let test_forward_access _ =
               ],
             ]
           |}
-          |> parse_annotation;
+          |> parse_annotation ~resolution;
         element = Attribute { name = "__add__"; defined = true };
       };
       {
@@ -618,6 +586,7 @@ let test_forward_access _ =
     ];
   (* Names don't match up. *)
   assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
     "union.__ne__(unknown)"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
@@ -635,7 +604,7 @@ let test_forward_access _ =
               ],
             ]
           |}
-          |> parse_annotation;
+          |> parse_annotation ~resolution;
         element = Attribute { name = "__ne__"; defined = true };
       };
       {
@@ -645,27 +614,58 @@ let test_forward_access _ =
     ];
 
   (* Classes. *)
-  assert_fold "Class" [{ annotation = Type.meta (Type.Primitive "Class"); element = Value }];
-  assert_fold "instance" [{ annotation = Type.Primitive "Class"; element = Value }];
   assert_fold
+    ~source:
+      {|
+        class Class: pass
+      |}
+    "Class"
+    [{ annotation = Type.meta (Type.Primitive "Class"); element = Value }];
+  assert_fold
+    ~source:
+      {|
+        class Class: pass
+        instance: Class
+      |}
+    "instance"
+    [{ annotation = Type.Primitive "Class"; element = Value }];
+  assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+        instance: Class
+      |}
     "instance.attribute"
     [
       { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+        instance: Class
+      |}
     "instance.undefined.undefined"
     [
       { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          def method(self) -> int: ...
+        instance: Class
+      |}
     "instance.method()"
     [
       { annotation = Type.Primitive "Class"; element = Value };
       {
         annotation =
-          parse_annotation "typing.Callable('Class.method')[[], int]";
+          parse_annotation ~resolution "typing.Callable('Class.method')[[], int]";
         element = Attribute { name = "method"; defined = true };
       };
       {
@@ -677,6 +677,12 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          def method(self) -> int: ...
+        instance: Class
+      |}
     "instance()"
     [
       { annotation = Type.Primitive "Class"; element = Value };
@@ -691,26 +697,54 @@ let test_forward_access _ =
     }
   in
 
-  assert_fold "v_instance" [{ annotation = bound_type_variable; element = Value }];
   assert_fold
+    ~source:
+      {|
+        class Class: pass
+        TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+        v_instance: TV_Bound
+      |}
+    "v_instance" [{ annotation = bound_type_variable; element = Value }];
+  assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+        TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+        v_instance: TV_Bound
+      |}
     "v_instance.attribute"
     [
       { annotation = bound_type_variable; element = Value };
       { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+        TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+        v_instance: TV_Bound
+      |}
     "v_instance.undefined.undefined"
     [
       { annotation = bound_type_variable; element = Value };
       { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          def method(self) -> int: ...
+        TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+        v_instance: TV_Bound
+      |}
     "v_instance.method()"
     [
       { annotation = bound_type_variable; element = Value };
       {
         annotation =
-          parse_annotation "typing.Callable('Class.method')[[], int]";
+          parse_annotation ~resolution "typing.Callable('Class.method')[[], int]";
         element = Attribute { name = "method"; defined = true };
       };
       {
@@ -722,6 +756,13 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          def method(self) -> int: ...
+        TV_Bound = typing.TypeVar("TV_Bound", bound=Class)
+        v_instance: TV_Bound
+      |}
     "v_instance()"
     [
       { annotation = bound_type_variable; element = Value };
@@ -736,8 +777,31 @@ let test_forward_access _ =
     }
   in
 
-  assert_fold "v_explicit_instance" [{ annotation = explicit_type_variable; element = Value }];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: TV_Explicit
+      |}
+    "v_explicit_instance" [{ annotation = explicit_type_variable; element = Value }];
+  assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: TV_Explicit
+      |}
     "v_explicit_instance.attribute"
     [
       { annotation = explicit_type_variable; element = Value };
@@ -747,12 +811,34 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: TV_Explicit
+      |}
     "v_explicit_instance.undefined.undefined"
     [
       { annotation = explicit_type_variable; element = Value };
       { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: TV_Explicit
+      |}
     "v_explicit_instance.method()"
     [
       { annotation = explicit_type_variable; element = Value };
@@ -795,6 +881,17 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: TV_Explicit
+      |}
     "v_explicit_instance()"
     [
       { annotation = explicit_type_variable; element = Value };
@@ -803,13 +900,21 @@ let test_forward_access _ =
 
 
   assert_fold
+    ~source:
+      {|
+        class Super:
+          pass
+        class Class(Super):
+          attribute: int = 1
+          def method(self) -> int: ...
+      |}
     ~parent:(Access.create "Class")
     "super().__init__()"
     [
       { annotation = Type.Primitive "Super"; element = Value };
       {
         annotation =
-          parse_annotation "typing.Callable('object.__init__')[[], None]";
+          parse_annotation ~resolution "typing.Callable('object.__init__')[[], None]";
         element = Attribute { name = "__init__"; defined = true };
       };
       {
@@ -823,9 +928,16 @@ let test_forward_access _ =
 
   (* Functions. *)
   assert_fold
+    ~source:
+      {|
+        def function() -> str: ...
+      |}
     "function()"
     [
-      { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
+      {
+        annotation = parse_annotation ~resolution "typing.Callable('function')[[], str]";
+        element = Value;
+      };
       {
         annotation = Type.string;
         element = SignatureFound {
@@ -835,11 +947,20 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        def function() -> str:
+          def nested() -> str:
+            ...
+      |}
     "function.nested()"
     [
-      { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
       {
-        annotation = parse_annotation "typing.Callable('function.nested')[[], str]";
+        annotation = parse_annotation ~resolution "typing.Callable('function')[[], str]";
+        element = Value;
+      };
+      {
+        annotation = parse_annotation ~resolution "typing.Callable('function.nested')[[], str]";
         element = Value;
       };
       {
@@ -851,30 +972,100 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        def function() -> str:
+          def nested() -> str:
+            ...
+      |}
     "function.unknown_nested()"
     [
-      { annotation = parse_annotation "typing.Callable('function')[[], str]"; element = Value };
+      {
+        annotation = parse_annotation ~resolution "typing.Callable('function')[[], str]";
+        element = Value;
+      };
       { annotation = Type.Top; element = Value };
     ];
 
   (* Modules. *)
-  assert_fold "os.sep" [{ annotation = Type.string; element = Value }];
-
-  assert_fold "empty.stub.unknown" [{ annotation = Type.Top; element = Value }];
-  assert_fold "suppressed.attribute" [{ annotation = Type.Top; element = Value }];
-
-  assert_fold "empty.stub.any_attribute" [{ annotation = Type.Top; element = Value }];
   assert_fold
+    ~additional_sources:[
+      parse
+        ~qualifier:(Access.create "os")
+        {|
+          sep: str = '/'
+        |};
+    ]
+    ~source:""
+    "os.sep"
+    [{ annotation = Type.string; element = Value }];
+
+  assert_fold
+    ~additional_sources:[
+      parse
+        ~qualifier:(Access.create "empty.stub")
+        ~local_mode:Source.PlaceholderStub
+        ~handle:"empty/stub.pyi"
+        ""
+    ]
+    ~source:""
+    "empty.stub.unknown"
+    [
+      { annotation = Type.Top; element = Value };
+    ];
+  assert_fold
+    ~additional_sources:[
+      parse
+        ~qualifier:(Access.create "empty.stub")
+        ~local_mode:Source.PlaceholderStub
+        ~handle:"empty/stub.pyi"
+        ""
+    ]
+    ~source:
+      {|
+        suppressed: empty.stub.submodule.Suppressed = ...
+      |}
+    "suppressed.attribute"
+    [{ annotation = Type.Top; element = Value }];
+
+  assert_fold
+    ~additional_sources:[
+      parse
+        ~qualifier:(Access.create "empty.stub")
+        ~local_mode:Source.PlaceholderStub
+        ~handle:"empty/stub.pyi"
+        ""
+    ]
+    ~source:
+      {|
+        suppressed: empty.stub.submodule.Suppressed = ...
+      |}
+    "empty.stub.any_attribute"
+    [{ annotation = Type.Top; element = Value }];
+  assert_fold
+    ~additional_sources:[
+      parse
+        ~qualifier:(Access.create "has_getattr")
+        "def __getattr__(name: str) -> typing.Any: ..."
+      |> Preprocessing.preprocess
+    ]
+    ~source:""
     "has_getattr.any_attribute"
-    [{ annotation = parse_annotation "typing.Any"; element = Value }];
+    [{ annotation = parse_annotation ~resolution "typing.Any"; element = Value }];
 
   assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+        instance: Class
+      |}
     "instance.attribute + 1.0"
     [
       { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
       {
-        annotation = parse_annotation "typing.Callable('int.__add__')[[Named(other, int)], int]";
+        annotation = parse_annotation ~resolution "typing.Callable('int.__add__')[[Named(other, int)], int]";
         element = Attribute { name = "__add__"; defined = true };
       };
       {
@@ -900,6 +1091,11 @@ let test_forward_access _ =
   } in
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie.title"
     [
       movie_typed_dictionary;
@@ -908,19 +1104,31 @@ let test_forward_access _ =
 
   let get_item = {
     annotation =
-      parse_annotation (
+      parse_annotation ~resolution (
         "typing.Callable('typing.Mapping.__getitem__')" ^
         "[[Named(k, typing._KT)], typing._VT_co]");
     element = Attribute { name = "__getitem__"; defined = true } ;
   } in
 
+  let resolution_with_movie =
+    to_resolution
+      [
+        parse "Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})"
+        |>  Preprocessing.preprocess
+      ]
+  in
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['title']"
     [
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation "str";
+        annotation = parse_annotation ~resolution:resolution_with_movie "str";
         element = SignatureFound {
             callable =
               "typing.Callable(typing.Mapping.__getitem__)" ^
@@ -930,12 +1138,17 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['year']"
     [
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation "int";
+        annotation = parse_annotation ~resolution:resolution_with_movie "int";
         element = SignatureFound {
             callable =
               "typing.Callable(typing.Mapping.__getitem__)" ^
@@ -946,12 +1159,17 @@ let test_forward_access _ =
     ];
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['missing']"
     [
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation "$unknown";
+        annotation = parse_annotation ~resolution:resolution_with_movie "$unknown";
         element =
           Annotated.Signature.TypedDictionaryMissingKey {
             typed_dictionary_name = "Movie";
@@ -962,27 +1180,38 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie[string]"
     [
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation "$unknown";
+        annotation = parse_annotation ~resolution:resolution_with_movie "$unknown";
         element =
           Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
           |> Option.some
           |> signature_not_found;
       };
     ];
+
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "Movie(title='Blade Runner', year=1982)"
     [
       {
-        annotation = parse_annotation "typing.Type[Movie]";
+        annotation = parse_annotation ~resolution:resolution_with_movie "typing.Type[Movie]";
         element = Value;
       };
       {
-        annotation = parse_annotation "Movie";
+        annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element = SignatureFound {
             callable =
               "typing.Callable(__init__)" ^
@@ -993,14 +1222,19 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "Movie(year=1982, title='Blade Runner')"
     [
       {
-        annotation = parse_annotation "typing.Type[Movie]";
+        annotation = parse_annotation ~resolution:resolution_with_movie "typing.Type[Movie]";
         element = Value;
       };
       {
-        annotation = parse_annotation "Movie";
+        annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element = SignatureFound {
             callable =
               "typing.Callable(__init__)" ^
@@ -1011,18 +1245,23 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "Movie(year='Blade Runner', title=1982)"
     [
       {
-        annotation = parse_annotation "typing.Type[Movie]";
+        annotation = parse_annotation ~resolution:resolution_with_movie "typing.Type[Movie]";
         element = Value;
       };
       {
-        annotation = parse_annotation "Movie";
+        annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element =
           {
-            Annotated.Signature.actual = parse_annotation "int";
-            expected = parse_annotation "str";
+            Annotated.Signature.actual = parse_annotation ~resolution:resolution_with_movie "int";
+            expected = parse_annotation ~resolution:resolution_with_movie "str";
             name = (Some "$parameter$title");
             position = 2;
           }
@@ -1033,14 +1272,19 @@ let test_forward_access _ =
       };
     ];
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "Movie('Blade Runner', 1982)"
     [
       {
-        annotation = parse_annotation ("typing.Type[Movie]");
+        annotation = parse_annotation ~resolution:resolution_with_movie ("typing.Type[Movie]");
         element = Value;
       };
       {
-        annotation = parse_annotation "Movie";
+        annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element =
           Annotated.Signature.TooManyArguments { expected = 0; provided = 2 }
           |> Option.some
@@ -1051,7 +1295,7 @@ let test_forward_access _ =
   let set_item =
     {
       annotation =
-        parse_annotation (
+        parse_annotation ~resolution:resolution_with_movie (
           "typing.Callable('TypedDictionary.__setitem__')" ^
           "[[Named(key, $unknown), Named(value, $unknown)], None]");
       element = Attribute { name = "__setitem__"; defined = true } ;
@@ -1059,6 +1303,11 @@ let test_forward_access _ =
   in
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['year'] = 7"
     [
       movie_typed_dictionary;
@@ -1075,6 +1324,11 @@ let test_forward_access _ =
     ];
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['year'] = 'string'"
     [
       movie_typed_dictionary;
@@ -1095,6 +1349,11 @@ let test_forward_access _ =
     ];
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie['missing'] = 7"
     [
       movie_typed_dictionary;
@@ -1112,6 +1371,11 @@ let test_forward_access _ =
     ];
 
   assert_fold
+    ~source:
+      {|
+        Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
+        movie: Movie
+      |}
     "movie[string] = 7"
     [
       movie_typed_dictionary;
