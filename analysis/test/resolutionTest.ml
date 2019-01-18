@@ -219,7 +219,7 @@ let test_can_be_bound _ =
       class Q: ...
     |}
   in
-  let assert_resolve_mutable_literals variable target expected =
+  let assert_can_be_bound variable target expected =
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
@@ -231,18 +231,18 @@ let test_can_be_bound _ =
       expected
       (Resolution.can_be_bound resolution ~variable ~target)
   in
-  assert_resolve_mutable_literals "typing.TypeVar('_T')" "C" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T')" "D" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T')" "Q" true;
+  assert_can_be_bound "typing.TypeVar('_T')" "C" true;
+  assert_can_be_bound "typing.TypeVar('_T')" "D" true;
+  assert_can_be_bound "typing.TypeVar('_T')" "Q" true;
 
-  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "C" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "D" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='C')" "Q" false;
-  assert_resolve_mutable_literals "typing.TypeVar('_T', $parameter$bound='D')" "C" false;
+  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "C" true;
+  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "D" true;
+  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "Q" false;
+  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='D')" "C" false;
 
-  assert_resolve_mutable_literals "typing.TypeVar('_T', C, Q)" "C" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T', C, Q)" "D" true;
-  assert_resolve_mutable_literals "typing.TypeVar('_T', D, Q)" "C" false;
+  assert_can_be_bound "typing.TypeVar('_T', C, Q)" "C" true;
+  assert_can_be_bound "typing.TypeVar('_T', C, Q)" "D" true;
+  assert_can_be_bound "typing.TypeVar('_T', D, Q)" "C" false;
   ()
 
 
