@@ -315,6 +315,16 @@ let test_process_type_check_request context =
         | _ ->
             failwith "Unexpected response."
       in
+      let actual_errors =
+        let compare (left_handle, _) (right_handle, _) =
+          File.Handle.compare left_handle right_handle
+        in
+        List.sort ~compare actual_errors
+      in
+      let expected_errors =
+        let compare (left, _) (right, _) = String.compare left right in
+        List.sort ~compare expected_errors
+      in
       assert_errors_equal ~actual_errors ~expected_errors;
       assert_equal
         ~cmp:(List.equal ~equal:String.equal)
@@ -350,8 +360,6 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> int: ..."]  (* Unchanged. *)
     ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:[]
-    ~expected_deferred_environment_requests:[]
     ();
   (* Single dependency. *)
   assert_response
@@ -360,9 +368,7 @@ let test_process_type_check_request context =
       "client.py", "from library import function";
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"]
-    ~expected_deferred_environment_requests:["client.py"]
+    ~expected_errors:["library.py", []; "client.py", []]
     ();
   (* Multiple depedencies. *)
   assert_response
@@ -372,9 +378,7 @@ let test_process_type_check_request context =
       "other.py", "from library import function";
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"; "other.py"]
-    ~expected_deferred_environment_requests:["client.py"; "other.py"]
+    ~expected_errors:["library.py", []; "client.py", []; "other.py", []]
     ();
   (* Indirect dependency. *)
   assert_response
@@ -388,9 +392,7 @@ let test_process_type_check_request context =
       "indirect.py", "from client import function"
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"]
-    ~expected_deferred_environment_requests:["client.py"]
+    ~expected_errors:["library.py", []; "client.py", []]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
@@ -406,9 +408,7 @@ let test_process_type_check_request context =
       "c.py", "from b import *";
     ]
     ~check:["a.py", "var = 1337"]
-    ~expected_errors:["a.py", []]
-    ~expected_deferred_check_requests:["b.py"]
-    ~expected_deferred_environment_requests:["b.py"]
+    ~expected_errors:["a.py", []; "b.py", []]
     ();
   assert_response
     ~sources:[
@@ -417,9 +417,7 @@ let test_process_type_check_request context =
       "c.py", "from b import *";
     ]
     ~check:["b.py", "from a import *"]
-    ~expected_errors:["b.py", []]
-    ~expected_deferred_check_requests:["c.py"]
-    ~expected_deferred_environment_requests:["c.py"]
+    ~expected_errors:["b.py", []; "c.py", []]
     ();
 
   (* Check nonexistent handles. *)

@@ -1114,6 +1114,7 @@ let test_incremental_dependencies context =
     add_defaults_to_environment ~configuration environment_handler;
     Service.Environment.populate ~configuration environment_handler sources;
     let expected_errors = [
+      File.Handle.create "a.py", [];
       File.Handle.create "b.py", [];
     ]
     in
@@ -1141,13 +1142,7 @@ let test_incremental_dependencies context =
       process (check_request ~update:[file ~local_root "b.py"] ~check:[file ~local_root "b.py"] ())
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
-    assert_equal
-      ~printer:(List.to_string ~f:Server.Protocol.Request.show)
-      [check_request
-         ~check:[file ~local_root "a.py"]
-         ~update:[file ~local_root "a.py"]
-         ()]
-      state.State.deferred_requests;
+    assert_equal [] state.State.deferred_requests;
     let { Request.state; response } =
       process
         (check_request
