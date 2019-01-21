@@ -342,7 +342,7 @@ let messages ~detailed:_ ~define location kind =
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
-                "Parameter `%s` is usde as type `%a` \
+                "Parameter `%s` is used as type `%a` \
                  and must have a type that does not contain `Any`"
                 (Access.show_sanitized name)
                 Type.pp annotation
