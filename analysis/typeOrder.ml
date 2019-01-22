@@ -514,13 +514,13 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             true
         | _, Type.Top, _ ->
             (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-            (* TODO(T38262178): this needs to be fixed. *)
             true
         | Type.Top, _, _ ->
             false
         | _ , Type.Object, _ ->
-            (* T[_T2] is a subtype of T[Any], for any _T2 but Top and regardless of its variance. *)
-            true
+            (* No T[_T2] should be accepted as a subtype of T[Any]: otherwise, a loosely-typed
+               callee might violate the stricter type of an argument provided by the caller. *)
+            false
         | _, _, Type.Variable { variance = Covariant; _ } ->
             less_or_equal order ~left ~right
         | _, _, Type.Variable { variance = Contravariant; _ } ->
@@ -1088,7 +1088,7 @@ and join ((module Handler: Handler) as order) left right =
                     Type.Top
                 | Type.Object, _, _
                 | _, Type.Object, _ ->
-                    Type.Object
+                    Type.Top
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     join order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->
@@ -1329,9 +1329,9 @@ and meet ((module Handler: Handler) as order) left right =
                 | Type.Top, other, _
                 | other, Type.Top, _ ->
                     other
-                | Type.Object, other, _
-                | other, Type.Object, _ ->
-                    other
+                | Type.Object, _, _
+                | _, Type.Object, _ ->
+                    Type.Bottom
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     meet order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->

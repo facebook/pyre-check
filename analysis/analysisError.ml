@@ -217,7 +217,7 @@ let messages ~detailed:_ ~define location kind =
     (string_of_int number) ^ suffix
   in
   let invariance_message =
-    " See https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches" ^
+    "See https://pyre-check.org/docs/error-types.html#list-and-dictionary-mismatches" ^
     "-with-subclassing for mutable container errors."
   in
   match kind with
@@ -528,13 +528,21 @@ let messages ~detailed:_ ~define location kind =
         in
         Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
-      let invariance_message = if due_to_invariance then [invariance_message] else [] in
+      let detailed_message =
+        if due_to_invariance then
+          [
+            Format.asprintf "This call might modify the type of the parameter.";
+            invariance_message
+          ]
+        else
+          []
+      in
       Format.asprintf
         "Expected `%a` for %s but got `%a`."
         Type.pp expected
         target
         Type.pp actual
-      :: invariance_message;
+      :: detailed_message;
 
 
   | IncompatibleConstructorAnnotation annotation ->
@@ -1612,6 +1620,10 @@ let suppress ~mode error =
           true
     else
       match kind with
+      (* TODO(T39440306): mirror behavior in other mismatch errors. *)
+      | IncompatibleParameterType { mismatch = { actual; expected; due_to_invariance }; _ }
+        when due_to_invariance ->
+          Type.equal actual Type.Object || Type.equal expected Type.Object
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
