@@ -83,7 +83,7 @@ let test_create _ =
        (Type.union [
            Type.integer;
            Type.string
-          ]
+         ]
        ));
   assert_create "typing.Union[typing.Optional[int], str]"
     (Type.optional

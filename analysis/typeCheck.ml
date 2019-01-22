@@ -2452,16 +2452,16 @@ module State = struct
                 true
             | annotation
               when is_named_tuple annotation &&
-                minimum_length <= List.length (get_named_tuple_parameters annotation) ->
+                   minimum_length <= List.length (get_named_tuple_parameters annotation) ->
                 true
             | _ ->
                 false
           in
           let nonuniform_sequence_parameters annotation =
-           match annotation with
-           | Type.Tuple (Type.Bounded parameters) -> parameters
-           | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
-           | _ -> []
+            match annotation with
+            | Type.Tuple (Type.Bounded parameters) -> parameters
+            | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
+            | _ -> []
           in
 
           match value with
@@ -2759,8 +2759,8 @@ module State = struct
                     (Error.Unpack {
                         expected_count = List.length elements;
                         unpack_problem = CountMismatch (
-                          List.length (get_named_tuple_parameters annotation)
-                        );
+                            List.length (get_named_tuple_parameters annotation)
+                          );
                       })
                 | _ ->
                     (Error.Unpack {

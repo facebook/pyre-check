@@ -22,9 +22,9 @@ module State = struct
 
 
   let initial_forward
-    ~configuration
-    ~resolution
-    ({ Node.value = ({ Define.parameters; parent; _ } as define); _ } as define_node) =
+      ~configuration
+      ~resolution
+      ({ Node.value = ({ Define.parameters; parent; _ } as define); _ } as define_node) =
     let state = State.initial ~configuration ~resolution define_node in
     let annotations =
       let reset_parameter

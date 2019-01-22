@@ -331,8 +331,8 @@ let find_stubs
 
 
 let find_sources
-  ?(filter = fun _ -> true)
-  { Configuration.Analysis.local_root; excludes; extensions; _ } =
+    ?(filter = fun _ -> true)
+    { Configuration.Analysis.local_root; excludes; extensions; _ } =
   let directory_filter path =
     not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
   in
