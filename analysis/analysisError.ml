@@ -1409,6 +1409,9 @@ let join ~resolution left right =
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
       when left = right ->
         TypedDictionaryAccessWithNonLiteral left
+    | Top, _
+    | _, Top ->
+        Top
     | _ ->
         Log.debug
           "Incompatible type in error join at %a: %a %a"
