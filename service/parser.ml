@@ -338,7 +338,13 @@ let find_sources
   in
   let valid_suffixes = ".py" :: extensions in
   let file_filter path =
-    List.exists ~f:(fun suffix -> String.is_suffix ~suffix path) valid_suffixes &&
+    let extension =
+      Filename.split_extension path
+      |> snd
+      >>| (fun extension -> "." ^ extension)
+      |> Option.value ~default:""
+    in
+    List.exists ~f:(String.equal extension) valid_suffixes &&
     not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
     not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)) &&
     filter path

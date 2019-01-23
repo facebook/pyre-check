@@ -206,7 +206,10 @@ class Configuration:
                 raise InvalidConfiguration(
                     "`extensions` field must be a list of strings."
                 )
-            if not all(extension.startswith(".") for extension in self.extensions):
+            if not all(
+                extension.startswith(".") or not extension
+                for extension in self.extensions
+            ):
                 raise InvalidConfiguration(
                     "`extensions` must only contain strings formatted as `.EXT`"
                 )

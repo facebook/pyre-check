@@ -69,5 +69,5 @@ let base_command_line_arguments =
     +> flag
       "-extension"
       (listed string)
-      ~doc:".EXT Consider extensions in this list equivalent to `.py` for type checking."
+      ~doc:".EXT Consider the given extension as equivalent to `.py` for type checking."
     +> anon (maybe_with_default "." ("source-root" %: string)))

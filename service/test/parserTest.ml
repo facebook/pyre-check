@@ -161,12 +161,13 @@ let test_find_sources context =
     write_file local_root "nested/a.cconf";
     write_file local_root "a.jpg";
     write_file local_root "nested/a.jpg";
+    write_file local_root "extensionless";
 
     let configuration =
       Configuration.Analysis.create
         ~local_root
         ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.py"]
-        ~extensions:[".cconf"]
+        ~extensions:[".cconf"; ""]
         ~search_path:[Path.SearchPath.Root module_root]
         ()
     in
@@ -179,7 +180,7 @@ let test_find_sources context =
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.cconf"; "a.py"; "b.py"; "nested/a.cconf"; "ttypes.py"]
+    ["a.cconf"; "a.py"; "b.py"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
     handles
 
 

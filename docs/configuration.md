@@ -51,7 +51,8 @@ provides typed stubs for library functions.
 
 `exclude`: List of regular expressions for files and directories that should not be parsed.
 
-`extensions`: List of file extensions to type check as python, in addition to `.py` and `.pyi`.
+`extensions`: Consider extensions in this list equivalent to `.py` for type checking.
+Empty string indicates extensionless files.
 
 
 # Local Configuration

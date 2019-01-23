@@ -445,7 +445,7 @@ class ConfigurationTest(unittest.TestCase):
                     "version": "VERSION",
                     "typeshed": "TYPE/%V/SHED/",
                     "ignore_all_errors": ["buck-out/dev/gen"],
-                    "extensions": [".a", ".b"],
+                    "extensions": [".a", ".b", ""],
                 },
                 {},
             ]
