@@ -1430,7 +1430,39 @@ let join ~resolution left right =
     | Top, _
     | _, Top ->
         Top
-    | _ ->
+    | AnalysisFailure _, _
+    | ConstantPropagation _, _
+    | ImpossibleIsinstance _, _
+    | IncompatibleAttributeType _, _
+    | IncompatibleAwaitableType _, _
+    | IncompatibleConstructorAnnotation _, _
+    | IncompatibleParameterType _, _
+    | IncompatibleReturnType _, _
+    | IncompatibleVariableType _, _
+    | InconsistentOverride _, _
+    | InvalidArgument _, _
+    | InvalidType _, _
+    | MissingArgument _, _
+    | MissingAttributeAnnotation _, _
+    | MissingGlobalAnnotation _, _
+    | MissingParameterAnnotation _, _
+    | MissingReturnAnnotation _, _
+    | MissingTypeParameters _, _
+    | NotCallable _, _
+    | RedundantCast _, _
+    | RevealedType _, _
+    | TooManyArguments _, _
+    | TypedDictionaryAccessWithNonLiteral _, _
+    | TypedDictionaryKeyNotFound _, _
+    | UnawaitedAwaitable _, _
+    | UndefinedAttribute _, _
+    | UndefinedImport _, _
+    | UndefinedName _, _
+    | UndefinedType _, _
+    | UnexpectedKeyword _, _
+    | UninitializedAttribute _, _
+    | Unpack _, _
+    | UnusedIgnore _, _ ->
         Log.debug
           "Incompatible type in error join at %a: %a %a"
           Location.Instantiated.pp (location left)
