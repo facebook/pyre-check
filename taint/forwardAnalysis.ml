@@ -121,7 +121,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let argument_taint = analyze_unstarred_expression ~resolution argument state in
             let tito =
               let add_tito_location features =
-                (SimpleFeatures.TitoPosition location) :: features
+                (SimpleFeatures.Breadcrumb Breadcrumb.Tito) ::
+                (SimpleFeatures.TitoPosition location) ::
+                features
               in
               let convert_tito tito {BackwardState.Tree.path; tip=return_taint; _} =
                 let taint_to_propagate =

@@ -149,6 +149,10 @@ let add_class_definition class_name handle =
   FileOfDefinition.add (Access.show class_name) handle
 
 
+let class_exists class_name =
+  FileOfDefinition.mem (Access.show class_name)
+
+
 let define_matches search { Node.value = { Define.name; _ } ; _ } =
   search = Access.show name
 

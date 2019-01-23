@@ -145,7 +145,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path; } =
             let add_tito_location features =
-              (SimpleFeatures.TitoPosition location) :: features
+              (SimpleFeatures.Breadcrumb Breadcrumb.Tito) ::
+              (SimpleFeatures.TitoPosition location) ::
+              features
             in
             let translate_tito argument_taint {BackwardState.Tree.path=tito_path; tip=element; _} =
               let gather_paths paths (ComplexFeatures.ReturnAccessPath extra_path) =

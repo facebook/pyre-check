@@ -30,17 +30,37 @@ let record_overrides overrides =
 let record_path_of_definitions ~path ~source =
   let defines = Preprocessing.defines ~include_stubs:true source in
   let record_classes { Node.value = class_node; _ } =
+    (*
+    Log.info "Recording class %a -> %a"
+      Access.pp class_node.Class.name
+      File.Handle.pp path;
+    *)
     Callable.add_class_definition class_node.Class.name path
   in
   let record_toplevel_definition definition =
     let name = definition.Node.value.Define.name in
     match definition.Node.value.Define.parent with
     | None ->
+        (*
+        Log.info "Recording function %a -> %a"
+          Access.pp name
+          File.Handle.pp path;
+        *)
         (* Only record top-level definitions. *)
         let () = Callable.add_function_definition name path in
         Callable.create_function name, definition
-    | Some _ ->
-        Callable.create_method name, definition
+    | Some class_name ->
+        if not (Callable.class_exists class_name) then
+          begin
+            Log.error "Method's class non-existing";
+            Format.asprintf
+              "Class %a for method %a not found"
+              Access.pp class_name
+              Access.pp name
+            |> failwith
+          end
+        else
+          Callable.create_method name, definition
   in
   List.iter ~f:record_classes (Preprocessing.classes source);
   List.map ~f:record_toplevel_definition defines

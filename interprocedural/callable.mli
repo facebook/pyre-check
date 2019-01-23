@@ -87,6 +87,7 @@ module Set : Caml.Set.S with type elt = t
 val add_function_definition: Access.t -> File.Handle.t -> unit
 val add_class_definition: Access.t -> File.Handle.t -> unit
 val get_definition: resolution: Analysis.Resolution.t -> [< real_target ] -> Define.t Node.t option
+val class_exists: Access.t -> bool
 
 
 module Map : Core.Map.S with type Key.t = t
