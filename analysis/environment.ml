@@ -794,8 +794,6 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
         | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) }
           when not (is_property define) ->
             Annotated.Callable.apply_decorators ~resolution ~define
-            |> Annotated.Define.create
-            |> Annotated.Define.define
             |> collect_callable ~parent ~location callables
 
         | _ ->
