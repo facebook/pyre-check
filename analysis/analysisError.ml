@@ -68,25 +68,22 @@ type unpack_problem =
 type kind =
   | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
+  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleAwaitableType of Type.t
+  | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
       name: Access.t option;
       position: int;
       callee: Access.t option;
       mismatch: mismatch;
     }
-  | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
-  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
-  | InvalidType of Type.t
   | InvalidArgument of invalid_argument
+  | InvalidType of Type.t
   | MissingArgument of { callee: Access.t option; name: Access.t }
-  | MissingAttributeAnnotation of {
-      parent: Type.t;
-      missing_annotation: missing_annotation;
-    }
+  | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
@@ -95,7 +92,6 @@ type kind =
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
-  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | Top
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
@@ -104,14 +100,11 @@ type kind =
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
-  | UninitializedAttribute of {
-      name: Access.t;
-      parent: Type.t;
-      mismatch: mismatch;
-    }
+  | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
+  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
-  (* Additionals errors. *)
+  (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | ConstantPropagation of Source.t
   | UnawaitedAwaitable of Access.t
@@ -166,11 +159,11 @@ let name = function
   | AnalysisFailure _ -> "Analysis failure"
   | ConstantPropagation _ -> "ConstantPropagation"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
-  | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
-  | IncompatibleParameterType _ -> "Incompatible parameter type"
-  | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
-  | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
+  | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
+  | IncompatibleConstructorAnnotation _ -> "Incompatible constructor annotation"
+  | IncompatibleParameterType _ -> "Incompatible parameter type"
+  | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
   | InvalidArgument _ -> "Invalid argument"
@@ -182,21 +175,21 @@ let name = function
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MissingTypeParameters _ -> "Missing type parameters"
   | NotCallable _ -> "Call error"
-  | RevealedType _ -> "Revealed type"
   | RedundantCast _ -> "Redundant cast"
+  | RevealedType _ -> "Revealed type"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
   | TypedDictionaryAccessWithNonLiteral _ -> "TypedDict accessed with a non-literal"
   | TypedDictionaryKeyNotFound _ -> "TypedDict accessed with a missing key"
   | UnawaitedAwaitable _ -> "Unawaited awaitable"
   | UndefinedAttribute _ -> "Undefined attribute"
+  | UndefinedImport _ -> "Undefined import"
   | UndefinedName _ -> "Undefined name"
   | UndefinedType _ -> "Undefined type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
-  | UndefinedImport _ -> "Undefined import"
   | UninitializedAttribute _ -> "Uninitialized attribute"
-  | UnusedIgnore _ -> "Unused ignore"
   | Unpack _ -> "Unable to unpack"
+  | UnusedIgnore _ -> "Unused ignore"
 
 
 let messages ~detailed:_ ~define location kind =

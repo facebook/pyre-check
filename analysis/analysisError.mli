@@ -57,25 +57,22 @@ type unpack_problem =
 type kind =
   | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
+  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleAwaitableType of Type.t
+  | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
       name: Access.t option;
       position: int;
       callee: Access.t option;
       mismatch: mismatch;
     }
-  | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
-  | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
-  | InvalidType of Type.t
   | InvalidArgument of invalid_argument
+  | InvalidType of Type.t
   | MissingArgument of { callee: Access.t option; name: Access.t }
-  | MissingAttributeAnnotation of {
-      parent: Type.t;
-      missing_annotation: missing_annotation;
-    }
+  | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
@@ -84,7 +81,6 @@ type kind =
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
-  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | Top
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
@@ -94,9 +90,10 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
   | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
+  | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
-  (* Additionals errors. *)
+  (* Additional errors. *)
   | ConstantPropagation of Source.t
   | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, hash]
