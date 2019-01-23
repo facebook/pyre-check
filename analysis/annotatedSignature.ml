@@ -729,7 +729,7 @@ let select
           let importance = function
             | InvalidKeywordArgument _ -> 0
             | InvalidVariableArgument _ -> 0
-            | Mismatch _ -> 0
+            | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
             | MissingArgument _ -> 1
             | TooManyArguments _ -> 1
             | TypedDictionaryAccessWithNonLiteral _ -> 0

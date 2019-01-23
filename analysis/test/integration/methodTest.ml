@@ -113,6 +113,18 @@ let test_check_method_parameters _ =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(b: str, a: str) -> None: ...
+      b: int = 1
+      a: int = 1
+      foo(b, a)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter " ^
+      "to call `foo` but got `int`."
     ]
 
 

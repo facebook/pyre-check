@@ -1260,10 +1260,10 @@ let test_forward_access _ =
         annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element =
           {
-            Annotated.Signature.actual = parse_annotation ~resolution:resolution_with_movie "int";
-            expected = parse_annotation ~resolution:resolution_with_movie "str";
-            name = (Some "$parameter$title");
-            position = 2;
+            Annotated.Signature.actual = parse_annotation ~resolution:resolution_with_movie "str";
+            expected = parse_annotation ~resolution:resolution_with_movie "int";
+            name = (Some "$parameter$year");
+            position = 1;
           }
           |> Node.create_with_default_location
           |> (fun node -> Annotated.Signature.Mismatch node)

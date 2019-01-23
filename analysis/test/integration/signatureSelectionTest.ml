@@ -574,9 +574,9 @@ let test_check_function_parameter_errors _ =
         str_float_to_int(input.undefined, input.undefined)
     |}
     [
-      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
-      "Incompatible parameter type [6]: Expected `float` for 2nd anonymous parameter " ^
+      "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter " ^
       "to call `str_float_to_int` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
     ];
 
