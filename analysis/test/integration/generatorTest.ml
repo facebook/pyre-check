@@ -184,26 +184,13 @@ let test_check_comprehensions _ =
 let test_check_generators _ =
   assert_type_errors
     {|
-      x: typing.Generator[typing.Any, typing.Any, typing.Any]
-      def foo() -> typing.Generator:
-        return x
-    |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type " ^
-      "that does not contain `Any`."
-    ];
-
-  assert_type_errors
-    {|
       x: typing.Generator[int, int, int]
       def foo() -> typing.Generator:
         return x
     |}
     [
       "Missing return annotation [3]: Returning `typing.Generator[int, int, int]` but " ^
-      "return type must be specified as type that does not contain `Any`.";
-      "Incompatible return type [7]: Expected `typing.Generator[typing.Any, typing.Any, " ^
-      "typing.Any]` but got `typing.Generator[int, int, int]`."
+      "return type must be specified as type that does not contain `Any`."
     ];
 
   assert_type_errors

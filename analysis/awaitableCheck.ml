@@ -105,7 +105,7 @@ module State (Context: Context) = struct
       let is_awaitable value =
         try
           let annotation = Resolution.resolve resolution value in
-          Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
+          Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Object)
         with TypeOrder.Untracked _ ->
           false
       in

@@ -1990,7 +1990,7 @@ module State = struct
             Resolution.less_or_equal
               resolution
               ~left:resolved
-              ~right:(Type.awaitable Type.Top)
+              ~right:(Type.awaitable Type.Object)
           in
           if not is_awaitable then
             Error.create

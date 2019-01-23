@@ -1145,16 +1145,6 @@ let test_less_or_equal_variance _ =
     assert_true (less_or_equal order ~left ~right);
     assert_false (less_or_equal order ~left:right ~right:left)
   in
-  assert_false
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" [Type.integer])
-       ~right:(Type.parametric "LinkedList" [Type.Object]));
-  assert_false
-    (less_or_equal
-       variance_order
-       ~left:(Type.parametric "LinkedList" [Type.Object])
-       ~right:(Type.parametric "LinkedList" [Type.integer]));
   (* Invariant. *)
   assert_false
     (less_or_equal
@@ -1733,18 +1723,6 @@ let test_join _ =
        (Type.parametric "Map" [Type.integer; Type.integer])
        (Type.parametric "Map" [Type.Top; Type.string]))
     (Type.parametric "Map" [Type.Top; Type.Object]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Object]))
-    (Type.parametric "LinkedList" [Type.Top]);
-  assert_type_equal
-    (join
-       variance_order
-       (Type.parametric "LinkedList" [Type.Object])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Top]);
   let variance_aliases =
     Type.Table.of_alist_exn [
       Type.Primitive "_T", Type.variable "_T";
@@ -1939,18 +1917,6 @@ let test_meet _ =
        (Type.parametric "LinkedList" [Type.Top])
        (Type.parametric "LinkedList" [Type.integer]))
     (Type.parametric "LinkedList" [Type.integer]);
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Object]))
-    (Type.parametric "LinkedList" [Type.Bottom]);
-  assert_type_equal
-    (meet
-       variance_order
-       (Type.parametric "LinkedList" [Type.Object])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Bottom]);
   assert_meet
     ~order:variance_order
     "Derived[int]"

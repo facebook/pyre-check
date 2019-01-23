@@ -169,21 +169,6 @@ let test_check_literal_variance _ =
       "Incompatible parameter type [6]: Expected `typing.List[float]` " ^
       "for 1st anonymous parameter to call `foo` but got `typing.List[int]`."
     ];
-  assert_type_errors ~show_error_traces:true
-    {|
-      def foo(a: typing.List[float]) -> float:
-        return a[0]
-      def bar() -> float:
-        a = [1,2,3]
-        return foo(a)
-    |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.List[float]` " ^
-      "for 1st anonymous parameter to call `foo` but got `typing.List[int]`. " ^
-      "This call might modify the type of the parameter. See https://pyre-check.org/docs/" ^
-      "error-types.html#list-and-dictionary-mismatches-with-subclassing " ^
-      "for mutable container errors."
-    ];
   assert_type_errors
     {|
       def foo(a: typing.Dict[str, float]) -> float:

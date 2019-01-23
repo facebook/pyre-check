@@ -763,7 +763,8 @@ let test_check_refinement _ =
         l = [1]
         l.append('asdf')
     |}
-    [];
+    ["Incompatible parameter type [6]: " ^
+     "Expected `int` for 1st anonymous parameter to call `list.append` but got `str`."];
 
   assert_type_errors
     {|
