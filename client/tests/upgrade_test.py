@@ -163,17 +163,19 @@ class FixmeAllTest(unittest.TestCase):
         "gather_local_configurations",
         return_value=[upgrade.Configuration("local/.pyre_configuration.local", {})],
     )
+    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_run_fixme_all(
-        self, run_fixme, get_errors, remove_version, gather, call
+        self, run_fixme, get_errors, remove_version, find_configuration, gather, call
     ) -> None:
         arguments = MagicMock()
         get_errors.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
         call.assert_not_called()
+
         errors = [
             {
                 "line": 2,
@@ -197,15 +199,17 @@ class FixmeAllTest(unittest.TestCase):
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
+    @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_upgrade_configuration(
-        self, run_fixme, get_errors, remove_version, call
+        self, run_fixme, local_configurations, get_errors, remove_version, call
     ) -> None:
         arguments = MagicMock()
-        get_errors.return_value = []
+        local_configurations.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
         call.assert_not_called()
+
         errors = [
             {
                 "line": 2,
