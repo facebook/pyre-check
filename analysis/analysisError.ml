@@ -1359,43 +1359,36 @@ let join ~resolution left right =
           })
     | InvalidType left, InvalidType right when Type.equal left right ->
         InvalidType left
-    | TooManyArguments left, TooManyArguments right ->
-        if Option.equal Access.equal_sanitized left.callee right.callee &&
+    | TooManyArguments left, TooManyArguments right
+      when Option.equal Access.equal_sanitized left.callee right.callee &&
            left.expected = right.expected &&
-           left.provided = right.provided then
-          TooManyArguments left
-        else
-          Top
+           left.provided = right.provided ->
+        TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
       when left.name = right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal_sanitized left right ->
         UnawaitedAwaitable left
-    | UndefinedAttribute left, UndefinedAttribute right
-      when Access.equal_sanitized left.attribute right.attribute ->
-        let origin: origin option =
-          match left.origin, right.origin with
-          | Class left, Class right when left.class_attribute = right.class_attribute ->
-              let annotation = Resolution.join resolution left.annotation right.annotation in
-              Some (Class { left with annotation })
-          | Module left, Module right when Access.equal_sanitized left right ->
-              Some (Module left)
-          | _ ->
-              None
-        in
-        origin
-        >>| (fun origin -> UndefinedAttribute { left with origin })
-        |> Option.value ~default:Top
+    | UndefinedAttribute { origin = Class left; attribute = left_attribute },
+      UndefinedAttribute { origin = Class right; attribute = right_attribute }
+      when Access.equal_sanitized left_attribute right_attribute ->
+        let annotation = Resolution.join resolution left.annotation right.annotation in
+        UndefinedAttribute { origin = Class { left with annotation }; attribute = left_attribute }
+
+    | UndefinedAttribute { origin = Module left; attribute = left_attribute },
+      UndefinedAttribute { origin = Module right; attribute = right_attribute }
+      when Access.equal_sanitized left_attribute right_attribute &&
+           Access.equal_sanitized left right ->
+        UndefinedAttribute { origin = Module left; attribute = left_attribute  }
+
     | UndefinedName left, UndefinedName right when Access.equal_sanitized left right ->
         UndefinedName left
     | UndefinedType left, UndefinedType right when Type.equal left right ->
         UndefinedType left
-    | UnexpectedKeyword left, UnexpectedKeyword right ->
-        if Option.equal Access.equal_sanitized left.callee right.callee &&
-           Identifier.equal left.name right.name then
-          UnexpectedKeyword left
-        else
-          Top
+    | UnexpectedKeyword left, UnexpectedKeyword right
+      when Option.equal Access.equal_sanitized left.callee right.callee &&
+           Identifier.equal left.name right.name ->
+        UnexpectedKeyword left
     | UndefinedImport left, UndefinedImport right when Access.equal_sanitized left right ->
         UndefinedImport left
 
