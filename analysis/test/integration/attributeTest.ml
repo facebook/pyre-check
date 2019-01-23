@@ -481,10 +481,7 @@ let test_check_attributes _ =
       def foo(any: typing.Any) -> int:
         return any.attribute
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
   assert_type_errors
     ~debug:false
     {|

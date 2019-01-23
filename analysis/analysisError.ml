@@ -1586,9 +1586,6 @@ let suppress ~mode error =
       | ConstantPropagation _
       | TooManyArguments _
       | Unpack _
-      | IncompatibleParameterType _
-      | IncompatibleReturnType _
-      | IncompatibleConstructorAnnotation _
       | InvalidArgument _
       | InvalidType _
       | MissingTypeParameters _
@@ -1606,8 +1603,11 @@ let suppress ~mode error =
       | MissingArgument _ ->
           false
       | ImpossibleIsinstance _
-      | IncompatibleAwaitableType _
       | IncompatibleAttributeType _
+      | IncompatibleAwaitableType _
+      | IncompatibleConstructorAnnotation _
+      | IncompatibleParameterType _
+      | IncompatibleReturnType _
       | IncompatibleVariableType _
       | InconsistentOverride _
       | MissingAttributeAnnotation _
