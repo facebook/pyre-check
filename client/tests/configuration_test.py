@@ -415,3 +415,55 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration._typeshed, None)
             self.assertEqual(configuration.excludes, [])
             self.assertEqual(configuration.extensions, [])
+
+    @patch("os.path.abspath", side_effect=lambda path: path)
+    @patch("os.path.isdir", return_value=True)
+    @patch("os.path.exists")
+    @patch("os.access", return_value=True)
+    @patch("os.listdir", side_effect=[["stdlib"], ["3"]])
+    @patch("builtins.open")
+    @patch("json.load")
+    @patch.object(os, "getenv", return_value=None)
+    def test_validate_configuration(
+        self,
+        os_environ,
+        json_load,
+        builtins_open,
+        listdir,
+        access,
+        exists,
+        isdir,
+        _abspath,
+    ) -> None:
+        exists.return_value = True
+        try:
+            json_load.side_effect = [
+                {
+                    "source_directories": ["a"],
+                    "binary": "abc",
+                    "logger": "/usr/logger",
+                    "version": "VERSION",
+                    "typeshed": "TYPE/%V/SHED/",
+                    "ignore_all_errors": ["buck-out/dev/gen"],
+                    "extensions": [".a", ".b"],
+                },
+                {},
+            ]
+            Configuration()
+        except BaseException:
+            self.fail("Configuration should not raise.")
+
+        with self.assertRaises(EnvironmentException):
+            json_load.side_effect = [
+                {
+                    "source_directories": ["a"],
+                    "binary": "abc",
+                    "logger": "/usr/logger",
+                    "version": "VERSION",
+                    "typeshed": "TYPE/%V/SHED/",
+                    "ignore_all_errors": ["buck-out/dev/gen"],
+                    "extensions": [".a", "b"],
+                },
+                {},
+            ]
+            Configuration()
