@@ -737,6 +737,72 @@ let test_join _ =
          }));
 
   assert_join
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }));
+  assert_join
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 4 }))
+    (error Error.Top);
+  assert_join
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
+    (error (Error.Unpack { expected_count = 3; unpack_problem = Error.CountMismatch 3 }))
+    (error Error.Top);
+
+  assert_join
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.integer;
+         }))
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }))
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }));
+  assert_join
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }))
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.integer;
+         }))
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }));
+  assert_join
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }))
+    (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
+    (error Error.Top);
+  assert_join
+    (error
+       (Error.Unpack {
+           expected_count = 2;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }))
+    (error
+       (Error.Unpack {
+           expected_count = 3;
+           unpack_problem = Error.UnacceptableType Type.float;
+         }))
+    (error Error.Top);
+
+  assert_join
     (error (Error.UndefinedType (Type.Primitive "derp")))
     (error (Error.UndefinedType (Type.Primitive "derp")))
     (error (Error.UndefinedType (Type.Primitive "derp")));
@@ -764,6 +830,104 @@ let test_join _ =
     (error (revealed_type "a" Type.integer))
     (error (revealed_type "b" Type.float))
     (error (Error.Top))
+
+
+let test_less_or_equal _ =
+  let resolution =
+    let environment = Environment.handler ~configuration (Environment.Builder.create ()) in
+    TypeCheck.resolution environment ()
+  in
+  assert_true
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            })));
+  assert_true
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.float
+            })));
+  assert_false
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.float;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            })));
+  assert_false
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 3;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            })));
+  assert_true
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.CountMismatch 2;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.CountMismatch 2;
+            })));
+  assert_false
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.CountMismatch 2;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.CountMismatch 3;
+            })));
+  assert_false
+    (Error.less_or_equal
+       ~resolution
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.CountMismatch 2;
+            }))
+       (error
+          (Error.Unpack {
+              expected_count = 2;
+              unpack_problem = Error.UnacceptableType Type.integer;
+            })))
 
 
 let test_filter _ =
@@ -939,6 +1103,7 @@ let () =
     "due_to_analysis_limitations">::test_due_to_analysis_limitations;
     "due_to_mismatch_with_any">::test_due_to_mismatch_with_any;
     "join">::test_join;
+    "less_or_equal">::test_less_or_equal;
     "filter">::test_filter;
     "suppress">::test_suppress;
   ]

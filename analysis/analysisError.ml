@@ -1219,6 +1219,18 @@ let less_or_equal ~resolution left right =
         Access.equal_sanitized left right
     | UnusedIgnore left, UnusedIgnore right ->
         Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
+    | Unpack { expected_count = left_count; unpack_problem = left_problem },
+      Unpack { expected_count = right_count; unpack_problem = right_problem } ->
+        left_count = right_count &&
+        begin
+          match left_problem, right_problem with
+          | UnacceptableType left, UnacceptableType right ->
+              Resolution.less_or_equal resolution ~left ~right
+          | CountMismatch left, CountMismatch right ->
+              left = right
+          | _ ->
+              false
+        end
     | _, Top -> true
     | _ ->
         false
@@ -1401,6 +1413,19 @@ let join ~resolution left right =
 
     | UnusedIgnore left, UnusedIgnore right ->
         UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
+
+    | Unpack { expected_count = left_count; unpack_problem = UnacceptableType left },
+      Unpack { expected_count = right_count; unpack_problem = UnacceptableType right }
+      when left_count = right_count ->
+        Unpack {
+          expected_count = left_count;
+          unpack_problem = UnacceptableType (Resolution.join resolution left right);
+        }
+
+    | Unpack { expected_count = left_count; unpack_problem = CountMismatch left },
+      Unpack { expected_count = right_count; unpack_problem = CountMismatch right }
+      when left_count = right_count && left = right ->
+        Unpack { expected_count = left_count; unpack_problem = CountMismatch left }
 
     | TypedDictionaryKeyNotFound left, TypedDictionaryKeyNotFound right
       when Identifier.equal left.typed_dictionary_name right.typed_dictionary_name &&
