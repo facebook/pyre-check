@@ -492,6 +492,15 @@ let test_qualify _ =
       def qualifier.foo(): pass
       qualifier.foo()
     |};
+  assert_qualify
+    {|
+      for b in []: pass
+      def b(): pass
+    |}
+    {|
+      for $target$b in []: pass
+      def qualifier.b(): pass
+    |};
 
   assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
   assert_qualify
@@ -548,6 +557,17 @@ let test_qualify _ =
           qualifier.foo.nestedB()
         def qualifier.foo.nestedB():
           qualifier.foo.nestedA()
+    |};
+  assert_qualify
+    {|
+      def foo():
+        def nested(a):
+          def a(): pass
+    |}
+    {|
+      def qualifier.foo():
+        def qualifier.foo.nested($parameter$a):
+          def qualifier.foo.nested.a(): pass
     |};
 
   (* SSA-gutted. *)

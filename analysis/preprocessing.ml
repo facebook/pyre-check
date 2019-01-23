@@ -534,7 +534,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         let _, body = qualify_statements ~scope:{ scope with qualifier = qualifier @ name } body in
         {
           define with
-          Define.name = qualify_access ~qualify_strings:false ~scope name;
+          Define.name = qualify_access ~suppress_synthetics:true ~qualify_strings:false ~scope name;
           parameters;
           body;
           decorators;
@@ -769,6 +769,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     scope, qualify_expression ~qualify_strings:false ~scope target
 
   and qualify_access
+      ?(suppress_synthetics = false)
       ~qualify_strings
       ~scope:({ aliases; use_forward_references; _ } as scope)
       access =
@@ -776,9 +777,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     | head :: tail ->
         let head =
           match Map.find aliases [head] with
-          | Some { access; is_forward_reference; _ }
+          | Some { access; is_forward_reference; qualifier }
             when (not is_forward_reference) || use_forward_references ->
-              access
+              if Access.show access |> String.is_prefix ~prefix:"$" &&
+                 suppress_synthetics then
+                qualifier @ [head]
+              else
+                access
           | _ ->
               [head]
         in
