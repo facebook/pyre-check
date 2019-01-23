@@ -28,7 +28,17 @@ let test_check_undefined_type _ =
     |}
     [
       "Undefined type [11]: Type `gurbage` is not defined.";
-      "Incompatible return type [7]: Expected `None` but got `gurbage`.";
+    ];
+
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(a: gurbage) -> int:
+        a = 1
+        return a
+    |}
+    [
+      "Undefined type [11]: Type `gurbage` is not defined.";
     ];
 
   assert_type_errors
@@ -138,6 +148,8 @@ let test_check_undefined_type _ =
 
   (* Ensure other errors are not missed when undefined type is thrown. *)
   assert_type_errors
+    ~debug:false
+    ~strict:true
     {|
       class Bar:
           async def undefined(self, x: Derp) -> Derp:
@@ -240,11 +252,9 @@ let test_check_analysis_failure _ =
     |}
     [
       "Undefined type [11]: Type `Derp` is not defined.";
-      "Incompatible return type [7]: Expected `Derp` but got implicit return value of `None`.";
       "Incompatible variable type [9]: x is declared to have type `int` " ^
       "but is used as type `unknown`.";
     ];
-  (* Crashes because we make direct comparison between Derp and Mapping when unwrapping `**x` *)
   assert_type_errors
     {|
       def foo(x: int) -> None:
@@ -253,7 +263,11 @@ let test_check_analysis_failure _ =
       def bar(x: Derp) -> None:
         test = foo( **x )
     |}
-    ["Analysis failure [30]: Terminating analysis because type `Derp` is not defined."]
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Invalid argument [32]: Keyword argument `x` has type `unknown` " ^
+      "but must be a mapping with string keys.";
+    ]
 
 
 let test_check_immutable_annotations _ =

@@ -520,7 +520,7 @@ let test_lookup_union_type_resolution _ =
 let test_lookup_unbound _ =
   let source =
     {|
-      def foo(list: List[_T]) -> None:
+      def foo(list: typing.List[_T]) -> None:
         a = [x for x in []]
         b = (a[0] if a else a[1])
         c = identity
@@ -533,8 +533,9 @@ let test_lookup_unbound _ =
   assert_annotation_list
     ~lookup
     [
-      "2:27-2:31/None";
-      "2:8-2:12/List[Variable[_T]]";
+      "2:14-2:25/typing.TypeAlias";
+      "2:34-2:38/None";
+      "2:8-2:12/typing.List[Variable[_T]]";
       "3:18-3:20/typing.List[]";
       "3:2-3:3/typing.List[]";
       "3:6-3:21/typing.List[]";
@@ -549,8 +550,8 @@ let test_lookup_unbound _ =
       "4:9-4:10/int";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
-      "6:2-6:3/List[Variable[_T]]";
-      "6:6-6:10/List[Variable[_T]]";
+      "6:2-6:3/typing.List[Variable[_T]]";
+      "6:6-6:10/typing.List[Variable[_T]]";
     ];
   assert_annotation
     ~position:{ Location.line = 3; column = 6 }
@@ -569,7 +570,7 @@ let test_lookup_unbound _ =
 let test_lookup_if_statements _ =
   let source =
     {|
-      def foo(flag: bool, list: List[int]) -> None:
+      def foo(flag: bool, list: typing.List[int]) -> None:
           if flag:
               pass
           if not flag:
@@ -585,15 +586,16 @@ let test_lookup_if_statements _ =
     ~lookup
     [
       "2:14-2:18/typing.Type[bool]";
-      "2:20-2:24/List[int]";
-      "2:31-2:34/typing.Type[int]";
-      "2:40-2:44/None";
+      "2:20-2:24/typing.List[int]";
+      "2:26-2:37/typing.TypeAlias";
+      "2:38-2:41/typing.Type[int]";
+      "2:47-2:51/None";
       "2:8-2:12/bool";
       "3:7-3:11/bool";
       "5:11-5:15/bool";
       "5:7-5:15/bool";
-      "7:7-7:11/List[int]";
-      "9:11-9:15/List[int]";
+      "7:7-7:11/typing.List[int]";
+      "9:11-9:15/typing.List[int]";
       "9:7-9:15/bool";
     ]
 

@@ -1589,7 +1589,6 @@ let suppress ~mode error =
       | InvalidArgument _
       | InvalidType _
       | MissingTypeParameters _
-      | NotCallable _
       | TypedDictionaryAccessWithNonLiteral _
       | TypedDictionaryKeyNotFound _
       | UnawaitedAwaitable _
@@ -1614,6 +1613,7 @@ let suppress ~mode error =
       | MissingGlobalAnnotation _
       | MissingParameterAnnotation _
       | MissingReturnAnnotation _
+      | NotCallable _
       | Top
       | UninitializedAttribute _
       | UnusedIgnore _ ->

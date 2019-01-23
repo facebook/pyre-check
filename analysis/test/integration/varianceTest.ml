@@ -29,6 +29,7 @@ let test_check_variance _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `input` has no type specified.";
+      "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
       "Undefined type [11]: Type `unknown` is not defined.";
     ]
 

@@ -40,7 +40,20 @@ let test_check_async _ =
     [
       "Missing type parameters [24]: Generic type `C` expects 1 type parameter.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
     ];
+
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      T = typing.TypeVar("T")
+      class C(typing.Awaitable[T]): ...
+
+      def foo(c: C) -> int:
+        return (await c)
+    |}
+    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
 
   assert_type_errors
     {|

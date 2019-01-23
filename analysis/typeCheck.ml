@@ -339,12 +339,14 @@ module State = struct
       ({ Node.location; _ } as expression) =
     let annotation = Resolution.parse_annotation resolution expression in
     let resolved = Resolution.resolve resolution expression in
+    let annotation_errors = check_annotation ~resolution ~location ~define ~annotation ~resolved in
     let errors =
-      check_annotation ~resolution ~location ~define ~annotation ~resolved
-      |> List.fold
+      List.fold
         ~init:errors
         ~f:(fun errors error -> Map.set ~key:(Error.hash error) ~data:error errors)
+        annotation_errors
     in
+    let annotation = if List.is_empty annotation_errors then annotation else Type.Top in
     { state with errors }, annotation
 
 
@@ -1246,9 +1248,15 @@ module State = struct
         value = ({ Define.name; parent; parameters; return_annotation; _ } as define);
       } as define_node) =
     let check_return_annotation state =
+      let update_define (state, annotation) =
+        let updated_define =
+          { define with return_annotation = Some (Type.expression annotation) }
+        in
+        { state with define = { define_node with Node.value = updated_define } }
+      in
       return_annotation
       >>| parse_and_check_annotation ~state
-      >>| fst
+      >>| update_define
       |> Option.value ~default:state
     in
     let check_parameter_annotations ({ resolution; resolution_fixpoint; _ } as state) =
@@ -2337,7 +2345,7 @@ module State = struct
             state
         in
         let check_missing_return state =
-          if Type.equal return_annotation Type.Top ||
+          if not (Define.has_return_annotation define_without_location) ||
              Type.contains_any return_annotation then
             let error =
               Error.create

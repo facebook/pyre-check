@@ -467,8 +467,19 @@ let test_check_constructors _ =
     [
       "Undefined type [11]: Type `Clss` is not defined.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`.";
-      "Call error [29]: `typing.Type[Clss]` is not a function.";
+      "Call error [29]: `unknown` is not a function.";
     ];
+
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      class Class:
+        def __init__(self, i: int) -> None: ...
+      def foo(x: typing.Type[Clss]) -> Class:
+        return x(7)
+    |}
+    ["Undefined type [11]: Type `Clss` is not defined."];
 
   assert_type_errors
     {|

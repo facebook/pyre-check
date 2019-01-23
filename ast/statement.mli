@@ -216,6 +216,7 @@ module Define : sig
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: t -> string -> bool
+  val has_return_annotation: t -> bool
 end
 
 module Class : sig

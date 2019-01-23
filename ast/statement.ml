@@ -293,6 +293,10 @@ module Define = struct
     Expression.exists_in_list ~expression_list:decorators decorator
 
 
+  let has_return_annotation { return_annotation; _ } =
+    Option.is_some return_annotation
+
+
   let is_coroutine define =
     has_decorator define "asyncio.coroutines.coroutine"
 

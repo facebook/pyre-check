@@ -22,7 +22,7 @@ let resolution = Test.resolution ()
 let create
     ?(bottom = false)
     ?(define = Test.mock_define)
-    ?(expected_return = Type.Top)
+    ?expected_return
     ?(resolution = Test.resolution ())
     ?(immutables = [])
     annotations =
@@ -48,7 +48,7 @@ let create
   let define =
     +{
       define with
-      Define.return_annotation = Some (Type.expression expected_return);
+      Define.return_annotation = expected_return >>| Type.expression;
     }
   in
   State.create ~bottom ~resolution ~define ()
@@ -2307,7 +2307,7 @@ let test_coverage _ =
         else:
           x = 1
     |}
-    { Coverage.full = 0; partial = 0; untyped = 0; ignore = 0; crashes = 1 };
+    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 };
 
   assert_coverage
     {|
