@@ -1045,48 +1045,52 @@ module State = struct
                     target
                 in
                 let implicit_parameter_annotation, callables =
+                  let extract_callable annotation =
+                    if Type.is_meta annotation then
+                      match Type.single_parameter annotation with
+                      | TypedDictionary { name; fields; total } ->
+                          Type.TypedDictionary.constructor ~name ~fields ~total
+                          |> Option.some
+                      | Variable { constraints = Type.Unconstrained; _ } ->
+                          find_method ~parent:resolved ~name:(Access.create "__call__")
+                      | Variable { constraints = Type.Explicit constraints; _ }
+                        when List.length constraints > 1 ->
+                          find_method ~parent:resolved ~name:(Access.create "__call__")
+                      | meta_parameter ->
+                          let class_definition =
+                            let parent =
+                              match meta_parameter with
+                              | Variable { constraints = Type.Explicit [parent]; _ } ->
+                                  parent
+                              | Variable { constraints = Type.Bound parent; _ } ->
+                                  parent
+                              | _ ->
+                                  meta_parameter
+                            in
+                            Resolution.class_definition resolution parent
+                            >>| Annotated.Class.create
+                          in
+                          match class_definition >>| Annotated.Class.constructor ~resolution with
+                          | Some (Type.Callable callable) -> Some callable
+                          | _ -> None
+                    else
+                      match annotation with
+                      | Type.Callable callable -> Some callable
+                      | _ -> None
+                  in
+                  let is_callable annotation =
+                    Type.is_callable annotation || Type.is_meta annotation
+                  in
                   match resolved with
                   | meta when Type.is_meta resolved ->
-                      let callable =
-                        match Type.single_parameter meta with
-                        | TypedDictionary { name; fields; total } ->
-                            Type.TypedDictionary.constructor ~name ~fields ~total
-                            |> Option.some
-                        | Variable { constraints = Type.Unconstrained; _ } ->
-                            find_method ~parent:resolved ~name:(Access.create "__call__")
-                        | Variable { constraints = Type.Explicit constraints; _ }
-                          when List.length constraints > 1 ->
-                            find_method ~parent:resolved ~name:(Access.create "__call__")
-                        | meta_parameter ->
-                            let class_definition =
-                              let parent =
-                                match meta_parameter with
-                                | Variable { constraints = Type.Explicit [parent]; _ } ->
-                                    parent
-                                | Variable { constraints = Type.Bound parent; _ } ->
-                                    parent
-                                | _ ->
-                                    meta_parameter
-                              in
-                              Resolution.class_definition resolution parent
-                              >>| Annotated.Class.create
-                            in
-                            match class_definition >>| Annotated.Class.constructor ~resolution with
-                            | Some (Type.Callable callable) -> Some callable
-                            | _ -> None
-                      in
                       target >>| AccessState.annotation,
-                      Option.to_list callable
+                      extract_callable meta |> Option.to_list
                   | Type.Callable callable ->
                       target >>| AccessState.annotation,
                       [callable]
-                  | Type.Union annotations when List.for_all annotations ~f:Type.is_callable ->
-                      let extract_callable = function
-                        | Type.Callable callable -> callable
-                        | _ -> failwith "Not a callable"
-                      in
+                  | Type.Union annotations when List.for_all annotations ~f:is_callable ->
                       target >>| AccessState.annotation,
-                      List.map annotations ~f:extract_callable
+                      List.map annotations ~f:extract_callable |> List.filter_opt
                   | _ ->
                       let callable =
                         find_method ~parent:resolved ~name:(Access.create "__call__")
@@ -1931,7 +1935,7 @@ module State = struct
                       Some (Error.create ~location ~kind ~define)
                 | NotCallable Type.Object ->
                     None
-                | NotCallable annotation->
+                | NotCallable annotation ->
                     let kind = Error.NotCallable annotation in
                     Some (Error.create ~location ~kind ~define)
                 | _ ->

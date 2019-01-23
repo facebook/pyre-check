@@ -694,6 +694,70 @@ let test_check_method_resolution _ =
     []
 
 
+let test_check_callables _ =
+  assert_type_errors
+    {|
+      x: int = 1
+      x()
+    |}
+    ["Call error [29]: `int` is not a function."];
+  assert_type_errors
+    {|
+      def foo() -> None: pass
+      def bar() -> None: pass
+      x = foo
+      x()
+      x = bar
+      x()
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` " ^
+      "has type `typing.Callable[[], None]` but no type is specified."
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None: pass
+      def bar() -> None: pass
+      test: bool
+      if test:
+        x = foo
+      else:
+        x = bar
+      reveal_type(x)
+      x()
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` " ^
+      "has type `typing.Callable[[], None]` but no type is specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[], None]`.";
+    ];
+  assert_type_errors
+    {|
+      class A:
+        def __init__(self) -> None: pass
+      class B:
+        def __init__(self) -> None: pass
+      def foo(
+        x: typing.Union[typing.Type[A], typing.Type[B]],
+        y: typing.Type[A],
+        z: typing.Type[B],
+      ) -> None:
+        x()
+        y()
+        z()
+    |}
+    [];
+  assert_type_errors
+    {|
+      class A:
+        def __init__(self) -> None: pass
+      def foo() -> None: pass
+      def bar(x: typing.Union[typing.Type[A], typing.Callable[[], None]]) -> None:
+        x()
+    |}
+    []
+
+
 let test_check_callable_protocols _ =
   (* Objects with a `__call__` method are callables. *)
   assert_type_errors
@@ -1302,6 +1366,7 @@ let () =
     "check_behavioral_subtyping">::test_check_behavioral_subtyping;
     "check_nested_class_inheritance">::test_check_nested_class_inheritance;
     "check_method_resolution">::test_check_method_resolution;
+    "check_callables">::test_check_callables;
     "check_callable_protocols">::test_check_callable_protocols;
     "check_explicit_method_call">::test_check_explicit_method_call;
     "check_self">::test_check_self;
