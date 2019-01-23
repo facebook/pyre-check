@@ -1477,7 +1477,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
               };
             } :: bases_tail;
           body;
-          decorators = [];
+          decorators = _;
           docstring = _;
         }
         when is_typed_dictionary ~module_name ~typed_dictionary ->

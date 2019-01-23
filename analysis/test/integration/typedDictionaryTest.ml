@@ -48,6 +48,13 @@ let test_check_typed_dictionaries _ =
               alpha: int
               beta: str
               gamma: bool
+            def decorator(cls: C) -> C:
+              return cls
+            @decorator
+            class DecoratedClassBasedTypedDictGreekLetters(TypedDict):
+              alpha: int
+              beta: str
+              gamma: bool
           |}
       }
     in
@@ -431,6 +438,14 @@ let test_check_typed_dictionaries _ =
       from foo.bar.baz import ClassBasedNonTotalTypedDictGreekLetters
       def f() -> int:
         baz = ClassBasedNonTotalTypedDictGreekLetters(alpha = 7, gamma = True)
+        return baz['alpha']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      from foo.bar.baz import DecoratedClassBasedTypedDictGreekLetters
+      def f() -> int:
+        baz = DecoratedClassBasedTypedDictGreekLetters(alpha = 7, beta = "a", gamma = True)
         return baz['alpha']
     |}
     [];
