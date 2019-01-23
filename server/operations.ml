@@ -26,7 +26,7 @@ exception ServerNotRunning
    creating the socket in a temporary directory and symlinking to it from the pyre directory. *)
 let socket_path ?(create=false) configuration =
   let link_path = Constants.Server.root configuration ^| "server.sock" in
-  if Path.file_exists link_path || not create then
+  if not create then
     try
       Unix.readlink (Path.absolute link_path)
       |> Path.create_absolute
