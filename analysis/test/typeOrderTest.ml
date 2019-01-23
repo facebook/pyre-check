@@ -713,6 +713,8 @@ let test_less_or_equal _ =
   (* Undeclared. *)
   assert_false (less_or_equal default ~left:(Type.undeclared) ~right:(Type.Top));
   assert_false (less_or_equal default ~left:(Type.Top) ~right:(Type.undeclared));
+  assert_false (less_or_equal default ~left:(Type.undeclared) ~right:(Type.Bottom));
+  assert_true (less_or_equal default ~left:(Type.Bottom) ~right:(Type.undeclared));
 
   (* Tuples. *)
   assert_true
@@ -1381,6 +1383,8 @@ let test_join _ =
     Type.Top
     Type.undeclared
     (Type.Union [Type.undeclared; Type.Top]);
+  assert_join_types Type.undeclared Type.Bottom Type.undeclared;
+  assert_join_types Type.Bottom Type.undeclared Type.undeclared;
   assert_join_types
     ~order
     !"0"
@@ -1903,6 +1907,14 @@ let test_meet _ =
        Type.string
        (Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"))
     Type.string;
+
+  (* Undeclared. *)
+  assert_type_equal
+    (meet default Type.undeclared Type.Bottom)
+    (Type.Bottom);
+  assert_type_equal
+    (meet default Type.Bottom Type.undeclared)
+    (Type.Bottom);
 
   (* Variance. *)
   assert_type_equal

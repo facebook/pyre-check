@@ -1002,6 +1002,10 @@ and join ((module Handler: Handler) as order) left right =
     left
   else
     match left, right with
+    | Type.Bottom, other
+    | other, Type.Bottom ->
+        other
+
     | undeclared, _ when Type.equal undeclared Type.undeclared ->
         Type.union [left; right]
     | _, undeclared when Type.equal undeclared Type.undeclared ->
@@ -1018,10 +1022,6 @@ and join ((module Handler: Handler) as order) left right =
     | Type.Object, _
     | _, Type.Object ->
         Type.Object
-
-    | Type.Bottom, other
-    | other, Type.Bottom ->
-        other
 
     | (Type.Variable { constraints = Type.Unconstrained; _ } as variable), other
     | other, (Type.Variable { constraints = Type.Unconstrained; _ } as variable) ->

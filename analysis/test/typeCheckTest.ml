@@ -1809,6 +1809,12 @@ let test_forward_expression _ =
     ~postcondition:["x", Type.list Type.integer]
     "['', *x]"
     (Type.list (Type.union [Type.string; Type.integer]));
+  assert_forward
+    ~precondition:["x", Type.undeclared]
+    ~postcondition:["x", Type.undeclared]
+    ~errors:(`Specific ["Undefined name [18]: Global name `x` is undefined."])
+    "[x]"
+    (Type.list Type.undeclared);
 
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
