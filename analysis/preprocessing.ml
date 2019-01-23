@@ -585,7 +585,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         in
         {
           definition with
-          Class.name = qualify_access ~qualify_strings:false ~scope name;
+          (* Ignore aliases, imports, etc. when declaring a class name. *)
+          Class.name = scope.qualifier @ name;
           bases = List.map bases ~f:qualify_base;
           body;
           decorators;
@@ -615,7 +616,16 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             Assert.test = qualify_expression ~qualify_strings:false ~scope test;
             message;
           }
-      | Class definition ->
+      | Class ({ name; _ } as definition) ->
+          let scope = {
+            scope with
+            aliases =
+              Map.set
+                aliases
+                ~key:name
+                ~data:(local_alias ~qualifier ~access:(qualifier @ name));
+          }
+          in
           scope,
           Class (qualify_class definition)
       | Define define ->

@@ -352,6 +352,20 @@ let test_qualify _ =
 
   assert_qualify
     {|
+      from module import C
+      a = C
+      class C: ...
+      b = C
+    |}
+    {|
+      from module import C
+      $local_qualifier$a = module.C
+      class qualifier.C: ...
+      $local_qualifier$b = qualifier.C
+    |};
+
+  assert_qualify
+    {|
       class C:
         INDENT = 1
         INDENT, other = 2, 3
