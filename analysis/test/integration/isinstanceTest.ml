@@ -32,6 +32,31 @@ let test_check_isinstance _ =
     |}
     ["Undefined name [18]: Global name `NonexistentClass` is undefined."];
 
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        if isinstance(x, str):
+          reveal_type(x)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> None:
+        if isinstance(x, NonexistentClass):
+          reveal_type(x)
+        reveal_type(x)
+    |}
+    [
+      "Undefined name [18]: Global name `NonexistentClass` is undefined.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+    ];
+
   assert_type_errors "isinstance(1, (int, str))" [];
   assert_type_errors "isinstance(1, (int, (int, str)))" [];
   assert_type_errors

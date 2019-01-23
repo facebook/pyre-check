@@ -2829,9 +2829,11 @@ module State = struct
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
-                    Type.Union (List.map elements ~f:(Resolution.parse_annotation resolution))
+                    List.map ~f:(parse_and_check_annotation ~state) elements
+                    |> List.map ~f:snd
+                    |> (fun elements -> Type.Union elements)
                 | _ ->
-                    Resolution.parse_annotation resolution annotation
+                    parse_and_check_annotation ~state annotation |> snd
               in
               let updated_annotation =
                 let refinement_unnecessary existing_annotation =
@@ -2864,7 +2866,7 @@ module State = struct
                     Access.Call {
                       Node.value = [
                         { Argument.name = None; value };
-                        { Argument.name = None; value = annotation };
+                        { Argument.name = None; value = annotation_expression };
                       ];
                       _;
                     };
@@ -2873,9 +2875,47 @@ module State = struct
               };
             } ->
               begin
+                let annotation =
+                  let parse_meta annotation =
+                    match parse_and_check_annotation ~state annotation |> snd with
+                    | Type.Top ->
+                        (* Try to resolve meta-types given as expressions. *)
+                        let annotation = Resolution.resolve resolution annotation_expression in
+                        if Type.is_meta annotation then
+                          (Type.single_parameter annotation)
+                        else
+                          Type.Top
+                    | annotation ->
+                        annotation
+                  in
+                  match annotation_expression with
+                  | { Node.value = Tuple elements; _ } ->
+                      List.map ~f:parse_meta elements
+                      |> (fun elements -> Type.Union elements)
+                  | _ ->
+                      parse_meta annotation_expression
+                in
                 let contradiction_error =
-                  match Resolution.parse_meta_annotation resolution annotation with
-                  | Some expected ->
+                  match annotation with
+                  | Type.Top ->
+                      let { resolved; _ } =
+                        forward_expression ~state ~expression:annotation_expression
+                      in
+                      Some
+                        (Error.create
+                           ~location:(Node.location test)
+                           ~kind:(Error.IncompatibleParameterType {
+                               name = None;
+                               position = 1;
+                               callee = Some (Access.create "isinstance");
+                               mismatch = {
+                                 Error.expected = Type.meta (Type.variable "T");
+                                 actual = resolved;
+                                 due_to_invariance = false;
+                               }
+                             })
+                           ~define)
+                  | expected ->
                       let { resolved; _ } = forward_expression ~state ~expression:value in
                       if
                         Type.equal resolved Type.Bottom
@@ -2897,22 +2937,6 @@ module State = struct
                                  expression = value;
                                })
                              ~define)
-                  | None ->
-                      let { resolved; _ } = forward_expression ~state ~expression:annotation in
-                      Some
-                        (Error.create
-                           ~location:(Node.location test)
-                           ~kind:(Error.IncompatibleParameterType {
-                               name = None;
-                               position = 1;
-                               callee = Some (Access.create "isinstance");
-                               mismatch = {
-                                 Error.expected = Type.meta (Type.variable "T");
-                                 actual = resolved;
-                                 due_to_invariance = false;
-                               }
-                             })
-                           ~define)
                 in
                 let resolve ~access =
                   match Resolution.get_local resolution ~access with
@@ -2931,13 +2955,8 @@ module State = struct
                       let constraints =
                         begin
                           match annotation with
-                          | { Node.value = Tuple elements; _ } ->
-                              List.filter_map
-                                elements
-                                ~f:(Resolution.parse_meta_annotation resolution)
-                          | _ ->
-                              Resolution.parse_meta_annotation resolution annotation
-                              |> Option.to_list
+                          | Type.Union elements -> elements
+                          | _ -> [annotation]
                         end
                         |> Type.Set.of_list
                       in

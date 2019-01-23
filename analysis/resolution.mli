@@ -55,7 +55,6 @@ val resolve_mutable_literals
   -> resolved:Type.t
   -> expected:Type.t
   -> Type.t
-val parse_meta_annotation: t -> Expression.t -> Type.t option
 
 val global: t -> Access.t -> global option
 
