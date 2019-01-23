@@ -733,7 +733,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
                   | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
                     (Parameter.Named _ as named) :: right ->
                       let is_compatible =
-                        Type.equal (Parameter.annotation variable) (Parameter.annotation keywords) &&
+                        Type.equal
+                          (Parameter.annotation variable)
+                          (Parameter.annotation keywords) &&
                         less_or_equal
                           order
                           ~left:(Parameter.annotation named)
@@ -1620,7 +1622,10 @@ and diff_variables substitutions left right =
           | Defined left, Defined right ->
               begin
                 let diff_parameters substitutions left right =
-                  diff_variables substitutions (Parameter.annotation left) (Parameter.annotation right)
+                  diff_variables
+                    substitutions
+                    (Parameter.annotation left)
+                    (Parameter.annotation right)
                 in
                 match List.fold2 ~init:substitutions ~f:diff_parameters left right with
                 | Ok substitutions -> substitutions
