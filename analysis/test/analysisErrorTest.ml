@@ -88,7 +88,7 @@ let configuration = Configuration.Analysis.create ()
 
 
 let test_due_to_analysis_limitations _ =
-  let assert_due_to_analysis_limitaitons kind =
+  let assert_due_to_analysis_limitations kind =
     assert_true (Error.due_to_analysis_limitations (error kind))
   in
   let assert_not_due_to_analysis_limitations kind =
@@ -96,7 +96,7 @@ let test_due_to_analysis_limitations _ =
   in
 
   (* IncompatibleAttributeType. *)
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleAttributeType {
         parent = mock_parent;
         incompatible_type = {
@@ -109,7 +109,7 @@ let test_due_to_analysis_limitations _ =
           declare_location = Location.Instantiated.any;
         };
       });
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleAttributeType {
         parent = mock_parent;
         incompatible_type = {
@@ -137,7 +137,7 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* Initialization *)
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.UninitializedAttribute {
         name = [Access.Identifier ""];
         parent = mock_parent;
@@ -160,12 +160,19 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* MissingParameterAnnotation. *)
-  assert_due_to_analysis_limitaitons
+  assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation {
         name = (Access.create "");
         annotation = Some Type.Top;
         evidence_locations = [];
         given_annotation = None;
+      });
+  assert_due_to_analysis_limitations
+    (Error.MissingParameterAnnotation {
+        name = (Access.create "");
+        annotation = None;
+        evidence_locations = [];
+        given_annotation = Some Type.Top;
       });
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation {
@@ -176,12 +183,19 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* MissingReturnAnnotation. *)
-  assert_due_to_analysis_limitaitons
+  assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation {
         name = (Access.create "$return_annotation");
         annotation = Some Type.Top;
         evidence_locations = [];
         given_annotation = None;
+      });
+  assert_due_to_analysis_limitations
+    (Error.MissingReturnAnnotation {
+        name = (Access.create "$return_annotation");
+        annotation = None;
+        evidence_locations = [];
+        given_annotation = Some Type.Top;
       });
   assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation {
@@ -192,13 +206,23 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* MissingAttributeAnnotation *)
-  assert_due_to_analysis_limitaitons
+  assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation {
         parent = mock_parent;
         missing_annotation = {
           Error.name = [Access.Identifier ""];
           annotation = Some Type.Top;
           given_annotation = None;
+          evidence_locations = [];
+        };
+      });
+  assert_due_to_analysis_limitations
+    (Error.MissingAttributeAnnotation {
+        parent = mock_parent;
+        missing_annotation = {
+          Error.name = [Access.Identifier ""];
+          annotation = None;
+          given_annotation = Some Type.Top;
           evidence_locations = [];
         };
       });
@@ -224,7 +248,7 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* Parameter. *)
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
         name = Some ((Access.create ""));
         position = 1;
@@ -235,7 +259,7 @@ let test_due_to_analysis_limitations _ =
           due_to_invariance = false;
         };
       });
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
         name = Some ((Access.create ""));
         position = 1;
@@ -258,7 +282,7 @@ let test_due_to_analysis_limitations _ =
         };
       });
 
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
         name = Some ((Access.create ""));
         position = 1;
@@ -271,7 +295,7 @@ let test_due_to_analysis_limitations _ =
       });
 
   (* Return. *)
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Top;
@@ -280,7 +304,7 @@ let test_due_to_analysis_limitations _ =
         };
         is_implicit = false;
       });
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Top;
@@ -308,7 +332,7 @@ let test_due_to_analysis_limitations _ =
     (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
   assert_not_due_to_analysis_limitations
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
-  assert_due_to_analysis_limitaitons
+  assert_due_to_analysis_limitations
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Top })
 
 

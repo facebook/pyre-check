@@ -1004,10 +1004,10 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType actual
-  | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
-  | MissingGlobalAnnotation { annotation = Some actual; _ }
-  | MissingParameterAnnotation { annotation = Some actual; _ }
-  | MissingReturnAnnotation { annotation = Some actual; _ }
+  | MissingAttributeAnnotation { missing_annotation = { given_annotation = Some actual; _ }; _ }
+  | MissingGlobalAnnotation { given_annotation = Some actual; _ }
+  | MissingParameterAnnotation { given_annotation = Some actual; _ }
+  | MissingReturnAnnotation { given_annotation = Some actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | RedundantCast actual
@@ -1591,8 +1591,6 @@ let suppress ~mode error =
       | IncompatibleConstructorAnnotation _
       | InvalidArgument _
       | InvalidType _
-      | MissingParameterAnnotation _
-      | MissingReturnAnnotation _
       | MissingTypeParameters _
       | NotCallable _
       | TypedDictionaryAccessWithNonLiteral _
@@ -1614,6 +1612,8 @@ let suppress ~mode error =
       | InconsistentOverride _
       | MissingAttributeAnnotation _
       | MissingGlobalAnnotation _
+      | MissingParameterAnnotation _
+      | MissingReturnAnnotation _
       | Top
       | UninitializedAttribute _
       | UnusedIgnore _ ->
@@ -1660,13 +1660,13 @@ let suppress ~mode error =
         (Define.is_untyped define && not (Define.is_toplevel define))
   in
 
-  let suppress_in_infer ({ kind; _ } as error) =
+  let suppress_in_infer { kind; _ } =
     match kind with
     | MissingReturnAnnotation { annotation = Some actual; _ }
     | MissingParameterAnnotation { annotation = Some actual; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
-        due_to_analysis_limitations error ||
+        Type.equal actual Type.Top ||
         Type.equal actual Type.Object ||
         Type.equal actual Type.Bottom
     | _ ->

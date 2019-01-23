@@ -1374,7 +1374,10 @@ module State = struct
                       ~state
                       ~given_annotation:(Some annotation)
                       (Some value_annotation),
-                    Annotation.create value_annotation
+                    Annotation.create_immutable
+                      ~global:false
+                      ~original:(Some annotation)
+                      value_annotation
                 | Some (_, annotation), None when Type.contains_any annotation ->
                     add_missing_parameter_annotation_error
                       ~state
