@@ -1944,6 +1944,34 @@ let test_forward_statement _ =
     "x = y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.integer];
 
+  assert_forward
+    ~errors:
+      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+    ["y", Type.undeclared]
+    "x = y"
+    ["x", Type.Object; "y", Type.undeclared];
+
+  assert_forward
+    ~errors:
+      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+    ["y", Type.Union [Type.integer; Type.undeclared]]
+    "x = y"
+    ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
+
+  assert_forward
+    ~errors:
+      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+    ["y", Type.undeclared]
+    "x = [y]"
+    ["x", Type.list Type.Object; "y", Type.undeclared];
+
+  assert_forward
+    ~errors:
+      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+    ["y", Type.Union [Type.integer; Type.undeclared]]
+    "x = [y]"
+    ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
+
   (* Assignments with tuples. *)
   assert_forward
     ["c", Type.integer; "d", Type.Top]

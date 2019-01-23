@@ -2379,6 +2379,7 @@ module State = struct
         let { state = { resolution; _ } as state; resolved } =
           forward_expression ~state ~expression:value
         in
+        let resolved = Type.remove_undeclared resolved in
         let original_annotation =
           annotation
           >>| Resolution.parse_annotation resolution

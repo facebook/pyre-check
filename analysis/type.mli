@@ -274,4 +274,6 @@ val instantiate_variables: replacement:t -> t -> t
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
 
+val remove_undeclared: t -> t
+
 val to_yojson: t -> Yojson.Safe.json

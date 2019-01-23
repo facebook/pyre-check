@@ -46,7 +46,41 @@ let test_check_assign _ =
         x += 'asdf'
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
+
+  (* Prune `undeclared` from assignments. *)
+  assert_type_errors
+    {|
+      def foo() -> None:
+        y = x
+        z = y
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
+  assert_type_errors
+    {|
+      def foo(a: bool) -> None:
+        if a:
+          x = 12
+        y = x
+        z = y
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        y = [x]
+        z = y
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
+  assert_type_errors
+    {|
+      def foo(a: bool) -> None:
+        if a:
+          x = 12
+        y = [x]
+        z = y
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."]
 
 
 

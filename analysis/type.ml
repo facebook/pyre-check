@@ -1442,7 +1442,7 @@ module Transform = struct
         else
           annotation
       in
-      let new_state, transformed_annotation =  Transformer.visit !state annotation in
+      let new_state, transformed_annotation = Transformer.visit !state annotation in
       state := new_state;
       transformed_annotation
 
@@ -2138,6 +2138,48 @@ module TypedDictionary = struct
       };
     }
 end
+
+
+let remove_undeclared annotation =
+  let module RemoveUndeclared = Transform.Make(struct
+      type state = unit
+
+      let visit_children _ _ =
+        true
+
+      let visit _ annotation =
+        match annotation with
+        | Parametric { name; parameters } ->
+            let declare annotation =
+              match annotation with
+              | Primitive "typing.Undeclared" -> Object
+              | _ -> annotation
+            in
+            let parameters = List.map parameters ~f:declare in
+            (), Parametric { name; parameters}
+        | Union annotations ->
+            begin
+              let annotations =
+                let declared = function
+                  | Primitive "typing.Undeclared" -> false
+                  | _ -> true
+                in
+                List.filter ~f:declared annotations
+              in
+              match annotations with
+              | [] -> (), Object
+              | [annotation] -> (), annotation
+              | _ -> (), union annotations
+            end
+        | _ ->
+            (), annotation
+    end)
+  in
+  match annotation with
+  | Primitive "typing.Undeclared" ->
+      Object
+  | _ ->
+      snd (RemoveUndeclared.visit () annotation)
 
 
 let to_yojson annotation =
