@@ -326,9 +326,8 @@ module SharedHandler: Analysis.Environment.Handler = struct
         { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
       let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
       let in_test =
-        let is_unit_test
-            { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
-          Access.equal name (Access.create "unittest.TestCase")
+        let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
+          Class.is_unit_test definition
         in
         let successor_classes =
           successors

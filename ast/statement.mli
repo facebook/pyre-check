@@ -240,6 +240,8 @@ module Class : sig
   val update: t -> definition: t -> t
 
   val has_decorator: t -> string -> bool
+
+  val is_unit_test: t -> bool
 end
 
 module For : sig

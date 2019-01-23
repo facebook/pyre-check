@@ -706,11 +706,9 @@ let attributes
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =
-        let is_unit_test { Node.value = { Record.Class.name; _ }; _ } =
-          Access.show name
-          |> String.equal "unittest.TestCase"
-        in
-        List.exists ~f:is_unit_test (definition :: superclass_definitions)
+        List.exists
+          (definition :: superclass_definitions)
+          ~f:(fun { Node.value; _ } -> Class.is_unit_test value)
       in
       (* Pass over normal class hierarchy. *)
       let accumulator =

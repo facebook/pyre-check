@@ -1034,6 +1034,10 @@ module Class = struct
 
   let has_decorator { decorators; _ } decorator =
     Expression.exists_in_list ~expression_list:decorators decorator
+
+
+  let is_unit_test { name; _ } =
+    Access.show name = "unittest.TestCase"
 end
 
 

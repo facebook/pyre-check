@@ -226,15 +226,11 @@ let handler
       let refine { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
         let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
         let in_test =
-          let is_unit_test
-              { Resolution.class_definition = { Node.value = { Class.name; _ }; _ }; _ } =
-            Access.equal name (Access.create "unittest.TestCase")
+          let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
+            Class.is_unit_test definition
           in
-          let successor_classes =
-            successors
-            |> List.filter_map ~f:(Hashtbl.find class_definitions)
-          in
-          List.exists ~f:is_unit_test successor_classes
+          List.filter_map successors ~f:(Hashtbl.find class_definitions)
+          |> List.exists ~f:is_unit_test
         in
         let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
         let implicit_attributes = Class.implicit_attributes ~in_test class_definition in

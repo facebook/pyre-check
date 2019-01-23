@@ -246,6 +246,27 @@ let test_defines _ =
     ~exists:false
 
 
+let test_is_unit_test _ =
+  assert_true
+    (Class.is_unit_test
+       (parse_single_class {|
+          class unittest.TestCase(object):
+            pass
+        |}));
+  assert_false
+    (Class.is_unit_test
+       (parse_single_class {|
+          class unittest.case.TestCase(object):
+            pass
+        |}));
+  assert_false
+    (Class.is_unit_test
+       (parse_single_class {|
+          class a.TestCase(unittest.TestCase):
+            pass
+        |}))
+
+
 let test_attributes _ =
   let create_attribute
       ?(primitive = false)
@@ -1047,6 +1068,7 @@ let () =
     "defines">::test_defines;
     "attributes">::test_attributes;
     "update">::test_update;
+    "is_unit_test">::test_is_unit_test;
   ]
   |> Test.run;
   "statement">:::[
