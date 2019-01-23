@@ -253,7 +253,7 @@ let test_is_unit_test _ =
           class unittest.TestCase(object):
             pass
         |}));
-  assert_false
+  assert_true
     (Class.is_unit_test
        (parse_single_class {|
           class unittest.case.TestCase(object):

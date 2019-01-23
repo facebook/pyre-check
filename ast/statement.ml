@@ -1037,7 +1037,8 @@ module Class = struct
 
 
   let is_unit_test { name; _ } =
-    Access.show name = "unittest.TestCase"
+    let name = Access.show name in
+    name = "unittest.TestCase" || name = "unittest.case.TestCase"
 end
 
 
