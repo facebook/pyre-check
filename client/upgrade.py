@@ -97,6 +97,7 @@ class Configuration:
         del contents["version"]
         with open(self._path, "w") as configuration_file:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
+            configuration_file.write("\n")
 
     def get_errors(self) -> List[Dict[str, Any]]:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
@@ -344,6 +345,7 @@ def run_global_version_update(
         # This will sort the keys in the configuration - we won't be clobbering comments
         # since Python's JSON parser disallows comments either way.
         json.dump(configuration, global_configuration_file, sort_keys=True, indent=2)
+        global_configuration_file.write("\n")
 
     for configuration in local_configurations:
         path = configuration.get_path()
@@ -359,6 +361,7 @@ def run_global_version_update(
 
         with open(path, "w") as configuration_file:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
+            configuration_file.write("\n")
 
 
 def run_missing_overridden_return_annotations(
