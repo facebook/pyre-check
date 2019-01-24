@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import subprocess
 import unittest
 from unittest.mock import MagicMock, call, patch
 
@@ -176,3 +177,21 @@ class IncrementalTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
             self.assertEqual(command._exit_code, commands.ExitCode.FOUND_ERRORS)
+
+    def test_read_stderr(self) -> None:
+        with patch("subprocess.Popen") as popen:
+            arguments = mock_arguments()
+
+            configuration = mock_configuration()
+            configuration.version_hash = "hash"
+            analysis_directory = AnalysisDirectory("/root")
+            command = incremental.Incremental(
+                arguments, configuration, analysis_directory
+            )
+            stream = MagicMock()
+            command._read_stderr(stream)
+            popen.assert_called_once_with(
+                ["tail", "--follow", "--lines=0", "/root/.pyre/server/server.stdout"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+            )

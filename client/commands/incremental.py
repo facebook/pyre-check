@@ -82,7 +82,7 @@ class Incremental(Reporting):
             self._analysis_directory.get_root(), ".pyre/server/server.stdout"
         )
         with subprocess.Popen(
-            ["tail", "-f", stderr_file],
+            ["tail", "--follow", "--lines=0", stderr_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
         ) as stderr_tail:
