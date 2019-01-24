@@ -1652,43 +1652,7 @@ let filter ~configuration ~resolution errors =
 let suppress ~mode error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
-      match kind with
-      | AnalysisFailure _
-      | ConstantPropagation _
-      | TooManyArguments _
-      | Unpack _
-      | InvalidArgument _
-      | InvalidType _
-      | MissingTypeParameters _
-      | TypedDictionaryAccessWithNonLiteral _
-      | TypedDictionaryKeyNotFound _
-      | UnawaitedAwaitable _
-      | UndefinedAttribute _
-      | UndefinedName _
-      | UndefinedImport _
-      | UndefinedType _
-      | UnexpectedKeyword _
-      | RedundantCast _
-      | RevealedType _
-      | MissingArgument _ ->
-          false
-      | ImpossibleIsinstance _
-      | IncompatibleAttributeType _
-      | IncompatibleAwaitableType _
-      | IncompatibleConstructorAnnotation _
-      | IncompatibleParameterType _
-      | IncompatibleReturnType _
-      | IncompatibleVariableType _
-      | InconsistentOverride _
-      | MissingAttributeAnnotation _
-      | MissingGlobalAnnotation _
-      | MissingParameterAnnotation _
-      | MissingReturnAnnotation _
-      | NotCallable _
-      | Top
-      | UninitializedAttribute _
-      | UnusedIgnore _ ->
-          true
+      true
     else
       match kind with
       | UndefinedImport _ ->
