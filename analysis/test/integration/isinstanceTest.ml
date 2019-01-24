@@ -8,8 +8,7 @@ open IntegrationTest
 
 
 let test_check_isinstance _ =
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def f(x) -> int:
         class Stub:

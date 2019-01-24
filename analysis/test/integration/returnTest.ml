@@ -40,8 +40,7 @@ let test_check_return _ =
     "def foo() -> typing.List[str]: return 1"
     ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     "def foo() -> int: return"
     ["Incompatible return type [7]: Expected `int` but got `None`."];
 

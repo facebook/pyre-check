@@ -470,9 +470,7 @@ let test_check_constructors _ =
       "Call error [29]: `unknown` is not a function.";
     ];
 
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       class Class:
         def __init__(self, i: int) -> None: ...

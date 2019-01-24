@@ -43,9 +43,7 @@ let test_check_async _ =
       "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
     ];
 
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       T = typing.TypeVar("T")
       class C(typing.Awaitable[T]): ...
@@ -68,8 +66,8 @@ let test_check_async _ =
         await a
     |}
     ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
-  assert_type_errors
-    ~debug:false
+
+  assert_default_type_errors
     {|
       def bar(a: typing.Any) -> None:
         await a

@@ -69,9 +69,7 @@ let test_check_attributes _ =
     ];
 
 
-  assert_type_errors
-    ~debug:true
-    ~strict:true
+  assert_strict_type_errors
     {|
       class Bar:
         def bar() -> None:
@@ -84,7 +82,6 @@ let test_check_attributes _ =
     ["Undefined attribute [16]: Optional type has no attribute `bar`."];
 
   assert_type_errors
-    ~strict:true
     {|
       a = str
       b = 1
@@ -484,16 +481,13 @@ let test_check_attributes _ =
     [];
 
   (* Any has all attributes in default mode, but not strict mode. *)
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(any: typing.Any) -> int:
         return any.attribute
     |}
     ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(any: typing.Any) -> int:
         return any.attribute
@@ -824,16 +818,14 @@ let test_check_missing_attribute _ =
     ];
 
   (* Don't report in non-debug mode. *)
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo:
         def __init__(self) -> None:
           self.a = 1
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo:
         a: typing.Any

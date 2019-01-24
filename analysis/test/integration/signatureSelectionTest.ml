@@ -165,8 +165,7 @@ let test_check_callables _ =
       "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def exec(f: typing.Callable[[], int]) -> int:
         return f()
@@ -428,16 +427,14 @@ let test_check_function_parameters _ =
     ["Incompatible parameter type [6]: " ^
      "Expected `str` for 2nd anonymous parameter to call `foo` but got `int`."];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
     [];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def f(d: typing.Dict[int, str], x) -> str:
         return d.get(x, "")
@@ -806,9 +803,7 @@ let test_check_variable_arguments _ =
       "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
     ];
 
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(a: int, b: int) -> int:
         return 1

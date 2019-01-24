@@ -8,49 +8,37 @@ open IntegrationTest
 
 
 let test_check_missing_parameter _ =
-  assert_type_errors
-    ~debug:false
-    ~strict:false
+  assert_default_type_errors
     {|
       def foo(x):
         return 1
     |}
     [];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(x) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(x = 1) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(x: typing.Any) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(x: typing.Any = unknown) -> int:
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(x: typing.Dict[typing.Any, str]) -> int:
         return 1
@@ -221,29 +209,25 @@ let test_check_missing_return _ =
     ];
 
   (* Don't report in non-debug mode. *)
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo():
         return 1
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo():
         pass
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x):
         return x
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       1 + 'asdf'  # report in top-level function
     |}

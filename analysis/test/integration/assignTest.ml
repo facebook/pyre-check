@@ -31,8 +31,7 @@ let test_check_assign _ =
       "but is used as type `int`.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Any) -> None:
         y: int = x

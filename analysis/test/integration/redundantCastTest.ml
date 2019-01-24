@@ -20,8 +20,7 @@ let test_check_redundant_cast _ =
         typing.cast(int, x)
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Any) -> None:
         typing.cast(int, x)

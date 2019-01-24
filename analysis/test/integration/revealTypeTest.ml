@@ -17,8 +17,7 @@ let test_reveal_type _ =
       "Revealed type [-1]: Revealed type for `x` is `str`.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x) -> None:
         reveal_type(x)

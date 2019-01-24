@@ -8,8 +8,7 @@ open IntegrationTest
 
 
 let test_check_undefined_type _ =
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Derp) -> Herp:
         pass
@@ -20,8 +19,7 @@ let test_check_undefined_type _ =
     ];
 
   (* Don't crash when returning a bad type. *)
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(a: gurbage) -> None:
         return a
@@ -30,8 +28,7 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `gurbage` is not defined.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(a: gurbage) -> int:
         a = 1
@@ -41,8 +38,7 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `gurbage` is not defined.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Derp, y: Herp) -> None:
         pass
@@ -51,15 +47,13 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: int) -> Herp:
         return x
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
         pass
@@ -69,22 +63,19 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Herp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Derp[int]) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Derp[int, str]) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Derp` is not defined."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Optional[Derp[int]]) -> typing.List[Herp]:
         pass
@@ -93,15 +84,13 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Optional) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Optional` is not defined."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Optional[Any]) -> None:
         pass
@@ -110,24 +99,21 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Any` is not defined.";
       "Undefined type [11]: Type `Optional` is not defined.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Dict) -> None:
         pass
     |}
     ["Undefined type [11]: Type `Dict` is not defined."];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo() -> None:
         x: undefined = 1
         return
     |}
     ["Undefined type [11]: Type `undefined` is not defined."];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: Derp) -> None:
         y: undefined = 1
@@ -147,9 +133,7 @@ let test_check_undefined_type _ =
     [];
 
   (* Ensure other errors are not missed when undefined type is thrown. *)
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+assert_strict_type_errors
     {|
       class Bar:
           async def undefined(self, x: Derp) -> Derp:
@@ -167,9 +151,7 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Herp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo() -> typing.Optional["Herp"]:
         return None
@@ -318,8 +300,7 @@ let test_check_immutable_annotations _ =
       "type `str`.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def expects_str(x: str) -> None:
         pass
@@ -558,9 +539,7 @@ let test_check_immutable_annotations _ =
       "but is used as type `typing.Any`.";
     ];
 
-  assert_type_errors
-    ~debug:false
-    ~strict:true
+  assert_strict_type_errors
     {|
       def foo(any: typing.Any) -> None:
         x: int = any
@@ -625,8 +604,7 @@ let test_check_immutable_annotations _ =
     |}
     [];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       constant = 1
       def foo() -> None:

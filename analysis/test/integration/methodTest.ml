@@ -225,9 +225,7 @@ let test_check_behavioral_subtyping _ =
     [];
 
   (* Missing annotations. *)
-  assert_type_errors
-    ~strict:false
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo():
         def foo() -> int: ...
@@ -261,7 +259,6 @@ let test_check_behavioral_subtyping _ =
 
   (* TODO(T29679691): We should also warn when parameter annotations are missing. *)
   assert_type_errors
-    ~strict:false
     {|
       class Foo():
         def foo(input: int) -> int: ...
@@ -571,8 +568,7 @@ let test_check_behavioral_subtyping _ =
     [];
 
   (* Ignore anything involving `Any`. *)
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo():
         def __eq__(self, o: typing.Any) -> typing.Any: ...
@@ -582,8 +578,7 @@ let test_check_behavioral_subtyping _ =
     [];
 
   (* Overrides when both *args and **kwargs exist are not inconsistent. *)
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo():
         def f(self, a: float) -> None: ...
@@ -594,8 +589,7 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `a` in overriding signature.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo():
         def f(self, b: int) -> None: ...
@@ -606,8 +600,7 @@ let test_check_behavioral_subtyping _ =
       "Inconsistent override [14]: `Bar.f` overrides method defined in `Foo` inconsistently. " ^
       "Could not find parameter `b` in overriding signature.";
     ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class Foo():
         def f(self, c: str) -> None: ...
@@ -806,8 +799,7 @@ let test_check_callable_protocols _ =
       "Call error [29]: `Call` is not a function.";
     ];
 
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(call) -> int:
         return call()
@@ -987,8 +979,7 @@ let test_check_self _ =
 
 
 let test_check_meta_self _ =
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       T = typing.TypeVar('T')
       S = typing.TypeVar('S')
