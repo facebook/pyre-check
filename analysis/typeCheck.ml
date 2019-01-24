@@ -1400,13 +1400,6 @@ module State = struct
                       >>| add_incompatible_variable_error ~state annotation
                       |> Option.value ~default:state
                     in
-                    let annotation =
-                      match annotation with
-                      | Type.Variable { constraints = Type.Explicit constraints; _ } ->
-                          Type.union constraints
-                      | _ ->
-                          annotation
-                    in
                     state, Annotation.create_immutable ~global:false annotation
                 | None, Some value ->
                     let { resolved = annotation; _ } =

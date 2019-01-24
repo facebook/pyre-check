@@ -58,7 +58,7 @@ let test_check_union _ =
         return a
     |}
     [
-      "Incompatible return type [7]: Expected `float` but got `typing.Union[int, str]`."
+      "Incompatible return type [7]: Expected `float` but got `Variable[T <: [int, str]]`."
     ];
 
   assert_type_errors
