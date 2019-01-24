@@ -10,14 +10,8 @@ class TestWarningCodeFilter(TestCase):
         self.warning_code_filter = WarningCodeFilter({6000})
 
     def test_filter_codes(self):
-        tuple_entries = [
-            (ParseType.ISSUE, "key1", {"code": 6000}),
-            (ParseType.ISSUE, "key2", {"code": 6001}),
-            (ParseType.ISSUE, "key2", {"code": 6002}),
-        ]
-        input = (tuple_entries, None)
-        output, _ = Pipeline([self.warning_code_filter]).run(input)
-        output_entries = list(output[0])
+        dict_entries = {"issues": [{"code": 6000}, {"code": 6001}, {"code": 6002}]}
+        output, _ = Pipeline([self.warning_code_filter]).run(dict_entries)
 
-        self.assertEqual(len(output_entries), 1)
-        self.assertEqual(output_entries[0], (ParseType.ISSUE, "key1", {"code": 6000}))
+        self.assertEqual(len(output["issues"]), 1)
+        self.assertEqual(output["issues"][0], {"code": 6000})

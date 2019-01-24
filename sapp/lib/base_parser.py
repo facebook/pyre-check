@@ -4,12 +4,20 @@
 import logging
 import os
 import pprint
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, TextIO, Tuple
+from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
 
 import xxhash  # pyre-ignore
 from tools.sapp.analysis_output import AnalysisOutput
-from tools.sapp.pipeline import InputFiles, ParsedTuples, PipelineStep, Summary
+from tools.sapp.pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
+
+
+# if these imports have the same name we get a linter error
+try:
+    import ujson as json
+except ImportError:
+    import json  # noqa
 
 
 log = logging.getLogger()
@@ -54,7 +62,7 @@ def log_trace_keyerror_in_generator(func):
     return wrapper
 
 
-class BaseParser(PipelineStep[InputFiles, ParsedTuples]):
+class BaseParser(PipelineStep[InputFiles, DictEntries]):
     """The parser takes a json file as input, and provides a simplified output
     for the Processor.
     """
@@ -83,7 +91,7 @@ class BaseParser(PipelineStep[InputFiles, ParsedTuples]):
         return
         yield
 
-    def generate_pipeline_input(
+    def _analysis_output_to_parsed_types(
         self, input: AnalysisOutput
     ) -> Iterable[Tuple[ParseType, Any, Dict[str, Any]]]:
         entries = self.parse(input)
@@ -100,16 +108,116 @@ class BaseParser(PipelineStep[InputFiles, ParsedTuples]):
                 key = (e["caller"], e["caller_port"])
             yield typ, key, e
 
+    def analysis_output_to_dict_entries(
+        self,
+        inputfile: AnalysisOutput,
+        previous_inputfile: Optional[AnalysisOutput],
+        previous_issue_handles: Optional[AnalysisOutput],
+        linemapfile: Optional[str],
+    ) -> DictEntries:
+        """Here we take input generators and return a dict with issues,
+        preconditions, and postconditions separated. If there is only a single
+        generator file, it's simple. If we also pass in a generator from a
+        previous inputfile then there are a couple extra steps:
+
+        1. If an issue was seen in the previous inputfile then we won't return
+        it, because it's not new.
+        2. In addition, we take an optional linemap file that maps for each
+        filename, each new file line position to a list of old file line
+        position. This is used to adjust handles to we can recognize when issues
+        moved.
+        """
+
+        issues = []
+        previous_handles: Set[str] = set()
+        conditions: Dict[ParseType, Dict[str, List[Dict[str, Any]]]] = {
+            ParseType.PRECONDITION: defaultdict(list),
+            ParseType.POSTCONDITION: defaultdict(list),
+        }
+
+        # If we have a mapfile, create the map.
+        if linemapfile:
+            log.info("Parsing linemap file")
+            with open(linemapfile, "r") as f:
+                linemap = json.load(f)
+        else:
+            linemap = None
+
+        # Save entry info from the parent analysis, if there is one.
+        # If previous issue handles file is provided, use it over
+        # previous_inputfile (contains the full JSON)
+        if previous_issue_handles:
+            log.info("Parsing previous issue handles")
+            for f in previous_issue_handles.file_handles():
+                handles = f.read().splitlines()
+                previous_handles = {handle for handle in handles}
+        elif previous_inputfile:
+            log.info("Parsing previous hh_server output")
+            for typ, master_key, e in self._analysis_output_to_parsed_types(
+                previous_inputfile
+            ):
+                if typ == ParseType.ISSUE:
+                    diff_handle = BaseParser.compute_diff_handle(
+                        e["filename"], e["line"], e["code"]
+                    )
+                    previous_handles.add(diff_handle)
+                    # Use exact handle match too in case linemap is missing.
+                    previous_handles.add(master_key)
+
+        log.info("Parsing hh_server output")
+        for typ, key, e in self._analysis_output_to_parsed_types(inputfile):
+            if typ == ParseType.ISSUE:
+                # We are only interested in issues that weren't in the previous
+                # analysis.
+                if not self._is_existing_issue(linemap, previous_handles, e, key):
+                    issues.append(e)
+            else:
+                conditions[typ][key].append(e)
+
+        return {
+            "issues": issues,
+            "preconditions": conditions[ParseType.PRECONDITION],
+            "postconditions": conditions[ParseType.POSTCONDITION],
+        }
+
+    def _is_existing_issue(self, linemap, old_handles, new_issue, new_handle):
+        if new_handle in old_handles:
+            return True
+        if not linemap:
+            return False
+        filename = new_issue["filename"]
+        old_map = linemap.get(filename, {})
+        old_lines = old_map.get(str(new_issue["line"]), [])
+        # Once this works, we should remove the "relative" line from the handle
+        # and use the absolute one to avoid having to map both the start of the
+        # method and the line in the method.
+
+        # Consider all possible old lines
+        for old_line in old_lines:
+            old_handle = BaseParser.compute_diff_handle(
+                filename, old_line, new_issue["code"]
+            )
+            if old_handle in old_handles:
+                return True
+        return False
+
     def run(
         self, input: InputFiles, summary: Summary = None
-    ) -> Tuple[ParsedTuples, Summary]:
+    ) -> Tuple[DictEntries, Summary]:
         inputfile, previous_inputfile = input
 
-        entries = self.generate_pipeline_input(inputfile)
-        previous_entries = None
-        if previous_inputfile:
-            previous_entries = self.generate_pipeline_input(previous_inputfile)
-        return (entries, previous_entries), summary
+        if summary is None:
+            summary = {}
+
+        return (
+            self.analysis_output_to_dict_entries(
+                inputfile,
+                previous_inputfile,
+                summary.get("previous_issue_handles"),
+                summary.get("old_linemap_file"),
+            ),
+            summary,
+        )
 
     @staticmethod
     def compute_master_handle(callable, line, start, end, code):

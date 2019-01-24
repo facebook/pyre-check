@@ -11,9 +11,8 @@ T_out = TypeVar("T_out")
 Summary = Optional[
     Dict[str, Any]
 ]  # blob of objects that gets passed through the pipeline
-IterableTuple = Iterable[Tuple[Any, Any, Any]]
 InputFiles = Tuple[AnalysisOutput, Optional[AnalysisOutput]]
-ParsedTuples = Tuple[IterableTuple, Optional[IterableTuple]]
+DictEntries = Dict[str, Any]
 
 
 class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
