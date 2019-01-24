@@ -584,7 +584,7 @@ let select
                     _;
                   } ->
                       let annotation = Resolution.resolve resolution expression in
-                      let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Object] in
+                      let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Top] in
                       if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
                         (* Try to extract second parameter. *)
                         Type.parameters annotation

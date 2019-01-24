@@ -185,8 +185,20 @@ let test_check_return_control_flow _ =
         return x
     |}
     [
-      "Missing return annotation [3]: Returning `typing.List[int]` but return type "
-      ^ "must be specified as type that does not contain `Any`."
+      "Missing return annotation [3]: Returning `typing.List[int]` but return type " ^
+      "must be specified as type that does not contain `Any`.";
+      "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`."
+    ];
+
+  assert_type_errors
+    {|
+      x: typing.List[typing.Any]
+      def foo() -> list:
+        return x
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`."
     ];
 
   assert_type_errors

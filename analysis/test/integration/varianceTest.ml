@@ -31,6 +31,23 @@ let test_check_variance _ =
       "Missing parameter annotation [2]: Parameter `input` has no type specified.";
       "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
       "Undefined type [11]: Type `unknown` is not defined.";
+    ];
+  assert_type_errors
+    {|
+      def foo(a: typing.Mapping[str, float]) -> float:
+        return a["a"]
+      def bar(x: typing.Dict[str, int]) -> float:
+        return foo(x)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(d: typing.Dict[int, typing.Any]) -> None:
+        d.update({ 1: 1 })
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `d` must have a type " ^
+      "that does not contain `Any`."
     ]
 
 
@@ -168,6 +185,21 @@ let test_check_literal_variance _ =
     [
       "Incompatible parameter type [6]: Expected `typing.List[float]` " ^
       "for 1st anonymous parameter to call `foo` but got `typing.List[int]`."
+    ];
+  assert_type_errors ~show_error_traces:true
+    {|
+      def foo(a: typing.List[float]) -> float:
+        return a[0]
+      def bar() -> float:
+        a = [1,2,3]
+        return foo(a)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `typing.List[float]` " ^
+      "for 1st anonymous parameter to call `foo` but got `typing.List[int]`. " ^
+      "This call might modify the type of the parameter. See https://pyre-check.org/docs/" ^
+      "error-types.html#list-and-dictionary-mismatches-with-subclassing " ^
+      "for mutable container errors."
     ];
   assert_type_errors
     {|

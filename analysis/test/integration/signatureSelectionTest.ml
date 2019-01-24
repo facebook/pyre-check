@@ -432,7 +432,10 @@ let test_check_function_parameters _ =
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
-    [];
+    [
+      "Incompatible parameter type [6]: Expected `typing.Iterable[typing.Tuple[int, int]]` " ^
+      "for 1st anonymous parameter to call `dict.update` but got `typing.Dict[int, typing.Any]`."
+    ];
 
   assert_default_type_errors
     {|
