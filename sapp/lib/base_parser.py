@@ -5,10 +5,11 @@ import logging
 import os
 import pprint
 from enum import Enum
-from typing import Any, Dict, Iterable, TextIO
+from typing import Any, Dict, Iterable, TextIO, Tuple
 
 import xxhash  # pyre-ignore
 from tools.sapp.analysis_output import AnalysisOutput
+from tools.sapp.pipeline import InputFiles, ParsedTuples, PipelineStep, Summary
 
 
 log = logging.getLogger()
@@ -53,7 +54,7 @@ def log_trace_keyerror_in_generator(func):
     return wrapper
 
 
-class BaseParser(object):
+class BaseParser(PipelineStep[InputFiles, ParsedTuples]):
     """The parser takes a json file as input, and provides a simplified output
     for the Processor.
     """
@@ -81,6 +82,34 @@ class BaseParser(object):
         assert False, "Abstract method called!"
         return
         yield
+
+    def generate_pipeline_input(
+        self, input: AnalysisOutput
+    ) -> Iterable[Tuple[ParseType, Any, Dict[str, Any]]]:
+        entries = self.parse(input)
+
+        for e in entries:
+            typ = e["type"]
+            if typ == ParseType.ISSUE:
+                key = e["handle"]
+                if self.extractor:
+                    e["extracted_features"] = self.extractor.extract_features(e)
+            elif e["type"] == ParseType.PRECONDITION:
+                key = (e["caller"], e["caller_port"])
+            elif e["type"] == ParseType.POSTCONDITION:
+                key = (e["caller"], e["caller_port"])
+            yield typ, key, e
+
+    def run(
+        self, input: InputFiles, summary: Summary = None
+    ) -> Tuple[ParsedTuples, Summary]:
+        inputfile, previous_inputfile = input
+
+        entries = self.generate_pipeline_input(inputfile)
+        previous_entries = None
+        if previous_inputfile:
+            previous_entries = self.generate_pipeline_input(previous_inputfile)
+        return (entries, previous_entries), summary
 
     @staticmethod
     def compute_master_handle(callable, line, start, end, code):
