@@ -966,6 +966,23 @@ let test_check_self _ =
       def g() -> SubSubclass:
         return SubSubclass().interface("A").verbose(7)
     |}
+    [];
+
+  (* Make sure the SelfType pattern works for generics *)
+  assert_type_errors
+    {|
+      TSelf = typing.TypeVar('TSelf', bound="C")
+      TG = typing.TypeVar('TG')
+      class C:
+        def inner(self, x: int) -> None:
+          pass
+        def verbose(self: TSelf, x: int) -> TSelf:
+          self.inner(x)
+          return self
+      class G(C, typing.Generic[TG]): pass
+      def foo(x: G[int], y: G[str]) -> typing.Tuple[G[int], G[str]]:
+        return (x.verbose(1), y.verbose(1))
+    |}
     []
 
 

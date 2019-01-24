@@ -987,6 +987,30 @@ let test_forward_access _ =
       { annotation = Type.Top; element = Value };
     ];
 
+  assert_fold
+    ~source:
+      {|
+          TSelf = typing.TypeVar('TSelf', bound="C")
+          TG = typing.TypeVar('TG')
+          class C:
+            def inner(self, x: int) -> None:
+              pass
+            def verbose(self: TSelf, x: int) -> TSelf:
+              self.inner(x)
+              return self
+          class G(C, typing.Generic[TG]): pass
+          g: G[int]
+      |}
+    "g.verbose"
+    [
+      { annotation = parse_annotation ~resolution "G[int]"; element = Value };
+      {
+        annotation =
+          parse_annotation ~resolution "typing.Callable('C.verbose')[[Named(x, int)], G[int]]";
+        element = Attribute { name = "verbose"; defined = true };
+      };
+    ];
+
   (* Modules. *)
   assert_fold
     ~additional_sources:[

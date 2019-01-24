@@ -593,6 +593,7 @@ module Attribute = struct
       class_attributes: bool;
       include_generated_attributes: bool;
       name: Access.t;
+      instantiated: Type.t option;
     }
     [@@deriving compare, sexp, hash]
 
@@ -624,6 +625,7 @@ let attributes
     ?(transitive = false)
     ?(class_attributes = false)
     ?(include_generated_attributes = true)
+    ?(instantiated = None)
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution =
   let key =
@@ -632,13 +634,14 @@ let attributes
       class_attributes;
       include_generated_attributes;
       name;
+      instantiated;
     }
   in
   match Hashtbl.find Attribute.Cache.cache key with
   | Some result ->
       result
   | None ->
-      let class_annotation = annotation definition ~resolution in
+      let instantiated = Option.value instantiated ~default:(annotation definition ~resolution) in
       let definition_attributes
           ~in_test
           attributes
@@ -660,7 +663,7 @@ let attributes
             |> Attribute.create
               ~resolution
               ~parent
-              ~instantiated:class_annotation
+              ~instantiated
               ~default_class_attribute:class_attributes
           in
           let existing_attribute =
@@ -829,6 +832,7 @@ let attribute
       }
   in
   attributes
+    ~instantiated:(Some instantiated)
     ~transitive
     ~class_attributes
     ~include_generated_attributes:true
