@@ -33,15 +33,22 @@ let test_socket_path context =
     (Path.absolute preexisting);
 
   (* Creating always overrides existing sockets. *)
-  let actual_path =
+  let socket_path = Server.Operations.socket_path ~create:true configuration in
+  (* The socket path gets written by the server, so simulate that. *)
+  File.write (File.create ~content:"" socket_path);
+  let expected_path =
     Format.sprintf "%s/pyre_%d.sock" Filename.temp_dir_name (Unix.getpid () |> Pid.to_int)
+    |> Path.create_absolute
   in
   assert_equal
+    ~printer:Path.absolute
+    ~cmp:Path.equal
+    expected_path
+    socket_path;
+  assert_equal
     ~printer:ident
-    (Server.Operations.socket_path ~create:true configuration
-     |> Path.absolute)
-    actual_path;
-  assert_equal ~printer:ident (Unix.readlink (Path.absolute socket_link)) actual_path
+    (Unix.readlink (Path.absolute socket_link))
+    (Path.absolute expected_path)
 
 
 let () =
