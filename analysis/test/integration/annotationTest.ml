@@ -166,7 +166,15 @@ let test_check_undefined_type _ =
       "Incompatible return type [7]: Expected `int` but got `None`.";
       "Undefined type [11]: Type `Herp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
-    ]
+    ];
+  assert_type_errors
+    ~debug:false
+    ~strict:true
+    {|
+      def foo() -> typing.Optional["Herp"]:
+        return None
+    |}
+    ["Undefined type [11]: Type `Herp` is not defined."]
 
 
 let test_check_invalid_type _ =

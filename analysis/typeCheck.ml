@@ -2309,57 +2309,54 @@ module State = struct
           ~resolved:actual
           ~expected:return_annotation
       in
-      try
-        let check_incompatible_return state =
-          if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
-             not (Define.is_abstract_method define_without_location) &&
-             not (Define.is_overloaded_method define_without_location) &&
-             not (Type.is_none actual &&
-                  (Annotated.Define.create define_without_location
-                   |> Annotated.Define.is_generator)) &&
-             not (Type.is_none actual && Type.is_noreturn return_annotation) then
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.IncompatibleReturnType
-                         {
-                           mismatch =
-                             (Error.create_mismatch
-                                ~resolution
-                                ~actual
-                                ~expected:return_annotation
-                                ~covariant:true);
-                           is_implicit;
-                         })
-                ~define
-            in
-            add_error ~state error
-          else
-            state
-        in
-        let check_missing_return state =
-          if not (Define.has_return_annotation define_without_location) ||
-             Type.contains_any return_annotation then
-            let error =
-              Error.create
-                ~location:define_location
-                ~kind:(Error.MissingReturnAnnotation {
-                    name = Access.create "$return_annotation";
-                    annotation = Some actual;
-                    evidence_locations = [instantiate location];
-                    given_annotation = Some return_annotation;
-                  })
-                ~define
-            in
-            add_error ~state error
-          else
-            state
-        in
-        state
-        |> check_incompatible_return
-        |> check_missing_return
-      with TypeOrder.Untracked _ ->
-        state
+      let check_incompatible_return state =
+        if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
+           not (Define.is_abstract_method define_without_location) &&
+           not (Define.is_overloaded_method define_without_location) &&
+           not (Type.is_none actual &&
+                (Annotated.Define.create define_without_location
+                 |> Annotated.Define.is_generator)) &&
+           not (Type.is_none actual && Type.is_noreturn return_annotation) then
+          let error =
+            Error.create
+              ~location
+              ~kind:(Error.IncompatibleReturnType
+                       {
+                         mismatch =
+                           (Error.create_mismatch
+                              ~resolution
+                              ~actual
+                              ~expected:return_annotation
+                              ~covariant:true);
+                         is_implicit;
+                       })
+              ~define
+          in
+          add_error ~state error
+        else
+          state
+      in
+      let check_missing_return state =
+        if not (Define.has_return_annotation define_without_location) ||
+           Type.contains_any return_annotation then
+          let error =
+            Error.create
+              ~location:define_location
+              ~kind:(Error.MissingReturnAnnotation {
+                  name = Access.create "$return_annotation";
+                  annotation = Some actual;
+                  evidence_locations = [instantiate location];
+                  given_annotation = Some return_annotation;
+                })
+              ~define
+          in
+          add_error ~state error
+        else
+          state
+      in
+      state
+      |> check_incompatible_return
+      |> check_missing_return
     in
     match value with
     | Assign { Assign.target; annotation; value; parent } ->
