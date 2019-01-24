@@ -48,6 +48,8 @@ let test_check_coverage _ =
 
   (* Expressions. *)
   assert_covered "ERROR";
+  assert_covered "typing.cast(int, ERROR)";
+  assert_covered "isinstance(ERROR, int)";
 
   (* Yield. *)
   assert_covered

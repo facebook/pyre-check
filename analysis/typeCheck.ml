@@ -1721,7 +1721,7 @@ module State = struct
         }
       ] ->
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
-        let { resolved; _ } = forward_expression ~state ~expression:value in
+        let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
           if Type.equal cast_annotation resolved then
             Error.create
