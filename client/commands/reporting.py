@@ -10,7 +10,7 @@ import fnmatch
 import json
 import logging
 import os
-from typing import Any, Dict, Iterable, List, Set  # noqa
+from typing import Any, Dict, Iterable, List, Sequence, Set  # noqa
 
 from .. import log
 from ..configuration import Configuration
@@ -39,19 +39,7 @@ class Reporting(Command):
             configuration.ignore_all_errors
         )  # type: Iterable[str]
 
-    def _print(self, errors: Iterable[Error]) -> None:
-        errors = [
-            error
-            for error in errors
-            if (
-                not error.is_ignored()
-                and (self._verbose or not (error.is_external_to_global_root()))
-            )
-        ]
-        errors = sorted(
-            errors, key=lambda error: (error.path, error.line, error.column)
-        )
-
+    def _print(self, errors: Sequence[Error]) -> None:
         if errors:
             length = len(errors)
             LOG.error("Found %d type error%s!", length, "s" if length > 1 else "")
@@ -71,10 +59,12 @@ class Reporting(Command):
         }
         return directories_to_analyze
 
-    def _get_errors(self, result: Result) -> Set[Error]:
+    def _get_errors(
+        self, result: Result, bypass_filtering: bool = False
+    ) -> Sequence[Error]:
         result.check()
 
-        errors = set()
+        errors = set()  # type: Set[Error]
         # pyre-ignore: T39175181
         results = {}  # type: List[Dict[str, Any]]
         try:
@@ -99,4 +89,20 @@ class Reporting(Command):
                     break
             errors.add(Error(ignore_error, external_to_global_root, **error))
 
-        return errors
+        if bypass_filtering:
+            return list(errors)
+        else:
+            filtered_errors = [
+                error
+                for error in errors
+                if (
+                    not error.is_ignored()
+                    and (self._verbose or not (error.is_external_to_global_root()))
+                )
+            ]
+            sorted_errors = sorted(
+                filtered_errors,
+                key=lambda error: (error.path, error.line, error.column),
+            )
+
+            return sorted_errors

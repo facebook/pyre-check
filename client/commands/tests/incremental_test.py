@@ -137,6 +137,9 @@ class IncrementalTest(unittest.TestCase):
                 [call(command=commands.Incremental.NAME)], any_order=True
             )
         arguments = mock_arguments()
+        arguments.original_directory = "/test"  # called from
+        arguments.current_directory = "/"  # project root
+        arguments.local_configuration = None
 
         configuration = mock_configuration()
         configuration.version_hash = "hash"
@@ -148,7 +151,7 @@ class IncrementalTest(unittest.TestCase):
                 {
                     "line": 4,
                     "column": 11,
-                    "path": "c.py",
+                    "path": "test/path.py",
                     "code": -1,
                     "name": "Revealed type",
                     "description": ".Fake error",
@@ -164,7 +167,7 @@ class IncrementalTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-project-root",
-                    ".",
+                    "/",
                     "-typeshed",
                     "stub",
                     "-expected-binary-version",

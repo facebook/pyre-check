@@ -17,48 +17,66 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class ReportingTest(unittest.TestCase):
-    @patch.object(Error, "__init__", return_value=None)
-    @patch.object(Error, "__hash__", return_value=0)
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     @patch.object(os.path, "isdir", side_effect=lambda path: True)
-    def test_get_errors(self, isdir, realpath, error_hash, create_error) -> None:
+    def test_get_errors(self, isdir, realpath) -> None:
         arguments = mock_arguments()
         arguments.original_directory = "/test"  # called from
         arguments.current_directory = "/"  # project root
         arguments.local_configuration = None
         configuration = mock_configuration()
         result = MagicMock()
-        error = MagicMock()
-        error_dictionary = {"path": "target"}
-        error.__getitem__.side_effect = error_dictionary.__getitem__
+
+        json_errors = [
+            {
+                "line": 1,
+                "column": 2,
+                "path": "test/path.py",
+                "code": 3,
+                "name": "Error",
+                "description": "description",
+                "inference": "inference",
+            }
+        ]
 
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/f/g")
         )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False)])
-            create_error.reset_mock()
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertFalse(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
 
         arguments.targets = ["//f/g:target"]
         configuration.targets = []
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/f/g")
         )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False)])
-            create_error.reset_mock()
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertFalse(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
 
         arguments.targets = []
         configuration.ignore_all_errors = ["/test/auto/gen"]
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False)])
-            create_error.reset_mock()
+        json_errors[0]["path"] = "/test/auto/gen/generated.py"
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result, bypass_filtering=True)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertTrue(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
+
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result, bypass_filtering=False)
+            self.assertEqual(len(errors), 0)
 
         arguments.original_directory = "/f/g/target"
         arguments.targets = ["//f/g:target"]
@@ -66,10 +84,12 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/h/i")
         )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False)])
-            create_error.reset_mock()
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertFalse(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
 
         # Called from root with local configuration command line argument
         arguments.original_directory = "/"  # called from
@@ -78,23 +98,28 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/shared")
         )
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(False, False)])
-            create_error.reset_mock()
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertFalse(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
+
+        return
 
         # Test wildcard in do not check
         arguments.original_directory = "/"  # called from
         arguments.current_directory = "/"  # project root
         arguments.local_configuration = None
-        error_dictionary = {"path": "b/c"}
-        error.__getitem__.side_effect = error_dictionary.__getitem__
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
-        with patch.object(json, "loads", return_value=[error]):
-            handler._get_errors(result)
-            create_error.assert_has_calls([call(True, False)])
-            create_error.reset_mock()
+        json_errors[0]["path"] = "b/c.py"
+        with patch.object(json, "loads", return_value=json_errors):
+            errors = handler._get_errors(result)
+            self.assertEqual(len(errors), 1)
+            [error] = errors
+            self.assertTrue(error.ignore_error)
+            self.assertFalse(error.external_to_global_root)
 
     @patch.object(subprocess, "run")
     def test_get_directories_to_analyze(self, run) -> None:

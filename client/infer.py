@@ -392,7 +392,7 @@ class Infer(commands.Reporting):
 
     def run(self) -> commands.Command:
         result = self._call_client(command=commands.Check.NAME)
-        errors = self._get_errors(result)
+        errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
             self._print(errors)
         else:
