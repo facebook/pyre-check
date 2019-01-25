@@ -307,14 +307,19 @@ module State = struct
 
 
   let check_annotation ~resolution ~location ~define ~annotation ~resolved =
+    let is_aliased_to_any =
+      (* Special-case expressions typed as Any to be valid types. *)
+      match annotation with
+      | Type.Primitive _ -> Type.equal resolved Type.Object
+      | _ -> false
+    in
     let check_untracked_annotation errors annotation =
-      if Resolution.is_tracked resolution annotation || Type.equal resolved Type.Object then
-        (* Special-case expressions typed as Any to be valid types. *)
+      if Resolution.is_tracked resolution annotation || is_aliased_to_any then
         errors
-      else if Type.is_unknown resolved then
-        Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
-      else
+      else if not (Type.is_unknown resolved || Type.equal resolved Type.Object) then
         Error.create ~location ~kind:(Error.InvalidType annotation) ~define :: errors
+      else
+        Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
     in
     let check_missing_type_parameters errors annotation =
       match annotation with

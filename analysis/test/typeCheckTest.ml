@@ -228,7 +228,34 @@ let test_check_annotation _ =
   assert_check_annotation
     "x: typing.Type[int] = int"
     "x"
-    []
+    [];
+  assert_check_annotation
+    "x: typing.Any"
+    "x"
+    [];
+  assert_check_annotation
+    {|
+      class Foo: ...
+      x = Foo
+    |}
+    "x"
+    [];
+  assert_check_annotation
+    {|
+      class Foo: ...
+      x = Foo()
+    |}
+    "x"
+    ["Invalid type [31]: Expression `x` is not a valid type."];
+  assert_check_annotation
+    {|
+      class Foo:
+        def __getitem__(self, other) -> typing.Any:
+          ...
+      x = Foo[Undefined]
+    |}
+    "x"
+    ["Undefined type [11]: Type `x` is not defined."]
 
 
 type attribute = {

@@ -588,7 +588,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~qualifier:(Access.create "typing")
       ~handle:"typing.pyi"
       {|
-        class _SpecialForm: ...
+        class _SpecialForm:
+          def __getitem__(self, typeargs: Any) -> Any: ...
         class TypeAlias: ...
 
         TypeVar = object()

@@ -156,6 +156,16 @@ assert_strict_type_errors
       def foo() -> typing.Optional["Herp"]:
         return None
     |}
+    ["Undefined type [11]: Type `Herp` is not defined."];
+
+  assert_strict_type_errors
+    {|
+      class Foo:
+        def __getitem__(self, other) -> typing.Any: ...
+
+      def foo() -> Foo["Herp"]:
+        return 1
+    |}
     ["Undefined type [11]: Type `Herp` is not defined."]
 
 
