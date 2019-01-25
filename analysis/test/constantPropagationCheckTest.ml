@@ -162,6 +162,23 @@ let test_forward _ =
       import threading
       t = threading.Thread
       threading.Thread()
+    |};
+
+  (* Global constants. *)
+  assert_constant_propagation
+    {|
+      import logging
+      d = logging.DEBUG
+      d
+      i = logging.INFO_1
+      i
+    |}
+    {|
+      import logging
+      d = logging.DEBUG
+      logging.DEBUG
+      i = logging.INFO_1
+      logging.INFO_1
     |}
 
 

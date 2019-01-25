@@ -192,7 +192,14 @@ module State (Context: Context) = struct
               Resolution.resolve resolution expression
               |> (fun annotation -> Type.is_callable annotation || Type.is_meta annotation)
             in
-            is_literal || is_callable
+            let is_global_constant =
+              match Node.value expression with
+              | Access access ->
+                  Str.string_match (Str.regexp ".*\\.[A-Z_0-9]+$") (Access.show access) 0
+              | _ ->
+                  false
+            in
+            is_literal || is_callable || is_global_constant
           in
           if propagate then
             Map.set constants ~key:access ~data:(Constant expression)
