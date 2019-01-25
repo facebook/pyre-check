@@ -58,6 +58,15 @@ let test_forward _ =
     |};
   assert_constant_propagation
     {|
+      a = None
+      b = a
+    |}
+    {|
+      a = None
+      b = None
+    |};
+  assert_constant_propagation
+    {|
       a = 1
       a = 2
       b = a

@@ -185,7 +185,7 @@ module State (Context: Context) = struct
           let propagate =
             let is_literal =
               match Node.value expression with
-              | Integer _ | String _ | True | False -> true
+              | Integer _ | String _ | True | False | Access [Access.Identifier "None"] -> true
               | _ -> false
             in
             let is_callable =
