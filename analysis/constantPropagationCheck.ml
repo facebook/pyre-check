@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Expression
+open Pyre
 open Statement
 
 
@@ -19,7 +20,6 @@ let name =
 
 module type Context = sig
   val configuration: Configuration.Analysis.t
-  val define: Define.t Node.t
   val environment: (module Environment.Handler)
   val transformations: Statement.t Location.Reference.Table.t
 end
@@ -29,16 +29,27 @@ module State (Context: Context) = struct
   type constant =
     | Constant of Expression.t
     | Top
-  [@@deriving show]
 
 
-  type t = {
+  and nested_define = {
+    nested_define: Define.t;
+    state: t;
+  }
+
+
+  and t = {
     constants: constant Access.Map.t;
+    define: Define.t;
+    nested_defines: nested_define Location.Reference.Map.t;
   }
 
 
   let show { constants; _ } =
     let print_entry (access, constant) =
+      let pp_constant format = function
+        | Constant expression -> Format.fprintf format "Constant %a" Expression.pp expression
+        | Top -> Format.fprintf format "Top"
+      in
       Format.asprintf
         "%a -> %a"
         Access.pp access
@@ -53,8 +64,17 @@ module State (Context: Context) = struct
     Format.fprintf format "%s" (show state)
 
 
-  let initial =
-    { constants = Access.Map.empty }
+  let initial ~state ~define =
+    let constants =
+      match state with
+      | Some { constants; _ } -> constants
+      | _ -> Access.Map.empty
+    in
+    { constants; define; nested_defines = Location.Reference.Map.empty }
+
+
+  let nested_defines { nested_defines; _ } =
+    Map.data nested_defines
 
 
   let less_or_equal ~left:{ constants = left; _ } ~right:{ constants = right; _ } =
@@ -82,8 +102,10 @@ module State (Context: Context) = struct
     join previous next
 
 
-  let forward ?key ({ constants; _ } as state) ~statement =
-    let { Node.value = { Define.name; parent;_ }; _ } = Context.define in
+  let forward
+      ?key
+      ({ constants; define = { Define.name; parent; _ }; nested_defines } as state)
+      ~statement =
     let resolution =
       TypeCheck.resolution_with_key
         ~environment:Context.environment
@@ -153,7 +175,8 @@ module State (Context: Context) = struct
       | _ ->
           transform statement
     in
-    Hashtbl.set Context.transformations ~key:(Node.location transformed) ~data:transformed;
+    if not (Statement.equal statement transformed) then
+      Hashtbl.set Context.transformations ~key:(Node.location transformed) ~data:transformed;
 
     (* Find new constants. *)
     let constants =
@@ -179,7 +202,17 @@ module State (Context: Context) = struct
           constants
     in
 
-    { state with constants }
+    let state = { state with constants } in
+
+    let nested_defines =
+      match statement with
+      | { Node.location; value = Define nested_define } ->
+          Map.set nested_defines ~key:location ~data:{ nested_define; state }
+      | _ ->
+          nested_defines
+    in
+
+    { state with nested_defines }
 
 
   let backward ?key:_ _ ~statement:_ =
@@ -191,27 +224,28 @@ let run
     ~configuration
     ~environment
     ~source:({ Source.qualifier; statements; handle; _ } as source) =
-  let define =
-    (* TODO(T38205782): run this on all defines. Limiting this to the toplevel for now. *)
-    Define.create_toplevel ~qualifier ~statements
-    |> Node.create ~location:(Location.Reference.create_with_handle ~handle)
-  in
   let module Context =
   struct
     let configuration = configuration
-    let define = define
     let environment = environment
     let transformations = Location.Reference.Table.create ()
   end
   in
-
-  (* Collect transformations. *)
   let module State = State(Context) in
   let module Fixpoint = Fixpoint.Make(State) in
-  Fixpoint.forward
-    ~cfg:(Cfg.create (Node.value define))
-    ~initial:State.initial
-  |> ignore;
+
+  (* Collect transformations. *)
+  let rec run ~state ~define =
+    Fixpoint.forward ~cfg:(Cfg.create define) ~initial:(State.initial ~state ~define)
+    |> Fixpoint.exit
+    >>| (fun state ->
+        State.nested_defines state
+        |> List.iter
+          ~f:(fun { State.nested_define; state } -> run ~state:(Some state) ~define:nested_define))
+    |> ignore
+  in
+  let define = Define.create_toplevel ~qualifier ~statements in
+  run ~state:None ~define;
 
   (* Apply transformations. *)
   let source =
@@ -229,9 +263,11 @@ let run
     Transform.transform () source
     |> Transform.source
   in
+
+  let location = Location.Reference.create_with_handle ~handle in
   [
     Error.create
-      ~location:(Node.location define)
+      ~location
       ~kind:(Error.ConstantPropagation source)
-      ~define:define;
+      ~define:(Node.create define ~location);
   ]

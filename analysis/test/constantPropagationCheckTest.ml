@@ -11,21 +11,21 @@ open Analysis
 open Test
 
 
-let test_forward _ =
-  let assert_constant_propagation source expected =
-    let environment = environment () in
-    let configuration = mock_configuration in
-    let actual =
-      let source = parse source in
-      TypeCheck.run ~configuration ~environment ~source |> ignore;
-      ConstantPropagationCheck.run ~configuration ~environment ~source
-      |> function
-      | [{ Error.kind = Error.ConstantPropagation actual; _ }] -> actual
-      | _ -> failwith "Did not generate a source"
-    in
-    assert_equal ~cmp:Source.equal ~printer:Source.show (parse expected) actual
+let assert_constant_propagation source expected =
+  let environment = environment () in
+  let configuration = mock_configuration in
+  let actual =
+    let source = parse source in
+    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    ConstantPropagationCheck.run ~configuration ~environment ~source
+    |> function
+    | [{ Error.kind = Error.ConstantPropagation actual; _ }] -> actual
+    | _ -> failwith "Did not generate a source"
   in
+  assert_equal ~cmp:Source.equal ~printer:Source.show (parse expected) actual
 
+
+let test_forward _ =
   (* Basic propagation. *)
   assert_constant_propagation
     {|
@@ -165,8 +165,73 @@ let test_forward _ =
     |}
 
 
+let test_scheduling _ =
+  assert_constant_propagation
+    {|
+      a = 1
+      def nested():
+        b = a
+    |}
+    {|
+      a = 1
+      def nested():
+        b = 1
+    |};
+  assert_constant_propagation
+    {|
+      def nested():
+        a = 1
+        b = a
+    |}
+    {|
+      def nested():
+        a = 1
+        b = 1
+    |};
+  assert_constant_propagation
+    {|
+      def nested():
+        def nested():
+          a = 1
+          b = a
+    |}
+    {|
+      def nested():
+        def nested():
+          a = 1
+          b = 1
+    |};
+  assert_constant_propagation
+    {|
+      def nested():
+        a = 1
+        def nested():
+          b = a
+    |}
+    {|
+      def nested():
+        a = 1
+        def nested():
+          b = 1
+    |};
+  assert_constant_propagation
+    {|
+      def nested():
+        def nested():
+          b = a
+        a = 1
+    |}
+    {|
+      def nested():
+        def nested():
+          b = a
+        a = 1
+    |}
+
+
 let () =
   "constantPropagationCheck">:::[
     "forward">::test_forward;
+    "scheduling">::test_scheduling;
   ]
   |> Test.run
