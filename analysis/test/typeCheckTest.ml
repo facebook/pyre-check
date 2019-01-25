@@ -394,7 +394,14 @@ let test_resolve_exports _ =
       "d", "cow = 1"
     ]
     "a.foo"
-    "d.cow"
+    "d.cow";
+  assert_resolve
+    ~sources:[
+      "qualifier", "from qualifier.foo import foo";  (* __init__.py module. *)
+      "qualifier.foo", "foo = 1";
+    ]
+    "qualifier.foo.foo"
+    "qualifier.foo.foo"
 
 
 let test_forward_access _ =
