@@ -52,6 +52,7 @@ class Configuration:
         self.targets = json_contents.get("targets")
         self.source_directories = json_contents.get("source_directories")
         self.push_blocking = bool(json_contents.get("push_blocking"))
+        self.version = json_contents.get("version")
 
     @staticmethod
     def find_project_configuration() -> Optional[str]:
@@ -275,7 +276,7 @@ def _upgrade_configuration(
     arguments: argparse.Namespace, configuration: Configuration, root: str
 ) -> None:
     LOG.info("Processing %s", configuration.get_path())
-    if not configuration.is_local:
+    if not configuration.is_local or not configuration.version:
         return
     configuration.remove_version()
     errors = configuration.get_errors()

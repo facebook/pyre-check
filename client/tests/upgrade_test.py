@@ -158,11 +158,7 @@ class FixmeAllTest(unittest.TestCase):
         assert run.call_count == 1
 
     @patch("subprocess.call")
-    @patch.object(
-        upgrade.Configuration,
-        "gather_local_configurations",
-        return_value=[upgrade.Configuration("local/.pyre_configuration.local", {})],
-    )
+    @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
@@ -171,6 +167,9 @@ class FixmeAllTest(unittest.TestCase):
         self, run_fixme, get_errors, remove_version, find_configuration, gather, call
     ) -> None:
         arguments = MagicMock()
+        gather.return_value = [
+            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
+        ]
         get_errors.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
@@ -196,16 +195,25 @@ class FixmeAllTest(unittest.TestCase):
             ["hg", "commit", "--message", "[typing] Update pyre version for local"]
         )
 
+        run_fixme.reset_mock()
+        call.reset_mock()
+        gather.return_value = [
+            upgrade.Configuration("local/.pyre_configuration.local", {})
+        ]
+        upgrade.run_fixme_all(arguments, [])
+        run_fixme.assert_not_called()
+        call.assert_not_called()
+
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_upgrade_configuration(
-        self, run_fixme, local_configurations, get_errors, remove_version, call
+        self, run_fixme, gather, get_errors, remove_version, call
     ) -> None:
         arguments = MagicMock()
-        local_configurations.return_value = []
+        gather.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
         call.assert_not_called()
@@ -225,7 +233,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         get_errors.return_value = errors
         configuration = upgrade.Configuration(
-            "/root/local/.pyre_configuration.local", {}
+            "/root/local/.pyre_configuration.local", {"version": 123}
         )
         configuration.get_path()
         upgrade._upgrade_configuration(arguments, configuration, "/root")
