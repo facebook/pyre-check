@@ -72,6 +72,13 @@ let test_check_missing_return _ =
     |}
     ["Missing return annotation [3]: Returning `int` but no return type is specified."];
 
+  assert_strict_type_errors
+    {|
+      def foo():
+        return 1
+    |}
+    ["Missing return annotation [3]: Returning `int` but no return type is specified."];
+
   assert_type_errors
     {|
       def foo() -> typing.Any:
