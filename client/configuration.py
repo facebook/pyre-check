@@ -112,7 +112,7 @@ class Configuration:
     def __init__(
         self,
         local_configuration: Optional[str] = None,
-        search_path: Optional[List[SearchPathElement]] = None,
+        search_path: Optional[List[str]] = None,
         binary: Optional[str] = None,
         typeshed: Optional[str] = None,
         preserve_pythonpath=False,
@@ -150,7 +150,8 @@ class Configuration:
             ]
             self._search_path.extend(sys_path)
         if search_path:
-            self._search_path.extend(search_path)
+            search_path_elements = [SearchPathElement(path) for path in search_path]
+            self._search_path.extend(search_path_elements)
         # We will extend the search path further, with the config file
         # items, inside _read().
 

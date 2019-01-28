@@ -143,11 +143,7 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=[
-                        SearchPathElement("command/"),
-                        SearchPathElement("line/"),
-                    ],
-                    preserve_pythonpath=True,
+                    search_path=["command/", "line/"], preserve_pythonpath=True
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
@@ -171,11 +167,7 @@ class ConfigurationTest(unittest.TestCase):
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):
                 configuration = Configuration(
-                    search_path=[
-                        SearchPathElement("command/"),
-                        SearchPathElement("line/"),
-                    ],
-                    preserve_pythonpath=False,
+                    search_path=["command/", "line/"], preserve_pythonpath=False
                 )
                 self.assertEqual(configuration.typeshed, "TYPESHED/")
                 self.assertEqual(
