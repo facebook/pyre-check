@@ -397,6 +397,21 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 "No class definition found for %s"
                 (Expression.Access.show annotation)))
 
+    | TypeQuery.DumpDependencies file ->
+        let () =
+          try
+            let handle = File.handle ~configuration file in
+            Path.create_relative
+              ~root:(Configuration.Analysis.pyre_root configuration)
+              ~relative:"dependencies.dot"
+            |> File.create
+              ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~handle)
+            |> File.write
+          with File.NonexistentHandle _ ->
+            ()
+        in
+        TypeQuery.Response (TypeQuery.Success ())
+
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

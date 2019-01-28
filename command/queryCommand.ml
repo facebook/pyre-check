@@ -51,6 +51,12 @@ let parse_query ~root query =
         match String.lowercase name, arguments with
         | "attributes", [name] ->
             Request.TypeQueryRequest (Attributes (access name))
+        | "dump_dependencies", [path] ->
+            let file =
+              Path.create_relative ~root ~relative:(string path)
+              |> File.create
+            in
+            Request.TypeQueryRequest (DumpDependencies file)
         | "join", [left; right] ->
             Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->

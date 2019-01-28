@@ -63,3 +63,8 @@ val of_list
   :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
   -> handles: File.Handle.t list
   -> File.Handle.Set.t
+
+val to_dot
+  :  get_dependencies: (Access.t -> (File.Handle.t list) option)
+  -> handle: File.Handle.t
+  -> string

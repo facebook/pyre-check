@@ -42,6 +42,7 @@ end
 module TypeQuery = struct
   type request =
     | Attributes of Access.t
+    | DumpDependencies of File.t
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t

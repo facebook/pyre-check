@@ -221,3 +221,67 @@ let of_list ~get_dependencies ~handles =
     ~f:fold_dependents
     handles
   |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))
+
+
+let to_dot ~get_dependencies ~handle =
+  let nodes, edges =
+    let rec iterate ~worklist ~visited ~result:((nodes, edges) as result) =
+      match Queue.dequeue worklist with
+      | Some access ->
+          let visited, nodes, edges =
+            if not (Set.mem visited access) then
+              let visited = Set.add visited access in
+              let nodes = access :: nodes in
+
+              let dependencies =
+                get_dependencies access
+                >>| List.map ~f:(fun handle -> Ast.Source.qualifier ~handle)
+                |> Option.value ~default:[]
+              in
+              let enqueue edges dependency =
+                if not (Set.mem visited dependency) then
+                  Queue.enqueue worklist dependency;
+                (access, dependency) :: edges
+              in
+              let edges = List.fold dependencies ~init:edges ~f:enqueue in
+              visited, nodes, edges
+            else
+              visited, nodes, edges
+          in
+          iterate ~worklist ~visited ~result:(nodes, edges)
+      | _ ->
+          result
+    in
+
+    let worklist = Queue.create () in
+    Queue.enqueue worklist (Ast.Source.qualifier ~handle);
+    let nodes, edges = iterate ~worklist ~visited:Access.Set.empty ~result:([], []) in
+    List.rev nodes, List.rev edges
+  in
+
+  let buffer = Buffer.create 10000 in
+  Buffer.add_string buffer "digraph {\n";
+  let print_node access =
+    let label =
+      Printf.sprintf
+        "  %d[label=\"%s\"%s]\n"
+        (Access.hash access)
+        (Access.show access)
+        (if (Access.equal access (Ast.Source.qualifier ~handle))
+         then " color=\"red\"" else "")
+    in
+    Buffer.add_string buffer label
+  in
+  let print_edge (source, dependency) =
+    let edge =
+      Printf.sprintf
+        "  %d -> %d [dir=back]\n"
+        (Access.hash source)
+        (Access.hash dependency)
+    in
+    Buffer.add_string buffer edge
+  in
+  List.iter nodes ~f:print_node;
+  List.iter edges ~f:print_edge;
+  Buffer.add_string buffer "}";
+  Buffer.contents buffer

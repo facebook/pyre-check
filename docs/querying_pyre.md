@@ -40,6 +40,11 @@ $ pyre query "attributes(a.C)"
 }
 ```
 
+## Dump dependency graph
+
+The command `dump_dependencies('filename.py')` dumps the dependency graph rooted at `filename.py` to a file called `dependencies.dot` in the `.pyre` directory.
+This file can be processed with `graphviz` to produce an image version of the dependency graph.
+
 ## Join
 
 This command uses Pyre's type engine to find a common superclass for two types.

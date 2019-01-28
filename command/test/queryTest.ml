@@ -110,7 +110,12 @@ let test_parse_query _ =
        (Path.create_absolute
           ~follow_symbolic_links:false
           "state"));
-  assert_fails_to_parse "save_server_state(state)"
+  assert_fails_to_parse "save_server_state(state)";
+
+  assert_parses "dump_dependencies('quoted.py')"
+    (DumpDependencies
+       (File.create (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py")));
+  assert_fails_to_parse "dump_dependencies(unquoted)"
 
 
 let () =
