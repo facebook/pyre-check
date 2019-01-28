@@ -984,6 +984,22 @@ include BaseError.Make(struct
   end)
 
 
+module IntSet = Set.Make(struct
+    type nonrec t = Int.t
+    let compare = Int.compare
+    let sexp_of_t = Int.sexp_of_t
+    let t_of_sexp = Int.t_of_sexp
+  end)
+
+
+module Set = Set.Make(struct
+    type nonrec t = t
+    let compare = compare
+    let sexp_of_t = sexp_of_t
+    let t_of_sexp = t_of_sexp
+  end)
+
+
 let due_to_analysis_limitations { kind; _ } =
   match kind with
   | ImpossibleIsinstance { mismatch = { actual; _ }; _ }
@@ -1211,7 +1227,7 @@ let less_or_equal ~resolution left right =
     | UndefinedImport left, UndefinedImport right ->
         Access.equal_sanitized left right
     | UnusedIgnore left, UnusedIgnore right ->
-        Set.is_subset (Int.Set.of_list left) ~of_:(Int.Set.of_list right)
+        IntSet.is_subset (IntSet.of_list left) ~of_:(IntSet.of_list right)
     | Unpack { expected_count = left_count; unpack_problem = left_problem },
       Unpack { expected_count = right_count; unpack_problem = right_problem } ->
         left_count = right_count &&
@@ -1438,7 +1454,7 @@ let join ~resolution left right =
         UndefinedImport right
 
     | UnusedIgnore left, UnusedIgnore right ->
-        UnusedIgnore (Set.to_list (Set.union (Int.Set.of_list left) (Int.Set.of_list right)))
+        UnusedIgnore (IntSet.to_list (IntSet.union (IntSet.of_list left) (IntSet.of_list right)))
 
     | Unpack { expected_count = left_count; unpack_problem = UnacceptableType left },
       Unpack { expected_count = right_count; unpack_problem = UnacceptableType right }

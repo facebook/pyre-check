@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
+open Core
 open Expression
 
 
@@ -99,6 +100,7 @@ type kind =
 [@@deriving compare, eq, show, hash]
 
 include BaseError.Error with type kind := kind
+module Set: Set.S with type Elt.t = t
 
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: t -> bool
