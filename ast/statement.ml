@@ -692,8 +692,8 @@ module Class = struct
         } ->
           let add_attribute map target value =
             Attribute.target ~parent:name target
-            >>| (fun target ->
-                let access = Expression.access target in
+            |> function
+            | Some ({ Node.value = Access access; _ } as target) ->
                 let attribute =
                   Attribute.create
                     ~primitive:true
@@ -702,8 +702,9 @@ module Class = struct
                     ~value
                     ()
                 in
-                Access.SerializableMap.set map ~key:access ~data:attribute)
-            |> Option.value ~default:map
+                Access.SerializableMap.set map ~key:access ~data:attribute
+            | _ ->
+                map
           in
           if List.length targets = List.length values then
             List.fold2_exn ~init:map ~f:add_attribute targets values
@@ -716,8 +717,8 @@ module Class = struct
         } ->
           let add_attribute index map target =
             Attribute.target ~parent:name target
-            >>| (fun target ->
-                let access = Expression.access target in
+            |> function
+            | Some ({ Node.value = Access access; _ } as target) ->
                 let value =
                   let get_item =
                     let index = Node.create ~location (Integer index) in
@@ -737,28 +738,32 @@ module Class = struct
                     ~value
                     ()
                 in
-                Access.SerializableMap.set map ~key:access ~data:attribute)
-            |> Option.value ~default:map
+                Access.SerializableMap.set map ~key:access ~data:attribute
+            | _ ->
+                map
           in
           List.foldi ~init:map ~f:add_attribute targets
       | Assign { Assign.target; annotation; value; _ } ->
-          Attribute.target ~parent:name target
-          >>| (fun target ->
-              let access = Expression.access target in
-              let attribute =
-                Attribute.create
-                  ~primitive:true
-                  ~location
-                  ~target
-                  ?annotation
-                  ~value
-                  ()
-              in
-              Access.SerializableMap.set
+          begin
+            Attribute.target ~parent:name target
+            |> function
+            | Some ({ Node.value = Access access; _ } as target) ->
+                let attribute =
+                  Attribute.create
+                    ~primitive:true
+                    ~location
+                    ~target
+                    ?annotation
+                    ~value
+                    ()
+                in
+                Access.SerializableMap.set
+                  map
+                  ~key:access
+                  ~data:attribute
+            | _ ->
                 map
-                ~key:access
-                ~data:attribute)
-          |> Option.value ~default:map
+          end
       | _ ->
           map
     in
@@ -829,23 +834,26 @@ module Class = struct
         | Define ({ Define.name = target; _ } as define) ->
             Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
             >>| (fun target ->
-                let name = Expression.access target in
-                let attribute =
-                  match Access.SerializableMap.find_opt name map with
-                  | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
-                      Attribute.create
-                        ~location
-                        ~target
-                        ~defines:({ define with Define.body = [] } :: defines)
-                        ()
-                  | _ ->
-                      Attribute.create
-                        ~location
-                        ~target
-                        ~defines:[{ define with Define.body = [] }]
-                        ()
-                in
-                Access.SerializableMap.set map ~key:name ~data:attribute)
+                match Node.value target with
+                | Access name ->
+                    let attribute =
+                      match Access.SerializableMap.find_opt name map with
+                      | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                          Attribute.create
+                            ~location
+                            ~target
+                            ~defines:({ define with Define.body = [] } :: defines)
+                            ()
+                      | _ ->
+                          Attribute.create
+                            ~location
+                            ~target
+                            ~defines:[{ define with Define.body = [] }]
+                            ()
+                    in
+                    Access.SerializableMap.set map ~key:name ~data:attribute
+                | _ ->
+                    map)
             |> Option.value ~default:map
         | _ ->
             map
