@@ -201,6 +201,7 @@ module Access : sig
   val create_from_identifiers: Identifier.t list -> t
   val create_from_expression: expression_t -> t
 
+  val combine: expression_t -> t -> t
   val expression: ?location: Location.t -> t -> expression_t
 
   val sanitized: t -> t

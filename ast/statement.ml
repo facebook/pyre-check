@@ -1128,7 +1128,7 @@ module With = struct
                "__enter__"
            in
            Access
-             ((Expression.access expression) @ (Access.call ~name:enter_call_name ~location ()))
+             (Access.combine expression (Access.call ~name:enter_call_name ~location ()))
            |> Node.create ~location
          in
          if async then

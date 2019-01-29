@@ -276,7 +276,7 @@ let test_equality _ =
     let full_printer ({ Node.location; _ } as expression) =
       Format.asprintf "%s/%a" (Location.Reference.show location) Expression.pp expression
     in
-    let value = String (StringLiteral.create "some_string") in
+    let value = Access [Identifier "some_string"] in
     let expression_left = Node.create ~location:left value in
     let expression_right = Node.create ~location:right value in
     assert_equal
@@ -289,8 +289,12 @@ let test_equality _ =
       (Expression.hash expression_left)
       (Expression.hash expression_right);
 
-    let access_left = Expression.access expression_left in
-    let access_right = Expression.access expression_right in
+    let extract_access = function
+      | { Node.value = Access access; _ } -> access
+      | _ -> failwith "Expected access."
+    in
+    let access_left = extract_access expression_left in
+    let access_right = extract_access expression_right in
     assert_equal
       ~cmp:Access.equal
       access_left

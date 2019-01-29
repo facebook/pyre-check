@@ -545,6 +545,14 @@ module Access = struct
     List.take_while access ~f:(function | Identifier _ -> true | _ -> false)
     |> show
     |> Core.Set.mem Recognized.assert_functions
+
+
+  let combine expression access =
+    match Node.value expression with
+    | Access head ->
+        head @ access
+    | _ ->
+        (Expression expression) :: access
 end
 
 

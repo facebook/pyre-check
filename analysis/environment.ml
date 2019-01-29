@@ -540,8 +540,11 @@ let register_aliases (module Handler: Handler) sources =
           | Type.Parametric { name = primitive; _ }
           | Primitive primitive ->
               let access =
-                Type.expression (Type.Primitive primitive)
-                |> Expression.access
+                match Node.value (Type.expression (Type.Primitive primitive)) with
+                | Expression.Access access ->
+                    access
+                | _ ->
+                    Expression.Access.create "typing.Any"
               in
               if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
                 sofar, Type.Object
