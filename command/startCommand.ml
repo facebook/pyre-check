@@ -86,11 +86,7 @@ let computation_thread request_queue configuration state =
       | _ ->
           ()
     in
-    let rec handle_request ?(retries = 2) state ~request:(origin, request) =
-      let process socket state configuration request =
-        Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
-        Request.process ~socket ~state ~configuration ~request
-      in
+    let rec handle_request ?(retries = 2) state ~origin ~process =
       try
         match origin with
         | Protocol.Request.PersistentSocket socket ->
@@ -120,7 +116,7 @@ let computation_thread request_queue configuration state =
                         ()
                   end
             in
-            let { Request.state; response } = process socket state configuration request in
+            let { Request.state; response } = process ~socket ~state in
             begin
               match response with
               | Some (LanguageServerProtocolResponse _)
@@ -140,7 +136,7 @@ let computation_thread request_queue configuration state =
             let { socket; persistent_clients; _ } =
               Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
             in
-            let { Request.state; response } = process socket state configuration request in
+            let { Request.state; response } = process ~socket ~state in
             begin
               match response with
               | Some response ->
@@ -153,7 +149,7 @@ let computation_thread request_queue configuration state =
             let { persistent_clients; _ } =
               Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
             in
-            let { Request.state; response } = process socket state configuration request in
+            let { Request.state; response } = process ~socket ~state in
             begin
               match response with
               | Some response ->
@@ -164,32 +160,17 @@ let computation_thread request_queue configuration state =
             state
       with uncaught_exception ->
         if retries > 0 then
-          handle_request ~retries:(retries - 1) state ~request:(origin, request)
+          handle_request ~retries:(retries - 1) state ~origin ~process
         else
           raise uncaught_exception
     in
     let state =
-      match Squeue.length request_queue, List.is_empty state.deferred_requests with
+      match Squeue.length request_queue, State.Deferred.is_empty state.deferred_state with
       | 0, false ->
-          let state =
-            {
-              state with
-              deferred_requests = Protocol.Request.deduplicate state.deferred_requests;
-              last_request_time = Unix.time ();
-            }
+          let process_state ~socket:_ ~state =
+            Request.process_deferred_state ~state ~configuration:analysis_configuration ~flush:false
           in
-          begin
-            match state.deferred_requests with
-            | [] ->
-                state
-            | request :: requests ->
-                Log.log
-                  ~section:`Server
-                  "Processing deferred request, %d remaining"
-                  (List.length requests);
-                let state = { state with deferred_requests = requests } in
-                handle_request state ~request:(Protocol.Request.Background, request)
-          end
+          handle_request state ~origin:Protocol.Request.Background ~process:process_state
       | 0, true ->
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
@@ -241,7 +222,12 @@ let computation_thread request_queue configuration state =
           { state with last_integrity_check }
       | _ ->
           let state = { state with last_request_time = Unix.time () } in
-          handle_request state ~request:(Squeue.pop request_queue)
+          let (origin, request) = Squeue.pop request_queue in
+          let process_request ~socket ~state =
+            Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
+            Request.process ~socket ~state ~configuration ~request
+          in
+          handle_request state ~origin ~process:process_request
     in
     loop configuration state
   in

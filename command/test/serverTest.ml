@@ -194,7 +194,7 @@ let mock_server_state
   in
   add_defaults_to_environment ~configuration environment;
   {
-    State.deferred_requests = [];
+    State.deferred_state = State.Deferred.of_list [];
     environment;
     errors;
     last_request_time = Unix.time ();
@@ -998,7 +998,7 @@ let test_incremental_typecheck context =
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Protocol.TypeCheckResponse []);
   assert_response
-    ~state:{ state with State.deferred_requests = [request_with_content] }
+    ~state:{ state with deferred_state = State.Deferred.of_list files }
     ~request:Protocol.Request.FlushTypeErrorsRequest
     (Protocol.TypeCheckResponse errors)
 
@@ -1142,12 +1142,9 @@ let test_incremental_dependencies context =
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal
-      ~printer:(List.to_string ~f:Server.Protocol.Request.show)
-      [check_request
-         ~check:[file ~local_root "a.py"]
-         ~update:[file ~local_root "a.py"]
-         ()]
-      state.State.deferred_requests;
+      ~printer:(List.to_string ~f:File.show)
+      [file ~local_root "a.py"]
+      (State.Deferred.take_all state.State.deferred_state |> fst);
     let { Request.state; response } =
       process
         (check_request
@@ -1167,9 +1164,9 @@ let test_incremental_dependencies context =
          ]))
       response;
     assert_equal
-      ~printer:(List.to_string ~f:(Protocol.Request.show))
-      state.State.deferred_requests
+      ~printer:(List.to_string ~f:(File.show))
       []
+      (State.Deferred.take_all state.State.deferred_state |> fst)
   in
   let finally () =
     Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]

@@ -204,7 +204,7 @@ let transitive ~get_dependencies ~handle =
 let transitive_of_list ~get_dependencies ~handles =
   handles
   |> List.map ~f:(fun handle -> transitive ~get_dependencies ~handle)
-  |> List.fold ~init:File.Handle.Set.empty ~f:Set.union
+  |> File.Handle.Set.union_list
   (* Ensure no file gets double-checked. *)
   |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))
 

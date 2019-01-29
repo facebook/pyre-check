@@ -27,7 +27,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
   in
   add_defaults_to_environment ~configuration environment;
   {
-    State.deferred_requests = [];
+    State.deferred_state = State.Deferred.of_list [];
     environment;
     errors;
     last_request_time = Unix.time ();
@@ -277,11 +277,10 @@ let test_process_type_check_request context =
       ?(sources = [])
       ~check
       ~expected_errors
-      ?(expected_deferred_check_requests = [])
-      ?(expected_deferred_environment_requests = [])
+      ?(expected_deferred_state = [])
       () =
     let assert_response _ =
-      let actual_errors, actual_deferred_check_requests, actual_deferred_environment_requests =
+      let actual_errors, actual_deferred_state =
         let configuration, state = initialize sources in
         let check = List.map check ~f:write_file in
         let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
@@ -289,29 +288,18 @@ let test_process_type_check_request context =
         |> function
         | {
           Request.response = Some (Protocol.TypeCheckResponse response);
-          state = { State.deferred_requests; _ };
+          state = { State.deferred_state; _ };
         } ->
-            let deferred_check_requests, deferred_environment_requests =
-              let deferred_request request =
-                let open Protocol in
-                match request with
-                | Request.TypeCheckRequest {
-                    TypeCheckRequest.check;
-                    update_environment_with;
-                  } ->
-                    let path file =
-                      File.handle file ~configuration
-                      |> File.Handle.show
-                    in
-                    List.map check ~f:path, List.map update_environment_with ~f:path
-                | _ ->
-                    failwith "Unable to extract deferred type-check request"
+            let deferred =
+              let show_file file =
+                File.handle file ~configuration
+                |> File.Handle.show
               in
-              List.map deferred_requests ~f:deferred_request
-              |> List.unzip
-              |> fun (check, environment) -> List.concat check, List.concat environment
+              State.Deferred.take_all deferred_state
+              |> fst
+              |> List.map ~f:show_file
             in
-            response, deferred_check_requests, deferred_environment_requests
+            response, deferred
         | _ ->
             failwith "Unexpected response."
       in
@@ -319,13 +307,8 @@ let test_process_type_check_request context =
       assert_equal
         ~cmp:(List.equal ~equal:String.equal)
         ~printer:(String.concat ~sep:"\n")
-        expected_deferred_check_requests
-        actual_deferred_check_requests;
-      assert_equal
-        ~cmp:(List.equal ~equal:String.equal)
-        ~printer:(String.concat ~sep:"\n")
-        expected_deferred_environment_requests
-        actual_deferred_environment_requests
+        expected_deferred_state
+        actual_deferred_state
     in
     OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response
   in
@@ -350,8 +333,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> int: ..."]  (* Unchanged. *)
     ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:[]
-    ~expected_deferred_environment_requests:[]
+    ~expected_deferred_state:[]
     ();
   (* Single dependency. *)
   assert_response
@@ -361,8 +343,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"]
-    ~expected_deferred_environment_requests:["client.py"]
+    ~expected_deferred_state:["client.py"]
     ();
   (* Multiple depedencies. *)
   assert_response
@@ -373,8 +354,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"; "other.py"]
-    ~expected_deferred_environment_requests:["client.py"; "other.py"]
+    ~expected_deferred_state:["client.py"; "other.py"]
     ();
   (* Indirect dependency. *)
   assert_response
@@ -389,8 +369,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_check_requests:["client.py"]
-    ~expected_deferred_environment_requests:["client.py"]
+    ~expected_deferred_state:["client.py"; "indirect.py"]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
@@ -407,8 +386,7 @@ let test_process_type_check_request context =
     ]
     ~check:["a.py", "var = 1337"]
     ~expected_errors:["a.py", []]
-    ~expected_deferred_check_requests:["b.py"]
-    ~expected_deferred_environment_requests:["b.py"]
+    ~expected_deferred_state:["b.py"; "c.py"]
     ();
   assert_response
     ~sources:[
@@ -418,8 +396,7 @@ let test_process_type_check_request context =
     ]
     ~check:["b.py", "from a import *"]
     ~expected_errors:["b.py", []]
-    ~expected_deferred_check_requests:["c.py"]
-    ~expected_deferred_environment_requests:["c.py"]
+    ~expected_deferred_state:["c.py"]
     ();
 
   (* Check nonexistent handles. *)
@@ -433,31 +410,44 @@ let test_process_type_check_request context =
   let { Request.response; _ } =
     Request.process_type_check_request ~state ~configuration ~request
   in
-  assert_equal (Some (Protocol.TypeCheckResponse [])) response;
+  assert_equal (Some (Protocol.TypeCheckResponse [])) response
 
-  (* Check files with very large number of dependencies. *)
-  let assert_response_size
-      ~sources
-      ~check
-      ~deferred_requests_size
-      () =
-    let assert_response_size _ =
-      let deferred_requests =
-        let configuration, state = initialize sources in
-        let check = List.map check ~f:write_file in
-        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
-        Request.process_type_check_request ~state ~configuration ~request
-        |> fun { state = { State.deferred_requests; _ }; _; } ->
-        deferred_requests
-      in
-      assert_equal
-        ~printer:(Int.to_string)
-        ((deferred_requests_size - 1) / configuration.number_of_workers + 1)
-        (List.length deferred_requests)
-    in
-    OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response_size
-  in
+
+let test_process_deferred_state context =
   let test_with_number_of_dependents dependents_number =
+    let assert_response_size
+        ~sources
+        ~check
+        ~dependents_number
+        () =
+      let assert_response_size _ =
+        let configuration, state = initialize sources in
+        let state =
+          let check = List.map check ~f:write_file in
+          let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
+          Request.process_type_check_request ~state ~configuration ~request
+          |> fun { state; _ } ->
+          state
+        in
+        assert_equal
+          ~printer:(Int.to_string)
+          dependents_number
+          (State.Deferred.length state.deferred_state);
+
+        (* Test a second iteration. *)
+        let { Request.state = state; _ } =
+          Request.process_deferred_state ~state ~configuration ~flush:false
+        in
+        let analyzed_size = Int.min dependents_number configuration.number_of_workers in
+        let expected_remaining_size = dependents_number - analyzed_size in
+        assert_equal
+          ~printer:(Int.to_string)
+          expected_remaining_size
+          (State.Deferred.length state.deferred_state);
+        ()
+      in
+      OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response_size
+    in
     let sources =
       let main = "a.py", "var = 42" in
       let dependents =
@@ -470,7 +460,7 @@ let test_process_type_check_request context =
     assert_response_size
       ~sources
       ~check:["a.py", "var = 3.14"]
-      ~deferred_requests_size:dependents_number
+      ~dependents_number
       ()
   in
   test_with_number_of_dependents 1;
@@ -612,6 +602,7 @@ let () =
     "process_type_query_request">::test_process_type_query_request;
     "process_display_type_errors_request">::test_process_display_type_errors_request;
     "process_type_check_request">::test_process_type_check_request;
+    "process_deferred_state">::test_process_deferred_state;
     "process_get_definition_request">::test_process_get_definition_request;
   ]
   |> Test.run

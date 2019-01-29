@@ -32,6 +32,11 @@ val process_type_check_request
   -> configuration: Configuration.Analysis.t
   -> request: Protocol.TypeCheckRequest.t
   -> response
+val process_deferred_state
+  :  state: State.t
+  -> configuration: Configuration.Analysis.t
+  -> flush: bool
+  -> response
 val process_get_definition_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t

@@ -85,21 +85,12 @@ let load
     raise (IncompatibleState "configuration mismatch");
 
   Log.info "Reanalyzing %d files which have been modified." (List.length changed_files);
-  let deferred_requests =
-    [
-      Protocol.Request.TypeCheckRequest
-        (Protocol.TypeCheckRequest.create
-           ~update_environment_with:changed_files
-           ~check:changed_files
-           ());
-    ]
-  in
   let errors =
     EnvironmentSharedMemory.ServerErrors.find_unsafe "errors"
     |> File.Handle.Table.of_alist_exn
   in
   {
-    State.deferred_requests;
+    State.deferred_state = State.Deferred.of_list changed_files;
     environment;
     errors;
     scheduler;
