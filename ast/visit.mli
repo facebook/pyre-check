@@ -64,8 +64,6 @@ module StatementCollector (Predicate: StatementPredicate) : sig
   val collect: Source.t -> Predicate.t list
 end
 
-val collect_accesses_in_position :  Statement.t -> Location.position -> (Access.t Node.t) list
-
 val collect_accesses: Statement.t -> Access.t list
 
 val collect_accesses_with_location: Statement.t -> (Access.t Node.t) list

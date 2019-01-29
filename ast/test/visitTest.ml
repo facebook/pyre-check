@@ -122,28 +122,6 @@ let test_collect _ =
       ])
 
 
-let test_collect_accesses_in_position _ =
-  let source =
-    {|
-       s = ham.egg(cheese).bake
-    |}
-    |> parse_single_statement
-  in
-  let assert_collected_accesses source line column expected_accesses =
-    let position = { Location.line; column } in
-    assert_equal
-      ~printer:(String.concat ~sep:", ")
-      expected_accesses
-      (Visit.collect_accesses_in_position source position
-       |> List.map ~f:Node.value
-       |> List.map ~f:Access.show)
-  in
-  assert_collected_accesses source 2 0 ["s"];
-  assert_collected_accesses source 2 4 ["ham.egg.(...).bake"];
-  assert_collected_accesses source 2 2 [];
-  assert_collected_accesses source 2 8 ["ham.egg.(...).bake"]
-
-
 let test_collect_accesses_with_location _ =
   let source =
     {|
@@ -255,7 +233,6 @@ let test_statement_visitor_source _ =
 let () =
   "visit">:::[
     "collect">::test_collect;
-    "collect_accesses_in_position">::test_collect_accesses_in_position;
     "collect_accesses_with_location">::test_collect_accesses_with_location;
     "statement_visitor">::test_statement_visitor;
     "statement_visitor_source">::test_statement_visitor_source;

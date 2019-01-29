@@ -341,26 +341,3 @@ let collect_accesses_with_location statement =
             None
     end) in
   Collector.collect (Source.create [statement])
-
-
-let collect_accesses_in_position statement { Location.line; column } =
-  let open Expression in
-  let module Collector = ExpressionCollector(struct
-      type t = Access.t Node.t
-      let predicate = function
-        | {
-          Node.value = Access access;
-          location = {
-            Location.start;
-            stop;
-            _
-          } as location;
-        }
-          when start.Location.line = line
-            && stop.Location.line = line
-            && start.Location.column <= column
-            && stop.Location.column >= column ->
-            Some { Node.value = access; location }
-        | _ -> None
-    end) in
-  Collector.collect (Source.create [statement])
