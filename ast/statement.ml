@@ -220,12 +220,17 @@ module Attribute = struct
 
   let target ~parent target =
     let open Expression in
-    let access = Expression.access target in
-    match List.rev access with
-    | (Access.Call _) :: ((Access.Identifier _) as access) :: class_name
-    | ((Access.Identifier _) as access) :: class_name
-      when Access.equal parent (List.rev class_name) ->
-        Some { target with Node.value = Access [access] }
+    match Node.value target with
+    | Access access ->
+        begin
+          match List.rev access with
+          | (Access.Call _) :: ((Access.Identifier _) as access) :: class_name
+          | ((Access.Identifier _) as access) :: class_name
+            when Access.equal parent (List.rev class_name) ->
+              Some { target with Node.value = Access [access] }
+          | _ ->
+              None
+        end
     | _ ->
         None
 end

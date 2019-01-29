@@ -1739,7 +1739,12 @@ let class_name annotation =
   split annotation
   |> fst
   |> expression
-  |> Expression.access
+  |> Node.value
+  |> function
+  | Expression.Access access ->
+      access
+  | _ ->
+      Access.create "typing.Any"
 
 
 let class_variable annotation =

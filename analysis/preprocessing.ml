@@ -284,9 +284,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         ({ qualifier; aliases; immutables; skip; _ } as scope)
         { Node.location; value } =
       match value with
-      | Assign { Assign.target; annotation = Some annotation; _ }
+      | Assign { Assign.target = { Node.value = Access name; _ }; annotation = Some annotation; _ }
         when Expression.show annotation = "_SpecialForm" ->
-          let name = Expression.access target in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
