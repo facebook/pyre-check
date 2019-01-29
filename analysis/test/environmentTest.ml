@@ -545,17 +545,25 @@ let test_register_globals _ =
 
   let source =
     parse
+      ~qualifier:(Access.create "qualifier")
       {|
-        qualifier.with_join = 1 or 'asdf'  # don't join with an incomplete environment
-        qualifier.annotated: int = 1
-        qualifier.unannotated = 'string'
-        qualifier.stub: int = ...
-        class qualifier.Class: ...
+        with_join = 1 or 'asdf'  # don't join with an incomplete environment
+        annotated: int = 1
+        unannotated = 'string'
+        stub: int = ...
+        class Class: ...
         if True:
-          qualifier.in_branch: int = 1
+          in_branch: int = 1
         else:
-          qualifier.in_branch: int = 2
+          in_branch: int = 2
+
+        identifier.access: int = 1
+        identifier().attribute: int = 1
+
+        class Foo:
+          attribute: int = 1
       |}
+    |> Preprocessing.preprocess
   in
   Environment.register_globals (module Handler) resolution source;
   assert_global "qualifier.undefined" None;
@@ -565,6 +573,9 @@ let test_register_globals _ =
   assert_global "qualifier.stub" (Some Type.integer);
   assert_global "qualifier.Class" (Some (Type.meta (Type.Primitive "qualifier.Class")));
   assert_global "qualifier.in_branch" (Some Type.integer);
+  assert_global "qualifier.identifier.access" None;
+  assert_global "qualifier.identifier().access" None;
+  assert_global "Foo.attribute" None;
 
   let source =
     parse

@@ -669,13 +669,21 @@ let register_globals
             let rec register_assign ~target ~annotation =
               let register ~location access annotation =
                 let access = qualified_access (qualifier @ access) in
-                let global =
-                  if explicit then
-                    Annotation.create_immutable ~global:true annotation
-                  else
-                    Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
-                in
-                Handler.register_global ~handle ~access ~global:(Node.create ~location global)
+                match Access.drop_prefix ~prefix:qualifier access with
+                | [Access.Identifier _] ->
+                    let global =
+                      if explicit then
+                        Annotation.create_immutable ~global:true annotation
+                      else
+                        Annotation.create_immutable
+                          ~global:true
+                          ~original:(Some Type.Top)
+                          annotation
+                    in
+                    Handler.register_global ~handle ~access ~global:(Node.create ~location global)
+                | _ ->
+                    (* Don't register attributes or chained accesses as globals *)
+                    ()
               in
               match target.Node.value, annotation with
               | Access access, _ ->
