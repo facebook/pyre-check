@@ -622,29 +622,6 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
   |> Map.to_alist
 
 
-let process_display_type_errors_request
-    ~state:({ State.errors; _ } as state)
-    ~configuration
-    ~files =
-  let errors =
-    match files with
-    | [] ->
-        Hashtbl.data errors
-        |> List.concat
-    | _ ->
-        let errors file =
-          try
-            File.handle ~configuration file
-            |> Hashtbl.find errors
-            |> Option.value ~default:[]
-          with (File.NonexistentHandle _) ->
-            []
-        in
-        List.concat_map ~f:errors files
-  in
-  { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
-
-
 let process_type_check_files
     ~state:({
         State.environment;
@@ -984,6 +961,35 @@ let process_deferred_state
     ~defer_dependencies:false
 
 
+let process_display_type_errors_request ~state ~configuration ~files ~flush =
+  let state =
+    if flush then
+      let { state; _ } = process_deferred_state ~state ~configuration ~flush:true in
+      state
+    else
+      state
+  in
+  let errors =
+    let { errors; _ } = state in
+    match files with
+    | [] ->
+        Hashtbl.data errors
+        |> List.concat
+        |> List.sort ~compare:Error.compare
+    | _ ->
+        let errors file =
+          try
+            File.handle ~configuration file
+            |> Hashtbl.find errors
+            |> Option.value ~default:[]
+          with (File.NonexistentHandle _) ->
+            []
+        in
+        List.concat_map ~f:errors files
+  in
+  { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
+
+
 let process_get_definition_request
     ~state
     ~configuration
@@ -1002,7 +1008,7 @@ let process_get_definition_request
 
 let rec process
     ~socket
-    ~state:({ State.environment; errors; lock; connections; _ } as state)
+    ~state:({ State.environment; lock; connections; _ } as state)
     ~configuration:({
         configuration;
         _;
@@ -1031,19 +1037,8 @@ let rec process
       | TypeQueryRequest request ->
           process_type_query_request ~state ~configuration ~request
 
-      | DisplayTypeErrors files ->
-          process_display_type_errors_request ~state ~configuration ~files
-
-      | FlushTypeErrorsRequest ->
-          let { state; _ } =
-            process_deferred_state ~state ~configuration ~flush:true
-          in
-          let errors =
-            Hashtbl.data errors
-            |> List.concat
-            |> List.sort ~compare:Error.compare
-          in
-          { state; response = Some (TypeCheckResponse (build_file_to_error_map ~state errors)) }
+      | DisplayTypeErrors { files; flush } ->
+          process_display_type_errors_request ~state ~configuration ~files ~flush
 
       | StopRequest ->
           Socket.write socket StopResponse;

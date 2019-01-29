@@ -236,7 +236,7 @@ let test_process_display_type_errors_request _ =
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
       in
       let files = List.map paths ~f:File.create in
-      Request.process_display_type_errors_request ~state ~configuration ~files
+      Request.process_display_type_errors_request ~state ~configuration ~files ~flush:false
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."

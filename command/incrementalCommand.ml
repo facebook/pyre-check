@@ -72,7 +72,7 @@ let run
            raise Operations.ServerNotRunning
        in
 
-       Socket.write socket Protocol.Request.FlushTypeErrorsRequest;
+       Socket.write socket (Protocol.Request.DisplayTypeErrors { files = []; flush = true });
 
        let response_json =
          match Socket.read socket with

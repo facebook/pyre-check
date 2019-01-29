@@ -325,13 +325,13 @@ let test_protocol_type_check context =
   assert_response
     ~local_root
     ~source
-    ~request:Protocol.Request.FlushTypeErrorsRequest
+    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)));
 
   assert_response
     ~local_root
     ~source
-    ~request:Protocol.Request.FlushTypeErrorsRequest
+    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
@@ -995,11 +995,11 @@ let test_incremental_typecheck context =
   let state = mock_server_state ~local_root (File.Handle.Table.create ()) in
   assert_response
     ~state
-    ~request:Protocol.Request.FlushTypeErrorsRequest
+    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
     (Protocol.TypeCheckResponse []);
   assert_response
     ~state:{ state with deferred_state = State.Deferred.of_list files }
-    ~request:Protocol.Request.FlushTypeErrorsRequest
+    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
     (Protocol.TypeCheckResponse errors)
 
 

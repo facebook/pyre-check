@@ -112,8 +112,7 @@ module Request : sig
     | ClientConnectionRequest of client
     | ClientExitRequest of client
     | RageRequest of int
-    | DisplayTypeErrors of File.t list
-    | FlushTypeErrorsRequest
+    | DisplayTypeErrors of { files: File.t list; flush: bool }
     | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of TypeQuery.request
     | StopRequest
