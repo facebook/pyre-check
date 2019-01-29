@@ -173,8 +173,12 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
-        call.assert_not_called()
+        call.assert_called_once_with(
+            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+        )
 
+        run_fixme.reset_mock()
+        call.reset_mock()
         errors = [
             {
                 "line": 2,

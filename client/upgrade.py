@@ -280,14 +280,13 @@ def _upgrade_configuration(
         return
     configuration.remove_version()
     errors = configuration.get_errors()
-    if len(errors) == 0:
-        return
+    if len(errors) > 0:
 
-    def error_path(error):
-        return error["path"]
+        def error_path(error):
+            return error["path"]
 
-    errors = itertools.groupby(sorted(errors, key=error_path), error_path)
-    run_fixme(arguments, errors)
+        errors = itertools.groupby(sorted(errors, key=error_path), error_path)
+        run_fixme(arguments, errors)
     try:
         LOG.info("Committing changes.")
         directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
