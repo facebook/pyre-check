@@ -174,7 +174,7 @@ let computation_thread request_queue configuration state =
           let state =
             {
               state with
-              deferred_requests = Protocol.Request.flatten state.deferred_requests;
+              deferred_requests = Protocol.Request.deduplicate state.deferred_requests;
               last_request_time = Unix.time ();
             }
           in
@@ -183,6 +183,10 @@ let computation_thread request_queue configuration state =
             | [] ->
                 state
             | request :: requests ->
+                Log.log
+                  ~section:`Server
+                  "Processing deferred request, %d remaining"
+                  (List.length requests);
                 let state = { state with deferred_requests = requests } in
                 handle_request state ~request:(Protocol.Request.Background, request)
           end

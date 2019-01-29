@@ -200,6 +200,55 @@ module Request = struct
       } :: unrelated
 
 
+  type deduplicate_state = {
+    requests: t list;
+    update_files_seen: File.Set.t;
+    check_files_seen: File.Set.t;
+  }
+
+
+  let deduplicate requests =
+    let deduplicate { requests; update_files_seen; check_files_seen } request =
+      match request with
+      | TypeCheckRequest { TypeCheckRequest.update_environment_with; check } ->
+          let new_update_files =
+            File.Set.of_list update_environment_with
+            |> fun files -> File.Set.diff files update_files_seen
+          in
+          let new_check_files =
+            File.Set.of_list check
+            |> fun files -> File.Set.diff files check_files_seen
+          in
+          let requests =
+            if (Set.is_empty new_update_files) && (Set.is_empty new_check_files) then
+              requests
+            else
+              TypeCheckRequest {
+                update_environment_with = Set.to_list new_update_files;
+                check = Set.to_list new_check_files;
+              } :: requests
+          in
+          {
+            requests;
+            update_files_seen = Set.union update_files_seen new_update_files;
+            check_files_seen = Set.union check_files_seen new_check_files;
+          }
+      | _ ->
+          { requests = request :: requests; update_files_seen; check_files_seen }
+    in
+    let { requests; _ } =
+      List.fold
+        ~init:{
+          requests = [];
+          update_files_seen = File.Set.empty;
+          check_files_seen = File.Set.empty;
+        }
+        ~f:deduplicate
+        requests
+    in
+    List.rev requests
+
+
   let name = function
     | LanguageServerProtocolRequest _ -> "LanguageServerProtocol"
     | ClientConnectionRequest _ -> "ClientConnection"

@@ -647,7 +647,7 @@ let process_display_type_errors_request
 
 let process_type_check_request
     ~state:({ State.environment; errors; scheduler; deferred_requests; _ } as state)
-    ~configuration:({ debug; _ } as configuration)
+    ~configuration:({ debug; number_of_workers; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.Attribute.Cache.clear ();
   let update_environment_with, check =
@@ -794,12 +794,20 @@ let process_type_check_request
       if List.is_empty files then
         deferred_requests
       else
-        (TypeCheckRequest
-           (TypeCheckRequest.create
-              ~update_environment_with:files
-              ~check:files
-              ())) ::
-        deferred_requests
+        begin
+          let new_requests =
+            (* The chunk size is an heuristic - the attempt is to have
+               a request that can be completed in a few seconds. *)
+            List.chunks_of files ~length:number_of_workers
+            |> List.map ~f:(fun files ->
+                TypeCheckRequest
+                  (TypeCheckRequest.create
+                     ~update_environment_with:files
+                     ~check:files
+                     ()))
+          in
+          deferred_requests @ new_requests
+        end
     else
       deferred_requests
   in

@@ -135,6 +135,8 @@ module Request : sig
 
   val flatten: t list -> t list
 
+  val deduplicate: t list -> t list
+
   val name: t -> string
 end
 

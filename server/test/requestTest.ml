@@ -423,19 +423,62 @@ let test_process_type_check_request context =
     ();
 
   (* Check nonexistent handles. *)
-  begin
-    let configuration, state = initialize [] in
-    let check =
-      Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"
-      |> File.create ~content:"def function() -> int: return ''"
-      |> fun file -> [file]
+  let configuration, state = initialize [] in
+  let check =
+    Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"
+    |> File.create ~content:"def function() -> int: return ''"
+    |> fun file -> [file]
+  in
+  let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
+  let { Request.response; _ } =
+    Request.process_type_check_request ~state ~configuration ~request
+  in
+  assert_equal (Some (Protocol.TypeCheckResponse [])) response;
+
+  (* Check files with very large number of dependencies. *)
+  let assert_response_size
+      ~sources
+      ~check
+      ~deferred_requests_size
+      () =
+    let assert_response_size _ =
+      let deferred_requests =
+        let configuration, state = initialize sources in
+        let check = List.map check ~f:write_file in
+        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
+        Request.process_type_check_request ~state ~configuration ~request
+        |> fun { state = { State.deferred_requests; _ }; _; } ->
+        deferred_requests
+      in
+      assert_equal
+        ~printer:(Int.to_string)
+        ((deferred_requests_size - 1) / configuration.number_of_workers + 1)
+        (List.length deferred_requests)
     in
-    let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
-    let { Request.response; _ } =
-      Request.process_type_check_request ~state ~configuration ~request
+    OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response_size
+  in
+  let test_with_number_of_dependents dependents_number =
+    let sources =
+      let main = "a.py", "var = 42" in
+      let dependents =
+        List.init
+          dependents_number
+          ~f:(fun id -> Format.sprintf "dependent-%d.py" id, "from a import var")
+      in
+      main :: dependents
     in
-    assert_equal (Some (Protocol.TypeCheckResponse [])) response
-  end
+    assert_response_size
+      ~sources
+      ~check:["a.py", "var = 3.14"]
+      ~deferred_requests_size:dependents_number
+      ()
+  in
+  test_with_number_of_dependents 1;
+  test_with_number_of_dependents 10;
+  test_with_number_of_dependents 20;
+  test_with_number_of_dependents 55;
+  test_with_number_of_dependents 100;
+  test_with_number_of_dependents 121
 
 
 let test_process_get_definition_request context =
