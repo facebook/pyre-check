@@ -144,7 +144,7 @@ let rules = [
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
   {
-    sources = [ Sources.Test ];
+    sources = [ Sources.Test; Sources.UserControlled ];
     sinks = [ Sinks.Test ];
     code = 5002;
     name = "Test flow.";
