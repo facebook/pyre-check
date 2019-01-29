@@ -174,7 +174,7 @@ class FixmeAllTest(unittest.TestCase):
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
         call.assert_called_once_with(
-            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+            ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
         run_fixme.reset_mock()
@@ -196,7 +196,7 @@ class FixmeAllTest(unittest.TestCase):
         upgrade.run_fixme_all(arguments, [])
         run_fixme.called_once_with(arguments, _result(errors))
         call.assert_called_once_with(
-            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+            ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
         run_fixme.reset_mock()
@@ -243,7 +243,7 @@ class FixmeAllTest(unittest.TestCase):
         upgrade._upgrade_configuration(arguments, configuration, "/root")
         run_fixme.called_once_with(arguments, _result(errors))
         call.assert_called_once_with(
-            ["hg", "commit", "--message", "[typing] Update pyre version for local"]
+            ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
 

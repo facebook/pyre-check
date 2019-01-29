@@ -271,6 +271,30 @@ def fix(
     path.write_text("\n".join(new_lines))
 
 
+def _commit_message(directory):
+    commit_message = """[typing] Update pyre version for {}
+
+        Summary: Automatic upgrade to remove `version` override and silence errors.
+
+        Test Plan: sandcastle
+
+        Reviewers: pyre
+
+        Subscribers:
+
+        Tasks:
+
+        Tags:
+
+        Blame Revision:
+        """.format(
+        directory
+    ).replace(
+        "            ", ""
+    )
+    return commit_message
+
+
 # Exposed for testing.
 def _upgrade_configuration(
     arguments: argparse.Namespace, configuration: Configuration, root: str
@@ -290,8 +314,7 @@ def _upgrade_configuration(
     try:
         LOG.info("Committing changes.")
         directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
-        commit_message = "[typing] Update pyre version for {}".format(directory)
-        subprocess.call(["hg", "commit", "--message", commit_message])
+        subprocess.call(["hg", "commit", "--message", _commit_message(directory)])
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
 
