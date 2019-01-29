@@ -646,7 +646,7 @@ let process_display_type_errors_request
 
 
 let process_type_check_request
-    ~state:({ State.environment; errors; scheduler; _ } as state)
+    ~state:({ State.environment; errors; scheduler; deferred_requests; _ } as state)
     ~configuration:({ debug; _ } as configuration)
     ~request:{ TypeCheckRequest.update_environment_with; check} =
   Annotated.Class.Attribute.Cache.clear ();
@@ -673,9 +673,10 @@ let process_type_check_request
     List.filter check ~f:keep
   in
   let (module Handler: Environment.Handler) = environment in
+  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
 
   (* Compute requests we do not serve immediately. *)
-  let dependencies =
+  let deferred_requests =
     if not (List.is_empty update_environment_with) then
       let files =
         let old_signature_hashes, new_signature_hashes =
@@ -789,13 +790,20 @@ let process_type_check_request
         in
         List.filter_map dependents ~f:to_file
       in
-      files
+
+      if List.is_empty files then
+        deferred_requests
+      else
+        (TypeCheckRequest
+           (TypeCheckRequest.create
+              ~update_environment_with:files
+              ~check:files
+              ())) ::
+        deferred_requests
     else
-      []
+      deferred_requests
   in
-  let update_environment_with, check =
-    dependencies @ update_environment_with, dependencies @ check
-  in
+
   (* Repopulate the environment. *)
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
@@ -848,7 +856,6 @@ let process_type_check_request
     in
     stubs @ sources
   in
-  Log.info "Repopulating type environment.";
   Log.log
     ~section:`Debug
     "Repopulating the environment with %a"
@@ -906,7 +913,7 @@ let process_type_check_request
     |> Option.some
   in
   {
-    state;
+    state = { state with deferred_requests };
     response = Some (TypeCheckResponse (build_file_to_error_map ~checked_files ~state new_errors));
   }
 
