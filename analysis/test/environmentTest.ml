@@ -280,6 +280,7 @@ let test_register_aliases _ =
           class D(C): pass
           B = D
           A = B
+          Twiddledee, Twiddledum = C, C
         |};
     ]
     [
@@ -287,6 +288,8 @@ let test_register_aliases _ =
       "D", "D";
       "B", "D";
       "A", "D";
+      "Twiddledee", "Twiddledee";
+      "Twiddledum", "Twiddledum";
     ];
   assert_resolved
     [

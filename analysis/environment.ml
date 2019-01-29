@@ -451,27 +451,30 @@ let register_aliases (module Handler: Handler) sources =
             false
       in
       match value with
-      | Assign { Assign.target; annotation; value; _ }
+      | Assign {
+          Assign.target = { Node.value = Access target; _ };
+          annotation;
+          value;
+          _;
+        }
         when is_allowable_alias_annotation annotation ->
           let target =
-            let access =
-              let access =
-                Expression.access target
-                |> Access.delocalize_qualified
-              in
-              if in_class_body then
-                access
-              else
-                qualifier @ access
-            in
-            { target with Node.value = Access access }
+            let access = Access.delocalize_qualified target in
+            if in_class_body then
+              access
+            else
+              qualifier @ access
           in
           begin
             match Node.value value with
-            | Expression.Access _ ->
+            | Access _ ->
                 let value = Expression.delocalize value in
                 let value_annotation = Type.create ~aliases:Handler.aliases value in
-                let target_annotation = Type.create ~aliases:Handler.aliases target in
+                let target_annotation =
+                  Type.create
+                    ~aliases:Handler.aliases
+                    (Node.create (Access target) ~location:(Node.location value))
+                in
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then
@@ -503,7 +506,7 @@ let register_aliases (module Handler: Handler) sources =
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [handle, Access.expression qualified_name, Access.expression original_name]
+                [handle, qualified_name, Access.expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
@@ -512,15 +515,15 @@ let register_aliases (module Handler: Handler) sources =
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
-    let target_annotation = Type.create ~aliases:Handler.aliases target in
+    let target_annotation =
+      Type.create
+        (Node.create (Access target) ~location:(Node.location value))
+        ~aliases:Handler.aliases
+    in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
-          let name =
-            Expression.access target
-            |> Access.show
-          in
-          Type.Variable { variable with variable = name }
+          Type.Variable { variable with variable = Access.show target }
       | annotation ->
           annotation
     in
@@ -575,10 +578,10 @@ let register_aliases (module Handler: Handler) sources =
           Log.debug
             "Unresolved alias %a:%a <- %a"
             File.Handle.pp handle
-            Expression.pp target
+            Access.pp target
             Expression.pp value
         in
-        List.iter ~f:show_unresolved unresolved
+            List.iter ~f:show_unresolved unresolved
   in
   List.concat_map ~f:collect_aliases sources
   |> resolve_aliases;
