@@ -234,7 +234,7 @@ let test_type_collection _ =
       in
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
-      Visit.collect_accesses_with_location statement
+      Visit.collect_accesses statement
       |> List.hd_exn
       |> fun { Node.value = access; _ } ->
       if String.equal (Access.show access) (Access.show test_access) then

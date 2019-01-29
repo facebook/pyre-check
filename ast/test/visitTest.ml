@@ -122,7 +122,7 @@ let test_collect _ =
       ])
 
 
-let test_collect_accesses_with_location _ =
+let test_collect_accesses _ =
   let source =
     {|
        s = ham.egg(cheese).bake
@@ -142,7 +142,7 @@ let test_collect_accesses_with_location _ =
              Format.sprintf "%s|%s"
                (Node.location node |> instantiate |> Location.Instantiated.show)
                (Node.value node |> Access.show))
-         (Visit.collect_accesses_with_location source))
+         (Visit.collect_accesses source))
   in
   assert_collected_accesses
     source
@@ -233,7 +233,7 @@ let test_statement_visitor_source _ =
 let () =
   "visit">:::[
     "collect">::test_collect;
-    "collect_accesses_with_location">::test_collect_accesses_with_location;
+    "collect_accesses_with_location">::test_collect_accesses;
     "statement_visitor">::test_statement_visitor;
     "statement_visitor_source">::test_statement_visitor_source;
   ]

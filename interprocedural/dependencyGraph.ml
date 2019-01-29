@@ -51,6 +51,7 @@ let create_callgraph ~environment ~source =
           List.fold new_callees ~f:add_call_edge ~init:callees
         in
         Visit.collect_accesses statement
+        |> List.map ~f:Node.value
         |> List.fold ~init:callees ~f:process_access
       in
       List.foldi statements ~init:callees ~f:fold_statements

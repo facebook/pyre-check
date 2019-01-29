@@ -2416,6 +2416,7 @@ let test_call_arguments_location _ =
     in
     Visit.collect_accesses statement
     |> List.hd_exn
+    |> Node.value
     |> List.fold ~init:[] ~f:collect_arguments
     |> List.concat
     |> List.map ~f:print_argument

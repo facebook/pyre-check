@@ -245,6 +245,7 @@ module State = struct
           access
       in
       Visit.collect_accesses statement
+      |> List.map ~f:Node.value
       |> List.fold ~init:resolution ~f:propagate
     in
 

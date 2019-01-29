@@ -320,19 +320,6 @@ end
 let collect_accesses statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Access.t
-      let predicate = function
-        | { Node.value = Access access; _ } ->
-            Some access
-        | _ ->
-            None
-    end) in
-  Collector.collect (Source.create [statement])
-
-
-let collect_accesses_with_location statement =
-  let open Expression in
-  let module Collector = ExpressionCollector(struct
       type t = Access.t Node.t
       let predicate = function
         | { Node.value = Access access; location } ->
