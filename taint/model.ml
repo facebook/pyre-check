@@ -158,8 +158,15 @@ let create ~resolution ?(verify = true) ~model_source () =
           Some (define, call_target)
       | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
+          let name =
+            match Node.value target with
+            | Access access ->
+                access
+            | _ ->
+                failwith "Non-access name for define."
+          in
           let define = {
-            Define.name = Expression.access target;
+            Define.name;
             parameters = [];
             body = [];
             decorators = [];

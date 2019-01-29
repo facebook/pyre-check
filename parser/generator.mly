@@ -80,7 +80,7 @@
         Format.asprintf "__%s%s__" (if compound then "i" else "") name
       in
       let arguments = [{ Argument.name = None; value = right }] in
-      ((access left) @ (Access.call ~arguments ~location ~name ()))
+      (Expression.Access.combine left (Access.call ~arguments ~location ~name ()))
     in
     {
       Node.location = left.Node.location;
@@ -146,7 +146,7 @@
       let arguments = [subscript_argument ~subscripts ~location] in
       Access.call ~arguments ~location ~name:"__getitem__" ()
     in
-    { Node.location; value = Access ((Expression.access head) @ get_item) }
+    { Node.location; value = Access (Expression.Access.combine head get_item) }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
     let head, subscripts = subscript in
@@ -159,7 +159,7 @@
       in
       Access.call ~arguments ~location ~name:"__setitem__" ()
     in
-    Access ((Expression.access head) @ set_item)
+    Access (Expression.Access.combine head set_item)
     |> Node.create ~location
     |> (fun expression -> Expression expression)
     |> Node.create ~location
@@ -536,7 +536,7 @@ small_statement:
         let yield =
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
-              (Expression.access yield) @ (Access.call ~name:"__iter__" ~location ())
+              (Expression.Access.combine yield (Access.call ~name:"__iter__" ~location ()))
               |> (fun access -> Access access)
               |> Node.create ~location
           | _ ->
@@ -1153,8 +1153,9 @@ atom:
         Node.location = name.Node.location;
         value =
           Access
-            (Expression.access name @
-             [Access.Call (Node.create ~location:call_location arguments)]);
+            (Expression.Access.combine
+               name
+               [Access.Call (Node.create ~location:call_location arguments)]);
       }
     }
 
@@ -1315,10 +1316,14 @@ expression:
   | LEFTPARENS; test = test_list; RIGHTPARENS { test }
 
   | access = expression; DOT; expression = expression {
-      {
-        Node.location = { access.Node.location with Location.stop = Node.stop expression };
-        value = Access ((Expression.access access) @ (Expression.access expression));
-      }
+      match Node.value expression with
+      | Access tail ->
+        {
+          Node.location = { access.Node.location with Location.stop = Node.stop expression };
+          value = Access (Expression.Access.combine access tail);
+        }
+      | _ ->
+        raise (ParserError "Invalid access")
     }
 
   | subscript = subscript { subscript_access subscript }

@@ -199,7 +199,6 @@ module Access : sig
 
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
-  val create_from_expression: expression_t -> t
 
   val combine: expression_t -> t -> t
   val expression: ?location: Location.t -> t -> expression_t
@@ -241,7 +240,6 @@ module Access : sig
   val is_assert_function: t -> bool
 end
 
-val access: t -> Access.t
 val delocalize: t -> t
 val delocalize_qualified: t -> t
 

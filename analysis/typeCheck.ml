@@ -1622,22 +1622,28 @@ module State = struct
       let iterator =
         let value =
           if async then
-            Access (Expression.access iterator @ [
-                Access.Identifier "__aiter__";
-                Access.Call (Node.create ~location []);
-                Access.Identifier "__anext__";
-                Access.Call (Node.create ~location []);
-              ])
+            Access
+              (Expression.Access.combine
+                 iterator
+                 [
+                   Access.Identifier "__aiter__";
+                   Access.Call (Node.create ~location []);
+                   Access.Identifier "__anext__";
+                   Access.Call (Node.create ~location []);
+                 ])
             |> Node.create ~location
             |> (fun target -> Await target)
             |> Node.create ~location
           else
-            Access (Expression.access iterator @ [
-                Access.Identifier "__iter__";
-                Access.Call (Node.create ~location []);
-                Access.Identifier "__next__";
-                Access.Call (Node.create ~location []);
-              ])
+            Access
+              (Expression.Access.combine
+                 iterator
+                 [
+                   Access.Identifier "__iter__";
+                   Access.Call (Node.create ~location []);
+                   Access.Identifier "__next__";
+                   Access.Call (Node.create ~location []);
+                 ])
             |> Node.create ~location
         in
         Assign { Assign.target; annotation = None; value; parent = None }
@@ -2045,34 +2051,38 @@ module State = struct
           let { Node.location; _ } = left in
           if has_method "__contains__" iterator then
             let arguments = [{ Argument.name = None; value = left }] in
-            Access ((access right) @ Access.call ~arguments ~location ~name:"__contains__" ())
+            Access
+              (Access.combine
+                 right
+                 (Access.call ~arguments ~location ~name:"__contains__" ()))
           else if has_method "__iter__" iterator then
             Access (
-              (access right) @
-              Access.call ~location ~name:"__iter__" () @
-              Access.call ~location ~name:"__next__" () @
-              Access.call
-                ~arguments:[{ Argument.name = None; value = left }]
-                ~location
-                ~name:"__eq__"
-                ()
-            )
+              (Access.combine
+                 right
+                 (Access.call ~location ~name:"__iter__" () @
+                  Access.call ~location ~name:"__next__" () @
+                  Access.call
+                    ~arguments:[{ Argument.name = None; value = left }]
+                    ~location
+                    ~name:"__eq__"
+                    ())))
           else
             Access (
-              access right @
-              Access.call
-                ~arguments:[{
-                    Argument.name = None;
-                    value = { Node.value = Expression.Integer 0; location };
-                  }]
-                ~location
-                ~name:"__getitem__"
-                () @
-              Access.call
-                ~arguments:[{ Argument.name = None; value = left }]
-                ~location
-                ~name:"__eq__"
-                ()
+              (Access.combine
+                 right
+                 (Access.call
+                    ~arguments:[{
+                        Argument.name = None;
+                        value = { Node.value = Expression.Integer 0; location };
+                      }]
+                    ~location
+                    ~name:"__getitem__"
+                    () @
+                  Access.call
+                    ~arguments:[{ Argument.name = None; value = left }]
+                    ~location
+                    ~name:"__eq__"
+                    ()))
             )
         in
         converted_call

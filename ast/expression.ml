@@ -328,12 +328,6 @@ module Access = struct
     List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
-  let create_from_expression ({ Node.value; _ } as expression) =
-    match value with
-    | Access access -> access
-    | _ -> [Expression expression]
-
-
   let create name =
     let identifier_names name =
       if String.equal name "..." then
@@ -527,6 +521,14 @@ module Access = struct
         None
 
 
+  let combine expression access =
+    match Node.value expression with
+    | Access head ->
+        head @ access
+    | _ ->
+        (Expression expression) :: access
+
+
   let redirect ~arguments ~location ~name =
     match name, arguments with
     | [Identifier name], [{ Argument.value; _ }] ->
@@ -538,26 +540,14 @@ module Access = struct
           | _ -> None
         end
         >>| fun name ->
-        (create_from_expression value) @ (call ~arguments:[] ~location ~name ())
+        combine value (call ~arguments:[] ~location ~name ())
     | _ -> None
 
   let is_assert_function access =
     List.take_while access ~f:(function | Identifier _ -> true | _ -> false)
     |> show
     |> Core.Set.mem Recognized.assert_functions
-
-
-  let combine expression access =
-    match Node.value expression with
-    | Access head ->
-        head @ access
-    | _ ->
-        (Expression expression) :: access
 end
-
-
-let access =
-  Access.create_from_expression
 
 
 let rec delocalize ({ Node.value; _ } as expression) =
@@ -630,7 +620,7 @@ module ComparisonOperator = struct
     operator
     >>| fun name ->
     let arguments = [{ Argument.name = None; value = right }] in
-    Access ((access left) @ Access.call ~arguments ~location ~name ())
+    Access (Access.combine left (Access.call ~arguments ~location ~name ()))
     |> Node.create ~location
 end
 
@@ -652,7 +642,7 @@ module UnaryOperator = struct
       | Positive -> Some "__pos__"
     end
     >>| fun name ->
-    Access ((access operand) @ (Access.call ~name ~location ()))
+    Access (Access.combine operand (Access.call ~name ~location ()))
     |> Node.create ~location
 end
 

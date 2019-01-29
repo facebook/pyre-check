@@ -468,7 +468,11 @@ let test_access _ =
                 };
               ]);
          ]);
-    ]
+    ];
+
+  assert_raises
+    (Failure "Could not parse test")
+    (fun () -> parse_untrimmed "a.((2, 3))")
 
 
 let test_starred _ =
