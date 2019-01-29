@@ -10,6 +10,7 @@ open Server
 
 
 let run
+    nonblocking
     verbose
     expected_version
     sections
@@ -72,7 +73,9 @@ let run
            raise Operations.ServerNotRunning
        in
 
-       Socket.write socket (Protocol.Request.DisplayTypeErrors { files = []; flush = true });
+       Socket.write
+         socket
+         (Protocol.Request.DisplayTypeErrors { files = []; flush = not nonblocking });
 
        let response_json =
          match Socket.read socket with
@@ -104,5 +107,10 @@ let command =
               Starts a daemon server in the current directory if it does not exist."
     Command.Spec.(
       empty
+      +> flag
+        "-nonblocking"
+        no_arg
+        ~doc:("Ask the server to return partial results immediately, " ^
+              "even if analysis is still in progress.")
       ++ Specification.base_command_line_arguments)
     run
