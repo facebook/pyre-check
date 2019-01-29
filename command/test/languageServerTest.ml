@@ -491,35 +491,55 @@ let test_language_server_protocol_read_message context =
 
   let in_channel, out_channel = bracket set_up tear_down context in
 
+  let test_read message expected_output =
+    Out_channel.output_string out_channel message;
+    Out_channel.flush out_channel;
+    let actual =
+      read_message in_channel
+      >>| Yojson.Safe.to_string
+    in
+    let expected =
+      expected_output
+      |> Option.some
+      >>| Yojson.Safe.to_string
+    in
+    assert_equal
+      ~cmp:(Option.equal String.equal)
+      expected
+      actual
+  in
+
   let message =
     "Content-Length: 32\r\n\
      \r\n\
      {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
   in
-
-  Out_channel.output_string out_channel message;
-  Out_channel.flush out_channel;
-
-  let actual =
-    read_message in_channel
-    >>| Yojson.Safe.to_string
-  in
-
   let expected =
     `Assoc
       [
         ("jsonrpc", `String "2.0");
         ("method", `String "foo");
       ]
-    |> Option.some
-    >>| Yojson.Safe.to_string
   in
+  test_read message expected;
 
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    expected
-    actual
+  let message_extra_header =
+    "Content-Length: 32\r\n\
+     Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+  in
+  test_read message_extra_header expected;
 
+  let message_arbitrary_header =
+    "Content-Length: 32\r\n\
+     Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\
+     Another-Header: yes\r\n\
+     One-More-Header: sure\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+  in
+  test_read message_arbitrary_header expected
 
 let test_language_server_protocol_deserialize_request _ =
   let module Request = RequestMessage.Make(struct

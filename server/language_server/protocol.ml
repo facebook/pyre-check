@@ -257,7 +257,11 @@ let read_message channel =
 
   let read_content length =
     let content_buffer = Buffer.create 10 in
-    In_channel.input_line channel (* eat the new line *)
+    let rec skip_header () = match In_channel.input_line channel with
+      | Some line when line <> "" -> skip_header ()
+      | other -> other
+    in
+    skip_header () (* ignore any other header lines *)
     >>= fun _ -> In_channel.input_buffer channel content_buffer ~len:length
     >>| fun _ -> Buffer.contents content_buffer
   in
