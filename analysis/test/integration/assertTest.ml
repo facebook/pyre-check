@@ -166,7 +166,7 @@ let test_check_assert_functions _ =
           return o.a
     |}
     [];
-    assert_default_type_errors
+  assert_default_type_errors
     ~qualifier:(Access.create "foo")
     {|
       class One:

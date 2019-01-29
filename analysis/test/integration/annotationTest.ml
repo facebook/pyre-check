@@ -133,7 +133,7 @@ let test_check_undefined_type _ =
     [];
 
   (* Ensure other errors are not missed when undefined type is thrown. *)
-assert_strict_type_errors
+  assert_strict_type_errors
     {|
       class Bar:
           async def undefined(self, x: Derp) -> Derp:

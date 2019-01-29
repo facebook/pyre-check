@@ -2340,8 +2340,8 @@ module State = struct
       let check_missing_return state =
         if not (Define.has_return_annotation define_without_location) ||
            Type.contains_any return_annotation then
-           let given_annotation =
-             Option.some_if
+          let given_annotation =
+            Option.some_if
               (Define.has_return_annotation define_without_location)
               return_annotation
           in
