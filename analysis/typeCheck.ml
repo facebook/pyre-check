@@ -763,6 +763,10 @@ module State = struct
                 match arguments, Access.backup ~name with
                 | [{ Argument.value; _ }], Some name ->
                     let resolution, arguments =
+                      (* If we have an access with an expression, we can't blindly put the access in
+                         there as we need the type of the parent to get passed in as an access to
+                         allow manipulating the access chain. This will go away if we properly
+                         abstract call nodes away. *)
                       match expression with
                       | Some expression ->
                           let argument_type =
