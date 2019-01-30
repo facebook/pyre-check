@@ -1,2 +1,4 @@
+python-munch
+SQLAlchemy
 ultrajson~=1.35
 xxhash~=1.3.0
