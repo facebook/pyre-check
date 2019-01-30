@@ -30,7 +30,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship
 from tools.sapp.errors import AIException
-from tools.sapp.utils import split_every
+from tools.sapp.iterutil import split_every
 
 
 log = logging.getLogger()
