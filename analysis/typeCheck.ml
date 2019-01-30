@@ -979,24 +979,30 @@ module State = struct
               None, []
         in
 
+        let step signature annotation =
+          step
+            { state with resolution }
+            ~element:(Signature { signature; callees; arguments })
+            ~resolved:(Annotation.create annotation)
+            ~lead
+            ()
+        in
+
         match signature with
         | Some
             (Annotated.Signature.Found {
                 callable = { implementation = { annotation; _ }; _ };
                 _;
               } as signature)
+          when Type.is_resolved annotation ->
+            step signature annotation
         | Some
             (Annotated.Signature.NotFound {
                 callable = { implementation = { annotation; _ }; _ };
                 _;
-              } as signature)
-          when Type.is_resolved annotation ->
-            step
-              { state with resolution }
-              ~element:(Signature { signature; callees; arguments })
-              ~resolved:(Annotation.create annotation)
-              ~lead
-              ()
+              } as signature) ->
+            let annotation = if Type.is_resolved annotation then annotation else Type.Top in
+            step signature annotation
         | _ ->
             abort state ~lead ()
       in

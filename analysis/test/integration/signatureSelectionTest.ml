@@ -550,7 +550,21 @@ let test_check_function_parameters _ =
       def f() -> None:
         a = foo(1,2,3,4)
     |}
-    ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."]
+    ["Too many arguments [19]: Call `foo` expects 0 positional arguments, 4 were provided."];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", bound=int)
+      S = typing.Callable[[], T]
+
+      def foo(x: S) -> T: ...
+
+      def bar() -> None:
+          foo()
+    |}
+    [
+      "Missing argument [20]: Call `foo` expects argument `x`.";
+    ]
 
 
 let test_check_function_parameter_errors _ =
@@ -663,6 +677,34 @@ let test_check_function_overloads _ =
         return x.derp(5)
     |}
     [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        @overload
+        def derp(self, x: int, y: int) -> int:
+          pass
+        @overload
+        def derp(self, x: str, y: str) -> str:
+          pass
+
+      def herp(x: Foo) -> int:
+        return x.derp(True)
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Missing argument [20]: Call `Foo.derp` expects argument `y`.";
+    ];
+
+  assert_type_errors
+    {|
+      def herp(x: int) -> int:
+        return typing.cast(x)
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Missing argument [20]: Call `typing.cast` expects argument `obj`.";
+    ];
 
   (* Technically invalid; @overload stubs must comprehensively cover implementation *)
   assert_type_errors
@@ -913,7 +955,11 @@ let test_check_variable_restrictions _ =
        def f(x: float) -> str:
          return variable_restricted_identity(x)
     |}
-    ["Incompatible return type [7]: Expected `str` but got `unknown`."];
+    [
+      "Incompatible return type [7]: Expected `str` but got `unknown`.";
+      "Incompatible parameter type [6]: Expected `Variable[_VR <: [str, int]]` " ^
+      "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`."
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T', int, str)
