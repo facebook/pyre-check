@@ -557,6 +557,7 @@ let test_register_globals _ =
         else:
           in_branch: int = 2
 
+        identifier = Class()
         identifier.access: int = 1
         identifier().attribute: int = 1
 
@@ -875,7 +876,7 @@ let test_populate _ =
     (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
   assert_global
     "test.B"
-    (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+    (Annotation.create_immutable ~global:true Type.integer);
   assert_global
     "test.C"
     (Annotation.create_immutable ~global:true (parse_annotation environment !"test.int"));
@@ -904,7 +905,7 @@ let test_populate _ =
   in
   assert_global
     "global_value_set"
-    (Annotation.create_immutable ~global:true ~original:(Some Type.Top) Type.integer);
+    (Annotation.create_immutable ~global:true Type.integer);
   assert_global "global_annotated" (Annotation.create_immutable ~global:true Type.integer);
   assert_global "global_both" (Annotation.create_immutable ~global:true Type.integer);
   assert_global "global_unknown" (Annotation.create_immutable ~global:true Type.Top);

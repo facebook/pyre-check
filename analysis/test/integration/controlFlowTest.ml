@@ -69,8 +69,9 @@ let test_scheduling _ =
     |}
     [
       "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Missing global annotation [5]: Globally accessible variable `variable` has type " ^
-      "`typing.Union[int, str]` but no type is specified.";
+      "Incompatible variable type [9]: variable is declared to have type `int` " ^
+      "but is used as type `str`.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
     ];
 
   (* Functions defined after try/except blocks are typechecked. *)

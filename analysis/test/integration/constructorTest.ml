@@ -243,8 +243,6 @@ let test_check_init _ =
       a = Foo("")
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `a` has type `Foo` " ^
-      "but no type is specified.";
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `Foo.__init__` but got `str`.";
     ];

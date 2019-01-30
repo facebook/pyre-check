@@ -672,16 +672,21 @@ let register_globals
                 let access = qualified_access (qualifier @ access) in
                 match Access.drop_prefix ~prefix:qualifier access with
                 | [Access.Identifier _] ->
-                    let global =
-                      if explicit then
-                        Annotation.create_immutable ~global:true annotation
-                      else
-                        Annotation.create_immutable
-                          ~global:true
-                          ~original:(Some Type.Top)
-                          annotation
+                    let register_global global =
+                      Node.create ~location global
+                      |> (fun global -> Handler.register_global ~handle ~access ~global)
                     in
-                    Handler.register_global ~handle ~access ~global:(Node.create ~location global)
+                    let exists = Option.is_some (Handler.globals access) in
+                    if explicit then
+                      Annotation.create_immutable ~global:true annotation
+                      |> register_global
+                    else if not exists then
+                      (* Treat literal globals as having been explicitly annotated. *)
+                      let original = if Type.is_unknown annotation then (Some Type.Top) else None in
+                      Annotation.create_immutable ~global:true ~original annotation
+                      |> register_global
+                    else
+                      ()
                 | _ ->
                     (* Don't register attributes or chained accesses as globals *)
                     ()

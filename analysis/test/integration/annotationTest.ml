@@ -193,8 +193,6 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `MyType` has type `int`" ^
-      " but no type is specified.";
       "Invalid type [31]: Expression `MyType` is not a valid type."
     ];
   assert_type_errors

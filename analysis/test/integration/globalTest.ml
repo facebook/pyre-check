@@ -171,6 +171,41 @@ let test_check_globals _ =
 
   assert_type_errors
     {|
+      constant: int = 1
+      constant: str = ""
+      def foo() -> str:
+        return constant
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      constant = 1
+      constant = ""
+      def foo() -> str:
+        return constant
+    |}
+    [
+      "Incompatible variable type [9]: constant is declared to have type `int` " ^
+      "but is used as type `str`.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
+
+  assert_type_errors
+    {|
+      x = 1
+      constant = x
+      def foo() -> str:
+        return constant
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` " ^
+      "but no type is specified.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ];
+
+  assert_type_errors
+    {|
       nasty_global = foo()
       def foo() -> int:
         a = nasty_global
@@ -188,10 +223,6 @@ let test_check_globals _ =
         return a
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `a` has type `int` " ^
-      "but no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `b` has type `int` " ^
-      "but no type is specified.";
       "Incompatible return type [7]: Expected `str` but got `int`."
     ];
 
@@ -301,7 +332,31 @@ let test_check_globals _ =
       def foo() -> str:
         return str_to_int_dictionary
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."]
+    ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."];
+
+  assert_type_errors
+    ~update_environment_with:[
+      {
+        qualifier = Access.create "export";
+        handle = "export.py";
+        source = "x = 1"
+      };
+    ]
+    {|
+      from export import x
+      def foo() -> str:
+        return x
+      def bar() -> str:
+        global x
+        x = ""
+        return x
+    |}
+    [
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible variable type [9]: export.x is declared to have type `int` " ^
+      "but is used as type `str`.";
+      "Incompatible return type [7]: Expected `str` but got `int`.";
+    ]
 
 
 let () =

@@ -86,10 +86,7 @@ let test_check_attributes _ =
       a = str
       b = 1
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `b` has type `int` but no " ^
-      "type is specified.";
-    ];
+    [];
 
   assert_type_errors
     ~show_error_traces:true
