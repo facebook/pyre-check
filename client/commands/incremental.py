@@ -23,6 +23,7 @@ class Incremental(Reporting):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Incremental, self).__init__(arguments, configuration, analysis_directory)
+        self._nonblocking = arguments.nonblocking  # type: bool
 
     def _run(self) -> None:
         if self._state() == State.DEAD:
@@ -71,6 +72,9 @@ class Incremental(Reporting):
         extensions = self._configuration.extensions
         for extension in extensions:
             flags.extend(["-extension", extension])
+
+        if self._nonblocking:
+            flags.append("-nonblocking")
 
         return flags
 

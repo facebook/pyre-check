@@ -204,7 +204,15 @@ def main() -> int:
     )
 
     incremental = parsed_commands.add_parser(commands.Incremental.NAME)
-    incremental.set_defaults(command=commands.incremental.Incremental)
+    incremental.set_defaults(command=commands.Incremental)
+    incremental.add_argument(
+        "--nonblocking",
+        action="store_true",
+        help=(
+            "Ask the server to return partial results immediately, "
+            "even if analysis is still in progress."
+        ),
+    )
 
     rage = parsed_commands.add_parser(commands.Rage.NAME)
     rage.set_defaults(command=commands.Rage)
@@ -293,6 +301,7 @@ def main() -> int:
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
             arguments.command = commands.Incremental
+            arguments.nonblocking = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
             LOG.warning(
@@ -398,7 +407,7 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         os.getcwd()
-    except FileNotFoundError as error:
+    except FileNotFoundError:
         print(
             "Pyre could not determine the current working directory. "
             "Has it been removed?\nExiting."

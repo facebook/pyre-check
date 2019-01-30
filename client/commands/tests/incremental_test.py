@@ -55,6 +55,32 @@ class IncrementalTest(unittest.TestCase):
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
 
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ):
+            nonblocking_arguments = mock_arguments()
+            nonblocking_arguments.nonblocking = True
+            command = incremental.Incremental(
+                nonblocking_arguments, configuration, analysis_directory
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                    "-nonblocking",
+                ],
+            )
+
+            command.run()
+            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+
         commands_Command_state.return_value = commands.command.State.DEAD
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]

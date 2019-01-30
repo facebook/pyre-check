@@ -44,6 +44,7 @@ def mock_arguments(
     arguments.taint_models_path = None
     arguments.terminal = terminal
     arguments.verbose = False
+    arguments.nonblocking = False
     return arguments
 
 
