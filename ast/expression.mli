@@ -37,6 +37,11 @@ module Record : sig
 
     type 'expression record = ('expression access) list
     [@@deriving compare, eq, sexp, show, hash]
+
+    type 'expression general_access_record =
+      | SimpleAccess of 'expression record
+      | ExpressionAccess of { expression: 'expression; access: 'expression record }
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module ComparisonOperator : sig
@@ -147,7 +152,7 @@ module StringLiteral : sig
 end
 
 type expression =
-  | Access of t Record.Access.record
+  | Access of t Record.Access.general_access_record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | ComparisonOperator of t Record.ComparisonOperator.record
@@ -155,7 +160,6 @@ type expression =
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | Ellipses
-  | ExpressionAccess of { expression: t; access: t Record.Access.record }
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t
@@ -192,6 +196,9 @@ module Access : sig
   type t = expression_t Record.Access.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  type general_access = expression_t Record.Access.general_access_record
+  [@@deriving compare, eq, sexp, show, hash]
+
   module Set: Set.S with type Elt.t = t
   module Map: Map.S with type Key.t = t
   module SerializableMap: SerializableMap.S with type key = t
@@ -200,7 +207,7 @@ module Access : sig
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
 
-  val combine: expression_t -> t -> expression_t
+  val combine: expression_t -> t -> general_access
   val expression: ?location: Location.t -> t -> expression_t
 
   val sanitized: t -> t
@@ -235,7 +242,11 @@ module Access : sig
   val backup: name: t -> t option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
-  val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> expression_t option
+  val redirect
+    :  arguments: Argument.t list
+    -> location: Location.t
+    -> name: t
+    -> general_access option
 
   val is_assert_function: t -> bool
 end

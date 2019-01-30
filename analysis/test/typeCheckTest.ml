@@ -300,20 +300,13 @@ let test_redirect _ =
       |> (fun environment -> TypeCheck.resolution environment ())
       |> Resolution.with_parent ~parent
     in
-    let parse_access unparsed =
-      match parse_single_expression unparsed with
-      | { Node.value = Access access; _ } ->
-          access
-      | _ ->
-          failwith "expected access"
-    in
-    let access = parse_access access in
+    let access = parse_single_access access in
     let access, resolution = AccessState.redirect ~resolution access in
     assert_equal
-      ~printer:Expression.show_expression
-      ~cmp:Expression.equal_expression
+      ~printer:Expression.Access.show_general_access
+      ~cmp:Expression.Access.equal_general_access
       access
-      (Access (parse_access expected_access));
+      (Access.SimpleAccess (parse_single_access expected_access));
     let assert_in_scope (expected_name, expected_type) =
       Access.create expected_name
       |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
@@ -393,18 +386,11 @@ let test_resolve_exports _ =
       AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
       |> (fun environment -> TypeCheck.resolution environment ())
     in
-    let parse_access unparsed =
-      match parse_single_expression unparsed with
-      | { Node.value = Access access; _ } ->
-          access
-      | _ ->
-          failwith "expected access"
-    in
     let access =
-      parse_access access
+      parse_single_access access
       |> AccessState.resolve_exports ~resolution
     in
-    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_access expected_access)
+    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_single_access expected_access)
   in
   assert_resolve
     ~sources:[]
@@ -457,7 +443,7 @@ let test_forward_access _ =
     let access, resolution =
       let access = parse_single_access access ~preprocess:true in
       match AccessState.redirect ~resolution access with
-      | Access access, resolution ->
+      | Access.SimpleAccess access, resolution ->
           access, resolution
       | _ ->
           access, resolution

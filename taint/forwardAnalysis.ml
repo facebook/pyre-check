@@ -213,7 +213,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | AccessPath.Access { expression; member = method_name } ->
           let receiver =
             AccessPath.as_access expression
-            |> Node.create ~location
+            |> fun access -> Node.create (Expression.Access access) ~location
           in
           let arguments =
             let receiver = {
@@ -224,7 +224,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           begin
             match Node.value receiver with
-            | Access receiver ->
+            | Access (SimpleAccess receiver) ->
                 Interprocedural.CallResolution.get_indirect_targets
                   ~resolution
                   ~receiver
@@ -276,7 +276,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let annotations =
               let annotation =
                 AccessPath.as_access expression
-                |> Node.create ~location
+                |> (fun access -> Node.create (Expression.Access access) ~location)
                 |> Resolution.resolve resolution
               in
               let successors =
@@ -363,7 +363,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_expression ~resolution expression state =
       match expression.Node.value with
-      | Access access ->
+      | Access (SimpleAccess access) ->
           AccessPath.normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution expression.Node.location state
       | Await expression ->
@@ -385,7 +385,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _ ->
           ForwardState.Tree.empty
-      | ExpressionAccess { expression; _ } ->
+      | Access (ExpressionAccess { expression; _ }) ->
           analyze_expression ~resolution expression state
       | Generator comprehension ->
           analyze_comprehension ~resolution comprehension state

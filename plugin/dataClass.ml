@@ -79,7 +79,10 @@ let transform_environment (module Handler: Handler) resolution source =
                   decorators = [];
                   docstring = None;
                   return_annotation =
-                    Some (Node.create ~location (Access (Access.create return_annotation)));
+                    Some
+                      (Node.create
+                         ~location
+                         (Access (SimpleAccess (Access.create return_annotation))));
                   async = false;
                   parent = Some parent;
                 }

@@ -75,7 +75,7 @@ module ExpressionVisitor = struct
           ~data
     in
     let annotate_argument_names = function
-      | { Node.value = Expression.Access access; _ } ->
+      | { Node.value = Expression.Access (SimpleAccess access); _ } ->
           let check_single_access = function
             | Access.Call { Node.value = arguments; _ }  ->
                 let check_argument
@@ -157,14 +157,17 @@ module ExpressionVisitor = struct
         let filter_annotation ~prefix ~element =
           let access = prefix @ [element] in
           resolve
-            ~expression:(Node.create ~location:expression_location (Expression.Access access))
+            ~expression:
+              (Node.create
+                 ~location:expression_location
+                 (Expression.Access (SimpleAccess access)))
         in
         collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
       in
       match expression_value with
-      | Expression.Access access ->
+      | Expression.Access (SimpleAccess access) ->
           store_access access
-      | Expression.ExpressionAccess { expression; access } ->
+      | Expression.Access (ExpressionAccess { expression; access }) ->
           resolve ~expression
           >>| store_annotation
           |> ignore;
@@ -210,7 +213,7 @@ module Visit = struct
               { Node.value = { Parameter.annotation; value; name }; location }
               ~visit_expression =
             Expression.Access.create_from_identifiers [name]
-            |> (fun access -> Expression.Access access)
+            |> (fun access -> Expression.Access (SimpleAccess access))
             |> Node.create ~location
             |> visit_expression;
             Option.iter ~f:visit_expression value;

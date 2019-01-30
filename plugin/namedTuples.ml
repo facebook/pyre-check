@@ -19,16 +19,21 @@ let transform_ast ({ Source.statements; _ } as source) =
       | {
         Node.location;
         value =
-          Access [
-            Access.Identifier module_name;
-            Access.Identifier named_tuple;
-            Access.Call { Node.value = arguments; _ };
-          ];
+          Access
+            (SimpleAccess [
+                Access.Identifier module_name;
+                Access.Identifier named_tuple;
+                Access.Call { Node.value = arguments; _ };
+              ]);
       } when (module_name = "typing" &&
               named_tuple = "NamedTuple") ||
              (module_name = "collections" &&
               named_tuple = "namedtuple") ->
-          let any_annotation = Node.create ~location (Access (Access.create "typing.Any")) in
+          let any_annotation =
+            Node.create
+              (Access (SimpleAccess (Access.create "typing.Any")))
+              ~location
+          in
           let attributes =
             match arguments with
             | [
@@ -79,7 +84,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         |> Type.expression
       in
       Assign {
-        Assign.target = Access (parent @ (Access.create "_fields")) |> node;
+        Assign.target = Access (SimpleAccess (parent @ (Access.create "_fields"))) |> node;
         annotation = Some annotation;
         value;
         parent = Some parent;
@@ -90,7 +95,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       let attribute_statements =
         let attribute (name, annotation, value) =
           let target =
-            Access (parent @ (Access.create name))
+            Access (SimpleAccess (parent @ (Access.create name)))
             |> Node.create ~location
           in
           Assign {
@@ -136,14 +141,14 @@ let transform_ast ({ Source.statements; _ } as source) =
     let tuple_base ~location =
       {
         Argument.name = None;
-        value = Node.create ~location (Access (Access.create "typing.NamedTuple"));
+        value = Node.create ~location (Access (SimpleAccess (Access.create "typing.NamedTuple")));
       }
     in
     let value =
       match value with
       | Assign {
           Assign.target = {
-            Node.value = Access name;
+            Node.value = Access (SimpleAccess name);
             _;
           };
           value = expression;
@@ -167,7 +172,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           end
       | Class ({ Class.name; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
-            | { Statement.Argument.value = { Node.value = Access name; _ }; _ } ->
+            | { Statement.Argument.value = { Node.value = Access (SimpleAccess name); _ }; _ } ->
                 Access.show name = "typing.NamedTuple"
             | _ ->
                 false
@@ -176,7 +181,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             let extract_assign = function
               | {
                 Node.value = Assign {
-                    Assign.target = { Node.value = Access target; _ };
+                    Assign.target = { Node.value = Access (SimpleAccess target); _ };
                     value;
                     annotation;
                     _;
@@ -186,7 +191,9 @@ let transform_ast ({ Source.statements; _ } as source) =
                   let annotation =
                     Option.value
                       annotation
-                      ~default:(Node.create ~location (Access (Access.create "typing.Any")))
+                      ~default:(Node.create
+                                  ~location
+                                  (Access (SimpleAccess (Access.create "typing.Any"))))
                   in
                   List.last target
                   >>| (fun target -> Access.show [target], annotation, Some value)

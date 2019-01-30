@@ -114,7 +114,7 @@ let connect_definition
     let register_supertype { Argument.value; _ } =
       let value = Expression.delocalize value in
       match Node.value value with
-      | Access name ->
+      | Access (SimpleAccess name) ->
           let supertype, parameters =
             Resolution.parse_annotation resolution value
             |> Type.split
@@ -436,12 +436,13 @@ let register_aliases (module Handler: Handler) sources =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       let is_allowable_alias_annotation = function
         | Some {
-            Node.value = Access [
-                Access.Identifier "typing";
-                Access.Identifier "Type";
-                Access.Identifier "__getitem__";
-                Access.Call _;
-              ];
+            Node.value = Access
+                (SimpleAccess [
+                    Access.Identifier "typing";
+                    Access.Identifier "Type";
+                    Access.Identifier "__getitem__";
+                    Access.Call _;
+                  ]);
             _;
           } ->
             true
@@ -452,7 +453,7 @@ let register_aliases (module Handler: Handler) sources =
       in
       match value with
       | Assign {
-          Assign.target = { Node.value = Access target; _ };
+          Assign.target = { Node.value = Access (SimpleAccess target); _ };
           annotation;
           value;
           _;
@@ -473,7 +474,7 @@ let register_aliases (module Handler: Handler) sources =
                 let target_annotation =
                   Type.create
                     ~aliases:Handler.aliases
-                    (Node.create (Access target) ~location:(Node.location value))
+                    (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
                 in
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
@@ -517,7 +518,7 @@ let register_aliases (module Handler: Handler) sources =
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
       Type.create
-        (Node.create (Access target) ~location:(Node.location value))
+        (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
         ~aliases:Handler.aliases
     in
     let value_annotation =
@@ -541,7 +542,7 @@ let register_aliases (module Handler: Handler) sources =
           | Primitive primitive ->
               let access =
                 match Node.value (Type.expression (Type.Primitive primitive)) with
-                | Expression.Access access ->
+                | Expression.Access (SimpleAccess access) ->
                     access
                 | _ ->
                     Expression.Access.create "typing.Any"
@@ -584,7 +585,7 @@ let register_aliases (module Handler: Handler) sources =
             Access.pp target
             Expression.pp value
         in
-            List.iter ~f:show_unresolved unresolved
+        List.iter ~f:show_unresolved unresolved
   in
   List.concat_map ~f:collect_aliases sources
   |> resolve_aliases;
@@ -616,7 +617,7 @@ let register_globals
         | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
             let primitive, _ =
-              Node.create ~location (Access name)
+              Node.create ~location (Access (SimpleAccess name))
               |> Resolution.parse_annotation resolution
               |> Type.split
             in
@@ -649,7 +650,7 @@ let register_globals
               | Some ({ Node.location; value } as annotation) ->
                   let annotation =
                     match value with
-                    | Access access ->
+                    | Access (SimpleAccess access) ->
                         (* Local names don't make sense when used globally. *)
                         Access.delocalize access
                         |> Access.expression ~location
@@ -686,7 +687,7 @@ let register_globals
                     ()
               in
               match target.Node.value, annotation with
-              | Access access, _ ->
+              | Access (SimpleAccess access), _ ->
                   register ~location:target.Node.location access annotation
               | Tuple elements, Type.Tuple (Type.Bounded parameters)
                 when List.length elements = List.length parameters ->
@@ -780,7 +781,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             let parent =
               if Define.is_class_method define then
                 parent
-                >>| (fun access -> Node.create ~location (Expression.Access access))
+                >>| (fun access -> Node.create ~location (Expression.Access (SimpleAccess access)))
                 >>| Resolution.parse_annotation resolution
                 >>| Type.meta
               else
@@ -1167,7 +1168,9 @@ module Builder = struct
             decorators = [];
             docstring = None;
             return_annotation =
-              Some (Node.create_with_default_location (Access (Access.create "None")));
+              Some
+                (Node.create_with_default_location
+                   (Access (SimpleAccess (Access.create "None"))));
             async = false;
             parent = Some (Access.create "TypedDictionary");
           }

@@ -132,7 +132,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       in
       match value with
       | Assign {
-          Assign.target = { Node.value = Expression.Access target; _ };
+          Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ };
           value = { Node.value = (Expression.List names); _ };
           _;
         }
@@ -145,7 +145,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
             | _ -> None
           in
           public_values, Some (List.filter_map ~f:to_access names)
-      | Assign { Assign.target = { Node.value = Expression.Access target; _ }; _ } ->
+      | Assign { Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ }; _ } ->
           public_values @ (filter_private [target]), dunder_all
       | Class { Record.Class.name; _ } ->
           public_values @ (filter_private [name]), dunder_all

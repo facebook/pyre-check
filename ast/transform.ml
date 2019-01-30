@@ -110,13 +110,14 @@ module Make (Transformer : Transformer) = struct
       in
       let transform_children value =
         match value with
-        | Access access ->
-            Access (transform_list access ~f:transform_access)
-        | ExpressionAccess { expression; access } ->
-            ExpressionAccess {
-              expression = transform_expression expression;
-              access = transform_list access ~f:transform_access;
-            }
+        | Access (SimpleAccess access) ->
+            Access (SimpleAccess (transform_list access ~f:transform_access))
+        | Access (ExpressionAccess { expression; access }) ->
+            Access
+              (ExpressionAccess {
+                  expression = transform_expression expression;
+                  access = transform_list access ~f:transform_access;
+                })
         | Await expression ->
             Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right; } ->

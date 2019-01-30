@@ -175,7 +175,7 @@ module State = struct
             let rec infer_annotation resolution parameter_annotation argument =
               let state = { state with resolution } in
               match Node.value argument with
-              | Access value ->
+              | Access (SimpleAccess value) ->
                   let { resolved; _ } =
                     TypeCheck.State.forward_expression ~state ~expression:argument
                   in
@@ -238,22 +238,19 @@ module State = struct
           | _ ->
               type_accumulator
         in
-        match access with
-        | Access access ->
-            TypeCheck.State.forward_access
-              ~resolution
-              ~initial:resolution
-              ~f:propagate_access
-              access
-        | ExpressionAccess { expression; access } ->
-            TypeCheck.State.forward_access
-              ~resolution
-              ~initial:resolution
-              ~f:propagate_access
-              ~expression
-              access
-        | _ ->
-            failwith "Impossible result of collect_accesses."
+        let expression, access =
+          match access with
+          | Access.SimpleAccess access ->
+              None, access
+          | Access.ExpressionAccess { expression; access } ->
+              Some expression, access
+        in
+        TypeCheck.State.forward_access
+          ?expression
+          ~resolution
+          ~initial:resolution
+          ~f:propagate_access
+          access
       in
       Visit.collect_accesses statement
       |> List.map ~f:Node.value
@@ -267,7 +264,7 @@ module State = struct
           let rec propagate_assign resolution target_annotation value =
             let state = { state with resolution } in
             match Node.value value with
-            | Access value_access ->
+            | Access (SimpleAccess value_access) ->
                 let resolution =
                   match value_access with
                   | [Access.Identifier _] ->
@@ -334,7 +331,7 @@ module State = struct
               in
               propagate_assign resolution resolved value)
 
-      | Return { Return.expression = Some { Node.value = Access access; _ }; _ } ->
+      | Return { Return.expression = Some { Node.value = Access (SimpleAccess access); _ }; _ } ->
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~access:return_access)
             |> Annotation.annotation

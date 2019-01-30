@@ -230,7 +230,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
       | Access { expression = receiver; member = method_name} ->
           let state =
-            let receiver = as_access receiver in
+            let receiver = Expression.Access (as_access receiver) in
             let arguments =
               let receiver_argument_record =
                 {
@@ -242,7 +242,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let receiver =
               match receiver with
-              | Access access ->
+              | Access (Access.SimpleAccess access) ->
                   access
               | _ ->
                   []
@@ -326,8 +326,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_expression ~resolution taint { Node.value = expression; _ } state =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
-      | Access access ->
+      | Access (SimpleAccess access) ->
           normalize_access access ~resolution
+          |> analyze_normalized_expression ~resolution state taint
+      | Access (ExpressionAccess { expression; access }) ->
+          List.fold access ~init:(Expression expression) ~f:normalize_access_list
           |> analyze_normalized_expression ~resolution state taint
       | Await expression ->
           analyze_expression ~resolution taint expression state
@@ -344,9 +347,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _ ->
           state
-      | ExpressionAccess { expression; access } ->
-          List.fold access ~init:(Expression expression) ~f:normalize_access_list
-          |> analyze_normalized_expression ~resolution state taint
       | Generator comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Integer _ ->

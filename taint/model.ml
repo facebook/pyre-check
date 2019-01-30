@@ -77,7 +77,7 @@ let extract_identifier = function
 
 let rec extract_taint_kinds expression =
   match expression.Node.value with
-  | Access [Identifier taint_kind] ->
+  | Access (SimpleAccess [Identifier taint_kind]) ->
       [taint_kind]
   | Tuple expressions ->
       List.concat_map ~f:extract_taint_kinds expressions
@@ -89,21 +89,23 @@ let rec taint_annotations = function
   | Some {
       Node.value =
         Expression.Access
-          (Identifier union
-           :: _
-           :: Call {
-             value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
-           :: _);
+          (SimpleAccess
+             (Identifier union
+              :: _
+              :: Call {
+                value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
+              :: _));
       _ } when union = "Union" ->
       List.concat_map ~f:(fun expression -> taint_annotations (Some expression)) expressions
   | Some {
       Node.value =
         Expression.Access
-          (Identifier taint_direction
-           :: _
-           :: Call {
-             value = { Argument.value = expression; _; } :: _; _ }
-           :: _);
+          (SimpleAccess
+             (Identifier taint_direction
+              :: _
+              :: Call {
+                value = { Argument.value = expression; _; } :: _; _ }
+              :: _));
       _ } ->
       [taint_direction, extract_taint_kinds expression]
   | _ ->
@@ -160,7 +162,7 @@ let create ~resolution ?(verify = true) ~model_source () =
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
           let name =
             match Node.value target with
-            | Access access ->
+            | Access (SimpleAccess access) ->
                 access
             | _ ->
                 failwith "Non-access name for define."

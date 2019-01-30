@@ -657,7 +657,7 @@ let test_class_attributes _ =
   in
   assert_equal
     (Attribute.name attribute)
-    (Expression.Access (Access.create "first"));
+    (Expression.Access (SimpleAccess (Access.create "first")));
   assert_equal
     (Attribute.annotation attribute)
     (Annotation.create_immutable ~global:true (Type.Primitive "int"));
@@ -680,7 +680,7 @@ let test_class_attributes _ =
         string_names
         attribute =
       match Attribute.name attribute with
-      | Expression.Access access -> (Access.show access) :: string_names
+      | Expression.Access (SimpleAccess access) -> (Access.show access) :: string_names
       | _ -> string_names
     in
     let resolution, parent = setup source in
@@ -807,7 +807,7 @@ let test_class_attributes _ =
   in
   let create_expected_attribute name callable =
     {
-      Class.Attribute.name = Expression.Access (Access.create name);
+      Class.Attribute.name = Expression.Access (SimpleAccess (Access.create name));
       parent = Type.Primitive "Attributes";
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = Node.create_with_default_location Expression.Ellipses;

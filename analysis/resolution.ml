@@ -237,7 +237,7 @@ let is_invariance_mismatch { order; _ } ~left ~right =
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
   match Node.value expression with
-  | Access access ->
+  | Access (SimpleAccess access) ->
       begin
         let is_defined class_name =
           class_definition resolution class_name

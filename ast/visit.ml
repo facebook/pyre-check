@@ -57,9 +57,9 @@ module Make (Visitor: Visitor) = struct
             ()
       in
       match value with
-      | Access access ->
+      | Access (SimpleAccess access) ->
           List.iter access ~f:visit_access
-      | ExpressionAccess { expression; access } ->
+      | Access (ExpressionAccess { expression; access }) ->
           visit_expression expression;
           List.iter access ~f:visit_access
       | Await expression ->
@@ -321,12 +321,11 @@ end
 let collect_accesses statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Expression.t
+      type t = Access.general_access Node.t
       let predicate expression =
         match expression with
-        | { Node.value = Access _; _ }
-        | { Node.value = ExpressionAccess _; _ } ->
-            Some expression
+        | { Node.location; value = Access access } ->
+            Some { Node.location; value = access }
         | _ ->
             None
     end) in

@@ -215,7 +215,7 @@ let parse_single_expression ?(preprocess = false) source =
 
 let parse_single_access ?(preprocess = false) source =
   match parse_single_expression ~preprocess source with
-  | { Node.value = Expression.Access access; _ } -> access
+  | { Node.value = Expression.Access (Expression.Access.SimpleAccess access); _ } -> access
   | _ -> failwith "Could not parse single access"
 
 
@@ -284,7 +284,7 @@ let (~+) value =
 
 let (!) name =
   let open Expression in
-  +Access (Access.create name)
+  +Access (SimpleAccess (Access.create name))
 
 
 let (!!) name =

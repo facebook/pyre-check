@@ -18,27 +18,28 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           Assign.value =
             {
               Node.value =
-                Access [
-                  Access.Identifier typing;
-                  Access.Identifier new_type;
-                  Access.Call {
-                    Node.value = [
-                      {
-                        Argument.value =
+                Access
+                  (SimpleAccess [
+                      Access.Identifier typing;
+                      Access.Identifier new_type;
+                      Access.Call {
+                        Node.value = [
                           {
-                            Node.value = String { StringLiteral.value = name; _ };
-                            _
+                            Argument.value =
+                              {
+                                Node.value = String { StringLiteral.value = name; _ };
+                                _
+                              };
+                            _;
                           };
+                          {
+                            Argument.value = ({ Node.value = Access _; _ } as base);
+                            _;
+                          } as base_argument;
+                        ];
                         _;
                       };
-                      {
-                        Argument.value = ({ Node.value = Access _; _ } as base);
-                        _;
-                      } as base_argument;
-                    ];
-                    _;
-                  };
-                ];
+                    ]);
               _;
             };
           _;

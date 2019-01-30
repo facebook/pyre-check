@@ -22,17 +22,19 @@ let parse_query ~root query =
   match (Parser.parse [query]) with
   | [{
       Node.value = Statement.Expression {
-          Node.value = Access [
-              Access.Identifier name;
-              Access.Call { Node.value = arguments; _ };
-            ];
+          Node.value =
+            Access
+              (SimpleAccess [
+                  Access.Identifier name;
+                  Access.Call { Node.value = arguments; _ };
+                ]);
           _;
         };
       _;
     }] ->
       let expression { Argument.value; _ } = value in
       let access = function
-        | { Argument.value = { Node.value = Access access; _ }; _ } -> access
+        | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } -> access
         | _ -> raise (InvalidQuery "expected access")
       in
       let string = function

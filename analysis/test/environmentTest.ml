@@ -753,7 +753,9 @@ let test_populate _ =
     (parse_annotation environment !"foo.foo")
     (Type.Primitive "foo.foo");
   assert_equal
-    (parse_annotation environment (+Access (parse_single_access "Optional[foo.foo]")))
+    (parse_annotation
+       environment
+       (+Access (SimpleAccess (parse_single_access "Optional[foo.foo]"))))
     (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
@@ -1096,13 +1098,13 @@ let test_less_or_equal_type_order _ =
   let super =
     parse_annotation
       environment
-      (+Access (access ["module.super"])) in
+      (+Access (SimpleAccess (access ["module.super"]))) in
   assert_equal super (Type.Primitive "module.super");
 
   let sub =
     parse_annotation
       environment
-      (+Access (access ["module.sub"])) in
+      (+Access (SimpleAccess (access ["module.sub"]))) in
   assert_equal
     sub
     (Type.Primitive "module.sub");
@@ -1125,21 +1127,21 @@ let test_less_or_equal_type_order _ =
   let super =
     parse_annotation
       environment
-      (+Access (access ["module.super"])) in
+      (+Access (SimpleAccess (access ["module.super"]))) in
   assert_equal super (Type.Primitive "module.super");
 
   let sub =
     parse_annotation
       environment
-      (+Access (access ["module.sub"])) in
+      (+Access (SimpleAccess (access ["module.sub"]))) in
   let super =
     parse_annotation
       environment
-      (+Access (access ["module.super"])) in
+      (+Access (SimpleAccess (access ["module.super"]))) in
   let top =
     parse_annotation
       environment
-      (+Access (access ["module.top"])) in
+      (+Access (SimpleAccess (access ["module.top"]))) in
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:top);
 

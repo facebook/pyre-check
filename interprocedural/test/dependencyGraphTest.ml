@@ -235,12 +235,13 @@ let test_type_collection _ =
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
       let keep_access = function
-        | { Node.value = Expression.Access access; _ } ->
+        | Access.SimpleAccess access ->
             Some access
         | _ ->
             None
       in
       Visit.collect_accesses statement
+      |> List.map ~f:Ast.Node.value
       |> List.filter_map ~f:keep_access
       |> List.hd_exn
       |> fun access ->

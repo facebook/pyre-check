@@ -19,6 +19,10 @@ let assert_expression_equal =
     ~pp_diff:(diff ~print:Expression.pp)
 
 
+let simple_access access =
+  +Access (SimpleAccess access)
+
+
 let test_negate _ =
   let assert_negate ~expected ~negated =
     assert_equal
@@ -217,33 +221,33 @@ let test_pp _ =
     {|lambda (x=1, y=2) ((x, "y"))|};
 
   assert_pp_equal
-    (+Access [
-       Access.Identifier "a";
-       Access.Identifier "b";
-       Access.Identifier "__getitem__";
-       Access.Call
-         (+[
-            {
-              Argument.name = None;
-              value =
-                (+Access [
-                   Access.Identifier "c";
-                   Access.Identifier "__getitem__";
-                   Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-                 ]);
-            }
-          ]);
-     ])
+    (simple_access [
+        Access.Identifier "a";
+        Access.Identifier "b";
+        Access.Identifier "__getitem__";
+        Access.Call
+          (+[
+             {
+               Argument.name = None;
+               value =
+                 (simple_access [
+                     Access.Identifier "c";
+                     Access.Identifier "__getitem__";
+                     Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+                   ]);
+             }
+           ]);
+      ])
     "a.b[c[1]]";
 
   assert_pp_equal
-    (+Access [
-       Access.Identifier "a";
-       Access.Identifier "b";
-       Access.Identifier "__getitem__";
-       Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-       Access.Identifier "c";
-     ])
+    (simple_access [
+        Access.Identifier "a";
+        Access.Identifier "b";
+        Access.Identifier "__getitem__";
+        Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+        Access.Identifier "c";
+      ])
     "a.b[1].c"
 
 
@@ -276,7 +280,7 @@ let test_equality _ =
     let full_printer ({ Node.location; _ } as expression) =
       Format.asprintf "%s/%a" (Location.Reference.show location) Expression.pp expression
     in
-    let value = Access [Identifier "some_string"] in
+    let value = Access (SimpleAccess [Identifier "some_string"]) in
     let expression_left = Node.create ~location:left value in
     let expression_right = Node.create ~location:right value in
     assert_equal
@@ -290,7 +294,7 @@ let test_equality _ =
       (Expression.hash expression_right);
 
     let extract_access = function
-      | { Node.value = Access access; _ } -> access
+      | { Node.value = Access (SimpleAccess access); _ } -> access
       | _ -> failwith "Expected access."
     in
     let access_left = extract_access expression_left in
@@ -382,7 +386,7 @@ let test_name_and_arguments _ =
   let assert_call ~call ?(expected_arguments = []) expected_name =
     let { Expression.Access.callee = name; arguments } =
       match parse_single_expression call with
-      | { Node.value = Access call; _ } ->
+      | { Node.value = Access (SimpleAccess call); _ } ->
           Option.value_exn (Expression.Access.name_and_arguments ~call)
       | _ -> failwith "Unable to parse access"
     in
@@ -395,7 +399,7 @@ let test_name_and_arguments _ =
   in
   let assert_not_call ~call =
     match parse_single_expression call with
-    | { Node.value = Access call; _ } ->
+    | { Node.value = Access (SimpleAccess call); _ } ->
         assert_equal (Expression.Access.name_and_arguments ~call) None
     | _ ->
         failwith "Unable to parse access"

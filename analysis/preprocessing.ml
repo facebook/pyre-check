@@ -65,13 +65,14 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                   element
             in
             match value with
-            | Access access ->
-                Access (List.map access ~f:transform_element)
-            | ExpressionAccess { expression; access } ->
-                ExpressionAccess {
-                  expression = transform_expression expression;
-                  access = List.map access ~f:transform_element;
-                }
+            | Access (SimpleAccess access) ->
+                Access (SimpleAccess (List.map access ~f:transform_element))
+            | Access (ExpressionAccess { expression; access }) ->
+                Access
+                  (ExpressionAccess {
+                      expression = transform_expression expression;
+                      access = List.map access ~f:transform_element;
+                    })
             | String { StringLiteral.value; _ } ->
                 let parsed =
                   try
@@ -102,7 +103,8 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                 in
                 parsed
                 >>| (fun parsed -> Access parsed)
-                |> Option.value ~default:(Access (Access.create "$unparsed_annotation"))
+                |> Option.value
+                  ~default:(Access (SimpleAccess (Access.create "$unparsed_annotation")))
             | Tuple elements ->
                 Tuple (List.map elements ~f:transform_expression)
             | _ ->
@@ -287,7 +289,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         ({ qualifier; aliases; immutables; skip; _ } as scope)
         { Node.location; value } =
       match value with
-      | Assign { Assign.target = { Node.value = Access name; _ }; annotation = Some annotation; _ }
+      | Assign {
+          Assign.target = { Node.value = Access (SimpleAccess name); _ };
+          annotation = Some annotation;
+          _;
+        }
         when Expression.show annotation = "_SpecialForm" ->
           {
             scope with
@@ -399,7 +405,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | {
-            Node.value = Access (Access.Identifier _ :: Access.Identifier "__getitem__" :: _);
+            Node.value =
+              Access
+                (SimpleAccess
+                   (Access.Identifier _ :: Access.Identifier "__getitem__" :: _));
             _;
           } ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
@@ -427,7 +436,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 | List elements ->
                     let scope, elements = qualify_targets scope elements in
                     scope, List elements
-                | Access ([_] as access) when qualify_assign ->
+                | Access (SimpleAccess ([_] as access)) when qualify_assign ->
                     (* Qualify field assignments in class body. *)
                     let sanitized =
                       match access with
@@ -447,11 +456,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       { scope with aliases }
                     in
                     let qualified = qualifier @ sanitized in
-                    scope, Access qualified
+                    scope, Access (SimpleAccess qualified)
                 | Starred (Starred.Once access) ->
                     let scope, access = qualify_target ~scope access in
                     scope, Starred (Starred.Once access)
-                | Access ([Access.Identifier name] as access) ->
+                | Access (SimpleAccess ([Access.Identifier name] as access)) ->
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
                       let qualified = String.is_prefix name ~prefix:"$" in
@@ -471,8 +480,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       else
                         scope
                     in
-                    scope, Access (qualify_access ~qualify_strings:false ~scope access)
-                | Access access ->
+                    scope,
+                    Access (SimpleAccess (qualify_access ~qualify_strings:false ~scope access))
+                | Access (SimpleAccess access) ->
                     let access =
                       let qualified =
                         match qualify_access ~qualify_strings:false ~scope access with
@@ -486,7 +496,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       else
                         qualified
                     in
-                    scope, Access access
+                    scope, Access (SimpleAccess access)
                 | target ->
                     scope, target
               in
@@ -768,7 +778,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       match target with
       | { Node.value = Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
-      | { Node.value = Access ([Access.Identifier name] as access); _ } ->
+      | { Node.value = Access (SimpleAccess ([Access.Identifier name] as access)); _ } ->
           if Set.mem locals access then
             scope
           else
@@ -865,8 +875,15 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         scope, List.rev reversed_generators
       in
       match value with
-      | Access access ->
-          Access (qualify_access ~qualify_strings ~scope access)
+      | Access (SimpleAccess access) ->
+          Access (SimpleAccess (qualify_access ~qualify_strings ~scope access))
+      | Access (ExpressionAccess { expression; access }) ->
+          Access
+            (ExpressionAccess {
+                expression = qualify_expression ~qualify_strings ~scope expression;
+                access = qualify_access ~qualify_strings ~scope access;
+              })
+
       | Await expression ->
           Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->
@@ -891,11 +908,6 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           DictionaryComprehension {
             Comprehension.element = qualify_entry ~qualify_strings ~scope element;
             generators;
-          }
-      | ExpressionAccess { expression; access } ->
-          ExpressionAccess {
-            expression = qualify_expression ~qualify_strings ~scope expression;
-            access = qualify_access ~qualify_strings ~scope access;
           }
       | Generator { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~qualify_strings ~scope generators in
@@ -1146,9 +1158,8 @@ let expand_type_checking_imports source =
       let statement _ ({ Node.value; _ } as statement) =
         let is_type_checking { Node.value; _ } =
           match value with
-          | Access [Access.Identifier "typing"; Access.Identifier "TYPE_CHECKING"] ->
-              true
-          | Access [Access.Identifier "TYPE_CHECKING"] ->
+          | Access (SimpleAccess [Access.Identifier "typing"; Access.Identifier "TYPE_CHECKING"])
+          | Access (SimpleAccess [Access.Identifier "TYPE_CHECKING"]) ->
               true
           | _ ->
               false
@@ -1364,8 +1375,8 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
       Assign {
-        target = node (Access (Access.create "TypedDict"));
-        annotation = Some (node (Access (Access.create "typing._SpecialForm")));
+        target = node (Access (SimpleAccess (Access.create "TypedDict")));
+        annotation = Some (node (Access (SimpleAccess (Access.create "typing._SpecialForm"))));
         value = node Ellipses;
         parent = None;
       } |> node
@@ -1399,21 +1410,24 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           }]
         in
         let access =
-          Access [
-            Access.Identifier "mypy_extensions";
-            Access.Identifier "TypedDict";
-            Access.Identifier "__getitem__";
-            Access.Call (Node.create arguments ~location);
-          ];
+          Access
+            (SimpleAccess [
+                Access.Identifier "mypy_extensions";
+                Access.Identifier "TypedDict";
+                Access.Identifier "__getitem__";
+                Access.Call (Node.create arguments ~location);
+              ]);
         in
         let annotation =
           let node value = Node.create value ~location in
-          Access [
-            Access.Identifier "typing";
-            Access.Identifier "Type";
-            Access.Identifier "__getitem__";
-            Access.Call (node [{ Expression.Record.Argument.name = None; value = node access }]);
-          ]
+          Access
+            (SimpleAccess [
+                Access.Identifier "typing";
+                Access.Identifier "Type";
+                Access.Identifier "__getitem__";
+                Access.Call
+                  (node [{ Expression.Record.Argument.name = None; value = node access }]);
+              ])
           |> node
           |> Option.some
         in
@@ -1452,21 +1466,22 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           target;
           value = {
             Node.value =
-              Access [
-                Access.Identifier module_name;
-                Access.Identifier typed_dictionary;
-                Access.Call {
-                  Node.value =
-                    { Argument.name = None; value = name }
-                    :: {
-                      Argument.name = None;
-                      value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+              Access
+                (SimpleAccess [
+                    Access.Identifier module_name;
+                    Access.Identifier typed_dictionary;
+                    Access.Call {
+                      Node.value =
+                        { Argument.name = None; value = name }
+                        :: {
+                          Argument.name = None;
+                          value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+                          _;
+                        }
+                        :: argument_tail;
                       _;
-                    }
-                    :: argument_tail;
-                  _;
-                };
-              ];
+                    };
+                  ]);
             _;
           };
           parent;
@@ -1484,10 +1499,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             {
               Argument.name = None;
               value = {
-                Node.value = Access [
-                    Access.Identifier module_name;
-                    Access.Identifier typed_dictionary;
-                  ];
+                Node.value =
+                  Access
+                    (SimpleAccess [
+                        Access.Identifier module_name;
+                        Access.Identifier typed_dictionary;
+                      ]);
                 _;
               };
             } :: bases_tail;
@@ -1510,7 +1527,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
               | {
                 Node.value =
                   Assign {
-                    target = { Node.value = Access name; _ };
+                    target = { Node.value = Access (SimpleAccess name); _ };
                     annotation = Some annotation;
                     value = { Node.value = Ellipses; _ };
                     parent = _;
@@ -1533,7 +1550,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                   typed_dictionary_declaration_assignment
                     ~name:(string_literal class_name)
                     ~fields
-                    ~target:(Node.create (Access qualified) ~location)
+                    ~target:(Node.create (Access (SimpleAccess qualified)) ~location)
                     ~parent:None
                     ~total)
             in

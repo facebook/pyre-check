@@ -80,6 +80,7 @@
     in
     let arguments = [{ Argument.name = None; value = right }] in
     Expression.Access.combine left (Access.call ~arguments ~location ~name ())
+    |> fun access -> { Node.location; value = Access access }
 
   let slice ~lower ~upper ~step ~colon =
     let location =
@@ -104,7 +105,7 @@
     let arguments =
       let argument argument =
         let none =
-          Access [Access.Identifier "None"]
+          Access (SimpleAccess [Access.Identifier "None"])
           |> Node.create ~location
         in
         Option.value argument ~default:none
@@ -115,7 +116,7 @@
         { Argument.name = None; value = argument step };
       ]
     in
-    Access (Access.call ~arguments ~location ~name:"slice" ())
+    Access (SimpleAccess (Access.call ~arguments ~location ~name:"slice" ()))
     |> Node.create ~location
 
   let create_ellipses (start, stop) =
@@ -141,6 +142,7 @@
       Access.call ~arguments ~location ~name:"__getitem__" ()
     in
     Expression.Access.combine head get_item
+    |> fun access -> { Node.location; value = Access access }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
     let head, subscripts = subscript in
@@ -154,7 +156,7 @@
       Access.call ~arguments ~location ~name:"__setitem__" ()
     in
     Expression.Access.combine head set_item
-    |> (fun node -> { node with Node.location })
+    |> (fun access -> { Node.location; value = Access access })
     |> fun expression -> Expression expression
     |> Node.create ~location
 
@@ -531,6 +533,7 @@ small_statement:
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
               Expression.Access.combine yield (Access.call ~name:"__iter__" ~location ())
+              |> fun access -> { Node.location; value = Access access }
           | _ ->
               yield
         in
@@ -932,7 +935,7 @@ define_parameters:
   | expression = expression {
       let rec identifier expression =
         match expression with
-        | { Node.location; value = Access [Access.Identifier identifier] } ->
+        | { Node.location; value = Access (SimpleAccess [Access.Identifier identifier]) } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
             location,
@@ -1099,7 +1102,7 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Access [Access.Identifier (snd identifier)];
+        value = Access (SimpleAccess [Access.Identifier (snd identifier)]);
       }
     }
 
@@ -1144,6 +1147,7 @@ atom:
       Expression.Access.combine
         name
         [Access.Call (Node.create ~location:call_location arguments)]
+      |> fun access -> { Node.location = name.Node.location; value = Access access }
     }
 
   | start = LEFTCURLY;
@@ -1304,9 +1308,9 @@ expression:
 
   | access = expression; DOT; expression = expression {
       match Node.value expression with
-      | Access tail ->
+      | Access (SimpleAccess tail) ->
          let location = { access.Node.location with Location.stop = Node.stop expression } in
-         { (Expression.Access.combine access tail) with Node.location }
+         { Node.location; value = Access (Access.combine access tail) }
       | _ ->
          raise (ParserError "Invalid access")
     }

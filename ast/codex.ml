@@ -263,7 +263,7 @@ let rec source_statement_codex_representation
       _;
     } -> (
       match assign_value with
-      | Access access -> [
+      | Access (SimpleAccess access) -> [
           CodexNode.VariableNode {
             CodexNode.Variable.name = access_with_parent access parent;
             default = Some (Expression.show value);

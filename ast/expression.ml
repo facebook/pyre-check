@@ -58,6 +58,12 @@ module Record = struct
 
     type 'expression record = ('expression access) list
     [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'expression general_access_record =
+      | SimpleAccess of 'expression record
+      | ExpressionAccess of { expression: 'expression; access: 'expression record }
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
 
@@ -236,7 +242,7 @@ end
 
 
 type expression =
-  | Access of t Record.Access.record
+  | Access of t Record.Access.general_access_record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | ComparisonOperator of t Record.ComparisonOperator.record
@@ -244,7 +250,6 @@ type expression =
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | Ellipses
-  | ExpressionAccess of { expression: t; access: t Record.Access.record }
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t
@@ -291,6 +296,8 @@ module Access = struct
   type t = expression_t Record.Access.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  type general_access = expression_t Record.Access.general_access_record
+  [@@deriving compare, eq, sexp, show, hash]
 
   module Set = Set.Make(struct
       type nonrec t = t
@@ -358,7 +365,7 @@ module Access = struct
 
   let expression ?location access =
     let location = Option.value location ~default:Location.Reference.any in
-    Access access
+    Access (SimpleAccess access)
     |> Node.create ~location
 
 
@@ -519,16 +526,13 @@ module Access = struct
 
 
   let combine { Node.location; value } access =
-    let value =
-      match value with
-      | Access head ->
-          Access (head @ access)
-      | ExpressionAccess { expression; access = head } ->
-          ExpressionAccess { expression; access = head @ access }
-      | _ ->
-          ExpressionAccess { expression = { Node.location; value }; access }
-    in
-    { Node.location; value }
+    match value with
+    | Access (SimpleAccess head) ->
+        SimpleAccess (head @ access)
+    | Access (ExpressionAccess { expression; access = head }) ->
+        ExpressionAccess { expression; access = head @ access }
+    | _ ->
+        ExpressionAccess { expression = { Node.location; value }; access }
 
 
   let redirect ~arguments ~location ~name =
@@ -544,6 +548,7 @@ module Access = struct
         >>| fun name ->
         combine value (call ~arguments:[] ~location ~name ())
     | _ -> None
+
 
   let is_assert_function access =
     List.take_while access ~f:(function | Identifier _ -> true | _ -> false)
@@ -564,17 +569,18 @@ let rec delocalize ({ Node.value; _ } as expression) =
           element
     in
     match value with
-    | Access access ->
+    | Access (SimpleAccess access) ->
         let access =
           Access.delocalize access
           |> List.map ~f:delocalize_element
         in
-        Access access
-    | ExpressionAccess { expression; access } ->
-        ExpressionAccess {
-          expression = delocalize expression;
-          access = List.map access ~f:delocalize_element;
-        }
+        Access (SimpleAccess access)
+    | Access (ExpressionAccess { expression; access }) ->
+        Access
+          (ExpressionAccess {
+              expression = delocalize expression;
+              access = List.map access ~f:delocalize_element;
+            })
     | List elements ->
         List (List.map elements ~f:delocalize)
     | Tuple elements ->
@@ -588,8 +594,10 @@ let rec delocalize ({ Node.value; _ } as expression) =
 let delocalize_qualified ({ Node.value; _ } as expression) =
   let value =
     match value with
-    | Access access -> Access (Access.delocalize_qualified access)
-    | _ -> value
+    | Access (SimpleAccess access) ->
+        Access (SimpleAccess (Access.delocalize_qualified access))
+    | _ ->
+        value
   in
   { expression with Node.value }
 
@@ -626,6 +634,7 @@ module ComparisonOperator = struct
     >>| fun name ->
     let arguments = [{ Argument.name = None; value = right }] in
     Access.combine left (Access.call ~arguments ~location ~name ())
+    |> fun access -> Node.create ~location (Access access)
 end
 
 
@@ -645,7 +654,8 @@ module UnaryOperator = struct
       | Not -> None
       | Positive -> Some "__pos__"
     end
-    >>| fun name -> Access.combine operand (Access.call ~name ~location ())
+    >>| (fun name -> Access.combine operand (Access.call ~name ~location ()))
+    >>| fun access -> Node.create ~location (Access access)
 end
 
 
@@ -746,12 +756,15 @@ let exists_in_list ~expression_list target_string =
   let rec matches expected actual =
     match expected, delocalize_qualified actual with
     | (expected :: expected_tail),
-      { Node.location; value = Access ((Access.Identifier identifier) :: identifiers) }
+      {
+        Node.location;
+        value = Access (SimpleAccess ((Access.Identifier identifier) :: identifiers));
+      }
       when identifier = expected ->
         if List.is_empty expected_tail && List.is_empty identifiers then
           true
         else
-          matches expected_tail { Node.location; value = Access identifiers }
+          matches expected_tail { Node.location; value = Access (SimpleAccess identifiers) }
     | _ ->
         false
   in
@@ -970,15 +983,15 @@ module PrettyPrinter = struct
 
   and pp_expression formatter expression =
     match expression with
-    | Access access_list ->
+    | Access (SimpleAccess access_list) ->
         pp_access_list formatter access_list
 
-    | ExpressionAccess { expression; access = access_list } ->
+    | Access (ExpressionAccess { expression; access = access_list }) ->
         Format.fprintf
           formatter
           "%a.%a"
           pp expression
-          pp_access_list access_list
+          pp_access_list (Access.Identifier "?" :: access_list)
 
     | Await expression ->
         Format.fprintf
@@ -1101,8 +1114,10 @@ let show expression = Format.asprintf "%a" pp expression
 
 let show_sanitized { Node.location; value } =
   match value with
-  | Access access ->
+  | Access (SimpleAccess access) ->
       Access.show_sanitized access
+  | Access (ExpressionAccess { expression; access }) ->
+      Format.asprintf "%a.%s" pp expression (Access.show_sanitized access)
   | _ ->
       show { Node.location; value }
 

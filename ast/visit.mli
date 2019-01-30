@@ -61,4 +61,4 @@ module StatementCollector (Predicate: StatementPredicate) : sig
   val collect: Source.t -> Predicate.t list
 end
 
-val collect_accesses: Statement.t -> Expression.t list
+val collect_accesses: Statement.t -> Expression.Access.general_access Node.t list

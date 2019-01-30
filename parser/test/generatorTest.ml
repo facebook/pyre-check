@@ -33,6 +33,10 @@ let assert_parsed_equal source statements =
     parsed_source
 
 
+let simple_access access =
+  +Access (SimpleAccess access)
+
+
 let test_lexer _ =
   assert_parsed_equal "1 # comment" [+Expression (+Integer 1)];
   assert_parsed_equal "# comment\n1" [+Expression (+Integer 1)];
@@ -112,49 +116,51 @@ let test_lexer _ =
     "1 +\\\n 2"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__add__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+              ];
+            }));
     ];
   assert_parsed_equal
     "1 + \\\n 2"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__add__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+              ];
+            }));
     ];
   assert_parsed_equal
     "(1 +\n 2)"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access (ExpressionAccess {
+             expression = +Integer 1;
+             access = [
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+             ];
+           }));
     ];
   assert_parsed_equal
     "(1 +\n 2)\n3"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access (ExpressionAccess {
+             expression = +Integer 1;
+             access = [
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+             ];
+           }));
       +Expression (+Integer 3)
     ]
 
@@ -220,262 +226,313 @@ let test_access _ =
   assert_parsed_equal
     "a.b"
     [
-      +Expression (+Access (Access.create "a.b"));
+      +Expression (+Access (SimpleAccess (Access.create "a.b")));
     ];
   assert_parsed_equal
     "a.async"
     [
-      +Expression (+Access (Access.create "a.async"));
+      +Expression (+Access (SimpleAccess (Access.create "a.async")));
     ];
   assert_parsed_equal
     "1.0.b"
     [
-      +Expression (+ExpressionAccess {
+      +Expression (+Access (ExpressionAccess {
           expression = +Float 1.0;
           access = [Access.Identifier "b"];
-        });
+        }));
     ];
   assert_parsed_equal
     "a.b.c"
     [
-      +Expression (+Access (Access.create "a.b.c"));
+      +Expression (+Access (SimpleAccess (Access.create "a.b.c")));
     ];
 
   assert_parsed_equal
     "a[1]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-         ])
+        (+Access
+          (SimpleAccess [
+              Access.Identifier "a";
+              Access.Identifier "__getitem__";
+              Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+            ]))
     ];
   assert_parsed_equal
     "a[1 < 2]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value =
-                    +ComparisonOperator {
-                      ComparisonOperator.left = +Integer 1;
-                      operator = ComparisonOperator.LessThan;
-                      right = +Integer 2;
-                    };
-                };
-              ]);
-         ])
+        (+Access
+          (SimpleAccess [
+              Access.Identifier "a";
+              Access.Identifier "__getitem__";
+              Access.Call
+                (+[
+                   {
+                     Argument.name = None;
+                     value =
+                       +ComparisonOperator {
+                         ComparisonOperator.left = +Integer 1;
+                         operator = ComparisonOperator.LessThan;
+                         right = +Integer 2;
+                       };
+                   };
+                 ]);
+            ]))
     ];
   assert_parsed_equal
     "a[1].b"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-           Access.Identifier "b";
-         ])
+        (+Access
+          (SimpleAccess [
+              Access.Identifier "a";
+              Access.Identifier "__getitem__";
+              Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+              Access.Identifier "b";
+            ]))
     ];
   assert_parsed_equal
     "a[b]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call (+[{ Argument.name = None; value = +Access [Access.Identifier "b"] }]);
-         ])
+        (+Access
+          (SimpleAccess [
+              Access.Identifier "a";
+              Access.Identifier "__getitem__";
+              Access.Call (+[{
+                  Argument.name = None;
+                  value = +Access (SimpleAccess [Access.Identifier "b"]);
+                }]);
+            ]))
     ];
   assert_parsed_equal
     "a[:]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                      ]);
-                  ];
-                };
-              ]);
-         ])
+        (+Access
+          (SimpleAccess [
+              Access.Identifier "a";
+              Access.Identifier "__getitem__";
+              Access.Call
+                (+[
+                   {
+                     Argument.name = None;
+                     value = +Access
+                       (SimpleAccess [
+                           Access.Identifier "slice";
+                           Access.Call (+[
+                               {
+                                 Argument.name = None;
+                                 value = simple_access [Access.Identifier "None"];
+                               };
+                               {
+                                 Argument.name = None;
+                                 value = simple_access [Access.Identifier "None"];
+                               };
+                               {
+                                 Argument.name = None;
+                                 value = simple_access [Access.Identifier "None"];
+                               };
+                             ]);
+                         ]);
+                   };
+                 ]);
+            ]))
     ];
   assert_parsed_equal
     "a[1:]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Integer 1 };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                      ]);
-                  ];
-                };
-              ]);
-         ])
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = +Access
+                     (SimpleAccess [
+                         Access.Identifier "slice";
+                         Access.Call (+[
+                             { Argument.name = None; value = +Integer 1 };
+                             {
+                               Argument.name = None;
+                               value = simple_access [Access.Identifier "None"];
+                             };
+                             { Argument.name = None;
+                               value = simple_access [Access.Identifier "None"];
+                             };
+                           ]);
+                       ]);
+                 };
+               ]);
+          ])
     ];
   assert_parsed_equal
     "a[::2]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Integer 2 };
-                      ]);
-                  ];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = simple_access [
+                       Access.Identifier "slice";
+                       Access.Call (+[
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                           { Argument.name = None; value = +Integer 2 };
+                         ]);
+                     ];
+                 };
+               ]);
+          ]);
     ];
   assert_parsed_equal
     "a[:1]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        { Argument.name = None; value = +Integer 1 };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                      ]);
-                  ];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = simple_access [
+                       Access.Identifier "slice";
+                       Access.Call (+[
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                           { Argument.name = None; value = +Integer 1 };
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                         ]);
+                     ];
+                 };
+               ]);
+          ]);
     ];
   assert_parsed_equal
     "a[:1 if True else 2]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                        {
-                          Argument.name = None;
-                          value =
-                            +Ternary {
-                              Ternary.target = +Integer 1;
-                              test = +True;
-                              alternative = +Integer 2;
-                            };
-                        };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                      ]);
-                  ];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = simple_access [
+                       Access.Identifier "slice";
+                       Access.Call (+[
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                           {
+                             Argument.name = None;
+                             value =
+                               +Ternary {
+                                 Ternary.target = +Integer 1;
+                                 test = +True;
+                                 alternative = +Integer 2;
+                               };
+                           };
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                         ]);
+                     ];
+                 };
+               ]);
+          ]);
     ];
   assert_parsed_equal
     "a[1:1]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [
-                    Access.Identifier "slice";
-                    Access.Call (+[
-                        { Argument.name = None; value = +Integer 1 };
-                        { Argument.name = None; value = +Integer 1 };
-                        { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                      ]);
-                  ];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = simple_access [
+                       Access.Identifier "slice";
+                       Access.Call (+[
+                           { Argument.name = None; value = +Integer 1 };
+                           { Argument.name = None; value = +Integer 1 };
+                           {
+                             Argument.name = None;
+                             value = simple_access [Access.Identifier "None"];
+                           };
+                         ]);
+                     ];
+                 };
+               ]);
+          ]);
     ];
   assert_parsed_equal
     "a[1,2]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call (+[{ Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call (+[{ Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }]);
+          ]);
     ];
   assert_parsed_equal
     "a[:1,2]"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__getitem__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value =
-                    +Tuple [
-                      +Access [
-                        Access.Identifier "slice";
-                        Access.Call
-                          (+[
-                             { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                             { Argument.name = None; value = +Integer 1 };
-                             { Argument.name = None; value = +Access [Access.Identifier "None"] };
-                           ])
-                      ];
-                      +Integer 2;
-                    ];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__getitem__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value =
+                     +Tuple [
+                       simple_access [
+                         Access.Identifier "slice";
+                         Access.Call
+                           (+[
+                              {
+                                Argument.name = None;
+                                value = simple_access [Access.Identifier "None"];
+                              };
+                              { Argument.name = None; value = +Integer 1 };
+                              {
+                                Argument.name = None;
+                                value = simple_access [Access.Identifier "None"];
+                              };
+                            ])
+                       ];
+                       +Integer 2;
+                     ];
+                 };
+               ]);
+          ]);
     ];
 
   assert_raises
@@ -653,14 +710,14 @@ let test_define _ =
         ];
         body = [+Expression (+Integer 1)];
         decorators = [
-          (+Access [
-             Access.Identifier "decorator";
-             Access.Call
-               (+[
-                  { Argument.name = Some ~+"a"; value = !"b" };
-                  { Argument.name = Some ~+"c"; value = !"d" };
-                ]);
-           ]);
+          (simple_access [
+              Access.Identifier "decorator";
+              Access.Call
+                (+[
+                   { Argument.name = Some ~+"a"; value = !"b" };
+                   { Argument.name = Some ~+"c"; value = !"d" };
+                 ]);
+            ]);
         ];
         docstring = None;
         return_annotation = None;
@@ -889,21 +946,21 @@ let test_define _ =
             Parameter.name = "a";
             value = None;
             annotation = Some
-                (+Access [
-                   Access.Identifier "Tuple";
-                   Access.Identifier "__getitem__";
-                   Access.Call
-                     (+[
-                        {
-                          Argument.name = None;
-                          value =
-                            +Tuple [
-                              +Access [Access.Identifier "int"];
-                              +Access [Access.Identifier "str"];
-                            ];
-                        };
-                      ]);
-                 ]);
+                (simple_access [
+                    Access.Identifier "Tuple";
+                    Access.Identifier "__getitem__";
+                    Access.Call
+                      (+[
+                         {
+                           Argument.name = None;
+                           value =
+                             +Tuple [
+                               simple_access [Access.Identifier "int"];
+                               simple_access [Access.Identifier "str"];
+                             ];
+                         };
+                       ]);
+                  ]);
           };
         ];
         body = [+Expression (+Integer 1)];
@@ -1431,67 +1488,70 @@ let test_binary_operator _ =
     "1 + 2"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access (ExpressionAccess {
+             expression = +Integer 1;
+             access = [
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+             ];
+           }));
     ];
   assert_parsed_equal
     "1 ^ 2"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__xor__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__xor__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+              ];
+            }));
     ];
   assert_parsed_equal
     "1 // 2"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__floordiv__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           ];
-         });
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__floordiv__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+              ];
+            }));
     ];
   assert_parsed_equal
     "1 - 2 + 3"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +Integer 1;
-           access = [
-             Access.Identifier "__sub__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
-           ];
-         })
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__sub__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+                Access.Identifier "__add__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
+              ];
+            }))
     ];
   assert_parsed_equal
     "a + b.c"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "__add__";
-           Access.Call
-             (+[
-                {
-                  Argument.name = None;
-                  value = +Access [Access.Identifier "b"; Access.Identifier "c"];
-                };
-              ]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__add__";
+            Access.Call
+              (+[
+                 {
+                   Argument.name = None;
+                   value = simple_access [Access.Identifier "b"; Access.Identifier "c"];
+                 };
+               ]);
+          ]);
     ]
 
 
@@ -1595,11 +1655,11 @@ let test_lambda _ =
                annotation = None;
              };
            ];
-           body = +Access [
-             Access.Identifier "x";
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-           ];
+           body = simple_access [
+               Access.Identifier "x";
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+             ];
          });
     ]
 
@@ -2158,11 +2218,11 @@ let test_yield _ =
       +Statement.YieldFrom
         (+Expression.Yield
           (Some
-             (+Access [
-                Access.Identifier "a";
-                Access.Identifier "__iter__";
-                Access.Call (+[]);
-              ])));
+             (simple_access [
+                 Access.Identifier "a";
+                 Access.Identifier "__iter__";
+                 Access.Call (+[]);
+               ])));
     ];
   assert_parsed_equal
     "yield 1, 2"
@@ -2178,7 +2238,7 @@ let test_comparison _ =
     [
       +Expression
         (+ComparisonOperator {
-           ComparisonOperator.left = +(Access (Access.create "a.b"));
+           ComparisonOperator.left = simple_access (Access.create "a.b");
            operator = ComparisonOperator.LessThan;
            right = +Integer 2;
          });
@@ -2270,144 +2330,144 @@ let test_call _ =
     "foo()"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[]);
+          ]);
     ];
   assert_parsed_equal
     "foo(a for a in [])"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               {
-                 Argument.name = None;
-                 value = +Generator {
-                   Comprehension.element = !"a";
-                   generators = [
-                     {
-                       Comprehension.target = !"a";
-                       iterator = +List [];
-                       conditions = [];
-                       async = false;
-                     };
-                   ];
-                 };
-               };
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                {
+                  Argument.name = None;
+                  value = +Generator {
+                    Comprehension.element = !"a";
+                    generators = [
+                      {
+                        Comprehension.target = !"a";
+                        iterator = +List [];
+                        conditions = [];
+                        async = false;
+                      };
+                    ];
+                  };
+                };
+              ]);
+          ]);
     ];
   assert_parsed_equal
     "foo(a for a in [],)"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               {
-                 Argument.name = None;
-                 value = +Generator {
-                   Comprehension.element = !"a";
-                   generators = [
-                     {
-                       Comprehension.target = !"a";
-                       iterator = +List [];
-                       conditions = [];
-                       async = false;
-                     };
-                   ];
-                 };
-               }
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                {
+                  Argument.name = None;
+                  value = +Generator {
+                    Comprehension.element = !"a";
+                    generators = [
+                      {
+                        Comprehension.target = !"a";
+                        iterator = +List [];
+                        conditions = [];
+                        async = false;
+                      };
+                    ];
+                  };
+                }
+              ]);
+          ]);
     ];
   assert_parsed_equal
     "foo(1, 2,)"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               { Argument.name = None; value = +Integer 1 };
-               { Argument.name = None; value = +Integer 2 };
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                { Argument.name = None; value = +Integer 1 };
+                { Argument.name = None; value = +Integer 2 };
+              ]);
+          ]);
     ];
   assert_parsed_equal
     "foo((1, 2))"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[{ Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) }]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[{ Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) }]);
+          ]);
     ];
   assert_parsed_equal
     "foo(x, 1, (a, b))"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               { Argument.name = None; value = !"x"; };
-               { Argument.name = None; value = +Integer 1 };
-               { Argument.name = None; value = (+Tuple [!"a"; !"b"]) };
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                { Argument.name = None; value = !"x"; };
+                { Argument.name = None; value = +Integer 1 };
+                { Argument.name = None; value = (+Tuple [!"a"; !"b"]) };
+              ]);
+          ]);
     ];
   assert_parsed_equal
     "a.foo(x)"
     [
       +Expression
-        (+Access [
-           Access.Identifier "a";
-           Access.Identifier "foo";
-           Access.Call (+[{ Argument.name = None; value = !"x"; }]);
-         ]);
+        (simple_access [
+            Access.Identifier "a";
+            Access.Identifier "foo";
+            Access.Call (+[{ Argument.name = None; value = !"x"; }]);
+          ]);
     ];
   assert_parsed_equal
     "foo(1, a = 1, b = 2)"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               { Argument.name = None; value = +Integer 1 };
-               {
-                 Argument.name = (Some ~+"a");
-                 value = +Integer 1;
-               };
-               {
-                 Argument.name = (Some ~+"b");
-                 value = +Integer 2;
-               };
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                { Argument.name = None; value = +Integer 1 };
+                {
+                  Argument.name = (Some ~+"a");
+                  value = +Integer 1;
+                };
+                {
+                  Argument.name = (Some ~+"b");
+                  value = +Integer 2;
+                };
+              ]);
+          ]);
     ];
   assert_parsed_equal
     "foo(1, a = 2, *args, **kwargs)"
     [
       +Expression
-        (+Access [
-           Access.Identifier "foo";
-           Access.Call (+[
-               { Argument.name = None; value = +Integer 1 };
-               {
-                 Argument.name = (Some ~+"a");
-                 value = (+Integer 2);
-               };
-               {
-                 Argument.name = None;
-                 value = +Starred (Starred.Once !"args");
-               };
-               {
-                 Argument.name = None;
-                 value = +Starred (Starred.Twice !"kwargs");
-               };
-             ]);
-         ]);
+        (simple_access [
+            Access.Identifier "foo";
+            Access.Call (+[
+                { Argument.name = None; value = +Integer 1 };
+                {
+                  Argument.name = (Some ~+"a");
+                  value = (+Integer 2);
+                };
+                {
+                  Argument.name = None;
+                  value = +Starred (Starred.Once !"args");
+                };
+                {
+                  Argument.name = None;
+                  value = +Starred (Starred.Twice !"kwargs");
+                };
+              ]);
+          ]);
     ]
 
 
@@ -2430,14 +2490,12 @@ let test_call_arguments_location _ =
          |> Option.value ~default:"(none)")
         Expression.pp value
     in
-    let access = function
-      | { Node.value = Access access; _ } ->
-          Some access
-      | _ ->
-          None
-    in
     Visit.collect_accesses statement
-    |> List.filter_map ~f:access
+    |> List.map ~f:Node.value
+    |> List.filter_map
+      ~f:(function
+          | Access.SimpleAccess access -> Some access
+          | _ -> None)
     |> List.hd_exn
     |> List.fold ~init:[] ~f:collect_arguments
     |> List.concat
@@ -2498,46 +2556,54 @@ let test_string _ =
     "'a' + 'b'"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +String (StringLiteral.create "a");
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-           ];
-         })
+        (+Access
+          (ExpressionAccess {
+              expression = +String (StringLiteral.create "a");
+              access = [
+                Access.Identifier "__add__";
+                Access.Call
+                  (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+              ];
+            }))
     ];
   assert_parsed_equal
     "\"a\" + \"b\""
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +String (StringLiteral.create "a");
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-           ]});
+        (+Access
+          (ExpressionAccess {
+              expression = +String (StringLiteral.create "a");
+              access = [
+                Access.Identifier "__add__";
+                Access.Call
+                  (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+              ]}));
     ];
   assert_parsed_equal
     "'''a''' + '''b'''"
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +String (StringLiteral.create "a");
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-           ]});
+        (+Access
+          (ExpressionAccess {
+              expression = +String (StringLiteral.create "a");
+              access = [
+                Access.Identifier "__add__";
+                Access.Call
+                  (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+              ]}));
     ];
   assert_parsed_equal
     "\"\"\"a\"\"\" + \"\"\"b\"\"\""
     [
       +Expression
-        (+ExpressionAccess {
-           expression = +String (StringLiteral.create "a");
-           access = [
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-           ]});
+        (+Access
+          (ExpressionAccess {
+              expression = +String (StringLiteral.create "a");
+              access = [
+                Access.Identifier "__add__";
+                Access.Call
+                  (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+              ]}));
     ]
 
 
@@ -2761,7 +2827,7 @@ let test_class _ =
             ];
             body = [
               +Assign {
-                Assign.target = +Access (Access.create "self.bar");
+                Assign.target = simple_access (Access.create "self.bar");
                 annotation = None;
                 value = +Integer 0;
                 parent = None;
@@ -2935,12 +3001,12 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = +Access [
-          Access.Identifier "a";
-          Access.Call (+[]);
-          Access.Identifier "foo";
-          Access.Call (+[]);
-        ];
+        value = simple_access [
+            Access.Identifier "a";
+            Access.Call (+[]);
+            Access.Identifier "foo";
+            Access.Call (+[]);
+          ];
         parent = None;
       };
     ];
@@ -2978,11 +3044,11 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = +Access [
-          Access.Identifier "a";
-          Access.Identifier "__iadd__";
-          Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-        ];
+        value = simple_access [
+            Access.Identifier "a";
+            Access.Identifier "__iadd__";
+            Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+          ];
         parent = None;
       };
     ];
@@ -2990,14 +3056,14 @@ let test_assign _ =
     "a.b += 1"
     [
       +Assign {
-        Assign.target = +Access (Access.create "a.b");
+        Assign.target = simple_access (Access.create "a.b");
         annotation = None;
-        value = +Access [
-          Access.Identifier "a";
-          Access.Identifier "b";
-          Access.Identifier "__iadd__";
-          Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-        ];
+        value = simple_access [
+            Access.Identifier "a";
+            Access.Identifier "b";
+            Access.Identifier "__iadd__";
+            Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+          ];
         parent = None;
       };
     ];
@@ -3005,7 +3071,7 @@ let test_assign _ =
     "a = b if b else c"
     [
       +Assign {
-        Assign.target = +Access (Access.create "a");
+        Assign.target = simple_access (Access.create "a");
         annotation = None;
         value = +Ternary {
           Ternary.target = !"b";
@@ -3019,7 +3085,7 @@ let test_assign _ =
     "a = b or c"
     [
       +Assign {
-        Assign.target = +Access (Access.create "a");
+        Assign.target = simple_access (Access.create "a");
         annotation = None;
         value = +BooleanOperator {
           BooleanOperator.left = !"b";
@@ -3033,7 +3099,7 @@ let test_assign _ =
     "a = b or c or d"
     [
       +Assign {
-        Assign.target = +Access (Access.create "a");
+        Assign.target = simple_access (Access.create "a");
         annotation = None;
         value = +BooleanOperator {
           BooleanOperator.left = !"b";
@@ -3210,13 +3276,13 @@ let test_if _ =
     [
       +If {
         If.test = +BooleanOperator {
-          BooleanOperator.left = +Access [
-            Access.Identifier "isinstance";
-            Access.Call (+[
-                { Argument.name = None; value = !"x"; };
-                { Argument.name = None; value = !"int" };
-              ]);
-          ];
+          BooleanOperator.left = simple_access [
+              Access.Identifier "isinstance";
+              Access.Call (+[
+                  { Argument.name = None; value = !"x"; };
+                  { Argument.name = None; value = !"int" };
+                ]);
+            ];
           operator = BooleanOperator.And;
           right = +ComparisonOperator {
             ComparisonOperator.left = !"x";
@@ -3236,10 +3302,10 @@ let test_if _ =
           BooleanOperator.left = !"x";
           operator = BooleanOperator.And;
           right = +ComparisonOperator {
-            ComparisonOperator.left = +Access [
-              Access.Identifier "foo";
-              Access.Call (+[{ Argument.name = None; value = !"x" }]);
-            ];
+            ComparisonOperator.left = simple_access [
+                Access.Identifier "foo";
+                Access.Call (+[{ Argument.name = None; value = !"x" }]);
+              ];
             operator = ComparisonOperator.GreaterThan;
             right = +Integer 0;
           };
@@ -3919,13 +3985,14 @@ let test_tuple _ =
       +Expression
         (+Tuple [
            +Integer 1;
-           +ExpressionAccess {
-             expression = +Integer 1;
-             access = [
-               Access.Identifier "__add__";
-               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-             ];
-           }]);
+           +Access
+             (ExpressionAccess {
+                 expression = +Integer 1;
+                 access = [
+                   Access.Identifier "__add__";
+                   Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+                 ];
+               })]);
     ];
   assert_parsed_equal
     "1, 2 if 3 else 4"
@@ -3945,13 +4012,14 @@ let test_tuple _ =
     [
       +Expression
         (+Tuple [
-           +ExpressionAccess {
-             expression = +Integer 1;
-             access = [
-               Access.Identifier "__add__";
-               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-             ];
-           };
+           +Access
+             (ExpressionAccess {
+                 expression = +Integer 1;
+                 access = [
+                   Access.Identifier "__add__";
+                   Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+                 ];
+               });
            +Integer 1;
          ])];
   assert_parsed_equal
@@ -4021,12 +4089,12 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some
-            (+Access [
-               Access.Identifier "Optional";
-               Access.Identifier "__getitem__";
-               Access.Call
-                 (+[{ Argument.name = None; value = +Access [Access.Identifier "int"] }]);
-             ]);
+            (simple_access [
+                Access.Identifier "Optional";
+                Access.Identifier "__getitem__";
+                Access.Call
+                  (+[{ Argument.name = None; value = simple_access [Access.Identifier "int"] }]);
+              ]);
         value = +Ellipses;
         parent = None;
       };
@@ -4216,7 +4284,7 @@ let test_setitem _ =
     "i[j] = 3"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[
@@ -4230,20 +4298,20 @@ let test_setitem _ =
     "i[j] += 3"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[
               { Argument.name = None; value = !"j" };
               {
                 Argument.name = None;
-                value = +Access[
-                  Access.Identifier "i";
-                  Access.Identifier "__getitem__";
-                  Access.Call(+[{ Argument.name = None; value = !"j" }]);
-                  Access.Identifier "__iadd__";
-                  Access.Call(+[{ Argument.name = None; value = +Integer 3 }]);
-                ];
+                value = simple_access[
+                    Access.Identifier "i";
+                    Access.Identifier "__getitem__";
+                    Access.Call(+[{ Argument.name = None; value = !"j" }]);
+                    Access.Identifier "__iadd__";
+                    Access.Call(+[{ Argument.name = None; value = +Integer 3 }]);
+                  ];
               }
             ]);
         ]
@@ -4253,7 +4321,7 @@ let test_setitem _ =
     "i[j][7] = 8"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__getitem__";
           Access.Call(+[{ Argument.name = None; value = !"j" }]);
@@ -4269,40 +4337,40 @@ let test_setitem _ =
     "i[j::1] = i[:j]"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[
               {
                 Argument.name = None;
-                value = +Access[
-                  Access.Identifier "slice";
-                  Access.Call(+[
-                      { Argument.name = None; value = !"j" };
-                      { Argument.name = None; value = !"None" };
-                      { Argument.name = None; value = +Integer 1 };
-                    ]);
-                ];
+                value = simple_access [
+                    Access.Identifier "slice";
+                    Access.Call(+[
+                        { Argument.name = None; value = !"j" };
+                        { Argument.name = None; value = !"None" };
+                        { Argument.name = None; value = +Integer 1 };
+                      ]);
+                  ];
               };
               {
                 Argument.name = None;
-                value = +Access[
-                  Access.Identifier "i";
-                  Access.Identifier "__getitem__";
-                  Access.Call(+[
-                      {
-                        Argument.name = None;
-                        value = +Access[
-                          Access.Identifier "slice";
-                          Access.Call(+[
-                              { Argument.name = None; value = !"None" };
-                              { Argument.name = None; value = !"j" };
-                              { Argument.name = None; value = !"None" };
-                            ]);
-                        ];
-                      };
-                    ]);
-                ];
+                value = simple_access [
+                    Access.Identifier "i";
+                    Access.Identifier "__getitem__";
+                    Access.Call(+[
+                        {
+                          Argument.name = None;
+                          value = simple_access [
+                              Access.Identifier "slice";
+                              Access.Call(+[
+                                  { Argument.name = None; value = !"None" };
+                                  { Argument.name = None; value = !"j" };
+                                  { Argument.name = None; value = !"None" };
+                                ]);
+                            ];
+                        };
+                      ]);
+                  ];
               }
             ]);
         ]
@@ -4311,23 +4379,23 @@ let test_setitem _ =
   assert_parsed_equal
     "i[j] = 5 if 1 else 1"
     [
-      +Expression (
-        +Access [
-          Access.Identifier "i";
-          Access.Identifier "__setitem__";
-          Access.Call(+[
-              { Argument.name = None; value = !"j" };
-              {
-                Argument.name = None;
-                value = +Ternary {
-                  target = +Integer 5;
-                  test = +Integer 1;
-                  alternative = +Integer 1;
-                };
-              }
-            ]);
-        ]
-      );
+      +Expression
+        (simple_access [
+            Access.Identifier "i";
+            Access.Identifier "__setitem__";
+            Access.Call(+[
+                { Argument.name = None; value = !"j" };
+                {
+                  Argument.name = None;
+                  value = +Ternary {
+                    target = +Integer 5;
+                    test = +Integer 1;
+                    alternative = +Integer 1;
+                  };
+                }
+              ]);
+          ]
+        );
     ];
   assert_parsed_equal
     "x = i[j] = y"
@@ -4339,7 +4407,7 @@ let test_setitem _ =
         parent = None;
       };
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[
@@ -4353,7 +4421,7 @@ let test_setitem _ =
     "j[i] = x = i[j] = y"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "j";
           Access.Identifier "__setitem__";
           Access.Call(+[
@@ -4369,7 +4437,7 @@ let test_setitem _ =
         parent = None;
       };
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[
@@ -4385,7 +4453,7 @@ let test_setitem _ =
       +Assign {
         target = +Tuple[
           !"x";
-          +Access[
+          simple_access [
             Access.Identifier "i";
             Access.Identifier "__getitem__";
             Access.Call(+[{ Argument.name = None; value = !"j" }]);
@@ -4400,7 +4468,7 @@ let test_setitem _ =
     "i[j] = x =  ... # type: Something"
     [
       +Expression (
-        +Access [
+        simple_access [
           Access.Identifier "i";
           Access.Identifier "__setitem__";
           Access.Call(+[

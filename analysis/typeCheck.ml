@@ -84,10 +84,10 @@ module AccessState = struct
                  ~access:[super]
                  ~annotation:(Annotation.create superclass)
              in
-             Access (super :: tail), resolution
+             Access.SimpleAccess (super :: tail), resolution
          | None ->
-             Access access, resolution)
-        |> Option.value ~default:(Access access, resolution)
+             Access.SimpleAccess access, resolution)
+        |> Option.value ~default:(Access.SimpleAccess access, resolution)
     (* Resolve `type()` calls. *)
     | (Access.Identifier "type")
       :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
@@ -101,20 +101,20 @@ module AccessState = struct
           in
           Resolution.set_local resolution ~access:[access] ~annotation
         in
-        Access (access :: tail), resolution
+        SimpleAccess (access :: tail), resolution
     (* Resolve function redirects. *)
     | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
         Access.redirect ~arguments ~location ~name:[Access.Identifier name]
         >>| (function
-            | { Node.value = Access redirect; _ } ->
-                Access (redirect @ tail)
-            | expression ->
-                ExpressionAccess { expression; access = tail })
-        |> Option.value ~default:(Access access),
+            | Access.SimpleAccess redirect ->
+                Access.SimpleAccess (redirect @ tail)
+            | Access.ExpressionAccess { expression; access } ->
+                Access.ExpressionAccess { expression; access = access @ tail })
+        |> Option.value ~default:(Access.SimpleAccess access),
         resolution
 
     | _ ->
-        Access access, resolution
+        Access.SimpleAccess access, resolution
 
 
   let resolve_exports ~resolution access =
@@ -413,7 +413,9 @@ module State = struct
               | Assign {
                   Assign.annotation = assign_annotation;
                   target = {
-                    Node.value = Access ((Expression.Access.Identifier self) :: ([_] as access));
+                    Node.value = Access
+                        (Access.SimpleAccess
+                           ((Expression.Access.Identifier self) :: ([_] as access)));
                     _;
                   };
                   _;
@@ -463,7 +465,7 @@ module State = struct
          let propagate_initialization_errors errors attribute =
            let expected = Annotation.annotation (Attribute.annotation attribute) in
            match Attribute.name attribute with
-           | Access name
+           | Access (Access.SimpleAccess name)
              when not (Type.equal expected Type.Top ||
                        Type.is_optional expected ||
                        Attribute.initialized attribute) ->
@@ -770,7 +772,9 @@ module State = struct
                                   expression
                               | _ ->
                                   Node.create
-                                    (ExpressionAccess { expression; access = backup_argument })
+                                    (Access
+                                       (Access.ExpressionAccess
+                                          { expression; access = backup_argument }))
                                     ~location
                             in
                             Resolution.resolve resolution backup_argument
@@ -785,7 +789,7 @@ module State = struct
                           let arguments = [{
                               Argument.value = {
                                 Node.location;
-                                value = Expression.Access [argument_as_identifier];
+                                value = Access (Access.SimpleAccess [argument_as_identifier]);
                               };
                               name = None;
                             }]
@@ -796,7 +800,7 @@ module State = struct
                           let arguments = [{
                               Argument.value = {
                                 Node.location;
-                                value = Expression.Access backup_argument;
+                                value = Access (SimpleAccess backup_argument);
                               };
                               name = None;
                             }]
@@ -1646,9 +1650,9 @@ module State = struct
     (* Redirect accesses. *)
     let value, ({ resolution; _ } as state) =
       match value with
-      | Access access ->
-          let expression, resolution = AccessState.redirect ~resolution access in
-          expression, { state with resolution }
+      | Access (SimpleAccess access) ->
+          let access, resolution = AccessState.redirect ~resolution access in
+          Access access, { state with resolution }
       | _ ->
           value, state
     in
@@ -1677,7 +1681,7 @@ module State = struct
                  Access.Identifier "__anext__";
                  Access.Call (Node.create ~location []);
                ])
-            |> (fun target -> Await target)
+            |> (fun target -> Await { Node.location; value = (Access target) })
             |> Node.create ~location
           else
             (Expression.Access.combine
@@ -1688,6 +1692,7 @@ module State = struct
                  Access.Identifier "__next__";
                  Access.Call (Node.create ~location []);
                ])
+            |> fun access -> { Node.location; value = Access access }
         in
         Assign { Assign.target; annotation = None; value; parent = None }
         |> Node.create ~location
@@ -1886,12 +1891,13 @@ module State = struct
         Annotation.annotation resolved
     in
     match value with
-    | Access [
-        Expression.Access.Identifier "reveal_type";
-        Expression.Access.Call {
-          Node.location;
-          value = [{ Expression.Argument.value; _ }] };
-      ] ->
+    | Access
+        (Access.SimpleAccess [
+            Expression.Access.Identifier "reveal_type";
+            Expression.Access.Call {
+              Node.location;
+              value = [{ Expression.Argument.value; _ }] };
+          ]) ->
         (* Special case reveal_type(). *)
         let { state; resolved = annotation } = forward_expression ~state ~expression:value in
         let state =
@@ -1902,17 +1908,18 @@ module State = struct
           |> add_error ~state
         in
         { state; resolved = Type.none }
-    | Access [
-        Expression.Access.Identifier "typing";
-        Expression.Access.Identifier "cast";
-        Expression.Access.Call {
-          Node.value = [
-            { Expression.Argument.value = cast_annotation; _ };
-            { Expression.Argument.value; _ };
-          ];
-          location;
-        }
-      ] ->
+    | Access
+        (Access.SimpleAccess [
+            Expression.Access.Identifier "typing";
+            Expression.Access.Identifier "cast";
+            Expression.Access.Call {
+              Node.value = [
+                { Expression.Argument.value = cast_annotation; _ };
+                { Expression.Argument.value; _ };
+              ];
+              location;
+            }
+          ]) ->
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
@@ -1926,15 +1933,16 @@ module State = struct
             state
         in
         { state; resolved = cast_annotation }
-    | Access [
-        Access.Identifier "isinstance";
-        Access.Call {
-          Node.value = [
-            { Argument.value = expression; _ };
-            { Argument.value = annotations; _ };
-          ];
-          _;
-        }] ->
+    | Access
+        (Access.SimpleAccess [
+            Access.Identifier "isinstance";
+            Access.Call {
+              Node.value = [
+                { Argument.value = expression; _ };
+                { Argument.value = annotations; _ };
+              ];
+              _;
+            }]) ->
         (* We special case type inference for `isinstance` in asserted, and the typeshed stubs are
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
@@ -1987,13 +1995,30 @@ module State = struct
         in
         { state; resolved = Type.bool }
     | Access access ->
+        let state =
+          match access with
+          | Access.ExpressionAccess { expression; _ } ->
+              let { state; _ } = forward_expression ~state ~expression in
+              state
+          | SimpleAccess _ ->
+              state
+        in
         (* Walk through the access. *)
         let _, state, resolved =
-          forward_access
-            access
-            ~resolution
-            ~initial:(false, state, Type.Top)
-            ~f:forward_access_step
+          match access with
+          | Access.SimpleAccess access ->
+              forward_access
+                access
+                ~resolution
+                ~initial:(false, state, Type.Top)
+                ~f:forward_access_step
+          | Access.ExpressionAccess { expression; access} ->
+              forward_access
+                ~expression
+                ~resolution
+                ~initial:(false, state, Type.Top)
+                ~f:forward_access_step
+                access
         in
 
         let state =
@@ -2009,7 +2034,10 @@ module State = struct
                 in
                 List.fold arguments ~f:forward_argument ~init:state
           in
-          List.fold access ~f:forward_access ~init:state
+          match access with
+          | Access.SimpleAccess access
+          | Access.ExpressionAccess { access; _ } ->
+              List.fold access ~f:forward_access ~init:state
         in
         { state; resolved }
 
@@ -2122,6 +2150,7 @@ module State = struct
                   ()))
         in
         converted_call
+        |> (fun access -> Node.create (Access access) ~location)
         |> fun call -> forward_expression ~state ~expression:call
 
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) ->
@@ -2171,32 +2200,6 @@ module State = struct
         (* Discard generator-local variables. *)
         { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
 
-    | ExpressionAccess { expression; access } ->
-        let { state; _ } = forward_expression ~state ~expression in
-        let (_, state, resolved) =
-          forward_access
-            ~expression
-            ~resolution
-            ~initial:(false, state, Type.Top)
-            ~f:forward_access_step
-            access
-        in
-        let state =
-          (* Check arguments and nested expressions. *)
-          let forward_access state access =
-            match access with
-            | Access.Identifier _ ->
-                state
-            | Access.Call { Node.value = arguments; _ } ->
-                let forward_argument state { Argument.value; _ } =
-                  forward_expression ~state ~expression:value
-                  |> fun { state; _ } -> state
-                in
-                List.fold arguments ~f:forward_argument ~init:state
-          in
-          List.fold access ~f:forward_access ~init:state
-        in
-        { state; resolved }
 
     | Ellipses ->
         { state; resolved = Type.ellipses }
@@ -2468,8 +2471,14 @@ module State = struct
               let filter_attribute { Node.value = { annotation; name; _ }; _ } =
                 let fields =
                   let is_fields = function
-                    | { Node.value = { name = Access name; _ }; _ } -> Access.show name = "_fields"
-                    | _ -> false
+                    | { Node.value = {
+                        name = Access (SimpleAccess [Access.Identifier "_fields"]);
+                        _ };
+                        _;
+                      } ->
+                        true
+                    | _ ->
+                        false
                   in
                   match List.find ~f:is_fields attributes >>| Node.value with
                   | Some { value = { Node.value = Tuple fields; _ }; _ } -> fields
@@ -2477,7 +2486,8 @@ module State = struct
                 in
                 let equals name field =
                   match name, Node.value field with
-                  | Access name, String { StringLiteral.value; _ } -> Access.show name = value
+                  | Access (SimpleAccess name),
+                    String { StringLiteral.value; _ } -> Access.show name = value
                   | _ -> false
                 in
                 if List.exists ~f:(equals name) fields then
@@ -2539,7 +2549,7 @@ module State = struct
           in
 
           match value with
-          | Access access ->
+          | Access (SimpleAccess access) ->
               let annotation, element =
                 let annotation, element =
                   let fold _ ~resolution:_ ~resolved ~element ~lead:_ =
@@ -2875,16 +2885,20 @@ module State = struct
               (* Explicit bottom. *)
               { state with bottom = true }
 
-          | Access [
-              Access.Identifier "isinstance";
-              Access.Call {
-                Node.value = [
-                  { Argument.name = None; value = { Node.value = Access access; _ } };
-                  { Argument.name = None; value = annotation };
-                ];
-                _;
-              }
-            ] ->
+          | Access
+              (SimpleAccess [
+                  Access.Identifier "isinstance";
+                  Access.Call {
+                    Node.value = [
+                      {
+                        Argument.name = None;
+                        value = { Node.value = Access (SimpleAccess access); _ };
+                      };
+                      { Argument.name = None; value = annotation };
+                    ];
+                    _;
+                  }
+                ]) ->
               let annotation =
                 match annotation with
                 | { Node.value = Tuple elements; _ } ->
@@ -2920,16 +2934,17 @@ module State = struct
               UnaryOperator.operator = UnaryOperator.Not;
               operand = {
                 Node.value =
-                  Access [
-                    Access.Identifier "isinstance";
-                    Access.Call {
-                      Node.value = [
-                        { Argument.name = None; value };
-                        { Argument.name = None; value = annotation_expression };
-                      ];
-                      _;
-                    };
-                  ];
+                  Access
+                    (Access.SimpleAccess [
+                        Access.Identifier "isinstance";
+                        Access.Call {
+                          Node.value = [
+                            { Argument.name = None; value };
+                            { Argument.name = None; value = annotation_expression };
+                          ];
+                          _;
+                        };
+                      ]);
                 _;
               };
             } ->
@@ -3034,21 +3049,25 @@ module State = struct
                 match contradiction_error, value with
                 | Some error, _ ->
                     add_error ~state:{ state with bottom = true } error
-                | _, { Node.value = Access access; _ } ->
+                | _, { Node.value = Access (Access.SimpleAccess access); _ } ->
                     { state with resolution = resolve ~access }
                 | _ ->
                     state
               end
 
-          | Access [
-              Access.Identifier "all";
-              Access.Call {
-                Node.value = [
-                  { Argument.name = None; value = { Node.value = Access access; _ } };
-                ];
-                _;
-              }
-            ] ->
+          | Access
+              (Access.SimpleAccess [
+                  Access.Identifier "all";
+                  Access.Call {
+                    Node.value = [
+                      {
+                        Argument.name = None;
+                        value = { Node.value = Access (Access.SimpleAccess access); _ };
+                      };
+                    ];
+                    _;
+                  }
+                ]) ->
               let resolution =
                 match Resolution.get_local resolution ~access with
                 | Some {
@@ -3075,7 +3094,7 @@ module State = struct
               in
               { state with resolution }
 
-          | Access access ->
+          | Access (SimpleAccess access) ->
               let element = last_element ~resolution access in
               let resolution =
                 match Resolution.get_local resolution ~access, element with
@@ -3164,14 +3183,14 @@ module State = struct
           | ComparisonOperator {
               ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
-              right = { Node.value = Access [Access.Identifier "None"]; _ };
+              right = { Node.value = Access (SimpleAccess [Access.Identifier "None"]); _ };
             } ->
               forward_statement ~state ~statement:(Statement.assume left)
 
           | ComparisonOperator {
-              ComparisonOperator.left = { Node.value = Access access; _ };
+              ComparisonOperator.left = { Node.value = Access (SimpleAccess access); _ };
               operator = ComparisonOperator.Is;
-              right = { Node.value = Access [Access.Identifier "None"]; _ };
+              right = { Node.value = Access (SimpleAccess [Access.Identifier "None"]); _ };
             } ->
               begin
                 let refined =
@@ -3206,7 +3225,8 @@ module State = struct
               state
         end
 
-    | Expression { Node.value = Access access; _ } when Access.is_assert_function access ->
+    | Expression { Node.value = Access (SimpleAccess access); _ }
+      when Access.is_assert_function access ->
         let find_assert_test access =
           match access with
           | Expression.Record.Access.Call {

@@ -30,9 +30,9 @@ let test_normalize_access _ =
     let normalized = AccessPath.normalize_access access ~resolution in
     let re_accessed = AccessPath.as_access normalized in
     assert_equal
-      ~cmp:Expression.equal_expression
-      ~printer:Expression.show_expression
-      (Access access)
+      ~cmp:Expression.Access.equal_general_access
+      ~printer:Expression.Access.show_general_access
+      (Access.SimpleAccess access)
       re_accessed;
     assert_equal
       ~cmp:AccessPath.equal_normalized_expression

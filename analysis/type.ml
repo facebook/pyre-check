@@ -779,7 +779,7 @@ let rec expression annotation =
                 (Node.create_with_default_location [
                     {
                       Argument.name = None;
-                      value = Node.create_with_default_location (Access overloads);
+                      value = Node.create_with_default_location (Access (SimpleAccess overloads));
                     }
                   ]);
             ]
@@ -854,14 +854,14 @@ let rec expression annotation =
   let value =
     match annotation with
     | Primitive "..." -> Ellipses
-    | _ -> Access (access annotation)
+    | _ -> Access (SimpleAccess (access annotation))
   in
   Node.create_with_default_location value
 
 
 let access annotation =
   match expression annotation with
-  | { Node.value = Access access; _ } -> access
+  | { Node.value = Access (SimpleAccess access); _ } -> access
   | _ -> failwith "Annotation expression is not an access"
 
 
@@ -1079,10 +1079,12 @@ let rec create ~aliases { Node.value = expression; _ } =
                   let parameters =
                     let extract_parameter index parameter =
                       match Node.value parameter with
-                      | Access [
-                          Access.Identifier name;
-                          Access.Call { Node.value = arguments; _ };
-                        ] ->
+                      | Access
+                          (SimpleAccess
+                             [
+                               Access.Identifier name;
+                               Access.Call { Node.value = arguments; _ };
+                             ]) ->
                           begin
                             let arguments =
                               List.map
@@ -1091,10 +1093,17 @@ let rec create ~aliases { Node.value = expression; _ } =
                             in
                             match name, arguments with
                             | "Named",
-                              { Node.value = Access name; _ } :: annotation :: tail ->
+                              { Node.value = Access (SimpleAccess name); _ }
+                              :: annotation
+                              :: tail ->
                                 let default =
                                   match tail with
-                                  | [{ Node.value = Access [Access.Identifier "default"]; _ }] ->
+                                  | [{
+                                      Node.value =
+                                        Access
+                                          (SimpleAccess [Access.Identifier "default"]);
+                                      _;
+                                    }] ->
                                       true
                                   | _ ->
                                       false
@@ -1104,7 +1113,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                                   annotation = create ~aliases annotation;
                                   default;
                                 }
-                            | "Variable", { Node.value = Access name; _ } :: tail ->
+                            | "Variable", { Node.value = Access (SimpleAccess name); _ } :: tail ->
                                 let annotation =
                                   match tail with
                                   | annotation :: _ -> create ~aliases annotation
@@ -1115,7 +1124,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                                   annotation;
                                   default = false;
                                 }
-                            | "Keywords", { Node.value = Access name; _ } :: tail ->
+                            | "Keywords", { Node.value = Access (SimpleAccess name); _ } :: tail ->
                                 let annotation =
                                   match tail with
                                   | annotation :: _ -> create ~aliases annotation
@@ -1169,19 +1178,21 @@ let rec create ~aliases { Node.value = expression; _ } =
                   match overloads with
                   | Expression.List arguments ->
                       [get_signature (Node.create ~location (Expression.Tuple arguments))]
-                  | Expression.ExpressionAccess {
-                      expression = { Node.value = (Expression.List arguments); _ };
-                      access = tail;
-                    } ->
+                  | Expression.Access
+                      (ExpressionAccess {
+                          expression = { Node.value = (Expression.List arguments); _ };
+                          access = tail;
+                        }) ->
                       get_signature (Node.create ~location (Expression.Tuple arguments))
-                      :: (parse_overloads (Access tail))
-                  | Expression.Access (
-                      Access.Identifier "__getitem__"
-                      :: Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }
-                      :: tail
-                    ) ->
-                      get_signature argument :: (parse_overloads (Access tail))
-                  | Access [] ->
+                      :: (parse_overloads (Access (SimpleAccess tail)))
+                  | Expression.Access
+                      (SimpleAccess (
+                          Access.Identifier "__getitem__"
+                          :: Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ }
+                          :: tail
+                        )) ->
+                      get_signature argument :: (parse_overloads (Access (SimpleAccess tail)))
+                  | Access (SimpleAccess []) ->
                       []
                   | _ ->
                       [undefined]
@@ -1193,17 +1204,18 @@ let rec create ~aliases { Node.value = expression; _ } =
           Callable { kind; implementation; overloads; implicit = None }
         in
         match expression with
-        | Access [
-            Access.Identifier "typing";
-            Access.Identifier "TypeVar";
-            Access.Call ({
-                Node.value = {
-                  Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
-                  _;
-                } :: arguments;
-                _;
-              });
-          ] ->
+        | Access
+            (SimpleAccess [
+                Access.Identifier "typing";
+                Access.Identifier "TypeVar";
+                Access.Call ({
+                    Node.value = {
+                      Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                      _;
+                    } :: arguments;
+                    _;
+                  });
+              ]) ->
             let constraints =
               let explicits =
                 let explicit = function
@@ -1258,38 +1270,44 @@ let rec create ~aliases { Node.value = expression; _ } =
             }
 
         | Access
-            ((Access.Identifier "typing")
-             :: (Access.Identifier "Callable")
-             :: (Access.Call { Node.value = modifiers; _ })
-             :: signatures) ->
+            (SimpleAccess
+               ((Access.Identifier "typing")
+                :: (Access.Identifier "Callable")
+                :: (Access.Call { Node.value = modifiers; _ })
+                :: signatures)) ->
             parse_callable ~modifiers ~signatures ()
-        | Access ((Access.Identifier "typing") :: (Access.Identifier "Callable") :: signatures) ->
+        | Access
+            (SimpleAccess
+               ((Access.Identifier "typing") :: (Access.Identifier "Callable") :: signatures)) ->
             parse_callable ~signatures ()
 
-        | Access ([
-            Access.Identifier "mypy_extensions";
-            Access.Identifier "TypedDict";
-            Access.Identifier "__getitem__";
-            Access.Call({
-                Node.value = [{
-                    Argument.name = None;
-                    value = {
-                      Node.value = Expression.Tuple (
-                          {
-                            Node.value = Expression.String { value = typed_dictionary_name; _ };
-                            _;
-                          } ::
-                          {
-                            Node.value = true_or_false;
-                            _;
-                          } ::
-                          fields);
-                      _;
-                    };
-                  }];
-                _;
-              });
-          ] as access) ->
+        | Access
+            (SimpleAccess
+               ([
+                 Access.Identifier "mypy_extensions";
+                 Access.Identifier "TypedDict";
+                 Access.Identifier "__getitem__";
+                 Access.Call({
+                     Node.value = [{
+                         Argument.name = None;
+                         value = {
+                           Node.value = Expression.Tuple (
+                               {
+                                 Node.value =
+                                   Expression.String { value = typed_dictionary_name; _ };
+                                 _;
+                               } ::
+                               {
+                                 Node.value = true_or_false;
+                                 _;
+                               } ::
+                               fields);
+                           _;
+                         };
+                       }];
+                     _;
+                   });
+               ] as access)) ->
             let total =
               match true_or_false with
               | Expression.True -> Some true
@@ -1324,7 +1342,7 @@ let rec create ~aliases { Node.value = expression; _ } =
             >>| parse_typed_dictionary
             |> Option.value ~default:(parse_access access)
 
-        | Access access ->
+        | Access (SimpleAccess access) ->
             parse_access access
 
         | Ellipses ->
@@ -1340,7 +1358,11 @@ let rec create ~aliases { Node.value = expression; _ } =
                   |> Source.statements
                 in
                 match parsed with
-                | [{ Node.value = Statement.Expression { Node.value = Access access; _ }; _ }] ->
+                | [{
+                    Node.value =
+                      Statement.Expression { Node.value = Access (SimpleAccess access); _ };
+                    _;
+                  }] ->
                     access
                 | _ ->
                     Access.create value
@@ -1742,7 +1764,7 @@ let class_name annotation =
   |> expression
   |> Node.value
   |> function
-  | Expression.Access access ->
+  | Expression.Access (SimpleAccess access) ->
       access
   | _ ->
       Access.create "typing.Any"

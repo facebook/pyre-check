@@ -49,7 +49,7 @@ let bases { Node.value = { Class.bases; _ }; _ } =
 let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
   let matches target decorator =
     match decorator with
-    | { Node.value = Access access; _ } ->
+    | { Node.value = Access (SimpleAccess access); _ } ->
         begin
           match Expression.Access.name_and_arguments ~call:access with
           | Some { callee = name; arguments } when name = target ->
@@ -66,7 +66,7 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
 
 
 let annotation { Node.value = { Class.name; _ }; location } ~resolution =
-  Resolution.parse_annotation resolution (Node.create ~location (Access name))
+  Resolution.parse_annotation resolution (Node.create ~location (Access (SimpleAccess name)))
 
 
 let successors class_node ~resolution =
@@ -538,7 +538,7 @@ module Attribute = struct
 
   let access { Node.value = { name; _ }; _ } =
     match name with
-    | Access access -> access
+    | Access (SimpleAccess access) -> access
     | _ -> []
 
 
@@ -820,7 +820,8 @@ let attribute
       {
         Node.location;
         value = {
-          Statement.Attribute.target = Node.create_with_default_location (Access name);
+          Statement.Attribute.target =
+            Node.create (Access (SimpleAccess name)) ~location;
           annotation = None;
           defines = None;
           value = None;
@@ -839,7 +840,10 @@ let attribute
     ~resolution
     definition
   |> List.find
-    ~f:(fun attribute -> Expression.equal_expression (Access name) (Attribute.name attribute))
+    ~f:(fun attribute ->
+        Expression.equal_expression
+          (Access (SimpleAccess name))
+          (Attribute.name attribute))
   |> Option.value ~default:undefined
   |> (fun attribute ->
       Attribute.parent attribute
@@ -917,7 +921,8 @@ let rec fallback_attribute ~resolution ~name definition =
                  {
                    Node.location;
                    value = {
-                     Statement.Attribute.target = Node.create ~location (Access name);
+                     Statement.Attribute.target =
+                       Node.create ~location (Access (SimpleAccess name));
                      annotation = Some (Type.expression return_annotation);
                      defines = None;
                      value = None;

@@ -141,7 +141,7 @@ let test_collect_accesses _ =
          ~f:(fun node ->
              Format.sprintf "%s|%s"
                (Node.location node |> instantiate |> Location.Instantiated.show)
-               (Expression.show node))
+               (Expression.show (Node.create_with_default_location (Access (Node.value node)))))
          (Visit.collect_accesses source))
   in
   assert_collected_accesses

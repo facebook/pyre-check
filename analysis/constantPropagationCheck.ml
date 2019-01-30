@@ -122,7 +122,7 @@ module State (Context: Context) = struct
             type t = unit
             let expression _ expression =
               match Node.value expression with
-              | Access access ->
+              | Access (SimpleAccess access) ->
                   begin
                     let rec transform ~lead ~tail =
                       match tail with
@@ -130,21 +130,22 @@ module State (Context: Context) = struct
                           begin
                             let lead = lead @ [head] in
                             match Map.find constants lead with
-                            | Some (Constant { Node.value = Access access; _ }) ->
-                                Access (access @ tail)
+                            | Some (Constant { Node.value = Access (SimpleAccess access); _ }) ->
+                                Access (SimpleAccess (access @ tail))
                             | Some (Constant expression) ->
                                 begin
                                   match tail with
                                   | [] ->
                                       Node.value expression
                                   | tail ->
-                                      ExpressionAccess { expression; access = tail }
+                                      Access.combine expression tail
+                                      |> fun access -> Access access
                                 end
                             | _ ->
                                 transform ~lead ~tail
                           end
                       | _ ->
-                          Access lead
+                          Access (SimpleAccess lead)
                     in
                     let value = transform ~lead:[] ~tail:access in
                     Node.create value ~location:(Node.location expression)
@@ -188,11 +189,16 @@ module State (Context: Context) = struct
     (* Find new constants. *)
     let constants =
       match Node.value transformed with
-      | Assign { target = { Node.value = Access access; _ }; value = expression; _ }  ->
+      | Assign {
+          target = { Node.value = Access (SimpleAccess access); _ };
+          value = expression;
+          _;
+        }  ->
           let propagate =
             let is_literal =
               match Node.value expression with
-              | Integer _ | String _ | True | False | Access [Access.Identifier "None"] -> true
+              | Integer _ | String _ | True | False
+              | Access (SimpleAccess [Access.Identifier "None"]) -> true
               | _ -> false
             in
             let is_callable =
@@ -201,7 +207,7 @@ module State (Context: Context) = struct
             in
             let is_global_constant =
               match Node.value expression with
-              | Access access ->
+              | Access (SimpleAccess access) ->
                   Str.string_match (Str.regexp ".*\\.[A-Z_0-9]+$") (Access.show access) 0
               | _ ->
                   false

@@ -250,7 +250,7 @@ let of_accesses = function
 
 
 let of_expression = function
-  | { Node.value = Access access; _ } -> of_accesses access
+  | { Node.value = Access (SimpleAccess access); _ } -> of_accesses access
   | _ -> None
 
 
@@ -339,29 +339,28 @@ let normalize_access ~resolution path =
 
 let rec as_access = function
   | Global access ->
-      Expression.Access access
+      Expression.Access.SimpleAccess access
   | Local identifier ->
-      Expression.Access (Access.create_from_identifiers [identifier])
+      Expression.Access.SimpleAccess (Access.create_from_identifiers [identifier])
   | Expression expression ->
-      Expression.ExpressionAccess { expression; access = [] }
+      Expression.Access.ExpressionAccess { expression; access = [] }
   | Call { callee; arguments; } ->
-      let callee = as_access callee in
+      let callee = Expression.Access (as_access callee) in
       Expression.Access.combine
         (Node.create_with_default_location callee)
         [Access.Call arguments]
-      |> Node.value
+
   | Access { expression; member; } ->
-      let left = as_access expression in
+      let left = Expression.Access (as_access expression) in
       Expression.Access.combine
         (Node.create_with_default_location left)
         [Access.Identifier member]
-      |> Node.value
+
   | Index { expression; original; arguments; _ } ->
-      let left = as_access expression in
+      let left = Expression.Access (as_access expression) in
       Expression.Access.combine
         (Node.create_with_default_location left)
         [Access.Identifier original; Access.Call arguments]
-      |> Node.value
 
 
 let to_json { root; path; } =

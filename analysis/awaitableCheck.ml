@@ -110,14 +110,15 @@ module State (Context: Context) = struct
           false
       in
       match value with
-      | Assign { target = { Node.value = Access access; _ }; value; _ } when is_awaitable value ->
+      | Assign { target = { Node.value = Access (SimpleAccess access); _ }; value; _ }
+        when is_awaitable value ->
           Map.set unawaited ~key:access ~data:Unawaited
 
       | Assign {
-          value = { Node.value = Await { Node.value = Access access; _ }; _ };
+          value = { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ };
           _
         }
-      | Expression { Node.value = Await { Node.value = Access access; _ }; _ } ->
+      | Expression { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ } ->
           Map.set unawaited ~key:access ~data:Awaited
 
       | _ ->

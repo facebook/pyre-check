@@ -221,13 +221,13 @@ module Attribute = struct
   let target ~parent target =
     let open Expression in
     match Node.value target with
-    | Access access ->
+    | Access (SimpleAccess access) ->
         begin
           match List.rev access with
           | (Access.Call _) :: ((Access.Identifier _) as access) :: class_name
           | ((Access.Identifier _) as access) :: class_name
             when Access.equal parent (List.rev class_name) ->
-              Some { target with Node.value = Access [access] }
+              Some { target with Node.value = Access (SimpleAccess [access]) }
           | _ ->
               None
         end
@@ -396,10 +396,12 @@ module Define = struct
     let matches = function
       | {
         Node.value = Expression {
-            Node.value = Expression.Access [
-                Access.Identifier identifier;
-                Access.Call _;
-              ];
+            Node.value =
+              Expression.Access
+                (SimpleAccess [
+                    Access.Identifier identifier;
+                    Access.Call _;
+                  ]);
             _;
           };
         _;
@@ -450,11 +452,11 @@ module Define = struct
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | ({
-                Node.value = Access ((Access.Identifier self) :: ([_] as access));
+                Node.value = Access (SimpleAccess ((Access.Identifier self) :: ([_] as access)));
                 _;
               } as target) when Identifier.equal self (self_identifier define) ->
                 let attribute =
-                  let target = { target with Node.value = Access access } in
+                  let target = { target with Node.value = Access (SimpleAccess access) } in
                   Attribute.create ~primitive:true ~location ~target ?annotation ~value ()
                 in
                 let update = function
@@ -470,7 +472,7 @@ module Define = struct
             | { Node.value = Access _; _ } as target ->
                 let annotation =
                   match annotation, value with
-                  | None, { Node.value = Access access; _ } ->
+                  | None, { Node.value = Access (SimpleAccess access); _ } ->
                       Access.SerializableMap.find_opt access parameter_annotations
                   | _ ->
                       annotation
@@ -511,12 +513,14 @@ module Define = struct
                   in
                   Some {
                     Node.location;
-                    value = Access [
-                        Access.Identifier "typing";
-                        Access.Identifier "Union";
-                        Access.Identifier "__getitem__";
-                        Access.Call (Node.create_with_default_location [argument]);
-                      ];
+                    value =
+                      Access
+                        (SimpleAccess [
+                            Access.Identifier "typing";
+                            Access.Identifier "Union";
+                            Access.Identifier "__getitem__";
+                            Access.Call (Node.create_with_default_location [argument]);
+                          ]);
                   }
           in
           { Node.location; value = { attribute with Attribute.annotation }}
@@ -537,11 +541,12 @@ module Define = struct
             expand_statements body
         | Expression {
             Node.value =
-              Access [
-                Access.Identifier self;
-                (Access.Identifier _) as name;
-                Access.Call _;
-              ];
+              Access
+                (SimpleAccess [
+                    Access.Identifier self;
+                    (Access.Identifier _) as name;
+                    Access.Call _;
+                  ]);
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
@@ -568,7 +573,10 @@ module Define = struct
     let open Expression in
     let attribute ?(setter = false) annotation =
       parent
-      >>= (fun parent -> Attribute.target ~parent (Node.create ~location (Access name)))
+      >>= (fun parent ->
+          Attribute.target
+            ~parent
+            (Node.create ~location (Access (SimpleAccess name))))
       >>| fun target ->
       Attribute.create
         ~location
@@ -593,12 +601,14 @@ module Define = struct
               in
               Some {
                 Node.location;
-                value = Access [
-                    Access.Identifier "typing";
-                    Access.Identifier "ClassVar";
-                    Access.Identifier "__getitem__";
-                    Access.Call (Node.create_with_default_location [argument]);
-                  ];
+                value =
+                  Access
+                    (SimpleAccess [
+                        Access.Identifier "typing";
+                        Access.Identifier "ClassVar";
+                        Access.Identifier "__getitem__";
+                        Access.Call (Node.create_with_default_location [argument]);
+                      ]);
               }
           | _ ->
               None
@@ -693,7 +703,7 @@ module Class = struct
           let add_attribute map target value =
             Attribute.target ~parent:name target
             |> function
-            | Some ({ Node.value = Access access; _ } as target) ->
+            | Some ({ Node.value = Access (SimpleAccess access); _ } as target) ->
                 let attribute =
                   Attribute.create
                     ~primitive:true
@@ -712,13 +722,13 @@ module Class = struct
             map
       | Assign {
           Assign.target = { Node.value = Tuple targets; _ };
-          value = { Node.value = Access values; location } as value;
+          value = { Node.value = Access (SimpleAccess values); location } as value;
           _;
         } ->
           let add_attribute index map target =
             Attribute.target ~parent:name target
             |> function
-            | Some ({ Node.value = Access access; _ } as target) ->
+            | Some ({ Node.value = Access (SimpleAccess access); _ } as target) ->
                 let value =
                   let get_item =
                     let index = Node.create ~location (Integer index) in
@@ -728,7 +738,7 @@ module Class = struct
                         (Node.create ~location [{ Argument.name = None; value = index }]);
                     ]
                   in
-                  { value with Node.value = Access (values @ get_item) }
+                  { value with Node.value = Access (SimpleAccess (values @ get_item)) }
                 in
                 let attribute =
                   Attribute.create
@@ -747,7 +757,7 @@ module Class = struct
           begin
             Attribute.target ~parent:name target
             |> function
-            | Some ({ Node.value = Access access; _ } as target) ->
+            | Some ({ Node.value = Access (SimpleAccess access); _ } as target) ->
                 let attribute =
                   Attribute.create
                     ~primitive:true
@@ -789,7 +799,10 @@ module Class = struct
               | Some ({
                   Node.value =
                     ({
-                      Attribute.target = { Node.value = Expression.Access ([_] as access); _ };
+                      Attribute.target = {
+                        Node.value = Expression.Access (SimpleAccess ([_] as access));
+                        _;
+                      };
                       setter = new_setter;
                       annotation = new_annotation;
                       _;
@@ -832,10 +845,12 @@ module Class = struct
       let callable_attributes map { Node.location; value } =
         match value with
         | Define ({ Define.name = target; _ } as define) ->
-            Attribute.target ~parent:name (Node.create ~location (Expression.Access target))
+            Attribute.target
+              (Node.create ~location (Expression.Access (SimpleAccess target)))
+              ~parent:name
             >>| (fun target ->
                 match Node.value target with
-                | Access name ->
+                | Access (SimpleAccess name) ->
                     let attribute =
                       match Access.SerializableMap.find_opt name map with
                       | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
@@ -870,22 +885,24 @@ module Class = struct
                 let argument = { Argument.name = None; value = Access.expression name } in
                 Node.create
                   ~location
-                  (Access [
-                      Access.Identifier "typing";
-                      Access.Identifier "Type";
-                      Access.Identifier "__getitem__";
-                      Access.Call (Node.create_with_default_location [argument]);
-                    ])
+                  (Access
+                     (SimpleAccess [
+                         Access.Identifier "typing";
+                         Access.Identifier "Type";
+                         Access.Identifier "__getitem__";
+                         Access.Call (Node.create_with_default_location [argument]);
+                       ]))
               in
               let argument = { Argument.name = None; value = meta_annotation } in
               Node.create
                 ~location
-                (Access [
-                    Access.Identifier "typing";
-                    Access.Identifier "ClassVar";
-                    Access.Identifier "__getitem__";
-                    Access.Call (Node.create_with_default_location [argument]);
-                  ])
+                (Access
+                   (SimpleAccess [
+                       Access.Identifier "typing";
+                       Access.Identifier "ClassVar";
+                       Access.Identifier "__getitem__";
+                       Access.Call (Node.create_with_default_location [argument]);
+                     ]))
             in
             Access.SerializableMap.set
               map
@@ -893,7 +910,9 @@ module Class = struct
               ~data:(
                 Attribute.create
                   ~location
-                  ~target:(Node.create ~location (Expression.Access [List.last_exn name]))
+                  ~target:(Node.create
+                             ~location
+                             (Expression.Access (SimpleAccess [List.last_exn name])))
                   ~annotation
                   ())
         | _ ->
@@ -914,7 +933,7 @@ module Class = struct
         in
         match value with
         | Assign {
-            Assign.target = { Node.value = Access access; _ };
+            Assign.target = { Node.value = Access (SimpleAccess access); _ };
             value = { Node.value = List attributes; location };
             _;
           } when is_slots access ->
@@ -925,7 +944,7 @@ module Class = struct
                   Attribute.create
                     ~location
                     ~target:
-                      (Node.create ~location (Expression.Access access))
+                      (Node.create ~location (Expression.Access (SimpleAccess access)))
                     ()
                   |> fun attribute -> Access.SerializableMap.set map ~key:access ~data:attribute
               | _ ->
@@ -1080,16 +1099,8 @@ module For = struct
           (Access.call ~name:"__iter__" ~location ()) @
           (Access.call ~name: "__next__" ~location ())
       in
-      begin
-        match value with
-        | Access access ->
-            Access (access @ next)
-        | expression ->
-            ExpressionAccess {
-              expression = Node.create_with_default_location expression;
-              access = next;
-            }
-      end
+      Access.combine { Node.location; value } next
+      |> fun access -> Access access
     in
     let value =
       if async then
@@ -1131,6 +1142,7 @@ module With = struct
                "__enter__"
            in
            Access.combine expression (Access.call ~name:enter_call_name ~location ())
+           |> fun access -> Node.create (Access access) ~location
          in
          if async then
            Node.create ~location (Await base_call)
@@ -1179,7 +1191,7 @@ module Try = struct
     in
     match kind, name with
     | Some ({ Node.location; value = Access _; _ } as annotation), Some name ->
-        [assume ~location ~target:{ Node.location; value = Access name } ~annotation]
+        [assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation]
     | Some { Node.location; value = Tuple values; _ }, Some name ->
         let annotation =
           let get_item =
@@ -1195,10 +1207,10 @@ module Try = struct
           in
           {
             Node.location;
-            value = Access ((Access.create "typing.Union") @ get_item);
+            value = Access (SimpleAccess ((Access.create "typing.Union") @ get_item));
           }
         in
-        [assume ~location ~target:{ Node.location; value = Access name } ~annotation]
+        [assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation]
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
         [Node.create ~location (Expression expression)]
