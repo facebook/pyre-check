@@ -232,8 +232,8 @@ let is_invariance_mismatch { order; _ } ~left ~right =
       false
 
 
-(* In general, python expressions can be self-referential. This non-recursive resolution only checks
-   literals and annotations found in the resolution map, without any resolutions/joins. *)
+(* In general, python expressions can be self-referential. This resolution only checks
+   literals and annotations found in the resolution map, without resolving expressions. *)
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
   match Node.value expression with
@@ -268,6 +268,15 @@ let rec resolve_literal resolution expression =
       resolve_literal resolution expression
       |> Type.awaitable_value
 
+  | BooleanOperator { BooleanOperator.left; right; _ } ->
+      let annotation =
+        join
+          resolution
+          (resolve_literal resolution left)
+          (resolve_literal resolution right)
+      in
+      if Type.is_concrete annotation then annotation else Type.Object
+
   | Complex _ ->
       Type.complex
 
@@ -284,7 +293,7 @@ let rec resolve_literal resolution expression =
       if Type.is_concrete key_annotation && Type.is_concrete value_annotation then
         Type.dictionary ~key:key_annotation ~value:value_annotation
       else
-        Type.Top
+        Type.Object
 
   | False ->
       Type.bool
@@ -295,12 +304,39 @@ let rec resolve_literal resolution expression =
   | Integer _ ->
       Type.integer
 
+  | List elements ->
+      let parameter =
+        let join sofar element =
+          join resolution sofar (resolve_literal resolution element)
+        in
+        List.fold ~init:Type.Bottom ~f:join elements
+      in
+      if Type.is_concrete parameter then Type.list parameter else Type.Object
+
+  | Set elements ->
+      let parameter =
+        let join sofar element =
+          join resolution sofar (resolve_literal resolution element)
+        in
+        List.fold ~init:Type.Bottom ~f:join elements
+      in
+      if Type.is_concrete parameter then Type.set parameter else Type.Object
+
   | String { StringLiteral.kind; _ } ->
       begin
         match kind with
         | StringLiteral.Bytes -> Type.bytes
         | _ -> Type.string
       end
+
+  | Ternary { Ternary.target; alternative; _ } ->
+      let annotation =
+        join
+          resolution
+          (resolve_literal resolution target)
+          (resolve_literal resolution alternative)
+      in
+      if Type.is_concrete annotation then annotation else Type.Object
 
   | True ->
       Type.bool
@@ -309,10 +345,10 @@ let rec resolve_literal resolution expression =
       Type.tuple (List.map elements ~f:(resolve_literal resolution))
 
   | Expression.Yield _ ->
-      Type.yield Type.Top
+      Type.yield Type.Object
 
   | _ ->
-      Type.Top
+      Type.Object
 
 let resolve_mutable_literals resolution ~expression ~resolved ~expected =
   match expression with

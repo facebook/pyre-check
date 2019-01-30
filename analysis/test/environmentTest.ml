@@ -547,7 +547,8 @@ let test_register_globals _ =
     parse
       ~qualifier:(Access.create "qualifier")
       {|
-        with_join = 1 or 'asdf'  # don't join with an incomplete environment
+        with_join = 1 or 'asdf'
+        with_resolve = with_join
         annotated: int = 1
         unannotated = 'string'
         stub: int = ...
@@ -568,7 +569,8 @@ let test_register_globals _ =
   in
   Environment.register_globals (module Handler) resolution source;
   assert_global "qualifier.undefined" None;
-  assert_global "qualifier.with_join" (Some Type.Top);
+  assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
+  assert_global "qualifier.with_resolve" (Some Type.Top);
   assert_global "qualifier.annotated" (Some Type.integer);
   assert_global "qualifier.unannotated" (Some Type.string);
   assert_global "qualifier.stub" (Some Type.integer);
