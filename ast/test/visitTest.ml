@@ -141,13 +141,13 @@ let test_collect_accesses _ =
          ~f:(fun node ->
              Format.sprintf "%s|%s"
                (Node.location node |> instantiate |> Location.Instantiated.show)
-               (Node.value node |> Access.show))
+               (Expression.show node))
          (Visit.collect_accesses source))
   in
   assert_collected_accesses
     source
     [
-      "test.py:2:4-2:24|ham.egg.(...).bake";
+      "test.py:2:4-2:24|ham.egg(cheese).bake";
       "test.py:2:12-2:18|cheese";
       "test.py:2:0-2:1|s";
     ]

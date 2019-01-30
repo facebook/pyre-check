@@ -238,11 +238,22 @@ module State = struct
           | _ ->
               type_accumulator
         in
-        TypeCheck.State.forward_access
-          ~resolution
-          ~initial:resolution
-          ~f:propagate_access
-          access
+        match access with
+        | Access access ->
+            TypeCheck.State.forward_access
+              ~resolution
+              ~initial:resolution
+              ~f:propagate_access
+              access
+        | ExpressionAccess { expression; access } ->
+            TypeCheck.State.forward_access
+              ~resolution
+              ~initial:resolution
+              ~f:propagate_access
+              ~expression
+              access
+        | _ ->
+            failwith "Impossible result of collect_accesses."
       in
       Visit.collect_accesses statement
       |> List.map ~f:Node.value

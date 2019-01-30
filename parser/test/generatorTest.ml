@@ -112,41 +112,49 @@ let test_lexer _ =
     "1 +\\\n 2"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "1 + \\\n 2"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)\n3"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
       +Expression (+Integer 3)
     ]
 
@@ -222,10 +230,10 @@ let test_access _ =
   assert_parsed_equal
     "1.0.b"
     [
-      +Expression (+Access [
-          Access.Expression (+Float 1.0);
-          Access.Identifier "b";
-        ]);
+      +Expression (+ExpressionAccess {
+          expression = +Float 1.0;
+          access = [Access.Identifier "b"];
+        });
     ];
   assert_parsed_equal
     "a.b.c"
@@ -1423,43 +1431,51 @@ let test_binary_operator _ =
     "1 + 2"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "1 ^ 2"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__xor__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__xor__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "1 // 2"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__floordiv__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__floordiv__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+           ];
+         });
     ];
   assert_parsed_equal
     "1 - 2 + 3"
     [
       +Expression
-        (+Access [
-           Access.Expression (+Integer 1);
-           Access.Identifier "__sub__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +Integer 1;
+           access = [
+             Access.Identifier "__sub__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
+           ];
+         })
     ];
   assert_parsed_equal
     "a + b.c"
@@ -2414,9 +2430,15 @@ let test_call_arguments_location _ =
          |> Option.value ~default:"(none)")
         Expression.pp value
     in
+    let access = function
+      | { Node.value = Access access; _ } ->
+          Some access
+      | _ ->
+          None
+    in
     Visit.collect_accesses statement
+    |> List.filter_map ~f:access
     |> List.hd_exn
-    |> Node.value
     |> List.fold ~init:[] ~f:collect_arguments
     |> List.concat
     |> List.map ~f:print_argument
@@ -2476,41 +2498,46 @@ let test_string _ =
     "'a' + 'b'"
     [
       +Expression
-        (+Access [
-           Access.Expression (+String (StringLiteral.create "a"));
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +String (StringLiteral.create "a");
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+           ];
+         })
     ];
   assert_parsed_equal
     "\"a\" + \"b\""
     [
       +Expression
-        (+Access [
-           Access.Expression (+String (StringLiteral.create "a"));
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +String (StringLiteral.create "a");
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+           ]});
     ];
   assert_parsed_equal
     "'''a''' + '''b'''"
     [
       +Expression
-        (+Access [
-           Access.Expression (+String (StringLiteral.create "a"));
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +String (StringLiteral.create "a");
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+           ]});
     ];
   assert_parsed_equal
     "\"\"\"a\"\"\" + \"\"\"b\"\"\""
     [
       +Expression
-        (+Access [
-           Access.Expression (+String (StringLiteral.create "a"));
-           Access.Identifier "__add__";
-           Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
-         ]);
+        (+ExpressionAccess {
+           expression = +String (StringLiteral.create "a");
+           access = [
+             Access.Identifier "__add__";
+             Access.Call (+[{ Argument.name = None; value = +String (StringLiteral.create "b") }]);
+           ]});
     ]
 
 
@@ -3892,12 +3919,13 @@ let test_tuple _ =
       +Expression
         (+Tuple [
            +Integer 1;
-           +Access [
-             Access.Expression (+Integer 1);
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-           ];
-         ]);
+           +ExpressionAccess {
+             expression = +Integer 1;
+             access = [
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+             ];
+           }]);
     ];
   assert_parsed_equal
     "1, 2 if 3 else 4"
@@ -3917,14 +3945,15 @@ let test_tuple _ =
     [
       +Expression
         (+Tuple [
-           +Access [
-             Access.Expression (+Integer 1);
-             Access.Identifier "__add__";
-             Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-           ];
+           +ExpressionAccess {
+             expression = +Integer 1;
+             access = [
+               Access.Identifier "__add__";
+               Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
+             ];
+           };
            +Integer 1;
-         ]);
-    ];
+         ])];
   assert_parsed_equal
     "(1, 2, 3)"
     [+Expression (+Tuple [+Integer 1; +Integer 2; +Integer 3])]

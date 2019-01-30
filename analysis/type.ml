@@ -1169,9 +1169,10 @@ let rec create ~aliases { Node.value = expression; _ } =
                   match overloads with
                   | Expression.List arguments ->
                       [get_signature (Node.create ~location (Expression.Tuple arguments))]
-                  | Expression.Access
-                      (Access.Expression { Node.value = (Expression.List arguments); _ }
-                       :: tail) ->
+                  | Expression.ExpressionAccess {
+                      expression = { Node.value = (Expression.List arguments); _ };
+                      access = tail;
+                    } ->
                       get_signature (Node.create ~location (Expression.Tuple arguments))
                       :: (parse_overloads (Access tail))
                   | Expression.Access (

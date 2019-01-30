@@ -234,9 +234,16 @@ let test_type_collection _ =
       in
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
+      let keep_access = function
+        | { Node.value = Expression.Access access; _ } ->
+            Some access
+        | _ ->
+            None
+      in
       Visit.collect_accesses statement
+      |> List.filter_map ~f:keep_access
       |> List.hd_exn
-      |> fun { Node.value = access; _ } ->
+      |> fun access ->
       if String.equal (Access.show access) (Access.show test_access) then
         let last_element = TypeCheck.State.last_element ~resolution access in
         match last_element with

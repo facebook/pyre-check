@@ -59,33 +59,27 @@
     | Subtract
 
   let binary_operator ~compound ~left:({ Node.location; _ } as left) ~operator ~right =
-    let access =
+    let name =
       let name =
-        let name =
-          match operator with
-          | Add -> "add"
-          | At -> "matmul"
-          | BitAnd -> "and"
-          | BitOr -> "or"
-          | BitXor -> "xor"
-          | Divide -> "truediv"
-          | FloorDivide -> "floordiv"
-          | LeftShift -> "lshift"
-          | Modulo -> "mod"
-          | Multiply -> "mul"
-          | Power -> "pow"
-          | RightShift -> "rshift"
-          | Subtract -> "sub"
-        in
-        Format.asprintf "__%s%s__" (if compound then "i" else "") name
+        match operator with
+        | Add -> "add"
+        | At -> "matmul"
+        | BitAnd -> "and"
+        | BitOr -> "or"
+        | BitXor -> "xor"
+        | Divide -> "truediv"
+        | FloorDivide -> "floordiv"
+        | LeftShift -> "lshift"
+        | Modulo -> "mod"
+        | Multiply -> "mul"
+        | Power -> "pow"
+        | RightShift -> "rshift"
+        | Subtract -> "sub"
       in
-      let arguments = [{ Argument.name = None; value = right }] in
-      (Expression.Access.combine left (Access.call ~arguments ~location ~name ()))
+      Format.asprintf "__%s%s__" (if compound then "i" else "") name
     in
-    {
-      Node.location = left.Node.location;
-      value = Access access
-    }
+    let arguments = [{ Argument.name = None; value = right }] in
+    Expression.Access.combine left (Access.call ~arguments ~location ~name ())
 
   let slice ~lower ~upper ~step ~colon =
     let location =
@@ -146,7 +140,7 @@
       let arguments = [subscript_argument ~subscripts ~location] in
       Access.call ~arguments ~location ~name:"__getitem__" ()
     in
-    { Node.location; value = Access (Expression.Access.combine head get_item) }
+    Expression.Access.combine head get_item
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
     let head, subscripts = subscript in
@@ -159,9 +153,9 @@
       in
       Access.call ~arguments ~location ~name:"__setitem__" ()
     in
-    Access (Expression.Access.combine head set_item)
-    |> Node.create ~location
-    |> (fun expression -> Expression expression)
+    Expression.Access.combine head set_item
+    |> (fun node -> { node with Node.location })
+    |> fun expression -> Expression expression
     |> Node.create ~location
 
   let with_annotation ~parameter ~annotation =
@@ -536,9 +530,7 @@ small_statement:
         let yield =
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
-              (Expression.Access.combine yield (Access.call ~name:"__iter__" ~location ()))
-              |> (fun access -> Access access)
-              |> Node.create ~location
+              Expression.Access.combine yield (Access.call ~name:"__iter__" ~location ())
           | _ ->
               yield
         in
@@ -1149,14 +1141,9 @@ atom:
     arguments = arguments;
     stop = RIGHTPARENS {
       let call_location = Location.create ~start ~stop in
-      {
-        Node.location = name.Node.location;
-        value =
-          Access
-            (Expression.Access.combine
-               name
-               [Access.Call (Node.create ~location:call_location arguments)]);
-      }
+      Expression.Access.combine
+        name
+        [Access.Call (Node.create ~location:call_location arguments)]
     }
 
   | start = LEFTCURLY;
@@ -1318,12 +1305,10 @@ expression:
   | access = expression; DOT; expression = expression {
       match Node.value expression with
       | Access tail ->
-        {
-          Node.location = { access.Node.location with Location.stop = Node.stop expression };
-          value = Access (Expression.Access.combine access tail);
-        }
+         let location = { access.Node.location with Location.stop = Node.stop expression } in
+         { (Expression.Access.combine access tail) with Node.location }
       | _ ->
-        raise (ParserError "Invalid access")
+         raise (ParserError "Invalid access")
     }
 
   | subscript = subscript { subscript_access subscript }

@@ -52,7 +52,6 @@ module Record = struct
   module Access = struct
     type 'expression access =
       | Call of (('expression Argument.record) list) Node.t
-      | Expression of 'expression
       | Identifier of Identifier.t
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -245,6 +244,7 @@ type expression =
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | Ellipses
+  | ExpressionAccess of { expression: t; access: t Record.Access.record }
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t
@@ -346,8 +346,6 @@ module Access = struct
           identifier
       | Call _ ->
           Format.asprintf "(...)"
-      | _ ->
-          "?"
     in
     List.map access ~f:identifier
     |> String.concat ~sep:"."
@@ -382,7 +380,6 @@ module Access = struct
       match element with
       | Identifier identifier -> identifier
       | Call _ -> Format.asprintf "(...)"
-      | _ -> "?"
     in
     sanitized access
     |> List.map ~f:identifier
@@ -521,12 +518,17 @@ module Access = struct
         None
 
 
-  let combine expression access =
-    match Node.value expression with
-    | Access head ->
-        head @ access
-    | _ ->
-        (Expression expression) :: access
+  let combine { Node.location; value } access =
+    let value =
+      match value with
+      | Access head ->
+          Access (head @ access)
+      | ExpressionAccess { expression; access = head } ->
+          ExpressionAccess { expression; access = head @ access }
+      | _ ->
+          ExpressionAccess { expression = { Node.location; value }; access }
+    in
+    { Node.location; value }
 
 
   let redirect ~arguments ~location ~name =
@@ -552,24 +554,27 @@ end
 
 let rec delocalize ({ Node.value; _ } as expression) =
   let value =
+    let delocalize_element = function
+      | Access.Call ({ Node.value = arguments; _ } as call) ->
+          let delocalize_argument ({ Argument.value; _ } as argument) =
+            { argument with Argument.value = delocalize value }
+          in
+          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
+      | element ->
+          element
+    in
     match value with
     | Access access ->
         let access =
-          let delocalize_element = function
-            | Access.Call ({ Node.value = arguments; _ } as call) ->
-                let delocalize_argument ({ Argument.value; _ } as argument) =
-                  { argument with Argument.value = delocalize value }
-                in
-                Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
-            | Access.Expression expression ->
-                Access.Expression (delocalize expression)
-            | element ->
-                element
-          in
           Access.delocalize access
           |> List.map ~f:delocalize_element
         in
         Access access
+    | ExpressionAccess { expression; access } ->
+        ExpressionAccess {
+          expression = delocalize expression;
+          access = List.map access ~f:delocalize_element;
+        }
     | List elements ->
         List (List.map elements ~f:delocalize)
     | Tuple elements ->
@@ -620,8 +625,7 @@ module ComparisonOperator = struct
     operator
     >>| fun name ->
     let arguments = [{ Argument.name = None; value = right }] in
-    Access (Access.combine left (Access.call ~arguments ~location ~name ()))
-    |> Node.create ~location
+    Access.combine left (Access.call ~arguments ~location ~name ())
 end
 
 
@@ -641,9 +645,7 @@ module UnaryOperator = struct
       | Not -> None
       | Positive -> Some "__pos__"
     end
-    >>| fun name ->
-    Access (Access.combine operand (Access.call ~name ~location ()))
-    |> Node.create ~location
+    >>| fun name -> Access.combine operand (Access.call ~name ~location ())
 end
 
 
@@ -770,8 +772,6 @@ module PrettyPrinter = struct
           formatter
           "(%a)"
           pp_argument_list arguments
-    | Access.Expression expression ->
-        Format.fprintf formatter "%a" pp_expression_t expression
     | Access.Identifier identifier ->
         Format.fprintf formatter "%s" @@ identifier
 
@@ -972,6 +972,13 @@ module PrettyPrinter = struct
     match expression with
     | Access access_list ->
         pp_access_list formatter access_list
+
+    | ExpressionAccess { expression; access = access_list } ->
+        Format.fprintf
+          formatter
+          "%a.%a"
+          pp expression
+          pp_access_list access_list
 
     | Await expression ->
         Format.fprintf

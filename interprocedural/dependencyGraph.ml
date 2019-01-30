@@ -47,6 +47,14 @@ let create_callgraph ~environment ~source =
               Callable.pp callee;
             callee :: callees
           in
+          let access, resolution =
+            match access with
+            | Expression.ExpressionAccess { expression = _; access }
+            | Expression.Access access ->
+                access, resolution
+            | _ ->
+                failwith "Impossible"
+          in
           let new_callees = CallResolution.resolve_call_targets ~resolution access in
           List.fold new_callees ~f:add_call_edge ~init:callees
         in

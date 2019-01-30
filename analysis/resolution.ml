@@ -98,6 +98,10 @@ let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
       None
 
 
+let unset_local ({ annotations; _ } as resolution) ~access =
+  { resolution with annotations = Map.remove annotations access }
+
+
 let annotations { annotations; _ } =
   annotations
 

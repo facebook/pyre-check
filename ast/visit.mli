@@ -4,9 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Expression
-
-
 module type Visitor = sig
   type t
   val expression: t -> Expression.t -> t
@@ -64,4 +61,4 @@ module StatementCollector (Predicate: StatementPredicate) : sig
   val collect: Source.t -> Predicate.t list
 end
 
-val collect_accesses: Statement.t -> (Access.t Node.t) list
+val collect_accesses: Statement.t -> Expression.t list

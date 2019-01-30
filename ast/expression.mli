@@ -32,7 +32,6 @@ module Record : sig
   module Access : sig
     type 'expression access =
       | Call of (('expression Argument.record) list) Node.t
-      | Expression of 'expression
       | Identifier of Identifier.t
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -156,6 +155,7 @@ type expression =
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
   | Ellipses
+  | ExpressionAccess of { expression: t; access: t Record.Access.record }
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t
@@ -200,7 +200,7 @@ module Access : sig
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
 
-  val combine: expression_t -> t -> t
+  val combine: expression_t -> t -> expression_t
   val expression: ?location: Location.t -> t -> expression_t
 
   val sanitized: t -> t
@@ -235,7 +235,7 @@ module Access : sig
   val backup: name: t -> t option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
-  val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> t option
+  val redirect: arguments: Argument.t list -> location: Location.t -> name: t -> expression_t option
 
   val is_assert_function: t -> bool
 end

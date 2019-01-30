@@ -84,10 +84,10 @@ module AccessState = struct
                  ~access:[super]
                  ~annotation:(Annotation.create superclass)
              in
-             super :: tail, resolution
+             Access (super :: tail), resolution
          | None ->
-             access, resolution)
-        |> Option.value ~default:(access, resolution)
+             Access access, resolution)
+        |> Option.value ~default:(Access access, resolution)
     (* Resolve `type()` calls. *)
     | (Access.Identifier "type")
       :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
@@ -101,16 +101,20 @@ module AccessState = struct
           in
           Resolution.set_local resolution ~access:[access] ~annotation
         in
-        access :: tail, resolution
+        Access (access :: tail), resolution
     (* Resolve function redirects. *)
     | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
         Access.redirect ~arguments ~location ~name:[Access.Identifier name]
-        >>| (fun redirect -> redirect @ tail)
-        |> Option.value ~default:access,
+        >>| (function
+            | { Node.value = Access redirect; _ } ->
+                Access (redirect @ tail)
+            | expression ->
+                ExpressionAccess { expression; access = tail })
+        |> Option.value ~default:(Access access),
         resolution
 
     | _ ->
-        access, resolution
+        Access access, resolution
 
 
   let resolve_exports ~resolution access =
@@ -720,7 +724,7 @@ module State = struct
   (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
      `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
      we're currently folding over. *)
-  let forward_access ~resolution ~initial ~f access =
+  let forward_access ~resolution ~initial ~f ?expression access =
     let open AccessState in
     let rec fold ~state ~lead ~tail =
       let { accumulator; resolved; target; resolution; _ } = state in
@@ -756,13 +760,48 @@ module State = struct
                 in
                 match arguments, Access.backup ~name with
                 | [{ Argument.value; _ }], Some name ->
-                    let arguments = [{
-                        Argument.value = {
-                          Node.location;
-                          value = Expression.Access backup_argument;
-                        };
-                        name = None;
-                      }]
+                    let resolution, arguments =
+                      match expression with
+                      | Some expression ->
+                          let argument_type =
+                            let backup_argument =
+                              match backup_argument with
+                              | [] ->
+                                  expression
+                              | _ ->
+                                  Node.create
+                                    (ExpressionAccess { expression; access = backup_argument })
+                                    ~location
+                            in
+                            Resolution.resolve resolution backup_argument
+                          in
+                          let argument_as_identifier = Access.Identifier "$backup_argument" in
+                          let resolution =
+                            Resolution.set_local
+                              resolution
+                              ~access:[argument_as_identifier]
+                              ~annotation:(Annotation.create argument_type)
+                          in
+                          let arguments = [{
+                              Argument.value = {
+                                Node.location;
+                                value = Expression.Access [argument_as_identifier];
+                              };
+                              name = None;
+                            }]
+                          in
+                          resolution, arguments
+                      | None ->
+                          (* Just an access chain. Pass it in directly. *)
+                          let arguments = [{
+                              Argument.value = {
+                                Node.location;
+                                value = Expression.Access backup_argument;
+                              };
+                              name = None;
+                            }]
+                          in
+                          resolution, arguments
                     in
                     Resolution.resolve resolution value
                     |> fun annotation -> find_method ~parent:annotation ~name
@@ -1126,11 +1165,6 @@ module State = struct
                   in
                   step state ~resolved ~target ~element ~continue:defined ~lead ()
 
-            | None, Access.Expression expression ->
-                (* Arbitrary expression. *)
-                let resolved = Annotation.create (Resolution.resolve resolution expression) in
-                step state ~resolved ~lead ()
-
             | None, _ ->
                 (* Module or global variable. *)
                 begin
@@ -1208,9 +1242,6 @@ module State = struct
                             abort state ~element ~lead ()
                       end
                 end
-
-            | _ ->
-                abort state ~lead ()
           in
           if continue then
             fold ~state ~lead ~tail
@@ -1219,9 +1250,16 @@ module State = struct
       | _ ->
           accumulator
     in
-    let access, resolution = redirect ~resolution access in
     let access = resolve_exports ~resolution access in
-    fold ~state:(AccessState.create ~accumulator:initial ~f ~resolution ()) ~lead:[] ~tail:access
+    let resolved =
+      expression
+      >>| Resolution.resolve resolution
+      >>| Annotation.create
+    in
+    fold
+      ~state:(AccessState.create ?resolved ~accumulator:initial ~f ~resolution ())
+      ~lead:[]
+      ~tail:access
 
 
   let last_element ~resolution access =
@@ -1605,6 +1643,15 @@ module State = struct
   and forward_expression
       ~state:({ resolution; define; _ } as state)
       ~expression:{ Node.location; value } =
+    (* Redirect accesses. *)
+    let value, ({ resolution; _ } as state) =
+      match value with
+      | Access access ->
+          let expression, resolution = AccessState.redirect ~resolution access in
+          expression, { state with resolution }
+      | _ ->
+          value, state
+    in
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
       let { state; resolved = key_resolved } = forward_expression ~state ~expression:key in
       let { state; resolved = value_resolved } = forward_expression ~state ~expression:value in
@@ -1622,29 +1669,25 @@ module State = struct
       let iterator =
         let value =
           if async then
-            Access
-              (Expression.Access.combine
-                 iterator
-                 [
-                   Access.Identifier "__aiter__";
-                   Access.Call (Node.create ~location []);
-                   Access.Identifier "__anext__";
-                   Access.Call (Node.create ~location []);
-                 ])
-            |> Node.create ~location
+            (Expression.Access.combine
+               iterator
+               [
+                 Access.Identifier "__aiter__";
+                 Access.Call (Node.create ~location []);
+                 Access.Identifier "__anext__";
+                 Access.Call (Node.create ~location []);
+               ])
             |> (fun target -> Await target)
             |> Node.create ~location
           else
-            Access
-              (Expression.Access.combine
-                 iterator
-                 [
-                   Access.Identifier "__iter__";
-                   Access.Call (Node.create ~location []);
-                   Access.Identifier "__next__";
-                   Access.Call (Node.create ~location []);
-                 ])
-            |> Node.create ~location
+            (Expression.Access.combine
+               iterator
+               [
+                 Access.Identifier "__iter__";
+                 Access.Call (Node.create ~location []);
+                 Access.Identifier "__next__";
+                 Access.Call (Node.create ~location []);
+               ])
         in
         Assign { Assign.target; annotation = None; value; parent = None }
         |> Node.create ~location
@@ -1688,6 +1731,159 @@ module State = struct
         state = join left.state right.state;
         resolved = Resolution.join resolution left.resolved right.resolved;
       }
+    in
+    let forward_access_step (found_error, state, _) ~resolution ~resolved ~element ~lead =
+      let state = { state with resolution } in
+      if found_error then
+        found_error, state, Annotation.annotation resolved
+      else if
+        Type.exists
+          (Annotation.annotation resolved)
+          ~predicate:(fun annotation -> Type.equal annotation Type.undeclared) then
+        let state =
+          Error.UndefinedName lead
+          |> (fun kind -> Error.create ~location ~kind ~define)
+          |> add_error ~state
+        in
+        true, state, Annotation.annotation resolved
+      else
+        let error =
+          match element with
+          | AccessState.Signature {
+              signature =
+                (Annotated.Signature.NotFound {
+                    callable = { Type.Callable.kind; _ };
+                    reason = Some reason;
+                    _;
+                  });
+              _;
+            } ->
+              let open Annotated.Signature in
+              let error =
+                let callee =
+                  match kind with
+                  | Type.Callable.Named access ->
+                      Some access
+                  | _ ->
+                      None
+                in
+                match reason with
+                | InvalidKeywordArgument {
+                    Node.location;
+                    value = { expression; annotation }
+                  } ->
+                    let kind =
+                      Error.InvalidArgument (Error.Keyword { expression; annotation })
+                    in
+                    Error.create ~location ~kind ~define
+                | InvalidVariableArgument {
+                    Node.location;
+                    value = { expression; annotation }
+                  } ->
+                    let kind =
+                      Error.InvalidArgument (Error.Variable { expression; annotation })
+                    in
+                    Error.create ~location ~kind ~define
+                | Mismatch mismatch ->
+                    let mismatch, name, position, location =
+                      let { Annotated.Signature.actual; expected; name; position } =
+                        Node.value mismatch
+                      in
+                      Error.create_mismatch ~resolution ~actual ~expected ~covariant:true,
+                      name,
+                      position,
+                      (Node.location mismatch)
+                    in
+                    Error.create
+                      ~location
+                      ~kind:
+                        (Error.IncompatibleParameterType {
+                            name =
+                              (name
+                               >>| fun name ->
+                               Expression.Access.create_from_identifiers [name]);
+                            position;
+                            callee;
+                            mismatch;
+                          })
+                      ~define
+                | MissingArgument name ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.MissingArgument { callee; name })
+                      ~define
+                | TooManyArguments { expected; provided } ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.TooManyArguments { callee; expected; provided })
+                      ~define
+                | TypedDictionaryAccessWithNonLiteral expression ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.TypedDictionaryAccessWithNonLiteral expression)
+                      ~define
+                | TypedDictionaryMissingKey { typed_dictionary_name; missing_key } ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.TypedDictionaryKeyNotFound {
+                          typed_dictionary_name;
+                          missing_key;
+                        })
+                      ~define
+                | UnexpectedKeyword name ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.UnexpectedKeyword { callee; name })
+                      ~define
+              in
+              Some error
+
+          | Attribute { attribute; origin; defined } when not defined ->
+              let open Annotated in
+              if Location.Reference.equal location Location.Reference.any then
+                begin
+                  Statistics.event
+                    ~name:"undefined attribute without location"
+                    ~normals:["attribute", (Expression.Access.show attribute)]
+                    ();
+                  None
+                end
+              else
+                let kind =
+                  match origin with
+                  | Instance class_attribute ->
+                      let annotation = Attribute.parent class_attribute in
+                      if Type.equal annotation Type.undeclared then
+                        Error.UndefinedName lead
+                      else
+                        Error.UndefinedAttribute {
+                          attribute;
+                          origin =
+                            Error.Class {
+                              annotation;
+                              class_attribute = Attribute.class_attribute class_attribute;
+                            };
+                        }
+                  | Module access when not (List.is_empty access) ->
+                      Error.UndefinedAttribute {
+                        attribute;
+                        origin = Error.Module access;
+                      }
+                  | Module _ ->
+                      Error.UndefinedName attribute
+                in
+                Some (Error.create ~location ~kind ~define)
+          | NotCallable Type.Object ->
+              None
+          | NotCallable annotation ->
+              let kind = Error.NotCallable annotation in
+              Some (Error.create ~location ~kind ~define)
+          | _ ->
+              None
+        in
+        Option.is_some error,
+        error >>| add_error ~state |> Option.value ~default:state,
+        Annotation.annotation resolved
     in
     match value with
     | Access [
@@ -1793,164 +1989,11 @@ module State = struct
     | Access access ->
         (* Walk through the access. *)
         let _, state, resolved =
-          let forward (found_error, state, _) ~resolution ~resolved ~element ~lead =
-            let state = { state with resolution } in
-            if found_error then
-              found_error, state, Annotation.annotation resolved
-            else if
-              Type.exists
-                (Annotation.annotation resolved)
-                ~predicate:(fun annotation -> Type.equal annotation Type.undeclared) then
-              let state =
-                Error.UndefinedName lead
-                |> (fun kind -> Error.create ~location ~kind ~define)
-                |> add_error ~state
-              in
-              true, state, Annotation.annotation resolved
-            else
-              let error =
-                match element with
-                | AccessState.Signature {
-                    signature =
-                      (Annotated.Signature.NotFound {
-                          callable = { Type.Callable.kind; _ };
-                          reason = Some reason;
-                          _;
-                        });
-                    _;
-                  } ->
-                    let open Annotated.Signature in
-                    let error =
-                      let callee =
-                        match kind with
-                        | Type.Callable.Named access ->
-                            Some access
-                        | _ ->
-                            None
-                      in
-                      match reason with
-                      | InvalidKeywordArgument {
-                          Node.location;
-                          value = { expression; annotation }
-                        } ->
-                          let kind =
-                            Error.InvalidArgument (Error.Keyword { expression; annotation })
-                          in
-                          Error.create ~location ~kind ~define
-                      | InvalidVariableArgument {
-                          Node.location;
-                          value = { expression; annotation }
-                        } ->
-                          let kind =
-                            Error.InvalidArgument (Error.Variable { expression; annotation })
-                          in
-                          Error.create ~location ~kind ~define
-                      | Mismatch mismatch ->
-                          let mismatch, name, position, location =
-                            let { Annotated.Signature.actual; expected; name; position } =
-                              Node.value mismatch
-                            in
-                            Error.create_mismatch ~resolution ~actual ~expected ~covariant:true,
-                            name,
-                            position,
-                            (Node.location mismatch)
-                          in
-                          Error.create
-                            ~location
-                            ~kind:
-                              (Error.IncompatibleParameterType {
-                                  name =
-                                    (name
-                                     >>| fun name ->
-                                     Expression.Access.create_from_identifiers [name]);
-                                  position;
-                                  callee;
-                                  mismatch;
-                                })
-                            ~define
-                      | MissingArgument name ->
-                          Error.create
-                            ~location
-                            ~kind:(Error.MissingArgument { callee; name })
-                            ~define
-                      | TooManyArguments { expected; provided } ->
-                          Error.create
-                            ~location
-                            ~kind:(Error.TooManyArguments { callee; expected; provided })
-                            ~define
-                      | TypedDictionaryAccessWithNonLiteral expression ->
-                          Error.create
-                            ~location
-                            ~kind:(Error.TypedDictionaryAccessWithNonLiteral expression)
-                            ~define
-                      | TypedDictionaryMissingKey { typed_dictionary_name; missing_key } ->
-                          Error.create
-                            ~location
-                            ~kind:(Error.TypedDictionaryKeyNotFound {
-                                typed_dictionary_name;
-                                missing_key;
-                              })
-                            ~define
-                      | UnexpectedKeyword name ->
-                          Error.create
-                            ~location
-                            ~kind:(Error.UnexpectedKeyword { callee; name })
-                            ~define
-                    in
-                    Some error
-
-                | Attribute { attribute; origin; defined } when not defined ->
-                    let open Annotated in
-                    if Location.Reference.equal location Location.Reference.any then
-                      begin
-                        Statistics.event
-                          ~name:"undefined attribute without location"
-                          ~normals:["attribute", (Expression.Access.show attribute)]
-                          ();
-                        None
-                      end
-                    else
-                      let kind =
-                        match origin with
-                        | Instance class_attribute ->
-                            let annotation = Attribute.parent class_attribute in
-                            if Type.equal annotation Type.undeclared then
-                              Error.UndefinedName lead
-                            else
-                              Error.UndefinedAttribute {
-                                attribute;
-                                origin =
-                                  Error.Class {
-                                    annotation;
-                                    class_attribute = Attribute.class_attribute class_attribute;
-                                  };
-                              }
-                        | Module access when not (List.is_empty access) ->
-                            Error.UndefinedAttribute {
-                              attribute;
-                              origin = Error.Module access;
-                            }
-                        | Module _ ->
-                            Error.UndefinedName attribute
-                      in
-                      Some (Error.create ~location ~kind ~define)
-                | NotCallable Type.Object ->
-                    None
-                | NotCallable annotation ->
-                    let kind = Error.NotCallable annotation in
-                    Some (Error.create ~location ~kind ~define)
-                | _ ->
-                    None
-              in
-              Option.is_some error,
-              error >>| add_error ~state |> Option.value ~default:state,
-              Annotation.annotation resolved
-          in
           forward_access
             access
             ~resolution
             ~initial:(false, state, Type.Top)
-            ~f:forward
+            ~f:forward_access_step
         in
 
         let state =
@@ -1965,9 +2008,6 @@ module State = struct
                   |> fun { state; _ } -> state
                 in
                 List.fold arguments ~f:forward_argument ~init:state
-            | Access.Expression expression ->
-                forward_expression ~state ~expression
-                |> fun { state; _ } -> state
           in
           List.fold access ~f:forward_access ~init:state
         in
@@ -2051,42 +2091,37 @@ module State = struct
           let { Node.location; _ } = left in
           if has_method "__contains__" iterator then
             let arguments = [{ Argument.name = None; value = left }] in
-            Access
-              (Access.combine
-                 right
-                 (Access.call ~arguments ~location ~name:"__contains__" ()))
+            (Access.combine
+               right
+               (Access.call ~arguments ~location ~name:"__contains__" ()))
           else if has_method "__iter__" iterator then
-            Access (
-              (Access.combine
-                 right
-                 (Access.call ~location ~name:"__iter__" () @
-                  Access.call ~location ~name:"__next__" () @
-                  Access.call
-                    ~arguments:[{ Argument.name = None; value = left }]
-                    ~location
-                    ~name:"__eq__"
-                    ())))
+            (Access.combine
+               right
+               (Access.call ~location ~name:"__iter__" () @
+                Access.call ~location ~name:"__next__" () @
+                Access.call
+                  ~arguments:[{ Argument.name = None; value = left }]
+                  ~location
+                  ~name:"__eq__"
+                  ()))
           else
-            Access (
-              (Access.combine
-                 right
-                 (Access.call
-                    ~arguments:[{
-                        Argument.name = None;
-                        value = { Node.value = Expression.Integer 0; location };
-                      }]
-                    ~location
-                    ~name:"__getitem__"
-                    () @
-                  Access.call
-                    ~arguments:[{ Argument.name = None; value = left }]
-                    ~location
-                    ~name:"__eq__"
-                    ()))
-            )
+            (Access.combine
+               right
+               (Access.call
+                  ~arguments:[{
+                      Argument.name = None;
+                      value = { Node.value = Expression.Integer 0; location };
+                    }]
+                  ~location
+                  ~name:"__getitem__"
+                  () @
+                Access.call
+                  ~arguments:[{ Argument.name = None; value = left }]
+                  ~location
+                  ~name:"__eq__"
+                  ()))
         in
         converted_call
-        |> Node.create ~location
         |> fun call -> forward_expression ~state ~expression:call
 
     | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) ->
@@ -2135,6 +2170,33 @@ module State = struct
         in
         (* Discard generator-local variables. *)
         { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
+
+    | ExpressionAccess { expression; access } ->
+        let { state; _ } = forward_expression ~state ~expression in
+        let (_, state, resolved) =
+          forward_access
+            ~expression
+            ~resolution
+            ~initial:(false, state, Type.Top)
+            ~f:forward_access_step
+            access
+        in
+        let state =
+          (* Check arguments and nested expressions. *)
+          let forward_access state access =
+            match access with
+            | Access.Identifier _ ->
+                state
+            | Access.Call { Node.value = arguments; _ } ->
+                let forward_argument state { Argument.value; _ } =
+                  forward_expression ~state ~expression:value
+                  |> fun { state; _ } -> state
+                in
+                List.fold arguments ~f:forward_argument ~init:state
+          in
+          List.fold access ~f:forward_access ~init:state
+        in
+        { state; resolved }
 
     | Ellipses ->
         { state; resolved = Type.ellipses }

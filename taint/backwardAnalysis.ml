@@ -235,10 +235,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               let receiver_argument_record =
                 {
                   Argument.name = None;
-                  value = Node.create ~location (Expression.Access receiver);
+                  value = Node.create receiver ~location;
                 }
               in
               receiver_argument_record :: arguments
+            in
+            let receiver =
+              match receiver with
+              | Access access ->
+                  access
+              | _ ->
+                  []
             in
             Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
             |> apply_call_targets ~resolution arguments state taint
@@ -337,6 +344,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _ ->
           state
+      | ExpressionAccess { expression; access } ->
+          List.fold access ~init:(Expression expression) ~f:normalize_access_list
+          |> analyze_normalized_expression ~resolution state taint
       | Generator comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Integer _ ->

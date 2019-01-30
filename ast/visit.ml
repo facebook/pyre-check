@@ -49,17 +49,18 @@ module Make (Visitor: Visitor) = struct
     in
 
     let visit_children value =
+      let visit_access access =
+        match access with
+        | Access.Call { Node.value = arguments; _ } ->
+            List.iter arguments ~f:(visit_argument ~visit_expression);
+        | Access.Identifier _ ->
+            ()
+      in
       match value with
       | Access access ->
-          let visit_access access =
-            match access with
-            | Access.Call { Node.value = arguments; _ } ->
-                List.iter arguments ~f:(visit_argument ~visit_expression);
-            | Access.Identifier _ ->
-                ()
-            | Access.Expression expression ->
-                visit_expression expression
-          in
+          List.iter access ~f:visit_access
+      | ExpressionAccess { expression; access } ->
+          visit_expression expression;
           List.iter access ~f:visit_access
       | Await expression ->
           visit_expression expression
@@ -320,10 +321,12 @@ end
 let collect_accesses statement =
   let open Expression in
   let module Collector = ExpressionCollector(struct
-      type t = Access.t Node.t
-      let predicate = function
-        | { Node.value = Access access; location } ->
-            Some { Node.value = access; location }
+      type t = Expression.t
+      let predicate expression =
+        match expression with
+        | { Node.value = Access _; _ }
+        | { Node.value = ExpressionAccess _; _ } ->
+            Some expression
         | _ ->
             None
     end) in

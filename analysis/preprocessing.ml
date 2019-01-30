@@ -52,23 +52,26 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               value
             } as expression) =
           let value =
+            let transform_element = function
+              | Access.Call ({ Node.value = arguments ; _ } as call) ->
+                  let transform_argument ({ Argument.value; _ } as argument) =
+                    { argument with Argument.value = transform_expression value }
+                  in
+                  Access.Call {
+                    call with
+                    Node.value = List.map arguments ~f:transform_argument;
+                  }
+              | element ->
+                  element
+            in
             match value with
             | Access access ->
-                let transform_element = function
-                  | Access.Call ({ Node.value = arguments ; _ } as call) ->
-                      let transform_argument ({ Argument.value; _ } as argument) =
-                        { argument with Argument.value = transform_expression value }
-                      in
-                      Access.Call {
-                        call with
-                        Node.value = List.map arguments ~f:transform_argument;
-                      }
-                  | Access.Expression expression ->
-                      Access.Expression (transform_expression expression)
-                  | element ->
-                      element
-                in
                 Access (List.map access ~f:transform_element)
+            | ExpressionAccess { expression; access } ->
+                ExpressionAccess {
+                  expression = transform_expression expression;
+                  access = List.map access ~f:transform_element;
+                }
             | String { StringLiteral.value; _ } ->
                 let parsed =
                   try
@@ -816,8 +819,6 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   { Argument.name; value = qualify_expression ~qualify_strings ~scope value }
                 in
                 Access.Call { call with Node.value = List.map arguments ~f:qualify_argument }
-            | Access.Expression expression ->
-                Access.Expression (qualify_expression ~qualify_strings ~scope expression)
             | element ->
                 element
           in
@@ -890,6 +891,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           DictionaryComprehension {
             Comprehension.element = qualify_entry ~qualify_strings ~scope element;
             generators;
+          }
+      | ExpressionAccess { expression; access } ->
+          ExpressionAccess {
+            expression = qualify_expression ~qualify_strings ~scope expression;
+            access = qualify_access ~qualify_strings ~scope access;
           }
       | Generator { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~qualify_strings ~scope generators in

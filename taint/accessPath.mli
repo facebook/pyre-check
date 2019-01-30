@@ -56,8 +56,12 @@ type normalized_expression =
 [@@deriving eq, show]
 
 val normalize_access: resolution: Resolution.t -> Access.t -> normalized_expression
+val normalize_access_list
+  :  normalized_expression
+  -> Expression.t Access.access
+  -> normalized_expression
 
-val as_access: normalized_expression -> Access.t
+val as_access: normalized_expression -> Expression.expression
 
 val to_json: t -> Yojson.Safe.json
 

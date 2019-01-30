@@ -211,16 +211,28 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
       | AccessPath.Access { expression; member = method_name } ->
-          let receiver = AccessPath.as_access expression in
+          let receiver =
+            AccessPath.as_access expression
+            |> Node.create ~location
+          in
           let arguments =
             let receiver = {
               Argument.name = None;
-              value = Access.expression ~location receiver;
+              value = receiver;
             } in
             receiver :: arguments
           in
-          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-          |> apply_call_targets ~resolution location arguments state
+          begin
+            match Node.value receiver with
+            | Access receiver ->
+                Interprocedural.CallResolution.get_indirect_targets
+                  ~resolution
+                  ~receiver
+                  ~method_name
+                |> apply_call_targets ~resolution location arguments state
+            | _ ->
+                analyze_expression ~resolution receiver state
+          end
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
           let callee_taint = analyze_normalized_expression ~resolution location state callee in
@@ -264,7 +276,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let annotations =
               let annotation =
                 AccessPath.as_access expression
-                |> Access.expression
+                |> Node.create ~location
                 |> Resolution.resolve resolution
               in
               let successors =
@@ -373,6 +385,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _ ->
           ForwardState.Tree.empty
+      | ExpressionAccess { expression; _ } ->
+          analyze_expression ~resolution expression state
       | Generator comprehension ->
           analyze_comprehension ~resolution comprehension state
       | Integer _ ->

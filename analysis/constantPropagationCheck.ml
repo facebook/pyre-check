@@ -131,23 +131,30 @@ module State (Context: Context) = struct
                             let lead = lead @ [head] in
                             match Map.find constants lead with
                             | Some (Constant { Node.value = Access access; _ }) ->
-                                access @ tail
+                                Access (access @ tail)
                             | Some (Constant expression) ->
-                                Access.Expression expression :: tail
+                                begin
+                                  match tail with
+                                  | [] ->
+                                      Node.value expression
+                                  | tail ->
+                                      ExpressionAccess { expression; access = tail }
+                                end
                             | _ ->
                                 transform ~lead ~tail
                           end
                       | _ ->
-                          lead
+                          Access lead
                     in
-                    match transform ~lead:[] ~tail:access with
-                    | [Access.Expression expression] -> expression
-                    | access -> Access.expression access ~location:(Node.location expression)
+                    let value = transform ~lead:[] ~tail:access in
+                    Node.create value ~location:(Node.location expression)
                   end
               | _ ->
                   expression
+
             let transform_children _ _ =
               true
+
             let statement _ statement =
               (), [statement]
           end)

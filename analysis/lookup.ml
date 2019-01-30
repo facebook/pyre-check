@@ -101,68 +101,76 @@ module ExpressionVisitor = struct
     annotate_argument_names expression;
 
     let () =
+      let store_annotation annotation =
+        store_lookup
+          ~table:annotations_lookup
+          ~location:expression_location
+          ~data:(Precise annotation)
+      in
+      let store_access access =
+        (* `filter` receives the prefix and current element, should return `Some entry` if one
+           should be added for the current prefix+entry, `None` otherwise. *)
+        let collect_and_store ~access ~lookup_table ~filter =
+          let _, entries =
+            let fold_callback (prefix, entries_sofar) element =
+              let access = prefix @ [element] in
+              let entries_sofar =
+                let add_entry entry =
+                  { reversed_prefix = List.rev access; entry } :: entries_sofar
+                in
+                filter ~prefix ~element
+                >>| add_entry
+                |> Option.value ~default:entries_sofar
+              in
+              access, entries_sofar
+            in
+            List.fold access ~init:([], []) ~f:fold_callback
+          in
+          if not (List.is_empty entries) then
+            store_lookup
+              ~table:lookup_table
+              ~location:expression_location
+              ~data:(Approximate entries);
+        in
+
+        (* Definitions. *)
+        let filter_definition ~prefix ~element =
+          let find_definition access =
+            Resolution.global resolution access
+            >>| Node.location
+            >>= fun location ->
+            if Location.equal location Location.Reference.any then None else Some location
+          in
+          match find_definition (prefix @ [element]) with
+          | Some definition ->
+              Some definition
+          | None ->
+              (* Resolve prefix to check if this is a method. *)
+              resolve ~expression:(Access.expression prefix)
+              >>| Type.class_name
+              >>| (fun resolved_prefix -> resolved_prefix @ [element])
+              >>= find_definition
+        in
+        collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
+
+        (* Annotations. *)
+        let filter_annotation ~prefix ~element =
+          let access = prefix @ [element] in
+          resolve
+            ~expression:(Node.create ~location:expression_location (Expression.Access access))
+        in
+        collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
+      in
       match expression_value with
       | Expression.Access access ->
-          (* `filter` receives the prefix and current element, should return `Some entry` if one
-             should be added for the current prefix+entry, `None` otherwise. *)
-          let collect_and_store ~access ~lookup_table ~filter =
-            let _, entries =
-              let fold_callback (prefix, entries_sofar) element =
-                let access = prefix @ [element] in
-                let entries_sofar =
-                  let add_entry entry =
-                    { reversed_prefix = List.rev access; entry } :: entries_sofar
-                  in
-                  filter ~prefix ~element
-                  >>| add_entry
-                  |> Option.value ~default:entries_sofar
-                in
-                access, entries_sofar
-              in
-              List.fold access ~init:([], []) ~f:fold_callback
-            in
-            if not (List.is_empty entries) then
-              store_lookup
-                ~table:lookup_table
-                ~location:expression_location
-                ~data:(Approximate entries);
-          in
-
-          (* Definitions. *)
-          let filter_definition ~prefix ~element =
-            let find_definition access =
-              Resolution.global resolution access
-              >>| Node.location
-              >>= fun location ->
-              if Location.equal location Location.Reference.any then None else Some location
-            in
-            match find_definition (prefix @ [element]) with
-            | Some definition ->
-                Some definition
-            | None ->
-                (* Resolve prefix to check if this is a method. *)
-                resolve ~expression:(Access.expression prefix)
-                >>| Type.class_name
-                >>| (fun resolved_prefix -> resolved_prefix @ [element])
-                >>= find_definition
-          in
-          collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
-
-          (* Annotations. *)
-          let filter_annotation ~prefix ~element =
-            let access = prefix @ [element] in
-            resolve
-              ~expression:(Node.create ~location:expression_location (Expression.Access access))
-          in
-          collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
+          store_access access
+      | Expression.ExpressionAccess { expression; access } ->
+          resolve ~expression
+          >>| store_annotation
+          |> ignore;
+          store_access access;
 
       | _ ->
-          let store_annotation annotation =
-            store_lookup
-              ~table:annotations_lookup
-              ~location:expression_location
-              ~data:(Precise annotation)
-          in
           resolve ~expression
           >>| store_annotation
           |> ignore

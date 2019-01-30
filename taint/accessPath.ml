@@ -302,8 +302,6 @@ let normalize_access_list left = function
     end
   | Access.Call arguments ->
       Call { callee = left; arguments }
-  | Access.Expression _ ->
-      failwith "invalid expr in access (not in root position)"
 
 
 let global_prefix ~resolution access =
@@ -325,8 +323,6 @@ let split_root ~resolution = function
   | Access.Identifier identifier :: rest
     when Interprocedural.CallResolution.is_local identifier ->
       Local identifier, rest
-  | Access.Expression expression :: rest ->
-      Expression expression, rest
   | (Access.Identifier _ :: _) as access ->
       let prefix, rest = global_prefix access ~resolution in
       Global prefix, rest
@@ -343,20 +339,29 @@ let normalize_access ~resolution path =
 
 let rec as_access = function
   | Global access ->
-      access
+      Expression.Access access
   | Local identifier ->
-      Access.create_from_identifiers [identifier]
+      Expression.Access (Access.create_from_identifiers [identifier])
   | Expression expression ->
-      [Access.Expression expression]
+      Expression.ExpressionAccess { expression; access = [] }
   | Call { callee; arguments; } ->
-      let callee_access = as_access callee in
-      callee_access @ [Access.Call arguments]
+      let callee = as_access callee in
+      Expression.Access.combine
+        (Node.create_with_default_location callee)
+        [Access.Call arguments]
+      |> Node.value
   | Access { expression; member; } ->
       let left = as_access expression in
-      left @ [Access.Identifier member]
+      Expression.Access.combine
+        (Node.create_with_default_location left)
+        [Access.Identifier member]
+      |> Node.value
   | Index { expression; original; arguments; _ } ->
       let left = as_access expression in
-      left @ [ Access.Identifier original; Access.Call arguments ]
+      Expression.Access.combine
+        (Node.create_with_default_location left)
+        [Access.Identifier original; Access.Call arguments]
+      |> Node.value
 
 
 let to_json { root; path; } =

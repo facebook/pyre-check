@@ -121,11 +121,12 @@ let test_expand_format_string _ =
     "f'foo{1+2}'"
     "foo{1+2}"
     [
-      +Access [
-        Access.Expression (+Integer 1);
+      +ExpressionAccess {
+        expression = +Integer 1;
+        access = [
         Access.Identifier "__add__";
         Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-      ]
+      ]};
     ];
 
   (* Ensure we fix up locations. *)

@@ -309,7 +309,11 @@ let test_redirect _ =
     in
     let access = parse_access access in
     let access, resolution = AccessState.redirect ~resolution access in
-    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_access expected_access);
+    assert_equal
+      ~printer:Expression.show_expression
+      ~cmp:Expression.equal_expression
+      access
+      (Access (parse_access expected_access));
     let assert_in_scope (expected_name, expected_type) =
       Access.create expected_name
       |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
@@ -450,6 +454,14 @@ let test_forward_access _ =
       to_resolution (source :: additional_sources)
       |> Resolution.with_parent ~parent
     in
+    let access, resolution =
+      let access = parse_single_access access ~preprocess:true in
+      match AccessState.redirect ~resolution access with
+      | Access access, resolution ->
+          access, resolution
+      | _ ->
+          access, resolution
+    in
     let steps =
       let steps steps ~resolution:_ ~resolved ~element ~lead:_ =
         let step =
@@ -489,7 +501,7 @@ let test_forward_access _ =
         step :: steps
       in
       let resolution = Resolution.with_parent resolution ~parent in
-      parse_single_access access ~preprocess:true
+      access
       |> TypeCheck.State.forward_access ~resolution ~initial:[] ~f:steps
       |> List.rev
     in

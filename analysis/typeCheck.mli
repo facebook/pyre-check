@@ -33,7 +33,7 @@ module AccessState: sig
     | Value
   [@@deriving show]
 
-  val redirect: resolution: Resolution.t -> Access.t -> Access.t * Resolution.t
+  val redirect: resolution: Resolution.t -> Access.t -> Expression.expression * Resolution.t
 
   val resolve_exports: resolution: Resolution.t -> Access.t -> Access.t
 end
@@ -108,6 +108,7 @@ module State : sig
           -> element: AccessState.element
           -> lead: Access.t
           -> 'a)
+    -> ?expression: Expression.t
     -> Expression.t Access.access sexp_list
     -> 'a
   val last_element: resolution: Resolution.t -> Access.t -> AccessState.element

@@ -1083,16 +1083,19 @@ module For = struct
       begin
         match value with
         | Access access ->
-            access @ next
+            Access (access @ next)
         | expression ->
-            [Access.Expression (Node.create_with_default_location expression)] @ next
+            ExpressionAccess {
+              expression = Node.create_with_default_location expression;
+              access = next;
+            }
       end
     in
     let value =
       if async then
-        { Node.location; value = Await (Node.create (Access value) ~location) }
+        { Node.location; value = Await (Node.create value ~location) }
       else
-        { Node.location; value = Access value }
+        { Node.location; value }
     in
     {
       Node.location;
@@ -1127,9 +1130,7 @@ module With = struct
              else
                "__enter__"
            in
-           Access
-             (Access.combine expression (Access.call ~name:enter_call_name ~location ()))
-           |> Node.create ~location
+           Access.combine expression (Access.call ~name:enter_call_name ~location ())
          in
          if async then
            Node.create ~location (Await base_call)
