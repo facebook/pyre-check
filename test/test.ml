@@ -618,8 +618,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class AsyncIterable(Protocol[_T_co]):
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
-        class AsyncIterator(AsyncIterable[_T_co],
-                    Protocol[_T_co]):
+        class AsyncIterator(AsyncIterable[_T_co], Protocol[_T_co]):
           def __anext__(self) -> Awaitable[_T_co]: ...
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
 
@@ -671,7 +670,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           @abstractmethod
           def __delitem__(self, v: _KT) -> None: ...
 
-        class Awaitable(Protocol[_T_co]): pass
+        class Awaitable(Protocol[_T_co]):
+          def __await__(self) -> Generator[Any, None, _T_co]: ...
         class Coroutine(Awaitable[_V_co], Generic[_T_co, _T_contra, _V_co]): pass
 
         class AsyncGenerator(AsyncIterator[_T_co], Generic[_T_co, _T_contra]):

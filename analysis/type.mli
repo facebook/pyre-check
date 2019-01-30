@@ -161,6 +161,7 @@ val parametric: string -> t list -> t
 val variable: ?constraints: constraints -> ?variance: variance -> string -> t
 
 val awaitable: t -> t
+val coroutine: t list -> t
 val bool: t
 val bytes: t
 val callable
@@ -258,6 +259,7 @@ val mismatch_with_any: t -> t -> bool
 val optional_value: t -> t
 val async_generator_value: t -> t
 val awaitable_value: t -> t
+val coroutine_value: t -> t
 
 val parameters: t -> t list
 val single_parameter: t -> t

@@ -2368,7 +2368,7 @@ module State = struct
           Annotated.Callable.return_annotation ~define:define_without_location ~resolution
         in
         if async then
-          Type.awaitable_value annotation
+          Type.coroutine_value annotation
         else
           annotation
       in
@@ -2384,8 +2384,7 @@ module State = struct
            not (Define.is_abstract_method define_without_location) &&
            not (Define.is_overloaded_method define_without_location) &&
            not (Type.is_none actual &&
-                (Annotated.Define.create define_without_location
-                 |> Annotated.Define.is_generator)) &&
+                (Annotated.Callable.is_generator define_without_location)) &&
            not (Type.is_none actual && Type.is_noreturn return_annotation) then
           let error =
             Error.create

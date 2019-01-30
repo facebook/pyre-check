@@ -79,7 +79,40 @@ let test_check_async _ =
       async def read(file: typing.AsyncIterable[str]) -> typing.List[str]:
         return [data async for data in file]
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      async def foo() -> typing.AsyncGenerator[bool, None]:
+        # not a generator; this gets wrapped in a coroutine
+        ...
+
+      reveal_type(foo())
+      def bar() -> None:
+        async for x in foo():
+            pass
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.(...)` is " ^
+      "`typing.Coroutine[typing.Any, typing.Any, typing.AsyncGenerator[bool, None]]`.";
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+      "Undefined attribute [16]: `typing.Coroutine[typing.Any, typing.Any, typing.Any]` " ^
+      "has no attribute `__aiter__`.";
+    ];
+
+  assert_type_errors
+    {|
+      async def foo() -> typing.AsyncGenerator[bool, None]:
+        yield
+
+      reveal_type(foo())
+      def bar() -> None:
+        async for x in foo():
+            pass
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `foo.(...)` is `typing.AsyncGenerator[bool, None]`.";
+    ]
 
 
 let () =

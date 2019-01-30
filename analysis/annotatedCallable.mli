@@ -7,6 +7,8 @@ open Ast
 open Statement
 
 
+val is_generator: Define.t -> bool
+
 val return_annotation: define: Define.t -> resolution: Resolution.t -> Type.t
 
 val apply_decorators: define: Define.t -> resolution: Resolution.t -> Define.t

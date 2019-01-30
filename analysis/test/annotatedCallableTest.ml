@@ -40,10 +40,13 @@ let test_return_annotation _ =
       |> (fun define ->
           Callable.return_annotation ~define ~resolution:(TypeCheck.resolution environment ()))
     in
-    assert_equal ~cmp:Type.equal expected return_annotation
+    assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
   assert_return_annotation (Some (Type.expression Type.integer)) false Type.integer;
-  assert_return_annotation (Some (Type.expression Type.integer)) true (Type.awaitable Type.integer)
+  assert_return_annotation
+    (Some (Type.expression Type.integer))
+    true
+    (Type.coroutine [Type.Object; Type.Object; Type.integer])
 
 
 let test_apply_decorators _ =
@@ -149,7 +152,7 @@ let test_create _ =
   assert_callable "def foo() -> int: ..." ~expected:"typing.Callable('foo')[[], int]";
   assert_callable
     "async def foo() -> int: ..."
-    ~expected:"typing.Callable('foo')[[], typing.Awaitable[int]]";
+    ~expected:"typing.Callable('foo')[[], typing.Coroutine[typing.Any, typing.Any, int]]";
 
   assert_callable
     "def foo(a, b) -> str: ..."

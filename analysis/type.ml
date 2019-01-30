@@ -371,6 +371,13 @@ let awaitable parameter =
   }
 
 
+let coroutine parameters =
+  Parametric {
+    name = "typing.Coroutine";
+    parameters;
+  }
+
+
 let bool =
   Primitive "bool"
 
@@ -1725,6 +1732,13 @@ let async_generator_value = function
 
 let awaitable_value = function
   | Parametric { name = "typing.Awaitable"; parameters = [parameter] } ->
+      parameter
+  | _ ->
+      Top
+
+
+let coroutine_value = function
+  | Parametric { name = "typing.Coroutine"; parameters = [_; _; parameter] } ->
       parameter
   | _ ->
       Top

@@ -19,8 +19,6 @@ val create: Define.t -> t
 
 val define: t -> Define.t
 
-val is_generator: t -> bool
-
 val parameter_annotations
   :  t
   -> resolution: Resolution.t

@@ -11,6 +11,27 @@ open Ast
 open Statement
 
 
+let is_generator { Define.body; _ } =
+  let module YieldVisit = Visit.Make(struct
+      type t = bool
+
+      let expression result expression =
+        match result, expression with
+        | true, _ -> true
+        | false, { Node.value = Expression.Yield _; _ } -> true
+        | false, _ -> false
+
+      let statement result statement =
+        match result, statement with
+        | true, _ -> true
+        | false, { Node.value = Statement.Yield _; _ } -> true
+        | false, { Node.value = Statement.YieldFrom _; _ } -> true
+        | false, _ -> false
+    end)
+  in
+  YieldVisit.visit false (Source.create body)
+
+
 let return_annotation ~define:({ Define.return_annotation; async; _ } as define) ~resolution =
   let annotation =
     Option.value_map
@@ -18,8 +39,8 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
       ~f:(Resolution.parse_annotation resolution)
       ~default:Type.Top
   in
-  if async then
-    Type.awaitable annotation
+  if async && not (is_generator define) then
+    Type.coroutine [Type.Object; Type.Object; annotation]
   else if Define.is_coroutine define then
     begin
       match annotation with
