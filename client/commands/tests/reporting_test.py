@@ -27,17 +27,19 @@ class ReportingTest(unittest.TestCase):
         configuration = mock_configuration()
         result = MagicMock()
 
-        json_errors = [
-            {
-                "line": 1,
-                "column": 2,
-                "path": "test/path.py",
-                "code": 3,
-                "name": "Error",
-                "description": "description",
-                "inference": "inference",
-            }
-        ]
+        json_errors = {
+            "errors": [
+                {
+                    "line": 1,
+                    "column": 2,
+                    "path": "test/path.py",
+                    "code": 3,
+                    "name": "Error",
+                    "description": "description",
+                    "inference": "inference",
+                }
+            ]
+        }
 
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/f/g")
@@ -66,7 +68,7 @@ class ReportingTest(unittest.TestCase):
         handler = commands.Reporting(
             arguments, configuration, AnalysisDirectory("/test/auto/gen")
         )
-        json_errors[0]["path"] = "/test/auto/gen/generated.py"
+        json_errors["errors"][0]["path"] = "/test/auto/gen/generated.py"
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result, bypass_filtering=True)
             self.assertEqual(len(errors), 1)
@@ -113,7 +115,7 @@ class ReportingTest(unittest.TestCase):
         arguments.local_configuration = None
         configuration.ignore_all_errors = ["*/b"]
         handler = commands.Reporting(arguments, configuration, AnalysisDirectory("/a"))
-        json_errors[0]["path"] = "b/c.py"
+        json_errors["errors"][0]["path"] = "b/c.py"
         with patch.object(json, "loads", return_value=json_errors):
             errors = handler._get_errors(result)
             self.assertEqual(len(errors), 1)
