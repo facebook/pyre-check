@@ -77,14 +77,19 @@ class Initialize(Command):
             "Which buck target(s) should pyre analyze? (//target:a,//target/b/...) "
         )
         configuration["targets"] = [target.strip() for target in targets.split(",")]
-        push_blocking = log.get_yes_no_input(
-            "Would you like pyre to enable pyre's push blocking integration?"
+        continuous = log.get_yes_no_input(
+            "Would you like to enable Pyre's continuous integration for your changes?"
         )
-        configuration["push_blocking"] = push_blocking
-        if push_blocking:
-            configuration["differential"] = log.get_yes_no_input(
-                "Should pyre only be push-blocking on newly introduced errors?"
+        configuration["continuous"] = continuous
+        if continuous:
+            push_blocking = log.get_yes_no_input(
+                "Would you like the continuous integration to be push blocking?"
             )
+            configuration["push_blocking"] = push_blocking
+            if push_blocking:
+                configuration["differential"] = log.get_yes_no_input(
+                    "Should pyre only be push-blocking on newly introduced errors?"
+                )
         return configuration
 
     def _run(self) -> None:

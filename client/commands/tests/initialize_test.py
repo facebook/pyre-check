@@ -71,3 +71,51 @@ class InitializeTest(unittest.TestCase):
                 initialize.Initialize(
                     arguments, configuration, AnalysisDirectory(".")
                 ).run()
+
+    def test_get_local_configuration(self):
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        command = initialize.Initialize(
+            arguments, configuration, AnalysisDirectory(".")
+        )
+
+        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
+            log, "input", return_value="//target/..."
+        ):
+            yes_no_input.side_effect = [False]
+            self.assertEqual(
+                command._get_local_configuration(),
+                {"continuous": False, "targets": ["//target/..."]},
+            )
+
+            yes_no_input.side_effect = [True, False]
+            self.assertEqual(
+                command._get_local_configuration(),
+                {
+                    "continuous": True,
+                    "push_blocking": False,
+                    "targets": ["//target/..."],
+                },
+            )
+
+            yes_no_input.side_effect = [True, True, False]
+            self.assertEqual(
+                command._get_local_configuration(),
+                {
+                    "continuous": True,
+                    "push_blocking": True,
+                    "differential": False,
+                    "targets": ["//target/..."],
+                },
+            )
+
+            yes_no_input.side_effect = [True, True, True]
+            self.assertEqual(
+                command._get_local_configuration(),
+                {
+                    "continuous": True,
+                    "differential": True,
+                    "push_blocking": True,
+                    "targets": ["//target/..."],
+                },
+            )
