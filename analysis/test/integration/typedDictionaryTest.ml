@@ -118,8 +118,8 @@ let test_check_typed_dictionaries _ =
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
       "to call `foo` but got `unknown`.";
-      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal; " ^
-      "expected one of ('name', 'year')."
+      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. " ^
+      "Expected one of ('name', 'year')."
     ];
 
   assert_test_typed_dictionary
@@ -268,9 +268,33 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "TypedDict accessed with a non-literal [26]: " ^
-      "TypedDict key must be a string literal; expected one of ('foo', 'bar').";
+      "TypedDict key must be a string literal. Expected one of ('foo', 'bar').";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
+  assert_test_typed_dictionary
+    {|
+      Baz = mypy_extensions.TypedDict(
+        'Baz',
+        {
+           'first_very_long_field': int,
+           'second_very_long_field': int,
+           'third_very_long_field': int,
+           'fourth_very_long_field': int,
+           'fifth_very_long_field': int
+        })
+      def foo(x: int, a: Baz) -> int:
+        if x == 7:
+            k = "foo"
+            q = a[k]
+        else:
+            q = a["first_very_long_field"]
+        return q
+    |}
+    [
+      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+
 
   assert_test_typed_dictionary
     {|

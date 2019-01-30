@@ -705,14 +705,21 @@ let messages ~detailed:_ ~define location kind =
           (if provided > 1 then "were" else "was");
       ]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
-      let acceptable_keys =
-        List.map acceptable_keys ~f:(Format.sprintf "'%s'")
-        |> String.concat ~sep:", "
+      let explanation =
+        let acceptable_keys =
+          List.map acceptable_keys ~f:(Format.sprintf "'%s'")
+          |> String.concat ~sep:", "
+        in
+        (* Use heuristic to limit message from going crazy. *)
+        if String.length acceptable_keys < 80 then
+          Format.asprintf " Expected one of (%s)." acceptable_keys
+        else
+          ""
       in
       [
         Format.asprintf
-          "TypedDict key must be a string literal; expected one of (%s)."
-          acceptable_keys
+          "TypedDict key must be a string literal.%s"
+          explanation
       ]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
       if typed_dictionary_name = "$anonymous" then
