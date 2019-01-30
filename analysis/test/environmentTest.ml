@@ -459,6 +459,28 @@ let test_register_aliases _ =
         |};
     ]
     ["x.C", "x.C"];
+  assert_resolved
+    [
+      parse
+        {|
+          A = int
+          B: typing.Type[int] = int
+          C: typing.Type[int]
+          D: typing.Any
+          E = ...
+          F = A
+          G = 1
+        |};
+    ]
+    [
+      "A", "int";
+      "B", "B";
+      "C", "C";
+      "D", "typing.Any";
+      "E", "E";
+      "F", "int";
+      "G", "G";
+    ];
   ()
 
 

@@ -434,31 +434,13 @@ let register_aliases (module Handler: Handler) sources =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let collect_aliases { Source.handle; statements; qualifier; _ } =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
-      let is_allowable_alias_annotation = function
-        | Some {
-            Node.value = Access
-                (SimpleAccess [
-                    Access.Identifier "typing";
-                    Access.Identifier "Type";
-                    Access.Identifier "__getitem__";
-                    Access.Call _;
-                  ]);
-            _;
-          } ->
-            true
-        | None ->
-            true
-        | _ ->
-            false
-      in
       match value with
       | Assign {
           Assign.target = { Node.value = Access (SimpleAccess target); _ };
           annotation;
           value;
           _;
-        }
-        when is_allowable_alias_annotation annotation ->
+        } ->
           let target =
             let access = Access.delocalize_qualified target in
             if in_class_body then
@@ -466,16 +448,58 @@ let register_aliases (module Handler: Handler) sources =
             else
               qualifier @ access
           in
+          let target_annotation =
+            Type.create
+              ~aliases:Handler.aliases
+              (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
+          in
           begin
-            match Node.value value with
-            | Access _ ->
+            match Node.value value, annotation with
+            | _, Some {
+                Node.value =
+                  Access
+                    (SimpleAccess [
+                      Access.Identifier "typing";
+                      Access.Identifier "Type";
+                      Access.Identifier "__getitem__";
+                      Access.Call {
+                        Node.value = [{
+                          Argument.value = ({
+                              Node.value = Access (SimpleAccess [
+                                Access.Identifier "mypy_extensions";
+                                Access.Identifier "TypedDict";
+                                Access.Identifier "__getitem__";
+                                Access.Call _;
+                              ]);
+                              _;
+                            } as annotation);
+                          _;
+                        }];
+                        _;
+                      };
+                    ]);
+                _;
+              } ->
+                if not (Type.equal target_annotation Type.Top) then
+                  (handle, target, annotation) :: aliases
+                else
+                  aliases
+            | _, Some ({
+                Node.value =
+                  Access
+                    (SimpleAccess[
+                      Access.Identifier "typing";
+                      Access.Identifier "Any";
+                    ]);
+                _;
+              } as annotation) ->
+                if not (Type.equal target_annotation Type.Top) then
+                  (handle, target, annotation) :: aliases
+                else
+                  aliases
+            | Access _, None ->
                 let value = Expression.delocalize value in
                 let value_annotation = Type.create ~aliases:Handler.aliases value in
-                let target_annotation =
-                  Type.create
-                    ~aliases:Handler.aliases
-                    (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
-                in
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then

@@ -172,10 +172,17 @@ let test_check_undefined_type _ =
 let test_check_invalid_type _ =
   assert_type_errors
     {|
-      MyType: typing.Type[int] = int
+      MyType = int
       x: MyType = 1
     |}
     [];
+  assert_type_errors
+    {|
+      # Type aliases cannot be annotated
+      MyType: typing.Type[int] = int
+      x: MyType = 1
+    |}
+    ["Invalid type [31]: Expression `MyType` is not a valid type."];
   assert_type_errors
     {|
       x: MyType = 1
@@ -199,6 +206,12 @@ let test_check_invalid_type _ =
     {|
       MyType: typing.Any
       x: MyType = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      MyType: typing.Any
+      x: typing.List[MyType] = [1]
     |}
     []
 

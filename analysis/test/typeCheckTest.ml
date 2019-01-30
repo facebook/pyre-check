@@ -228,6 +228,10 @@ let test_check_annotation _ =
   assert_check_annotation
     "x: typing.Type[int] = int"
     "x"
+    ["Invalid type [31]: Expression `x` is not a valid type."];
+  assert_check_annotation
+    "x = int"
+    "x"
     [];
   assert_check_annotation
     "x: typing.Any"
