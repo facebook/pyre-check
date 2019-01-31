@@ -66,7 +66,7 @@ class InitTest(unittest.TestCase):
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")
     @patch("os.path.exists", return_value=True)
-    def test_resolve_source_directories(self, realpath, cwd, exists) -> None:
+    def test_resolve_source_directories(self, exists, cwd, realpath) -> None:
         arguments = MagicMock()
         arguments.source_directories = []
         arguments.original_directory = "/root"
