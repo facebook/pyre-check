@@ -953,6 +953,16 @@ let test_constraints _ =
       (Type.Map.of_alist_exn expected)
       constraints
   in
+  let int_and_foo_string_union = Type.Union [Type.parametric "Foo" [Type.string]; Type.integer ] in
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [int_and_foo_string_union])
+    {|
+      _V = typing.TypeVar('_V')
+      class Foo(typing.Generic[_V]):
+        pass
+    |}
+    [Type.variable "_V", int_and_foo_string_union];
 
   assert_constraints
     ~target:"Foo"
@@ -1092,7 +1102,81 @@ let test_constraints _ =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [Type.variable "_T", Type.integer]
+    [Type.variable "_T", Type.integer];
+
+  assert_constraints
+    ~target:"Foo"
+    ~parameters:[Type.parametric "Foo" [Type.variable "_T"]]
+    ~instantiated:(Type.parametric "Bar" [Type.parametric "Bar" [Type.integer]])
+    {|
+      _V = typing.TypeVar('_V', covariant=True)
+      class Foo(typing.Generic[_V]):
+        pass
+      _V2 = typing.TypeVar('_V2')
+      class Bar(Foo[_V2]):
+        pass
+    |}
+    [Type.variable "_T", Type.integer];
+
+  let t_bound = Type.variable ~constraints:(Type.Bound (Type.Primitive "Bound")) "T_Bound" in
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.Primitive "Bound"])
+    {|
+      class Bound:
+        pass
+      T_Bound = typing.TypeVar('T_Bound', bound=Bound)
+      class Foo(typing.Generic[T_Bound]):
+        pass
+    |}
+    [t_bound, Type.Primitive "Bound"];
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.Primitive "UnderBound"])
+    {|
+      class Bound:
+        pass
+      class UnderBound(Bound):
+        pass
+      T_Bound = typing.TypeVar('T_Bound', bound=Bound)
+      class Foo(typing.Generic[T_Bound]):
+        pass
+    |}
+    [t_bound, Type.Primitive "UnderBound"];
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.Primitive "OverBound"])
+    {|
+      class Bound:
+        pass
+      class OverBound():
+        pass
+      T_Bound = typing.TypeVar('T_Bound', bound=Bound)
+      class Foo(typing.Generic[T_Bound]):
+        pass
+    |}
+    [];
+  let t_explicit =
+    Type.variable ~constraints:(Type.Explicit [Type.integer; Type.string]) "T_Explicit"
+  in
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.integer])
+    {|
+      T_Explicit = typing.TypeVar('T_Explicit', int, str)
+      class Foo(typing.Generic[T_Explicit]):
+        pass
+    |}
+    [t_explicit, Type.integer];
+  assert_constraints
+    ~target:"Foo"
+    ~instantiated:(Type.parametric "Foo" [Type.bool])
+    {|
+      T_Explicit = typing.TypeVar('T_Explicit', int, str)
+      class Foo(typing.Generic[T_Explicit]):
+        pass
+    |}
+    []
 
 
 let test_inferred_generic_base _ =

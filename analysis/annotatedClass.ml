@@ -230,75 +230,21 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
     | Some parameters ->
         parameters
   in
-  let resolved_parameters =
-    let target =
-      annotation ~resolution target
-      |> Type.split
-      |> fst
-    in
-    TypeOrder.instantiate_successors_parameters
-      (Resolution.order resolution)
-      ~source:instantiated
-      ~target
-    |> Option.value ~default:[]
+  let target =
+    annotation ~resolution target
+    |> Type.split
+    |> fst
   in
-  if List.length parameters = List.length resolved_parameters then
-    let rec compute_constraints map expected instantiated =
-      let fold_constraints ~map left right =
-        List.fold2 ~init:map ~f:compute_constraints left right
-        |> function
-        | List.Or_unequal_lengths.Ok map ->
-            map
-        | _ ->
-            None
-      in
-      match expected, instantiated with
-      | Type.Parametric { name = left_name; parameters = left_parameters },
-        Type.Parametric { name = right_name; parameters = right_parameters }
-        when Identifier.equal left_name right_name ->
-          fold_constraints ~map left_parameters right_parameters
-      | Type.Tuple (Type.Bounded left_parameters),
-        Type.Tuple (Type.Bounded right_parameters) ->
-          fold_constraints ~map left_parameters right_parameters
-      | Type.Tuple (Type.Bounded left_parameters),
-        Type.Tuple (Type.Unbounded right_parameter) ->
-          let right_parameters =
-            List.init (List.length left_parameters) ~f:(fun _ -> right_parameter)
-          in
-          fold_constraints ~map left_parameters right_parameters
-      | Type.Tuple (Type.Unbounded left_parameter),
-        Type.Tuple (Type.Bounded right_parameters) ->
-          compute_constraints map left_parameter (Type.union right_parameters)
-      | Type.Tuple (Type.Unbounded left_parameter),
-        Type.Tuple (Type.Unbounded right_parameter) ->
-          compute_constraints map left_parameter right_parameter
-      | Type.Variable { constraints = Type.Unconstrained; _ }, _
-        when not (Type.equal instantiated Type.Bottom) ->
-          map
-          >>| Map.set ~key:expected ~data:instantiated
-      | Type.Variable { constraints = Type.Explicit constraints; _ }, _ ->
-          let matches_constraint variable_constraint =
-            Resolution.less_or_equal
-              resolution
-              ~left:instantiated
-              ~right:variable_constraint
-          in
-          if List.exists ~f:matches_constraint constraints then
-            map
-            >>| Map.set ~key:expected ~data:instantiated
-          else
-            None
-      | _ ->
-          map
-    in
-    List.fold2_exn
-      ~init:(Some Type.Map.empty)
-      ~f:compute_constraints
-      parameters
-      resolved_parameters
-    |> Option.value ~default:Type.Map.empty
-  else
-    Type.Map.empty
+  let target =
+    match target with
+    | Primitive name ->
+        Type.parametric name parameters
+    | _ ->
+        target
+  in
+  Resolution.solve_constraints resolution ~constraints:Type.Map.empty ~source:instantiated ~target
+  (* TODO(T39598018): error in this case somehow, something must be wrong *)
+  |> Option.value ~default:Type.Map.empty
 
 
 let superclasses definition ~resolution =
