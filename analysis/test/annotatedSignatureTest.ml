@@ -454,6 +454,19 @@ let test_select _ =
     "(union)"
     (`Found "[[typing.Union[int, str]], typing.Union[int, str]]");
 
+  assert_select
+    "[[int], _T]"
+    "(5)"
+    (`Found "[[int], $bottom]");
+  assert_select
+    "[[int], _T_float_or_str]"
+    "(5)"
+    (`Found "[[int], $bottom]");
+  assert_select
+    "[[int], _T_bound_by_float_str_union]"
+    "(5)"
+    (`Found "[[int], $bottom]");
+
   (* Ranking. *)
   assert_select
     ~allow_undefined:true

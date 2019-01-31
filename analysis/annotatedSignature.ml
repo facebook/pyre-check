@@ -511,21 +511,6 @@ let select
                 constraints;
                 _;
               } as signature_match) =
-            (* Map unresolved and unbound constraints to `Bottom`. *)
-            let unbound_variables =
-              let is_unbound = function
-                | Type.Variable { constraints = Type.Explicit _; _ } -> false
-                | _ -> true
-              in
-              Type.Callable {
-                Type.Callable.kind = Anonymous;
-                implementation;
-                overloads = [];
-                implicit = None;
-              }
-              |> Type.variables
-              |> List.filter ~f:is_unbound
-            in
             let remaining_to_bottom constraints variable =
               let update = function
                 | None -> Some Type.Bottom
@@ -533,7 +518,14 @@ let select
               in
               Map.change constraints variable ~f:update
             in
-            List.fold unbound_variables ~f:remaining_to_bottom ~init:constraints
+            Type.Callable {
+              Type.Callable.kind = Anonymous;
+              implementation;
+              overloads = [];
+              implicit = None;
+            }
+            |> Type.variables
+            |> List.fold ~f:remaining_to_bottom ~init:constraints
             |> (fun constraints -> { signature_match with constraints })
           in
           List.rev arguments
