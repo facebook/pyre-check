@@ -162,9 +162,17 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
+    @patch("%s.run_global_version_update" % upgrade.__name__)
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_run_fixme_all(
-        self, run_fixme, get_errors, remove_version, find_configuration, gather, call
+        self,
+        run_fixme,
+        run_global_version_update,
+        get_errors,
+        remove_version,
+        find_configuration,
+        gather,
+        call,
     ) -> None:
         arguments = MagicMock()
         gather.return_value = [
@@ -172,6 +180,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         get_errors.return_value = []
         upgrade.run_fixme_all(arguments, [])
+        run_global_version_update.assert_not_called()
         run_fixme.assert_not_called()
         call.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
@@ -194,6 +203,7 @@ class FixmeAllTest(unittest.TestCase):
         ]
         get_errors.return_value = errors
         upgrade.run_fixme_all(arguments, [])
+        run_global_version_update.assert_not_called()
         run_fixme.called_once_with(arguments, _result(errors))
         call.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
@@ -208,13 +218,33 @@ class FixmeAllTest(unittest.TestCase):
         run_fixme.assert_not_called()
         call.assert_not_called()
 
+        run_fixme.reset_mock()
+        call.reset_mock()
+        gather.return_value = [
+            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
+        ]
+        arguments.hash = "abc"
+        upgrade.run_fixme_all(arguments, [])
+        run_global_version_update.assert_called_once_with(arguments, [])
+        run_fixme.called_once_with(arguments, _result(errors))
+        call.assert_called_once_with(
+            ["hg", "commit", "--message", upgrade._commit_message("local")]
+        )
+
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "remove_version")
     @patch.object(upgrade.Configuration, "get_errors")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
+    @patch("%s.run_global_version_update" % upgrade.__name__)
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_upgrade_configuration(
-        self, run_fixme, gather, get_errors, remove_version, call
+        self,
+        run_fixme,
+        run_global_version_update,
+        gather,
+        get_errors,
+        remove_version,
+        call,
     ) -> None:
         arguments = MagicMock()
         gather.return_value = []
@@ -241,6 +271,7 @@ class FixmeAllTest(unittest.TestCase):
         )
         configuration.get_path()
         upgrade._upgrade_configuration(arguments, configuration, "/root")
+        run_global_version_update.assert_not_called()
         run_fixme.called_once_with(arguments, _result(errors))
         call.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]

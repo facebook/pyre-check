@@ -453,6 +453,9 @@ def run_fixme_single(
 def run_fixme_all(
     arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
 ) -> None:
+    if arguments.hash and isinstance(arguments.hash, str):
+        run_global_version_update(arguments, errors)
+
     configurations = Configuration.gather_local_configurations(arguments)
     LOG.info(
         "Found %d %sconfiguration%s",
@@ -484,11 +487,6 @@ if __name__ == "__main__":
 
     commands = parser.add_subparsers()
 
-    # Subcommand: Fixme all errors inputted through stdin.
-    fixme = commands.add_parser("fixme")
-    fixme.set_defaults(errors=errors_from_stdin, function=run_fixme)
-    fixme.add_argument("--comment", help="Custom comment after fixme comments")
-
     # Subcommand: Add annotations according to errors inputted through stdin.
     missing_overridden_return_annotations = commands.add_parser(
         "missing-overridden-return-annotations"
@@ -496,22 +494,6 @@ if __name__ == "__main__":
     missing_overridden_return_annotations.set_defaults(
         errors=errors_from_stdin, function=run_missing_overridden_return_annotations
     )
-
-    # Subcommand: Run pyre and fixme errors for a single project
-    fixme_single = commands.add_parser("fixme-single")
-    fixme_single.set_defaults(errors=lambda _arguments: [], function=run_fixme_single)
-    fixme_single.add_argument(
-        "path", help="Path to project root with local configuration"
-    )
-
-    # Subcommand: Find and run pyre against all projects with configurations,
-    # and fixme all errors in each project.
-    fixme_all = commands.add_parser("fixme-all")
-    fixme_all.set_defaults(errors=lambda _arguments: [], function=run_fixme_all)
-    fixme_all.add_argument(
-        "-c", "--comment", help="Custom comment after fixme comments"
-    )
-    fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
@@ -522,6 +504,29 @@ if __name__ == "__main__":
     update_global_version.add_argument("hash", help="Hash of new Pyre version")
     update_global_version.add_argument(
         "-p", "--push-blocking-only", action="store_true"
+    )
+
+    # Subcommand: Fixme all errors inputted through stdin.
+    fixme = commands.add_parser("fixme")
+    fixme.set_defaults(errors=errors_from_stdin, function=run_fixme)
+    fixme.add_argument("--comment", help="Custom comment after fixme comments")
+
+    # Subcommand: Fixme all errors for a single project.
+    fixme_single = commands.add_parser("fixme-single")
+    fixme_single.set_defaults(errors=lambda _arguments: [], function=run_fixme_single)
+    fixme_single.add_argument(
+        "path", help="Path to project root with local configuration"
+    )
+
+    # Subcommand: Fixme all errors in all projects with local configurations.
+    fixme_all = commands.add_parser("fixme-all")
+    fixme_all.set_defaults(errors=lambda _arguments: [], function=run_fixme_all)
+    fixme_all.add_argument(
+        "-c", "--comment", help="Custom comment after fixme comments"
+    )
+    fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
+    fixme_all.add_argument(
+        "hash", nargs="?", default=None, help="Hash of new Pyre version"
     )
 
     # Initialize default values.
