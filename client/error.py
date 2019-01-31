@@ -5,6 +5,7 @@
 
 # pyre-strict
 
+import sys
 from typing import Any
 
 from . import is_capable_terminal
@@ -34,9 +35,10 @@ class Error:
         self.external_to_global_root = external_to_global_root  # type: bool
 
     def __repr__(self) -> str:
-        key = self.__key()
-        if is_capable_terminal():
+        if is_capable_terminal(file=sys.stdout):
             key = self._key_with_color()
+        else:
+            key = self.__key()
         return key + " " + self.description
 
     def __key(self) -> str:

@@ -10,7 +10,14 @@ import sys
 import unittest
 from unittest.mock import MagicMock, call, patch
 
-from .. import EnvironmentException, buck, commands, configuration, pyre
+from .. import (
+    EnvironmentException,
+    buck,
+    commands,
+    configuration,
+    is_capable_terminal,
+    pyre,
+)
 
 
 class PyreTest(unittest.TestCase):
@@ -91,3 +98,11 @@ class PyreTest(unittest.TestCase):
                 generate_source_directories.assert_called_with(
                     set(), build=True, prompt=False
                 )
+
+    def test_is_capable_terminal(self) -> None:
+        with patch("os.isatty", side_effect=lambda x: x), patch("os.getenv", return_value="vim"):
+            file = MagicMock()
+            file.fileno = lambda: True
+            self.assertEqual(is_capable_terminal(file), True)
+            file.fileno = lambda: False
+            self.assertEqual(is_capable_terminal(file), False)

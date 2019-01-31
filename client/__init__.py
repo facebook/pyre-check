@@ -33,11 +33,11 @@ def assert_readable_directory(directory: str) -> None:
         raise EnvironmentException("{} is not a readable directory.".format(directory))
 
 
-def is_capable_terminal() -> bool:
+def is_capable_terminal(file=sys.stderr) -> bool:
     """
     Determine whether we are connected to a capable terminal.
     """
-    if not os.isatty(sys.stderr.fileno()):
+    if not os.isatty(file.fileno()):
         return False
     terminal = os.getenv("TERM", "dumb")
     # Hardcoded list of non-capable terminals.
