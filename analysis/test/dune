@@ -12,10 +12,10 @@
 (tests
  (names
   AwaitableCheckTest
-  ConstantPropagationCheckTest
   CoverageTest
   abstractDomainTest
   CfgTest
+  DeobfuscationCheckTest
   DependentTest
   EnvironmentTest
   analysisErrorTest

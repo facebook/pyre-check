@@ -24,7 +24,7 @@ let checks: (module Signature) String.Map.t =
   let checks: (string * (module Signature)) list =
     [
       "awaitable", (module AwaitableCheck);
-      "constantPropagation", (module ConstantPropagationCheck);
+      "deobfuscation", (module DeobfuscationCheck);
       "inference", (module Inference);
       "typeCheck", (module TypeCheck);
     ]

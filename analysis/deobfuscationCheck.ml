@@ -15,7 +15,7 @@ module Error = AnalysisError
 
 
 let name =
-  "ConstantPropagation"
+  "Deobfuscation"
 
 
 module type Context = sig
@@ -288,6 +288,6 @@ let run
   [
     Error.create
       ~location
-      ~kind:(Error.ConstantPropagation source)
+      ~kind:(Error.Deobfuscation source)
       ~define:(Node.create define ~location);
   ]

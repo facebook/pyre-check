@@ -17,9 +17,9 @@ let assert_constant_propagation source expected =
   let actual =
     let source = parse source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
-    ConstantPropagationCheck.run ~configuration ~environment ~source
+    DeobfuscationCheck.run ~configuration ~environment ~source
     |> function
-    | [{ Error.kind = Error.ConstantPropagation actual; _ }] -> actual
+    | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
   assert_equal ~cmp:Source.equal ~printer:Source.show (parse expected) actual
@@ -256,7 +256,7 @@ let test_scheduling _ =
 
 
 let () =
-  "constantPropagationCheck">:::[
+  "DeobfuscationCheck">:::[
     "forward">::test_forward;
     "scheduling">::test_scheduling;
   ]

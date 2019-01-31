@@ -106,7 +106,7 @@ type kind =
 
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
-  | ConstantPropagation of Source.t
+  | Deobfuscation of Source.t
   | UnawaitedAwaitable of Access.t
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -152,12 +152,12 @@ let code = function
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
-  | ConstantPropagation _ -> 102
+  | Deobfuscation _ -> 102
 
 
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
-  | ConstantPropagation _ -> "ConstantPropagation"
+  | Deobfuscation _ -> "Deobfuscation"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
@@ -220,7 +220,7 @@ let messages ~detailed:_ ~define location kind =
           "Terminating analysis because type `%a` is not defined."
           Type.pp annotation
       ]
-  | ConstantPropagation source ->
+  | Deobfuscation source ->
       [Format.asprintf "\n%a" Source.pp source]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
@@ -1036,7 +1036,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedAttribute { origin = Class { annotation; _ }; _ } ->
       Type.is_unknown annotation
   | AnalysisFailure _
-  | ConstantPropagation _
+  | Deobfuscation _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
@@ -1098,7 +1098,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
       Type.mismatch_with_any actual expected
   | AnalysisFailure _
-  | ConstantPropagation _
+  | Deobfuscation _
   | TooManyArguments _
   | Unpack _
   | MissingAttributeAnnotation _
@@ -1135,7 +1135,7 @@ let less_or_equal ~resolution left right =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right ->
         Type.equal left right
-    | ConstantPropagation left, ConstantPropagation right ->
+    | Deobfuscation left, Deobfuscation right ->
         Source.equal left right
     | ImpossibleIsinstance left, ImpossibleIsinstance right
       when Expression.equal left.expression right.expression ->
@@ -1249,7 +1249,7 @@ let less_or_equal ~resolution left right =
         end
     | _, Top -> true
     | AnalysisFailure _, _
-    | ConstantPropagation _, _
+    | Deobfuscation _, _
     | ImpossibleIsinstance _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
@@ -1314,8 +1314,8 @@ let join ~resolution left right =
     match left.kind, right.kind with
     | AnalysisFailure left, AnalysisFailure right ->
         AnalysisFailure (Type.union [left; right])
-    | ConstantPropagation left, ConstantPropagation right when Source.equal left right ->
-        ConstantPropagation left
+    | Deobfuscation left, Deobfuscation right when Source.equal left right ->
+        Deobfuscation left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
@@ -1487,7 +1487,7 @@ let join ~resolution left right =
     | _, Top ->
         Top
     | AnalysisFailure _, _
-    | ConstantPropagation _, _
+    | Deobfuscation _, _
     | ImpossibleIsinstance _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
@@ -1769,8 +1769,8 @@ let dequalify
     match kind with
     | AnalysisFailure annotation ->
         AnalysisFailure (dequalify annotation)
-    | ConstantPropagation left ->
-        ConstantPropagation left
+    | Deobfuscation left ->
+        Deobfuscation left
     | ImpossibleIsinstance ({
         mismatch = { actual; expected; due_to_invariance };
         _;
