@@ -502,83 +502,8 @@ let run
               Handler.register_global ~handle ~access ~global;
               true, error :: globals_added_sofar
         in
+        (* TODO(T31680236): use inferred annotations in global fixpoint. *)
         match error with
-        | {
-          Error.kind = Error.MissingReturnAnnotation { annotation = Some annotation; _ };
-          define = ({ Node.value = define; location } as define_node);
-          _;
-        } ->
-            let is_redundant
-                ({ Node.value = { Define.return_annotation; _ }; _ } as define_node) =
-              define_node.Node.location = location &&
-              return_annotation = Some (Type.expression annotation)
-            in
-            begin
-              match Handler.function_definitions define.Define.name with
-              | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
-                  changed, globals_added_sofar
-              | _ ->
-                  let define =
-                    {
-                      define with
-                      Define.return_annotation = Some (Type.expression annotation)
-                    }
-                  in
-                  Handler.register_definition
-                    ~handle
-                    { define_node with Node.value = define };
-                  true, globals_added_sofar
-            end
-        | {
-          Error.kind = Error.MissingParameterAnnotation { name; annotation = Some annotation; _ };
-          define = ({ Node.value = define; location } as define_node);
-          _;
-        } ->
-            let is_redundant
-                ({ Node.value = { Define.parameters; _ }; _ } as define_node) =
-              let find_parameter { Node.value = parameter; _ } =
-                Access.equal (Access.create_from_identifiers [parameter.Parameter.name]) name &&
-                parameter.Parameter.annotation = Some (Type.expression annotation)
-              in
-              define_node.Node.location = location &&
-              List.exists ~f:find_parameter parameters
-            in
-            begin
-              match Handler.function_definitions define.Define.name with
-              | Some define_node_list when List.exists ~f:is_redundant define_node_list ->
-                  changed, globals_added_sofar
-              | _ ->
-                  let update_parameter parameters name annotation =
-                    let update updated ({ Node.value = parameter; _ } as parameter_node) =
-                      if Access.create_from_identifiers [Parameter.name parameter_node] = name then
-                        let updated_parameter =
-                          {
-                            parameter_node with
-                            Node.value = ({
-                                parameter with
-                                Parameter.annotation = Some annotation
-                              })
-                          }
-                        in
-                        updated_parameter :: updated
-                      else
-                        parameter_node :: updated
-                    in
-                    List.fold ~init:[] ~f:update parameters
-                  in
-                  let define =
-                    let annotation = Type.expression annotation in
-                    {
-                      define with
-                      Define.parameters =
-                        update_parameter define.Define.parameters name annotation
-                    }
-                  in
-                  Handler.register_definition
-                    ~handle
-                    { define_node with Node.value = define };
-                  true, globals_added_sofar
-            end
         | ({
             Error.kind = Error.MissingAttributeAnnotation {
                 parent;
