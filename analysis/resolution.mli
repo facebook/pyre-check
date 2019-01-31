@@ -31,7 +31,7 @@ val create
   -> module_definition: (Access.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
   -> class_representation: (Type.t -> class_representation option)
-  -> constructor: (resolution: t -> Class.t Node.t -> Type.t)
+  -> constructor: (instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t)
   -> ?parent: Access.t
   -> unit
   -> t

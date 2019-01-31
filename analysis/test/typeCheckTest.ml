@@ -1136,6 +1136,73 @@ let test_forward_access _ =
           };
       };
     ];
+  assert_fold
+    ~source:
+      {|
+        T = typing.TypeVar('T')
+        class Class(typing.Generic[T]):
+          def __init__(self, x: T) -> None:
+            pass
+        Class_int: typing.Type[Class[int]]
+      |}
+    "Class_int(7)"
+    [
+      { annotation = Type.meta (Type.parametric "Class" [Type.integer]); element = Value };
+      {
+        annotation = Type.parametric "Class" [Type.integer];
+        element = SignatureFound {
+            callable = "typing.Callable(Class.__init__)[[Named(x, int)], Class[int]]";
+            callees = ["Class.__init__"];
+          };
+      };
+    ];
+  assert_fold
+    ~source:
+      {|
+        T = typing.TypeVar('T')
+        class Class(typing.Generic[T]):
+          def __init__(self, x: T) -> None:
+            pass
+        Class_int: typing.Type[Class[int]]
+      |}
+    "Class_int('seven')"
+    [
+      { annotation = Type.meta (Type.parametric "Class" [Type.integer]); element = Value };
+      {
+        annotation = Type.parametric "Class" [Type.integer];
+        element =
+          {
+            Annotated.Signature.actual = Type.string;
+            expected = Type.integer;
+            name = None;
+            position = 1;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
+          |> Option.some
+          |> signature_not_found;
+      };
+    ];
+  assert_fold
+    ~source:
+      {|
+        T = typing.TypeVar('T')
+        class Class(typing.Generic[T]):
+          def __init__(self, x: T) -> None:
+            pass
+        Class_type: typing.Type[Class]
+      |}
+    "Class_type(True)"
+    [
+      { annotation = Type.meta (Type.Primitive "Class"); element = Value };
+      {
+        annotation = Type.parametric "Class" [Type.bool];
+        element = SignatureFound {
+            callable = "typing.Callable(Class.__init__)[[Named(x, bool)], Class[bool]]";
+            callees = ["Class.__init__"];
+          };
+      };
+    ];
 
   (* Typed dictionaries. *)
   let movie_typed_dictionary = {
@@ -1601,8 +1668,7 @@ let test_object_callables _ =
   assert_resolved "module.callable()" "int";
 
   assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
-  (* We don't resolve calls to constructors at the resolve_literal level. *)
-  assert_resolved "module.meta()" "module.Call[$bottom, $bottom]";
+  assert_resolved "module.meta()" "module.Call[int, str]";
   assert_resolved "module.submodule.generic_callable" "typing.Callable[[int], int]"
 
 

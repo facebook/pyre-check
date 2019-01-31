@@ -889,9 +889,9 @@ let rec fallback_attribute ~resolution ~name definition =
   | _ -> getitem_backup ()
 
 
-let constructor definition ~resolution =
-  let class_annotation = annotation definition ~resolution in
+let constructor definition ~instantiated ~resolution =
   let return_annotation =
+    let class_annotation = annotation definition ~resolution in
     match class_annotation with
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
@@ -906,11 +906,17 @@ let constructor definition ~resolution =
         else if List.is_empty generics then
           class_annotation
         else
-          Type.Parametric { name; parameters = generics }
+          begin
+            match instantiated with
+            | Type.Parametric { parameters; _}
+              when List.length parameters = List.length generics ->
+                instantiated
+            | _ ->
+                Type.Parametric { name; parameters = generics }
+          end
     | _ ->
         class_annotation
   in
-  let class_annotation, _ = Type.split class_annotation in
   let definitions =
     definition :: superclasses ~resolution definition
     |> List.map ~f:name
@@ -931,7 +937,7 @@ let constructor definition ~resolution =
         ~transitive:true
         ~resolution
         ~name:(Access.create "__init__")
-        ~instantiated:class_annotation
+        ~instantiated
     in
     let signature =
       attribute
@@ -947,7 +953,7 @@ let constructor definition ~resolution =
         ~transitive:true
         ~resolution
         ~name:(Access.create "__new__")
-        ~instantiated:class_annotation
+        ~instantiated
     in
     let signature =
       attribute

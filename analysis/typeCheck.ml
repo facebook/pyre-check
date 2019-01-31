@@ -1116,7 +1116,11 @@ module State = struct
                             Resolution.class_definition resolution parent
                             >>| Annotated.Class.create
                           in
-                          match class_definition >>| Annotated.Class.constructor ~resolution with
+                          let constructor =
+                            class_definition
+                            >>| Annotated.Class.constructor ~instantiated:meta_parameter ~resolution
+                          in
+                          match constructor with
                           | Some (Type.Callable callable) -> Some callable
                           | _ -> None
                     else
@@ -3488,7 +3492,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~module_definition:(fun _ -> None)
         ~class_definition:(fun _ -> None)
         ~class_representation:(fun _ -> None)
-        ~constructor:(fun ~resolution:_ _ -> Type.Top)
+        ~constructor:(fun ~instantiated:_ ~resolution:_ _ -> Type.Top)
         ()
     in
     {
@@ -3508,9 +3512,9 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     State.forward_expression ~state ~expression
     |> fun { State.resolved; _ } -> resolved
   in
-  let constructor ~resolution class_node =
+  let constructor ~instantiated ~resolution class_node =
     AnnotatedClass.create class_node
-    |> AnnotatedClass.constructor ~resolution
+    |> AnnotatedClass.constructor ~instantiated ~resolution
   in
   Resolution.create
     ~annotations

@@ -36,7 +36,7 @@ type t = {
   module_definition: Access.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
   class_representation: Type.t -> class_representation option;
-  constructor: resolution: t -> Class.t Node.t -> Type.t;
+  constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
 
   parent: Access.t option;
 }
@@ -437,10 +437,13 @@ let solve_constraints resolution ~constraints ~source ~target =
     let source =
       (* This needs to eventually also be in normal less_or_equal, as is, could cause problems with
          variance check *)
+      let instantiated_constructor instantiated =
+        class_definition resolution instantiated
+        >>| constructor resolution ~instantiated
+      in
       Option.some_if (Type.is_meta source && Type.is_callable target) source
       >>| Type.single_parameter
-      >>= class_definition resolution
-      >>| constructor resolution
+      >>= instantiated_constructor
       |> Option.value ~default:source
     in
     match source with

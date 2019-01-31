@@ -226,11 +226,15 @@ let test_get_decorator _ =
 
 
 let test_constructors _ =
-  let assert_constructor source constructors =
+  let assert_constructor source instantiated constructors =
     Class.Attribute.Cache.clear ();
     let resolution =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()
+    in
+    let instantiated =
+      parse_single_expression instantiated
+      |> Resolution.parse_annotation resolution
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
@@ -243,7 +247,7 @@ let test_constructors _ =
         let actual =
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.constructor ~resolution
+          |> Class.constructor ~resolution ~instantiated
         in
         assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
     | _ ->
@@ -252,10 +256,12 @@ let test_constructors _ =
   (* Undefined constructors. *)
   assert_constructor
     "class Foo: pass"
+    "Foo"
     (Some "typing.Callable('object.__init__')[[], Foo]");
 
   assert_constructor
     "class Foo: ..."
+    "Foo"
     (Some "typing.Callable('object.__init__')[[], Foo]");
 
   (* Statement.Defined constructors. *)
@@ -264,6 +270,7 @@ let test_constructors _ =
       class Foo:
         def Foo.__init__(self, a: int) -> None: pass
     |}
+    "Foo"
     (Some "typing.Callable('Foo.__init__')[[Named(a, int)], Foo]");
 
   assert_constructor
@@ -273,6 +280,7 @@ let test_constructors _ =
         @typing.overload
         def Foo.__init__(self, b: str) -> None: pass
     |}
+    "Foo"
     (Some
        ("typing.Callable('Foo.__init__')[[Named(a, int)], Foo]" ^
         "[[[Named(b, str)], Foo]]"));
@@ -285,7 +293,17 @@ let test_constructors _ =
       class Foo(typing.Generic[_K, _V]):
         def Foo.__init__(self) -> None: pass
     |}
+    "Foo"
     (Some "typing.Callable('Foo.__init__')[[], Foo[typing.TypeVar('_K'),typing.TypeVar('_V')]]");
+  assert_constructor
+    {|
+      _K = typing.TypeVar('_K')
+      _V = typing.TypeVar('_V')
+      class Foo(typing.Generic[_K, _V]):
+        def Foo.__init__(self, x:_K, y:_V) -> None: pass
+    |}
+    "Foo[int, str]"
+    (Some "typing.Callable('Foo.__init__')[[Named(x, int), Named(y, str)], Foo[int, str]]");
 
   (* Tuples. *)
   assert_constructor
@@ -294,6 +312,7 @@ let test_constructors _ =
       class tuple(typing.Generic[_T]):
         def tuple.__init__(self) -> None: ...
     |}
+    "tuple"
     (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[typing.TypeVar('_T'), ...]]");
 
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
@@ -305,6 +324,7 @@ let test_constructors _ =
       class C(Parent):
         pass
     |}
+    "C"
     (Some "typing.Callable('Parent.__init__')[[Named(x, int)], C]");
   assert_constructor
     {|
@@ -314,6 +334,7 @@ let test_constructors _ =
       class C(Parent):
         pass
     |}
+    "C"
     (Some "typing.Callable('Parent.__new__')[[Named(x, str)], C]")
 
 
