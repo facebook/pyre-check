@@ -571,16 +571,17 @@ let select
     in
     let determine_reason
         { callable; constraints; reasons = { arity; annotation; _ }; _ } =
+      let callable =
+        Type.Callable.map
+          ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
+          callable
+        |> (function
+            | Some callable -> callable
+            | _ -> failwith "Instantiate did not return a callable")
+      in
       match List.rev arity, List.rev annotation with
       | [], [] ->
-          Type.Callable.map
-            ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
-            callable
-          |> (function
-              | Some callable ->
-                  Found { callable; constraints }
-              | _ ->
-                  failwith "Instantiate did not return a callable")
+          Found { callable; constraints }
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function

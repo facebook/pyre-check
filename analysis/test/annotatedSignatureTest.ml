@@ -397,22 +397,23 @@ let test_select _ =
   assert_select
     "[[typing.Sequence[_T]], int]"
     "(1)"
-    (`NotFoundMismatch
-       (Type.integer, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
+    (`NotFoundMismatchWithClosest
+       ("[[typing.Sequence[$bottom]], int]",
+        Type.integer, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
 
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
   assert_select
     "[[_R], _R]"
     "('string')"
-    (`NotFoundMismatch
-       (Type.string,
+    (`NotFoundMismatchWithClosest
+       ("[[$bottom], $bottom]", Type.string,
         Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
     "(['string'])"
-    (`NotFoundMismatch
-       (Type.list Type.string,
+    (`NotFoundMismatchWithClosest
+       ("[[typing.List[$bottom]], $bottom]", Type.list Type.string,
         Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
@@ -440,11 +441,13 @@ let test_select _ =
   assert_select
     "[[_T_float_or_str], None]"
     "(union)"
-    (`NotFoundMismatch
-       (Type.union [Type.integer; Type.string],
+    (`NotFoundMismatchWithClosest
+       ("[[$bottom], None]",
+        Type.union [Type.integer; Type.string],
         Type.variable "_T_float_or_str" ~constraints:(Type.Explicit [Type.float; Type.string]),
         None,
-        1));
+        1)
+    );
   assert_select
     "[[_T_float_str_or_union], _T_float_str_or_union]"
     "(union)"

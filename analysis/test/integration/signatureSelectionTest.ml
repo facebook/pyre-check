@@ -702,7 +702,6 @@ let test_check_function_overloads _ =
         return typing.cast(x)
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Missing argument [20]: Call `typing.cast` expects argument `obj`.";
     ];
 
@@ -956,9 +955,8 @@ let test_check_variable_restrictions _ =
          return variable_restricted_identity(x)
     |}
     [
-      "Incompatible return type [7]: Expected `str` but got `unknown`.";
       "Incompatible parameter type [6]: Expected `Variable[_VR <: [str, int]]` " ^
-      "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`."
+      "for 1st anonymous parameter to call `variable_restricted_identity` but got `float`.";
     ];
   assert_type_errors
     {|
