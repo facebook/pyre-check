@@ -1602,7 +1602,7 @@ let test_object_callables _ =
 
   assert_resolved "module.meta" "typing.Type[module.Call[int, str]]";
   (* We don't resolve calls to constructors at the resolve_literal level. *)
-  assert_resolved "module.meta()" "$unknown";
+  assert_resolved "module.meta()" "module.Call[$bottom, $bottom]";
   assert_resolved "module.submodule.generic_callable" "typing.Callable[[int], int]"
 
 
@@ -1806,6 +1806,7 @@ let test_forward_expression _ =
 
   (* Generators. *)
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
+  assert_forward "(element for element in [])" (Type.generator Type.Bottom);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
     (Type.generator (Type.tuple [Type.integer; Type.string]));

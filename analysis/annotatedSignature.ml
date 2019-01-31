@@ -114,11 +114,24 @@ let select
   let open Type.Callable in
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let all_arguments = arguments in
+    let initial_constraints =
+      let to_bottom constraints variable =
+        Map.set constraints ~key:variable ~data:Type.Bottom
+      in
+      Type.Callable {
+        Type.Callable.kind = Anonymous;
+        implementation;
+        overloads = [];
+        implicit = None;
+      }
+      |> Type.variables
+      |> List.fold ~f:to_bottom ~init:Type.Map.empty
+    in
     let base_signature_match =
       {
         callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
-        constraints = Type.Map.empty;
+        constraints = initial_constraints;
         ranks = {
           arity = 0;
           annotation = 0;
@@ -505,32 +518,8 @@ let select
                         |> set_constraints_and_reasons
                 end
           in
-          let instantiate_unbound_constraints
-              ({
-                callable = { Type.Callable.implementation; _ };
-                constraints;
-                _;
-              } as signature_match) =
-            let remaining_to_bottom constraints variable =
-              let update = function
-                | None -> Some Type.Bottom
-                | value -> value
-              in
-              Map.change constraints variable ~f:update
-            in
-            Type.Callable {
-              Type.Callable.kind = Anonymous;
-              implementation;
-              overloads = [];
-              implicit = None;
-            }
-            |> Type.variables
-            |> List.fold ~f:remaining_to_bottom ~init:constraints
-            |> (fun constraints -> { signature_match with constraints })
-          in
           List.rev arguments
           |> check signature_match
-          |> instantiate_unbound_constraints
     in
     Map.fold ~init:signature_match ~f:update argument_mapping
   in

@@ -417,7 +417,7 @@ let test_select _ =
         Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
-  assert_select "[[], _R]" "()" (`Found "[[], _R]");
+  assert_select "[[], _R]" "()" (`Found "[[], $bottom]");
 
   assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select
@@ -469,6 +469,19 @@ let test_select _ =
     "[[int], _T_bound_by_float_str_union]"
     "(5)"
     (`Found "[[int], $bottom]");
+
+  assert_select
+    "[[], _T]"
+    "()"
+    (`Found "[[], $bottom]");
+  assert_select
+    "[[], _T_float_or_str]"
+    "()"
+    (`Found "[[], $bottom]");
+  assert_select
+    "[[], _T_bound_by_float_str_union]"
+    "()"
+    (`Found "[[], $bottom]");
 
   (* Ranking. *)
   assert_select

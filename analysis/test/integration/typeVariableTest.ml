@@ -79,14 +79,12 @@ let test_bottom_unbound_variables _ =
     {|
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
-        # This dummy arg is necessary for now because of a bug where zero argument functions
-        # aren't bottomed
-        def __init__(self, dummy: bool) -> None:
+        def __init__(self) -> None:
           pass
         def eat(self, x: T_Explicit) -> None:
           pass
       def bar() -> G[int]:
-        g = G(True)
+        g = G()
         reveal_type(g)
         g.eat(7)
         reveal_type(g)
