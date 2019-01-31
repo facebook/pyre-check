@@ -49,7 +49,7 @@ module InitializeResponse : sig
   [@@deriving to_yojson]
 
   (** default [id] [response] the server initialize response message *)
-  val default: int -> t
+  val default: Types.RequestId.t -> t
 end
 
 module ShutdownResponse : sig
@@ -57,7 +57,7 @@ module ShutdownResponse : sig
   [@@deriving to_yojson]
 
   (** default [id] [response] the shutdown response *)
-  val default: int -> t
+  val default: Types.RequestId.t -> t
 end
 
 module TextDocumentDefinitionResponse : sig
@@ -66,7 +66,7 @@ module TextDocumentDefinitionResponse : sig
 
   val create
     :  configuration: Configuration.Analysis.t
-    -> id: int
+    -> id: Types.RequestId.t
     -> location: Ast.Location.Instantiated.t option
     -> t
 end
@@ -80,7 +80,7 @@ module HoverResponse : sig
     contents: string;
   }
 
-  val create: id: int -> result: hover_result option -> t
+  val create: id: Types.RequestId.t -> result: hover_result option -> t
 end
 
 module RageResponse : sig
@@ -89,7 +89,7 @@ module RageResponse : sig
 
   val create
     :  items: Types.RageResponse.RageResult.rageItem list
-    -> id: int
+    -> id: Types.RequestId.t
     -> t
 end
 

@@ -16,7 +16,10 @@ type response = {
   response: Protocol.response option;
 }
 
-val process_client_shutdown_request: state: State.t -> id: int -> response
+val process_client_shutdown_request
+  :  state: State.t
+  -> id: LanguageServer.Types.RequestId.t
+  -> response
 val process_type_query_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t

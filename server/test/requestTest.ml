@@ -11,6 +11,9 @@ open Pyre
 open Server
 open Test
 
+let int_request_id id = LanguageServer.Types.RequestId.Int id
+
+let string_request_id id = LanguageServer.Types.RequestId.String id
 
 let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) () =
   let configuration = Test.mock_configuration in
@@ -122,8 +125,8 @@ let test_generate_lsp_response _ =
     in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
-  assert_response 1 (Some 1337) {|{"jsonrpc":"2.0","id":1,"result":1337}|};
-  assert_response 2 None {|{"jsonrpc":"2.0","id":2,"result":null}|}
+  assert_response (int_request_id 1) (Some 1337) {|{"jsonrpc":"2.0","id":1,"result":1337}|};
+  assert_response (string_request_id "abcd") None {|{"jsonrpc":"2.0","id":"abcd","result":null}|}
 
 
 let test_process_client_shutdown_request _ =
@@ -144,8 +147,8 @@ let test_process_client_shutdown_request _ =
     in
     assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
   in
-  assert_response 0 {|{"jsonrpc":"2.0","id":0,"result":null}|};
-  assert_response 2 {|{"jsonrpc":"2.0","id":2,"result":null}|}
+  assert_response (int_request_id 0) {|{"jsonrpc":"2.0","id":0,"result":null}|};
+  assert_response (string_request_id "xyz") {|{"jsonrpc":"2.0","id":"xyz","result":null}|}
 
 
 let test_process_type_query_request _ =
@@ -493,7 +496,7 @@ let test_process_get_definition_request context =
                 ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
               |> File.create
         in
-        { Protocol.DefinitionRequest.id = 0; file; position }
+        { Protocol.DefinitionRequest.id = int_request_id 0; file; position }
       in
       let actual_response =
         let actual_response =
@@ -538,7 +541,7 @@ let test_process_get_definition_request context =
         in
         {
           TextDocumentDefinitionResponse.jsonrpc = "2.0";
-          id = 0;
+          id = int_request_id 0;
           result = Some result;
           error = None;
         }

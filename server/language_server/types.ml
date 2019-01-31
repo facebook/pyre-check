@@ -40,6 +40,22 @@ module None : OfAny = struct
 end
 
 
+module RequestId = struct
+  type t =
+    | Int of int
+    | String of string
+  [@@deriving eq, show]
+
+  let to_yojson = function
+    | Int id -> `Int id
+    | String id -> `String id
+
+  let of_yojson = function
+    | `Int id -> Ok (Int id)
+    | `String id -> Ok (String id)
+    | json -> Error (Format.asprintf "Invalid request id %s" (Yojson.Safe.to_string json))
+end
+
 module DocumentUri = struct
   type t = string
   [@@deriving yojson]
@@ -678,7 +694,7 @@ module RequestMessage = struct
   module type S = sig
     type t = {
       jsonrpc: string;
-      id: int;
+      id: RequestId.t;
       method_: string;
       parameters: parameters option;
     }
@@ -691,7 +707,7 @@ module RequestMessage = struct
     type t = {
       jsonrpc: string
           [@key "jsonrpc"];
-      id: int
+      id: RequestId.t
           [@key "id"];
       method_: string
           [@key "method"];
@@ -738,7 +754,7 @@ module ResponseMessage = struct
   module type S = sig
     type t = {
       jsonrpc: string;
-      id: int;
+      id: RequestId.t;
       result: result option;
       error: error option;
     }
@@ -754,7 +770,7 @@ module ResponseMessage = struct
     type t = {
       jsonrpc: string
           [@key "jsonrpc"];
-      id: int
+      id: RequestId.t
           [@key "id"];
       result: result option
           [@key "result"];

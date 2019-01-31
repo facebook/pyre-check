@@ -6,13 +6,12 @@
 open Core
 
 open Ast
-open Expression
 open Analysis
-
+open Expression
 
 module DefinitionRequest: sig
   type t = {
-    id: int;
+    id: LanguageServer.Types.RequestId.t;
     file: File.t;
     position: Location.position;
   }
@@ -111,12 +110,12 @@ module Request : sig
     | LanguageServerProtocolRequest of string
     | ClientConnectionRequest of client
     | ClientExitRequest of client
-    | RageRequest of int
+    | RageRequest of LanguageServer.Types.RequestId.t
     | DisplayTypeErrors of { files: File.t list; flush: bool }
     | TypeCheckRequest of TypeCheckRequest.t
     | TypeQueryRequest of TypeQuery.request
     | StopRequest
-    | ClientShutdownRequest of int
+    | ClientShutdownRequest of LanguageServer.Types.RequestId.t
     | GetDefinitionRequest of DefinitionRequest.t
     | HoverRequest of DefinitionRequest.t
     | OpenDocument of File.t

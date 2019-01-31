@@ -21,6 +21,9 @@ type test_files = {
   symlink_target: string;
 }
 
+let int_request_id id = LanguageServer.Types.RequestId.Int id
+
+let string_request_id id = LanguageServer.Types.RequestId.String id
 
 let files context =
   let root = bracket_tmpdir context |> Filename.realpath in
@@ -155,7 +158,7 @@ let test_initialize_request_parses _ =
   assert_parses {|
   {
     "jsonrpc": "2.0",
-    "id": 0,
+    "id": "abcd",
     "method": "initialize",
     "params": {
       "processId": 2160986,
@@ -303,7 +306,7 @@ let test_initialize_request_parses _ =
   assert_parses {|
   {
    "jsonrpc": "2.0",
-   "id": 0,
+   "id": "961810f9-ed94-4044-a7c8-82b4135925a7",
    "method": "initialize",
    "params": {
      "processId": null,
@@ -451,12 +454,35 @@ let test_initialize_request_parses _ =
 
 let test_initialize_response _ =
   assert_equal
-    (InitializeResponse.default 1
+    (InitializeResponse.default (int_request_id 1)
      |> InitializeResponse.to_yojson
      |> Yojson.Safe.sort)
     ({|
       {
         "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "capabilities": {
+            "definitionProvider": true,
+            "hoverProvider": true,
+            "rageProvider": true,
+            "textDocumentSync": {
+              "change": 0,
+              "openClose": true,
+              "save": { "includeText": false }
+            }
+          }
+        }
+      }
+     |}
+     |> Yojson.Safe.from_string);
+  assert_equal
+    (InitializeResponse.default (string_request_id "961810f9-ed94-4044-a7c8-82b4135925a7")
+     |> InitializeResponse.to_yojson
+     |> Yojson.Safe.sort)
+    ({|
+      {
+        "id": "961810f9-ed94-4044-a7c8-82b4135925a7",
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
@@ -564,7 +590,7 @@ let test_language_server_protocol_deserialize_request _ =
     let open Request in
     {
       jsonrpc = "2.0";
-      id = 0;
+      id = int_request_id 0;
       method_ = "initialize";
       parameters = Some ();
     }
@@ -649,11 +675,20 @@ let test_language_server_definition_response context =
     assert_equal ~printer:Yojson.Safe.pretty_to_string expected message
   in
   assert_response
-    ~id:1
+    ~id:(int_request_id 1)
     ~location:None
     ~expected:(
       `Assoc [
         "id", `Int 1;
+        "jsonrpc", `String "2.0";
+        "result", `List [];
+      ]);
+  assert_response
+    ~id:(string_request_id "abcd")
+    ~location:None
+    ~expected:(
+      `Assoc [
+        "id", `String "abcd";
         "jsonrpc", `String "2.0";
         "result", `List [];
       ]);
@@ -679,7 +714,7 @@ let test_language_server_definition_response context =
   add_paths handles;
 
   assert_response
-    ~id:1
+    ~id:(int_request_id 1)
     ~location:(
       Some
         {
@@ -702,7 +737,7 @@ let test_language_server_definition_response context =
         ];
       ]);
   assert_response
-    ~id:1
+    ~id:(string_request_id "abcd")
     ~location:(
       Some
         {
@@ -713,7 +748,7 @@ let test_language_server_definition_response context =
     ~expected:(
       `Assoc [
         "jsonrpc", `String "2.0";
-        "id", `Int 1;
+        "id", `String "abcd";
         "result", `List [
           `Assoc [
             "uri", `String (Format.sprintf "file://%s" (Path.absolute stub));
@@ -752,7 +787,7 @@ let test_language_server_hover_request _ =
     let open Position in
     {
       jsonrpc = "2.0";
-      id = 0;
+      id = int_request_id 0;
       method_ = "textDocument/hover";
       parameters = Some {
           textDocument = {
@@ -777,7 +812,7 @@ let test_language_server_hover_request _ =
 let test_language_server_hover_response _ =
   let message =
     HoverResponse.create
-      ~id:1
+      ~id:(int_request_id 1)
       ~result:(
         Some {
           HoverResponse.location = Ast.Location.Instantiated.any;

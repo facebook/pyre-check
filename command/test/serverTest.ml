@@ -17,6 +17,9 @@ open Test
 
 exception Timeout
 
+let int_request_id id = LanguageServer.Types.RequestId.Int id
+
+let string_request_id id = LanguageServer.Types.RequestId.String id
 
 let file ~local_root ?content path =
   File.create ?content (Path.create_relative ~root:local_root ~relative:path)
@@ -278,10 +281,10 @@ let test_shutdown context =
   assert_response
     ~local_root
     ~source
-    ~request:(Protocol.Request.ClientShutdownRequest 1)
+    ~request:(Protocol.Request.ClientShutdownRequest (int_request_id 1))
     (Some
        (Protocol.LanguageServerProtocolResponse
-          (LanguageServer.Protocol.ShutdownResponse.default 1
+          (LanguageServer.Protocol.ShutdownResponse.default (int_request_id 1)
            |> LanguageServer.Protocol.ShutdownResponse.to_yojson
            |> Yojson.Safe.to_string)))
 
@@ -305,7 +308,7 @@ let test_language_scheduler_shutdown context =
         }
        |})
     (Some (Protocol.LanguageServerProtocolResponse
-             (LanguageServer.Protocol.ShutdownResponse.default 2
+             (LanguageServer.Protocol.ShutdownResponse.default (int_request_id 2)
               |> LanguageServer.Protocol.ShutdownResponse.to_yojson
               |> Yojson.Safe.to_string)))
 
@@ -1370,7 +1373,7 @@ let test_language_scheduler_definition context =
   let expected_response =
     LanguageServer.Protocol.TextDocumentDefinitionResponse.create
       ~configuration
-      ~id:3
+      ~id:(int_request_id 3)
       ~location:None
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
