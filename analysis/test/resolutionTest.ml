@@ -233,39 +233,143 @@ let test_resolve_mutable_literals _ =
     ~against:"typing.Set[Q]"
 
 
-let test_can_be_bound _ =
+let test_solve_constraints _ =
   let resolution =
     make_resolution
       {|
       class C: ...
       class D(C): ...
       class Q: ...
+      T_Unconstrained = typing.TypeVar('T_Unconstrained')
+      T_Bound_C = typing.TypeVar('T_Bound_C', bound=C)
+      T_Bound_D = typing.TypeVar('T_Bound_D', bound=D)
+      T_C_Q = typing.TypeVar('T_C_Q', C, Q)
+      T_D_Q = typing.TypeVar('T_D_Q', D, Q)
+
+      T = typing.TypeVar('T')
+      class G_invariant(typing.Generic[T]):
+        pass
+      T_Covariant = typing.TypeVar('T_Cov', covariant=True)
+      class G_covariant(typing.Generic[T_Covariant]):
+        pass
+
+      class Constructable:
+        def __init__(self, x: int) -> None:
+          pass
     |}
   in
-  let assert_can_be_bound variable target expected =
+  let assert_solve ~source ~target ?constraints expected =
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
     in
-    let variable = parse_annotation variable in
+    let source = parse_annotation source in
     let target = parse_annotation target in
+    let parse_map map =
+      map
+      >>| List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value))
+      >>| Type.Map.of_alist_exn
+    in
+    let expected = parse_map expected in
+    let constraints =
+      parse_map constraints
+      |> Option.value ~default:(Type.Map.empty)
+    in
+    let optional_map_compare left right =
+      match left, right with
+      | Some left, Some right -> Type.Map.equal Type.equal left right
+      | None, None -> true
+      | _ , _ -> false
+    in
+    let optional_map_print map =
+      let show_line ~key ~data accumulator =
+        Format.sprintf "%s \n %s -> %s" accumulator (Type.show key) (Type.show data)
+      in
+      map
+      >>| Map.fold ~init:"" ~f:show_line
+      |> Option.value ~default:"None"
+    in
     assert_equal
+      ~cmp:optional_map_compare
+      ~printer:optional_map_print
       expected
-      (Resolution.can_be_bound resolution ~variable ~target)
+      (Resolution.solve_constraints resolution ~constraints ~source ~target)
   in
-  assert_can_be_bound "typing.TypeVar('_T')" "C" true;
-  assert_can_be_bound "typing.TypeVar('_T')" "D" true;
-  assert_can_be_bound "typing.TypeVar('_T')" "Q" true;
+  assert_solve ~source:"C" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
+  assert_solve ~source:"D" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
+  assert_solve ~source:"Q" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "Q"]);
 
-  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "C" true;
-  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "D" true;
-  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='C')" "Q" false;
-  assert_can_be_bound "typing.TypeVar('_T', $parameter$bound='D')" "C" false;
+  assert_solve ~source:"C" ~target:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+  assert_solve ~source:"D" ~target:"T_Bound_C" (Some ["T_Bound_C", "D"]);
+  assert_solve ~source:"Q" ~target:"T_Bound_C" (None);
+  assert_solve ~source:"C" ~target:"T_Bound_D" (None);
 
-  assert_can_be_bound "typing.TypeVar('_T', C, Q)" "C" true;
-  assert_can_be_bound "typing.TypeVar('_T', C, Q)" "D" true;
-  assert_can_be_bound "typing.TypeVar('_T', D, Q)" "C" false;
+  assert_solve ~source:"C" ~target:"T_C_Q" (Some ["T_C_Q", "C"]);
+  (* An explicit type variable can only be bound to its constraints *)
+  assert_solve ~source:"D" ~target:"T_C_Q" (Some ["T_C_Q", "C"]);
+  assert_solve ~source:"C" ~target:"T_D_Q" (None);
+
+  assert_solve ~source:"$bottom" ~target:"T_Unconstrained" (Some []);
+
+
+  assert_solve
+    ~source:"typing.Union[int, G_invariant[str], str]"
+    ~target:"T_Unconstrained"
+    (Some ["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]);
+  assert_solve ~source:"typing.Union[D, C]" ~target:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+
+  assert_solve
+    ~constraints:["T_Unconstrained", "Q"]
+    ~source:"G_invariant[C]"
+    ~target:"G_invariant[T_Unconstrained]"
+    None;
+  assert_solve
+    ~constraints:["T_Unconstrained", "Q"]
+    ~source:"G_covariant[C]"
+    ~target:"G_covariant[T_Unconstrained]"
+    (Some ["T_Unconstrained", "typing.Union[Q, C]"]);
+
+  assert_solve
+    ~source:"typing.Optional[C]"
+    ~target:"typing.Optional[T_Unconstrained]"
+    (Some ["T_Unconstrained", "C"]);
+  assert_solve
+    ~source:"C"
+    ~target:"typing.Optional[T_Unconstrained]"
+    (Some ["T_Unconstrained", "C"]);
+
+  assert_solve
+    ~source:"typing.Tuple[C, ...]"
+    ~target:"typing.Tuple[T_Unconstrained, ...]"
+    (Some ["T_Unconstrained", "C"]);
+  assert_solve
+    ~source:"typing.Tuple[C, Q, D]"
+    ~target:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
+    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+  assert_solve
+    ~source:"typing.Tuple[D, ...]"
+    ~target:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
+    (Some ["T_Unconstrained", "D"]);
+  assert_solve
+    ~source:"typing.Tuple[C, Q, D]"
+    ~target:"typing.Tuple[T_Unconstrained, ...]"
+    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+
+  assert_solve
+    ~source:"G_covariant[C]"
+    ~target:"typing.Union[G_covariant[T_Unconstrained], int]"
+    (Some ["T_Unconstrained", "C"]);
+
+  assert_solve
+    ~source:"typing.Type[int]"
+    ~target:"typing.Callable[[], T_Unconstrained]"
+    (Some ["T_Unconstrained", "int"]);
+
+  assert_solve
+    ~source:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
+    ~target:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
+    (Some ["T", "typing.Union[C, Q, int]"]);
   ()
 
 
@@ -275,6 +379,6 @@ let () =
     "parse_annotation">::test_parse_annotation;
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
-    "can_be_bound">::test_can_be_bound;
+    "solve_constraints">::test_solve_constraints;
   ]
   |> Test.run

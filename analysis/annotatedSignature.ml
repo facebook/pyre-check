@@ -453,7 +453,13 @@ let select
                           >>| (fun existing -> Resolution.join resolution existing resolved)
                           |> Option.value ~default:resolved
                         in
-                        if Resolution.can_be_bound resolution ~variable ~target:resolved then
+                        let constraints_solution_exists =
+                          Resolution.constraints_solution_exists
+                            resolution
+                            ~source:resolved
+                            ~target:variable
+                        in
+                        if constraints_solution_exists then
                           Some (Map.set ~key:variable ~data:resolved constraints)
                         else if less_or_equal then
                           Some constraints

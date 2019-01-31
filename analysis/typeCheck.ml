@@ -1316,7 +1316,8 @@ module State = struct
           let add_incompatible_variable_error ~state annotation default =
             if Type.equal default Type.Object ||
                Resolution.less_or_equal resolution ~left:default ~right:annotation ||
-               Resolution.can_be_bound resolution ~variable:annotation ~target:default then
+               Resolution.constraints_solution_exists resolution ~source:default ~target:annotation
+            then
               state
             else
               let instantiate location =
@@ -3487,6 +3488,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~module_definition:(fun _ -> None)
         ~class_definition:(fun _ -> None)
         ~class_representation:(fun _ -> None)
+        ~constructor:(fun ~resolution:_ _ -> Type.Top)
         ()
     in
     {
@@ -3506,6 +3508,10 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     State.forward_expression ~state ~expression
     |> fun { State.resolved; _ } -> resolved
   in
+  let constructor ~resolution class_node =
+    AnnotatedClass.create class_node
+    |> AnnotatedClass.constructor ~resolution
+  in
   Resolution.create
     ~annotations
     ~order
@@ -3515,6 +3521,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ~module_definition:Handler.module_definition
     ~class_definition
     ~class_representation
+    ~constructor
     ()
 
 

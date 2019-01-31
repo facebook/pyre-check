@@ -31,6 +31,7 @@ val create
   -> module_definition: (Access.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
   -> class_representation: (Type.t -> class_representation option)
+  -> constructor: (resolution: t -> Class.t Node.t -> Type.t)
   -> ?parent: Access.t
   -> unit
   -> t
@@ -77,4 +78,10 @@ val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool
 val contains_untracked: t -> Type.t -> bool
 val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool
-val can_be_bound: variable: Type.t -> target: Type.t -> t -> bool
+val solve_constraints
+  :  t
+  -> constraints: Type.t Type.Map.t
+  -> source: Type.t
+  -> target: Type.t
+  -> Type.t Type.Map.t option
+val constraints_solution_exists: source: Type.t -> target: Type.t -> t -> bool
