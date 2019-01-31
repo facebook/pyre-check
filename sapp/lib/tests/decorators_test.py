@@ -1,6 +1,6 @@
-from unittest import TestCase
+from unittest import TestCase, mock
 
-from tools.sapp.decorators import retryable
+from tools.sapp.decorators import log_time, retryable
 
 
 class RetryableTest(TestCase):
@@ -36,3 +36,31 @@ class RetryableTest(TestCase):
     def testRetryableExceptions(self):
         self.assertRaises(Exception, lambda: self.raiseRetryableException())
         self.assertEqual(3, self.times_through)
+
+
+def mocked_time_generator():
+    """
+    Returns time in 10s increments
+    """
+    start = 578854800.0
+    while True:
+        yield start
+        start += 10
+
+
+@mock.patch("time.time", side_effect=mocked_time_generator())
+class LogTimeTest(TestCase):
+    @log_time
+    def takes_some_time(self):
+        pass
+
+    def testBasic(self, mocked_time_generator):
+        with self.assertLogs() as cm:
+            self.takes_some_time()
+        self.assertEqual(
+            cm.output,
+            [
+                "INFO:root:Takes_Some_Time starting...",
+                "INFO:root:Takes_Some_Time finished (0:00:20)",
+            ],
+        )

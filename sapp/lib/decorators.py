@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
+import datetime
+import logging
+import time
 from functools import wraps
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
+
+
+log = logging.getLogger()
 
 
 class retryable(object):
@@ -27,3 +33,22 @@ class retryable(object):
 
         new_func.__wrapped__ = func
         return new_func
+
+
+def log_time(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Log the time it takes to run a function. It's sort of like timeit, but
+    prettier.
+    """
+
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        log.info("%s starting...", func.__name__.title())
+        ret = func(*args, **kwargs)
+        log.info(
+            "%s finished (%s)",
+            func.__name__.title(),
+            datetime.timedelta(seconds=int(time.time() - start_time)),
+        )
+        return ret
+
+    return wrapper
