@@ -579,6 +579,7 @@ class DecodeTest(unittest.TestCase):
 
 
 class UpdateGlobalVersionTest(unittest.TestCase):
+    @patch("subprocess.call")
     @patch.object(
         upgrade.Configuration, "find_project_configuration", return_value="/root"
     )
@@ -596,7 +597,11 @@ class UpdateGlobalVersionTest(unittest.TestCase):
     )
     @patch("builtins.open")
     def test_run_global_version_update(
-        self, open_mock, gather_local_configurations, find_project_configuration
+        self,
+        open_mock,
+        gather_local_configurations,
+        find_project_configuration,
+        subprocess,
     ) -> None:
         arguments = MagicMock()
         arguments.hash = "abcd"
@@ -630,8 +635,20 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     ),
                 ]
             )
+            subprocess.assert_called_once_with(
+                [
+                    "hg",
+                    "commit",
+                    "--message",
+                    upgrade._commit_message(
+                        "global configuration",
+                        summary_override="Automatic upgrade to hash abcd",
+                    ),
+                ]
+            )
         # Push blocking argument: Since the push blocking only argument is only used when
         # gathering local configurations (mocked here), this is a no-op. Documents it.
+        subprocess.reset_mock()
         arguments.push_blocking_only = True
         with patch("json.dump") as dump:
             mocks = [
@@ -659,6 +676,17 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                         mocks[5],
                         indent=2,
                         sort_keys=True,
+                    ),
+                ]
+            )
+            subprocess.assert_called_once_with(
+                [
+                    "hg",
+                    "commit",
+                    "--message",
+                    upgrade._commit_message(
+                        "global configuration",
+                        summary_override="Automatic upgrade to hash abcd",
                     ),
                 ]
             )

@@ -271,10 +271,14 @@ def fix(
     path.write_text("\n".join(new_lines))
 
 
-def _commit_message(directory):
+def _commit_message(directory, summary_override: Optional[str] = None):
+    summary = (
+        summary_override
+        or "Automatic upgrade to remove `version` override and silence errors."
+    )
     commit_message = """[typing] Update pyre version for {}
 
-        Summary: Automatic upgrade to remove `version` override and silence errors.
+        Summary: {}
 
         Test Plan: sandcastle
 
@@ -288,11 +292,16 @@ def _commit_message(directory):
 
         Blame Revision:
         """.format(
-        directory
+        directory, summary
     ).replace(
         "            ", ""
     )
     return commit_message
+
+
+def _commit_changes(message):
+    LOG.info("Committing changes.")
+    subprocess.call(["hg", "commit", "--message", message])
 
 
 # Exposed for testing.
@@ -312,9 +321,8 @@ def _upgrade_configuration(
         errors = itertools.groupby(sorted(errors, key=error_path), error_path)
         run_fixme(arguments, errors)
     try:
-        LOG.info("Committing changes.")
         directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
-        subprocess.call(["hg", "commit", "--message", _commit_message(directory)])
+        _commit_changes(_commit_message(directory))
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
 
@@ -385,6 +393,14 @@ def run_global_version_update(
         with open(path, "w") as configuration_file:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
             configuration_file.write("\n")
+
+    try:
+        commit_summary = "Automatic upgrade to hash {}".format(arguments.hash)
+        _commit_changes(
+            _commit_message("global configuration", summary_override=commit_summary)
+        )
+    except subprocess.CalledProcessError:
+        LOG.info("Error while running hg.")
 
 
 def run_missing_overridden_return_annotations(
