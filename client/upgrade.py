@@ -107,7 +107,7 @@ class Configuration:
                 # If building targets, run clean or space may run out on device!
                 LOG.info("Running `buck clean`...")
                 subprocess.call(["buck", "clean"], timeout=200)
-            except subprocess.TimeoutExpired as error:
+            except subprocess.TimeoutExpired:
                 LOG.warning("Buck timed out. Try running `buck kill` before retrying.")
                 return []
             except subprocess.CalledProcessError as error:
@@ -421,6 +421,19 @@ def run_missing_overridden_return_annotations(
         path.write_text("\n".join(lines))
 
 
+def run_fixme_single(
+    arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
+) -> None:
+    root = Configuration.find_project_configuration()
+    if root is None:
+        LOG.info("No project configuration found for the given directory.")
+        return
+    configuration_path = arguments.path + "/.pyre_configuration.local"
+    with open(configuration_path) as configuration_file:
+        configuration = Configuration(configuration_path, json.load(configuration_file))
+        _upgrade_configuration(arguments, configuration, root)
+
+
 def run_fixme_all(
     arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
 ) -> None:
@@ -468,7 +481,14 @@ if __name__ == "__main__":
         errors=errors_from_stdin, function=run_missing_overridden_return_annotations
     )
 
-    # Subcommand: Find and run pyre against all configurations,
+    # Subcommand: Run pyre and fixme errors for a single project
+    fixme_single = commands.add_parser("fixme-single")
+    fixme_single.set_defaults(errors=lambda _arguments: [], function=run_fixme_single)
+    fixme_single.add_argument(
+        "path", help="Path to project root with local configuration"
+    )
+
+    # Subcommand: Find and run pyre against all projects with configurations,
     # and fixme all errors in each project.
     fixme_all = commands.add_parser("fixme-all")
     fixme_all.set_defaults(errors=lambda _arguments: [], function=run_fixme_all)
@@ -477,14 +497,17 @@ if __name__ == "__main__":
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
 
+    # Subcommand: Set global configuration to given hash, and add version override
+    # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
     update_global_version.set_defaults(
         errors=(lambda arguments: []), function=run_global_version_update
     )
-    update_global_version.add_argument("hash", help="Hash of new Pyre version.")
+    update_global_version.add_argument("hash", help="Hash of new Pyre version")
     update_global_version.add_argument(
         "-p", "--push-blocking-only", action="store_true"
     )
+
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):

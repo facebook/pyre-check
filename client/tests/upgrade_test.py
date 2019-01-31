@@ -247,6 +247,56 @@ class FixmeAllTest(unittest.TestCase):
         )
 
 
+class FixmeSingleTest(unittest.TestCase):
+    @patch("subprocess.call")
+    @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
+    @patch.object(upgrade.Configuration, "remove_version")
+    @patch.object(upgrade.Configuration, "get_errors")
+    @patch("%s.run_fixme" % upgrade.__name__)
+    def test_run_fixme_single(
+        self, run_fixme, get_errors, remove_version, find_configuration, call
+    ) -> None:
+        arguments = MagicMock()
+        arguments.path = "local"
+        get_errors.return_value = []
+        configuration_contents = '{"targets":[]}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_fixme_single(arguments, [])
+            run_fixme.assert_not_called()
+            call.assert_not_called()
+
+        configuration_contents = '{"version": 123}'
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_fixme_single(arguments, [])
+            run_fixme.assert_not_called()
+            call.assert_called_once_with(
+                ["hg", "commit", "--message", upgrade._commit_message("local")]
+            )
+
+        run_fixme.reset_mock()
+        call.reset_mock()
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = errors
+        with patch("builtins.open", mock_open(read_data=configuration_contents)):
+            upgrade.run_fixme_single(arguments, [])
+            run_fixme.called_once_with(arguments, _result(errors))
+            call.assert_called_once_with(
+                ["hg", "commit", "--message", upgrade._commit_message("local")]
+            )
+
+
 class FixmeTest(unittest.TestCase):
     @patch.object(pathlib.Path, "read_text")
     def test_fixme(self, path_read_text) -> None:
