@@ -598,7 +598,7 @@ let test_due_to_mismatch_with_any _ =
 let test_join _ =
   let assert_join left right expected =
     let environment =
-      Environment.handler ~configuration (Environment.Builder.create ())
+      Environment.handler (Environment.Builder.create ())
     in
     let resolution = TypeCheck.resolution environment () in
     let result = Error.join ~resolution left right in
@@ -834,7 +834,7 @@ let test_join _ =
 
 let test_less_or_equal _ =
   let resolution =
-    let environment = Environment.handler ~configuration (Environment.Builder.create ()) in
+    let environment = Environment.handler (Environment.Builder.create ()) in
     TypeCheck.resolution environment ()
   in
   assert_true
@@ -933,7 +933,7 @@ let test_less_or_equal _ =
 let test_filter _ =
   let open Error in
   let environment =
-    Environment.handler ~configuration (Environment.Builder.create ())
+    Environment.handler (Environment.Builder.create ())
   in
   add_defaults_to_environment ~configuration environment;
   Service.Environment.populate

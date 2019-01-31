@@ -17,13 +17,10 @@ let configuration =
 let populate_with_sources sources =
   let environment =
     let environment = Environment.Builder.create () in
-    Service.Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment)
-      sources;
+    Service.Environment.populate ~configuration (Environment.handler environment) sources;
     environment
   in
-  Environment.handler ~configuration environment
+  Environment.handler environment
 
 
 let populate source =
@@ -31,11 +28,11 @@ let populate source =
     let environment = Environment.Builder.create () in
     Service.Environment.populate
       ~configuration
-      (Environment.handler ~configuration environment)
+      (Environment.handler environment)
       (parse source :: typeshed_stubs ());
     environment
   in
-  Environment.handler ~configuration environment
+  Environment.handler environment
 
 
 let value option =

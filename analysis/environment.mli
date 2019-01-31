@@ -9,7 +9,6 @@ open Statement
 
 
 type t = {
-  function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
@@ -24,11 +23,6 @@ type t = {
     e.g., in-process hash tables, shared memory, or network streams to provide
     lookups. *)
 module type Handler = sig
-  val register_definition
-    :  handle: File.Handle.t
-    -> ?name_override: Access.t
-    -> (Define.t Node.t)
-    -> unit
   val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
   val register_global
     :  handle: File.Handle.t
@@ -40,7 +34,6 @@ module type Handler = sig
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
-  val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> Resolution.class_representation option
 
   val register_protocol: Type.t -> unit
@@ -71,7 +64,7 @@ end
 (** Provides a default in-process environment handler constructed from an
     [Environment.t]. Use [Environment_service.handler] if interfacing from outside
     [Analysis]. *)
-val handler: t -> configuration: Configuration.Analysis.t -> (module Handler)
+val handler: t -> (module Handler)
 
 val dependencies: (module Handler) -> Access.t -> File.Handle.t list option
 

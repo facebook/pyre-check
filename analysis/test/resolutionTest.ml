@@ -78,11 +78,11 @@ let make_resolution source =
       let environment = Environment.Builder.create () in
       Service.Environment.populate
         ~configuration
-        (Environment.handler ~configuration environment)
+        (Environment.handler environment)
         (parse source :: typeshed_stubs ());
       environment
     in
-    Environment.handler ~configuration environment
+    Environment.handler environment
   in
   populate source
   |> fun environment -> TypeCheck.resolution environment ()

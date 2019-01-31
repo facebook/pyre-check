@@ -12,7 +12,6 @@ open Statement
 
 
 type t = {
-  function_definitions: ((Define.t Node.t) list) Access.Table.t;
   class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Access.Table.t;
@@ -23,11 +22,6 @@ type t = {
 }
 
 module type Handler = sig
-  val register_definition
-    :  handle: File.Handle.t
-    -> ?name_override: Access.t
-    -> (Define.t Node.t)
-    -> unit
   val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
   val register_global
     :  handle: File.Handle.t
@@ -39,7 +33,6 @@ module type Handler = sig
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
-  val function_definitions: Access.t -> (Define.t Node.t) list option
   val class_definition: Type.t -> Resolution.class_representation option
 
   val register_protocol: Type.t -> unit
@@ -148,7 +141,6 @@ let connect_definition
 
 let handler
     {
-      function_definitions;
       class_definitions;
       protocols;
       modules;
@@ -156,29 +148,12 @@ let handler
       aliases;
       globals;
       dependencies;
-    }
-    ~configuration:{ Configuration.Analysis.infer; _ } =
+    } =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
 
   (module struct
     module TypeOrderHandler = (val TypeOrder.handler order: TypeOrder.Handler)
     module DependencyHandler = DependencyHandler
-
-    let register_definition
-        ~handle
-        ?name_override
-        ({ Node.value = { Define.name; _  }; _ } as definition) =
-      let name = Option.value ~default:name name_override in
-      DependencyHandler.add_function_key ~handle name;
-      if infer then
-        let definitions =
-          match Hashtbl.find function_definitions name with
-          | Some definitions ->
-              definition::definitions
-          | None ->
-              [definition]
-        in
-        Hashtbl.set ~key:name ~data:definitions function_definitions
 
 
     let register_dependency ~handle ~dependency =
@@ -279,8 +254,6 @@ let handler
               |> ignore)
           keys
       in
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
-      |> purge_table_given_keys function_definitions;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
       |> purge_table_given_keys class_definitions;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
@@ -296,9 +269,6 @@ let handler
       if debug then
         TypeOrder.check_integrity (TypeOrder.handler order)
 
-
-    let function_definitions =
-      Hashtbl.find function_definitions
 
     let class_definition =
       Hashtbl.find class_definitions
@@ -798,10 +768,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             callables
             ({ Define.name; _ } as define) =
 
-          Handler.register_definition
-            ~handle
-            ~name_override:name
-            (Node.create ~location define);
+          Handler.DependencyHandler.add_function_key ~handle name;
 
           (* Register callable global. *)
           let callable =
@@ -1071,7 +1038,6 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
 
 module Builder = struct
   let create () =
-    let function_definitions = Access.Table.create () in
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
     let modules = Access.Table.create () in
@@ -1228,7 +1194,6 @@ module Builder = struct
 
 
     {
-      function_definitions;
       class_definitions;
       protocols;
       modules;
@@ -1241,7 +1206,6 @@ module Builder = struct
 
   let copy
       {
-        function_definitions;
         class_definitions;
         protocols;
         modules;
@@ -1251,7 +1215,6 @@ module Builder = struct
         dependencies;
       } =
     {
-      function_definitions = Hashtbl.copy function_definitions;
       class_definitions = Hashtbl.copy class_definitions;
       protocols = Hash_set.copy protocols;
       modules = Hashtbl.copy modules;
@@ -1264,25 +1227,19 @@ module Builder = struct
 
   let statistics
       {
-        function_definitions;
         class_definitions;
         protocols;
         globals;
         _;
       } =
     Format.asprintf
-      "Found %d functions, %d classes, %d protocols, and %d globals"
-      (Hashtbl.length function_definitions)
+      "Found %d classes, %d protocols, and %d globals"
       (Hashtbl.length class_definitions)
       (Hash_set.length protocols)
       (Hashtbl.length globals)
 
 
-  let pp format { function_definitions; order; aliases; globals; _ } =
-    let functions =
-      Hashtbl.keys function_definitions
-      |> List.map ~f:(fun access -> "  " ^  (Format.asprintf "%a" Access.pp access))
-      |> String.concat ~sep:"\n" in
+  let pp format { order; aliases; globals; _ } =
     let aliases =
       let alias (key, data) =
         Format.asprintf
@@ -1304,9 +1261,8 @@ module Builder = struct
       |> String.concat ~sep:"\n" in
     Format.fprintf
       format
-      "Environment:\nOrder:\n%a\nFunctions:\n%s\nAliases:\n%s\nGlobals:\n%s"
+      "Environment:\nOrder:\n%a\nAliases:\n%s\nGlobals:\n%s"
       TypeOrder.pp order
-      functions
       aliases
       globals
 

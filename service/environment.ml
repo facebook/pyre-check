@@ -116,9 +116,6 @@ let build
 
 
 module SharedHandler: Analysis.Environment.Handler = struct
-  let function_definitions =
-    FunctionDefinitions.get
-
   let class_definition =
     ClassDefinitions.get
 
@@ -306,20 +303,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         (serialized_edges (backedges ()))
   end
 
-  let register_definition
-      ~handle
-      ?name_override
-      ({ Node.location; value = { Statement.Define.name; _ }; _ }) =
-    let name = Option.value ~default:name name_override in
-    DependencyHandler.add_function_key ~handle name;
-    let annotation =
-      Annotation.create_immutable ~global:true Type.Top
-      |> Node.create ~location
-    in
-    Globals.remove_batch (Globals.KeySet.singleton name);
-    Globals.add name annotation
-
-
   let refine_class_definition annotation =
     let open Statement in
     let refine
@@ -457,8 +440,7 @@ let populate_shared_memory
     ~sources =
   let add_to_shared_memory
       {
-        Environment.function_definitions;
-        class_definitions;
+        Environment.class_definitions;
         protocols;
         modules;
         aliases;
@@ -496,7 +478,6 @@ let populate_shared_memory
     in
     add_type_order order;
 
-    add_table FunctionDefinitions.write_through function_definitions;
     add_table ClassDefinitions.write_through class_definitions;
     add_table Aliases.add aliases;
     add_table Globals.write_through globals;
@@ -515,7 +496,7 @@ let populate_shared_memory
   in
   let environment = Environment.Builder.create () in
   let ((module InProcessHandler: Environment.Handler) as handler) =
-    Environment.handler ~configuration environment
+    Environment.handler environment
   in
   build handler ~configuration ~stubs ~sources;
 

@@ -17,12 +17,9 @@ let configuration = Configuration.Analysis.create ()
 
 let populate source =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate
-    ~configuration
-    (Environment.handler ~configuration environment)
-    [parse source];
+  Service.Environment.populate ~configuration (Environment.handler environment) [parse source];
   environment
-  |> Environment.handler ~configuration
+  |> Environment.handler
 
 
 let access names =
@@ -42,7 +39,7 @@ let test_index _ =
   in
   Service.Environment.populate
     ~configuration
-    (Environment.handler ~configuration environment)
+    (Environment.handler environment)
     [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
@@ -84,7 +81,7 @@ let test_dependent_of_list _ =
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
   let assert_dependencies ~handles ~expected =
-    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
       Dependencies.of_list ~handles:(List.map handles ~f:File.Handle.create) ~get_dependencies
       |> Set.to_list
@@ -120,7 +117,7 @@ let test_transitive_dependent_of_list _ =
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
   let assert_dependencies ~handles ~expected =
-    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
       Dependencies.transitive_of_list
         ~handles:(List.map handles ~f:File.Handle.create)
@@ -155,7 +152,7 @@ let test_transitive_dependents _ =
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
   let assert_dependents ~handle ~expected =
-    let get_dependencies = get_dependencies (Environment.handler ~configuration environment) in
+    let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
       Dependencies.transitive
         ~handle:(File.Handle.create handle)

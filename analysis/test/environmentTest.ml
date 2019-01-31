@@ -33,20 +33,20 @@ let create_environment ?(include_helpers = false) () =
   let environment = Environment.Builder.create () in
   Service.Environment.populate
     ~configuration
-    (Environment.handler ~configuration environment)
+    (Environment.handler environment)
     (typeshed_stubs ~include_helper_builtins:include_helpers ());
   environment
 
 
 let plain_populate ~environment sources =
-  let handler = Environment.handler ~configuration environment in
+  let handler = Environment.handler environment in
   Service.Environment.populate ~configuration handler sources;
   environment
 
 
 let populate_with_sources ?(environment = create_environment ()) sources =
   plain_populate ~environment sources
-  |> Environment.handler ~configuration
+  |> Environment.handler
 
 
 let populate ?(environment = create_environment ()) ?handle ?qualifier source =
@@ -85,9 +85,7 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_definitions _ =
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ())
-  in
+  let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   Environment.register_class_definitions
     (module Handler)
     (parse {|
@@ -105,7 +103,6 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) (!"D")) (Type.Primitive "D");
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.Primitive "B");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.Primitive "A");
-  assert_equal (Handler.function_definitions (access ["foo"])) None;
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   assert_equal (TypeOrder.successors order (Type.Primitive "C")) [];
   assert_equal (TypeOrder.predecessors order (Type.Primitive "C")) [];
@@ -141,7 +138,7 @@ let test_register_class_definitions _ =
 
 let test_refine_class_definitions _ =
   let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ~include_helpers:false ())
+    Environment.handler (create_environment ~include_helpers:false ())
   in
   let source =
     parse
@@ -235,7 +232,7 @@ let test_register_aliases _ =
   let assert_resolved sources aliases =
     let (module Handler) =
       let (module Handler: Environment.Handler) =
-        Environment.handler ~configuration (create_environment ())
+        Environment.handler (create_environment ())
       in
       let sources = List.map sources ~f:Preprocessing.preprocess in
       let register
@@ -485,9 +482,7 @@ let test_register_aliases _ =
 
 
 let test_connect_definition _ =
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ())
-  in
+  let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
 
   let (module TypeOrderHandler: TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
@@ -546,9 +541,7 @@ let test_connect_definition _ =
 
 
 let test_register_globals _ =
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ())
-  in
+  let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
 
   let assert_global access expected =
@@ -622,7 +615,7 @@ let test_register_globals _ =
 
 let test_connect_type_order _ =
   let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ~include_helpers:false ())
+    Environment.handler (create_environment ~include_helpers:false ())
   in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
@@ -664,106 +657,6 @@ let test_connect_type_order _ =
   assert_successors
     (Type.Primitive "CallMe")
     [Type.Primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
-
-
-let test_register_functions _ =
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ())
-  in
-  let resolution = TypeCheck.resolution (module Handler) () in
-  let source =
-    parse {|
-       def function() -> int: ...
-       def function_with_arguments(i: int) -> None: ...
-
-       class Class:
-         def Class.__init__(self) -> None: ...
-         def Class.method(self, i: int) -> int: ...
-         @classmethod
-         def Class.classmethod(cls, i: str) -> str: ...
-         @property
-         def Class.property_method(self) -> int: ...
-         class Class.Nested:
-           def Class.Nested.nested_instance_method(self) -> str: ...
-
-       class ClassWithOverloadedConstructor:
-         @overload
-         def ClassWithOverloadedConstructor.__init__(self, s: str) -> None: ...
-         def ClassWithOverloadedConstructor.__init__(self, i: int) -> None: ...
-
-       @overload
-       def overloaded(i: int) -> None: ...
-       @overload
-       def overloaded(i: float) -> None: ...
-       def overloaded(i: str) -> None:
-         pass
-
-       def wrapper() -> None:
-         def wrapper.nested_in_function() -> None:
-           pass
-
-       def function_with_undefined_parameter(x: Undefined) -> None: ...
-       def function_with_undefined_parameter_parametric(x: typing.List[Undefined]) -> None: ...
-       def function_with_undefined_return(x: int) -> Undefined: ...
-    |}
-  in
-  Environment.register_functions (module Handler) resolution source;
-  assert_is_some (Handler.function_definitions (access ["function"]));
-  assert_is_some (Handler.function_definitions (access ["Class.__init__"]));
-  assert_is_none (Handler.function_definitions (access ["nested_in_function"]));
-  assert_is_none (Handler.function_definitions (access ["Class.property_method"]));
-
-  let assert_global access expected =
-    let actual =
-      Access.create access
-      |> Handler.globals
-      >>| Node.value
-      >>| Annotation.annotation
-    in
-    assert_equal
-      ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
-      ~cmp:(Option.equal Type.equal)
-      (Some (parse_callable expected))
-      actual
-  in
-  assert_global "function" "typing.Callable('function')[[], int]";
-  assert_global
-    "function_with_arguments"
-    "typing.Callable('function_with_arguments')[[Named(i, int)], None]";
-
-  assert_global
-    "Class.__init__"
-    "typing.Callable('Class.__init__')[[Named(self, $unknown)], None]";
-  assert_global
-    "Class.method"
-    "typing.Callable('Class.method')[[Named(self, $unknown), Named(i, int)], int]";
-  assert_global
-    "Class.classmethod"
-    "typing.Callable('Class.classmethod')[[Named(i, str)], str]";
-  assert_global
-    "Class.Nested.nested_instance_method"
-    "typing.Callable('Class.Nested.nested_instance_method')[[Named(self, $unknown)], str]";
-
-  assert_global
-    "overloaded"
-    ("typing.Callable('overloaded')[[Named(i, str)], None]" ^
-     "[[[Named(i, int)], None]" ^
-     "[[Named(i, float)], None]]");
-  assert_global
-    "ClassWithOverloadedConstructor.__init__"
-    ("typing.Callable('ClassWithOverloadedConstructor.__init__')" ^
-     "[[Named(self, $unknown), Named(i, int)], None]" ^
-     "[[[Named(self, $unknown), Named(s, str)], None]]");
-
-  assert_global
-    "function_with_undefined_parameter"
-    "typing.Callable('function_with_undefined_parameter')[[Named(x, $unknown)], None]";
-  assert_global
-    "function_with_undefined_parameter_parametric"
-    "typing.Callable('function_with_undefined_parameter_parametric')[[Named(x, $unknown)], None]";
-  assert_global
-    "function_with_undefined_return"
-    "typing.Callable('function_with_undefined_return')[[Named(x, int)], $unknown]"
 
 
 let test_populate _ =
@@ -1499,9 +1392,7 @@ let test_import_dependencies context =
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
 let test_register_dependencies _ =
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (create_environment ())
-  in
+  let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   let source = {|
          import a # a is added here
          from subdirectory.b import c # subdirectory.b is added here
@@ -1526,9 +1417,7 @@ let test_register_dependencies _ =
 
 let test_purge _ =
   let environment = Environment.Builder.create () in
-  let ((module Handler: Environment.Handler) as handler) =
-    Environment.handler ~configuration environment
-  in
+  let ((module Handler: Environment.Handler) as handler) = Environment.handler environment in
   let source = {|
       import a
       class baz.baz(): pass
@@ -1542,7 +1431,6 @@ let test_purge _ =
     handler
     [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
-  assert_is_some (Handler.function_definitions (Access.create "foo"));
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   assert_equal
     (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create "a.py")))
@@ -1551,7 +1439,6 @@ let test_purge _ =
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
-  assert_is_none (Handler.function_definitions (Access.create "foo"));
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
   assert_equal
     (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create"a.py")))
@@ -1577,7 +1464,7 @@ let test_infer_protocols _ =
       Test.parse source
       |> Preprocessing.preprocess
     in
-    let environment = Environment.handler ~configuration (create_environment ()) in
+    let environment = Environment.handler (create_environment ()) in
     Service.Environment.populate ~configuration environment [source];
     let ((module Handler: Environment.Handler) as handler) = environment in
     let resolution = TypeCheck.resolution (module Handler) () in
@@ -1791,7 +1678,6 @@ let () =
     "register_aliases">::test_register_aliases;
     "register_class_definitions">::test_register_class_definitions;
     "register_dependencies">::test_register_dependencies;
-    "register_functions">::test_register_functions;
     "register_globals">::test_register_globals;
     "propagate_nested_classes">::test_propagate_nested_classes;
   ]

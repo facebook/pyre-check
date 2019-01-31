@@ -742,12 +742,12 @@ let environment
     ?(sources = typeshed_stubs ())
     ?(configuration = mock_configuration)
     () =
-  let environment = Environment.Builder.create () in
-  Service.Environment.populate
-    ~configuration
-    (Environment.handler ~configuration environment)
-    sources;
-  Environment.handler ~configuration environment
+  let environment =
+    let environment = Environment.Builder.create () in
+    Environment.handler environment
+  in
+  Service.Environment.populate ~configuration environment sources;
+  environment
 
 
 let mock_define = {

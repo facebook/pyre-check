@@ -49,7 +49,7 @@ let environment () =
   let configuration = Configuration.Analysis.create () in
   let environment = Environment.Builder.create () in
   Service.Environment.populate
-    (Environment.handler ~configuration environment)
+    (Environment.handler environment)
     ~configuration
     [
       parse {|
@@ -67,7 +67,7 @@ let environment () =
 let make_errors ?handle ?qualifier source =
   let configuration = Configuration.Analysis.create () in
   let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
-  let environment = Environment.handler ~configuration (environment ()) in
+  let environment = Environment.handler (environment ()) in
   Service.Environment.populate environment ~configuration [source];
   let configuration = mock_analysis_configuration () in
   TypeCheck.run ~configuration ~environment ~source

@@ -16,9 +16,7 @@ open Test
 let assert_environment_contains source expected =
   Annotated.Class.Attribute.Cache.clear ();
   let configuration = Configuration.Analysis.create ~infer:true () in
-  let (module Handler: Environment.Handler) =
-    Environment.handler ~configuration (Environment.Builder.create ())
-  in
+  let (module Handler: Environment.Handler) = Environment.handler (Environment.Builder.create ()) in
   let source = Analysis.Preprocessing.preprocess (parse source) in
   Service.Environment.populate ~configuration (module Handler) [source];
 

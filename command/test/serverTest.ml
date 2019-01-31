@@ -165,7 +165,7 @@ let environment ~local_root =
   let configuration = configuration ~local_root in
   Service.Environment.populate
     ~configuration
-    (Environment.handler ~configuration environment)
+    (Environment.handler environment)
     [
       parse {|
         class int(float): pass
@@ -181,7 +181,7 @@ let environment ~local_root =
 let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
-  let environment = Environment.handler ~configuration (environment ~local_root) in
+  let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
   Service.Environment.populate ~configuration environment [source];
   TypeCheck.run ~configuration ~environment ~source
@@ -192,9 +192,7 @@ let mock_server_state
     ?(initial_environment = environment ~local_root)
     errors =
   let configuration = configuration ~local_root in
-  let environment =
-    Environment.handler ~configuration initial_environment
-  in
+  let environment = Environment.handler initial_environment in
   add_defaults_to_environment ~configuration environment;
   {
     State.deferred_state = State.Deferred.of_list [];
@@ -237,10 +235,7 @@ let assert_response
   let initial_environment =
     let environment = environment ~local_root in
     let configuration = configuration ~local_root in
-    Service.Environment.populate
-      ~configuration
-      (Environment.handler ~configuration environment)
-      [parsed];
+    Service.Environment.populate ~configuration (Environment.handler environment) [parsed];
     environment
   in
   let mock_server_state =
@@ -1111,9 +1106,7 @@ let test_incremental_dependencies context =
 
     let environment = environment ~local_root in
     let configuration = configuration ~local_root in
-    let environment_handler =
-      Environment.handler ~configuration environment
-    in
+    let environment_handler = Environment.handler environment in
     add_defaults_to_environment ~configuration environment_handler;
     Service.Environment.populate ~configuration environment_handler sources;
     let expected_errors = [
@@ -1208,8 +1201,8 @@ let test_incremental_lookups _ =
   in
   let configuration = configuration ~local_root:(Path.current_working_directory ()) in
   let environment = Environment.Builder.create () in
-  let (module Handler: Environment.Handler) = Environment.handler ~configuration environment in
-  let environment_handler = Environment.handler ~configuration environment in
+  let (module Handler: Environment.Handler) = Environment.handler environment in
+  let environment_handler = Environment.handler environment in
   add_defaults_to_environment ~configuration environment_handler;
   Service.Environment.populate ~configuration environment_handler [parse source];
 
@@ -1274,8 +1267,9 @@ let test_incremental_repopulate context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
+  let handle = "test_incremental.py" in
   let parse content =
-    let handle = File.Handle.create "test.py" in
+    let handle = File.Handle.create handle in
     Source.create
       ~handle
       ~qualifier:(Source.qualifier ~handle)
@@ -1289,14 +1283,27 @@ let test_incremental_repopulate context =
     |}
     |> trim_extra_indentation
   in
+
   let environment = Environment.Builder.create () in
   let configuration = configuration ~local_root in
   let ((module Handler: Environment.Handler) as environment_handler) =
-    Environment.handler ~configuration environment
+    Environment.handler environment
   in
-  Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
+  let resolution = TypeCheck.resolution environment_handler () in
+
+  let path = Path.create_relative ~root:local_root ~relative:handle in
+  let file = File.create ~content:source path in
+  File.write file;
+
   add_defaults_to_environment ~configuration environment_handler;
+  Service.Parser.parse_sources
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~preprocessing_state:None
+    ~files:[file]
+  |> ignore;
   Service.Environment.populate ~configuration environment_handler [parse source];
+
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -1305,36 +1312,42 @@ let test_incremental_repopulate context =
       errors
   in
   let get_annotation access_name =
-    match Handler.function_definitions (Access.create access_name) with
+    match Resolution.function_definitions resolution (Access.create access_name) with
     | Some [ { Node.value = { Statement.Define.return_annotation; _ }; _ } ] ->
         return_annotation
     | _ -> None
   in
   begin
-    match (get_annotation "test.foo") with
-    | Some expression -> assert_equal (Expression.show expression) "int"
+    match (get_annotation "test_incremental.foo") with
+    | Some expression -> assert_equal ~printer:Fn.id (Expression.show expression) "int"
     | None -> assert_unreached ()
   end;
-  let source =
-    {|
-      def foo(x)->str:
-        return ""
-    |}
-    |> trim_extra_indentation
+
+  let file =
+    File.create
+      ~content:
+        ({|
+          def foo(x)->str:
+            return ""
+        |}
+         |> trim_extra_indentation)
+      path
   in
-  Out_channel.write_all ~data:source (Path.absolute local_root ^/ "test.py");
-  let _ =
-    Request.process
-      ~socket:mock_client_socket
-      ~state:initial_state
-      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-      ~request:(Protocol.Request.TypeCheckRequest
-                  (Protocol.TypeCheckRequest.create
-                     ~update_environment_with:[file ~local_root "test.py"]
-                     ~check:[file ~local_root "test.py"]
-                     ()))
-  in
-  begin match (get_annotation "test.foo") with
+  File.write file;
+
+  Request.process
+    ~socket:mock_client_socket
+    ~state:initial_state
+    ~configuration:(CommandTest.mock_server_configuration ~local_root ())
+    ~request:
+      (Protocol.Request.TypeCheckRequest
+         (Protocol.TypeCheckRequest.create
+            ~update_environment_with:[file]
+            ~check:[file]
+            ()))
+  |> ignore;
+  begin
+    match (get_annotation "test_incremental.foo") with
     | Some expression -> assert_equal (Expression.show expression) "str"
     | None -> assert_unreached ()
   end
@@ -1396,7 +1409,7 @@ let test_incremental_attribute_caching context =
   let server_configuration = Operations.create_configuration configuration in
   let environment =
     Analysis.Environment.Builder.create ()
-    |> Analysis.Environment.handler ~configuration
+    |> Analysis.Environment.handler
   in
   add_defaults_to_environment ~configuration environment;
   let ({ State.connections; lock = server_lock; _ } as old_state) =

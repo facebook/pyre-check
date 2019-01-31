@@ -461,10 +461,10 @@ let test_implements _ =
     in
     Service.Environment.populate
       ~configuration
-      (Environment.handler ~configuration environment)
+      (Environment.handler environment)
       (definition :: protocol :: Test.typeshed_stubs ());
     let ((module Handler: Environment.Handler) as handler) =
-      Environment.handler environment ~configuration
+      Environment.handler environment
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
