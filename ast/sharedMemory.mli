@@ -12,9 +12,8 @@ end
 
 module Sources: sig
   val get: File.Handle.t -> Source.t option
-
+  val get_for_qualifier: Expression.Access.t -> Source.t option
   val add: File.Handle.t -> Source.t -> unit
-
   val remove: handles: File.Handle.t list -> unit
 end
 

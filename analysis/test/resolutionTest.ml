@@ -233,6 +233,76 @@ let test_resolve_mutable_literals _ =
     ~against:"typing.Set[Q]"
 
 
+let test_function_definitions _ =
+  let assert_functions sources access count =
+    let sources =
+      let source (path, content) = path, trim_extra_indentation content in
+      List.map sources ~f:source
+    in
+
+    let files =
+      let file (path, content) = File.create ~content (mock_path path) in
+      List.map sources ~f:file
+    in
+    let { Service.Parser.syntax_error; system_error; _ } =
+      Service.Parser.parse_sources
+        ~configuration:mock_configuration
+        ~scheduler:(Scheduler.mock ())
+        ~preprocessing_state:None
+        ~files
+    in
+    assert_true (List.is_empty syntax_error);
+    assert_true (List.is_empty system_error);
+
+    let resolution =
+      let sources =
+        let source (path, content) =
+          parse
+            ~qualifier:(Access.create (String.chop_suffix_exn path ~suffix:".py"))
+            ~handle:path
+            content
+          |> Preprocessing.qualify
+        in
+        List.map sources ~f:source
+      in
+      resolution ~sources ()
+    in
+    let functions =
+      Resolution.function_definitions resolution (Access.create access)
+      >>| List.length
+      |> Option.value ~default:0
+    in
+    assert_equal functions count
+  in
+  assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" 1;
+  assert_functions
+    [
+      "bar.py",
+      {|
+        @overload
+        def bar(a: int) -> str: ...
+        def bar(a: str) -> int: ...
+      |};
+    ]
+    "bar.bar"
+    2;
+  assert_functions
+    []
+    "undefined.undefined"
+    0;
+  assert_functions
+    [
+      "foo.py",
+      {|
+        def foo():
+          def nested(): pass
+      |};
+    ]
+    "foo.foo.nested"
+    1;
+  ()
+
+
 let test_solve_constraints _ =
   let resolution =
     make_resolution
@@ -379,6 +449,7 @@ let () =
     "parse_annotation">::test_parse_annotation;
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
+    "function_definitions">::test_function_definitions;
     "solve_constraints">::test_solve_constraints;
   ]
   |> Test.run

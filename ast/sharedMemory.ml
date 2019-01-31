@@ -15,6 +15,11 @@ module HandleKey = struct
   let compare = File.Handle.compare
 end
 
+module HandleValue = struct
+  type t = File.Handle.t
+  let prefix = Prefix.make ()
+  let description = "File handle"
+end
 
 module IntKey = struct
   type t = int
@@ -62,13 +67,20 @@ module Sources = struct
     let prefix = Prefix.make ()
     let description = "AST"
   end
+
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+  module QualifiersToHandles = SharedMemory.NoCache (AccessKey) (HandleValue)
 
   let get handle =
     Sources.get handle
 
-  let add handle =
-    Sources.add handle
+  let get_for_qualifier qualifier =
+    QualifiersToHandles.get qualifier
+    >>= Sources.get
+
+  let add handle ({ Source.qualifier; _ } as source) =
+    Sources.add handle source;
+    QualifiersToHandles.add qualifier handle
 
   let remove ~handles =
     List.filter ~f:Sources.mem handles

@@ -63,6 +63,7 @@ val global: t -> Access.t -> global option
 val module_definition: t -> Access.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 val class_representation: t -> Type.t -> class_representation option
+val function_definitions: t -> Access.t -> ((Define.t Node.t) list) option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
 val join: t -> Type.t -> Type.t -> Type.t

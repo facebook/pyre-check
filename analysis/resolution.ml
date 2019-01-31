@@ -178,6 +178,25 @@ let constructor ({ constructor; _ } as resolution) =
   constructor ~resolution
 
 
+let function_definitions resolution access =
+  let qualifier =
+    let rec qualifier ~lead ~tail =
+      match tail with
+      | head :: tail ->
+          let new_lead = lead @ [head] in
+          if Option.is_none (module_definition resolution new_lead) then
+            lead
+          else
+            qualifier ~lead:new_lead ~tail
+      | _ ->
+          lead
+    in
+    qualifier ~lead:[] ~tail:access
+  in
+  Ast.SharedMemory.Sources.get_for_qualifier qualifier
+  >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
+
+
 let less_or_equal { order; _ } =
   TypeOrder.less_or_equal order
 
