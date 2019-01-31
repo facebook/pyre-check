@@ -30,7 +30,13 @@ let resolution =
       _T = typing.TypeVar('_T')
       _S = typing.TypeVar('_S')
       _R = typing.TypeVar('_R', int, float)
-      _U = typing.TypeVar('_U', int, str)
+      _T_float_or_str = typing.TypeVar('_U', float, str)
+      _T_float_str_or_union = (
+        typing.TypeVar('_T_float_str_or_union', float, str, typing.Union[float, str])
+      )
+      _T_bound_by_float_str_union = (
+        typing.TypeVar('_T_bound_by_float_str_union', bound=typing.Union[float, str])
+      )
       class typing.Generic: ...
       class typing.Type(typing.Generic[_T]): ...
 
@@ -48,6 +54,8 @@ let resolution =
       int_to_int_dictionary: typing.Dict[int, int] = ...
 
       unknown: $unknown = ...
+      g: typing.Callable[[int], bool]
+      f: typing.Callable[[int], typing.List[bool]]
     |}
   |> fun environment -> TypeCheck.resolution environment ()
 
@@ -191,7 +199,10 @@ let test_select _ =
   assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
 
   assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
-  assert_select "[[int], None]" "(union)" (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+  assert_select
+    "[[int], None]"
+    "(union)"
+    (`NotFoundMismatch (Type.union [Type.integer; Type.string], Type.integer, None, 1));
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
@@ -426,7 +437,22 @@ let test_select _ =
     "(a=1, b=2)"
     (`Found "[[Keywords(keywords, int)], int]");
 
-  assert_select "[[_U], None]" "(union)" (`Found "[[_U], None]");
+  assert_select
+    "[[_T_float_or_str], None]"
+    "(union)"
+    (`NotFoundMismatch
+       (Type.union [Type.integer; Type.string],
+        Type.variable "_T_float_or_str" ~constraints:(Type.Explicit [Type.float; Type.string]),
+        None,
+        1));
+  assert_select
+    "[[_T_float_str_or_union], _T_float_str_or_union]"
+    "(union)"
+    (`Found "[[typing.Union[float, str]], typing.Union[float, str]]");
+  assert_select
+    "[[_T_bound_by_float_str_union], _T_bound_by_float_str_union]"
+    "(union)"
+    (`Found "[[typing.Union[int, str]], typing.Union[int, str]]");
 
   (* Ranking. *)
   assert_select
@@ -515,7 +541,17 @@ let test_select _ =
   assert_select
     "[[int], None]"
     "('string')"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1))
+    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+
+  assert_select
+    "[[typing.Callable[[_T], bool]], _T]"
+    "(g)"
+    (`Found "[[typing.Callable[[int], bool]], int]");
+
+  assert_select
+    "[[typing.Callable[[_T], typing.List[bool]]], _T]"
+    "(f)"
+    (`Found "[[typing.Callable[[int], typing.List[bool]]], int]")
 
 
 let test_determine _ =

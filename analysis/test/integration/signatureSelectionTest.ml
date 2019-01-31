@@ -1030,7 +1030,7 @@ let test_check_keyword_arguments _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `foo` but got `str`."
+      "to call `foo` but got `typing.Union[int, str]`."
     ]
 
 

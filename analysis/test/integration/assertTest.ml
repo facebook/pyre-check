@@ -63,7 +63,7 @@ let test_check_assert _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `int_to_int` but got `typing.Undeclared`.";
+      "to call `int_to_int` but got `typing.Union[int, typing.Undeclared]`.";
       "Undefined name [18]: Global name `x` is undefined.";
     ];
   assert_type_errors

@@ -386,10 +386,10 @@ let select
           let rec set_constraints_and_reasons
               ~resolution
               ~position
-              ~argument:({ Argument.name; value = { Node.location; _ } } as argument)
+              ~argument:{ Argument.name; value = { Node.location; _ } }
               ~argument_annotation
               ({ constraints; reasons = { annotation; _ }; _; } as signature_match) =
-            let reasons =
+            let reasons_with_mismatch =
               let mismatch =
                 let location =
                   name
@@ -407,157 +407,16 @@ let select
               in
               { reasons with annotation = mismatch :: annotation }
             in
-            let argument_annotation =
-              if Type.is_meta argument_annotation && Type.is_callable parameter_annotation then
-                Type.single_parameter argument_annotation
-                |> Resolution.class_definition resolution
-                >>| Class.create
-                >>| Class.constructor ~resolution
-                |> Option.value ~default:argument_annotation
-              else
-                argument_annotation
-            in
-            let less_or_equal =
-              try
-                (Type.equal argument_annotation Type.Top &&
-                 Type.equal parameter_annotation Type.Object) ||
-                Resolution.less_or_equal
-                  resolution
-                  ~left:argument_annotation
-                  ~right:parameter_annotation
-              with TypeOrder.Untracked _ ->
-                false
-            in
-            match argument_annotation with
-            | Type.Union elements when not less_or_equal ->
-                let check_element signature_match element =
-                  let access = Access.create "$argument" in
-                  let annotation = Annotation.create element in
-                  let resolution = Resolution.set_local resolution ~access ~annotation in
-                  set_constraints_and_reasons
-                    ~resolution
-                    ~position
-                    ~argument
-                    ~argument_annotation:(Annotation.annotation annotation)
-                    signature_match
-                in
-                List.fold elements ~f:check_element ~init:signature_match
-            | _ ->
-                let parameters_to_infer = Type.variables parameter_annotation |> List.length in
-                if parameters_to_infer > 0 then
-                  let updated_constraints =
-                    let rec update argument_annotation parameter_annotation constraints =
-                      let update_constraints ~constraints ~variable ~resolved =
-                        let resolved =
-                          Map.find constraints variable
-                          >>| (fun existing -> Resolution.join resolution existing resolved)
-                          |> Option.value ~default:resolved
-                        in
-                        let constraints_solution_exists =
-                          Resolution.constraints_solution_exists
-                            resolution
-                            ~source:resolved
-                            ~target:variable
-                        in
-                        if constraints_solution_exists then
-                          Some (Map.set ~key:variable ~data:resolved constraints)
-                        else if less_or_equal then
-                          Some constraints
-                        else
-                          None
-                      in
-                      match argument_annotation, parameter_annotation with
-                      | Type.Bottom, _ ->
-                          Some constraints
-                      | _, (Type.Variable _ as variable) ->
-                          update_constraints ~constraints ~variable ~resolved:argument_annotation
-                      | _, Type.Parametric _ ->
-                          let primitive, parameters = Type.split parameter_annotation in
-                          Resolution.class_definition resolution primitive
-                          >>| Class.create
-                          >>= fun target ->
-                          let primitive, _ = Type.split argument_annotation in
-                          Resolution.class_definition resolution primitive
-                          >>| Class.create
-                          >>| Class.constraints
-                            ~target
-                            ~parameters
-                            ~instantiated:argument_annotation
-                            ~resolution
-                          >>= fun inferred ->
-                          if Map.length inferred < parameters_to_infer && not less_or_equal then
-                            None
-                          else
-                            let update_constraints ~key ~data constraints =
-                              constraints
-                              >>= fun constraints ->
-                              update_constraints ~constraints ~variable:key ~resolved:data
-                            in
-                            Map.fold ~init:(Some constraints) ~f:update_constraints inferred
-                      | _, Type.Union annotations ->
-                          List.fold
-                            ~init:(Some constraints)
-                            ~f:(fun constraints annotation ->
-                                constraints >>= update argument_annotation annotation)
-                            annotations
-                      | Type.Callable {
-                          Type.Callable.implementation = {
-                            Type.Callable.annotation = argument_annotation;
-                            parameters = argument_parameters;
-                          };
-                          _;
-                        },
-                        Type.Callable {
-                          Type.Callable.implementation = {
-                            Type.Callable.annotation = parameter_annotation;
-                            parameters = parameters;
-                          };
-                          _;
-                        } ->
-                          let constraints =
-                            update
-                              argument_annotation
-                              parameter_annotation
-                              constraints
-                          in
-                          let argument_parameters =
-                            match argument_parameters with
-                            | Type.Callable.Defined parameters ->
-                                List.map parameters ~f:Type.Callable.Parameter.annotation
-                            | _ ->
-                                []
-                          in
-                          let parameters =
-                            match parameters with
-                            | Type.Callable.Defined parameters ->
-                                List.map parameters ~f:Type.Callable.Parameter.annotation
-                            | _ ->
-                                []
-                          in
-                          List.fold2
-                            argument_parameters
-                            parameters
-                            ~init:constraints
-                            ~f:(fun constraints argument parameter ->
-                                constraints >>= update argument parameter)
-                          |> (function
-                              | List.Or_unequal_lengths.Ok constraints -> constraints
-                              (* Don't ignore previous constraints if encountering a mismatch due to
-                               *args/**kwargs vs. concrete parameters or default arguments. *)
-                              | _ -> constraints)
-                      | _ ->
-                          Some constraints
-                    in
-                    update argument_annotation parameter_annotation constraints
-                  in
-                  updated_constraints
-                  >>| (fun updated_constraints ->
-                      { signature_match with constraints = updated_constraints })
-                  |> Option.value ~default:{ signature_match with constraints; reasons }
-                else if less_or_equal then
-                  signature_match
-                else
-                  { signature_match with reasons }
+            Resolution.solve_constraints
+              resolution
+              ~constraints
+              ~source:argument_annotation
+              ~target:parameter_annotation
+            >>| (fun updated_constraints ->
+                { signature_match with constraints = updated_constraints }
+              )
+            |> Option.value
+              ~default:{ signature_match with constraints; reasons = reasons_with_mismatch }
           in
           let rec check signature_match = function
             | [] ->
