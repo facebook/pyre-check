@@ -2835,7 +2835,7 @@ CAMLprim value hh_save_table_sqlite(value out_filename) {
     SQLITE_OK);
   for (size_t slot = 0; slot < hashtbl_size; ++slot) {
     uint64_t slot_hash = hashtbl[slot].hash;
-    if (slot_hash == 0) {
+    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
       continue;
     }
     char *value = hashtbl[slot].addr - sizeof(hh_header_t);
@@ -2901,7 +2901,7 @@ CAMLprim value hh_save_table_keys_sqlite(value out_filename, value keys) {
   for (int i = 0; i < n_keys; ++i) {
     unsigned int slot = find_slot(Field(keys, i));
     uint64_t slot_hash = hashtbl[slot].hash;
-    if (slot_hash == 0) {
+    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
       continue;
     }
     char *value = hashtbl[slot].addr - sizeof(hh_header_t);
