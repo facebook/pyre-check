@@ -3,9 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import builtins  # noqa
 import os
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import call, mock_open, patch
 
 from ... import EnvironmentException, commands, log
 from ...commands import initialize
@@ -21,7 +22,7 @@ class InitializeTest(unittest.TestCase):
     @patch("subprocess.call")
     @patch("builtins.open")
     def test_initialize(
-        self, mock_open, subprocess_call, isfile, which, _get_input, get_yes_no_input
+        self, open, subprocess_call, isfile, which, _get_input, get_yes_no_input
     ):
         get_yes_no_input.return_value = True
         arguments = mock_arguments()
@@ -47,7 +48,7 @@ class InitializeTest(unittest.TestCase):
                 arguments, configuration, AnalysisDirectory(".")
             ).run()
             subprocess_call.assert_has_calls([call(["watchman", "watch-project", "."])])
-            mock_open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
+            open.assert_any_call(os.path.abspath(".watchmanconfig"), "w+")
 
         arguments.local = True
 
@@ -55,10 +56,16 @@ class InitializeTest(unittest.TestCase):
             return False
 
         isfile.side_effect = exists
-        with patch.object(commands.Command, "_call_client"):
+        file = mock_open()
+        with patch("builtins.open", file), patch.object(
+            commands.Command, "_call_client"
+        ), patch.object(
+            initialize.Initialize, "_get_local_configuration", return_value={}
+        ):
             initialize.Initialize(
                 arguments, configuration, AnalysisDirectory(".")
             ).run()
+            file().write.assert_has_calls([call("{}"), call("\n")])
 
         def exists(path):
             if path.endswith(".pyre_configuration"):
