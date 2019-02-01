@@ -313,8 +313,11 @@ let test_solve_constraints _ =
       T_Unconstrained = typing.TypeVar('T_Unconstrained')
       T_Bound_C = typing.TypeVar('T_Bound_C', bound=C)
       T_Bound_D = typing.TypeVar('T_Bound_D', bound=D)
+      T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
+      T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
+      T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
 
       T = typing.TypeVar('T')
       class G_invariant(typing.Generic[T]):
@@ -440,6 +443,49 @@ let test_solve_constraints _ =
     ~source:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~target:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
     (Some ["T", "typing.Union[C, Q, int]"]);
+
+  (* Bound => Bound *)
+  assert_solve
+    ~source:"T_Bound_D"
+    ~target:"T_Bound_C"
+    (Some ["T_Bound_C", "T_Bound_D"]);
+  assert_solve
+    ~source:"T_Bound_C"
+    ~target:"T_Bound_D"
+    None;
+
+  (* Bound => Explicit *)
+  assert_solve
+    ~source:"T_Bound_D"
+    ~target:"T_C_Q"
+    (Some ["T_C_Q", "C"]);
+  assert_solve
+    ~source:"T_Bound_C"
+    ~target:"T_D_Q"
+    None;
+
+  (* Explicit => Bound *)
+  assert_solve
+    ~source:"T_D_Q"
+    ~target:"T_Bound_Union_C_Q"
+    (Some ["T_Bound_Union_C_Q", "T_D_Q"]);
+  assert_solve
+    ~source:"T_D_Q"
+    ~target:"T_Bound_D"
+    None;
+
+  (* Explicit => Explicit *)
+  assert_solve
+    ~source:"T_C_Q"
+    ~target:"T_C_Q_int"
+    (Some ["T_C_Q_int", "T_C_Q"]);
+  (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
+     as the only sound solution here would be
+     T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
+  assert_solve
+    ~source:"T_D_Q"
+    ~target:"T_C_Q_int"
+    None;
   ()
 
 

@@ -446,13 +446,6 @@ let solve_constraints resolution ~constraints ~source ~target =
       | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
       | List.Or_unequal_lengths.Unequal_lengths, false -> None
     in
-    let true_join left right =
-      (* Join right now sometimes gives any when it could give a union, we need to avoid that
-         behavior *)
-      let joined = join resolution left right in
-      let unionized = Type.union [left; right] in
-      if not (less_or_equal resolution ~left:joined ~right:unionized) then unionized else joined
-    in
     let source =
       (* This needs to eventually also be in normal less_or_equal, as is, could cause problems with
          variance check *)
@@ -477,6 +470,16 @@ let solve_constraints resolution ~constraints ~source ~target =
           match source, target with
           | _, (Type.Variable { constraints = target_constraints; _ } as variable) ->
               let joined_source =
+                let true_join left right =
+                  (* Join right now sometimes gives any when it could give a union, we need to
+                     avoid that behavior *)
+                  let joined = join resolution left right in
+                  let unionized = Type.union [left; right] in
+                  if not (less_or_equal resolution ~left:joined ~right:unionized) then
+                    unionized
+                  else
+                    joined
+                in
                 Map.find constraints variable
                 >>| (fun existing -> true_join existing source)
                 |> Option.value ~default:source
@@ -491,7 +494,9 @@ let solve_constraints resolution ~constraints ~source ~target =
                     Option.some_if
                       (List.for_all source_constraints ~f:exists_in_target_constraints)
                       joined_source
-                | _, Type.Explicit target_constraints ->
+                | Type.Variable { constraints = Type.Bound joined_source; _ },
+                  Type.Explicit target_constraints
+                | joined_source, Type.Explicit target_constraints ->
                     let in_constraint bound =
                       less_or_equal resolution ~left:joined_source ~right:bound
                     in
