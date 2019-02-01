@@ -76,12 +76,14 @@ class PyreAst:
         configuration_path = os.path.abspath(configuration_path)
         if os.path.isfile(os.path.join(configuration_path, ".pyre_configuration")):
             self._project_configuration = configuration_path
-            self._local_configuration = configuration_path
+            self._local_configuration = None  # pyre-ignore: fixed in D13928554
+            self._command = ["pyre"]
             self._initialize_server()
         elif os.path.isfile(
             os.path.join(configuration_path, ".pyre_configuration.local")
         ):
             self._local_configuration = configuration_path
+            self._command = ["pyre", "-l", self._local_configuration]
             project_configuration = find_configuration_root(
                 os.path.dirname(configuration_path), ".pyre_configuration"
             )
@@ -101,17 +103,13 @@ class PyreAst:
     def _initialize_server(self) -> None:
         # TODO(T37004997): Server call can be async
         return_code = subprocess.call(
-            ["pyre", "-l", self._local_configuration],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            self._command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         killed = False
         while return_code == ExitCode.FAILURE and not killed:
             subprocess.call(["pyre", "kill"])
             return_code = subprocess.call(
-                ["pyre", "-l", self._local_configuration],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                self._command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             killed = True
         if return_code == ExitCode.SUCCESS or ExitCode.FOUND_ERRORS:
@@ -123,13 +121,7 @@ class PyreAst:
         )
 
     def _query_file_types(self, filename: str) -> Mapping[Location, Annotation]:
-        query_command = [
-            "pyre",
-            "-l",
-            self._local_configuration,
-            "query",
-            "types_in_file('" + filename + "')",
-        ]
+        query_command = self._command + ["query", "types_in_file('" + filename + "')"]
         # TODO(T37004997): Server call can be async
         process = subprocess.Popen(
             query_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE

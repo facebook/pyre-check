@@ -37,6 +37,7 @@ class TypedAstTestCase(unittest.TestCase):
             path: str,
             expected_project_root: Optional[str],
             expected_local_root: Optional[str],
+            expected_command: Optional[List[str]],
         ) -> None:
             valid_files = [
                 os.path.join(file, ".pyre_configuration")
@@ -47,7 +48,7 @@ class TypedAstTestCase(unittest.TestCase):
                 for file in valid_local_configurations
             ]
             isfile.side_effect = lambda x: x in (valid_files + valid_local_files)
-            if not expected_local_root or not expected_project_root:
+            if not expected_project_root or not expected_command:
                 with self.assertRaises(PyreServerException):
                     pyre_ast = PyreAst(path)
             else:
@@ -55,9 +56,16 @@ class TypedAstTestCase(unittest.TestCase):
                 self.assertEqual(pyre_ast._project_configuration, expected_project_root)
                 self.assertEqual(pyre_ast._local_configuration, expected_local_root)
 
-        assert_init(["/root"], [], "/root", "/root", "/root")
-        assert_init(["/root"], ["/root/a"], "/root/a", "/root", "/root/a")
-        assert_init([], [], "/root", None, None)
+        assert_init(["/root"], [], "/root", "/root", None, ["pyre"])
+        assert_init(
+            ["/root"],
+            ["/root/a"],
+            "/root/a",
+            "/root",
+            "/root/a",
+            ["pyre", "-l", "/root/a"],
+        )
+        assert_init([], [], "/root", None, None, None)
 
     def create_file_types(
         self, annotation_list: List[Tuple[int, int, int, int, str]]
@@ -103,7 +111,7 @@ class TypedAstTestCase(unittest.TestCase):
             json_response: str, expected_file_types: Mapping[Location, Annotation]
         ) -> None:
             pyre_ast = PyreAst("/config_root")
-            pyre_ast._local_configuration = "/config_root"
+            pyre_ast._command = ["pyre", "-l", "/config_root"]
             # Configure process stdout file
             process_mock = Mock()
             mock_stdout = json_response.encode("utf-8")
