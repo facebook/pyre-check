@@ -32,49 +32,44 @@ let test_forward _ =
       a = 1
       b = a
       c = b
+      c
     |}
     {|
-      a = 1
-      b = 1
-      c = 1
+      1
     |};
   assert_constant_propagation
     {|
       a = 'string'
-      b = a
+      a
     |}
     {|
-      a = 'string'
-      b = 'string'
+      'string'
     |};
   assert_constant_propagation
     {|
       a = True
-      b = a
+      a
     |}
     {|
-      a = True
-      b = True
+      True
     |};
   assert_constant_propagation
     {|
       a = None
-      b = a
+      a
     |}
     {|
-      a = None
-      b = None
+      None
     |};
   assert_constant_propagation
     {|
       a = 1
       a = 2
-      b = a
+      a
     |}
     {|
       a = 1
-      a = 2
-      b = 2
+      2
     |};
   assert_constant_propagation
     {|
@@ -82,7 +77,6 @@ let test_forward _ =
       foo(a)
     |}
     {|
-      a = 1
       foo(1)
     |};
 
@@ -92,11 +86,24 @@ let test_forward _ =
       a = 1
       a = foo()
       b = a
+      b
     |}
     {|
       a = 1
       a = foo()
       b = a
+      b
+    |};
+  assert_constant_propagation
+    {|
+      a = 1
+      a = a + 1
+      a
+    |}
+    {|
+      a = 1
+      a = 1 + 1
+      a
     |};
 
   (* Control flow. *)
@@ -106,14 +113,14 @@ let test_forward _ =
         a = 1
       else:
         a = 2
-      b = a
+      a
     |}
     {|
       if True:
         a = 1
       else:
         a = 2
-      b = a
+      a
     |};
   assert_constant_propagation
     {|
@@ -121,14 +128,14 @@ let test_forward _ =
         a = 1
       else:
         a = 1
-      b = a
+      a
     |}
     {|
       if True:
-        a = 1
+        pass
       else:
-        a = 1
-      b = 1
+        pass
+      1
     |};
 
   (* Functions. *)
@@ -138,7 +145,6 @@ let test_forward _ =
       a
     |}
     {|
-      a = len
       len
     |};
   assert_constant_propagation
@@ -147,7 +153,6 @@ let test_forward _ =
       a(b)
     |}
     {|
-      a = len
       len(b)
     |};
   assert_constant_propagation
@@ -156,7 +161,6 @@ let test_forward _ =
       a(b).imag
     |}
     {|
-      a = len
       len(b).imag
     |};
 
@@ -169,7 +173,6 @@ let test_forward _ =
     |}
     {|
       import threading
-      t = threading.Thread
       threading.Thread()
     |};
 
@@ -184,9 +187,7 @@ let test_forward _ =
     |}
     {|
       import logging
-      d = logging.DEBUG
       logging.DEBUG
-      i = logging.INFO_1
       logging.INFO_1
     |}
 
@@ -196,62 +197,57 @@ let test_scheduling _ =
     {|
       a = 1
       def nested():
-        b = a
+        b
     |}
     {|
-      a = 1
       def nested():
-        b = 1
+        b
     |};
   assert_constant_propagation
     {|
       def nested():
         a = 1
-        b = a
+        a
     |}
     {|
       def nested():
-        a = 1
-        b = 1
+        1
     |};
   assert_constant_propagation
     {|
       def nested():
         def nested():
           a = 1
-          b = a
+          a
     |}
     {|
       def nested():
         def nested():
-          a = 1
-          b = 1
+          1
     |};
   assert_constant_propagation
     {|
       def nested():
         a = 1
         def nested():
-          b = a
+          a
     |}
     {|
       def nested():
-        a = 1
         def nested():
-          b = 1
+          1
     |};
   assert_constant_propagation
     {|
       def nested():
         def nested():
-          b = a
+          a
         a = 1
     |}
     {|
       def nested():
         def nested():
-          b = a
-        a = 1
+          a
     |}
 
 
