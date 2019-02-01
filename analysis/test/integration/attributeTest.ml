@@ -814,6 +814,34 @@ let test_check_missing_attribute _ =
       "Incompatible return type [7]: Expected `bool` but got `int`."
     ];
 
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, test:bool) -> None:
+          if test:
+            self.x = 1
+          else:
+            self.x = "hi"
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
+      "`typing.Union[int, str]` but no type is specified."
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, test: bool, y: str) -> None:
+          if test:
+            self.x = 1
+          else:
+            self.x = y
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
+      "`typing.Union[int, str]` but no type is specified."
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_default_type_errors
     {|

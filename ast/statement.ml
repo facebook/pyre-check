@@ -453,7 +453,7 @@ module Define = struct
       in
       List.fold ~init:Access.SerializableMap.empty ~f:add_parameter parameters
     in
-    let attribute map { Node.value; _ } =
+    let attribute ~toplevel map { Node.value; _ } =
       match value with
       | Assign { Assign.target; annotation; value; _ } ->
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
@@ -478,9 +478,13 @@ module Define = struct
             match target with
             | { Node.value = Access _; _ } as target ->
                 let annotation =
-                  match annotation, value with
-                  | None, { Node.value = Access (SimpleAccess access); _ } ->
-                      Access.SerializableMap.find_opt access parameter_annotations
+                  match toplevel, annotation, target, value with
+                  | true,
+                    None,
+                    { Node.value = Access (SimpleAccess (_ :: ([_] as target_access))); _ },
+                    { Node.value = Access (SimpleAccess value_access); _ }
+                    when Access.show_sanitized target_access = Access.show_sanitized value_access ->
+                      Access.SerializableMap.find_opt value_access parameter_annotations
                   | _ ->
                       annotation
                 in
@@ -534,18 +538,21 @@ module Define = struct
       | [] ->
           failwith "Unpossible!"
     in
-    let rec expand_statements body =
+    let rec gather_nested_statements ~toplevel body =
       (* Can't use `Visit` module due to circularity :( *)
       let expand_statement ({ Node.value; _ } as statement) =
         match value with
         | If { If.body; orelse; _ }
         | For { RecordFor.body; orelse; _ }
         | While { While.body; orelse; _ } ->
-            (expand_statements body) @ (expand_statements orelse)
+            (gather_nested_statements ~toplevel:false body) @
+            (gather_nested_statements ~toplevel:false orelse)
         | Try { RecordTry.body; orelse; finally; _ } ->
-            (expand_statements body) @ (expand_statements orelse) @ (expand_statements finally)
+            (gather_nested_statements ~toplevel:false body) @
+            (gather_nested_statements ~toplevel:false orelse) @
+            (gather_nested_statements ~toplevel:false finally)
         | With { RecordWith.body; _ } ->
-            expand_statements body
+            gather_nested_statements ~toplevel:false body
         | Expression {
             Node.value =
               Access
@@ -567,12 +574,19 @@ module Define = struct
             List.find_map ~f:inline definition_body
             |> Option.value ~default:[statement]
         | _ ->
-            [statement]
+            if toplevel then
+              []
+            else
+              [statement]
       in
       List.concat_map ~f:expand_statement body
     in
-    expand_statements body
-    |> List.fold ~init:Access.SerializableMap.empty ~f:attribute
+    let toplevel_attributes =
+      body
+      |> List.fold ~init:Access.SerializableMap.empty ~f:(attribute ~toplevel:true)
+    in
+    gather_nested_statements ~toplevel:true body
+    |> List.fold ~init:toplevel_attributes ~f:(attribute ~toplevel:false)
     |> Access.SerializableMap.map merge_attributes
 
 

@@ -255,7 +255,36 @@ let test_check_init _ =
         def a(self) -> int:
           return self.a
     |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `C` has type `int` " ^
+      "but no type is specified.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      class C:
+        def __init__(self, x: int, y: int) -> None:
+          self.x = x
+          self.y = y
+    |}
     [];
+
+  assert_type_errors
+    {|
+      class C:
+        def __init__(self, x: int, y: int, test: bool) -> None:
+          self.attribute = x
+          self.x = x
+          if test:
+            self.y = y
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `attribute` of class `C` has type `int` " ^
+      "but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `y` of class `C` has type `int` " ^
+      "but no type is specified.";
+    ];
 
   assert_type_errors
     {|
