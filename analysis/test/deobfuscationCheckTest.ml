@@ -11,7 +11,7 @@ open Analysis
 open Test
 
 
-let assert_constant_propagation source expected =
+let assert_deobfuscation source expected =
   let environment = environment () in
   let configuration = mock_configuration in
   let actual =
@@ -27,7 +27,7 @@ let assert_constant_propagation source expected =
 
 let test_forward _ =
   (* Basic propagation. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       b = a
@@ -37,7 +37,7 @@ let test_forward _ =
     {|
       1
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 'string'
       a
@@ -45,7 +45,7 @@ let test_forward _ =
     {|
       'string'
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = True
       a
@@ -53,7 +53,7 @@ let test_forward _ =
     {|
       True
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = None
       a
@@ -61,7 +61,7 @@ let test_forward _ =
     {|
       None
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       a = 2
@@ -71,7 +71,7 @@ let test_forward _ =
       a = 1
       2
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       foo(a)
@@ -81,7 +81,7 @@ let test_forward _ =
     |};
 
   (* Deletion. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       a = foo()
@@ -94,7 +94,7 @@ let test_forward _ =
       b = a
       b
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       a = a + 1
@@ -107,7 +107,7 @@ let test_forward _ =
     |};
 
   (* Control flow. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       if True:
         a = 1
@@ -122,7 +122,7 @@ let test_forward _ =
         a = 2
       a
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       if True:
         a = 1
@@ -139,7 +139,7 @@ let test_forward _ =
     |};
 
   (* Functions. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = len
       a
@@ -147,7 +147,7 @@ let test_forward _ =
     {|
       len
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = len
       a(b)
@@ -155,7 +155,7 @@ let test_forward _ =
     {|
       len(b)
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = len
       a(b).imag
@@ -165,7 +165,7 @@ let test_forward _ =
     |};
 
   (* Constructors. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       import threading
       t = threading.Thread
@@ -177,7 +177,7 @@ let test_forward _ =
     |};
 
   (* Global constants. *)
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       import logging
       d = logging.DEBUG
@@ -193,7 +193,7 @@ let test_forward _ =
 
 
 let test_scheduling _ =
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       a = 1
       def nested():
@@ -203,7 +203,7 @@ let test_scheduling _ =
       def nested():
         b
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       def nested():
         a = 1
@@ -213,7 +213,7 @@ let test_scheduling _ =
       def nested():
         1
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       def nested():
         def nested():
@@ -225,7 +225,7 @@ let test_scheduling _ =
         def nested():
           1
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       def nested():
         a = 1
@@ -237,7 +237,7 @@ let test_scheduling _ =
         def nested():
           1
     |};
-  assert_constant_propagation
+  assert_deobfuscation
     {|
       def nested():
         def nested():
