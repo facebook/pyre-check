@@ -272,7 +272,8 @@ let create define =
         Node.connect split join;
         create statements jumps join
 
-    | { Ast.Node.value = If ({ If.test; body; orelse; _ } as conditional); _ } :: statements ->
+    | ({ Ast.Node.value = If ({ If.test; body; orelse; _ } as conditional); _ } as statement)
+      :: statements ->
         (* -> [split] -> [body]
                  |          |
                  v          v
@@ -283,7 +284,7 @@ let create define =
         let body_node =
           let body_statements =
             let test = Expression.normalize test in
-            (assume test) :: body
+            (Statement.assume ~origin:(Assert.If { statement; true_branch = true }) test) :: body
           in
           create body_statements jumps split
         in
@@ -295,7 +296,7 @@ let create define =
             |> Expression.normalize
             |> fun test -> { test with location = Location.Reference.synthetic }
           in
-          (assume test) :: orelse
+          (Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test) :: orelse
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
@@ -307,7 +308,8 @@ let create define =
             |> fun test -> { test with location = Location.Reference.synthetic }
           in
           if Statement.terminates body then
-            (assume test) :: statements
+            (Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test)
+            :: statements
           else
             statements
         in
@@ -403,7 +405,7 @@ let create define =
         let body =
           let body_statements =
             let test = Expression.normalize test in
-            (assume test) :: body
+            (Statement.assume ~origin:Assert.While test) :: body
           in
           create body_statements loop_jumps split
         in

@@ -242,10 +242,11 @@ module Make (Transformer : Transformer) = struct
               value = transform_expression value;
               parent;
             }
-        | Assert { Assert.test; message } ->
+        | Assert { Assert.test; message; origin } ->
             Assert {
               Assert.test = transform_expression test;
               message = message >>| transform_expression;
+              origin;
             }
         | Break ->
             value

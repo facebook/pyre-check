@@ -124,7 +124,7 @@ module Make (Visitor: Visitor) = struct
           visit_expression target;
           Option.iter ~f:visit_expression annotation;
           visit_expression value
-      | Assert { Assert.test; message } ->
+      | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
       | Class { Class.bases; body; decorators; _ } ->

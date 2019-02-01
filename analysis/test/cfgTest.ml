@@ -176,11 +176,13 @@ let test_for _ =
 
 
 let test_if _ =
-  let conditional = {
-    If.test = +True;
-    body = [!!"body"];
-    orelse = [!!"orelse"];
-  } in
+  let conditional =
+    {
+      If.test = +True;
+      body = [!!"body"];
+      orelse = [!!"orelse"];
+    }
+  in
   assert_cfg
     [+If conditional]
     [
@@ -191,8 +193,26 @@ let test_if _ =
       node 4 Node.Yield [] [];
       node 5 (Node.If conditional) [0] [7; 8];
       node 6 Node.Join [7; 8] [1];
-      node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
-      node 8 (Node.Block [assume (+False); !!"orelse"]) [5] [6];
+      node
+        7
+        (Node.Block
+           [
+             assume ~origin:(Assert.If { statement = +If conditional; true_branch = true }) (+True);
+             !!"body";
+           ])
+        [5]
+        [6];
+      node
+        8
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+             !!"orelse";
+           ])
+        [5]
+        [6];
     ];
 
   let conditional = { If.test = +True; body = [!!"body"]; orelse = [] } in
@@ -206,8 +226,25 @@ let test_if _ =
       node 4 Node.Yield [] [];
       node 5 (Node.If conditional) [0] [7; 8];
       node 6 Node.Join [7; 8] [1];
-      node 7 (Node.Block [assume (+True); !!"body"]) [5] [6];
-      node 8 (Node.Block [assume (+False)]) [5] [6];
+      node
+        7
+        (Node.Block
+           [
+             assume ~origin:(Assert.If { statement = +If conditional; true_branch = true }) (+True);
+             !!"body";
+           ])
+        [5]
+        [6];
+      node
+        8
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+           ])
+        [5]
+        [6];
     ];
 
   let conditional = {
@@ -225,8 +262,27 @@ let test_if _ =
       node 4 Node.Yield [] [];
       node 5 (Node.If conditional) [0] [7; 8];
       node 6 Node.Join [7; 8] [1];
-      node 7 (Node.Block [assume (+True); !!"first"; !!"second"]) [5] [6];
-      node 8 (Node.Block [assume (+False); +Pass]) [5] [6];
+      node
+        7
+        (Node.Block
+           [
+             assume ~origin:(Assert.If { statement = +If conditional; true_branch = true }) (+True);
+             !!"first";
+             !!"second";
+           ])
+        [5]
+        [6];
+      node
+        8
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+             +Pass;
+           ])
+        [5]
+        [6];
     ];
 
   let conditional = {
@@ -245,8 +301,27 @@ let test_if _ =
       node 5 (Node.Block [!!"before"]) [0] [6];
       node 6 (Node.If conditional) [5] [8; 9];
       node 7 Node.Join [8; 9] [10];
-      node 8 (Node.Block [assume (+True); !!"first"; !!"second"]) [6] [7];
-      node 9 (Node.Block [assume (+False); !!"orelse"]) [6] [7];
+      node
+        8
+        (Node.Block
+           [
+             assume ~origin:(Assert.If { statement = +If conditional; true_branch = true }) (+True);
+             !!"first";
+             !!"second";
+           ])
+        [6]
+        [7];
+      node
+        9
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+             !!"orelse";
+           ])
+        [6]
+        [7];
       node 10 (Node.Block [!!"after"]) [7] [1];
     ]
 
@@ -607,7 +682,7 @@ let test_while _ =
       node 4 Node.Yield [] [];
       node 5 (Node.While loop) [0; 7] [6; 7; 8];
       node 6 Node.Join [5; 8] [1];
-      node 7 (Node.Block [assume (+True); !!"body"]) [5] [5];
+      node 7 (Node.Block [assume ~origin:Assert.While (+True); !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
@@ -631,11 +706,30 @@ let test_while _ =
       node 4 Node.Yield [] [];
       node 5 (Node.While loop) [0; 12] [6; 7; 13];
       node 6 Node.Join [5; 10; 13] [1];
-      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 7 (Node.Block [assume ~origin:Assert.While (+True)]) [5] [8];
       node 8 (Node.If conditional) [7] [10; 11];
       node 9 Node.Join [11] [12];
-      node 10 (Node.Block [assume (+True); +Break]) [8] [6];
-      node 11 (Node.Block [assume (+False)]) [8] [9];
+      node
+        10
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = true })
+               (+True);
+             +Break;
+           ])
+        [8]
+        [6];
+      node
+        11
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+           ])
+        [8]
+        [9];
       node 12 (Node.Block [!!"body"]) [9] [5];
       node 13 (Node.Block [!!"orelse"]) [5] [6];
     ];
@@ -660,12 +754,39 @@ let test_while _ =
       node 4 Node.Yield [] [];
       node 5 (Node.While loop) [0; 10; 12] [6; 7; 13];
       node 6 Node.Join [5; 13] [1];
-      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 7 (Node.Block [assume ~origin:Assert.While (+True)]) [5] [8];
       node 8 (Node.If conditional) [7] [10; 11];
       node 9 Node.Join [11] [12];
-      node 10 (Node.Block [assume (+True); +Continue]) [8] [5];
-      node 11 (Node.Block [assume (+False)]) [8] [9];
-      node 12 (Node.Block [assume (+False); !!"body"]) [9] [5];
+      node
+        10
+        (Node.Block
+           [
+             assume ~origin:(Assert.If { statement = +If conditional; true_branch = true }) (+True);
+             +Continue;
+           ])
+        [8]
+        [5];
+      node
+        11
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+           ])
+        [8]
+        [9];
+      node
+        12
+        (Node.Block
+           [
+             assume
+               ~origin:(Assert.If { statement = +If conditional; true_branch = false })
+               (+False);
+             !!"body";
+           ])
+        [9]
+        [5];
       node 13 (Node.Block [!!"orelse"]) [5] [6];
     ];
 
@@ -690,10 +811,10 @@ let test_while _ =
       node 4 Node.Yield [] [];
       node 5 (Node.While outer) [0; 11] [6; 7];
       node 6 Node.Join [5] [1];
-      node 7 (Node.Block [assume (+True)]) [5] [8];
+      node 7 (Node.Block [assume ~origin:Assert.While (+True)]) [5] [8];
       node 8 (Node.While inner) [7; 10] [9; 10];
       node 9 Node.Join [8] [11];
-      node 10 (Node.Block [assume (+True); !!"body"]) [8] [8];
+      node 10 (Node.Block [assume ~origin:Assert.While (+True); !!"body"]) [8] [8];
       node 11 (Node.Block [+Continue]) [9] [5]
     ]
 

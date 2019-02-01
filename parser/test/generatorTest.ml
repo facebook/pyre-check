@@ -3626,7 +3626,7 @@ let test_try _ =
 let test_assert _ =
   assert_parsed_equal
     "assert a"
-    [+Assert { Assert.test = !"a"; message = None }];
+    [+Assert { Assert.test = !"a"; message = None; origin = Assert.Assertion }];
   assert_parsed_equal
     "assert a is b"
     [
@@ -3637,6 +3637,7 @@ let test_assert _ =
           right = !"b";
         };
         message = None;
+        origin = Assert.Assertion;
       };
     ];
   assert_parsed_equal
@@ -3645,6 +3646,7 @@ let test_assert _ =
       +Assert {
         Assert.test = !"a";
         message = Some !"b";
+        origin = Assert.Assertion;
       };
     ];
   assert_parsed_equal
@@ -3657,6 +3659,7 @@ let test_assert _ =
           right = !"None";
         };
         message = Some (+String (StringLiteral.create "b or c"));
+        origin = Assert.Assertion;
       }
     ]
 

@@ -90,9 +90,15 @@ module If : sig
 end
 
 module Assert : sig
-  type t = {
+  type 'statement origin =
+    | Assertion
+    | If of { statement: 'statement; true_branch: bool }
+    | While
+
+  and 'statement t = {
     test: Expression.t;
     message: Expression.t option;
+    origin: 'statement origin;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -133,7 +139,7 @@ end
 
 type statement =
   | Assign of Assign.t
-  | Assert of Assert.t
+  | Assert of t Assert.t
   | Break
   | Class of t Record.Class.record
   | Continue
@@ -271,7 +277,8 @@ module Try : sig
   val preamble: statement_t handler -> statement_t list
 end
 
-val assume: Expression.t -> t
+
+val assume: ?origin: t Assert.origin -> Expression.t -> t
 
 val terminates: t list -> bool
 

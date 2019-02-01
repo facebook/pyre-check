@@ -105,9 +105,16 @@ end
 
 
 module Assert = struct
-  type t = {
+  type 'statement origin =
+    | Assertion
+    | If of { statement: 'statement; true_branch: bool }
+    | While
+
+
+  and 'statement t = {
     test: Expression.t;
     message: Expression.t option;
+    origin: 'statement origin;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -155,7 +162,7 @@ end
 
 type statement =
   | Assign of Assign.t
-  | Assert of Assert.t
+  | Assert of t Assert.t
   | Break
   | Class of t Record.Class.record
   | Continue
@@ -627,10 +634,10 @@ module Define = struct
 end
 
 
-let assume ({ Node.location; _ } as test) =
+let assume ?(origin = Assert.Assertion) ({ Node.location; _ } as test) =
   {
     Node.location;
-    value = Assert { Assert.test; message = None };
+    value = Assert { Assert.test; message = None; origin };
   }
 
 
@@ -1370,7 +1377,7 @@ module PrettyPrinter = struct
           "%a"
           pp_assign assign
 
-    | Assert { Assert.test; Assert.message } ->
+    | Assert { Assert.test; Assert.message; _ } ->
         Format.fprintf
           formatter
           "assert %a, %a"

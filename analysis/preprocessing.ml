@@ -622,11 +622,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | Assign assign ->
           let scope, assign = qualify_assign assign in
           scope, Assign assign
-      | Assert { Assert.test; message } ->
+      | Assert { Assert.test; message; origin } ->
           scope,
           Assert {
             Assert.test = qualify_expression ~qualify_strings:false ~scope test;
             message;
+            origin;
           }
       | Class ({ name; _ } as definition) ->
           let scope = {

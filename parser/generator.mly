@@ -424,14 +424,14 @@ small_statement:
   | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test; message = None }
+        value = Assert { Assert.test; message = None; origin = Assert.Assertion }
       }]
     }
   | start = ASSERT; test = test;
     COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test; message = Some message }
+        value = Assert { Assert.test; message = Some message; origin = Assert.Assertion }
       }]
     }
 
