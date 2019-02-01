@@ -4,6 +4,7 @@
 """
 
 import logging
+from typing import Any, Dict, Optional
 
 from tools.sapp.db import DB
 from tools.sapp.decorators import log_time
@@ -59,16 +60,11 @@ class BulkSaver:
 
     BATCH_SIZE = 30000
 
-    def __init__(self):
-        self.saving = {}
+    def __init__(self, primary_key_generator: Optional[PrimaryKeyGenerator] = None):
+        self.primary_key_generator = primary_key_generator or PrimaryKeyGenerator()
+        self.saving: Dict[str, Any] = {}
         for cls in self.SAVING_CLASSES_ORDER:
             self.saving[cls.__name__] = []
-        self.primary_key_generator = None
-
-    def _primary_key_generator(self) -> PrimaryKeyGenerator:
-        if not self.primary_key_generator:
-            self.primary_key_generator = PrimaryKeyGenerator()
-        return self.primary_key_generator
 
     def add(self, item):
         assert item.model in self.SAVING_CLASSES_ORDER, (
@@ -98,7 +94,7 @@ class BulkSaver:
         }
 
         with database.make_session() as session:
-            pk_gen = self._primary_key_generator().reserve(
+            pk_gen = self.primary_key_generator.reserve(
                 session, saving_classes, item_counts
             )
 
