@@ -100,7 +100,9 @@ class PyreTest(unittest.TestCase):
                 )
 
     def test_is_capable_terminal(self) -> None:
-        with patch("os.isatty", side_effect=lambda x: x), patch("os.getenv", return_value="vim"):
+        with patch("os.isatty", side_effect=lambda x: x), patch(
+            "os.getenv", return_value="vim"
+        ):
             file = MagicMock()
             file.fileno = lambda: True
             self.assertEqual(is_capable_terminal(file), True)
