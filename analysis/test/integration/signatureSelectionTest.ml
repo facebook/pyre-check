@@ -933,7 +933,16 @@ let test_check_variable_arguments _ =
      def bar(b: typing.Tuple[int, int]) -> int:
        return foo( *b )
    |}
-    []
+    [];
+  assert_type_errors
+    {|
+     def foo(a: typing.Tuple[int, str]) -> typing.Set[int]:
+       return set(a)
+   |}
+    [
+      "Incompatible return type [7]: " ^
+      "Expected `typing.Set[int]` but got `typing.Set[typing.Union[int, str]]`.";
+    ]
 
 
 let test_check_variable_restrictions _ =

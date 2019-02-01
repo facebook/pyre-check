@@ -2084,7 +2084,14 @@ let test_instantiate_parameters _ =
 
   assert_equal
     (instantiate_successors_parameters default ~source:(Type.string) ~target:!"typing.Iterable")
-    (Some [Type.string])
+    (Some [Type.string]);
+
+  assert_equal
+    (instantiate_successors_parameters
+       default
+       ~source:(Type.tuple [Type.integer; Type.integer])
+       ~target:!"typing.Iterable")
+    (Some [Type.integer])
 
 
 let test_deduplicate _ =

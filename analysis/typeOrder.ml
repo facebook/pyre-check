@@ -1540,6 +1540,13 @@ and instantiate_successors_parameters
     ~source
     ~target =
   let primitive, parameters = Type.split source in
+  let parameters =
+    if primitive = Type.Primitive "tuple" then
+      (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+      [List.fold ~init:Type.Bottom ~f:(join order) parameters]
+    else
+      parameters
+  in
 
   raise_if_untracked order primitive;
   raise_if_untracked order target;
