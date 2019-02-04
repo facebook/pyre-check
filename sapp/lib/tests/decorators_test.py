@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
+import gc
 from unittest import TestCase, mock
 
-from tools.sapp.decorators import log_time, retryable
+from tools.sapp.decorators import disable_gc, log_time, retryable
 
 
 class RetryableTest(TestCase):
@@ -64,3 +67,21 @@ class LogTimeTest(TestCase):
                 "INFO:root:Takes_Some_Time finished (0:00:20)",
             ],
         )
+
+
+class DisableGCTest(TestCase):
+    @disable_gc
+    def gcShouldBeDisabled(self):
+        self.assertFalse(gc.isenabled())
+
+    def testDisableGCWhenEnabled(self):
+        self.assertTrue(gc.isenabled())
+        self.gcShouldBeDisabled()
+        self.assertTrue(gc.isenabled())  # make sure we enable afterwards
+
+    def testDoesNotEnableGCIfDisabled(self):
+        gc.disable()
+        self.assertFalse(gc.isenabled())
+        self.gcShouldBeDisabled()
+        self.assertFalse(gc.isenabled())
+        gc.enable()

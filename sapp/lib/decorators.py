@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+import gc
 import logging
 import time
 from functools import wraps
@@ -50,5 +51,18 @@ def log_time(func: Callable[..., Any]) -> Callable[..., Any]:
             datetime.timedelta(seconds=int(time.time() - start_time)),
         )
         return ret
+
+    return wrapper
+
+
+def disable_gc(func: Callable[..., Any]) -> Callable[..., Any]:
+    def wrapper(*args, **kwargs):
+        gcenabled = gc.isenabled()
+        gc.disable()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if gcenabled:
+                gc.enable()
 
     return wrapper
