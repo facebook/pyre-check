@@ -122,6 +122,13 @@ def translate_paths(paths, original_directory):
     return {translate_path(translation, path) for path in paths}
 
 
+def _buck_target_count(arguments, configuration):
+    if arguments.source_directories or arguments.targets:
+        return len(set(arguments.targets or []))
+    else:
+        return len(set(configuration.targets or []))
+
+
 def _resolve_source_directories(arguments, commands, configuration, prompt):
     source_directories = set(arguments.source_directories or [])
     targets = set(arguments.targets or [])
@@ -181,7 +188,10 @@ def resolve_analysis_directory(
             local_configuration_root, arguments.current_directory
         )
 
-    if len(source_directories) == 1:
+    if (
+        len(source_directories) == 1
+        and _buck_target_count(arguments, configuration) == 0
+    ):
         analysis_directory = AnalysisDirectory(source_directories.pop(), filter_paths)
     else:
         analysis_directory = SharedAnalysisDirectory(

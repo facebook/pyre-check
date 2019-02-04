@@ -199,10 +199,7 @@ class InitTest(unittest.TestCase):
     )
     def test_resolve_analysis_directory(self, buck) -> None:
         arguments = MagicMock()
-        arguments.source_directories = ["a/b"]
-        arguments.targets = None
         arguments.build = None
-        arguments.filter_directory = None
         arguments.original_directory = "/project"
         arguments.current_directory = "/project"
 
@@ -215,6 +212,9 @@ class InitTest(unittest.TestCase):
         configuration.targets = []
         configuration.local_configuration_root = None
 
+        arguments.source_directories = ["a/b"]
+        arguments.targets = []
+        arguments.filter_directory = None
         expected_analysis_directory = AnalysisDirectory("a/b")
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -222,9 +222,21 @@ class InitTest(unittest.TestCase):
         assert_analysis_directory(expected_analysis_directory, analysis_directory)
 
         arguments.source_directories = ["/symlinked/directory"]
+        arguments.targets = []
         arguments.filter_directory = "/real/directory"
         expected_analysis_directory = AnalysisDirectory(
             "/symlinked/directory", ["/real/directory"]
+        )
+        analysis_directory = resolve_analysis_directory(
+            arguments, commands, configuration
+        )
+        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+
+        arguments.source_directories = []
+        arguments.targets = ["//x:y"]
+        arguments.filter_directory = "/real/directory"
+        expected_analysis_directory = SharedAnalysisDirectory(
+            ["//x:y"], ["/real/directory"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -237,6 +249,19 @@ class InitTest(unittest.TestCase):
         configuration.targets = ["//overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
             ["a/b", "//x:y", "//y:/..."], ["/filter"]
+        )
+        analysis_directory = resolve_analysis_directory(
+            arguments, commands, configuration
+        )
+        assert_analysis_directory(expected_analysis_directory, analysis_directory)
+
+        arguments.source_directories = []
+        arguments.targets = []
+        arguments.filter_directory = "/filter"
+        configuration.source_directories = []
+        configuration.targets = ["//not:overridden/..."]
+        expected_analysis_directory = SharedAnalysisDirectory(
+            ["//not:overridden/..."], ["/filter"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
