@@ -157,7 +157,7 @@ def main() -> int:
         "--preserve-pythonpath",
         action="store_true",
         default=False,
-        help="Preserve the value of the PYTHONPATH environment variable and"
+        help="Preserve the value of the PYTHONPATH environment variable and "
         "inherit the current python environment's search path",
     )
 

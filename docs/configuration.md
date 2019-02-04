@@ -77,17 +77,18 @@ The Pyre command line flags can be summarized by running `pyre --help` or `pyre 
 
 ```bash
 $ pyre --help
-usage: pyre     [-h] [-l LOCAL_CONFIGURATION] [--show-error-traces]
-                [--output {text,json}] [--verbose] [--noninteractive]
-                [--show-parse-errors] [--binary-version] [--build]
-                [--target TARGET] [--source-directory SOURCE_DIRECTORY]
-                [--search-path SEARCH_PATH] [--preserve-pythonpath]
-                [--typeshed TYPESHED]
-                {check, kill, incremental, initialize init, rage, restart,
-                start, stop} ...
+usage: pyre [-h] [-l LOCAL_CONFIGURATION] [--version] [--binary-version]
+            [--show-error-traces] [--output {text,json}] [--verbose] [-n]
+            [--show-parse-errors] [--target TARGETS] [--build]
+            [--source-directory SOURCE_DIRECTORIES]
+            [--search-path SEARCH_PATH] [--preserve-pythonpath]
+            [--binary BINARY] [--exclude EXCLUDE] [--typeshed TYPESHED]
+            [--save-initial-state-to SAVE_INITIAL_STATE_TO]
+            {analyze, check, kill, incremental, initialize init, query,
+            rage, restart, start, stop} ...
 
 positional arguments:
-  {check, kill, incremental, initialize (init), rage, restart, start, stop}
+  {analyze, check, kill, incremental, initialize (init), query, rage, restart, start, stop}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -98,25 +99,24 @@ optional arguments:
   --show-error-traces   Display errors trace information
   --output {text,json}  How to format output
   --verbose             Enable verbose logging
-  --noninteractive      Disable interactive logging
+  -n, --noninteractive  Disable interactive logging
   --show-parse-errors   Display detailed information about parse errors
   --search-path SEARCH_PATH
-                        Add an additional directory of modules and stubs to
-                        include in the type environment
+                        Add an additional directory of modules and stubs to include in the type environment
   --preserve-pythonpath
-                        Preserve the value of the PYTHONPATH environment
-                        variable and inherit the current python environment's
-                        search path
+                        Preserve the value of the PYTHONPATH environment variable and inherit the current python environment's search path
   --binary BINARY       Location of the pyre binary
   --exclude EXCLUDE     Exclude files and directories matching this regexp from parsing
   --typeshed TYPESHED   Location of the typeshed stubs
+  --save-initial-state-to SAVE_INITIAL_STATE_TO
+                        Path to serialize pyre's initial state to.
 
 buck:
-  --build               Build all the necessary artifacts.
-  --target TARGET       The buck target to check
+  --target TARGETS      The buck target to check
+  --build               Freshly build all the necessary artifacts.
 
-source-directory:
-  --source-directory SOURCE_DIRECTORY
+source-directories:
+  --source-directory SOURCE_DIRECTORIES
                         The source directory to check
 ```
 
