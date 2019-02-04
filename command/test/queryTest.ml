@@ -115,7 +115,9 @@ let test_parse_query _ =
   assert_parses "dump_dependencies('quoted.py')"
     (DumpDependencies
        (File.create (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py")));
-  assert_fails_to_parse "dump_dependencies(unquoted)"
+  assert_fails_to_parse "dump_dependencies(unquoted)";
+
+  assert_parses "dump_memory_to_sqlite()" DumpMemoryToSqlite
 
 
 let () =

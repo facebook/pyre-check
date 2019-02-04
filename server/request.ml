@@ -412,6 +412,24 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         TypeQuery.Response (TypeQuery.Success ())
 
+    | TypeQuery.DumpMemoryToSqlite ->
+        let path =
+          Path.create_relative
+            ~root:(Configuration.Analysis.pyre_root configuration)
+            ~relative:"memory.sqlite"
+          |> Path.absolute
+        in
+        let () =
+          try
+            Unix.unlink path;
+          with Unix.Unix_error _ ->
+            ()
+        in
+        let seconds = Memory.save_table_sqlite path in
+        let { Memory.used_slots; _ } = Memory.hash_stats () in
+        Log.info "Dumped %d slots in %d seconds to %s" used_slots seconds path;
+        TypeQuery.Response (TypeQuery.Success ())
+
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

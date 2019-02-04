@@ -59,6 +59,8 @@ let parse_query ~root query =
               |> File.create
             in
             Request.TypeQueryRequest (DumpDependencies file)
+        | "dump_memory_to_sqlite", _ ->
+            Request.TypeQueryRequest DumpMemoryToSqlite
         | "join", [left; right] ->
             Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->

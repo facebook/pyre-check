@@ -94,6 +94,12 @@ module Std : sig
     val init_done: unit -> unit
 
     (*****************************************************************************)
+    (* Serializes the hash table to sqlite *)
+    (****************************************************************************)
+
+    val save_table_sqlite: string -> int
+
+    (*****************************************************************************)
     (* Serializes the dependency table and writes it to a file *)
     (*****************************************************************************)
     val save_dep_table_sqlite: string -> string -> int

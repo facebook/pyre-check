@@ -29,6 +29,7 @@ module TypeQuery: sig
   type request =
     | Attributes of Access.t
     | DumpDependencies of File.t
+    | DumpMemoryToSqlite
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t
