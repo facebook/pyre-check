@@ -457,7 +457,15 @@ let run
                     orelse = fix_statement_list orelse;
                   }
               | Define ({ Define.body; _ } as define) ->
-                  Define { define with Define.body = fix_statement_list body }
+                  let body =
+                    let remove_docstring = function
+                      | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
+                      | statements -> statements
+                    in
+                    fix_statement_list body
+                    |> remove_docstring
+                  in
+                  Define { define with Define.body; docstring = None }
               | value ->
                   value
             in

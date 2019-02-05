@@ -274,6 +274,7 @@ let test_scheduling _ =
 
 
 let test_fixup _ =
+  (* Fix empty bodies. *)
   assert_deobfuscation
     {|
       if True:
@@ -293,7 +294,20 @@ let test_fixup _ =
     {|
       def foo():
         pass
+    |};
+
+  (* Remove docstrings. *)
+  assert_deobfuscation
+    {|
+      def foo():
+        "docstring"
+        pass
     |}
+    {|
+      def foo():
+        pass
+    |}
+
 
 
 let () =
