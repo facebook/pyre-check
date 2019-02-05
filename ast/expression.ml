@@ -990,8 +990,8 @@ module PrettyPrinter = struct
         Format.fprintf
           formatter
           "%a.%a"
-          pp expression
-          pp_access_list (Access.Identifier "?" :: access_list)
+          pp_expression (Node.value expression)
+          pp_access_list access_list
 
     | Await expression ->
         Format.fprintf

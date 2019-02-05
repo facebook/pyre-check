@@ -248,7 +248,11 @@ let test_pp _ =
         Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
         Access.Identifier "c";
       ])
-    "a.b[1].c"
+    "a.b[1].c";
+
+  assert_pp_equal
+    (parse_single_expression "'string {}'.format(1)")
+    "\"string {}\".format(1)"
 
 
 let test_drop_prefix _ =
