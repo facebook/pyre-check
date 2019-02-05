@@ -18,6 +18,7 @@ class TrimTraceGraph(PipelineStep[TraceGraph, TraceGraph]):
         self.summary = summary or {}
 
         if self.summary.get("affected_files") is None:
+            self.summary["graph"] = input  # used by ranker
             return input, self.summary
 
         log.info("Trimming graph to affected files.")
@@ -25,4 +26,6 @@ class TrimTraceGraph(PipelineStep[TraceGraph, TraceGraph]):
             self.summary["affected_files"], self.summary.get("affected_issues_only")
         )
         trimmed_graph.populate_from_trace_graph(input)
-        return trimmed_graph, summary
+
+        self.summary["graph"] = trimmed_graph  # used by ranker
+        return trimmed_graph, self.summary
