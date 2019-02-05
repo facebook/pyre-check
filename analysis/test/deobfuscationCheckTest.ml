@@ -273,9 +273,33 @@ let test_scheduling _ =
     |}
 
 
+let test_fixup _ =
+  assert_deobfuscation
+    {|
+      if True:
+        dead = 1
+    |}
+    {|
+      if True:
+        pass
+      else:
+        pass
+    |};
+  assert_deobfuscation
+    {|
+      def foo():
+        dead = 1
+    |}
+    {|
+      def foo():
+        pass
+    |}
+
+
 let () =
-  "DeobfuscationCheck">:::[
+  "deobfuscation">:::[
     "forward">::test_forward;
     "scheduling">::test_scheduling;
+    "fixup">::test_fixup;
   ]
   |> Test.run
