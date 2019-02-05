@@ -34,12 +34,8 @@ log = logging.getLogger()
 
 
 class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
-    def run(
-        self, iters: DictEntries, summary: Summary = None
-    ) -> Tuple[TraceGraph, Summary]:
-        self.summary: Summary = {}
-        if summary is not None:
-            self.summary = summary
+    def run(self, iters: DictEntries, summary: Summary) -> Tuple[TraceGraph, Summary]:
+        self.summary = summary
 
         self.summary["extracted_features"] = {}  # Dict[int, Any]
         self.summary["precondition_entries"] = defaultdict(

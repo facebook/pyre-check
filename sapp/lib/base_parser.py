@@ -201,13 +201,8 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
                 return True
         return False
 
-    def run(
-        self, input: InputFiles, summary: Summary = None
-    ) -> Tuple[DictEntries, Summary]:
+    def run(self, input: InputFiles, summary: Summary) -> Tuple[DictEntries, Summary]:
         inputfile, previous_inputfile = input
-
-        if summary is None:
-            summary = {}
 
         return (
             self.analysis_output_to_dict_entries(

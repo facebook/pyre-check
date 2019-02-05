@@ -8,9 +8,7 @@ T = TypeVar("T")
 T_in = TypeVar("T_in")
 T_out = TypeVar("T_out")
 
-Summary = Optional[
-    Dict[str, Any]
-]  # blob of objects that gets passed through the pipeline
+Summary = Dict[str, Any]  # blob of objects that gets passed through the pipeline
 InputFiles = Tuple[AnalysisOutput, Optional[AnalysisOutput]]
 DictEntries = Dict[str, Any]
 
@@ -24,7 +22,7 @@ class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def run(self, input: T_in, summary: Summary = None) -> Tuple[T_out, Summary]:
+    def run(self, input: T_in, summary: Summary) -> Tuple[T_out, Summary]:
         assert False, "Abstract method called!"
         pass
 
@@ -33,7 +31,11 @@ class Pipeline(object):
     def __init__(self, steps: List[PipelineStep[Any, Any]]):
         self.steps: List[PipelineStep[Any, Any]] = steps
 
-    def run(self, first_input, summary: Summary = None) -> Tuple[Any, Summary]:
+    def run(
+        self, first_input, summary: Optional[Summary] = None
+    ) -> Tuple[Any, Summary]:
+        if summary is None:
+            summary = {}
         next_input = first_input
         for step in self.steps:
             next_input, summary = step.run(next_input, summary)
