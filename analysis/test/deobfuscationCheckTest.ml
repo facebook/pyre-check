@@ -138,6 +138,28 @@ let test_forward _ =
       1
     |};
 
+  (* Assertions. *)
+  assert_deobfuscation
+    {|
+      a = False
+      assert a
+    |}
+    {|
+      assert False
+    |};
+  assert_deobfuscation
+    {|
+      a = False
+      if a:
+        pass
+    |}
+    {|
+      if False:
+        pass
+      else:
+        pass
+    |};
+
   (* Functions. *)
   assert_deobfuscation
     {|

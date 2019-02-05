@@ -116,7 +116,7 @@ module ConstantPropagationState(Context: Context) = struct
 
     (* Update transformations. *)
     let transformed =
-      let transform statement =
+      let transform_statement statement =
         let module Transform =
           Transform.Make(struct
             type t = unit
@@ -168,20 +168,34 @@ module ConstantPropagationState(Context: Context) = struct
         | [statement] -> statement
         | _ -> failwith "Could not transform statement"
       in
+      let transform_expression expression =
+        Statement.Expression expression
+        |> Node.create_with_default_location
+        |> transform_statement
+        |> function
+        | { Node.value = Statement.Expression value; _ } -> value
+        | _ -> failwith "Could not extract expression"
+      in
       match Node.value statement with
       | Assign ({ value; _ } as assign) ->
           (* Do not update left hand side of assignment. *)
-          let value =
-            Statement.Expression value
-            |> Node.create_with_default_location
-            |> transform
-            |> function
-            | { Node.value = Statement.Expression value; _ } -> value
-            | _ -> failwith "Could not extract expression"
-          in
+          let value = transform_expression value in
           { statement with Node.value = Assign { assign with value }}
+      | Assert {
+          Assert.origin =
+            Assert.If {
+              statement = { Node.location; value = If ({ If.test; _ } as conditional) };
+              true_branch = true;
+            };
+          _;
+        } ->
+          let transformed_test = transform_expression test in
+          if not (Expression.equal test transformed_test) then
+            { Node.location; value = If { conditional with If.test = transformed_test } }
+          else
+            statement
       | _ ->
-          transform statement
+          transform_statement statement
     in
     if not (Statement.equal statement transformed) then
       Hashtbl.set Context.transformations ~key:(Node.location transformed) ~data:[transformed];
