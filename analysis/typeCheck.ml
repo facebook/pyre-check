@@ -2391,26 +2391,21 @@ module State = struct
     in
     match value with
     | Assign { Assign.target; annotation; value; parent } ->
-        let state =
+        let state, original_annotation =
           annotation
           >>| parse_and_check_annotation ~state
-          >>| fst
-          |> Option.value ~default:state
+          >>| (fun (state, annotation) -> state, Some annotation)
+          |> Option.value ~default:(state, None)
         in
-        let { state = { resolution; _ } as state; resolved } =
+        let { state; resolved } =
           forward_expression ~state ~expression:value
         in
         let resolved = Type.remove_undeclared resolved in
-        let original_annotation =
-          annotation
-          >>| Resolution.parse_annotation resolution
-          |> Option.filter
-            ~f:(fun annotation -> not (Resolution.contains_untracked resolution annotation))
-        in
         let guide =
           (* This is the annotation determining how we recursively break up the assignment. *)
-          original_annotation
-          |> Option.value ~default:resolved
+          match original_annotation with
+          | Some annotation when not (Type.is_unknown annotation) -> annotation
+          | _ -> resolved
         in
         let explicit = Option.is_some annotation in
         let rec forward_assign
@@ -2538,10 +2533,10 @@ module State = struct
                    ClassVar, etc. transformations are applied, this is the only way we can retain
                    the user-given annotation. *)
                 match original_annotation with
-                | Some original ->
+                | Some original when not (Type.is_unknown original) ->
                     Type.class_variable_value original
                     |> Option.value ~default:original
-                | None ->
+                | _ ->
                     Annotation.original annotation
               in
               let resolved =
