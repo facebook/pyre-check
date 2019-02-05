@@ -18,6 +18,8 @@ class Restart(Command):
 
     def _run(self) -> None:
         Stop(self._arguments, self._configuration, self._analysis_directory).run()
+        # Force the incremental run to be blocking.
+        self._arguments.nonblocking = False
         Incremental(
             self._arguments, self._configuration, self._analysis_directory
         ).run()
