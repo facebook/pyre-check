@@ -411,6 +411,12 @@ module Scheduler(State: State)(Context: Context) = struct
 end
 
 
+type fixup = {
+  replacements: string String.Table.t;
+  last_replacement: string ref;
+}
+
+
 let run
     ~configuration
     ~environment
@@ -441,12 +447,18 @@ let run
   let source =
     let module Transform =
       Transform.Make(struct
-        type t = unit
-        let expression _ expression =
+        type t = fixup
+
+        let sanitize { replacements; _ } identifier =
+          match Hashtbl.find replacements identifier with
+          | Some replacement -> replacement
+          | None -> Identifier.sanitized identifier
+
+        let expression state expression =
           let value =
             match Node.value expression with
             | Access (SimpleAccess (Access.Identifier head :: tail)) ->
-                Access (SimpleAccess (Access.Identifier (Identifier.sanitized head) :: tail))
+                Access (SimpleAccess (Access.Identifier (sanitize state head) :: tail))
             | value ->
                 value
           in
@@ -455,7 +467,7 @@ let run
         let transform_children _ _ =
           true
 
-        let statement _ statement =
+        let statement ({ replacements; last_replacement } as state) statement =
           let transformed =
             let fix_statement_list = function
               | [] -> [Node.create_with_default_location Pass]
@@ -463,6 +475,45 @@ let run
             in
             let value =
               match Node.value statement with
+              | Assign ({
+                  target = {
+                    Node.value = Access (SimpleAccess [Access.Identifier identifier]);
+                    _;
+                  } as target;
+                  _;
+                } as assign) ->
+                  let identifier =
+                    if String.length identifier > 15 then
+                      begin
+                        let next_replacement =
+                          match String.to_list_rev !last_replacement with
+                          | []
+                          | 'z' :: _ ->
+                              !last_replacement ^ "a"
+                          | character :: tail ->
+                              let character =
+                                Char.to_int character
+                                |> (+) 1
+                                |> Char.of_int_exn
+                              in
+                              character :: tail
+                              |> List.rev
+                              |> String.of_char_list
+                        in
+                        last_replacement := next_replacement;
+                        Hashtbl.set replacements ~key:identifier ~data:!last_replacement;
+                        !last_replacement
+                      end
+                    else
+                      identifier
+                  in
+                  Assign {
+                    assign with
+                    Assign.target = {
+                      target with
+                      Node.value = Access (SimpleAccess [Access.Identifier identifier]);
+                    };
+                  }
               | If ({ If.body; orelse; _ } as conditional) ->
                   If {
                     conditional with
@@ -481,7 +532,7 @@ let run
                   let parameters =
                     let sanitize_parameter =
                       let sanitize_parameter ({ Parameter.name; _ } as parameter) =
-                        { parameter with Parameter.name = Identifier.sanitized name }
+                        { parameter with Parameter.name = sanitize state name }
                       in
                       Node.map ~f:sanitize_parameter
                     in
@@ -493,10 +544,10 @@ let run
             in
             { statement with Node.value }
           in
-          (), [transformed]
+          state, [transformed]
       end)
     in
-    Transform.transform () source
+    Transform.transform { replacements = String.Table.create (); last_replacement = ref "" } source
     |> Transform.source
   in
 

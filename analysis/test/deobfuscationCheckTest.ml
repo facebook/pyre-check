@@ -324,6 +324,29 @@ let test_fixup _ =
     {|
       def foo(parameter):
         pass
+    |};
+
+  (* Naming heuristics. *)
+  assert_deobfuscation
+    {|
+      if True:
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 1
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      if True:
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpYd = 2
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpYd
+    |}
+    {|
+      if True:
+        a = 1
+      else:
+        pass
+      a
+      if True:
+        b = 2
+      else:
+        pass
+      b
     |}
 
 
