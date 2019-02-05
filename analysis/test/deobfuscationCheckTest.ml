@@ -133,8 +133,6 @@ let test_forward _ =
     {|
       if True:
         pass
-      else:
-        pass
       1
     |};
 
@@ -155,8 +153,6 @@ let test_forward _ =
     |}
     {|
       if False:
-        pass
-      else:
         pass
     |};
 
@@ -283,8 +279,6 @@ let test_fixup _ =
     {|
       if True:
         pass
-      else:
-        pass
     |};
   assert_deobfuscation
     {|
@@ -339,13 +333,9 @@ let test_fixup _ =
     {|
       if True:
         a = 1
-      else:
-        pass
       a
       if True:
         b = 2
-      else:
-        pass
       b
     |}
 

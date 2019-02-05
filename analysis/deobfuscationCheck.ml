@@ -514,12 +514,8 @@ let run
                       Node.value = Access (SimpleAccess [Access.Identifier identifier]);
                     };
                   }
-              | If ({ If.body; orelse; _ } as conditional) ->
-                  If {
-                    conditional with
-                    If.body = fix_statement_list body;
-                    orelse = fix_statement_list orelse;
-                  }
+              | If ({ If.body; _ } as conditional) ->
+                  If { conditional with If.body = fix_statement_list body }
               | Define ({ Define.body; parameters; _ } as define) ->
                   let body =
                     let remove_docstring = function
