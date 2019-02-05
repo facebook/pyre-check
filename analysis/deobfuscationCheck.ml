@@ -440,8 +440,21 @@ let run
   (* Fix up AST. *)
   let source =
     let module Transform =
-      Transform.MakeStatementTransformer(struct
+      Transform.Make(struct
         type t = unit
+        let expression _ expression =
+          let value =
+            match Node.value expression with
+            | Access (SimpleAccess (Access.Identifier head :: tail)) ->
+                Access (SimpleAccess (Access.Identifier (Identifier.sanitized head) :: tail))
+            | value ->
+                value
+          in
+          { expression with Node.value }
+
+        let transform_children _ _ =
+          true
+
         let statement _ statement =
           let transformed =
             let fix_statement_list = function

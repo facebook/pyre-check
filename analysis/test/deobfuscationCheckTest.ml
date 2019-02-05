@@ -306,6 +306,15 @@ let test_fixup _ =
     {|
       def foo():
         pass
+    |};
+
+  (* Sanitize accesses. *)
+  assert_deobfuscation
+    {|
+      $local_qualifier$variable
+    |}
+    {|
+      variable
     |}
 
 
