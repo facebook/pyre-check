@@ -469,7 +469,7 @@ let run
                     If.body = fix_statement_list body;
                     orelse = fix_statement_list orelse;
                   }
-              | Define ({ Define.body; _ } as define) ->
+              | Define ({ Define.body; parameters; _ } as define) ->
                   let body =
                     let remove_docstring = function
                       | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
@@ -478,7 +478,16 @@ let run
                     fix_statement_list body
                     |> remove_docstring
                   in
-                  Define { define with Define.body; docstring = None }
+                  let parameters =
+                    let sanitize_parameter =
+                      let sanitize_parameter ({ Parameter.name; _ } as parameter) =
+                        { parameter with Parameter.name = Identifier.sanitized name }
+                      in
+                      Node.map ~f:sanitize_parameter
+                    in
+                    List.map parameters ~f:sanitize_parameter;
+                  in
+                  Define { define with Define.body; parameters; docstring = None }
               | value ->
                   value
             in

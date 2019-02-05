@@ -315,6 +315,15 @@ let test_fixup _ =
     |}
     {|
       variable
+    |};
+  assert_deobfuscation
+    {|
+      def foo($parameter$parameter):
+        pass
+    |}
+    {|
+      def foo(parameter):
+        pass
     |}
 
 
