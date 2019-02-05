@@ -377,83 +377,29 @@ module State = struct
         resolution;
         errors;
         define = ({
-            Node.value = { Define.name; return_annotation; body; _ } as define;
+            Node.value = { Define.name; return_annotation; _ } as define;
             _;
           } as define_node);
         _;
       } =
-    let constructor_errors errors =
+    let constructor_return_errors errors =
       if not (Statement.Define.is_constructor define) then
         errors
       else
-        (* Return errors. *)
-        let errors =
-          match return_annotation with
-          | Some ({ Node.location; _ } as annotation) ->
-              let annotation = Resolution.parse_annotation resolution annotation in
-              if Type.is_none annotation then
-                errors
-              else
-                let error =
-                  Error.create
-                    ~location
-                    ~kind:(Error.IncompatibleConstructorAnnotation annotation)
-                    ~define:define_node
-                in
-                error :: errors
-          | _ ->
+        match return_annotation with
+        | Some ({ Node.location; _ } as annotation) ->
+            let annotation = Resolution.parse_annotation resolution annotation in
+            if Type.is_none annotation then
               errors
-        in
-        (* Create missing attribute errors. *)
-        match Annotated.Define.parent_definition ~resolution (Annotated.Define.create define) with
-        | Some class_definition ->
-            let annotation = AnnotatedClass.annotation ~resolution class_definition in
-            let untyped_assignment_error errors { Node.location; value } =
-              match value with
-              | Assign {
-                  Assign.annotation = assign_annotation;
-                  target = {
-                    Node.value = Access
-                        (Access.SimpleAccess
-                           ((Expression.Access.Identifier self) :: ([_] as access)));
-                    _;
-                  };
-                  _;
-                } when self = Statement.Define.self_identifier define ->
-                  let attribute_annotation =
-                    Annotated.Class.attribute
-                      class_definition
-                      ~resolution
-                      ~name:access
-                      ~instantiated:annotation
-                    |> Annotated.Attribute.annotation
-                    |> Annotation.annotation
-                  in
-                  if Type.equal attribute_annotation Type.Object then
-                    let given_annotation =
-                      assign_annotation
-                      >>| Resolution.parse_annotation resolution
-                    in
-                    Error.create
-                      ~location
-                      ~kind:(Error.MissingAttributeAnnotation {
-                          parent = annotation;
-                          missing_annotation = {
-                            Error.name = access;
-                            annotation = None;
-                            evidence_locations = [];
-                            given_annotation;
-                          };
-                        })
-                      ~define:define_node
-                    :: errors
-                  else
-                    errors
-              | _ ->
-                  errors
-            in
-            List.fold body ~f:untyped_assignment_error ~init:errors
-        | None ->
+            else
+              let error =
+                Error.create
+                  ~location
+                  ~kind:(Error.IncompatibleConstructorAnnotation annotation)
+                  ~define:define_node
+              in
+              error :: errors
+        | _ ->
             errors
     in
     let class_initialization_errors errors =
@@ -531,7 +477,7 @@ module State = struct
     |> Error.join_at_define
       ~resolution
     |> class_initialization_errors
-    |> constructor_errors
+    |> constructor_return_errors
     |> Error.filter ~configuration ~resolution
 
 

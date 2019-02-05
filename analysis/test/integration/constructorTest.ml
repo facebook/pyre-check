@@ -74,6 +74,24 @@ let test_check_init _ =
   assert_type_errors
     {|
       class Foo:
+        x = 1
+        def __init__(self) -> None:
+          self.x = "string"
+          self.y = self.x
+          self.z = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
+      "`typing.Union[int, str]` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `y` of class `Foo` has type " ^
+      "`str` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `z` of class `Foo` has type " ^
+      "`int` but no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
         def __init__(self) -> None:
           self.attribute: bool = False
     |}
