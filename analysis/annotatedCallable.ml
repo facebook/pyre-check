@@ -90,8 +90,6 @@ let create ~parent ~resolution defines =
     let annotation =
       annotation
       >>| Resolution.parse_annotation resolution
-      |> Option.filter
-        ~f:(fun annotation -> not (Resolution.contains_untracked resolution annotation))
       |> Option.value ~default:Type.Top
     in
     if String.is_prefix ~prefix:"**" name then
@@ -103,13 +101,9 @@ let create ~parent ~resolution defines =
   in
   let implementation, overloads =
     let to_signature (implementation, overloads) ({ Define.parameters; _ } as define) =
-      let return_annotation =
-        let annotation = return_annotation ~define ~resolution in
-        if Resolution.contains_untracked resolution annotation then Type.Top else annotation
-      in
       let signature =
         {
-          annotation = return_annotation;
+          annotation = return_annotation ~define ~resolution;
           parameters = Defined (List.map parameters ~f:parameter);
         }
       in

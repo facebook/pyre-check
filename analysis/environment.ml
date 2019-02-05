@@ -109,7 +109,8 @@ let connect_definition
       match Node.value value with
       | Access (SimpleAccess name) ->
           let supertype, parameters =
-            Resolution.parse_annotation resolution value
+            (* While building environment, allow untracked to parse into primitives *)
+            Resolution.parse_annotation ~allow_untracked:true resolution value
             |> Type.split
           in
           if not (TypeOrder.contains (module Handler) supertype) &&
@@ -612,7 +613,7 @@ let register_globals
             (* Register meta annotation. *)
             let primitive, _ =
               Node.create ~location (Access (SimpleAccess name))
-              |> Resolution.parse_annotation resolution
+              |> Resolution.parse_annotation ~allow_untracked:true resolution
               |> Type.split
             in
             let global =
@@ -778,7 +779,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
               if Define.is_class_method define then
                 parent
                 >>| (fun access -> Node.create ~location (Expression.Access (SimpleAccess access)))
-                >>| Resolution.parse_annotation resolution
+                >>| Resolution.parse_annotation ~allow_untracked:true resolution
                 >>| Type.meta
               else
                 None

@@ -1955,7 +1955,7 @@ let dequalify
   let define =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
       value.Parameter.annotation
-      >>| Resolution.parse_annotation resolution
+      >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
       >>| Type.expression
       |> fun annotation ->
@@ -1964,7 +1964,7 @@ let dequalify
     let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =
       return_annotation
-      >>| Resolution.parse_annotation resolution
+      >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
       >>| Type.expression
     in

@@ -74,8 +74,9 @@ let class_definition environment =
 
 
 let parse_annotation environment =
+  (* Allow untracked because we're not calling all of populate *)
   TypeCheck.resolution environment ()
-  |> Resolution.parse_annotation
+  |> Resolution.parse_annotation ~allow_untracked:true
 
 
 let create_location path start_line start_column end_line end_column =

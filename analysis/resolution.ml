@@ -129,35 +129,6 @@ let resolve ({ resolve; _  } as resolution) =
   resolve ~resolution
 
 
-let parse_annotation { parse_annotation; module_definition; _ } expression =
-  let expression =
-    let is_local_access =
-      Expression.show expression
-      |> String.is_substring ~substring:"$local_"
-    in
-    if is_local_access then
-      Expression.delocalize expression
-    else
-      expression
-  in
-  let parsed = parse_annotation expression in
-  let constraints = function
-    | Type.Primitive name ->
-        let originates_from_empty_stub =
-          name
-          |> Access.create
-          |> fun access -> Module.from_empty_stub ~access ~module_definition
-        in
-        if originates_from_empty_stub then
-          Some Type.Object
-        else
-          None
-    | _ ->
-        None
-  in
-  Type.instantiate parsed ~constraints
-
-
 let global { global; _ } =
   global
 
@@ -225,6 +196,42 @@ let contains_untracked resolution annotation =
   List.exists
     ~f:(fun annotation -> not (is_tracked resolution annotation))
     (Type.elements annotation)
+
+
+let parse_annotation
+    ?(allow_untracked=false)
+    ({ parse_annotation; module_definition; _ } as resolution)
+    expression =
+  let expression =
+    let is_local_access =
+      Expression.show expression
+      |> String.is_substring ~substring:"$local_"
+    in
+    if is_local_access then
+      Expression.delocalize expression
+    else
+      expression
+  in
+  let parsed = parse_annotation expression in
+  let constraints = function
+    | Type.Primitive name ->
+        let originates_from_empty_stub =
+          name
+          |> Access.create
+          |> fun access -> Module.from_empty_stub ~access ~module_definition
+        in
+        if originates_from_empty_stub then
+          Some Type.Object
+        else
+          None
+    | _ ->
+        None
+  in
+  let annotation = Type.instantiate parsed ~constraints in
+  if contains_untracked resolution annotation && not allow_untracked then
+    Type.Top
+  else
+    annotation
 
 
 let is_invariance_mismatch { order; _ } ~left ~right =

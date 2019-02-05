@@ -433,7 +433,7 @@ let test_forward_access _ =
   let parse_annotation ~resolution annotation =
     annotation
     |> parse_single_expression
-    |> Resolution.parse_annotation resolution
+    |> Resolution.parse_annotation ~allow_untracked:true resolution
   in
   let assert_fold ?(additional_sources = []) ?parent ~source access expected =
     let resolution =

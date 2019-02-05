@@ -362,8 +362,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     let resolution = TypeCheck.resolution environment () in
     let parse_and_validate access =
       let annotation =
+        (* Return untracked so we can specifically message the user about them. *)
         Expression.Access.expression access
-        |> Resolution.parse_annotation resolution
+        |> Resolution.parse_annotation ~allow_untracked:true resolution
       in
       if TypeOrder.is_instantiated order annotation then
         annotation

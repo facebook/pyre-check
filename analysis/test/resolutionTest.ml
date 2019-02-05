@@ -42,33 +42,38 @@ let test_set_local _ =
 
 
 let test_parse_annotation _ =
-  let assert_parse_annotation ~resolution ~expression ~expected =
+  let assert_parse_annotation ?(allow_untracked=false) ~resolution ~expected expression =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
       (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
-      (parse_single_expression expression |> Resolution.parse_annotation resolution)
+      (parse_single_expression expression
+      |> Resolution.parse_annotation ~allow_untracked resolution)
   in
 
   let resolution =
     Test.resolution
-      ~sources:[
+      ~sources:([
         parse ~qualifier:(Access.create "empty") ~handle:"empty.pyi" "class Empty: ...";
         parse
           ~qualifier:(Access.create "empty.stub")
           ~local_mode:Source.PlaceholderStub
           ~handle:"empty/stub.pyi"
           "";
-      ]
+      ] @ (Test.typeshed_stubs ()))
       ()
   in
-  assert_parse_annotation ~resolution ~expression:"int" ~expected:"int";
-  assert_parse_annotation ~resolution ~expression:"$local_qualifier$int" ~expected:"qualifier.int";
-  assert_parse_annotation ~resolution ~expression:"empty.stub.Annotation" ~expected:"typing.Any";
+  assert_parse_annotation ~resolution ~expected:"int" "int";
+  assert_parse_annotation
+    ~allow_untracked:true
+    ~resolution
+    ~expected:"qualifier.int"
+    "$local_qualifier$int";
+  assert_parse_annotation ~resolution ~expected:"typing.Any" "empty.stub.Annotation";
   assert_parse_annotation
     ~resolution
-    ~expression:"typing.Dict[str, empty.stub.Annotation]"
     ~expected:"typing.Dict[str, typing.Any]"
+    "typing.Dict[str, empty.stub.Annotation]"
 
 
 let make_resolution source =

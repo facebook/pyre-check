@@ -358,7 +358,7 @@ module State = struct
   let parse_and_check_annotation
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
-    let annotation = Resolution.parse_annotation resolution expression in
+    let annotation = Resolution.parse_annotation ~allow_untracked:true resolution expression in
     let resolved = Resolution.resolve resolution expression in
     let annotation_errors = check_annotation ~resolution ~location ~define ~annotation ~resolved in
     let errors =
@@ -1327,7 +1327,7 @@ module State = struct
                 let resolved =
                   let parent_annotation =
                     Access.expression parent
-                    |> Resolution.parse_annotation resolution
+                    |> Resolution.parse_annotation ~allow_untracked:true resolution
                     |> function
                     | Type.Primitive name ->
                         let variables =
@@ -2622,7 +2622,7 @@ module State = struct
                     in
                     let is_type_alias access =
                       Expression.Access.expression access
-                      |> Resolution.parse_annotation resolution
+                      |> Resolution.parse_annotation ~allow_untracked:true resolution
                       |> Resolution.is_instantiated resolution
                     in
                     match element with

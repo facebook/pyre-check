@@ -50,7 +50,6 @@ val order: t -> (module TypeOrder.Handler)
 
 val resolve: t -> Expression.t -> Type.t
 val resolve_literal: t -> Expression.t -> Type.t
-val parse_annotation: t -> Expression.t -> Type.t
 val resolve_mutable_literals
   :  t
   -> expression:Ast.Expression.t option
@@ -78,6 +77,8 @@ val widen
 val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool
 val contains_untracked: t -> Type.t -> bool
+
+val parse_annotation: ?allow_untracked:bool -> t -> Expression.t -> Type.t
 val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool
 val solve_constraints
   :  t
