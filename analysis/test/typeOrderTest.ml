@@ -2349,25 +2349,59 @@ let test_variables _ =
   assert_variables ~expected:None "Nonexistent"
 
 
+let test_is_instantiated _ =
+  let order =
+    let order = Builder.create () |> TypeOrder.handler in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order Type.generic;
+    insert order !"A";
+    insert order !"B";
+    connect order ~predecessor:Type.Bottom ~successor:!"A";
+    connect order ~predecessor:Type.Bottom ~successor:!"B";
+    connect order ~predecessor:!"A" ~successor:Type.Top;
+    connect order ~predecessor:!"B" ~successor:Type.Top;
+    order
+  in
+  assert_true (TypeOrder.is_instantiated order (Type.Primitive "A"));
+  assert_true (TypeOrder.is_instantiated order (Type.Primitive "B"));
+  assert_false (TypeOrder.is_instantiated order (Type.Primitive "C"));
+  assert_true (TypeOrder.is_instantiated order (Type.parametric "A" [Type.Primitive "B"]));
+  assert_true (TypeOrder.is_instantiated order (Type.parametric "A" [Type.Primitive "A"]));
+  assert_true
+    (TypeOrder.is_instantiated
+       order
+       (Type.parametric "A" [Type.Primitive "A"; Type.Primitive "B"]));
+  assert_false
+    (TypeOrder.is_instantiated
+       order
+       (Type.parametric "A" [Type.Primitive "C"; Type.Primitive "B"]));
+  assert_false
+    (TypeOrder.is_instantiated
+       order
+       (Type.parametric "C" [Type.Primitive "A"; Type.Primitive "B"]))
+
+
 let () =
   "order">:::[
+    "add_backedges">::test_add_backedges;
+    "check_integrity">::test_check_integrity;
+    "connect_annotations_to_top">::test_connect_annotations_to_top;
+    "deduplicate">::test_deduplicate;
     "default">::test_default;
-    "method_resolution_order_linearize">::test_method_resolution_order_linearize;
-    "successors">::test_successors;
-    "predecessors">::test_predecessors;
     "greatest">::test_greatest;
-    "less_or_equal">::test_less_or_equal;
-    "less_or_equal_variance">::test_less_or_equal_variance;
-    "join">::test_join;
-    "meet">::test_meet;
-    "least_upper_bound">::test_least_upper_bound;
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
-    "add_backedges">::test_add_backedges;
-    "deduplicate">::test_deduplicate;
+    "is_instantiated">::test_is_instantiated;
+    "join">::test_join;
+    "least_upper_bound">::test_least_upper_bound;
+    "less_or_equal">::test_less_or_equal;
+    "less_or_equal_variance">::test_less_or_equal_variance;
+    "meet">::test_meet;
+    "method_resolution_order_linearize">::test_method_resolution_order_linearize;
+    "predecessors">::test_predecessors;
     "remove_extra_edges">::test_remove_extra_edges;
-    "connect_annotations_to_top">::test_connect_annotations_to_top;
-    "check_integrity">::test_check_integrity;
+    "successors">::test_successors;
     "to_dot">::test_to_dot;
     "variables">::test_variables;
   ]

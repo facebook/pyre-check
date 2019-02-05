@@ -356,7 +356,19 @@ let test_check_globals _ =
       "Incompatible variable type [9]: export.x is declared to have type `int` " ^
       "but is used as type `str`.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      A = typing.Mapping[int, str]
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      A = MappBoo[int, str]
+    |}
+    ["Undefined name [18]: Global name `MappBoo` is undefined."]
 
 
 let () =

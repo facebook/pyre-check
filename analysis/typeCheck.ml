@@ -2397,8 +2397,26 @@ module State = struct
           >>| (fun (state, annotation) -> state, Some annotation)
           |> Option.value ~default:(state, None)
         in
-        let { state; resolved } =
-          forward_expression ~state ~expression:value
+        let is_type_alias access =
+          Expression.Access.expression access
+          |> Resolution.parse_annotation resolution
+          |> function
+          | Type.Top -> false
+          | annotation -> Resolution.is_instantiated resolution annotation
+        in
+        let state, resolved =
+          let { state = { resolution; _ } as new_state; resolved } =
+            forward_expression ~state ~expression:value
+          in
+          (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
+          match Node.value value with
+          | Access (SimpleAccess access) ->
+              if is_type_alias access then
+                { state with resolution }, resolved
+              else
+                new_state, resolved
+          | _ ->
+              new_state, resolved
         in
         let resolved = Type.remove_undeclared resolved in
         let guide =
@@ -2619,11 +2637,6 @@ module State = struct
                         None, []
                       else
                         Some resolved, [instantiate location]
-                    in
-                    let is_type_alias access =
-                      Expression.Access.expression access
-                      |> Resolution.parse_annotation ~allow_untracked:true resolution
-                      |> Resolution.is_instantiated resolution
                     in
                     match element with
                     | Attribute { attribute = access; origin = Module _; defined }
