@@ -514,22 +514,24 @@ class FixmeTest(unittest.TestCase):
             upgrade.run_fixme(arguments_short, result)
             path_write_text.assert_called_once_with(
                 """# pyre: description one,
-# pyre: that has a pretty
-# FIXME[1]: verbose text
-line 1
-# FIXME[2]: description-that-will-not-break-even-when-facing-adversities
-line 2
-# pyre: description.with
-# pyre: mixed.separators.
-# pyre: that should.also.
-# FIXME[3]: break
-line 3
-# pyre: description
-# pyre: starts short,
-# pyre: but-then-has-a-very-long-type-name-or-similar
-# pyre: that does not
-# FIXME[4]: break
-line 4""".replace(
+                # pyre: that has a pretty
+                # FIXME[1]: verbose text
+                line 1
+                # FIXME[2]: description-that-will-not-break-even-when-facing-adversities
+                line 2
+                # pyre: description.with
+                # pyre: mixed.separators.
+                # pyre: that should.also.
+                # FIXME[3]: break
+                line 3
+                # pyre: description
+                # pyre: starts short,
+                # pyre: but-then-has-a-very-long-type-name-or-similar
+                # pyre: that does not
+                # FIXME[4]: break
+                line 4""".replace(
+                    "                ", ""
+                ).replace(
                     "FIXME", "pyre-fixme"
                 )
             )
@@ -555,31 +557,37 @@ line 4""".replace(
                     },
                 ]
             )
-            path_read_text.return_value = """# pyre: description one,
-# pyre: that has a pretty
-# FIXME[1]: verbose text
-line 1
-# pyre: other description with
-# FIXME[2]: wrapping lines
-line 2
-# pyre: yet other description with
-# FIXME[3]: wrapping lines
-line 3
+            path_read_text.return_value = (
+                (
+                    """# pyre: description one,
+                    # pyre: that has a pretty
+                    # FIXME[1]: verbose text
+                    line 1
+                    # pyre: other description with
+                    # FIXME[2]: wrapping lines
+                    line 2
+                    # pyre: yet other description with
+                    # FIXME[3]: wrapping lines
+                    line 3
 
-# pyre: long description
-# FIXME[4]: preceded by whitespace
-line 4""".replace(
-                "FIXME", "pyre-fixme"
+                    # pyre: long description
+                    # FIXME[4]: preceded by whitespace
+                    line 4"""
+                )
+                .replace("                    ", "")
+                .replace("FIXME", "pyre-fixme")
             )
             upgrade.run_fixme(arguments, result)
             path_write_text.assert_called_once_with(
                 """line 1
-# pyre: other description with
-# FIXME[2]: wrapping lines
-line 2
-line 3
+                # pyre: other description with
+                # FIXME[2]: wrapping lines
+                line 2
+                line 3
 
-line 4""".replace(
+                line 4""".replace(
+                    "                ", ""
+                ).replace(
                     "FIXME", "pyre-fixme"
                 )
             )
