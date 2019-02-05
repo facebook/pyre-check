@@ -320,6 +320,7 @@ let test_solve_constraints _ =
       T_Bound_D = typing.TypeVar('T_Bound_D', bound=D)
       T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
       T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
+      T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
@@ -458,6 +459,10 @@ let test_solve_constraints _ =
     ~source:"T_Bound_C"
     ~target:"T_Bound_D"
     None;
+  assert_solve
+    ~source:"T_Bound_Union"
+    ~target:"T_Bound_Union"
+    (Some ["T_Bound_Union", "T_Bound_Union"]);
 
   (* Bound => Explicit *)
   assert_solve

@@ -854,15 +854,15 @@ let test_less_or_equal _ =
   (* Variables. *)
   assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Object);
   assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
-  assert_true (less_or_equal order ~left:Type.Object ~right:(Type.variable "T"));
-  assert_true (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
+  assert_false (less_or_equal order ~left:Type.Object ~right:(Type.variable "T"));
+  assert_false (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
   assert_true
     (less_or_equal
        order
        ~left:(Type.variable "T")
        ~right:(Type.union [Type.string; Type.variable "T"]));
 
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:Type.integer
@@ -872,11 +872,61 @@ let test_less_or_equal _ =
        order
        ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
        ~right:(Type.union [Type.float; Type.string]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~right:(Type.union [Type.float; Type.string; !"A"]));
   assert_false
     (less_or_equal
        order
        ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
        ~right:(Type.union [Type.float]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
+       ~right:(Type.union [Type.float; Type.string; !"A"]));
+  let float_string_variable =
+    Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"
+  in
+  assert_true
+    (less_or_equal
+       order
+       ~left:float_string_variable
+       ~right:(Type.union [float_string_variable; !"A"]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound !"A") "T")
+       ~right:(Type.union [Type.variable ~constraints:(Type.Bound !"A") "T"; Type.string]));
+
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound Type.integer) "T")
+       ~right:(Type.union [Type.float; Type.string]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound Type.integer) "T")
+       ~right:(Type.union [Type.variable ~constraints:(Type.Bound Type.integer) "T"; Type.string]));
+
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Unconstrained) "T")
+       ~right:(Type.Top));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Unconstrained) "T")
+       ~right:(Type.union [Type.variable ~constraints:(Type.Unconstrained) "T"; Type.string]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
+       ~right:(Type.union [Type.float; Type.string]));
 
   assert_false
     (less_or_equal
@@ -889,7 +939,7 @@ let test_less_or_equal _ =
        ~left:Type.float
        ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"));
 
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:(Type.union [Type.string; Type.integer])
@@ -1912,19 +1962,19 @@ let test_meet _ =
     "$bottom";
 
   (* Variables. *)
-  assert_type_equal (meet default Type.integer (Type.variable "T")) Type.integer;
+  assert_type_equal (meet default Type.integer (Type.variable "T")) Type.Bottom;
   assert_type_equal
     (meet
        default
        Type.integer
        (Type.variable ~constraints:(Type.Bound Type.float) "T"))
-    (Type.variable ~constraints:(Type.Bound Type.integer) "T");
+    (Type.Bottom);
   assert_type_equal
     (meet
        default
        Type.string
        (Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"))
-    Type.string;
+    Type.Bottom;
 
   (* Undeclared. *)
   assert_type_equal

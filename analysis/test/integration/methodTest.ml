@@ -286,8 +286,7 @@ let test_check_behavioral_subtyping _ =
     {|
       T = typing.TypeVar('T')
       class Foo(typing.Generic[T]):
-        def foo(self) -> T:
-          return ""
+        def foo(self) -> T: ...
       class Bar(Foo[int]):
         def foo(self) -> int:
           return 1

@@ -150,7 +150,38 @@ let test_check_return _ =
     [
       "Incompatible return type [7]: Expected `str` but got `int`.";
       "Incompatible return type [7]: Expected `str` but got `int`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(x: list[T])-> T:
+        return x
+
+      def bar(x: list[int]) -> int:
+        return foo(x)
+    |}
+    [ "Incompatible return type [7]: Expected `Variable[T]` but got `typing.List[Variable[T]]`." ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(x: list[T])-> T:
+        return x[0]
+      def bar(x: list[int]) -> int:
+        return foo(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', int, str)
+      def foo(x: T)-> T:
+        return "a"
+      def bar() -> int:
+        return foo(8) + 9
+    |}
+    ["Incompatible return type [7]: Expected `Variable[T <: [int, str]]` but got `str`."]
 
 
 let test_check_return_control_flow _ =
