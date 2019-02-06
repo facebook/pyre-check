@@ -459,8 +459,16 @@ let run
             match Node.value expression with
             | Access (SimpleAccess access) ->
                 let sanitize = function
-                  | Access.Identifier identifier -> Access.Identifier (sanitize state identifier)
-                  | element -> element
+                  | Access.Identifier identifier ->
+                      Access.Identifier (sanitize state identifier)
+                  | Access.Call arguments ->
+                      let sanitize_argument ({ Argument.name; _ } as argument)=
+                        {
+                          argument with
+                          Argument.name = name >>| Node.map ~f:(sanitize state);
+                        }
+                      in
+                      Access.Call (Node.map arguments ~f:(List.map ~f:sanitize_argument))
                 in
                 Access (SimpleAccess (List.map access ~f:sanitize))
             | value ->

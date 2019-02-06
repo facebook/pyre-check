@@ -319,6 +319,13 @@ let test_fixup _ =
       def foo(parameter):
         pass
     |};
+  assert_deobfuscation
+    {|
+      foo($parameter$parameter = 1)
+    |}
+    {|
+      foo(parameter = 1)
+    |};
 
   (* Naming heuristics. *)
   assert_deobfuscation
