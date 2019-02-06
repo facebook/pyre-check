@@ -377,33 +377,15 @@ module State = struct
         resolution;
         errors;
         define = ({
-            Node.value = { Define.name; return_annotation; _ } as define;
+            Node.value = { Define.name; _ } as define;
             _;
           } as define_node);
         _;
       } =
-    let constructor_return_errors errors =
-      if not (Statement.Define.is_constructor define) then
-        errors
-      else
-        match return_annotation with
-        | Some ({ Node.location; _ } as annotation) ->
-            let annotation = Resolution.parse_annotation resolution annotation in
-            if Type.is_none annotation then
-              errors
-            else
-              let error =
-                Error.create
-                  ~location
-                  ~kind:(Error.IncompatibleConstructorAnnotation annotation)
-                  ~define:define_node
-              in
-              error :: errors
-        | _ ->
-            errors
-    in
     let class_initialization_errors errors =
-      (* Ensure non-nullable typed attributes are instantiated in init. *)
+      (* Ensure non-nullable typed attributes are instantiated in init.
+        This must happen after typechecking is finished to access the annotations
+        added to resolution. *)
       let check_attributes_initialized define =
         let open Annotated in
         (Define.parent_definition ~resolution (Define.create define)
@@ -477,7 +459,6 @@ module State = struct
     |> Error.join_at_define
       ~resolution
     |> class_initialization_errors
-    |> constructor_return_errors
     |> Error.filter ~configuration ~resolution
 
 
@@ -1613,6 +1594,24 @@ module State = struct
       in
       { state with errors }
     in
+    let check_constructor_return state =
+      if not (Statement.Define.is_constructor define) then
+        state
+      else
+        match return_annotation with
+        | Some ({ Node.location; _ } as annotation) ->
+            let annotation = Resolution.parse_annotation resolution annotation in
+            if Type.is_none annotation then
+              state
+            else
+              Error.create
+                ~location
+                ~kind:(Error.IncompatibleConstructorAnnotation annotation)
+                ~define:define_node
+              |> add_error ~state
+        | _ ->
+            state
+    in
     create
       ~configuration
       ~resolution:(Resolution.with_parent resolution ~parent)
@@ -1622,6 +1621,7 @@ module State = struct
     |> check_parameter_annotations
     |> check_base_annotations
     |> check_behavioral_subtyping
+    |> check_constructor_return
 
   and forward_expression
       ~state:({ resolution; define; _ } as state)
