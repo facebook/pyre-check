@@ -2308,8 +2308,8 @@ module State = struct
           resolution;
           define = ({
               Node.location = define_location;
-              value = { Define.async; _ } as define_without_location;
-            } as define);
+              value = { Define.async; _ } as define;
+            } as define_node);
           _;
         } as state)
       ~statement:{ Node.location; value } =
@@ -2322,7 +2322,7 @@ module State = struct
     let validate_return ~expression ~state ~actual ~is_implicit =
       let return_annotation =
         let annotation =
-          Annotated.Callable.return_annotation ~define:define_without_location ~resolution
+          Annotated.Callable.return_annotation ~define ~resolution
         in
         if async then
           Type.coroutine_value annotation
@@ -2338,10 +2338,9 @@ module State = struct
       in
       let check_incompatible_return state =
         if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
-           not (Define.is_abstract_method define_without_location) &&
-           not (Define.is_overloaded_method define_without_location) &&
-           not (Type.is_none actual &&
-                (Annotated.Callable.is_generator define_without_location)) &&
+           not (Define.is_abstract_method define) &&
+           not (Define.is_overloaded_method define) &&
+           not (Type.is_none actual && (Annotated.Callable.is_generator define)) &&
            not (Type.is_none actual && Type.is_noreturn return_annotation) then
           let error =
             Error.create
@@ -2356,19 +2355,16 @@ module State = struct
                               ~covariant:true);
                          is_implicit;
                        })
-              ~define
+              ~define:define_node
           in
           add_error ~state error
         else
           state
       in
       let check_missing_return state =
-        if not (Define.has_return_annotation define_without_location) ||
-           Type.contains_any return_annotation then
+        if not (Define.has_return_annotation define) || Type.contains_any return_annotation then
           let given_annotation =
-            Option.some_if
-              (Define.has_return_annotation define_without_location)
-              return_annotation
+            Option.some_if (Define.has_return_annotation define) return_annotation
           in
           let error =
             Error.create
@@ -2379,7 +2375,7 @@ module State = struct
                   evidence_locations = [instantiate location];
                   given_annotation;
                 })
-              ~define
+              ~define:define_node
           in
           add_error ~state error
         else
@@ -2619,7 +2615,7 @@ module State = struct
                           declare_location = instantiate location;
                         }
                   in
-                  Error.create ~location ~kind ~define
+                  Error.create ~location ~kind ~define:define_node
                   |> add_error ~state
                 else
                   state
@@ -2656,7 +2652,7 @@ module State = struct
                                 evidence_locations;
                                 given_annotation = original_annotation;
                               })
-                            ~define
+                            ~define:define_node
                         )
                     | Attribute { attribute = access; origin = Instance attribute; defined }
                       when defined && insufficiently_annotated ->
@@ -2673,7 +2669,7 @@ module State = struct
                                   given_annotation = original_annotation;
                                 };
                               })
-                            ~define
+                            ~define:define_node
                         )
                     | Value
                       when Type.equal expected Type.Top &&
@@ -2693,7 +2689,7 @@ module State = struct
                                 evidence_locations;
                                 given_annotation = original_annotation;
                               })
-                            ~define
+                            ~define:define_node
                         )
                     | _ ->
                         None
@@ -2791,7 +2787,7 @@ module State = struct
                           expected_count = List.length assignees;
                           unpack_problem = CountMismatch (List.length annotations);
                         })
-                      ~define
+                      ~define:define_node
                     |> add_error ~state
                   in
                   state, List.map assignees ~f:(fun _ -> Type.Top)
@@ -2830,7 +2826,7 @@ module State = struct
                 Error.create
                   ~location
                   ~kind
-                  ~define
+                  ~define:define_node
                 |> add_error ~state
               in
               List.fold
@@ -2962,7 +2958,7 @@ module State = struct
                                  due_to_invariance = false;
                                }
                              })
-                           ~define)
+                           ~define:define_node)
                   | expected ->
                       let { resolved; _ } = forward_expression ~state ~expression:value in
                       if
@@ -2984,7 +2980,7 @@ module State = struct
                                       ~covariant:true);
                                  expression = value;
                                })
-                             ~define)
+                             ~define:define_node)
                 in
                 let resolve ~access =
                   match Resolution.get_local resolution ~access with
@@ -3256,7 +3252,7 @@ module State = struct
                 Error.create
                   ~location
                   ~kind:(Error.UndefinedImport import)
-                  ~define
+                  ~define:define_node
                 :: errors
             | _ ->
                 errors
