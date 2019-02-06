@@ -2630,7 +2630,13 @@ module State = struct
                 let error =
                   let error =
                     let insufficiently_annotated =
-                      Type.equal expected Type.Top || Type.equal expected Type.Object
+                        match original_annotation with
+                        | Some annotation when Type.contains_any annotation ->
+                            Type.equal expected Type.Top || Type.equal expected Type.Object
+                        | None ->
+                            Type.equal expected Type.Top || Type.equal expected Type.Object
+                        | _ ->
+                            false
                     in
                     let actual_annotation, evidence_locations =
                       if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then

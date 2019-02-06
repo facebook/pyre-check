@@ -166,7 +166,21 @@ let test_check_undefined_type _ =
       def foo() -> Foo["Herp"]:
         return 1
     |}
-    ["Undefined type [11]: Type `Herp` is not defined."]
+    ["Undefined type [11]: Type `Herp` is not defined."];
+
+  assert_type_errors
+    {|
+      class Foo:
+        x: int = 1
+        y: Derp = 1
+
+        def __init__(self) -> None:
+          self.z: Herp = 1
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ]
 
 
 let test_check_invalid_type _ =
