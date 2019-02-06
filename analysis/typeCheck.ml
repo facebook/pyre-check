@@ -2642,77 +2642,74 @@ module State = struct
               (* Check for missing annotations. *)
               let state =
                 let error =
-                  let error =
-                    let insufficiently_annotated =
-                        match original_annotation with
-                        | Some annotation when Type.contains_any annotation ->
-                            Type.equal expected Type.Top || Type.contains_any expected
-                        | None ->
-                            Type.equal expected Type.Top || Type.contains_any expected
-                        | _ ->
-                            false
-                    in
-                    let actual_annotation, evidence_locations =
-                      if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
-                        None, []
-                      else
-                        Some resolved, [instantiate location]
-                    in
-                    match element with
-                    | Attribute { attribute = access; origin = Module _; defined }
-                      when defined && insufficiently_annotated ->
-                        Some (
-                          Error.create
-                            ~location
-                            ~kind:(Error.MissingGlobalAnnotation {
-                                Error.name = access;
-                                annotation = actual_annotation;
-                                evidence_locations;
-                                given_annotation = original_annotation;
-                              })
-                            ~define:define_node
-                        )
-                    | Attribute { attribute = access; origin = Instance attribute; defined }
-                      when defined && insufficiently_annotated ->
-                        let attribute_location = Annotated.Attribute.location attribute in
-                        Some (
-                          Error.create
-                            ~location:attribute_location
-                            ~kind:(Error.MissingAttributeAnnotation {
-                                parent = Annotated.Attribute.parent attribute;
-                                missing_annotation = {
-                                  Error.name = access;
-                                  annotation = actual_annotation;
-                                  evidence_locations;
-                                  given_annotation = original_annotation;
-                                };
-                              })
-                            ~define:define_node
-                        )
-                    | Value
-                      when Type.equal expected Type.Top &&
-                           not (Type.equal resolved Type.Top) &&
-                           not (is_type_alias access) ->
-                        let global_location =
-                          Resolution.global resolution (Expression.Access.delocalize access)
-                          >>| Node.location
-                          |> Option.value ~default:location
-                        in
-                        Some (
-                          Error.create
-                            ~location:global_location
-                            ~kind:(Error.MissingGlobalAnnotation {
-                                Error.name = access;
-                                annotation = actual_annotation;
-                                evidence_locations;
-                                given_annotation = original_annotation;
-                              })
-                            ~define:define_node
-                        )
-                    | _ ->
-                        None
+                  let insufficiently_annotated =
+                      match original_annotation with
+                      | Some annotation when Type.contains_any annotation ->
+                          Type.equal expected Type.Top || Type.contains_any expected
+                      | None ->
+                          Type.equal expected Type.Top || Type.contains_any expected
+                      | _ ->
+                          false
                   in
-                  error
+                  let actual_annotation, evidence_locations =
+                    if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
+                      None, []
+                    else
+                      Some resolved, [instantiate location]
+                  in
+                  match element with
+                  | Attribute { attribute = access; origin = Module _; defined }
+                    when defined && insufficiently_annotated ->
+                      Some (
+                        Error.create
+                          ~location
+                          ~kind:(Error.MissingGlobalAnnotation {
+                              Error.name = access;
+                              annotation = actual_annotation;
+                              evidence_locations;
+                              given_annotation = original_annotation;
+                            })
+                          ~define:define_node
+                      )
+                  | Attribute { attribute = access; origin = Instance attribute; defined }
+                    when defined && insufficiently_annotated ->
+                      let attribute_location = Annotated.Attribute.location attribute in
+                      Some (
+                        Error.create
+                          ~location:attribute_location
+                          ~kind:(Error.MissingAttributeAnnotation {
+                              parent = Annotated.Attribute.parent attribute;
+                              missing_annotation = {
+                                Error.name = access;
+                                annotation = actual_annotation;
+                                evidence_locations;
+                                given_annotation = original_annotation;
+                              };
+                            })
+                          ~define:define_node
+                      )
+                  | Value
+                    when Type.equal expected Type.Top &&
+                         not (Type.equal resolved Type.Top) &&
+                         not (is_type_alias access) ->
+                      let global_location =
+                        Resolution.global resolution (Expression.Access.delocalize access)
+                        >>| Node.location
+                        |> Option.value ~default:location
+                      in
+                      Some (
+                        Error.create
+                          ~location:global_location
+                          ~kind:(Error.MissingGlobalAnnotation {
+                              Error.name = access;
+                              annotation = actual_annotation;
+                              evidence_locations;
+                              given_annotation = original_annotation;
+                            })
+                          ~define:define_node
+                      )
+                  | _ ->
+                      None
                 in
                 error >>| add_error ~state |> Option.value ~default:state
               in
