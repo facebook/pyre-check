@@ -400,8 +400,16 @@ module Scheduler(State: State)(Context: Context) = struct
         type t = unit
         let statement _ statement =
           let transformed =
-            Hashtbl.find Context.transformations (Node.location statement)
-            |> Option.value ~default:[statement]
+            let transformed =
+              Hashtbl.find Context.transformations (Node.location statement)
+              |> Option.value ~default:[statement]
+            in
+            match statement, transformed with
+            | { Node.value = If conditional; _ }, [{ Node.value = If { If.test; _ }; _ }] ->
+                (* Don't undo work we've done in the body of the conditional. *)
+                [{ statement with Node.value = If { conditional with If.test } }]
+            | _ ->
+                transformed
           in
           (), transformed
       end)

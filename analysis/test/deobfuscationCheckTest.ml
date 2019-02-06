@@ -155,6 +155,17 @@ let test_forward _ =
       if False:
         pass
     |};
+  assert_deobfuscation
+    {|
+      a = False
+      b = 1
+      if a:
+        foo(b)
+    |}
+    {|
+      if False:
+        foo(1)
+    |};
 
   (* Functions. *)
   assert_deobfuscation
