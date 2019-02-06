@@ -467,21 +467,15 @@ let run
         let transform_children _ _ =
           true
 
-        let statement ({ replacements; last_replacement } as state) statement =
+        let statement state statement =
           let transformed =
             let fix_statement_list = function
               | [] -> [Node.create_with_default_location Pass]
               | statements -> statements
             in
-            let value =
-              match Node.value statement with
-              | Assign ({
-                  target = {
-                    Node.value = Access (SimpleAccess [Access.Identifier identifier]);
-                    _;
-                  } as target;
-                  _;
-                } as assign) ->
+            let sanitize_access { replacements; last_replacement } access =
+              match access with
+              | Access.Identifier identifier :: tail ->
                   let identifier =
                     if String.length identifier > 15 then
                       begin
@@ -507,16 +501,26 @@ let run
                     else
                       identifier
                   in
+                  Access.Identifier identifier :: tail
+              | _ ->
+                  access
+            in
+            let value =
+              match Node.value statement with
+              | Assign ({
+                  target = { Node.value = Access (SimpleAccess access); _ } as target;
+                  _;
+                } as assign) ->
                   Assign {
                     assign with
                     Assign.target = {
                       target with
-                      Node.value = Access (SimpleAccess [Access.Identifier identifier]);
+                      Node.value = Access (SimpleAccess (sanitize_access state access));
                     };
                   }
               | If ({ If.body; _ } as conditional) ->
                   If { conditional with If.body = fix_statement_list body }
-              | Define ({ Define.body; parameters; _ } as define) ->
+              | Define ({ Define.name; body; parameters; _ } as define) ->
                   let body =
                     let remove_docstring = function
                       | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
@@ -534,7 +538,13 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define { define with Define.body; parameters; docstring = None }
+                  Define {
+                    define with
+                    Define.name = sanitize_access state name;
+                    body;
+                    parameters;
+                    docstring = None;
+                  }
               | value ->
                   value
             in

@@ -337,6 +337,28 @@ let test_fixup _ =
       if True:
         b = 2
       b
+    |};
+  assert_deobfuscation
+    {|
+      def FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
+        pass
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
+    |}
+    {|
+      def a():
+        pass
+      a()
+    |};
+  assert_deobfuscation
+    {|
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
+      def FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
+        pass
+    |}
+    {|
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()  # current limitation
+      def a():
+        pass
     |}
 
 
