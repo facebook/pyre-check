@@ -843,6 +843,26 @@ let test_check_missing_attribute _ =
       "`typing.Union[int, str]` but no type is specified."
     ];
 
+  assert_type_errors
+    {|
+      class Foo:
+        x: typing.Any = 1
+        y: typing.List[typing.Any] = [1]
+        def __init__(self, test: bool, y: str) -> None:
+          self.a: typing.Any = 1
+          self.b: typing.List[typing.Any] = [1]
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` " ^
+      "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `y` of class `Foo` must have a type " ^
+      "that does not contain `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
+      "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `b` of class `Foo` must have a type " ^
+      "that does not contain `Any`.";
+    ];
+
   (* Don't report in non-debug mode. *)
   assert_default_type_errors
     {|

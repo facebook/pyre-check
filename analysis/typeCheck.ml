@@ -2646,9 +2646,9 @@ module State = struct
                     let insufficiently_annotated =
                         match original_annotation with
                         | Some annotation when Type.contains_any annotation ->
-                            Type.equal expected Type.Top || Type.equal expected Type.Object
+                            Type.equal expected Type.Top || Type.contains_any expected
                         | None ->
-                            Type.equal expected Type.Top || Type.equal expected Type.Object
+                            Type.equal expected Type.Top || Type.contains_any expected
                         | _ ->
                             false
                     in
