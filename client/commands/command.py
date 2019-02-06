@@ -176,8 +176,7 @@ class Command:
                     if buffer:
                         buffer.flush()
                         buffer = None
-                        print("\n")
-                    print(line)
+                    LOG.error(line)
             if buffer:
                 buffer.flush()
         except Exception:
