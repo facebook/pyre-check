@@ -173,7 +173,7 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
         None
   in
   let find_single_type_variable { Argument.value; _ } =
-    match Resolution.parse_annotation ~allow_untracked:true resolution value with
+    match Resolution.parse_annotation resolution value with
     | Type.Parametric { parameters = [Type.Variable variable]; _ } ->
         Some [Type.Variable variable]
     | _ ->
@@ -197,7 +197,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
   in
   let find_single_type_variable { Argument.value; _ } =
     let _, parameters =
-      Resolution.parse_annotation ~allow_untracked:true resolution value
+      Resolution.parse_annotation resolution value
       |> Type.split
     in
     match parameters with
@@ -354,7 +354,7 @@ module Attribute = struct
     (* Account for class attributes. *)
     let annotation, class_attribute =
       (attribute_annotation
-       >>| Resolution.parse_annotation ~allow_untracked:true resolution
+       >>| Resolution.parse_annotation resolution
        >>| (fun annotation ->
            match Type.class_variable_value annotation with
            | Some annotation -> Some annotation, true

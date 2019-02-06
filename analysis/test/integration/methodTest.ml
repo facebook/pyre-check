@@ -182,7 +182,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def foo() -> _T: ...
       class Bar(Foo[float]):
         def foo() -> str: return ""
@@ -194,7 +194,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def foo() -> _T: ...
       class Bar(Foo[float]):
         def foo() -> int: return 1
@@ -203,7 +203,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def foo() -> _T: ...
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[float]):
@@ -216,7 +216,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def foo() -> _T: ...
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[float]):
@@ -406,7 +406,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Bar(Foo[float]):
@@ -421,7 +421,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Bar(Foo[int]):
@@ -432,7 +432,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Passthrough(Foo[_T]): ...
@@ -448,7 +448,7 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
-      class Foo(Generic[_T]):
+      class Foo(typing.Generic[_T]):
         def bar(self, x: typing.Union[str, _T]) -> None:
           pass
       class Passthrough(Foo[_T]): ...

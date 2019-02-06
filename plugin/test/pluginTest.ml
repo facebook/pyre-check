@@ -15,15 +15,19 @@ open Test
 
 let assert_environment_contains source expected =
   Annotated.Class.Attribute.Cache.clear ();
-  let configuration = Configuration.Analysis.create ~infer:true () in
-  let (module Handler: Environment.Handler) = Environment.handler (Environment.Builder.create ()) in
-  let source = Analysis.Preprocessing.preprocess (parse source) in
-  Service.Environment.populate ~configuration (module Handler) [source];
+  let (module Handler: Environment.Handler) =
+    environment ~sources:(typeshed_stubs ~include_helper_builtins:false ()) ()
+  in
+  let source = Preprocessing.preprocess (parse source) in
+  Service.Environment.populate
+    ~configuration:(Configuration.Analysis.create ())
+    (module Handler)
+    [source];
 
   let expected =
     List.map
       expected
-      ~f:(fun definition -> (Analysis.Preprocessing.preprocess (parse definition)))
+      ~f:(fun definition -> (Preprocessing.preprocess (parse definition)))
   in
   let class_types =
     let get_name_if_class { Node.value; _ } =
@@ -50,7 +54,7 @@ let assert_environment_contains source expected =
       expected
       (Source.create
          ~handle:(File.Handle.create "test.py")
-         [+Statement.Class (Node.value class_definition)]
+         [+Class (Node.value class_definition)]
       )
   in
   List.iter2_exn ~f:assert_class_equal class_types expected

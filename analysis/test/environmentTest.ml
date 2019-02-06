@@ -1279,6 +1279,10 @@ let test_supertypes_type_order _ =
     ~printer:(List.to_string ~f:Type.show)
     [
       Type.Parametric {
+        name = "typing.Protocol";
+        parameters = [Type.integer];
+      };
+      Type.Parametric {
         name = "typing.Generic";
         parameters = [Type.integer];
       };

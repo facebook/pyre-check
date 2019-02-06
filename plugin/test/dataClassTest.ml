@@ -249,7 +249,7 @@ let test_transform_environment _ =
       @dataclass
       class Foo:
         name: str
-        age: List[int]
+        age: typing.List[int]
         parent: typing.Tuple['int', 'str']
     |}
     [
@@ -257,9 +257,9 @@ let test_transform_environment _ =
         @dataclass
         class Foo:
           name: str
-          age: List[int]
+          age: typing.List[int]
           parent: typing.Tuple['int', 'str']
-          def __init__(self, name: str, age: List[int], parent: typing.Tuple['int', 'str']) -> None:
+          def __init__(self, name: str, age: typing.List[int], parent: typing.Tuple['int', 'str']) -> None:
             pass
           def __repr__(self) -> str:
             pass
@@ -520,7 +520,7 @@ let test_transform_environment _ =
         y: int = 20
       @dataclass
       class Base:
-        x: Any = 15.0
+        x: typing.Any = 15.0
         y: int = 0
     |}
     [
@@ -544,9 +544,9 @@ let test_transform_environment _ =
       {|
         @dataclass
         class Base:
-          x: Any = 15.0
+          x: typing.Any = 15.0
           y: int = 0
-          def __init__(self, x: Any = 15.0, y: int = 0) -> None:
+          def __init__(self, x: object = 15.0, y: int = 0) -> None:
             pass
           def __repr__(self) -> str:
             pass

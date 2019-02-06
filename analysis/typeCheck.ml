@@ -1327,7 +1327,7 @@ module State = struct
                 let resolved =
                   let parent_annotation =
                     Access.expression parent
-                    |> Resolution.parse_annotation ~allow_untracked:true resolution
+                    |> Resolution.parse_annotation resolution
                     |> function
                     | Type.Primitive name ->
                         let variables =

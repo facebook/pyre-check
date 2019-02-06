@@ -62,7 +62,12 @@ let assert_state_equal =
 
 
 let test_initial _ =
-  let assert_initial ?parent ?(errors = []) define state =
+  let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
+    let resolution =
+      parse environment
+      |> (fun source -> source :: (Test.typeshed_stubs ()))
+      |> (fun sources -> Test.resolution ~sources ())
+    in
     let initial =
       let define =
         match parse_single_statement define with
@@ -119,15 +124,18 @@ let test_initial _ =
   assert_initial
     ~parent:"Foo"
     ~errors:[]
+    ~environment:"class Foo: ..."
     "def __eq__(self, other: typing.Any): ..."
     (create ~immutables:["other", false] ["self", Type.Primitive "Foo"; "other", Type.Object]);
 
   assert_initial
     ~parent:"Foo"
+    ~environment:"class Foo: ..."
     "def foo(self): ..."
     (create ["self", Type.Primitive "Foo"]);
   assert_initial
     ~parent:"Foo"
+    ~environment:"class Foo: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
     (create ["a", Type.Object])
@@ -433,7 +441,7 @@ let test_forward_access _ =
   let parse_annotation ~resolution annotation =
     annotation
     |> parse_single_expression
-    |> Resolution.parse_annotation ~allow_untracked:true resolution
+    |> Resolution.parse_annotation resolution
   in
   let assert_fold ?(additional_sources = []) ?parent ~source access expected =
     let resolution =
@@ -825,7 +833,8 @@ let test_forward_access _ =
         TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
         v_explicit_instance: TV_Explicit
       |}
-    "v_explicit_instance" [{ annotation = explicit_type_variable; element = Value }];
+    "v_explicit_instance"
+    [{ annotation = explicit_type_variable; element = Value }];
   assert_fold
     ~source:
       {|
@@ -1023,26 +1032,36 @@ let test_forward_access _ =
       { annotation = Type.Top; element = Value };
     ];
 
+  let source_with_generics =
+    {|
+        TSelf = typing.TypeVar('TSelf', bound="C")
+        TG = typing.TypeVar('TG')
+        class C:
+          def inner(self, x: int) -> None:
+            pass
+          def verbose(self: TSelf, x: int) -> TSelf:
+            self.inner(x)
+            return self
+        class G(C, typing.Generic[TG]): pass
+        g: G[int]
+    |}
+  in
+  let resolution_with_generics =
+    to_resolution [parse source_with_generics |>  Preprocessing.preprocess]
+  in
   assert_fold
-    ~source:
-      {|
-          TSelf = typing.TypeVar('TSelf', bound="C")
-          TG = typing.TypeVar('TG')
-          class C:
-            def inner(self, x: int) -> None:
-              pass
-            def verbose(self: TSelf, x: int) -> TSelf:
-              self.inner(x)
-              return self
-          class G(C, typing.Generic[TG]): pass
-          g: G[int]
-      |}
+    ~source:source_with_generics
     "g.verbose"
     [
-      { annotation = parse_annotation ~resolution "G[int]"; element = Value };
+      {
+        annotation = parse_annotation ~resolution:resolution_with_generics "G[int]";
+        element = Value
+      };
       {
         annotation =
-          parse_annotation ~resolution "typing.Callable('C.verbose')[[Named(x, int)], G[int]]";
+          parse_annotation
+            ~resolution:resolution_with_generics
+            "typing.Callable('C.verbose')[[Named(x, int)], G[int]]";
         element = Attribute { name = "verbose"; defined = true };
       };
     ];
