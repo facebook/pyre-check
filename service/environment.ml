@@ -418,6 +418,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
+    |> List.dedup_and_sort ~compare:Expression.Access.compare
     |> purge_dependents;
 
     DependencyHandler.clear_keys_batch handles;
