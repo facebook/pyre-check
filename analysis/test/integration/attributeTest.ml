@@ -30,6 +30,7 @@ let test_check_attributes _ =
     [];
   assert_type_errors
     {|
+      class Bar: ...
       class Foo(Bar):
         bar: typing.Optional[int] = None
         def foo(self) -> typing.Optional[int]:

@@ -1432,6 +1432,23 @@ module State = struct
       in
       { state with resolution; resolution_fixpoint }
     in
+    let check_base_annotations state =
+      if Define.is_class_toplevel define then
+        let open Annotated in
+        let check_base state { Argument.value; _ } =
+          parse_and_check_annotation ~state value
+          |> fst
+        in
+        let bases =
+          Define.create define
+          |> Define.parent_definition ~resolution
+          >>| Class.bases
+          |> Option.value ~default:[]
+        in
+        List.fold ~init:state ~f:check_base bases
+      else
+        state
+    in
     let check_behavioral_subtyping ({ errors; _ } as state) =
       let errors =
         try
@@ -1603,6 +1620,7 @@ module State = struct
       ()
     |> check_return_annotation
     |> check_parameter_annotations
+    |> check_base_annotations
     |> check_behavioral_subtyping
 
   and forward_expression

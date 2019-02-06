@@ -180,6 +180,42 @@ let test_check_undefined_type _ =
     [
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo(Bar): ...
+    |}
+    ["Undefined type [11]: Type `Bar` is not defined."];
+
+  assert_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+      class Foo(Generic[_T]): ...
+    |}
+    ["Undefined type [11]: Type `Generic` is not defined."];
+
+  assert_type_errors
+    {|
+      class AA: ...
+      class CC: ...
+      class Foo(AA, BB, CC, DD): ...
+    |}
+    [
+      "Undefined type [11]: Type `BB` is not defined.";
+      "Undefined type [11]: Type `DD` is not defined.";
+    ];
+
+  assert_type_errors
+    {|
+      class AA: ...
+      class CC(BB): ...
+      class Foo(AA, BB, CC, DD): ...
+    |}
+    [
+      "Undefined type [11]: Type `BB` is not defined.";
+      "Undefined type [11]: Type `BB` is not defined.";
+      "Undefined type [11]: Type `DD` is not defined.";
     ]
 
 
