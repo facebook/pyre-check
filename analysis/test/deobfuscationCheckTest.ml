@@ -351,6 +351,17 @@ let test_fixup _ =
     |};
   assert_deobfuscation
     {|
+      def qualifier.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
+        pass
+      qualifier.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
+    |}
+    {|
+      def qualifier.a():
+        pass
+      qualifier.a()
+    |};
+  assert_deobfuscation
+    {|
       FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
       def FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
         pass

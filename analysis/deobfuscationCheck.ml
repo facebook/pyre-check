@@ -457,8 +457,12 @@ let run
         let expression state expression =
           let value =
             match Node.value expression with
-            | Access (SimpleAccess (Access.Identifier head :: tail)) ->
-                Access (SimpleAccess (Access.Identifier (sanitize state head) :: tail))
+            | Access (SimpleAccess access) ->
+                let sanitize = function
+                  | Access.Identifier identifier -> Access.Identifier (sanitize state identifier)
+                  | element -> element
+                in
+                Access (SimpleAccess (List.map access ~f:sanitize))
             | value ->
                 value
           in
@@ -474,7 +478,7 @@ let run
               | statements -> statements
             in
             let sanitize_access { replacements; last_replacement } access =
-              match access with
+              match List.rev access with
               | Access.Identifier identifier :: tail ->
                   let identifier =
                     if String.length identifier > 15 then
@@ -502,6 +506,7 @@ let run
                       identifier
                   in
                   Access.Identifier identifier :: tail
+                  |> List.rev
               | _ ->
                   access
             in
