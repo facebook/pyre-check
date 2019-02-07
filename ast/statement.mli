@@ -221,7 +221,7 @@ module Define : sig
     -> Attribute.t Access.SerializableMap.t
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
-  val has_decorator: t -> string -> bool
+  val has_decorator: ?match_prefix:bool -> t -> string -> bool
   val has_return_annotation: t -> bool
 end
 

@@ -437,6 +437,61 @@ let test_is_assert_function _ =
   assert_false (is_assert "pyretestassert()");
   assert_false (is_assert "notAssert")
 
+let test_exists_in_list _ =
+  let make_expression target_string =
+    let make_access = function
+      | "()" -> Access.Call { Node.location = Location.Reference.any; value = [] }
+      | name -> Access.Identifier name
+    in
+    let elements = String.split ~on:'.' target_string in
+    let access = List.map elements ~f:make_access in
+    +Access (SimpleAccess access)
+  in
+  let assert_exists ~match_prefix expression_list target_string =
+    exists_in_list ~match_prefix ~expression_list target_string
+    |> assert_true
+  in
+  let assert_not_exists ~match_prefix expression_list target_string =
+    exists_in_list ~match_prefix ~expression_list target_string
+    |> assert_false
+  in
+
+  let simple = make_expression "a.b.c" in
+  let call_at_end = make_expression "a.b.c.()" in
+  let call_in_the_middle = make_expression "a.b.().c" in
+  let call_everywhere = make_expression "a.().b.().c.()" in
+  assert_exists [simple] ~match_prefix:false "a.b.c";
+  assert_exists [simple] ~match_prefix:true "a.b.c";
+  assert_not_exists [simple] "a.b" ~match_prefix:false;
+  assert_exists [simple] "a.b" ~match_prefix:true;
+  assert_not_exists [simple] "a.c" ~match_prefix:false;
+  assert_not_exists [simple] "a.c" ~match_prefix:true;
+  assert_not_exists [simple] "a.b.c.d" ~match_prefix:false;
+  assert_not_exists [simple] "a.b.c.d" ~match_prefix:true;
+  assert_not_exists [call_at_end] "a.b.c" ~match_prefix:false;
+  assert_exists [call_at_end] "a.b.c" ~match_prefix:true;
+  assert_not_exists [call_at_end] "a.b" ~match_prefix:false;
+  assert_exists [call_at_end] "a.b" ~match_prefix:true;
+  assert_not_exists [call_at_end] "a.c" ~match_prefix:false;
+  assert_not_exists [call_at_end] "a.c" ~match_prefix:true;
+  assert_not_exists [call_at_end] "a.b.c.d" ~match_prefix:false;
+  assert_not_exists [call_at_end] "a.b.c.d" ~match_prefix:true;
+  assert_not_exists [call_in_the_middle] "a.b.c" ~match_prefix:false;
+  assert_not_exists [call_in_the_middle] "a.b.c" ~match_prefix:true;
+  assert_not_exists [call_in_the_middle] "a.b" ~match_prefix:false;
+  assert_exists [call_in_the_middle] "a.b" ~match_prefix:true;
+  assert_not_exists [call_in_the_middle] "a.c" ~match_prefix:false;
+  assert_not_exists [call_in_the_middle] "a.c" ~match_prefix:true;
+  assert_not_exists [call_in_the_middle] "a.b.c.d" ~match_prefix:false;
+  assert_not_exists [call_in_the_middle] "a.b.c.d" ~match_prefix:true;
+  assert_not_exists [call_everywhere] "a.b.c" ~match_prefix:false;
+  assert_not_exists [call_everywhere] "a.b.c" ~match_prefix:true;
+  assert_not_exists [call_everywhere] "a.b" ~match_prefix:false;
+  assert_not_exists [call_everywhere] "a.b" ~match_prefix:true;
+  assert_not_exists [call_everywhere] "a.c" ~match_prefix:false;
+  assert_not_exists [call_everywhere] "a.c" ~match_prefix:true;
+  assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:false;
+  assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true
 
 let () =
   "expression">:::[
@@ -449,5 +504,6 @@ let () =
     "comparison_operator_override">::test_comparison_operator_override;
     "name_and_arguments">::test_name_and_arguments;
     "is_assert_function">::test_is_assert_function;
+    "exists_in_list">::test_exists_in_list;
   ]
   |> Test.run

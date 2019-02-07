@@ -301,8 +301,8 @@ module Define = struct
     Option.is_some parent
 
 
-  let has_decorator { decorators; _ } decorator =
-    Expression.exists_in_list ~expression_list:decorators decorator
+  let has_decorator ?(match_prefix=false) { decorators; _ } decorator =
+    Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
 
 
   let has_return_annotation { return_annotation; _ } =

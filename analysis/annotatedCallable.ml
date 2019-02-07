@@ -76,6 +76,19 @@ let apply_decorators ~define ~resolution =
     else
       define
   else
+  if Define.has_decorator ~match_prefix:true define "click.command" ||
+     Define.has_decorator ~match_prefix:true define "click.group"
+  then
+    (* Suppress caller/callee parameter matching by altering the click entry
+       point to have a generic parameter list. *)
+    {
+      define with
+      parameters = [
+        Parameter.create ~name:"*args" ();
+        Parameter.create ~name:"**kwargs" ();
+      ];
+    }
+  else
     define
 
 

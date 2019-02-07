@@ -752,7 +752,7 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
-let exists_in_list ~expression_list target_string =
+let exists_in_list ?(match_prefix=false) ~expression_list target_string =
   let rec matches expected actual =
     match expected, delocalize_qualified actual with
     | (expected :: expected_tail),
@@ -761,7 +761,9 @@ let exists_in_list ~expression_list target_string =
         value = Access (SimpleAccess ((Access.Identifier identifier) :: identifiers));
       }
       when identifier = expected ->
-        if List.is_empty expected_tail && List.is_empty identifiers then
+        if List.is_empty expected_tail &&
+           (match_prefix || List.is_empty identifiers)
+        then
           true
         else
           matches expected_tail { Node.location; value = Access (SimpleAccess identifiers) }

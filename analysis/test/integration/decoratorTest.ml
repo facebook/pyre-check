@@ -74,6 +74,77 @@ let test_check_contextmanager _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
+let test_check_click_command _ =
+  assert_type_errors
+    {|
+      @click.command()
+      @click.option('--flag', is_flag=True, help='Test flag')
+      def main(flag: bool) -> bool:
+          return flag
+
+      main()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @click.command()
+      @click.argument('filename')
+      def main(filename: str) -> str:
+          return filename
+
+      main()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def common_params(
+        func: typing.Callable[[bool, int], int]
+      ) -> typing.Callable[[bool, bool], int]:
+          @click.option('--foo', is_flag=True, help='Test flag')
+          @click.option('--bar', is_flag=True, help='Another test flag')
+          def wrapper(foo: bool, bar: bool) -> int:
+              bar_int = 1 if bar else 2
+              return func(foo, bar_int)
+          return wrapper
+
+      @click.command()
+      @common_params
+      def main(foo: bool, bar: int) -> int:
+          return bar if foo else 0
+
+      main()
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class Context: ...  # Emulate click.Context
+
+      @click.group()
+      @click.pass_context
+      def main(ctx: Context) -> None:
+          pass
+
+      @test.command()
+      @click.pass_context
+      def run(ctx: Context) -> None:
+          pass
+
+      main(obj={})
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def main(flag: bool) -> bool:
+          return flag
+
+      main()
+    |}
+    ["Missing argument [20]: Call `main` expects argument `flag`."]
+
 
 let test_decorators _ =
   assert_type_errors
@@ -110,6 +181,7 @@ let test_decorators _ =
 let () =
   "decorator">:::[
     "check_contextmanager">::test_check_contextmanager;
+    "check_click_command">::test_check_click_command;
     "decorators">::test_decorators;
   ]
   |> Test.run

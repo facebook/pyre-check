@@ -50,7 +50,21 @@ let test_return_annotation _ =
 
 
 let test_apply_decorators _ =
-  let assert_apply_decorators define expected_return_annotation =
+  let create_define ~decorators ~parameters ~return_annotation =
+    {
+      Statement.Define.name = Access.create "define";
+      parameters;
+      body = [+Pass];
+      decorators;
+      docstring = None;
+      return_annotation;
+      async = false;
+      parent = None;
+    }
+  in
+
+  (* Contextlib related tests *)
+  let assert_apply_contextlib_decorators define expected_return_annotation =
     let resolution =
       populate {|
         _T = typing.TypeVar("T")
@@ -75,32 +89,67 @@ let test_apply_decorators _ =
       expected_return_annotation
       applied_return_annotation
   in
-  let create_define ~decorators ~return_annotation =
-    {
-      Statement.Define.name = Access.create "define";
-      parameters = [];
-      body = [+Pass];
-      decorators;
-      docstring = None;
-      return_annotation;
-      async = false;
-      parent = None;
-    }
-  in
-  assert_apply_decorators
-    (create_define ~decorators:[] ~return_annotation:(Some !"str"))
+  assert_apply_contextlib_decorators
+    (create_define ~decorators:[] ~parameters:[] ~return_annotation:(Some !"str"))
     Type.string;
-  assert_apply_decorators
+  assert_apply_contextlib_decorators
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
+       ~parameters:[]
        ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
     (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
-  assert_apply_decorators
+  assert_apply_contextlib_decorators
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
+       ~parameters:[]
        ~return_annotation:
          (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
-    (Type.parametric "contextlib.GeneratorContextManager" [Type.string])
+    (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
+
+  (* Click related tests *)
+  let assert_apply_click_decorators ~expected_count define =
+    let actual_count =
+      let resolution =
+        populate ""
+        |> fun environment -> TypeCheck.resolution environment ()
+      in
+      Callable.apply_decorators ~define ~resolution
+      |> fun { Statement.Define.parameters; _ } -> List.length parameters
+    in
+    assert_equal
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      expected_count
+      actual_count
+  in
+  let make_click_decorator name =
+    let access =
+      Access.combine
+        !"click"
+        (Access.call ~location:Location.Reference.any ~name ())
+    in
+    +Access access
+  in
+  create_define
+    ~decorators:[]
+    ~parameters:[Parameter.create ~name:"test" ()]
+    ~return_annotation:None
+  |> assert_apply_click_decorators ~expected_count:1;
+  create_define
+    ~decorators:[make_click_decorator "neither_command_nor_group"]
+    ~parameters:[Parameter.create ~name:"test" ()]
+    ~return_annotation:None
+  |> assert_apply_click_decorators ~expected_count:1;
+  create_define
+    ~decorators:[make_click_decorator "command"]
+    ~parameters:[Parameter.create ~name:"test" ()]
+    ~return_annotation:None
+  |> assert_apply_click_decorators ~expected_count:2;
+  create_define
+    ~decorators:[make_click_decorator "group"]
+    ~parameters:[Parameter.create ~name:"test" ()]
+    ~return_annotation:None
+  |> assert_apply_click_decorators ~expected_count:2
 
 
 let test_create _ =
