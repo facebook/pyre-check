@@ -74,7 +74,7 @@ class Initialize(Command):
     def _get_local_configuration(self) -> Dict[str, Any]:
         configuration = {}  # type: Dict[str, Any]
         targets = log.get_input(
-            "Which buck target(s) should pyre analyze? (//target:a,//target/b/...) "
+            "Which buck target(s) should pyre analyze? (//target:a,//target/b/...)\n"
         )
         configuration["targets"] = [target.strip() for target in targets.split(",")]
         continuous = log.get_yes_no_input(
