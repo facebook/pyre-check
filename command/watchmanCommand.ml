@@ -98,8 +98,9 @@ let set_symlink ({ configuration; symlinks; _ } as state) ~path =
         |> List.map ~f:Path.SearchPath.to_path
         |> List.exists ~f:(fun directory -> Path.directory_contains ~directory path)
       in
-      if not (Path.Map.mem symlinks path) && tracked path then
-        Map.set symlinks ~key:(Path.real_path path) ~data:path
+      let real_path = Path.real_path path in
+      if not (Path.Map.mem symlinks real_path) && tracked path then
+        Map.set symlinks ~key:real_path ~data:path
       else
         symlinks
     with Unix.Unix_error (error, name, parameters) ->
