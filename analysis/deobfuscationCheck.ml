@@ -372,7 +372,7 @@ end
 
 
 (* Lol functors... *)
-module Scheduler(State: State)(Context: Context) = struct
+module Scheduler (State: State) (Context: Context) = struct
   let run ({ Source.qualifier; statements; _ } as source) =
     Hashtbl.clear Context.transformations;
 
@@ -443,8 +443,8 @@ let run
 
   (* Dead store elimination. *)
   let source =
-    let module State = UnusedStoreState(Context) in
-    let module DeadStoreEliminationScheduler = Scheduler(State)(Context) in
+    let module State = UnusedStoreState (Context) in
+    let module DeadStoreEliminationScheduler = Scheduler (State) (Context) in
     DeadStoreEliminationScheduler.run source
   in
 
