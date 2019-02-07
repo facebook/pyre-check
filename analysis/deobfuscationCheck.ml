@@ -448,7 +448,7 @@ let run
     DeadStoreEliminationScheduler.run source
   in
 
-  (* Fix up AST. *)
+  (* Rename obfuscated variables. *)
   let source =
     let module Transform =
       Transform.Make(struct
@@ -486,10 +486,6 @@ let run
 
         let statement state statement =
           let transformed =
-            let fix_statement_list = function
-              | [] -> [Node.create_with_default_location Pass]
-              | statements -> statements
-            in
             let sanitize_access { replacements; last_replacement } access =
               match List.rev access with
               | Access.Identifier identifier :: tail ->
@@ -536,17 +532,7 @@ let run
                       Node.value = Access (SimpleAccess (sanitize_access state access));
                     };
                   }
-              | If ({ If.body; _ } as conditional) ->
-                  If { conditional with If.body = fix_statement_list body }
-              | Define ({ Define.name; body; parameters; _ } as define) ->
-                  let body =
-                    let remove_docstring = function
-                      | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
-                      | statements -> statements
-                    in
-                    fix_statement_list body
-                    |> remove_docstring
-                  in
+              | Define ({ Define.name; parameters; _ } as define) ->
                   let parameters =
                     let sanitize_parameter =
                       let sanitize_parameter ({ Parameter.name; _ } as parameter) =
@@ -556,13 +542,7 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define {
-                    define with
-                    Define.name = sanitize_access state name;
-                    body;
-                    parameters;
-                    docstring = None;
-                  }
+                  Define { define with Define.name = sanitize_access state name; parameters }
               | value ->
                   value
             in
@@ -572,6 +552,44 @@ let run
       end)
     in
     Transform.transform { replacements = String.Table.create (); last_replacement = ref "" } source
+    |> Transform.source
+  in
+
+  (* Fix up AST. *)
+  let source =
+    let module Transform =
+      Transform.MakeStatementTransformer(struct
+        type t = unit
+
+        let statement _ statement =
+          let transformed =
+            let fix_statement_list = function
+              | [] -> [Node.create_with_default_location Pass]
+              | statements -> statements
+            in
+            let value =
+              match Node.value statement with
+              | If ({ If.body; _ } as conditional) ->
+                  If { conditional with If.body = fix_statement_list body }
+              | Define ({ Define.body; _ } as define) ->
+                  let body =
+                    let remove_docstring = function
+                      | { Node.value = Expression { Node.value = String _; _ }; _ } :: tail -> tail
+                      | statements -> statements
+                    in
+                    fix_statement_list body
+                    |> remove_docstring
+                  in
+                  Define { define with Define.body; docstring = None }
+              | value ->
+                  value
+            in
+            { statement with Node.value }
+          in
+          (), [transformed]
+      end)
+    in
+    Transform.transform () source
     |> Transform.source
   in
 
