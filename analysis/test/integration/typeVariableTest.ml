@@ -71,7 +71,24 @@ let test_check_variable_bindings _ =
       def foo(t: T) -> int:
         return t.baz()
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+
+      T = TypeVar("T", bound=int)
+
+      def f(x: T, y: int) -> T:
+        return x
+
+      def buggy(n: None) -> None:
+        return f(2, n)
+    |}
+    [
+      "Incompatible return type [7]: Expected `None` but got `int`.";
+      "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
+       `f` but got `None`.";
+    ]
 
 
 let test_bottom_unbound_variables _ =
