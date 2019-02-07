@@ -92,12 +92,6 @@ module ClassValue = struct
   let description = "Class"
 end
 
-module FunctionValue = struct
-  type t = (Define.t Node.t) list
-  let prefix = Prefix.make ()
-  let description = "Function"
-end
-
 module AliasValue = struct
   type t = Type.t
   let prefix = Prefix.make ()
@@ -159,8 +153,6 @@ module ErrorsValue = struct
 end
 
 (** Shared memory maps *)
-module FunctionDefinitions = SharedMemory.WithCache (AccessKey) (FunctionValue)
-
 module ClassDefinitions = SharedMemory.WithCache (TypeKey) (ClassValue)
 
 module Aliases = SharedMemory.NoCache (TypeKey) (AliasValue)

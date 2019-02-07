@@ -398,7 +398,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
     |> fun keys ->
     begin
-      FunctionDefinitions.remove_batch (FunctionDefinitions.KeySet.of_list keys);
       (* We add a global name for each function definition as well. *)
       Globals.remove_batch (Globals.KeySet.of_list keys);
     end;
