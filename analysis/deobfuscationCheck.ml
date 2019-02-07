@@ -427,11 +427,11 @@ let run
     ~environment
     ~source:({ Source.qualifier; statements; handle; _ } as source) =
   let module Context =
-  struct
-    let configuration = configuration
-    let environment = environment
-    let transformations = Location.Reference.Table.create ()
-  end
+    (struct
+      let configuration = configuration
+      let environment = environment
+      let transformations = Location.Reference.Table.create ()
+    end)
   in
 
   (* Constant propagation. *)
