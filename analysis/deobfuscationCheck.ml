@@ -18,6 +18,33 @@ let name =
   "Deobfuscation"
 
 
+module NestedDefines = struct
+  type 'state nested = {
+    nested_define: Define.t;
+    state: 'state;
+  }
+
+
+  and 'state t = ('state nested) Location.Reference.Map.t
+
+
+  let initial =
+    Location.Reference.Map.empty
+
+
+  let nested_defines nested_defines =
+    Map.data nested_defines
+
+
+  let update_nested_defines nested_defines ~statement ~state =
+    match statement with
+    | { Node.location; value = Define nested_define } ->
+        Map.set nested_defines ~key:location ~data:{ nested_define; state }
+    | _ ->
+        nested_defines
+end
+
+
 module type Context = sig
   val configuration: Configuration.Analysis.t
   val environment: (module Environment.Handler)
@@ -31,16 +58,10 @@ module ConstantPropagationState(Context: Context) = struct
     | Top
 
 
-  and nested_define = {
-    nested_define: Define.t;
-    state: t;
-  }
-
-
   and t = {
     constants: constant Access.Map.t;
     define: Define.t;
-    nested_defines: nested_define Location.Reference.Map.t;
+    nested_defines: t NestedDefines.t;
   }
 
 
@@ -70,11 +91,11 @@ module ConstantPropagationState(Context: Context) = struct
       | Some { constants; _ } -> constants
       | _ -> Access.Map.empty
     in
-    { constants; define; nested_defines = Location.Reference.Map.empty }
+    { constants; define; nested_defines = NestedDefines.initial }
 
 
   let nested_defines { nested_defines; _ } =
-    Map.data nested_defines
+    nested_defines
 
 
   let less_or_equal ~left:{ constants = left; _ } ~right:{ constants = right; _ } =
@@ -237,14 +258,7 @@ module ConstantPropagationState(Context: Context) = struct
     in
     let state = { state with constants } in
 
-    let nested_defines =
-      match statement with
-      | { Node.location; value = Define nested_define } ->
-          Map.set nested_defines ~key:location ~data:{ nested_define; state }
-      | _ ->
-          nested_defines
-    in
-
+    let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
     { state with nested_defines }
 
 
@@ -254,16 +268,10 @@ end
 
 
 module UnusedStoreState (Context: Context) = struct
-  type nested_define = {
-    nested_define: Define.t;
-    state: t;
-  }
-
-
-  and t = {
+  type t = {
     unused: Location.Reference.Set.t Access.Map.t;
     define: Define.t;
-    nested_defines: nested_define Location.Reference.Map.t;
+    nested_defines: t NestedDefines.t;
   }
 
 
@@ -278,11 +286,11 @@ module UnusedStoreState (Context: Context) = struct
 
 
   let initial ~state:_ ~define =
-    { unused = Access.Map.empty; define; nested_defines = Location.Reference.Map.empty }
+    { unused = Access.Map.empty; define; nested_defines = NestedDefines.initial }
 
 
   let nested_defines { nested_defines; _ } =
-    Map.data nested_defines
+    nested_defines
 
 
   let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
@@ -344,14 +352,7 @@ module UnusedStoreState (Context: Context) = struct
     in
     let state = { state with unused } in
 
-    let nested_defines =
-      match statement with
-      | { Node.location; value = Define nested_define } ->
-          Map.set nested_defines ~key:location ~data:{ nested_define; state }
-      | _ ->
-          nested_defines
-    in
-
+    let nested_defines = NestedDefines.update_nested_defines nested_defines ~statement ~state in
     { state with nested_defines }
 
 
@@ -363,15 +364,10 @@ end
 module type State = sig
   type t
 
-  type nested_define = {
-    nested_define: Define.t;
-    state: t;
-  }
-
   include Fixpoint.State with type t := t
 
   val initial: state: t option -> define: Define.t -> t
-  val nested_defines: t -> nested_define list
+  val nested_defines: t -> t NestedDefines.t
 end
 
 
@@ -387,8 +383,9 @@ module Scheduler(State: State)(Context: Context) = struct
       |> Fixpoint.exit
       >>| (fun state ->
           State.nested_defines state
+          |> Map.data
           |> List.iter
-            ~f:(fun { State.nested_define; state } ->
+            ~f:(fun { NestedDefines.nested_define; state } ->
                 run ~state:(Some state) ~define:nested_define))
       |> ignore
     in
