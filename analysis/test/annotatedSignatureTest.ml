@@ -62,7 +62,7 @@ let resolution =
 
 let parse_annotation annotation =
   (* Allow untracked to create callables with unknowns, which would otherwise
-    be generated from Callable.create on defines. *)
+     be generated from Callable.create on defines. *)
   annotation
   |> parse_single_expression
   |> Resolution.parse_annotation ~allow_untracked:true resolution

@@ -384,8 +384,8 @@ module State = struct
       } =
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init.
-        This must happen after typechecking is finished to access the annotations
-        added to resolution. *)
+         This must happen after typechecking is finished to access the annotations
+         added to resolution. *)
       let check_attributes_initialized define =
         let open Annotated in
         (Define.parent_definition ~resolution (Define.create define)
@@ -2643,13 +2643,13 @@ module State = struct
               let state =
                 let error =
                   let insufficiently_annotated =
-                      match original_annotation with
-                      | Some annotation when Type.contains_any annotation ->
-                          Type.equal expected Type.Top || Type.contains_any expected
-                      | None ->
-                          Type.equal expected Type.Top || Type.contains_any expected
-                      | _ ->
-                          false
+                    match original_annotation with
+                    | Some annotation when Type.contains_any annotation ->
+                        Type.equal expected Type.Top || Type.contains_any expected
+                    | None ->
+                        Type.equal expected Type.Top || Type.contains_any expected
+                    | _ ->
+                        false
                   in
                   let actual_annotation, evidence_locations =
                     if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then

@@ -430,25 +430,25 @@ let register_aliases (module Handler: Handler) sources =
                 Node.value =
                   Access
                     (SimpleAccess [
-                      Access.Identifier "typing";
-                      Access.Identifier "Type";
-                      Access.Identifier "__getitem__";
-                      Access.Call {
-                        Node.value = [{
-                          Argument.value = ({
-                              Node.value = Access (SimpleAccess [
-                                Access.Identifier "mypy_extensions";
-                                Access.Identifier "TypedDict";
-                                Access.Identifier "__getitem__";
-                                Access.Call _;
-                              ]);
+                        Access.Identifier "typing";
+                        Access.Identifier "Type";
+                        Access.Identifier "__getitem__";
+                        Access.Call {
+                          Node.value = [{
+                              Argument.value = ({
+                                  Node.value = Access (SimpleAccess [
+                                      Access.Identifier "mypy_extensions";
+                                      Access.Identifier "TypedDict";
+                                      Access.Identifier "__getitem__";
+                                      Access.Call _;
+                                    ]);
+                                  _;
+                                } as annotation);
                               _;
-                            } as annotation);
+                            }];
                           _;
-                        }];
-                        _;
-                      };
-                    ]);
+                        };
+                      ]);
                 _;
               } ->
                 if not (Type.equal target_annotation Type.Top) then
@@ -459,9 +459,9 @@ let register_aliases (module Handler: Handler) sources =
                 Node.value =
                   Access
                     (SimpleAccess[
-                      Access.Identifier "typing";
-                      Access.Identifier "Any";
-                    ]);
+                        Access.Identifier "typing";
+                        Access.Identifier "Any";
+                      ]);
                 _;
               } as annotation) ->
                 if not (Type.equal target_annotation Type.Top) then
