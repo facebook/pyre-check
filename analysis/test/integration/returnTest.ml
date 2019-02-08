@@ -348,7 +348,7 @@ let test_check_return_control_flow _ =
     [];
 
   (* Builtins. *)
-  assert_type_errors
+  assert_default_type_errors
     {|
       def f() -> str:
         return __name__
@@ -356,6 +356,8 @@ let test_check_return_control_flow _ =
         return __file__
       def h() -> str:
         return typing.__name__
+      def dict() -> typing.Dict[str, typing.Any]:
+        return __dict__
       def i() -> str:
         return ...
     |}

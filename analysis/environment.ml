@@ -293,6 +293,12 @@ let handler
       in
       Hashtbl.set globals ~key:(qualifier @ (Access.create "__file__")) ~data:string;
       Hashtbl.set globals ~key:(qualifier @ (Access.create "__name__")) ~data:string;
+      let dictionary_annotation =
+        Type.dictionary ~key:Type.string ~value:Type.Object
+        |> Annotation.create_immutable ~global:true
+        |> Node.create_with_default_location
+      in
+      Hashtbl.set globals ~key:(qualifier @ (Access.create "__dict__")) ~data:dictionary_annotation;
 
       if not is_registered_empty_stub then
         Hashtbl.set
