@@ -578,10 +578,23 @@ let run
       Transform.Make(struct
         type t = unit
 
+        let dequalify_access access =
+          let sanitized = Access.sanitized access in
+          let has_qualifier_as_prefix =
+            List.is_prefix
+              sanitized
+              ~prefix:qualifier
+              ~equal:(Access.equal_access Expression.equal)
+          in
+          if has_qualifier_as_prefix then
+            List.drop sanitized (List.length qualifier)
+          else
+            sanitized
+
         let expression _ expression =
           let value =
             match Node.value expression with
-            | Access (SimpleAccess access) -> Access (SimpleAccess (Access.sanitized access))
+            | Access (SimpleAccess access) -> Access (SimpleAccess (dequalify_access access))
             | value -> value
           in
           { expression with Node.value }
@@ -593,7 +606,7 @@ let run
           let transformed =
             let value =
               match Node.value statement with
-              | Define ({ Define.parameters; _ } as define) ->
+              | Define ({ Define.name; parameters; _ } as define) ->
                   let parameters =
                     let sanitize_parameter =
                       let sanitize_parameter ({ Parameter.name; _ } as parameter) =
@@ -603,7 +616,7 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define { define with Define.parameters }
+                  Define { define with Define.name = dequalify_access name; parameters }
               | value ->
                   value
             in

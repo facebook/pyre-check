@@ -14,15 +14,16 @@ open Test
 let assert_deobfuscation source expected =
   let environment = environment () in
   let configuration = mock_configuration in
+  let qualifier = Expression.Access.create "qualifier" in
   let actual =
-    let source = parse source in
+    let source = parse ~qualifier source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     DeobfuscationCheck.run ~configuration ~environment ~source
     |> function
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
-  assert_equal ~cmp:Source.equal ~printer:Source.show (parse expected) actual
+  assert_equal ~cmp:Source.equal ~printer:Source.show (parse ~qualifier expected) actual
 
 
 let test_forward _ =
@@ -338,6 +339,17 @@ let test_fixup _ =
       foo(parameter = 1)
     |};
 
+  (* Drop qualifier. *)
+  assert_deobfuscation
+    {|
+      def qualifier.foo():
+        qualifier.bar()
+    |}
+    {|
+      def foo():
+        bar()
+    |};
+
   (* Naming heuristics. *)
   assert_deobfuscation
     {|
@@ -393,14 +405,14 @@ let test_fixup _ =
     |};
   assert_deobfuscation
     {|
-      def qualifier.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
+      def other.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
         pass
-      qualifier.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
+      other.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
     |}
     {|
-      def qualifier.a():
+      def other.a():
         pass
-      qualifier.a()
+      other.a()
     |};
   assert_deobfuscation
     {|
@@ -413,7 +425,6 @@ let test_fixup _ =
       def a():
         pass
     |}
-
 
 
 let () =
