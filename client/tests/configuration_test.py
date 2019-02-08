@@ -87,6 +87,24 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.strict, False)
+
+        json_load.side_effect = [
+            {
+                "search_path": ["additional/"],
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "workers": 20,
+                "strict": True,
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
+        self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.strict, True)
 
         json_load.side_effect = [
             {
@@ -436,6 +454,7 @@ class ConfigurationTest(unittest.TestCase):
                     "logger": "/usr/logger",
                     "version": "VERSION",
                     "typeshed": "TYPE/%V/SHED/",
+                    "strict": False,
                     "ignore_all_errors": ["buck-out/dev/gen"],
                     "extensions": [".a", ".b", ""],
                 },

@@ -191,3 +191,34 @@ class CheckTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
+
+    @patch("subprocess.check_output")
+    @patch("os.path.realpath")
+    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
+    def test_check_strict(self, directories_to_analyze, realpath, check_output) -> None:
+        realpath.side_effect = lambda x: x
+
+        arguments = mock_arguments()
+        configuration = mock_configuration()
+        configuration.strict = True
+
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ):
+            command = commands.Check(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-strict",
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Check.NAME)

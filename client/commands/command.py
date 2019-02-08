@@ -80,7 +80,9 @@ class Command:
         self._analysis_directory = analysis_directory
         self._debug = arguments.debug  # type: bool
         self._sequential = arguments.sequential  # type: bool
-        self._strict = arguments.strict  # type: bool
+        self._strict = arguments.strict or (
+            configuration and configuration.strict
+        )  # type: bool
         self._additional_checks = arguments.additional_check  # type: List[str]
         self._show_error_traces = arguments.show_error_traces  # type: bool
         self._verbose = arguments.verbose  # type: bool

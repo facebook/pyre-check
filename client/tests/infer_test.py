@@ -520,6 +520,7 @@ def mock_configuration() -> MagicMock:
     configuration.search_path = ["path1", "path2"]
     configuration.get_typeshed = MagicMock()
     configuration.logger = None
+    configuration.strict = False
     return configuration
 
 

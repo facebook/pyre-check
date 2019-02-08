@@ -50,6 +50,7 @@ def mock_arguments(
 
 def mock_configuration(version_hash=None) -> MagicMock:
     configuration = MagicMock()
+    configuration.strict = False
     configuration.source_directories = ["."]
     configuration.logger = None
     configuration.number_of_workers = 5

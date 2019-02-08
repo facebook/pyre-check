@@ -130,6 +130,7 @@ class Configuration:
         self._version_hash = None  # type: Optional[str]
         self._binary = None  # type: Optional[str]
         self._typeshed = None  # type: Optional[str]
+        self.strict = False  # type: bool
 
         # Handle search path from multiple sources
         self._search_path = []
@@ -362,6 +363,7 @@ class Configuration:
 
                 self.logger = configuration.consume("logger", current=self.logger)
 
+                self.strict = configuration.consume("strict", default=self.strict)
                 ignore_all_errors = configuration.consume(
                     "ignore_all_errors", default=[]
                 )
