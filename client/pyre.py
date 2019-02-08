@@ -220,6 +220,9 @@ def main() -> int:
     check = parsed_commands.add_parser(commands.Check.NAME)
     check.set_defaults(command=commands.Check)
 
+    deobfuscate = parsed_commands.add_parser(commands.Deobfuscate.NAME)
+    deobfuscate.set_defaults(command=commands.Deobfuscate)
+
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
     analyze.set_defaults(command=commands.Analyze)
     analyze.add_argument(

@@ -7,6 +7,7 @@
 
 from .analyze import Analyze as Analyze  # noqa
 from .check import Check as Check  # noqa
+from .deobfuscate import Deobfuscate as Deobfuscate  # noqa
 from .incremental import Incremental as Incremental  # noqa
 from .initialize import Initialize as Initialize  # noqa
 from .kill import Kill as Kill  # noqa
