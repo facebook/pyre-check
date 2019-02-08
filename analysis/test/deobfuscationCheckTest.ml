@@ -384,6 +384,20 @@ let test_fixup _ =
     |};
   assert_deobfuscation
     {|
+      (
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc,
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpYd
+      ) = foo()
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpYd
+    |}
+    {|
+      a, b = foo()
+      a
+      b
+    |};
+  assert_deobfuscation
+    {|
       if True:
         FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 1
       else:

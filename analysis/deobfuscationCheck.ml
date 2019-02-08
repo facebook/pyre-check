@@ -558,17 +558,17 @@ let run
           let transformed =
             let value =
               match Node.value statement with
-              | Assign ({
-                  target = { Node.value = Access (SimpleAccess access); _ } as target;
-                  _;
-                } as assign) ->
-                  Assign {
-                    assign with
-                    Assign.target = {
-                      target with
-                      Node.value = Access (SimpleAccess (sanitize_access access));
-                    };
-                  }
+              | Assign ({ target; _; } as assign) ->
+                  let rec sanitize_target target =
+                    match target with
+                    | { Node.value = Access (SimpleAccess access); _ } as target ->
+                        { target with Node.value = Access (SimpleAccess (sanitize_access access)) }
+                    | { Node.value = Tuple targets; _ } as tuple ->
+                        { tuple with Node.value = Tuple (List.map targets ~f:sanitize_target) }
+                    | _ ->
+                        target
+                  in
+                  Assign { assign with Assign.target = sanitize_target target }
               | value ->
                   value
             in
