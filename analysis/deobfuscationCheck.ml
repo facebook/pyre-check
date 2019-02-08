@@ -499,16 +499,12 @@ let run
           let transformed =
             let sanitize_access access =
               match List.rev access with
-              | Access.Identifier identifier :: tail ->
+              | Access.Identifier identifier :: tail
+                when String.length (Identifier.sanitized identifier) > 15 ->
                   let identifier =
-                    if String.length identifier > 15 then
-                      begin
-                        let replacement = generate_identifier () in
-                        Hashtbl.set replacements ~key:identifier ~data:replacement;
-                        replacement
-                      end
-                    else
-                      identifier
+                    let replacement = generate_identifier () in
+                    Hashtbl.set replacements ~key:identifier ~data:replacement;
+                    replacement
                   in
                   Access.Identifier identifier :: tail
                   |> List.rev
