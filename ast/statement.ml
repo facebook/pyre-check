@@ -1373,10 +1373,11 @@ module PrettyPrinter = struct
     in
     Format.fprintf
       formatter
-      "%a@[<v 2>%adef %a#%a(%a)%s:@;%a@]@."
+      "%a@[<v 2>%adef %a%s%a(%a)%s:@;%a@]@."
       pp_decorators decorators
       pp_async async
       pp_access_list_option parent
+      (if Option.is_some parent then "#" else "")
       pp_access_list name
       Expression.pp_expression_parameter_list parameters
       return_annotation

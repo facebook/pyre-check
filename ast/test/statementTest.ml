@@ -937,7 +937,7 @@ let test_pp _ =
         x = "hello world"
     |}
     ~expected:{|
-      def #foo(bar):
+      def foo(bar):
         x = "hello world"
     |};
 
@@ -951,7 +951,7 @@ let test_pp _ =
     |}
     ~expected:{|
       @(decorator1, decorator2)
-      def #foo(bar):
+      def foo(bar):
         x = "hello world"
     |};
 
@@ -970,11 +970,11 @@ let test_pp _ =
     |}
     ~expected:{|
       @(decorator1, decorator2)
-      def #foo(bar):
+      def foo(bar):
         x = "hello world"
 
       @(decorator3)
-      def #foo(baz):
+      def foo(baz):
         x = "hello squirrel"
         y = 5
     |};
@@ -1064,7 +1064,7 @@ let test_pp _ =
     |}
     ~expected:{|
       @(some.decorator("with_a_string"))
-      def #decorator_test():
+      def decorator_test():
         return 5
     |}
 
