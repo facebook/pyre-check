@@ -479,6 +479,16 @@ let run
       | _ ->
           access
     in
+    let sanitize_identifier identifier =
+      if String.length (Identifier.sanitized identifier) > 15 then
+        begin
+          let replacement = generate_identifier () in
+          Hashtbl.set replacements ~key:identifier ~data:replacement;
+          replacement
+        end
+      else
+        identifier
+    in
 
     let module ScopeTransform =
       Transform.MakeStatementTransformer(struct
@@ -492,16 +502,7 @@ let run
                   let parameters =
                     let sanitize_parameter
                         ({ Node.value = { Parameter.name; _ } as parameter; _ } as node) =
-                      let name =
-                        if String.length (Identifier.sanitized name) > 15 then
-                          begin
-                            let replacement = generate_identifier () in
-                            Hashtbl.set replacements ~key:name ~data:replacement;
-                            replacement
-                          end
-                        else
-                          name
-                      in
+                      let name = sanitize_identifier name in
                       { node with Node.value = { parameter with Parameter.name} }
                     in
                     List.map parameters ~f:sanitize_parameter
@@ -515,6 +516,8 @@ let run
                     { target with Node.value = Access (SimpleAccess (sanitize_access access)) }
                   in
                   For { block with For.target }
+              | Global globals ->
+                  Global (List.map globals ~f:sanitize_identifier)
               | value ->
                   value
             in

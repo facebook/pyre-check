@@ -439,6 +439,8 @@ let test_fixup _ =
       def a():
         pass
     |};
+
+  (* For. *)
   assert_deobfuscation
     {|
       for FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc in []:
@@ -447,6 +449,26 @@ let test_fixup _ =
     {|
       for a in []:
         a
+    |};
+
+  (* Globals. *)
+  assert_deobfuscation
+    {|
+      global FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      global a
+      a
+    |};
+  assert_deobfuscation
+    {|
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      global FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      a
+      global a
     |}
 
 
