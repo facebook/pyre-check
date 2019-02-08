@@ -372,8 +372,16 @@ module Access = struct
   let sanitized access =
     let sanitized element =
       match element with
-      | Identifier identifier -> Identifier (Identifier.sanitized identifier)
-      | _ -> element
+      | Identifier identifier ->
+          Identifier (Identifier.sanitized identifier)
+      | Call arguments ->
+          let sanitize_argument ({ Argument.name; _ } as argument)=
+            {
+              argument with
+              Argument.name = name >>| Node.map ~f:Identifier.sanitized;
+            }
+          in
+          Call (Node.map arguments ~f:(List.map ~f:sanitize_argument))
     in
     List.map access ~f:sanitized
 

@@ -455,23 +455,15 @@ let run
         let sanitize identifier =
           match Hashtbl.find replacements identifier with
           | Some replacement -> replacement
-          | None -> Identifier.sanitized identifier
+          | None -> identifier
 
         let expression _ expression =
           let value =
             match Node.value expression with
             | Access (SimpleAccess access) ->
                 let sanitize = function
-                  | Access.Identifier identifier ->
-                      Access.Identifier (sanitize identifier)
-                  | Access.Call arguments ->
-                      let sanitize_argument ({ Argument.name; _ } as argument)=
-                        {
-                          argument with
-                          Argument.name = name >>| Node.map ~f:sanitize;
-                        }
-                      in
-                      Access.Call (Node.map arguments ~f:(List.map ~f:sanitize_argument))
+                  | Access.Identifier identifier -> Access.Identifier (sanitize identifier)
+                  | access -> access
                 in
                 Access (SimpleAccess (List.map access ~f:sanitize))
             | value ->
@@ -547,6 +539,50 @@ let run
             { statement with Node.value }
           in
           state, [transformed]
+      end)
+    in
+    Transform.transform () source
+    |> Transform.source
+  in
+
+  (* Dequalify. *)
+  let source =
+    let module Transform =
+      Transform.Make(struct
+        type t = unit
+
+        let expression _ expression =
+          let value =
+            match Node.value expression with
+            | Access (SimpleAccess access) -> Access (SimpleAccess (Access.sanitized access))
+            | value -> value
+          in
+          { expression with Node.value }
+
+        let transform_children _ _ =
+          true
+
+        let statement _ statement =
+          let transformed =
+            let value =
+              match Node.value statement with
+              | Define ({ Define.parameters; _ } as define) ->
+                  let parameters =
+                    let sanitize_parameter =
+                      let sanitize_parameter ({ Parameter.name; _ } as parameter) =
+                        { parameter with Parameter.name = Identifier.sanitized name }
+                      in
+                      Node.map ~f:sanitize_parameter
+                    in
+                    List.map parameters ~f:sanitize_parameter;
+                  in
+                  Define { define with Define.parameters }
+              | value ->
+                  value
+            in
+            { statement with Node.value }
+          in
+          (), [transformed]
       end)
     in
     Transform.transform () source
