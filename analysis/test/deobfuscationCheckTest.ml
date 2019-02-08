@@ -438,6 +438,15 @@ let test_fixup _ =
       a()
       def a():
         pass
+    |};
+  assert_deobfuscation
+    {|
+      for FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc in []:
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      for a in []:
+        a
     |}
 
 

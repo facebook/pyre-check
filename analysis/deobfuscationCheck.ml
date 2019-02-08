@@ -507,6 +507,14 @@ let run
                     List.map parameters ~f:sanitize_parameter
                   in
                   Define { define with Define.name = sanitize_access name; parameters }
+              | For ({
+                  For.target = { Node.value = Access (SimpleAccess access); _ } as target;
+                  _;
+                } as block) ->
+                  let target =
+                    { target with Node.value = Access (SimpleAccess (sanitize_access access)) }
+                  in
+                  For { block with For.target }
               | value ->
                   value
             in
