@@ -1427,8 +1427,11 @@ module PrettyPrinter = struct
           pp_statement_list body
           pp_statement_list orelse
 
-    | Global global_list ->
-        pp_list formatter String.pp "," global_list
+    | Global globals ->
+        Format.fprintf
+          formatter
+          "global %s"
+          (String.concat globals ~sep:", ")
 
     | If { If.test; body; orelse } ->
         if List.is_empty orelse then

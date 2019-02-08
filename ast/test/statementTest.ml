@@ -1066,6 +1066,14 @@ let test_pp _ =
       @(some.decorator("with_a_string"))
       def decorator_test():
         return 5
+    |};
+
+  assert_pretty_print
+    {|
+      global a
+    |}
+    ~expected:{|
+      global a
     |}
 
 
