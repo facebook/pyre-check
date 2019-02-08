@@ -471,18 +471,20 @@ let run
 
         let replacements = String.Table.create ()
 
-        let sanitize identifier =
-          match Hashtbl.find replacements identifier with
-          | Some replacement -> replacement
-          | None -> identifier
-
         let expression _ expression =
           let value =
             match Node.value expression with
             | Access (SimpleAccess access) ->
                 let sanitize = function
-                  | Access.Identifier identifier -> Access.Identifier (sanitize identifier)
-                  | access -> access
+                  | Access.Identifier identifier ->
+                      let identifier =
+                        match Hashtbl.find replacements identifier with
+                        | Some replacement -> replacement
+                        | None -> identifier
+                      in
+                      Access.Identifier identifier
+                  | access ->
+                      access
                 in
                 Access (SimpleAccess (List.map access ~f:sanitize))
             | value ->
@@ -526,17 +528,8 @@ let run
                       Node.value = Access (SimpleAccess (sanitize_access access));
                     };
                   }
-              | Define ({ Define.name; parameters; _ } as define) ->
-                  let parameters =
-                    let sanitize_parameter =
-                      let sanitize_parameter ({ Parameter.name; _ } as parameter) =
-                        { parameter with Parameter.name = sanitize name }
-                      in
-                      Node.map ~f:sanitize_parameter
-                    in
-                    List.map parameters ~f:sanitize_parameter;
-                  in
-                  Define { define with Define.name = sanitize_access name; parameters }
+              | Define ({ Define.name; _ } as define) ->
+                  Define { define with Define.name = sanitize_access name }
               | value ->
                   value
             in

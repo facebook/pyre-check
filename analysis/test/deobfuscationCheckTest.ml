@@ -382,6 +382,16 @@ let test_fixup _ =
         pass
       a()
     |};
+  (* TODO(T38205782): simplify parameters. *)
+  assert_deobfuscation
+    {|
+      def foo($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
+        $parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      def foo(FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |};
   assert_deobfuscation
     {|
       def qualifier.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
