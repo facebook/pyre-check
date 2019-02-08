@@ -617,6 +617,14 @@ let run
                     List.map parameters ~f:sanitize_parameter;
                   in
                   Define { define with Define.name = dequalify_access name; parameters }
+              | Try ({ Try.handlers; _ } as block) ->
+                  let handlers =
+                    let sanitize_handler ({ Try.name; _ } as handler) =
+                      { handler with Try.name = name >>| Identifier.sanitized }
+                    in
+                    List.map handlers ~f:sanitize_handler
+                  in
+                  Try { block with Try.handlers }
               | value ->
                   value
             in

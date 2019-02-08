@@ -338,6 +338,20 @@ let test_fixup _ =
     {|
       foo(parameter = 1)
     |};
+  assert_deobfuscation
+    {|
+      try:
+        pass
+      except Exception as $target$e:
+        pass
+    |}
+    {|
+      try:
+        pass
+      except Exception as e:
+        pass
+    |};
+
 
   (* Drop qualifier. *)
   assert_deobfuscation
