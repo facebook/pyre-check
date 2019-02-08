@@ -448,7 +448,26 @@ let run
       Transform.Make(struct
         type t = unit
 
-        let last_replacement = ref ""
+        let last_identifier = ref ""
+
+        let generate_identifier () =
+          let identifier =
+            match String.to_list_rev !last_identifier with
+            | []
+            | 'z' :: _ ->
+                !last_identifier ^ "a"
+            | character :: tail ->
+                let character =
+                  Char.to_int character
+                  |> (+) 1
+                  |> Char.of_int_exn
+                in
+                character :: tail
+                |> List.rev
+                |> String.of_char_list
+          in
+          last_identifier := identifier;
+          identifier
 
         let replacements = String.Table.create ()
 
@@ -482,24 +501,9 @@ let run
                   let identifier =
                     if String.length identifier > 15 then
                       begin
-                        let next_replacement =
-                          match String.to_list_rev !last_replacement with
-                          | []
-                          | 'z' :: _ ->
-                              !last_replacement ^ "a"
-                          | character :: tail ->
-                              let character =
-                                Char.to_int character
-                                |> (+) 1
-                                |> Char.of_int_exn
-                              in
-                              character :: tail
-                              |> List.rev
-                              |> String.of_char_list
-                        in
-                        last_replacement := next_replacement;
-                        Hashtbl.set replacements ~key:identifier ~data:!last_replacement;
-                        !last_replacement
+                        let replacement = generate_identifier () in
+                        Hashtbl.set replacements ~key:identifier ~data:replacement;
+                        replacement
                       end
                     else
                       identifier
