@@ -416,12 +416,6 @@ module Scheduler (State: State) (Context: Context) = struct
 end
 
 
-type fixup = {
-  replacements: string String.Table.t;
-  last_replacement: string ref;
-}
-
-
 let run
     ~configuration
     ~environment
@@ -452,25 +446,29 @@ let run
   let source =
     let module Transform =
       Transform.Make(struct
-        type t = fixup
+        type t = unit
 
-        let sanitize { replacements; _ } identifier =
+        let last_replacement = ref ""
+
+        let replacements = String.Table.create ()
+
+        let sanitize identifier =
           match Hashtbl.find replacements identifier with
           | Some replacement -> replacement
           | None -> Identifier.sanitized identifier
 
-        let expression state expression =
+        let expression _ expression =
           let value =
             match Node.value expression with
             | Access (SimpleAccess access) ->
                 let sanitize = function
                   | Access.Identifier identifier ->
-                      Access.Identifier (sanitize state identifier)
+                      Access.Identifier (sanitize identifier)
                   | Access.Call arguments ->
                       let sanitize_argument ({ Argument.name; _ } as argument)=
                         {
                           argument with
-                          Argument.name = name >>| Node.map ~f:(sanitize state);
+                          Argument.name = name >>| Node.map ~f:sanitize;
                         }
                       in
                       Access.Call (Node.map arguments ~f:(List.map ~f:sanitize_argument))
@@ -486,7 +484,7 @@ let run
 
         let statement state statement =
           let transformed =
-            let sanitize_access { replacements; last_replacement } access =
+            let sanitize_access access =
               match List.rev access with
               | Access.Identifier identifier :: tail ->
                   let identifier =
@@ -529,20 +527,20 @@ let run
                     assign with
                     Assign.target = {
                       target with
-                      Node.value = Access (SimpleAccess (sanitize_access state access));
+                      Node.value = Access (SimpleAccess (sanitize_access access));
                     };
                   }
               | Define ({ Define.name; parameters; _ } as define) ->
                   let parameters =
                     let sanitize_parameter =
                       let sanitize_parameter ({ Parameter.name; _ } as parameter) =
-                        { parameter with Parameter.name = sanitize state name }
+                        { parameter with Parameter.name = sanitize name }
                       in
                       Node.map ~f:sanitize_parameter
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define { define with Define.name = sanitize_access state name; parameters }
+                  Define { define with Define.name = sanitize_access name; parameters }
               | value ->
                   value
             in
@@ -551,7 +549,7 @@ let run
           state, [transformed]
       end)
     in
-    Transform.transform { replacements = String.Table.create (); last_replacement = ref "" } source
+    Transform.transform () source
     |> Transform.source
   in
 

@@ -358,6 +358,21 @@ let test_fixup _ =
     |};
   assert_deobfuscation
     {|
+      if True:
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 1
+      else:
+        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 2
+      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      if True:
+        a = 1
+      else:
+        a = 2
+      a
+    |};
+  assert_deobfuscation
+    {|
       def FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
         pass
       FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()
