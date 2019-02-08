@@ -382,15 +382,14 @@ let test_fixup _ =
         pass
       a()
     |};
-  (* TODO(T38205782): simplify parameters. *)
   assert_deobfuscation
     {|
       def foo($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
         $parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
     |}
     {|
-      def foo(FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
-        FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      def foo(a):
+        a
     |};
   assert_deobfuscation
     {|
@@ -410,7 +409,7 @@ let test_fixup _ =
         pass
     |}
     {|
-      FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()  # current limitation
+      a()
       def a():
         pass
     |}

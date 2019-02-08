@@ -444,32 +444,80 @@ let run
 
   (* Rename obfuscated variables. *)
   let source =
+    let last_identifier = ref "" in
+    let generate_identifier () =
+      let identifier =
+        match String.to_list_rev !last_identifier with
+        | []
+        | 'z' :: _ ->
+            !last_identifier ^ "a"
+        | character :: tail ->
+            let character =
+              Char.to_int character
+              |> (+) 1
+              |> Char.of_int_exn
+            in
+            character :: tail
+            |> List.rev
+            |> String.of_char_list
+      in
+      last_identifier := identifier;
+      identifier
+    in
+    let replacements = String.Table.create () in
+    let sanitize_access access =
+      match List.rev access with
+      | Access.Identifier identifier :: tail
+        when String.length (Identifier.sanitized identifier) > 15 ->
+          let identifier =
+            let replacement = generate_identifier () in
+            Hashtbl.set replacements ~key:identifier ~data:replacement;
+            replacement
+          in
+          Access.Identifier identifier :: tail
+          |> List.rev
+      | _ ->
+          access
+    in
+
+    let module ScopeTransform =
+      Transform.MakeStatementTransformer(struct
+        type t = unit
+
+        let statement state statement =
+          let transformed =
+            let value =
+              match Node.value statement with
+              | Define ({ Define.name; parameters; _ } as define) ->
+                  let parameters =
+                    let sanitize_parameter
+                        ({ Node.value = { Parameter.name; _ } as parameter; _ } as node) =
+                      let name =
+                        if String.length (Identifier.sanitized name) > 15 then
+                          begin
+                            let replacement = generate_identifier () in
+                            Hashtbl.set replacements ~key:name ~data:replacement;
+                            replacement
+                          end
+                        else
+                          name
+                      in
+                      { node with Node.value = { parameter with Parameter.name} }
+                    in
+                    List.map parameters ~f:sanitize_parameter
+                  in
+                  Define { define with Define.name = sanitize_access name; parameters }
+              | value ->
+                  value
+            in
+            { statement with Node.value }
+          in
+          state, [transformed]
+      end)
+    in
     let module Transform =
       Transform.Make(struct
         type t = unit
-
-        let last_identifier = ref ""
-
-        let generate_identifier () =
-          let identifier =
-            match String.to_list_rev !last_identifier with
-            | []
-            | 'z' :: _ ->
-                !last_identifier ^ "a"
-            | character :: tail ->
-                let character =
-                  Char.to_int character
-                  |> (+) 1
-                  |> Char.of_int_exn
-                in
-                character :: tail
-                |> List.rev
-                |> String.of_char_list
-          in
-          last_identifier := identifier;
-          identifier
-
-        let replacements = String.Table.create ()
 
         let expression _ expression =
           let value =
@@ -497,20 +545,6 @@ let run
 
         let statement state statement =
           let transformed =
-            let sanitize_access access =
-              match List.rev access with
-              | Access.Identifier identifier :: tail
-                when String.length (Identifier.sanitized identifier) > 15 ->
-                  let identifier =
-                    let replacement = generate_identifier () in
-                    Hashtbl.set replacements ~key:identifier ~data:replacement;
-                    replacement
-                  in
-                  Access.Identifier identifier :: tail
-                  |> List.rev
-              | _ ->
-                  access
-            in
             let value =
               match Node.value statement with
               | Assign ({
@@ -524,8 +558,6 @@ let run
                       Node.value = Access (SimpleAccess (sanitize_access access));
                     };
                   }
-              | Define ({ Define.name; _ } as define) ->
-                  Define { define with Define.name = sanitize_access name }
               | value ->
                   value
             in
@@ -534,7 +566,9 @@ let run
           state, [transformed]
       end)
     in
-    Transform.transform () source
+    ScopeTransform.transform () source
+    |> ScopeTransform.source
+    |> Transform.transform ()
     |> Transform.source
   in
 
