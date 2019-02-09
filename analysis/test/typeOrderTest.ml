@@ -2100,21 +2100,28 @@ let test_least_upper_bound _ =
 
 
 let test_greatest_lower_bound _ =
-  assert_equal (greatest_lower_bound diamond_order Type.Bottom Type.Bottom) [Type.Bottom];
+  let assert_greatest_lower_bound ~order type1 type2 expected =
+    let actual = greatest_lower_bound order type1 type2 |> List.sort ~compare:Type.compare in
+    assert_equal
+      ~printer:(List.to_string ~f:Type.show)
+      actual
+      expected
+  in
+  assert_greatest_lower_bound ~order:diamond_order Type.Bottom Type.Bottom [Type.Bottom];
 
-  assert_equal (greatest_lower_bound diamond_order Type.Bottom !"D") [Type.Bottom];
-  assert_equal (greatest_lower_bound diamond_order Type.Bottom !"A") [Type.Bottom];
-  assert_equal (greatest_lower_bound diamond_order !"A" !"C") [!"C"];
-  assert_equal (greatest_lower_bound diamond_order !"A" !"B") [!"B"];
-  assert_equal (greatest_lower_bound diamond_order !"A" !"D") [!"D"];
-  assert_equal (greatest_lower_bound diamond_order !"B" !"D") [!"D"];
-  assert_equal (greatest_lower_bound diamond_order !"B" !"C") [!"D"];
+  assert_greatest_lower_bound ~order:diamond_order Type.Bottom !"D" [Type.Bottom];
+  assert_greatest_lower_bound ~order:diamond_order Type.Bottom !"A" [Type.Bottom];
+  assert_greatest_lower_bound ~order:diamond_order !"A" !"C" [!"C"];
+  assert_greatest_lower_bound ~order:diamond_order !"A" !"B" [!"B"];
+  assert_greatest_lower_bound ~order:diamond_order !"A" !"D" [!"D"];
+  assert_greatest_lower_bound ~order:diamond_order !"B" !"D" [!"D"];
+  assert_greatest_lower_bound ~order:diamond_order !"B" !"C" [!"D"];
 
-  assert_equal (greatest_lower_bound diamond_order Type.Top !"B") [!"B"];
+  assert_greatest_lower_bound ~order:diamond_order Type.Top !"B" [!"B"];
 
-  assert_equal (greatest_lower_bound diamond_order Type.Top Type.Top) [Type.Top];
+  assert_greatest_lower_bound ~order:diamond_order Type.Top Type.Top [Type.Top];
 
-  assert_equal (greatest_lower_bound butterfly !"2" !"3") [!"0"; !"1"]
+  assert_greatest_lower_bound ~order:butterfly !"2" !"3" [!"0"; !"1"]
 
 
 let test_instantiate_parameters _ =
@@ -2354,16 +2361,16 @@ let test_to_dot _ =
     ~printer:ident
     ({|
        digraph {
-         0[label="0"]
-         1[label="1"]
-         2[label="2"]
-         3[label="3"]
-         4[label="undefined"]
-         5[label="unknown"]
-         0 -> 1[label="(str)"]
-         0 -> 2
-         1 -> 3
-         2 -> 3
+         129913994[label="undefined"]
+         152507349[label="unknown"]
+         234594981[label="2"]
+         547049050[label="1"]
+         611166579[label="3"]
+         847044026[label="0"]
+         234594981 -> 611166579
+         547049050 -> 611166579
+         847044026 -> 234594981
+         847044026 -> 547049050[label="(str)"]
        }
      |}
      |> Test.trim_extra_indentation)

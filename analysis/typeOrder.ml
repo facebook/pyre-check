@@ -178,11 +178,20 @@ let index_of (module Handler: Handler) annotation =
 let insert (module Handler: Handler) annotation =
   if not (Handler.contains (Handler.indices ()) annotation) then
     begin
-      let indices = Handler.indices () in
-      let index = Handler.length indices in
+      let annotations = Handler.annotations () in
+      let index =
+        let initial = Type.hash annotation in
+        let rec pick_index index =
+          if Handler.contains annotations index then
+            pick_index (initial + 1)
+          else
+            index
+        in
+        pick_index initial
+      in
       Handler.add_key index;
-      Handler.set indices ~key:annotation ~data:index;
-      Handler.set (Handler.annotations ()) ~key:index ~data:annotation;
+      Handler.set (Handler.indices ()) ~key:annotation ~data:index;
+      Handler.set annotations ~key:index ~data:annotation;
       Handler.set (Handler.edges ()) ~key:index ~data:[];
       Handler.set (Handler.backedges ()) ~key:index ~data:[]
     end
