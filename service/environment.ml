@@ -191,8 +191,8 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
       match Dependents.get dependent with
-      | None -> Dependents.add dependent [handle]
-      | Some dependencies -> Dependents.add dependent (handle :: dependencies)
+      | None -> Dependents.add dependent (File.Handle.Set.Tree.singleton handle)
+      | Some dependencies -> Dependents.add dependent (File.Handle.Set.Tree.add dependencies handle)
 
     let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
     let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
@@ -386,7 +386,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let purge ?(debug = false) handles =
     let purge_dependents keys =
       let remove_path dependents =
-        List.filter
+        File.Handle.Set.Tree.filter
           ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
           dependents
       in
@@ -481,7 +481,7 @@ let populate_shared_memory
     add_table ClassDefinitions.write_through class_definitions;
     add_table Aliases.add aliases;
     add_table Globals.write_through globals;
-    add_table Dependents.write_through dependents;
+    add_table Dependents.write_through (Hashtbl.map ~f:Set.to_tree dependents);
     add_table FunctionKeys.write_through (Hashtbl.map ~f:Hash_set.to_list function_keys);
     add_table ClassKeys.write_through (Hashtbl.map ~f:Hash_set.to_list class_keys);
     add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);

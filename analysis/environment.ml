@@ -52,7 +52,7 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: Access.t -> File.Handle.t list option
+  val dependencies: Access.t -> File.Handle.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
 
@@ -241,18 +241,18 @@ let handler
        *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
        * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
       let purge_dependents keys =
-        let remove_path dependents =
-          List.filter
-            ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-            dependents
+        let remove_paths entry =
+          match entry with
+          | Some set ->
+              Set.filter
+                ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
+                set
+              |> Option.some
+          | None ->
+              None
         in
-        let dependents = dependencies.Dependencies.dependents in
         List.iter
-          ~f:(fun key ->
-              Hashtbl.find dependents key
-              >>| remove_path
-              >>| (fun dependents_list -> Hashtbl.set ~key ~data:dependents_list dependents)
-              |> ignore)
+          ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
           keys
       in
       List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles

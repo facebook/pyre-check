@@ -60,13 +60,32 @@ let add_dependent table handle dependent =
   let handle = File.Handle.create handle in
   let source = Source.qualifier ~handle in
   let dependent = File.Handle.create dependent in
-  match Hashtbl.find table source with
-  | None -> Hashtbl.set table ~key:source ~data:[dependent]
-  | Some dependents -> Hashtbl.set table ~key:source ~data:(dependent :: dependents)
+  let update entry =
+    match entry with
+    | None ->
+        File.Handle.Set.singleton dependent
+    | Some set ->
+        Set.add set dependent
+  in
+  Hashtbl.update table source ~f:update
 
 
 let get_dependencies (module Handler: Environment.Handler) handle =
   Handler.dependencies (Source.qualifier ~handle)
+
+
+let assert_dependencies ~environment ~handles ~expected function_to_test =
+  let get_dependencies = get_dependencies (Environment.handler environment) in
+  let dependencies =
+    function_to_test
+      ~get_dependencies
+      ~handles:(List.map handles ~f:File.Handle.create)
+    |> Set.to_list
+    |> List.map ~f:File.Handle.show
+    |> List.sort ~compare:String.compare
+  in
+  let expected = List.sort ~compare:String.compare expected in
+  assert_equal expected dependencies
 
 
 let test_dependent_of_list _ =
@@ -81,15 +100,7 @@ let test_dependent_of_list _ =
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
   let assert_dependencies ~handles ~expected =
-    let get_dependencies = get_dependencies (Environment.handler environment) in
-    let dependencies =
-      Dependencies.of_list ~handles:(List.map handles ~f:File.Handle.create) ~get_dependencies
-      |> Set.to_list
-      |> List.map ~f:File.Handle.show
-      |> List.sort ~compare:String.compare
-    in
-    let expected = List.sort ~compare:String.compare expected in
-    assert_equal expected dependencies
+    assert_dependencies ~environment ~handles ~expected Dependencies.of_list
   in
   assert_dependencies
     ~handles:["b.py"; "c.py"]
@@ -105,6 +116,25 @@ let test_dependent_of_list _ =
     ~expected:[]
 
 
+let test_dependent_of_list_duplicates _ =
+  let table = Access.Table.create () in
+  let environment = Environment.Builder.create () in
+  let dependencies =
+    { environment.Environment.dependencies with Dependencies.dependents = table }
+  in
+  let environment = { environment with Environment.dependencies } in
+  add_dependent table "a.py" "b.py";
+  add_dependent table "a.py" "c.py";
+  add_dependent table "a.py" "b.py";
+  add_dependent table "a.py" "c.py";
+  let assert_dependencies ~handles ~expected =
+    assert_dependencies ~environment ~handles ~expected Dependencies.of_list
+  in
+  assert_dependencies
+    ~handles:["a.py"]
+    ~expected:["b.py"; "c.py"]
+
+
 let test_transitive_dependent_of_list _ =
   let table = Access.Table.create () in
   let environment = Environment.Builder.create () in
@@ -117,17 +147,7 @@ let test_transitive_dependent_of_list _ =
   add_dependent table "c.py" "b.py";
   add_dependent table "a.py" "test.py";
   let assert_dependencies ~handles ~expected =
-    let get_dependencies = get_dependencies (Environment.handler environment) in
-    let dependencies =
-      Dependencies.transitive_of_list
-        ~handles:(List.map handles ~f:File.Handle.create)
-        ~get_dependencies
-      |> Set.to_list
-      |> List.map ~f:File.Handle.show
-      |> List.sort ~compare:String.compare
-    in
-    let expected = List.sort ~compare:String.compare expected in
-    assert_equal expected dependencies
+    assert_dependencies ~environment ~handles ~expected Dependencies.transitive_of_list
   in
   assert_dependencies
     ~handles:["b.py"; "c.py"]
@@ -175,5 +195,6 @@ let () =
     "transitive_dependents">::test_transitive_dependents;
     "transitive_dependent_of_list">::test_transitive_dependent_of_list;
     "dependent_of_list">::test_dependent_of_list;
+    "dependent_of_list_duplicates">::test_dependent_of_list_duplicates;
   ]
   |> Test.run

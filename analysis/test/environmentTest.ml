@@ -1385,7 +1385,8 @@ let test_import_dependencies context =
     let dependencies handle =
       let handle = File.Handle.create handle in
       Environment.dependencies environment (Source.qualifier ~handle)
-      >>| List.map ~f:File.Handle.show
+      >>| String.Set.Tree.map ~f:File.Handle.show
+      >>| String.Set.Tree.to_list
     in
     assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
       (dependencies "subdirectory/b.py")
@@ -1410,7 +1411,8 @@ let test_register_dependencies _ =
   let dependencies handle =
     let handle = File.Handle.create handle in
     Environment.dependencies (module Handler) (Source.qualifier ~handle)
-    >>| List.map ~f:File.Handle.show
+    >>| String.Set.Tree.map ~f:File.Handle.show
+    >>| String.Set.Tree.to_list
   in
   assert_equal
     (dependencies "subdirectory/b.py")
@@ -1437,16 +1439,22 @@ let test_purge _ =
     [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
+  let dependencies handle =
+    let handle = File.Handle.create handle in
+    Handler.dependencies (Source.qualifier ~handle)
+    >>| String.Set.Tree.map ~f:File.Handle.show
+    >>| String.Set.Tree.to_list
+  in
   assert_equal
-    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create "a.py")))
-    (Some [File.Handle.create "test.py"]);
+    (dependencies "a.py")
+    (Some ["test.py"]);
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
   assert_equal
-    (Handler.dependencies (Source.qualifier ~handle:(File.Handle.create"a.py")))
+    (dependencies "a.py")
     (Some [])
 
 

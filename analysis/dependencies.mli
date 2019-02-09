@@ -19,7 +19,7 @@ type index = {
 
 type t = {
   index: index;
-  dependents: (File.Handle.t list) Access.Table.t;
+  dependents: (File.Handle.Set.t) Access.Table.t;
 }
 
 module type Handler = sig
@@ -31,7 +31,7 @@ module type Handler = sig
 
   val add_dependent: handle: File.Handle.t -> Access.t -> unit
 
-  val dependents: Access.t -> (File.Handle.t list) option
+  val dependents: Access.t -> File.Handle.Set.Tree.t option
 
   val get_function_keys: handle: File.Handle.t -> Access.t list
   val get_class_keys: handle: File.Handle.t -> Type.t list
@@ -50,21 +50,21 @@ val copy: t -> t
 val handler: t -> (module Handler)
 
 val transitive
-  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  :  get_dependencies: (File.Handle.t -> File.Handle.Set.Tree.t option)
   -> handle: File.Handle.t
   -> File.Handle.Set.t
 
 val transitive_of_list
-  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  :  get_dependencies: (File.Handle.t -> File.Handle.Set.Tree.t option)
   -> handles: File.Handle.t list
   -> File.Handle.Set.t
 
 val of_list
-  :  get_dependencies: (File.Handle.t -> (File.Handle.t list) option)
+  :  get_dependencies: (File.Handle.t -> File.Handle.Set.Tree.t option)
   -> handles: File.Handle.t list
   -> File.Handle.Set.t
 
 val to_dot
-  :  get_dependencies: (Access.t -> (File.Handle.t list) option)
+  :  get_dependencies: (Access.t -> File.Handle.Set.Tree.t option)
   -> handle: File.Handle.t
   -> string

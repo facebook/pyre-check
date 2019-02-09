@@ -21,7 +21,7 @@ type index = {
 
 type t = {
   index: index;
-  dependents: (File.Handle.t list) Access.Table.t;
+  dependents: (File.Handle.Set.t) Access.Table.t;
 }
 
 
@@ -33,7 +33,7 @@ module type Handler = sig
   val add_dependent_key: handle: File.Handle.t -> Access.t -> unit
 
   val add_dependent: handle: File.Handle.t -> Access.t -> unit
-  val dependents: Access.t -> (File.Handle.t list) option
+  val dependents: Access.t -> File.Handle.Set.Tree.t option
 
   val get_function_keys: handle: File.Handle.t -> Access.t list
   val get_class_keys: handle: File.Handle.t -> Type.t list
@@ -107,10 +107,17 @@ let handler {
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
-      Hashtbl.add_multi ~key:dependent ~data:handle dependents
+      let update entry =
+        match entry with
+        | None -> File.Handle.Set.singleton handle
+        | Some set -> Set.add set handle
+      in
+      Hashtbl.update dependents dependent ~f:update
 
 
-    let dependents = Hashtbl.find dependents
+    let dependents access =
+      Hashtbl.find dependents access
+      >>| Set.to_tree
 
 
     let get_function_keys ~handle =
@@ -189,7 +196,7 @@ let transitive ~get_dependencies ~handle =
         match get_dependencies node with
         | None -> visited
         | Some neighbors ->
-            List.fold
+            File.Handle.Set.Tree.fold
               ~init:visited
               ~f:(fun visited neighbor ->
                   closure ~visited neighbor)
@@ -212,7 +219,7 @@ let transitive_of_list ~get_dependencies ~handles =
 let of_list ~get_dependencies ~handles =
   let fold_dependents dependents handle =
     get_dependencies handle
-    >>| File.Handle.Set.of_list
+    >>| File.Handle.Set.of_tree
     >>| Set.union dependents
     |> Option.value ~default:dependents
   in
@@ -235,15 +242,15 @@ let to_dot ~get_dependencies ~handle =
 
               let dependencies =
                 get_dependencies access
-                >>| List.map ~f:(fun handle -> Ast.Source.qualifier ~handle)
-                |> Option.value ~default:[]
+                >>| Access.Set.Tree.map ~f:(fun handle -> Ast.Source.qualifier ~handle)
+                |> Option.value ~default:Access.Set.Tree.empty
               in
               let enqueue edges dependency =
                 if not (Set.mem visited dependency) then
                   Queue.enqueue worklist dependency;
                 (access, dependency) :: edges
               in
-              let edges = List.fold dependencies ~init:edges ~f:enqueue in
+              let edges = Access.Set.Tree.fold dependencies ~init:edges ~f:enqueue in
               visited, nodes, edges
             else
               visited, nodes, edges
