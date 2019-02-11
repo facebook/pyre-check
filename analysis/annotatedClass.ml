@@ -339,6 +339,7 @@ module Attribute = struct
           setter;
           property;
           primitive;
+          toplevel;
         };
       } =
     let class_annotation = annotation parent ~resolution in
@@ -419,13 +420,32 @@ module Attribute = struct
       | Some annotation, None ->
           Annotation.create_immutable ~global:true annotation
       | None, Some value ->
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some Type.Top)
-            (if setter then
-               (Resolution.parse_annotation resolution value)
-             else
-               (Resolution.resolve_literal resolution value))
+          let literal_value_annotation =
+            if setter then
+              Resolution.parse_annotation resolution value
+            else
+              Resolution.resolve_literal resolution value
+          in
+          let is_dataclass_attribute =
+            let get_dataclass_decorator annotated =
+              get_decorator annotated ~decorator:"dataclasses.dataclass"
+              @ get_decorator annotated ~decorator:"dataclass"
+            in
+            not (List.is_empty (get_dataclass_decorator parent))
+          in
+          if not (Type.is_unknown literal_value_annotation) &&
+             not is_dataclass_attribute &&
+             toplevel
+          then
+            (* Treat literal attributes as having been explicitly annotated. *)
+            Annotation.create_immutable
+              ~global:true
+              literal_value_annotation
+          else
+            Annotation.create_immutable
+              ~global:true
+              ~original:(Some Type.Top)
+              (Resolution.parse_annotation resolution value)
       | _ ->
           Annotation.create Type.Top
     in
@@ -775,6 +795,7 @@ let attribute
           setter = false;
           property = false;
           primitive = true;
+          toplevel = true;
         }
       }
   in
@@ -876,6 +897,7 @@ let rec fallback_attribute ~resolution ~name definition =
                      setter = false;
                      property = false;
                      primitive = true;
+                     toplevel = true;
                    };
                  })
         | _ ->

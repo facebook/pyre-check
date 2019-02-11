@@ -66,10 +66,7 @@ let test_check_init _ =
         def __init__(renamed_self) -> None:
           renamed_self.attribute = 0
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
-       no type is specified.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -81,11 +78,9 @@ let test_check_init _ =
           self.z = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
-      "`typing.Union[int, str]` but no type is specified.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type `int` " ^
+      "but is used as type `str`.";
       "Missing attribute annotation [4]: Attribute `y` of class `Foo` has type " ^
-      "`str` but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `z` of class `Foo` has type " ^
       "`int` but no type is specified.";
     ];
 
@@ -227,10 +222,7 @@ let test_check_init _ =
         def __init__(self) -> None:
           self.attribute = 0
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
-      "no type is specified.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -559,11 +551,7 @@ let test_infer_constructor_attributes _ =
         def foo(self) -> int:
           return self.x
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
-      " specified.";
-      "Incompatible return type [7]: Expected `int` but got `C`.";
-    ];
+    ["Incompatible return type [7]: Expected `int` but got `C`."];
 
   assert_type_errors
     {|
@@ -577,8 +565,6 @@ let test_infer_constructor_attributes _ =
           return self.x
     |}
     [
-      "Missing attribute annotation [4]: Attribute `x` of class `D` has type `C` but no type is" ^
-      " specified.";
       "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were" ^
       " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`."]

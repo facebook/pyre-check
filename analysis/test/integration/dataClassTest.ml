@@ -47,8 +47,8 @@ let test_check_data_class _ =
           b = Foo(2)
     |}
     [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` but " ^
-      "no type is specified.";
+      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` " ^
+      "but no type is specified.";
       "Too many arguments [19]: Call `Foo.__init__` expects 0 positional arguments, 1 was" ^
       " provided.";
     ];

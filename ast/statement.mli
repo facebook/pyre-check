@@ -177,6 +177,7 @@ module Attribute : sig
     setter: bool;
     property: bool;
     primitive: bool;
+    toplevel: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

@@ -618,6 +618,7 @@ let test_class_attributes _ =
       ?(setter = false)
       ?(property = false)
       ?(primitive = false)
+      ?(toplevel = true)
       name =
     +{
       Statement.Attribute.target = !name;
@@ -628,6 +629,7 @@ let test_class_attributes _ =
       setter;
       property;
       primitive;
+      toplevel;
     }
   in
 

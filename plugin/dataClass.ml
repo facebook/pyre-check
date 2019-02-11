@@ -95,6 +95,7 @@ let transform_environment (module Handler: Handler) resolution source =
                       ~name:(Access.create "__init__")) then
                   let parameters =
                     let collect_parameters parameters attribute =
+                      (* Parameters must be annotated attributes *)
                       let annotation =
                         Annotated.Attribute.annotation attribute
                         |> Annotation.original

@@ -272,6 +272,7 @@ let test_attributes _ =
       ?(primitive = false)
       ?(property = false)
       ?(setter = false)
+      ?(toplevel = true)
       ~target
       ~annotation
       ?defines
@@ -286,17 +287,19 @@ let test_attributes _ =
       setter;
       property;
       primitive;
+      toplevel;
     }
     |> Node.create_with_default_location
   in
   (* Test define field assigns. *)
   let assert_implicit_attributes source expected =
     let expected =
-      let attribute (target, annotation, value) =
+      let attribute (target, annotation, value, toplevel) =
         create_attribute
           ~target
           ~annotation
           ~value
+          ~toplevel
           ~primitive:true
           ()
       in
@@ -328,21 +331,26 @@ let test_attributes _ =
         self.attribute = value
         self.attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value"];
+    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
   assert_implicit_attributes
     {|
       def foo():
         self.attribute: int = value
         self.attribute = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value"];
+    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
   assert_implicit_attributes
     {|
       def foo():
         self.attribute: int = value
         self.attribute: str = value
     |}
-    ["attribute", Some (Type.expression (Type.Union [Type.string; Type.integer])), Some !"value"];
+    [
+      "attribute",
+      Some (Type.expression (Type.Union [Type.string; Type.integer])),
+      Some !"value",
+      true
+    ];
 
   assert_implicit_attributes
     {|
@@ -352,10 +360,12 @@ let test_attributes _ =
     [
       "attribute",
       None,
-      Some (parse_single_expression "derp()");
+      Some (parse_single_expression "derp()"),
+      true;
       "other",
       None,
-      Some (parse_single_expression "derp()");
+      Some (parse_single_expression "derp()"),
+      true;
     ];
   assert_implicit_attributes
     {|
@@ -365,10 +375,12 @@ let test_attributes _ =
     [
       "attribute",
       None,
-      Some (parse_single_expression "derp");
+      Some (parse_single_expression "derp"),
+      true;
       "other",
       None,
-      Some (parse_single_expression "derp");
+      Some (parse_single_expression "derp"),
+      true;
     ];
 
   assert_implicit_attributes
@@ -376,14 +388,14 @@ let test_attributes _ =
       def foo(self, argument: str):
         self.attribute = argument
     |}
-    ["attribute", None, Some !"argument";];
+    ["attribute", None, Some !"argument", true];
 
   assert_implicit_attributes
     {|
       def foo(self, attribute: str):
         self.attribute = attribute
     |}
-    ["attribute", Some (Type.expression Type.string), Some !"attribute";];
+    ["attribute", Some (Type.expression Type.string), Some !"attribute", true];
 
   assert_implicit_attributes
     {|
@@ -391,14 +403,14 @@ let test_attributes _ =
         if test:
           self.attribute = attribute
     |}
-    ["attribute", None, Some !"attribute";];
+    ["attribute", None, Some !"attribute", false];
 
   assert_implicit_attributes
     {|
       def foo(self, argument: str):
         self.argument = unknown
     |}
-    ["argument", None, Some !"unknown";];
+    ["argument", None, Some !"unknown", true];
 
   (* Implicit arguments in branches. *)
   assert_implicit_attributes
@@ -412,9 +424,9 @@ let test_attributes _ =
             self.nested = value
     |}
     [
-      "attribute", None, Some !"value";
-      "nested", None, Some !"value";
-      "other", None, Some !"value";
+      "attribute", None, Some !"value", true;
+      "nested", None, Some !"value", false;
+      "other", None, Some !"value", false;
     ];
 
   (* `self` isn't special cased if a self parameter is passed into the function. *)
@@ -423,7 +435,7 @@ let test_attributes _ =
     def foo(renamed_self):
       renamed_self.attribute: int = value
   |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value"];
+    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
 
   (* Test define field assigns. *)
   let assert_property_attribute source expected =

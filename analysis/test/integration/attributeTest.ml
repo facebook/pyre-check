@@ -257,11 +257,7 @@ let test_check_attributes _ =
         def foo(self) -> str:
             return self.a
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but no type is specified.";
-      "Incompatible return type [7]: Expected `str` but got `int`."
-    ];
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
 
   assert_type_errors
     {|
@@ -308,12 +304,7 @@ let test_check_attributes _ =
         foo_obj.bar = 1
         return foo_obj.bar
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-    ];
+    [];
 
   assert_type_errors
     {|
@@ -418,10 +409,8 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.attribute
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but " ^
-      "no type is specified.";
-    ];
+    [];
+
   assert_type_errors
     {|
       class unittest.TestCase: ...
@@ -432,6 +421,7 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+
   assert_type_errors
     {|
       class unittest.case.TestCase: ...
@@ -442,6 +432,7 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+
   assert_type_errors
     {|
       class Foo:
@@ -754,10 +745,7 @@ let test_check_missing_attribute _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but no type is specified."
-    ];
+    [];
   assert_type_errors
     {|
       class Foo:

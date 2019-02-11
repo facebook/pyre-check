@@ -202,6 +202,7 @@ module Attribute = struct
     setter: bool;
     property: bool;
     primitive: bool;
+    toplevel: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -216,12 +217,13 @@ module Attribute = struct
       ?(setter = false)
       ?(primitive = false)
       ?(property = false)
+      ?(toplevel = true)
       ?value
       ?annotation
       ?defines
       ~target
       () =
-    { target; annotation; defines; value; async; setter; property; primitive }
+    { target; annotation; defines; value; async; setter; property; primitive; toplevel }
     |> Node.create ~location
 
 
@@ -464,7 +466,7 @@ module Define = struct
               } as target) when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   let target = { target with Node.value = Access (SimpleAccess access) } in
-                  Attribute.create ~primitive:true ~location ~target ?annotation ~value ()
+                  Attribute.create ~primitive:true ~toplevel ~location ~target ?annotation ~value ()
                 in
                 let update = function
                   | Some attributes -> Some (attribute :: attributes)
