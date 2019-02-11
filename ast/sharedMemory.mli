@@ -18,10 +18,10 @@ module Sources: sig
 end
 
 module HandleKeys: sig
-  val get: unit -> File.Handle.t list
+  val get: unit -> File.Handle.Set.Tree.t
   (* Can only be called from the master process. *)
   val clear: unit -> unit
-  val add: handles: File.Handle.t list -> unit
+  val add: handles: File.Handle.Set.Tree.t -> unit
 end
 
 module Modules: sig

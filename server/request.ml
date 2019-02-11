@@ -706,11 +706,11 @@ let process_type_check_files
 
         (* Update the tracked handles, if necessary. *)
         let newly_introduced_handles =
-          List.filter
-            handles
+          File.Handle.Set.Tree.of_list handles
+          |> File.Handle.Set.Tree.filter
             ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
         in
-        if not (List.is_empty newly_introduced_handles) then
+        if not (File.Handle.Set.Tree.is_empty newly_introduced_handles) then
           Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
         Ast.SharedMemory.Sources.remove ~handles;
         let targets =

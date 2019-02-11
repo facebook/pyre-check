@@ -108,7 +108,7 @@ end
 
 module HandleKeys = struct
   module HandleKeysValue = struct
-    type t = File.Handle.t list
+    type t = File.Handle.Set.Tree.t
     let prefix = Prefix.make ()
     let description = "All handles"
   end
@@ -117,7 +117,7 @@ module HandleKeys = struct
 
   let get () =
     HandleKeys.get 0
-    |> Option.value ~default:[]
+    |> Option.value ~default:File.Handle.Set.Tree.empty
 
   let clear () =
     HandleKeys.remove_batch (HandleKeys.KeySet.singleton 0)
@@ -125,7 +125,8 @@ module HandleKeys = struct
   let add ~handles:new_keys =
     let handles = get () in
     clear ();
-    HandleKeys.add 0 (new_keys @ handles)
+    let handles = File.Handle.Set.Tree.union handles new_keys in
+    HandleKeys.add 0 handles
 end
 
 

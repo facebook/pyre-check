@@ -934,10 +934,14 @@ let test_incremental_typecheck context =
                    ()))
     (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
   (* The handles get updated in shared memory. *)
+  let print_tree tree =
+    File.Handle.Set.Tree.to_list tree
+    |> List.to_string ~f:File.Handle.show
+  in
   assert_equal
-    ~printer:(List.to_string ~f:File.Handle.show)
+    ~printer:print_tree
     (Ast.SharedMemory.HandleKeys.get ())
-    [File.Handle.create handle];
+    (File.Handle.Set.Tree.singleton (File.Handle.create handle));
 
   let files = [file ~local_root ~content:source path] in
   let request_with_content =
@@ -971,9 +975,9 @@ let test_incremental_typecheck context =
       ~request:(check_request ~update_environment_with:[stub_file] ())
       (Protocol.TypeCheckResponse []);
     assert_equal
-      ~printer:(List.to_string ~f:File.Handle.show)
+      ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
-      [File.Handle.create (relativize stub_path ^ "i")];
+      (File.Handle.Set.Tree.singleton (File.Handle.create (relativize stub_path ^ "i")));
 
   in
   assert_response

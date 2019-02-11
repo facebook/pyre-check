@@ -91,7 +91,8 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
       ~scheduler:(Some scheduler)
       ~configuration
   in
-  Ast.SharedMemory.HandleKeys.add ~handles;
+  File.Handle.Set.Tree.of_list handles
+  |> fun handles -> Ast.SharedMemory.HandleKeys.add ~handles;
   Statistics.performance
     ~name:"initialization"
     ~timer
