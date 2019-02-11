@@ -95,11 +95,16 @@ class Initialize(Command):
     def _run(self) -> None:
         configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
-            raise EnvironmentException(
-                "A pyre configuration already exists at `{}`.".format(
+            if self._local:
+                error = "Local configurations must be created in subdirectories of `{}`"
+                "as it already contains a `.pyre_configuration`.".format(
+                    self._original_directory
+                )
+            else:
+                error = "A pyre configuration already exists at `{}`.".format(
                     configuration_path
                 )
-            )
+            raise EnvironmentException(error)
         if os.path.isfile(configuration_path + ".local"):
             raise EnvironmentException(
                 "A local pyre configuration already exists at `{}`.".format(
