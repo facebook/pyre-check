@@ -68,36 +68,36 @@ class PyreTest(unittest.TestCase):
         with patch.object(commands.Check, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
-                generate_source_directories.assert_called_with(
-                    set(), build=False, prompt=False
-                )
+                generate_source_directories.assert_not_called()
+
+            # The generation of source directories is handled within _run, which is
+            # mocked here (via the mock of run()), so verify that we don't
+            # call generate_source_directories outside of run. Tests in the
+            # subcommands verify that prepare() is called, which calls
+            # generate_source_directories.
+            with patch.object(sys, "argv", ["pyre", "--target", "//a/b", "check"]):
+                self.assertEqual(pyre.main(), 0)
+                generate_source_directories.assert_not_called()
+
         with patch.object(commands.Incremental, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre"]):
                 # One for shutil.which("watchman"),
                 # another for shutil.which(BINARY_NAME).
                 with patch.object(shutil, "which", side_effect=[True, True]):
                     self.assertEqual(pyre.main(), 0)
-                    generate_source_directories.assert_called_with(
-                        set(), build=False, prompt=False
-                    )
+                    generate_source_directories.assert_not_called()
         with patch.object(commands.Persistent, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "persistent"]):
                 self.assertEqual(pyre.main(), 0)
-                generate_source_directories.assert_called_with(
-                    set(), build=False, prompt=False
-                )
+                generate_source_directories.assert_not_called()
         with patch.object(commands.Start, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "start"]):
                 self.assertEqual(pyre.main(), 0)
-                generate_source_directories.assert_called_with(
-                    set(), build=True, prompt=True
-                )
+                generate_source_directories.assert_not_called()
         with patch.object(commands.Start, "run", return_value=mock_success):
             with patch.object(sys, "argv", ["pyre", "--noninteractive", "start"]):
                 self.assertEqual(pyre.main(), 0)
-                generate_source_directories.assert_called_with(
-                    set(), build=True, prompt=False
-                )
+                generate_source_directories.assert_not_called()
 
     def test_is_capable_terminal(self) -> None:
         with patch("os.isatty", side_effect=lambda x: x), patch(

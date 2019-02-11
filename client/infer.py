@@ -537,6 +537,7 @@ def main():
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration, prompt=False
         )
+        analysis_directory.prepare()
         Infer(arguments, configuration, analysis_directory).run()
     except (
         buck.BuckException,

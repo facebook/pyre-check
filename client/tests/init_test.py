@@ -10,7 +10,6 @@ from .. import (
     EnvironmentException,
     __name__ as client_name,
     _resolve_filter_paths,
-    _resolve_source_directories,
     buck,
     commands,
     find_configuration_root,
@@ -62,103 +61,6 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.original_directory, "/a/b")
                 self.assertEqual(arguments.current_directory, "/a/b")
                 self.assertEqual(arguments.local_configuration, None)
-
-    @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
-    @patch("os.getcwd", return_value="/")
-    @patch("os.path.exists", return_value=True)
-    def test_resolve_source_directories(self, exists, cwd, realpath) -> None:
-        arguments = MagicMock()
-        arguments.source_directories = []
-        arguments.original_directory = "/root"
-        arguments.build = False
-        arguments.command = commands.Check
-        configuration = MagicMock()
-        configuration.source_directories = []
-
-        with self.assertRaises(EnvironmentException):
-            _resolve_source_directories(arguments, commands, configuration, prompt=True)
-
-        # Arguments override configuration.
-        with patch.object(
-            buck, "generate_source_directories", return_value=[]
-        ) as buck_source_directories:
-            arguments.source_directories = ["arguments_source_directory"]
-            configuration.source_directories = ["configuration_source_directory"]
-
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            buck_source_directories.assert_called_with(set(), build=False, prompt=True)
-            self.assertEqual(
-                source_directories, {"realpath(root/arguments_source_directory)"}
-            )
-
-        with patch.object(
-            buck, "generate_source_directories", return_value=["arguments_target"]
-        ) as buck_source_directories:
-            arguments.source_directories = []
-            arguments.targets = ["arguments_target"]
-            configuration.source_directories = ["configuration_source_directory"]
-
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=False, prompt=True
-            )
-            self.assertEqual(source_directories, {"realpath(root/arguments_target)"})
-
-        # Restart and start always rebuild buck targets
-        with patch.object(
-            buck, "generate_source_directories", return_value=["arguments_target"]
-        ) as buck_source_directories:
-            arguments.command = commands.Start
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=True, prompt=True
-            )
-            arguments.command = commands.Restart
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=True, prompt=True
-            )
-
-        # Configuration is picked up when no arguments provided.
-        with patch.object(
-            buck, "generate_source_directories", return_value=[]
-        ) as buck_source_directories:
-            arguments.source_directories = []
-            arguments.targets = []
-            arguments.command = commands.Check
-            arguments.build = True
-            configuration.targets = ["configuration_target"]
-            configuration.source_directories = ["configuration_source_directory"]
-
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            buck_source_directories.assert_called_with(
-                {"configuration_target"}, build=True, prompt=True
-            )
-            self.assertEqual(
-                source_directories, {"realpath(root/configuration_source_directory)"}
-            )
-
-        # Files are translated relative to project root
-        with patch.object(
-            buck, "generate_source_directories", return_value=[]
-        ) as buck_source_directories:
-            arguments.source_directories = []
-            arguments.targets = []
-            configuration.source_directories = ["."]
-            source_directories = _resolve_source_directories(
-                arguments, commands, configuration, prompt=True
-            )
-            self.assertEqual(source_directories, {"realpath(root/.)"})
 
     def test_resolve_filter_paths(self) -> None:
         arguments = MagicMock()
@@ -236,7 +138,7 @@ class InitTest(unittest.TestCase):
         arguments.targets = ["//x:y"]
         arguments.filter_directory = "/real/directory"
         expected_analysis_directory = SharedAnalysisDirectory(
-            ["//x:y"], ["/real/directory"]
+            [], ["//x:y"], "/project", ["/real/directory"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -248,7 +150,7 @@ class InitTest(unittest.TestCase):
         arguments.filter_directory = "/filter"
         configuration.targets = ["//overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
-            ["a/b", "//x:y", "//y:/..."], ["/filter"]
+            ["a/b"], ["//x:y", "//y:/..."], "/project", ["/filter"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -261,7 +163,7 @@ class InitTest(unittest.TestCase):
         configuration.source_directories = []
         configuration.targets = ["//not:overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
-            ["//not:overridden/..."], ["/filter"]
+            [], ["//not:overridden/..."], "/project", ["/filter"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration

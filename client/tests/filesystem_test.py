@@ -10,8 +10,9 @@ import tempfile
 import unittest
 from contextlib import contextmanager
 from typing import Dict  # noqa
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
+from .. import buck, commands, resolve_analysis_directory
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     Filesystem,
@@ -94,7 +95,7 @@ class FilesystemTest(unittest.TestCase):
         create_file("scipyi/sci.pyi")
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
-        shared_analysis_directory = SharedAnalysisDirectory([root])
+        shared_analysis_directory = SharedAnalysisDirectory([root], [])
         all_paths = {}  # type: Dict[str, str]
         shared_analysis_directory._merge_into_paths(root, all_paths)
         self.assertEqual(
@@ -157,7 +158,7 @@ class FilesystemTest(unittest.TestCase):
         check_output.side_effect = side_effect
         os_path_realpath.side_effect = lambda x: x
         shared_analysis_directory = SharedAnalysisDirectory(
-            [os.path.join(root, "first"), os.path.join(root, "second")]
+            [os.path.join(root, "first"), os.path.join(root, "second")], []
         )
         shared_analysis_directory._merge()
         shared_root = shared_analysis_directory.get_root()
@@ -227,12 +228,12 @@ class FilesystemTest(unittest.TestCase):
 
     @patch("shutil.rmtree")
     def test_cleanup(self, rmtree) -> None:
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
         shared_analysis_directory.cleanup()
         rmtree.assert_not_called()
 
         shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], isolate=True
+            ["first", "second"], [], isolate=True
         )
         shared_analysis_directory.cleanup()
         rmtree.assert_called_with(shared_analysis_directory.get_root())
@@ -299,7 +300,7 @@ class FilesystemTest(unittest.TestCase):
         # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
 
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "default/.pyre")
@@ -310,7 +311,7 @@ class FilesystemTest(unittest.TestCase):
         # Scratch, no local configuration
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
 
@@ -321,7 +322,10 @@ class FilesystemTest(unittest.TestCase):
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
         shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], ["path/to/local"], "path/to/local"
+            ["first", "second"],
+            [],
+            filter_paths=["path/to/local"],
+            local_configuration_root="path/to/local",
         )
 
         directory = shared_analysis_directory.get_scratch_directory()
@@ -334,7 +338,10 @@ class FilesystemTest(unittest.TestCase):
         check_output.side_effect = None
         check_output.return_value = "/scratch\n".encode("utf-8")
         shared_analysis_directory = SharedAnalysisDirectory(
-            ["first", "second"], ["path/to/local"], "path/to/local"
+            ["first", "second"],
+            [],
+            filter_paths=["path/to/local"],
+            local_configuration_root="path/to/local",
         )
         directory = shared_analysis_directory.get_scratch_directory()
         self.assertEqual(directory, "/scratch")
@@ -351,8 +358,139 @@ class FilesystemTest(unittest.TestCase):
         def acquire(*args, **kwargs):
             yield
 
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"])
+        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
         acquire_lock.side_effect = acquire
         shared_analysis_directory.prepare()
         merge.assert_has_calls([call()])
         clear.assert_has_calls([call()])
+
+    @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
+    @patch("os.getcwd", return_value="/")
+    @patch("os.path.exists", return_value=True)
+    def test_resolve_source_directories(self, exists, cwd, realpath) -> None:
+        arguments = MagicMock()
+        arguments.source_directories = []
+        arguments.original_directory = "/root"
+        arguments.build = False
+        arguments.command = commands.Check
+        arguments.current_directory = "/root/local"
+        configuration = MagicMock()
+        configuration.source_directories = []
+        configuration.local_configuration_root = "/root/local"
+
+        with self.assertRaises(EnvironmentException):
+            analysis_directory = SharedAnalysisDirectory(
+                [], [], original_directory="/root", filter_paths=[], build=False
+            )
+            analysis_directory._resolve_source_directories()
+
+        # Arguments override configuration.
+        with patch.object(
+            buck, "generate_source_directories", return_value=[]
+        ) as buck_source_directories:
+            arguments.source_directories = ["arguments_source_directory"]
+            configuration.source_directories = ["configuration_source_directory"]
+
+            analysis_directory = SharedAnalysisDirectory(
+                ["some_source_directory"],
+                ["configuration_source_directory"],
+                "/root",
+                [],
+                build=False,
+                prompt=True,
+            )
+            analysis_directory._resolve_source_directories()
+            buck_source_directories.assert_called_with(
+                {"configuration_source_directory"}, build=False, prompt=True
+            )
+            self.assertEqual(
+                analysis_directory._source_directories, {"some_source_directory"}
+            )
+
+        with patch.object(
+            buck, "generate_source_directories", return_value=["arguments_target"]
+        ) as buck_source_directories:
+            arguments.source_directories = []
+            arguments.targets = ["arguments_target"]
+            configuration.source_directories = ["configuration_source_directory"]
+
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+            buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=False, prompt=True
+            )
+            self.assertEqual(
+                analysis_directory._source_directories,
+                {"realpath(root/arguments_target)"},
+            )
+
+        # Restart and start always rebuild buck targets
+        with patch.object(
+            buck, "generate_source_directories", return_value=["arguments_target"]
+        ) as buck_source_directories:
+            arguments.command = commands.Start
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+            buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=True, prompt=True
+            )
+            arguments.command = commands.Restart
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+            buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=True, prompt=True
+            )
+
+        # Configuration is picked up when no arguments provided.
+        with patch.object(
+            buck,
+            "generate_source_directories",
+            return_value=["configuration_source_directory"],
+        ) as buck_source_directories:
+            arguments.source_directories = []
+            arguments.targets = []
+            arguments.command = commands.Check
+            arguments.build = True
+            configuration.targets = ["configuration_target"]
+            configuration.source_directories = []
+
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+
+            buck_source_directories.assert_called_with(
+                {"configuration_target"}, build=True, prompt=True
+            )
+            self.assertEqual(
+                analysis_directory._source_directories,
+                {"realpath(root/configuration_source_directory)"},
+            )
+
+        # Files are translated relative to project root
+        with patch.object(
+            buck, "generate_source_directories", return_value=["."]
+        ) as buck_source_directories:
+            arguments.source_directories = []
+            arguments.targets = []
+            configuration.targets = ["."]
+
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+
+            self.assertEqual(
+                analysis_directory._source_directories, {"realpath(root/.)"}
+            )

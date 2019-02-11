@@ -16,7 +16,12 @@ from typing import Any, Dict, Optional
 
 from . import buck
 from .exceptions import EnvironmentException
-from .filesystem import AnalysisDirectory, SharedAnalysisDirectory  # noqa
+from .filesystem import (  # noqa
+    AnalysisDirectory,
+    SharedAnalysisDirectory,
+    translate_path,
+    translate_paths,
+)
 
 
 LOG = logging.getLogger(__name__)
@@ -88,17 +93,6 @@ def switch_root(arguments) -> None:
     arguments.current_directory = root
 
 
-def translate_path(root, path):
-    if os.path.isabs(path):
-        return path
-
-    translated = os.path.join(root, path)
-    if os.path.exists(translated):
-        return os.path.realpath(translated)
-
-    return path
-
-
 def translate_arguments(commands, arguments):
     root = arguments.original_directory
 
@@ -112,48 +106,11 @@ def translate_arguments(commands, arguments):
         arguments.logger = translate_path(root, arguments.logger)
 
 
-def translate_paths(paths, original_directory):
-    current_directory = os.getcwd()
-    if not original_directory.startswith(current_directory):
-        return paths
-    translation = os.path.relpath(original_directory, current_directory)
-    if not translation:
-        return paths
-    return {translate_path(translation, path) for path in paths}
-
-
 def _buck_target_count(arguments, configuration):
     if arguments.source_directories or arguments.targets:
         return len(set(arguments.targets or []))
     else:
         return len(set(configuration.targets or []))
-
-
-def _resolve_source_directories(arguments, commands, configuration, prompt):
-    source_directories = set(arguments.source_directories or [])
-    targets = set(arguments.targets or [])
-
-    # Only read configuration if no arguments were provided.
-    if not source_directories and not targets:
-        source_directories = set(configuration.source_directories)
-        targets = set(configuration.targets)
-    else:
-        LOG.warning(
-            "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead "
-        )
-
-    always_build = arguments.build or arguments.command in [
-        commands.Restart,
-        commands.Start,
-    ]
-    source_directories.update(
-        buck.generate_source_directories(targets, build=always_build, prompt=prompt)
-    )
-    if len(source_directories) == 0:
-        raise EnvironmentException("No targets or source directories to analyze.")
-
-    # Translate link trees if we switched directories earlier.
-    return translate_paths(source_directories, arguments.original_directory)
 
 
 def _resolve_filter_paths(arguments, configuration):
@@ -175,27 +132,44 @@ def _resolve_filter_paths(arguments, configuration):
 def resolve_analysis_directory(
     arguments, commands, configuration, isolate: bool = False, prompt: bool = True
 ) -> AnalysisDirectory:
-    source_directories = _resolve_source_directories(
-        arguments, commands, configuration, prompt
-    )
+    # Only read from the configuration if no explicit targets are passed in.
+    if not arguments.source_directories and not arguments.targets:
+        source_directories = configuration.source_directories
+        targets = configuration.targets
+    else:
+        source_directories = arguments.source_directories or []
+        targets = arguments.targets or []
+        LOG.warning(
+            "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead."
+        )
+
     if arguments.filter_directory:
         filter_paths = [arguments.filter_directory]
     else:
         filter_paths = _resolve_filter_paths(arguments, configuration)
+
     local_configuration_root = configuration.local_configuration_root
     if local_configuration_root:
         local_configuration_root = os.path.relpath(
             local_configuration_root, arguments.current_directory
         )
 
-    if (
-        len(source_directories) == 1
-        and _buck_target_count(arguments, configuration) == 0
-    ):
+    if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(source_directories.pop(), filter_paths)
     else:
+        build = arguments.build or arguments.command in [
+            commands.Restart,
+            commands.Start,
+        ]
         analysis_directory = SharedAnalysisDirectory(
-            source_directories, filter_paths, local_configuration_root, isolate
+            source_directories=source_directories,
+            targets=targets,
+            filter_paths=filter_paths,
+            local_configuration_root=local_configuration_root,
+            original_directory=arguments.original_directory,
+            isolate=isolate,
+            build=build,
+            prompt=prompt,
         )
     return analysis_directory
 

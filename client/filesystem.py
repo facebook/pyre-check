@@ -12,13 +12,34 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from time import time
-from typing import Dict, Generator, List, Optional
+from typing import Dict, Generator, List, Optional, Set
 
-from . import log
+from . import buck, log
 from .exceptions import EnvironmentException
 
 
 LOG = logging.getLogger(__name__)
+
+
+def translate_path(root: str, path: str) -> str:
+    if os.path.isabs(path):
+        return path
+
+    translated = os.path.join(root, path)
+    if os.path.exists(translated):
+        return os.path.realpath(translated)
+
+    return path
+
+
+def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
+    current_directory = os.getcwd()
+    if not original_directory.startswith(current_directory):
+        return paths
+    translation = os.path.relpath(original_directory, current_directory)
+    if not translation:
+        return paths
+    return {translate_path(translation, path) for path in paths}
 
 
 class AnalysisDirectory:
@@ -39,15 +60,23 @@ class AnalysisDirectory:
 class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
         self,
-        source_directories,
+        source_directories: List[str],
+        targets: List[str],
+        original_directory: Optional[str] = None,
         filter_paths: Optional[List[str]] = None,
         local_configuration_root: Optional[str] = None,
         isolate: bool = False,
+        build: bool = False,
+        prompt: bool = False,
     ):
         self._source_directories = set(source_directories)
+        self._targets = set(targets)
+        self._original_directory = original_directory
         self._filter_paths = filter_paths
         self._local_configuration_root = local_configuration_root
         self._isolate = isolate
+        self._build = build
+        self._prompt = prompt
 
     def get_scratch_directory(self) -> str:
         try:
@@ -67,10 +96,28 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
 
+    # Exposed for testing.
+    def _resolve_source_directories(self):
+        if self._targets:
+            new_source_directories = buck.generate_source_directories(
+                self._targets, build=self._build, prompt=self._prompt
+            )
+            original_directory = self._original_directory
+            if original_directory is not None:
+                new_source_directories = translate_paths(
+                    new_source_directories, original_directory
+                )
+            self._source_directories.update(new_source_directories)
+
+        if len(self._source_directories) == 0:
+            raise EnvironmentException("No targets or source directories to analyze.")
+
     def prepare(self) -> None:
         start = time()
         root = self.get_root()
         LOG.info("Constructing shared directory `%s`", root)
+
+        self._resolve_source_directories()
 
         try:
             os.makedirs(root)
