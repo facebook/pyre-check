@@ -139,8 +139,16 @@ def resolve_analysis_directory(
     else:
         source_directories = arguments.source_directories or []
         targets = arguments.targets or []
+        if targets:
+            configuration_name = ".pyre_configuration.local"
+            command = "pyre init --local"
+        else:
+            configuration_name = ".pyre_configuration"
+            command = "pyre init"
         LOG.warning(
-            "Setting up a `.pyre_configuration` with `pyre init` may reduce overhead."
+            "Setting up a `%s` with `%s` may reduce overhead.",
+            configuration_name,
+            command,
         )
 
     if arguments.filter_directory:
