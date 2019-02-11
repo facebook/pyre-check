@@ -433,6 +433,30 @@ let test_fixup _ =
     |};
   assert_deobfuscation
     {|
+      def foo($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
+        $parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+      def bar($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
+        $parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc
+    |}
+    {|
+      def foo(a):
+        a
+      def bar(b):
+        b
+    |};
+  assert_deobfuscation
+    {|
+      def foo($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc):
+        pass
+      foo($parameter$FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 1)
+    |}
+    {|
+      def foo(a):
+        pass
+      foo(FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc = 1)
+    |};
+  assert_deobfuscation
+    {|
       def other.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc():
         pass
       other.FafJsUlzgBbRAOWSEqDLIQvnVrMkhCjGeXwioHKPutxTmNpdc()

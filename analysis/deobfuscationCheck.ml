@@ -498,7 +498,60 @@ let run
           let transformed =
             let value =
               match Node.value statement with
-              | Define ({ Define.name; parameters; _ } as define) ->
+              | Define ({ Define.name; parameters; body; _ } as define) ->
+                  (* Scope parameters to the function. *)
+                  let names = String.Hash_set.create () in
+                  let scope_name identifier =
+                    let qualifier =
+                      Access.show name
+                      |> String.substr_replace_all ~pattern:"." ~with_:"?"
+                    in
+                    identifier
+                    |> String.chop_prefix_exn ~prefix:"$parameter"
+                    |> Format.asprintf "$parameter_%s%s" qualifier
+                  in
+                  let parameters  =
+                    let parameter ({ Node.value = { Parameter.name; _ } as parameter; _ } as node) =
+                      Hash_set.add names name;
+                      { node with Node.value = { parameter with Parameter.name = scope_name name } }
+                    in
+                    List.map parameters ~f:parameter
+                  in
+                  let body =
+                    let module Transform =
+                      Transform.Make(struct
+                        type t = unit
+
+                        let expression _ expression =
+                          let value =
+                            match Node.value expression with
+                            | Access (SimpleAccess access) ->
+                                let element = function
+                                  | Access.Identifier name when Hash_set.mem names name ->
+                                      Access.Identifier (scope_name name)
+                                  | element ->
+                                      element
+                                in
+                                Access (SimpleAccess (List.map access ~f:element))
+                            | value ->
+                                value
+                          in
+                          { expression with Node.value }
+
+                        let transform_children _ _ =
+                          true
+
+                        let statement _ statement =
+                          (), [statement]
+                      end)
+                    in
+                    Source.create body
+                    |> Transform.transform ()
+                    |> Transform.source
+                    |> Source.statements
+                  in
+
+                  (* Sanitize. *)
                   let parameters =
                     let sanitize_parameter
                         ({ Node.value = { Parameter.name; _ } as parameter; _ } as node) =
@@ -507,7 +560,7 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter
                   in
-                  Define { define with Define.name = sanitize_access name; parameters }
+                  Define { define with Define.name = sanitize_access name; parameters; body }
               | For ({
                   For.target = { Node.value = Access (SimpleAccess access); _ } as target;
                   _;
