@@ -2725,6 +2725,18 @@ module State = struct
                             })
                           ~define:define_node
                       )
+                  | Attribute _ when insufficiently_annotated && not is_type_alias ->
+                      Some (
+                        Error.create
+                          ~location
+                          ~kind:(Error.ProhibitedAny {
+                              Error.name = access;
+                              annotation = actual_annotation;
+                              evidence_locations;
+                              given_annotation = Some expected;
+                            })
+                          ~define:define_node
+                      )
                   | Value
                     when (Resolution.is_global ~access resolution) &&
                          insufficiently_annotated &&
@@ -2745,15 +2757,17 @@ module State = struct
                             })
                           ~define:define_node
                       )
-                  | Attribute _ when insufficiently_annotated && not is_type_alias ->
+                  | Value when is_type_alias && Type.expression_contains_any value ->
                       Some (
                         Error.create
                           ~location
                           ~kind:(Error.ProhibitedAny {
                               Error.name = access;
-                              annotation = actual_annotation;
+                              annotation = None;
                               evidence_locations;
-                              given_annotation = Some expected;
+                              given_annotation = Some (
+                                Resolution.parse_annotation resolution value
+                              );
                             })
                           ~define:define_node
                       )

@@ -371,7 +371,13 @@ let test_check_globals _ =
     [
       "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
       "Undefined name [18]: Global name `MappBoo` is undefined.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      MyType = typing.List[typing.Any]
+    |}
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot contain `Any`."]
 
 
 let () =

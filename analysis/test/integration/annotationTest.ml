@@ -267,7 +267,8 @@ let test_check_undefined_type _ =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `Derp` " ^
-      "must be specified as type other than `Any`."
+      "must be specified as type other than `Any`.";
+      "Prohibited any [33]: Explicit annotation for `Herp` cannot contain `Any`.";
     ];
 
   assert_type_errors
