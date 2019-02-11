@@ -125,10 +125,7 @@ let test_register_class_definitions _ =
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
-      (parse {|
-         class int:
-           pass
-       |})
+      (parse "class int: pass")
   in
   assert_equal
     ~cmp:Type.Set.equal
