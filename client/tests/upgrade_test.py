@@ -5,6 +5,7 @@
 
 import itertools
 import json
+import os
 import pathlib
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
@@ -158,6 +159,52 @@ class FixmeAllTest(unittest.TestCase):
         assert run.call_count == 1
 
     @patch("subprocess.call")
+    @patch.object(upgrade.Configuration, "remove_version")
+    @patch.object(upgrade.Configuration, "get_errors")
+    @patch.object(upgrade.Configuration, "gather_local_configurations")
+    @patch("%s.run_global_version_update" % upgrade.__name__)
+    @patch("%s.run_fixme" % upgrade.__name__)
+    def test_upgrade_configuration(
+        self,
+        run_fixme,
+        run_global_version_update,
+        gather,
+        get_errors,
+        remove_version,
+        call,
+    ) -> None:
+        arguments = MagicMock()
+        gather.return_value = []
+        upgrade.run_fixme_all(arguments, [])
+        run_fixme.assert_not_called()
+        call.assert_not_called()
+
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        get_errors.return_value = errors
+        configuration = upgrade.Configuration(
+            "/root/local/.pyre_configuration.local", {"version": 123}
+        )
+        configuration.get_path()
+        upgrade._upgrade_configuration(arguments, configuration, "/root")
+        run_global_version_update.assert_not_called()
+        run_fixme.called_once_with(arguments, _result(errors))
+        call.assert_called_once_with(
+            ["hg", "commit", "--message", upgrade._commit_message("local")]
+        )
+
+    @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(upgrade.Configuration, "find_project_configuration", return_value=".")
     @patch.object(upgrade.Configuration, "remove_version")
@@ -231,51 +278,53 @@ class FixmeAllTest(unittest.TestCase):
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
-    @patch("subprocess.call")
-    @patch.object(upgrade.Configuration, "remove_version")
-    @patch.object(upgrade.Configuration, "get_errors")
+    @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
-    @patch("%s.run_global_version_update" % upgrade.__name__)
-    @patch("%s.run_fixme" % upgrade.__name__)
-    def test_upgrade_configuration(
-        self,
-        run_fixme,
-        run_global_version_update,
-        gather,
-        get_errors,
-        remove_version,
-        call,
-    ) -> None:
-        arguments = MagicMock()
-        gather.return_value = []
-        upgrade.run_fixme_all(arguments, [])
-        run_fixme.assert_not_called()
-        call.assert_not_called()
+    @patch.object(upgrade.Configuration, "find_project_configuration")
+    def test_run_fixme_all_sandcastle(self, find_configuration, gather, run) -> None:
+        command_json = """
+        {
+            "command": "CommandName",
+            "args": {"hash": null, "paths": null},
+            "hash": "repository/hash",
+            "priority": 0,
+            "user": "unixname",
+            "alias": "pyre-upgrade",
+            "capabilities": {"type": "type", "vcs": "vcs"},
+            "oncall": "pyre"
+        }
+        """
 
-        errors = [
-            {
-                "line": 2,
-                "column": 4,
-                "path": "local.py",
-                "code": 7,
-                "name": "Kind",
-                "description": "Error",
-                "inference": {},
-                "ignore_error": False,
-                "external_to_global_root": False,
-            }
+        def generate_sandcastle_command(hash, paths):
+            paths = [os.path.realpath(path) for path in paths]
+            command = json.loads(command_json)
+            command["args"]["hash"] = hash
+            command["args"]["paths"] = paths
+            return str(command).encode("utf-8")
+
+        arguments = MagicMock()
+        arguments.sandcastle = "sandcastle.json"
+        with patch("builtins.open", mock_open(read_data=command_json)):
+            arguments.hash = "abc"
+            gather.return_value = [
+                upgrade.Configuration("a/.pyre_configuration.local", {"version": 123}),
+                upgrade.Configuration("b/.pyre_configuration.local", {"version": 123}),
+            ]
+            upgrade.run_fixme_all(arguments, [])
+            find_configuration.assert_not_called()
+            run.assert_called_once_with(
+                ["scutil", "create"],
+                input=generate_sandcastle_command("abc", ["a", "b"]),
+            )
+
+        run.reset_mock()
+        arguments.hash = None
+        gather.return_value = [
+            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
         ]
-        get_errors.return_value = errors
-        configuration = upgrade.Configuration(
-            "/root/local/.pyre_configuration.local", {"version": 123}
-        )
-        configuration.get_path()
-        upgrade._upgrade_configuration(arguments, configuration, "/root")
-        run_global_version_update.assert_not_called()
-        run_fixme.called_once_with(arguments, _result(errors))
-        call.assert_called_once_with(
-            ["hg", "commit", "--message", upgrade._commit_message("local")]
-        )
+        upgrade.run_fixme_all(arguments, [])
+        find_configuration.assert_not_called()
+        run.assert_not_called()
 
 
 class FixmeSingleTest(unittest.TestCase):

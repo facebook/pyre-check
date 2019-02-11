@@ -89,6 +89,9 @@ class Configuration:
     def get_path(self) -> str:
         return self._path
 
+    def get_directory(self) -> str:
+        return os.path.dirname(os.path.realpath(self._path))
+
     def remove_version(self) -> None:
         with open(self._path) as configuration_file:
             contents = json.load(configuration_file)
@@ -453,9 +456,7 @@ def run_fixme_single(
 def run_fixme_all(
     arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
 ) -> None:
-    if arguments.hash and isinstance(arguments.hash, str):
-        run_global_version_update(arguments, errors)
-
+    # Find local configurations.
     configurations = Configuration.gather_local_configurations(arguments)
     LOG.info(
         "Found %d %sconfiguration%s",
@@ -463,6 +464,25 @@ def run_fixme_all(
         "push-blocking " if arguments.push_blocking_only else "",
         "s" if len(configurations) != 1 else "",
     )
+
+    # Create sandcastle command.
+    if arguments.sandcastle and isinstance(arguments.sandcastle, str):
+        if not arguments.hash:
+            LOG.error("Must provide binary hash to fixme-all --sandcastle")
+            return
+        paths = [configuration.get_directory() for configuration in configurations]
+        with open(arguments.sandcastle) as sandcastle_file:
+            sandcastle_command = json.load(sandcastle_file)
+        sandcastle_command["args"]["hash"] = arguments.hash
+        sandcastle_command["args"]["paths"] = paths
+        command = ["scutil", "create"]
+        subprocess.run(command, input=str(sandcastle_command).encode("utf-8"))
+        return
+
+    # Run locally.
+    if arguments.hash and isinstance(arguments.hash, str):
+        run_global_version_update(arguments, errors)
+
     root = Configuration.find_project_configuration()
     if root is None:
         LOG.info("No project configuration found for the current directory.")
@@ -525,6 +545,9 @@ if __name__ == "__main__":
         "-c", "--comment", help="Custom comment after fixme comments"
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
+    fixme_all.add_argument(
+        "-s", "--sandcastle", help="Create upgrade stack on sandcastle."
+    )
     fixme_all.add_argument(
         "hash", nargs="?", default=None, help="Hash of new Pyre version"
     )
