@@ -920,7 +920,7 @@ let test_check_incomplete_annotations _ =
         x: typing.Any = 1
     |}
     [
-      "Incomplete annotation [33]: Expression `x` has type `int`; " ^
+      "Prohibited any [33]: Expression `x` has type `int`; " ^
       "given explicit type cannot be `Any."
     ];
   assert_type_errors
@@ -928,37 +928,28 @@ let test_check_incomplete_annotations _ =
       def foo() -> None:
         x: typing.List[typing.Any] = []
     |}
-    [
-      "Incomplete annotation [33]: Explicit annotation for `x` " ^
-      "must have a type that does not contain `Any`."
-    ];
+    ["Prohibited any [33]: Explicit annotation for `x` cannot contain `Any`."];
   assert_type_errors
     {|
       def foo() -> None:
         x = 1
         typing.cast(typing.Any, x)
     |}
-    [
-      "Incomplete annotation [33]: Explicit annotation for `typing.cast` " ^
-      "must have a type other than `Any`.";
-    ];
+    ["Prohibited any [33]: Explicit annotation for `typing.cast` cannot be `Any`."];
   assert_type_errors
     {|
       def foo() -> None:
         x = 1
         typing.cast(typing.List[typing.Any], x)
     |}
-    [
-      "Incomplete annotation [33]: Explicit annotation for `typing.cast` " ^
-      "must have a type that does not contain `Any`.";
-    ];
+    ["Prohibited any [33]: Explicit annotation for `typing.cast` cannot contain `Any`."];
   assert_default_type_errors
     {|
       def foo() -> None:
         x: typing.Any = 1
     |}
     [];
-  
+
   assert_type_errors
     {|
       def foo() -> None:
@@ -994,10 +985,7 @@ let test_check_refinement _ =
         l = [1]
         l.append('asdf')
     |}
-    [
-      "Incomplete annotation [33]: Explicit annotation for `l` must have a type " ^
-      "that does not contain `Any`.";
-    ];
+    ["Prohibited any [33]: Explicit annotation for `l` cannot contain `Any`."];
 
   assert_type_errors
     {|

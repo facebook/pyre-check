@@ -79,7 +79,6 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
-  | IncompleteAnnotation of missing_annotation
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
@@ -90,6 +89,7 @@ type kind =
   | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | NotCallable of Type.t
+  | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
@@ -150,7 +150,7 @@ let code = function
   | AnalysisFailure _ -> 30
   | InvalidType _ -> 31
   | InvalidArgument _ -> 32
-  | IncompleteAnnotation _ -> 33
+  | ProhibitedAny _ -> 33
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -167,7 +167,6 @@ let name = function
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
-  | IncompleteAnnotation _ -> "Incomplete annotation"
   | InconsistentOverride _ -> "Inconsistent override"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidType _ -> "Invalid type"
@@ -178,6 +177,7 @@ let name = function
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MissingTypeParameters _ -> "Missing type parameters"
   | NotCallable _ -> "Call error"
+  | ProhibitedAny _ -> "Prohibited any"
   | RedundantCast _ -> "Redundant cast"
   | RevealedType _ -> "Revealed type"
   | TooManyArguments _ -> "Too many arguments"
@@ -242,7 +242,8 @@ let messages ~detailed:_ ~define location kind =
            Type.pp actual
         );
       ]
-  | IncompleteAnnotation { name; annotation = Some annotation; given_annotation; _ }
+  | Top -> [ "Problem with analysis." ]
+  | ProhibitedAny { name; annotation = Some annotation; given_annotation; _ }
     when Type.is_concrete annotation ->
       begin
         match given_annotation with
@@ -261,23 +262,22 @@ let messages ~detailed:_ ~define location kind =
                 Type.pp annotation
             ]
       end
-  | IncompleteAnnotation { name; given_annotation; _ } ->
+  | ProhibitedAny { name; given_annotation; _ } ->
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Object ->
             [
               Format.asprintf
-                "Explicit annotation for `%s` must have a type other than `Any`."
+                "Explicit annotation for `%s` cannot be `Any`."
                 (Access.show_sanitized name)
             ]
         | _ ->
             [
               Format.asprintf
-                "Explicit annotation for `%s` must have a type that does not contain `Any`."
+                "Explicit annotation for `%s` cannot contain `Any`."
                 (Access.show_sanitized name)
             ]
       end
-  | Top -> [ "Problem with analysis." ]
   | MissingAttributeAnnotation { parent; missing_annotation } ->
       begin
         match missing_annotation with
@@ -1064,7 +1064,6 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
-  | IncompleteAnnotation { given_annotation = Some actual; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
@@ -1076,6 +1075,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingReturnAnnotation { given_annotation = Some actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
   | NotCallable actual
+  | ProhibitedAny { given_annotation = Some actual; _ }
   | RedundantCast actual
   | UninitializedAttribute { mismatch = {actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
@@ -1088,13 +1088,13 @@ let due_to_analysis_limitations { kind; _ } =
   | AnalysisFailure _
   | Deobfuscation _
   | IncompatibleConstructorAnnotation _
-  | IncompleteAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
+  | ProhibitedAny _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
@@ -1151,7 +1151,6 @@ let due_to_mismatch_with_any { kind; _ } =
   | AnalysisFailure _
   | Deobfuscation _
   | IncompatibleConstructorAnnotation _
-  | IncompleteAnnotation _
   | InconsistentOverride _
   | InvalidType _
   | MissingAttributeAnnotation _
@@ -1159,6 +1158,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MissingTypeParameters _
+  | ProhibitedAny _
   | RedundantCast _
   | RevealedType _
   | TooManyArguments _
@@ -1201,7 +1201,7 @@ let less_or_equal ~resolution left right =
     | MissingArgument left, MissingArgument right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         Access.equal_sanitized left.name right.name
-    | IncompleteAnnotation left, IncompleteAnnotation right
+    | ProhibitedAny left, ProhibitedAny right
     | MissingParameterAnnotation left, MissingParameterAnnotation right
     | MissingReturnAnnotation left, MissingReturnAnnotation right
     | MissingAttributeAnnotation { missing_annotation = left; _ },
@@ -1310,7 +1310,6 @@ let less_or_equal ~resolution left right =
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
     | IncompatibleVariableType _, _
-    | IncompleteAnnotation _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
@@ -1321,6 +1320,7 @@ let less_or_equal ~resolution left right =
     | MissingReturnAnnotation _, _
     | MissingTypeParameters _, _
     | NotCallable _, _
+    | ProhibitedAny _, _
     | RedundantCast _, _
     | RevealedType _, _
     | TooManyArguments _, _
@@ -1372,8 +1372,6 @@ let join ~resolution left right =
         Deobfuscation left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
-    | IncompleteAnnotation left, IncompleteAnnotation right ->
-        IncompleteAnnotation (join_missing_annotation left right)
     | MissingArgument left, MissingArgument right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
            Access.equal_sanitized left.name right.name ->
@@ -1405,6 +1403,8 @@ let join ~resolution left right =
         }
     | NotCallable left, NotCallable right ->
         NotCallable (Resolution.join resolution left right)
+    | ProhibitedAny left, ProhibitedAny right ->
+        ProhibitedAny (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
     | RevealedType left, RevealedType right
@@ -1551,7 +1551,6 @@ let join ~resolution left right =
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
     | IncompatibleVariableType _, _
-    | IncompleteAnnotation _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
@@ -1562,6 +1561,7 @@ let join ~resolution left right =
     | MissingReturnAnnotation _, _
     | MissingTypeParameters _, _
     | NotCallable _, _
+    | ProhibitedAny _, _
     | RedundantCast _, _
     | RevealedType _, _
     | TooManyArguments _, _
@@ -1762,12 +1762,12 @@ let suppress ~mode error =
         _;
       } ->
         true
-    | IncompleteAnnotation _
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
     | MissingGlobalAnnotation _
     | MissingTypeParameters _
+    | ProhibitedAny _
     | Unpack { unpack_problem = UnacceptableType Type.Object; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
@@ -1845,8 +1845,6 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
-    | IncompleteAnnotation ({ annotation; _ } as missing_annotation) ->
-        IncompleteAnnotation { missing_annotation with annotation = annotation >>| dequalify }
     | InvalidArgument (Keyword { expression; annotation }) ->
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
     | InvalidArgument (Variable { expression; annotation }) ->
@@ -1877,6 +1875,8 @@ let dequalify
         MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }
     | NotCallable annotation ->
         NotCallable (dequalify annotation)
+    | ProhibitedAny ({ annotation; _ } as missing_annotation) ->
+        ProhibitedAny { missing_annotation with annotation = annotation >>| dequalify }
     | RedundantCast annotation ->
         RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->

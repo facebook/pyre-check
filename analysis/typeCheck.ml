@@ -1925,7 +1925,7 @@ module State = struct
           if contains_literal_any then
             Error.create
               ~location
-              ~kind:(Error.IncompleteAnnotation {
+              ~kind:(Error.ProhibitedAny {
                   Error.name = Access.create "typing.cast";
                   annotation = None;
                   evidence_locations = [];
@@ -2749,7 +2749,7 @@ module State = struct
                       Some (
                         Error.create
                           ~location
-                          ~kind:(Error.IncompleteAnnotation {
+                          ~kind:(Error.ProhibitedAny {
                               Error.name = access;
                               annotation = actual_annotation;
                               evidence_locations;

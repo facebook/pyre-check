@@ -69,7 +69,6 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
-  | IncompleteAnnotation of missing_annotation
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
@@ -80,6 +79,7 @@ type kind =
   | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | NotCallable of Type.t
+  | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
