@@ -302,9 +302,11 @@ def _commit_message(directory, summary_override: Optional[str] = None):
     return commit_message
 
 
-def _commit_changes(message):
+def _submit_changes(arguments, message):
     LOG.info("Committing changes.")
     subprocess.call(["hg", "commit", "--message", message])
+    if arguments.submit is True:
+        subprocess.call(["jf", "submit"])
 
 
 # Exposed for testing.
@@ -325,7 +327,7 @@ def _upgrade_configuration(
         run_fixme(arguments, errors)
     try:
         directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
-        _commit_changes(_commit_message(directory))
+        _submit_changes(arguments, _commit_message(directory))
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
 
@@ -399,8 +401,9 @@ def run_global_version_update(
 
     try:
         commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
-        _commit_changes(
-            _commit_message("global configuration", summary_override=commit_summary)
+        _submit_changes(
+            arguments,
+            _commit_message("global configuration", summary_override=commit_summary),
         )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
@@ -525,6 +528,9 @@ if __name__ == "__main__":
     update_global_version.add_argument(
         "-p", "--push-blocking-only", action="store_true"
     )
+    update_global_version.add_argument(
+        "--submit", action="store_true", help=argparse.SUPPRESS
+    )
 
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
@@ -537,6 +543,7 @@ if __name__ == "__main__":
     fixme_single.add_argument(
         "path", help="Path to project root with local configuration"
     )
+    fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
@@ -545,6 +552,7 @@ if __name__ == "__main__":
         "-c", "--comment", help="Custom comment after fixme comments"
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
+    fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument(
         "-s", "--sandcastle", help="Create upgrade stack on sandcastle."
     )

@@ -219,7 +219,7 @@ class FixmeAllTest(unittest.TestCase):
         remove_version,
         find_configuration,
         gather,
-        call,
+        subprocess,
     ) -> None:
         arguments = MagicMock()
         gather.return_value = [
@@ -229,12 +229,12 @@ class FixmeAllTest(unittest.TestCase):
         upgrade.run_fixme_all(arguments, [])
         run_global_version_update.assert_not_called()
         run_fixme.assert_not_called()
-        call.assert_called_once_with(
+        subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
         run_fixme.reset_mock()
-        call.reset_mock()
+        subprocess.reset_mock()
         errors = [
             {
                 "line": 2,
@@ -252,31 +252,34 @@ class FixmeAllTest(unittest.TestCase):
         upgrade.run_fixme_all(arguments, [])
         run_global_version_update.assert_not_called()
         run_fixme.called_once_with(arguments, _result(errors))
-        call.assert_called_once_with(
+        subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
         run_fixme.reset_mock()
-        call.reset_mock()
+        subprocess.reset_mock()
         gather.return_value = [
             upgrade.Configuration("local/.pyre_configuration.local", {})
         ]
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
-        call.assert_not_called()
+        subprocess.assert_not_called()
 
         run_fixme.reset_mock()
-        call.reset_mock()
+        subprocess.reset_mock()
         gather.return_value = [
             upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
         ]
         arguments.hash = "abc"
+        arguments.submit = True
         upgrade.run_fixme_all(arguments, [])
         run_global_version_update.assert_called_once_with(arguments, [])
         run_fixme.called_once_with(arguments, _result(errors))
-        call.assert_called_once_with(
-            ["hg", "commit", "--message", upgrade._commit_message("local")]
-        )
+        calls = [
+            call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+            call(["jf", "submit"]),
+        ]
+        subprocess.assert_has_calls(calls)
 
     @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
@@ -334,27 +337,30 @@ class FixmeSingleTest(unittest.TestCase):
     @patch.object(upgrade.Configuration, "get_errors")
     @patch("%s.run_fixme" % upgrade.__name__)
     def test_run_fixme_single(
-        self, run_fixme, get_errors, remove_version, find_configuration, call
+        self, run_fixme, get_errors, remove_version, find_configuration, subprocess
     ) -> None:
         arguments = MagicMock()
+        arguments.submit = True
         arguments.path = "local"
         get_errors.return_value = []
         configuration_contents = '{"targets":[]}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_fixme_single(arguments, [])
             run_fixme.assert_not_called()
-            call.assert_not_called()
+            subprocess.assert_not_called()
 
         configuration_contents = '{"version": 123}'
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_fixme_single(arguments, [])
             run_fixme.assert_not_called()
-            call.assert_called_once_with(
-                ["hg", "commit", "--message", upgrade._commit_message("local")]
-            )
+            calls = [
+                call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+                call(["jf", "submit"]),
+            ]
+            subprocess.assert_has_calls(calls)
 
         run_fixme.reset_mock()
-        call.reset_mock()
+        subprocess.reset_mock()
         errors = [
             {
                 "line": 2,
@@ -372,9 +378,11 @@ class FixmeSingleTest(unittest.TestCase):
         with patch("builtins.open", mock_open(read_data=configuration_contents)):
             upgrade.run_fixme_single(arguments, [])
             run_fixme.called_once_with(arguments, _result(errors))
-            call.assert_called_once_with(
-                ["hg", "commit", "--message", upgrade._commit_message("local")]
-            )
+            calls = [
+                call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+                call(["jf", "submit"]),
+            ]
+            call.assert_has_calls(calls)
 
 
 class FixmeTest(unittest.TestCase):
@@ -738,6 +746,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
         # gathering local configurations (mocked here), this is a no-op. Documents it.
         subprocess.reset_mock()
         arguments.push_blocking_only = True
+        arguments.submit = True
         with patch("json.dump") as dump:
             mocks = [
                 mock_open(read_data='{"version": "old"}').return_value,
@@ -767,14 +776,18 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     ),
                 ]
             )
-            subprocess.assert_called_once_with(
-                [
-                    "hg",
-                    "commit",
-                    "--message",
-                    upgrade._commit_message(
-                        "global configuration",
-                        summary_override="Automatic upgrade to hash `abcd`",
-                    ),
-                ]
-            )
+            calls = [
+                call(
+                    [
+                        "hg",
+                        "commit",
+                        "--message",
+                        upgrade._commit_message(
+                            "global configuration",
+                            summary_override="Automatic upgrade to hash `abcd`",
+                        ),
+                    ]
+                ),
+                call(["jf", "submit"]),
+            ]
+            subprocess.assert_has_calls(calls)
