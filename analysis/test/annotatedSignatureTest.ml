@@ -311,7 +311,7 @@ let test_select _ =
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = Access.create "$0";
-                annotation = Type.Object;
+                annotation = Type.Any;
                 default = false;
               }])
           ~annotation:Type.integer

@@ -348,8 +348,8 @@ let test_due_to_mismatch_with_any _ =
     (Error.ImpossibleIsinstance {
         expression = !"expression";
         mismatch = {
-          Error.actual = Type.Object;
-          expected = Type.Object;
+          Error.actual = Type.Any;
+          expected = Type.Any;
           due_to_invariance = false;
         };
       });
@@ -361,8 +361,8 @@ let test_due_to_mismatch_with_any _ =
         incompatible_type = {
           Error.name = [Access.Identifier ""];
           mismatch = {
-            Error.actual = Type.Object;
-            expected = Type.Object;
+            Error.actual = Type.Any;
+            expected = Type.Any;
             due_to_invariance = false;
           };
           declare_location = Location.Instantiated.any;
@@ -370,7 +370,7 @@ let test_due_to_mismatch_with_any _ =
       });
 
   (* IncompatibleAwaitableType *)
-  assert_due_to_mismatch_with_any (Error.IncompatibleAwaitableType Type.Object);
+  assert_due_to_mismatch_with_any (Error.IncompatibleAwaitableType Type.Any);
 
   (* IncompatibleParameterType *)
   assert_due_to_mismatch_with_any
@@ -379,8 +379,8 @@ let test_due_to_mismatch_with_any _ =
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
-          Error.actual = Type.Object;
-          expected = Type.Object;
+          Error.actual = Type.Any;
+          expected = Type.Any;
           due_to_invariance = false;
         };
       });
@@ -391,7 +391,7 @@ let test_due_to_mismatch_with_any _ =
         callee = Some (Access.create "callee");
         mismatch = {
           Error.actual = Type.string;
-          expected = Type.Object;
+          expected = Type.Any;
           due_to_invariance = false;
         };
       });
@@ -400,8 +400,8 @@ let test_due_to_mismatch_with_any _ =
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType {
         mismatch = {
-          Error.actual = Type.Object;
-          expected = Type.Object;
+          Error.actual = Type.Any;
+          expected = Type.Any;
           due_to_invariance = false;
         };
         is_implicit = false;
@@ -409,7 +409,7 @@ let test_due_to_mismatch_with_any _ =
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType {
         mismatch = {
-          Error.actual = Type.Object;
+          Error.actual = Type.Any;
           expected = Type.string;
           due_to_invariance = false;
         };
@@ -431,7 +431,7 @@ let test_due_to_mismatch_with_any _ =
         name = [Expression.Access.Identifier "name"];
         mismatch = {
           Error.actual = Type.string;
-          expected = Type.Object;
+          expected = Type.Any;
           due_to_invariance = false;
         };
         declare_location = Location.Instantiated.any;
@@ -459,7 +459,7 @@ let test_due_to_mismatch_with_any _ =
         overridden_method = Access.create "foo";
         parent = Access.create (Type.show mock_parent);
         override = (WeakenedPostcondition {
-            actual = Type.Object;
+            actual = Type.Any;
             expected = Type.integer;
             due_to_invariance = false;
           });
@@ -480,7 +480,7 @@ let test_due_to_mismatch_with_any _ =
         parent = Access.create (Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
-            expected = Type.Object;
+            expected = Type.Any;
             due_to_invariance = false;
           }));
       });
@@ -504,19 +504,19 @@ let test_due_to_mismatch_with_any _ =
     (InvalidArgument (
         Keyword {
           expression = !"name";
-          annotation = Type.Object;
+          annotation = Type.Any;
         }
       ));
   assert_due_to_mismatch_with_any
     (InvalidArgument (
         Variable {
           expression = !"name";
-          annotation = Type.Object;
+          annotation = Type.Any;
         }
       ));
 
   (* NotCallable *)
-  assert_due_to_mismatch_with_any (Error.NotCallable Type.Object);
+  assert_due_to_mismatch_with_any (Error.NotCallable Type.Any);
   assert_not_due_to_mismatch_with_any (Error.NotCallable Type.Top);
 
   (* UndefinedAttribute *)
@@ -524,7 +524,7 @@ let test_due_to_mismatch_with_any _ =
     (Error.UndefinedAttribute {
         attribute = Access.create "foo";
         origin = Error.Class {
-            annotation = Type.Object;
+            annotation = Type.Any;
             class_attribute = false;
           };
       });
@@ -541,7 +541,7 @@ let test_due_to_mismatch_with_any _ =
         name = [Access.Identifier ""];
         parent = mock_parent;
         mismatch = {
-          Error.actual = Type.Object;
+          Error.actual = Type.Any;
           expected = Type.Optional Type.integer;
           due_to_invariance = false;
         };
@@ -564,13 +564,13 @@ let test_due_to_mismatch_with_any _ =
   assert_not_due_to_mismatch_with_any
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
   assert_due_to_mismatch_with_any
-    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Object });
+    (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Any });
 
   (* Missing X errors *)
   assert_not_due_to_mismatch_with_any
     (Error.MissingParameterAnnotation {
         name = (Access.create "");
-        annotation = Some Type.Object;
+        annotation = Some Type.Any;
         evidence_locations = [];
         given_annotation = None;
       });
@@ -588,7 +588,7 @@ let test_due_to_mismatch_with_any _ =
         parent = mock_parent;
         missing_annotation = {
           Error.name = [Access.Identifier ""];
-          annotation = Some Type.Object;
+          annotation = Some Type.Any;
           given_annotation = None;
           evidence_locations = [];
         };
@@ -1039,19 +1039,19 @@ let test_suppress _ =
 
   (* Test different modes. *)
   assert_suppressed Source.Infer (missing_return Type.Top);
-  assert_suppressed Source.Infer (missing_return Type.Object);
+  assert_suppressed Source.Infer (missing_return Type.Any);
   assert_not_suppressed Source.Infer (missing_return Type.integer);
   assert_suppressed Source.Infer (Error.UndefinedType Type.integer);
   assert_suppressed Source.Infer (Error.AnalysisFailure Type.integer);
 
   assert_not_suppressed Source.Strict (missing_return Type.Top);
   assert_suppressed Source.Strict (Error.IncompatibleAwaitableType Type.Top);
-  assert_not_suppressed Source.Strict (missing_return Type.Object);
+  assert_not_suppressed Source.Strict (missing_return Type.Any);
   assert_not_suppressed Source.Strict (Error.AnalysisFailure Type.integer);
 
   assert_suppressed Source.Default (missing_return Type.integer);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
-  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Object);
+  assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Any);
   assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
   assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
   assert_suppressed Source.Default (Error.UndefinedName (Access.create "reveal_type"));
@@ -1071,10 +1071,10 @@ let test_suppress _ =
       });
 
   let suppress_missing_return =
-    Source.DefaultButDontCheck [Error.code (error (missing_return Type.Object))]
+    Source.DefaultButDontCheck [Error.code (error (missing_return Type.Any))]
   in
   assert_suppressed suppress_missing_return (missing_return Type.integer);
-  assert_suppressed suppress_missing_return (missing_return Type.Object);
+  assert_suppressed suppress_missing_return (missing_return Type.Any);
   (* Defer to Default policy if not specifically suppressed *)
   assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
   assert_suppressed suppress_missing_return (Error.UndefinedName (Access.create "reveal_type"));

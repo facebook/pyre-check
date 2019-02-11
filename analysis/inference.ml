@@ -141,8 +141,8 @@ module State = struct
       | None ->
           add_missing_parameter_error ~given_annotation:None
       | Some annotation
-        when Type.equal (Resolution.parse_annotation resolution annotation) Type.Object ->
-          add_missing_parameter_error ~given_annotation:(Some Type.Object)
+        when Type.equal (Resolution.parse_annotation resolution annotation) Type.Any ->
+          add_missing_parameter_error ~given_annotation:(Some Type.Any)
       | _ -> errors
     in
     let parameters =

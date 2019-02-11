@@ -116,17 +116,17 @@ let test_initial _ =
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     "def foo(x): ..."
-    (create ["x", Type.Object]);
+    (create ["x", Type.Any]);
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     "def foo(x: typing.Any): ..."
-    (create ~immutables:["x", false] ["x", Type.Object]);
+    (create ~immutables:["x", false] ["x", Type.Any]);
   assert_initial
     ~parent:"Foo"
     ~errors:[]
     ~environment:"class Foo: ..."
     "def __eq__(self, other: typing.Any): ..."
-    (create ~immutables:["other", false] ["self", Type.Primitive "Foo"; "other", Type.Object]);
+    (create ~immutables:["other", false] ["self", Type.Primitive "Foo"; "other", Type.Any]);
 
   assert_initial
     ~parent:"Foo"
@@ -138,7 +138,7 @@ let test_initial _ =
     ~environment:"class Foo: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
-    (create ["a", Type.Object])
+    (create ["a", Type.Any])
 
 
 let test_less_or_equal _ =
@@ -345,7 +345,7 @@ let test_redirect _ =
         class Subclass(Superclass): pass
       |}
     "super().foo()"
-    ("$super.foo()", ["$super", Type.Object]);
+    ("$super.foo()", ["$super", Type.Any]);
 
   assert_redirect
     ~parent:(Access.create "Superclass")
@@ -1859,11 +1859,11 @@ let test_forward_expression _ =
   assert_forward "{**{1: 1}}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
   assert_forward
     "{**{1: 1}, **{'a': 'b'}}"
-    (Type.dictionary ~key:Type.Object ~value:Type.Object);
+    (Type.dictionary ~key:Type.Any ~value:Type.Any);
   assert_forward
     ~errors:(`Undefined 1)
     "{1: 'string', **{undefined: 1}}"
-    (Type.dictionary ~key:Type.Top ~value:Type.Object);
+    (Type.dictionary ~key:Type.Top ~value:Type.Any);
   assert_forward
     ~errors:(`Undefined 1)
     "{undefined: 1}"
@@ -1914,7 +1914,7 @@ let test_forward_expression _ =
       let to_parameter name =
         Parameter.Named {
           Parameter.name = Access.create name;
-          annotation = Type.Object;
+          annotation = Type.Any;
           default = false;
         }
       in
@@ -1927,7 +1927,7 @@ let test_forward_expression _ =
     "lambda parameter: parameter"
     (callable
        ~parameters:["parameter"]
-       ~annotation:Type.Object);
+       ~annotation:Type.Any);
   assert_forward
     ~errors:(`Undefined 1)
     "lambda: undefined"
@@ -2095,7 +2095,7 @@ let test_forward_statement _ =
       (`Specific ["Undefined name [18]: Global name `y` is undefined."])
     ["y", Type.undeclared]
     "x = y"
-    ["x", Type.Object; "y", Type.undeclared];
+    ["x", Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
@@ -2109,7 +2109,7 @@ let test_forward_statement _ =
       (`Specific ["Undefined name [18]: Global name `y` is undefined."])
     ["y", Type.undeclared]
     "x = [y]"
-    ["x", Type.list Type.Object; "y", Type.undeclared];
+    ["x", Type.list Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
@@ -2298,13 +2298,13 @@ let test_forward_statement _ =
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer];
 
   (* Isinstance. *)
-  assert_forward ["x", Type.Object] "assert isinstance(x, int)" ["x", Type.integer];
+  assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward
-    ["x", Type.Object; "y", Type.Top]
+    ["x", Type.Any; "y", Type.Top]
     "assert isinstance(y, str)"
-    ["x", Type.Object; "y", Type.string];
+    ["x", Type.Any; "y", Type.string];
   assert_forward
-    ["x", Type.Object]
+    ["x", Type.Any]
     "assert isinstance(x, (int, str))"
     ["x", Type.union [Type.integer; Type.string]];
   assert_forward

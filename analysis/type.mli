@@ -76,7 +76,7 @@ and t =
   | Bottom
   | Callable of t Record.Callable.record
   | Deleted
-  | Object
+  | Any
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
   | Primitive of Identifier.t

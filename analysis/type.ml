@@ -109,7 +109,7 @@ and t =
   | Bottom
   | Callable of t Record.Callable.record
   | Deleted
-  | Object
+  | Any
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
   | Primitive of Identifier.t
@@ -261,7 +261,7 @@ let rec pp format annotation =
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Deleted ->
       Format.fprintf format "deleted"
-  | Object ->
+  | Any ->
       Format.fprintf format "typing.Any"
   | Optional Bottom ->
       Format.fprintf format "None"
@@ -504,7 +504,7 @@ let meta annotation =
   let parameter =
     match annotation with
     | Variable _ ->
-        Object
+        Any
     | annotation ->
         annotation
   in
@@ -528,8 +528,8 @@ let rec optional parameter =
       Top
   | Deleted ->
       Deleted
-  | Object ->
-      Object
+  | Any ->
+      Any
   | Optional _ ->
       parameter
   | _ ->
@@ -586,8 +586,8 @@ let union parameters =
   in
   if List.mem ~equal parameters undeclared then
     Union parameters
-  else if List.mem ~equal parameters Object then
-    Object
+  else if List.mem ~equal parameters Any then
+    Any
   else if List.mem ~equal parameters Top then
     Top
   else
@@ -627,7 +627,7 @@ let primitive_substitution_map =
     let rec parameters sofar remaining =
       match remaining with
       | 0 -> sofar
-      | _ -> parameters (Object :: sofar) (remaining - 1)
+      | _ -> parameters (Any :: sofar) (remaining - 1)
     in
     Parametric { name; parameters = (parameters [] number_of_anys) }
   in
@@ -636,17 +636,17 @@ let primitive_substitution_map =
     "$deleted", Deleted;
     "$unknown", Top;
     "None", none;
-    "function", callable ~annotation:Object ();
+    "function", callable ~annotation:Any ();
     "dict", parametric_anys "dict" 2;
-    "list", list Object;
-    "object", Object;
+    "list", list Any;
+    "object", Any;
     "type", parametric_anys "type" 1;
-    "typing.Any", Object;
+    "typing.Any", Any;
     "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
     "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", callable ~annotation:Object ();
+    "typing.Callable", callable ~annotation:Any ();
     "typing.ChainMap", parametric_anys "collections.ChainMap" 1;
     "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
     "typing.Counter", parametric_anys "collections.Counter" 1;
@@ -657,11 +657,11 @@ let primitive_substitution_map =
     "typing.Generator", parametric_anys "typing.Generator" 3;
     "typing.Iterable", parametric_anys "typing.Iterable" 1;
     "typing.Iterator", parametric_anys "typing.Iterator" 1;
-    "typing.List", list Object;
+    "typing.List", list Any;
     "typing.Mapping", parametric_anys "typing.Mapping" 2;
     "typing.Sequence", parametric_anys "typing.Sequence" 1;
     "typing.Set", parametric_anys "typing.Set" 1;
-    "typing.Tuple", Tuple (Unbounded Object);
+    "typing.Tuple", Tuple (Unbounded Any);
     "typing.Type", parametric_anys "type" 1;
   ]
   |> List.map
@@ -793,7 +793,7 @@ let rec expression annotation =
         in
         (Access.create "typing.Callable") @ (convert implementation) @ overloads
     | Deleted -> Access.create "$deleted"
-    | Object -> Access.create "object"
+    | Any -> Access.create "object"
     | Optional Bottom ->
         split "None"
     | Optional parameter ->
@@ -946,7 +946,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                       | Bottom
                       | Callable _
                       | Deleted
-                      | Object
+                      | Any
                       | Primitive _
                       | Top ->
                           annotation
@@ -1462,7 +1462,7 @@ module Transform = struct
         | Bottom
         | Deleted
         | Top
-        | Object
+        | Any
         | Primitive _ ->
             annotation
       in
@@ -1518,7 +1518,7 @@ let is_concrete annotation =
       let predicate = function
         | Top
         | Deleted
-        | Object ->
+        | Any ->
             true
         | _ ->
             false
@@ -1632,7 +1632,7 @@ let is_unknown annotation =
 
 
 let contains_any annotation =
-  exists annotation ~predicate:(function | Object -> true | _ -> false)
+  exists annotation ~predicate:(function | Any -> true | _ -> false)
 
 
 let expression_contains_any expression =
@@ -1706,7 +1706,7 @@ let elements annotation =
             Primitive "typing.Union" :: sofar, annotation
         | Bottom
         | Deleted
-        | Object
+        | Any
         | Top
         | Variable _ ->
             sofar, annotation
@@ -1721,11 +1721,11 @@ let is_resolved annotation =
 
 
 let is_partially_typed annotation =
-  exists annotation ~predicate:(function | Object | Top | Bottom -> true | _ -> false)
+  exists annotation ~predicate:(function | Any | Top | Bottom -> true | _ -> false)
 
 
 let is_untyped = function
-  | Object
+  | Any
   | Bottom
   | Top -> true
   | _ -> false
@@ -1810,7 +1810,7 @@ let class_variable_value = function
 (* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.
    See T22792667. *)
 let assume_any = function
-  | Top -> Object
+  | Top -> Any
   | annotation -> annotation
 
 
@@ -2028,8 +2028,8 @@ let rec mismatch_with_any left right =
   in
 
   match left, right with
-  | Object, _
-  | _, Object ->
+  | Any, _
+  | _, Any ->
       true
   | Callable {
       Callable.implementation = {
@@ -2099,11 +2099,11 @@ let rec mismatch_with_any left right =
   | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
       begin
         match unbounded, bounded with
-        | Object, _ ->
+        | Any, _ ->
             true
         | unbounded, head :: tail ->
             mismatch_with_any unbounded head ||
-            List.for_all ~f:(equal Object) tail
+            List.for_all ~f:(equal Any) tail
         | _ ->
             false
       end
@@ -2113,8 +2113,8 @@ let rec mismatch_with_any left right =
       let right = Set.of_list right in
       let mismatched left right =
         Set.length left = Set.length right &&
-        Set.mem left Object &&
-        not (Set.mem right Object) &&
+        Set.mem left Any &&
+        not (Set.mem right Any) &&
         Set.length (Set.diff left right) = 1
       in
       mismatched left right || mismatched right left
@@ -2207,7 +2207,7 @@ let remove_undeclared annotation =
         | Parametric { name; parameters } ->
             let declare annotation =
               match annotation with
-              | Primitive "typing.Undeclared" -> Object
+              | Primitive "typing.Undeclared" -> Any
               | _ -> annotation
             in
             let parameters = List.map parameters ~f:declare in
@@ -2222,7 +2222,7 @@ let remove_undeclared annotation =
                 List.filter ~f:declared annotations
               in
               match annotations with
-              | [] -> (), Object
+              | [] -> (), Any
               | [annotation] -> (), annotation
               | _ -> (), union annotations
             end
@@ -2232,7 +2232,7 @@ let remove_undeclared annotation =
   in
   match annotation with
   | Primitive "typing.Undeclared" ->
-      Object
+      Any
   | _ ->
       snd (RemoveUndeclared.visit () annotation)
 

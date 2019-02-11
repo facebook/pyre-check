@@ -28,7 +28,7 @@ let test_create _ =
   assert_create "foo.$local_qualifier$bar" (Type.Primitive "foo.bar");
 
   assert_create "$deleted" Type.Deleted;
-  assert_create "object" Type.Object;
+  assert_create "object" Type.Any;
   assert_create "$unknown" Type.Top;
 
   assert_create "foo[bar]" (Type.parametric "foo" [Type.Primitive "bar"]);
@@ -41,16 +41,16 @@ let test_create _ =
     "typing.Dict.__getitem__((int, str))"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
   (* Type aliases in typeshed. *)
-  assert_create "typing.Counter" (Type.parametric "collections.Counter" [Type.Object]);
+  assert_create "typing.Counter" (Type.parametric "collections.Counter" [Type.Any]);
   assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" [Type.integer]);
-  assert_create "typing.ChainMap" (Type.parametric "collections.ChainMap" [Type.Object]);
+  assert_create "typing.ChainMap" (Type.parametric "collections.ChainMap" [Type.Any]);
   assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
-  assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Object]);
+  assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Any]);
   assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
 
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
-  assert_create "typing.List" (Type.list Type.Object);
+  assert_create "typing.List" (Type.list Type.Any);
   assert_create
     "typing.DefaultDict[int, str]"
     (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
@@ -62,13 +62,13 @@ let test_create _ =
   assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
   assert_create "typing.Tuple[()]" (Type.tuple []);
 
-  assert_create "typing.Any" Type.Object;
+  assert_create "typing.Any" Type.Any;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
   assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
   assert_create "typing.Set[int]" (Type.set Type.integer);
 
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
-  assert_create "typing.Union[int, typing.Any]" Type.Object;
+  assert_create "typing.Union[int, typing.Any]" Type.Any;
   assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
   assert_create "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
     (Type.optional
@@ -94,10 +94,10 @@ let test_create _ =
        ));
 
   (* Nested renaming. *)
-  assert_create "typing.Set[typing.Any]" (Type.set Type.Object);
+  assert_create "typing.Set[typing.Any]" (Type.set Type.Any);
   assert_create
     "typing.Dict[str, typing.Any]"
-    (Type.dictionary ~key:Type.string ~value:Type.Object);
+    (Type.dictionary ~key:Type.string ~value:Type.Any);
 
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
@@ -356,10 +356,10 @@ let test_create _ =
         implicit = None;
       });
   assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
-  assert_create "function" (Type.callable ~annotation:Type.Object ());
+  assert_create "function" (Type.callable ~annotation:Type.Any ());
   assert_create
     "typing.Callable[..., function]"
-    (Type.callable ~annotation:(Type.callable ~annotation:Type.Object ()) ());
+    (Type.callable ~annotation:(Type.callable ~annotation:Type.Any ()) ());
 
   assert_create
     "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
@@ -566,7 +566,7 @@ let test_union _ =
     (Type.union [Type.float; Type.string; Type.optional Type.float])
     (Type.Optional (Type.Union [Type.float; Type.string]));
 
-  assert_true (Type.equal (Type.union [Type.float; Type.Object]) Type.Object);
+  assert_true (Type.equal (Type.union [Type.float; Type.Any]) Type.Any);
   assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);
 
   assert_true
@@ -638,7 +638,7 @@ let test_primitives _ =
     (Type.primitives Type.integer);
   assert_equal
     []
-    (Type.primitives Type.Object);
+    (Type.primitives Type.Any);
 
   assert_equal
     [Type.integer; Type.string]
@@ -706,7 +706,7 @@ let test_elements _ =
     (Type.elements Type.integer);
   assert_equal
     []
-    (Type.elements Type.Object);
+    (Type.elements Type.Any);
 
   assert_equal
     [Type.integer; Type.string; Type.Primitive "TypedDictionary"]
@@ -742,7 +742,7 @@ let test_exists _ =
   assert_true (top_exists Type.Top);
   assert_false (top_exists Type.Bottom);
   assert_false (top_exists Type.integer);
-  assert_false (top_exists Type.Object)
+  assert_false (top_exists Type.Any)
 
 
 let test_is_iterator _ =
@@ -766,7 +766,7 @@ let test_contains_callable _ =
 
 
 let test_contains_any _ =
-  assert_true (Type.contains_any (Type.Object))
+  assert_true (Type.contains_any (Type.Any))
 
 
 let test_is_not_instantiated _ =
@@ -802,7 +802,7 @@ let test_is_type_alias _ =
 
 let test_is_unknown _ =
   assert_false (Type.is_unknown Type.Bottom);
-  assert_false (Type.is_unknown Type.Object);
+  assert_false (Type.is_unknown Type.Any);
 
   assert_true (Type.is_unknown (Type.optional Type.Top));
   assert_false (Type.is_unknown (Type.optional Type.integer));
@@ -857,68 +857,68 @@ let test_mismatch_with_any _ =
   assert_false (Type.mismatch_with_any Type.Bottom Type.Top);
   assert_false (Type.mismatch_with_any Type.integer Type.string);
 
-  assert_true (Type.mismatch_with_any Type.Object Type.string);
-  assert_true (Type.mismatch_with_any Type.integer Type.Object);
+  assert_true (Type.mismatch_with_any Type.Any Type.string);
+  assert_true (Type.mismatch_with_any Type.integer Type.Any);
 
   assert_false (Type.mismatch_with_any (Type.Optional Type.integer) (Type.Optional Type.string));
-  assert_true (Type.mismatch_with_any (Type.Optional Type.Object) (Type.Optional Type.string));
+  assert_true (Type.mismatch_with_any (Type.Optional Type.Any) (Type.Optional Type.string));
 
   assert_false (Type.mismatch_with_any (Type.list Type.integer) (Type.list Type.string));
-  assert_true (Type.mismatch_with_any (Type.list Type.Object) (Type.list Type.string));
+  assert_true (Type.mismatch_with_any (Type.list Type.Any) (Type.list Type.string));
   assert_false
     (Type.mismatch_with_any
        (Type.dictionary ~key:Type.string ~value:Type.integer)
        (Type.dictionary ~key:Type.string ~value:Type.string));
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.string ~value:Type.Object)
+       (Type.dictionary ~key:Type.string ~value:Type.Any)
        (Type.dictionary ~key:Type.string ~value:Type.string));
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.dictionary ~key:Type.string ~value:(Type.list Type.integer)));
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.dictionary
           ~key:Type.string
           ~value:(Type.dictionary ~key:Type.string ~value:Type.integer)));
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.Object ~value:Type.Object)
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.Optional
           (Type.dictionary
              ~key:Type.string
              ~value:Type.string)));
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.Object ~value:Type.bool)
+       (Type.dictionary ~key:Type.Any ~value:Type.bool)
        (Type.parametric "typing.Mapping" [Type.integer; Type.bool]));
 
   assert_true
     (Type.mismatch_with_any
-       (Type.dictionary ~key:Type.Object ~value:Type.bool)
+       (Type.dictionary ~key:Type.Any ~value:Type.bool)
        (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool]));
 
   assert_true
     (Type.mismatch_with_any
        (Type.dictionary ~key:Type.integer ~value:Type.bool)
-       (Type.parametric "collections.OrderedDict" [Type.Object; Type.bool]));
+       (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool]));
 
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.string)
-       (Type.parametric "typing.List" [Type.Object]));
+       (Type.parametric "typing.List" [Type.Any]));
 
   assert_true
     (Type.mismatch_with_any
-       (Type.sequence Type.Object)
+       (Type.sequence Type.Any)
        (Type.list Type.integer));
 
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.string)
-       (Type.parametric "typing.Optional" [Type.Object]));
+       (Type.parametric "typing.Optional" [Type.Any]));
 
   assert_false
     (Type.mismatch_with_any
@@ -928,15 +928,15 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.string)
-       (Type.list Type.Object));
+       (Type.list Type.Any));
   assert_true
     (Type.mismatch_with_any
-       (Type.iterable Type.Object)
+       (Type.iterable Type.Any)
        (Type.list Type.string));
   assert_true
     (Type.mismatch_with_any
        (Type.iterable Type.integer)
-       (Type.set Type.Object));
+       (Type.set Type.Any));
 
   assert_false
     (Type.mismatch_with_any
@@ -945,7 +945,7 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.tuple [Type.string; Type.string])
-       (Type.tuple [Type.string; Type.Object]));
+       (Type.tuple [Type.string; Type.Any]));
   assert_false
     (Type.mismatch_with_any
        (Type.Tuple (Type.Unbounded Type.integer))
@@ -953,15 +953,15 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.Tuple (Type.Unbounded Type.integer))
-       (Type.Tuple (Type.Unbounded Type.Object)));
+       (Type.Tuple (Type.Unbounded Type.Any)));
   assert_true
     (Type.mismatch_with_any
-       (Type.Tuple (Type.Bounded [Type.integer; Type.Object]))
+       (Type.Tuple (Type.Bounded [Type.integer; Type.Any]))
        (Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
     (Type.mismatch_with_any
        (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
-       (Type.Tuple (Type.Unbounded Type.Object)));
+       (Type.Tuple (Type.Unbounded Type.Any)));
   assert_false
     (Type.mismatch_with_any
        (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
@@ -974,42 +974,42 @@ let test_mismatch_with_any _ =
   assert_true
     (Type.mismatch_with_any
        (Type.union [Type.integer; Type.string])
-       (Type.union [Type.integer; Type.Object]));
+       (Type.union [Type.integer; Type.Any]));
 
   assert_true
     (Type.mismatch_with_any
-       (Type.union [Type.integer; Type.Object])
+       (Type.union [Type.integer; Type.Any])
        Type.integer);
 
 
-  assert_true (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Object));
+  assert_true (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Any));
   assert_true
     (Type.mismatch_with_any
        (Type.iterator (Type.list Type.integer))
-       (Type.generator (Type.list Type.Object)));
+       (Type.generator (Type.list Type.Any)));
   assert_false (Type.mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float));
 
   assert_true
     (Type.mismatch_with_any
        (Type.Union [Type.list Type.integer; Type.string])
-       (Type.list Type.Object));
+       (Type.list Type.Any));
 
   assert_false
     (Type.mismatch_with_any
        (Type.Union [Type.list Type.integer; Type.string])
-       (Type.parametric "unknown" [Type.Object]));
+       (Type.parametric "unknown" [Type.Any]));
 
   assert_true
     (Type.mismatch_with_any
        (Type.callable ~annotation:Type.integer ())
-       Type.Object);
+       Type.Any);
   assert_true
     (Type.mismatch_with_any
-       Type.Object
+       Type.Any
        (Type.callable ~annotation:Type.integer ()));
   assert_true
     (Type.mismatch_with_any
-       Type.Object
+       Type.Any
        (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]));
 
   assert_true

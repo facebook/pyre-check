@@ -924,7 +924,7 @@ let constructor definition ~instantiated ~resolution =
           | [tuple_variable] ->
               Type.Tuple (Type.Unbounded tuple_variable)
           | _ ->
-              Type.Tuple (Type.Unbounded Type.Object)
+              Type.Tuple (Type.Unbounded Type.Any)
         else if List.is_empty generics then
           class_annotation
         else

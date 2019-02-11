@@ -314,13 +314,13 @@ module State = struct
     let is_aliased_to_any =
       (* Special-case expressions typed as Any to be valid types. *)
       match annotation with
-      | Type.Primitive _ -> Type.equal resolved Type.Object
+      | Type.Primitive _ -> Type.equal resolved Type.Any
       | _ -> false
     in
     let check_untracked_annotation errors annotation =
       if Resolution.is_tracked resolution annotation || is_aliased_to_any then
         errors
-      else if not (Type.is_unknown resolved || Type.equal resolved Type.Object) then
+      else if not (Type.is_unknown resolved || Type.equal resolved Type.Any) then
         Error.create ~location ~kind:(Error.InvalidType annotation) ~define :: errors
       else
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
@@ -1259,7 +1259,7 @@ module State = struct
             |> fun name -> [Access.Identifier name]
           in
           let add_incompatible_variable_error ~state annotation default =
-            if Type.equal default Type.Object ||
+            if Type.equal default Type.Any ||
                Resolution.less_or_equal resolution ~left:default ~right:annotation ||
                Resolution.constraints_solution_exists resolution ~source:default ~target:annotation
             then
@@ -1294,7 +1294,7 @@ module State = struct
             let should_accept_any =
               let has_any_annotation =
                 match given_annotation with
-                | Some Type.Object -> true
+                | Some Type.Any -> true
                 | _ -> false
               in
               Define.is_dunder_method define &&
@@ -1406,7 +1406,7 @@ module State = struct
                     Annotation.create annotation
                 | None, None ->
                     add_missing_parameter_annotation_error ~state ~given_annotation:None None,
-                    Annotation.create Type.Object
+                    Annotation.create Type.Any
           in
           let annotation =
             if String.is_prefix ~prefix:"**" name then
@@ -1720,7 +1720,7 @@ module State = struct
               | Type.Parametric { parameters = [parameter]; _ } ->
                   parameter
               | _ ->
-                  Type.Object
+                  Type.Any
             in
             { state; resolved = Resolution.join resolution resolved parameter }
         | _ ->
@@ -1876,7 +1876,7 @@ module State = struct
                       Error.UndefinedName attribute
                 in
                 Some (Error.create ~location ~kind ~define)
-          | NotCallable Type.Object ->
+          | NotCallable Type.Any ->
               None
           | NotCallable annotation ->
               let kind = Error.NotCallable annotation in
@@ -1993,7 +1993,7 @@ module State = struct
                     callee = Some [Access.Identifier "isinstance"];
                     mismatch = {
                       Error.actual = non_meta;
-                      expected = Type.meta Type.Object;
+                      expected = Type.meta Type.Any;
                       due_to_invariance = false;
                     }})
                 ~define
@@ -2237,7 +2237,7 @@ module State = struct
             Resolution.set_local
               resolution
               ~access:(Access.create name)
-              ~annotation:(Annotation.create Type.Object)
+              ~annotation:(Annotation.create Type.Any)
           in
           List.fold ~f:add_parameter ~init:resolution parameters
         in
@@ -2249,7 +2249,7 @@ module State = struct
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
           Type.Callable.Parameter.Named {
             Type.Callable.Parameter.name = Access.create name;
-            annotation = Type.Object;
+            annotation = Type.Any;
             default = false;
           }
         in

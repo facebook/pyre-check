@@ -46,7 +46,7 @@ let test_return_annotation _ =
   assert_return_annotation
     (Some (Type.expression Type.integer))
     true
-    (Type.coroutine [Type.Object; Type.Object; Type.integer])
+    (Type.coroutine [Type.Any; Type.Any; Type.integer])
 
 
 let test_apply_decorators _ =

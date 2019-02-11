@@ -81,7 +81,7 @@ let connect_definition
     let cycle_with_top =
       match predecessor, successor with
       | Type.Top, _ -> true
-      | Type.Object, successor when not (Type.equal successor Type.Top) -> true
+      | Type.Any, successor when not (Type.equal successor Type.Top) -> true
       | _ -> false
     in
     if annotations_tracked && not primitive_cycle && not cycle_with_top then
@@ -102,7 +102,7 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.Object) or Access.show name = "object" then
+  if not (Type.equal primitive Type.Any) or Access.show name = "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =
       let value = Expression.delocalize value in
@@ -294,7 +294,7 @@ let handler
       Hashtbl.set globals ~key:(qualifier @ (Access.create "__file__")) ~data:string;
       Hashtbl.set globals ~key:(qualifier @ (Access.create "__name__")) ~data:string;
       let dictionary_annotation =
-        Type.dictionary ~key:Type.string ~value:Type.Object
+        Type.dictionary ~key:Type.string ~value:Type.Any
         |> Annotation.create_immutable ~global:true
         |> Node.create_with_default_location
       in
@@ -549,7 +549,7 @@ let register_aliases (module Handler: Handler) sources =
                     Expression.Access.create "typing.Any"
               in
               if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
-                sofar, Type.Object
+                sofar, Type.Any
               else if TypeOrder.contains order (Primitive primitive) then
                 sofar, annotation
               else
@@ -878,7 +878,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
       let edges =
         let add_edge sofar source =
           (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
-          if Type.equal source protocol || Type.equal source Type.Object then
+          if Type.equal source protocol || Type.equal source Type.Any then
             sofar
           else
             Set.add sofar { Edge.source; target = protocol }
@@ -1083,7 +1083,7 @@ module Builder = struct
     Hashtbl.set globals ~key:(Access.create "None") ~data:(annotation Type.none);
     Hashtbl.set globals
       ~key:[Access.Identifier ("...")]
-      ~data:(annotation Type.Object);
+      ~data:(annotation Type.Any);
 
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
        in the stubs. *)
@@ -1099,7 +1099,7 @@ module Builder = struct
       in
       let successors =
         let successor { Argument.value; _ } = Type.create value ~aliases:(fun _ -> None) in
-        (List.map bases ~f:successor) @ [Type.Object]
+        (List.map bases ~f:successor) @ [Type.Any]
       in
       Hashtbl.set
         ~key:(Type.Primitive name)

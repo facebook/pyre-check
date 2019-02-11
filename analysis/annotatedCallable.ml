@@ -40,7 +40,7 @@ let return_annotation ~define:({ Define.return_annotation; async; _ } as define)
       ~default:Type.Top
   in
   if async && not (is_generator define) then
-    Type.coroutine [Type.Object; Type.Object; annotation]
+    Type.coroutine [Type.Any; Type.Any; annotation]
   else if Define.is_coroutine define then
     begin
       match annotation with
@@ -63,7 +63,7 @@ let apply_decorators ~define ~resolution =
         TypeOrder.Untracked _ ->
           (* Apply_decorators gets called when building the environment,
              which is unsound and can raise. *)
-          Type.Object
+          Type.Any
     in
     if Type.is_iterator joined then
       {

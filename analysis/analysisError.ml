@@ -247,7 +247,7 @@ let messages ~detailed:_ ~define location kind =
     when Type.is_concrete annotation ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
                 "Expression `%s` has type `%a`; given explicit type cannot be `Any."
@@ -265,7 +265,7 @@ let messages ~detailed:_ ~define location kind =
   | ProhibitedAny { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
                 "Explicit annotation for `%s` cannot be `Any`."
@@ -285,7 +285,7 @@ let messages ~detailed:_ ~define location kind =
           when not (Type.is_concrete annotation) ->
             begin
               match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Object ->
+              | Some given_annotation when Type.equal given_annotation Type.Any ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type other than `Any`."
@@ -323,7 +323,7 @@ let messages ~detailed:_ ~define location kind =
             in
             begin
               match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Object ->
+              | Some given_annotation when Type.equal given_annotation Type.Any ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
@@ -363,7 +363,7 @@ let messages ~detailed:_ ~define location kind =
     when Type.is_concrete annotation ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but type `Any` is specified."
@@ -389,7 +389,7 @@ let messages ~detailed:_ ~define location kind =
   | MissingParameterAnnotation { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
                 "Parameter `%a` must have a type other than `Any`."
@@ -430,7 +430,7 @@ let messages ~detailed:_ ~define location kind =
       in
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               (Format.asprintf
                  "Returning `%a` but type `Any` is specified."
@@ -456,7 +456,7 @@ let messages ~detailed:_ ~define location kind =
   | MissingReturnAnnotation { given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             ["Return type must be specified as type other than `Any`."]
         | Some given_annotation when Type.contains_any given_annotation ->
             ["Return type must be specified as type that does not contain `Any`."]
@@ -476,7 +476,7 @@ let messages ~detailed:_ ~define location kind =
           |> String.concat ~sep:", "
         in
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
@@ -520,7 +520,7 @@ let messages ~detailed:_ ~define location kind =
   | MissingGlobalAnnotation { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Object ->
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
           [
             Format.asprintf
               "Globally accessible variable `%a` must be specified as type other than `Any`."
@@ -1138,7 +1138,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.equal actual Type.Object
+      Type.equal actual Type.Any
   | ImpossibleIsinstance { mismatch = { actual; expected; _ }; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; expected; _ }; _ }
@@ -1746,7 +1746,7 @@ let suppress ~mode error =
       (* TODO(T39440306): mirror behavior in other mismatch errors. *)
       | IncompatibleParameterType { mismatch = { actual; expected; due_to_invariance }; _ }
         when due_to_invariance ->
-          Type.equal actual Type.Object || Type.equal expected Type.Object
+          Type.equal actual Type.Any || Type.equal expected Type.Any
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
@@ -1768,7 +1768,7 @@ let suppress ~mode error =
     | MissingGlobalAnnotation _
     | MissingTypeParameters _
     | ProhibitedAny _
-    | Unpack { unpack_problem = UnacceptableType Type.Object; _ }
+    | Unpack { unpack_problem = UnacceptableType Type.Any; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
     | UndefinedImport _ ->
@@ -1791,7 +1791,7 @@ let suppress ~mode error =
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
         Type.equal actual Type.Top ||
-        Type.equal actual Type.Object ||
+        Type.equal actual Type.Any ||
         Type.equal actual Type.Bottom
     | _ ->
         true

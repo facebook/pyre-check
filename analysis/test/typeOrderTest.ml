@@ -143,7 +143,7 @@ let variance_order =
   in
 
   insert order Type.Bottom;
-  insert order Type.Object;
+  insert order Type.Any;
   insert order Type.Top;
   add_simple (Type.string);
   insert order Type.integer;
@@ -239,7 +239,7 @@ let multiplane_variance_order =
   in
 
   insert order Type.Bottom;
-  insert order Type.Object;
+  insert order Type.Any;
   insert order Type.Top;
   add_simple (Type.string);
   insert order Type.integer;
@@ -320,7 +320,7 @@ let parallel_planes_variance_order =
   in
 
   insert order Type.Bottom;
-  insert order Type.Object;
+  insert order Type.Any;
   insert order Type.Top;
   add_simple (Type.string);
   insert order Type.integer;
@@ -386,7 +386,7 @@ let default =
   connect order ~predecessor:Type.Bottom ~successor:!"list";
   connect order ~predecessor:!"list" ~successor:!"typing.Sized";
   connect order ~predecessor:!"list" ~successor:!"typing.Generic" ~parameters:[variable];
-  connect order ~predecessor:!"typing.Sized" ~successor:Type.Object;
+  connect order ~predecessor:!"typing.Sized" ~successor:Type.Any;
 
   insert order !"set";
   connect order ~predecessor:Type.Bottom ~successor:!"set";
@@ -426,7 +426,7 @@ let default =
 
   insert order !"dict";
   connect order ~predecessor:Type.Bottom ~successor:!"dict";
-  connect order ~predecessor:!"dict" ~successor:Type.Object ~parameters:[variable; other_variable];
+  connect order ~predecessor:!"dict" ~successor:Type.Any ~parameters:[variable; other_variable];
   connect
     order
     ~predecessor:!"dict"
@@ -445,7 +445,7 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
   assert_true (less_or_equal order ~left:Type.Deleted ~right:Type.Top);
-  assert_true (less_or_equal order ~left:Type.Object ~right:Type.Deleted);
+  assert_true (less_or_equal order ~left:Type.Any ~right:Type.Deleted);
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
@@ -546,7 +546,7 @@ let test_successors _ =
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
-    insert order Type.Object;
+    insert order Type.Any;
     insert order Type.Top;
     insert order !"typing.Iterator";
     insert order !"typing.Iterable";
@@ -567,7 +567,7 @@ let test_successors _ =
       ~predecessor:!"typing.Iterable"
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
     order in
 
   assert_equal
@@ -576,7 +576,7 @@ let test_successors _ =
        (Type.parametric "typing.Iterable" [Type.integer]))
     [
       Type.parametric "typing.Generic" [Type.integer];
-      Type.Object;
+      Type.Any;
     ];
 
   assert_equal
@@ -586,7 +586,7 @@ let test_successors _ =
     [
       Type.parametric "typing.Iterable" [Type.integer];
       Type.parametric "typing.Generic" [Type.integer];
-      Type.Object;
+      Type.Any;
     ]
 
 
@@ -742,7 +742,7 @@ let test_less_or_equal _ =
     in
 
     insert order Type.Bottom;
-    insert order Type.Object;
+    insert order Type.Any;
     insert order Type.Top;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
@@ -778,7 +778,7 @@ let test_less_or_equal _ =
       ~predecessor:!"C"
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
     connect
       order
       ~predecessor:!"A"
@@ -789,7 +789,7 @@ let test_less_or_equal _ =
       ~predecessor:!"B"
       ~successor:!"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
     connect order ~predecessor:Type.Bottom ~successor:!"FloatToStrCallable";
     connect
       order
@@ -852,9 +852,9 @@ let test_less_or_equal _ =
            [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
 
   (* Variables. *)
-  assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Object);
+  assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
   assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
-  assert_false (less_or_equal order ~left:Type.Object ~right:(Type.variable "T"));
+  assert_false (less_or_equal order ~left:Type.Any ~right:(Type.variable "T"));
   assert_false (less_or_equal order ~left:Type.integer ~right:(Type.variable "T"));
   assert_true
     (less_or_equal
@@ -1222,11 +1222,11 @@ let test_less_or_equal_variance _ =
     (less_or_equal
        variance_order
        ~left:(Type.parametric "LinkedList" [Type.integer])
-       ~right:(Type.parametric "LinkedList" [Type.Object]));
+       ~right:(Type.parametric "LinkedList" [Type.Any]));
   assert_false
     (less_or_equal
        variance_order
-       ~left:(Type.parametric "LinkedList" [Type.Object])
+       ~left:(Type.parametric "LinkedList" [Type.Any])
        ~right:(Type.parametric "LinkedList" [Type.integer]));
   assert_strict_less
     ~order:variance_order
@@ -1240,7 +1240,7 @@ let test_less_or_equal_variance _ =
   assert_strict_less
     ~order:variance_order
     ~left:(Type.parametric "Box" [Type.integer])
-    ~right:(Type.parametric "Box" [Type.Object]);
+    ~right:(Type.parametric "Box" [Type.Any]);
   (* Contravariant. *)
   assert_strict_less
     ~order:variance_order
@@ -1248,7 +1248,7 @@ let test_less_or_equal_variance _ =
     ~right:(Type.parametric "Sink" [Type.integer]);
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "Sink" [Type.Object])
+    ~left:(Type.parametric "Sink" [Type.Any])
     ~right:(Type.parametric "Sink" [Type.integer]);
   (* More complex rules. *)
   assert_strict_less
@@ -1476,7 +1476,7 @@ let test_join _ =
     in
 
     insert order Type.Bottom;
-    insert order Type.Object;
+    insert order Type.Any;
     insert order Type.Top;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
@@ -1523,7 +1523,7 @@ let test_join _ =
       ~predecessor:!"C"
       ~successor:!"typing.Generic"
       ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Object;
+    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
     connect order ~predecessor:Type.Bottom ~successor:!"CallableClass";
     connect
       order
@@ -1760,14 +1760,14 @@ let test_join _ =
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Object])
+       (Type.parametric "LinkedList" [Type.Any])
        (Type.parametric "LinkedList" [Type.Top]))
     (Type.parametric "LinkedList" [Type.Top]);
   assert_type_equal
     (join
        variance_order
        (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.Object]))
+       (Type.parametric "LinkedList" [Type.Any]))
     (Type.parametric "LinkedList" [Type.Top]);
   assert_type_equal
     (join
@@ -1792,17 +1792,17 @@ let test_join _ =
        variance_order
        (Type.parametric "Map" [Type.integer; Type.integer])
        (Type.parametric "Map" [Type.Top; Type.string]))
-    (Type.parametric "Map" [Type.Top; Type.Object]);
+    (Type.parametric "Map" [Type.Top; Type.Any]);
   assert_type_equal
     (join
        variance_order
        (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Object]))
+       (Type.parametric "LinkedList" [Type.Any]))
     (Type.parametric "LinkedList" [Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Object])
+       (Type.parametric "LinkedList" [Type.Any])
        (Type.parametric "LinkedList" [Type.integer]))
     (Type.parametric "LinkedList" [Type.Top]);
   let variance_aliases =
@@ -2011,12 +2011,12 @@ let test_meet _ =
     (meet
        variance_order
        (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Object]))
+       (Type.parametric "LinkedList" [Type.Any]))
     (Type.parametric "LinkedList" [Type.Bottom]);
   assert_type_equal
     (meet
        variance_order
-       (Type.parametric "LinkedList" [Type.Object])
+       (Type.parametric "LinkedList" [Type.Any])
        (Type.parametric "LinkedList" [Type.integer]))
     (Type.parametric "LinkedList" [Type.Bottom]);
   assert_meet

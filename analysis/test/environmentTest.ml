@@ -165,12 +165,12 @@ let test_refine_class_definitions _ =
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
-    ~top:Type.Object
+    ~top:Type.Any
     all_annotations;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom
-    ~top:Type.Object
+    ~top:Type.Any
     all_annotations;
 
   Handler.refine_class_definition (Type.Primitive "A");
@@ -214,7 +214,7 @@ let test_refine_class_definitions _ =
     in
     let expected =
       List.map expected ~f:(fun annotation -> Type.Primitive annotation)
-      |> (fun expected -> expected @ [Type.Object; Type.Deleted; Type.Top])
+      |> (fun expected -> expected @ [Type.Any; Type.Deleted; Type.Top])
     in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
@@ -651,13 +651,13 @@ let test_connect_type_order _ =
   assert_successors (Type.Primitive "C") [];
   assert_successors (Type.Primitive "D") [Type.Primitive "C"];
 
-  TypeOrder.connect_annotations_to_top order ~top:Type.Object all_annotations;
+  TypeOrder.connect_annotations_to_top order ~top:Type.Any all_annotations;
 
-  assert_successors (Type.Primitive "C") [Type.Object; Type.Deleted; Type.Top];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Object; Type.Deleted; Type.Top];
+  assert_successors (Type.Primitive "C") [Type.Any; Type.Deleted; Type.Top];
+  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Deleted; Type.Top];
   assert_successors
     (Type.Primitive "CallMe")
-    [Type.Primitive "typing.Callable"; Type.Object; Type.Deleted; Type.Top]
+    [Type.Primitive "typing.Callable"; Type.Any; Type.Deleted; Type.Top]
 
 
 let test_populate _ =
@@ -749,7 +749,7 @@ let test_populate _ =
         class C(metaclass=abc.ABCMeta): ...
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.Object];
+  assert_superclasses ~environment "C" ~superclasses:[Type.Any];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
@@ -762,7 +762,7 @@ let test_populate _ =
           pass
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.Object];
+  assert_superclasses ~environment "C" ~superclasses:[Type.Any];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -999,9 +999,9 @@ let test_infer_protocols_edges _ =
   assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized");
   assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized");
   assert_edge_not_inferred (Type.Primitive "AlmostSet") (Type.Primitive "Sized");
-  assert_edge_not_inferred (Type.Object) (Type.Primitive "SuperObject");
+  assert_edge_not_inferred (Type.Any) (Type.Primitive "SuperObject");
   assert_edge_inferred (Type.Primitive "List") (Type.Primitive "Empty");
-  assert_edge_not_inferred (Type.Object) (Type.Primitive "Empty")
+  assert_edge_not_inferred (Type.Any) (Type.Primitive "Empty")
 
 
 let test_less_or_equal_type_order _ =
@@ -1145,12 +1145,12 @@ let test_less_or_equal_type_order _ =
     (TypeOrder.less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
-       ~right:Type.Object);
+       ~right:Type.Any);
   assert_true
     (TypeOrder.less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
-       ~right:(Type.Union [Type.Top; Type.Object; Type.Optional Type.float]));
+       ~right:(Type.Union [Type.Top; Type.Any; Type.Optional Type.float]));
   assert_false
     (TypeOrder.less_or_equal
        order
@@ -1187,7 +1187,7 @@ let test_join_type_order _ =
     (TypeOrder.join order foo bar)
     (Type.union [foo; bar]);
   assert_equal
-    (TypeOrder.join order Type.Object Type.Top)
+    (TypeOrder.join order Type.Any Type.Top)
     Type.Top;
 
   assert_equal
@@ -1236,7 +1236,7 @@ let test_meet_type_order _ =
 
   assert_meet Type.Bottom bar Type.Bottom;
   assert_meet Type.Top bar bar;
-  assert_meet Type.Object Type.Top Type.Object;
+  assert_meet Type.Any Type.Top Type.Any;
   assert_meet foo bar Type.Bottom;
 
   assert_meet Type.integer (Type.Union [Type.integer; Type.string]) Type.integer;
@@ -1261,10 +1261,10 @@ let test_supertypes_type_order _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    [Type.Object; Type.Deleted; Type.Top]
+    [Type.Any; Type.Deleted; Type.Top]
     (TypeOrder.successors order (Type.Primitive "foo"));
   assert_equal
-    [Type.Primitive "foo"; Type.Object; Type.Deleted; Type.Top]
+    [Type.Primitive "foo"; Type.Any; Type.Deleted; Type.Top]
     (TypeOrder.successors order (Type.Primitive "bar"));
 
   let environment =
@@ -1286,7 +1286,7 @@ let test_supertypes_type_order _ =
         name = "typing.Generic";
         parameters = [Type.integer];
       };
-      Type.Object;
+      Type.Any;
       Type.Deleted;
       Type.Top;
     ]
@@ -1314,7 +1314,7 @@ let test_class_definition _ =
   assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
 
   let any =
-    class_definition environment Type.Object
+    class_definition environment Type.Any
     |> value
     |> Node.value
   in

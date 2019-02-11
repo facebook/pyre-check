@@ -490,9 +490,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Deleted, _ ->
       false
 
-  | _, Type.Object ->
+  | _, Type.Any ->
       true
-  | Type.Object, _ ->
+  | Type.Any, _ ->
       false
 
   | Type.Bottom, _ ->
@@ -819,7 +819,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key; value ] }
     when mapping = "typing.Mapping" &&
          Type.equal Type.string key &&
-         Type.equal Type.Object value ->
+         Type.equal Type.Any value ->
       true
 
   | Type.TypedDictionary _, _
@@ -1036,9 +1036,9 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Deleted ->
         Type.Deleted
 
-    | Type.Object, _
-    | _, Type.Object ->
-        Type.Object
+    | Type.Any, _
+    | _, Type.Any ->
+        Type.Any
 
     (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
     | (Type.Union left), (Type.Union right) ->
@@ -1090,7 +1090,7 @@ and join ((module Handler: Handler) as order) left right =
               else
                 join order left_primitive right_primitive
             with Untracked _ ->
-              Type.Object
+              Type.Any
           in
           if Handler.contains (Handler.indices ()) target then
             let left_parameters = instantiate_successors_parameters order ~source:left ~target in
@@ -1105,8 +1105,8 @@ and join ((module Handler: Handler) as order) left right =
                 | Type.Top, _, _
                 | _, Type.Top, _ ->
                     Type.Top
-                | Type.Object, _, _
-                | _, Type.Object, _ ->
+                | Type.Any, _, _
+                | _, Type.Any, _ ->
                     Type.Top
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     join order left right
@@ -1117,13 +1117,13 @@ and join ((module Handler: Handler) as order) left right =
                        less_or_equal order ~left:right ~right:left then
                       left
                     else
-                      (* We fallback to Type.Object if type equality fails to help display
+                      (* We fallback to Type.Any if type equality fails to help display
                          meaningful error messages. *)
-                      Type.Object
+                      Type.Any
                 | _ ->
                     Log.warning "Cannot join %a and %a, not a variable: %a"
                       Type.pp left Type.pp right Type.pp variable;
-                    Type.Object
+                    Type.Any
               in
               match left_parameters, right_parameters, variables with
               | Some left, Some right, Some variables
@@ -1144,10 +1144,10 @@ and join ((module Handler: Handler) as order) left right =
               | Type.Primitive _, None ->
                   target
               | _ ->
-                  Type.Object
+                  Type.Any
             end
           else
-            Type.Object
+            Type.Any
 
     (* Special case joins of optional collections with their uninstantated counterparts. *)
     | Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
@@ -1199,7 +1199,7 @@ and join ((module Handler: Handler) as order) left right =
         then
           Type.Parametric {
             name = "typing.Mapping";
-            parameters = [ Type.string; Type.Object ]
+            parameters = [ Type.string; Type.Any ]
           }
         else
           let join_fields =
@@ -1222,12 +1222,12 @@ and join ((module Handler: Handler) as order) left right =
            Type.equal key_annotation Type.string ->
         Type.Parametric {
           name = "typing.Mapping";
-          parameters = [ Type.string; Type.Object ]
+          parameters = [ Type.string; Type.Any ]
         }
 
     | Type.TypedDictionary _, _
     | _, Type.TypedDictionary _ ->
-        Type.Object
+        Type.Any
 
     | Type.Callable left,
       Type.Callable right ->
@@ -1246,9 +1246,9 @@ and join ((module Handler: Handler) as order) left right =
             left.Callable.implementation
             right.Callable.implementation
           >>| (fun implementation -> Type.Callable { left with Callable.kind; implementation })
-          |> Option.value ~default:Type.Object
+          |> Option.value ~default:Type.Any
         else
-          Type.Object
+          Type.Any
 
     | Type.Callable callable, other
     | other, Type.Callable callable ->
@@ -1270,7 +1270,7 @@ and join ((module Handler: Handler) as order) left right =
               Type.union [left; right]
         | None ->
             Log.debug "Couldn't find a upper bound for %a and %a" Type.pp left Type.pp right;
-            Type.Object
+            Type.Any
 
 
 and meet ((module Handler: Handler) as order) left right =
@@ -1286,8 +1286,8 @@ and meet ((module Handler: Handler) as order) left right =
     | other, Type.Deleted when not (Type.equal other Type.Top) ->
         other
 
-    | Type.Object, other
-    | other, Type.Object when not (Type.is_unknown other) ->
+    | Type.Any, other
+    | other, Type.Any when not (Type.is_unknown other) ->
         other
 
     | Type.Bottom, _
@@ -1340,8 +1340,8 @@ and meet ((module Handler: Handler) as order) left right =
                 | Type.Top, other, _
                 | other, Type.Top, _ ->
                     other
-                | Type.Object, _, _
-                | _, Type.Object, _ ->
+                | Type.Any, _, _
+                | _, Type.Any, _ ->
                     Type.Bottom
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     meet order left right
@@ -1968,9 +1968,9 @@ module Builder = struct
 
 
   let default_annotations =
-    let singleton annotation = [Type.Bottom; annotation; Type.Object] in
+    let singleton annotation = [Type.Bottom; annotation; Type.Any] in
     [
-      [Type.Bottom; Type.Object; Type.Deleted; Type.Top];
+      [Type.Bottom; Type.Any; Type.Deleted; Type.Top];
       (* Special forms *)
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
@@ -1987,7 +1987,7 @@ module Builder = struct
       singleton (Type.Primitive "unittest.mock.Base");
       singleton (Type.Primitive "unittest.mock.NonCallableMock");
       singleton (Type.Primitive "typing.ClassVar");
-      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.Object];
+      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.Any];
       singleton (Type.Primitive "None");
       (* Numerical hierarchy. *)
       [
@@ -1997,11 +1997,11 @@ module Builder = struct
         Type.complex;
         Type.Primitive "numbers.Complex";
         Type.Primitive "numbers.Number";
-        Type.Object;
+        Type.Any;
       ];
-      [Type.integer; Type.Primitive "numbers.Integral"; Type.Object];
-      [Type.float; Type.Primitive "numbers.Rational"; Type.Object];
-      [Type.float; Type.Primitive "numbers.Real"; Type.Object];
+      [Type.integer; Type.Primitive "numbers.Integral"; Type.Any];
+      [Type.float; Type.Primitive "numbers.Rational"; Type.Any];
+      [Type.float; Type.Primitive "numbers.Real"; Type.Any];
     ]
 
 

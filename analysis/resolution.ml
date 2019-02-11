@@ -232,7 +232,7 @@ let parse_annotation
           |> fun access -> Module.from_empty_stub ~access ~module_definition
         in
         if originates_from_empty_stub then
-          Some Type.Object
+          Some Type.Any
         else
           None
     | _ ->
@@ -319,7 +319,7 @@ let rec resolve_literal resolution expression =
           (resolve_literal resolution left)
           (resolve_literal resolution right)
       in
-      if Type.is_concrete annotation then annotation else Type.Object
+      if Type.is_concrete annotation then annotation else Type.Any
 
   | Complex _ ->
       Type.complex
@@ -337,7 +337,7 @@ let rec resolve_literal resolution expression =
       if Type.is_concrete key_annotation && Type.is_concrete value_annotation then
         Type.dictionary ~key:key_annotation ~value:value_annotation
       else
-        Type.Object
+        Type.Any
 
   | False ->
       Type.bool
@@ -355,7 +355,7 @@ let rec resolve_literal resolution expression =
         in
         List.fold ~init:Type.Bottom ~f:join elements
       in
-      if Type.is_concrete parameter then Type.list parameter else Type.Object
+      if Type.is_concrete parameter then Type.list parameter else Type.Any
 
   | Set elements ->
       let parameter =
@@ -364,7 +364,7 @@ let rec resolve_literal resolution expression =
         in
         List.fold ~init:Type.Bottom ~f:join elements
       in
-      if Type.is_concrete parameter then Type.set parameter else Type.Object
+      if Type.is_concrete parameter then Type.set parameter else Type.Any
 
   | String { StringLiteral.kind; _ } ->
       begin
@@ -380,7 +380,7 @@ let rec resolve_literal resolution expression =
           (resolve_literal resolution target)
           (resolve_literal resolution alternative)
       in
-      if Type.is_concrete annotation then annotation else Type.Object
+      if Type.is_concrete annotation then annotation else Type.Any
 
   | True ->
       Type.bool
@@ -389,10 +389,10 @@ let rec resolve_literal resolution expression =
       Type.tuple (List.map elements ~f:(resolve_literal resolution))
 
   | Expression.Yield _ ->
-      Type.yield Type.Object
+      Type.yield Type.Any
 
   | _ ->
-      Type.Object
+      Type.Any
 
 let resolve_mutable_literals resolution ~expression ~resolved ~expected =
   match expression with
@@ -602,7 +602,7 @@ let solve_constraints resolution ~constraints ~source ~target =
                 ~targets:(parameter_annotations target_parameters)
           | _ ->
               None
-        else if Type.equal source Type.Top && Type.equal target Type.Object then
+        else if Type.equal source Type.Top && Type.equal target Type.Any then
           Some constraints
         else if less_or_equal resolution ~left:source ~right:target then
           Some constraints
