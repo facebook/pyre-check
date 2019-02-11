@@ -281,6 +281,30 @@ let test_scheduling _ =
     |}
 
 
+let test_dead_store_elimination _ =
+  assert_deobfuscation
+    {|
+      a = 1
+      a
+    |}
+    {|
+      1
+    |};
+  assert_deobfuscation
+    {|
+      if True:
+        a = 1
+      else:
+        a = 1
+      a
+    |}
+    {|
+      if True:
+        pass
+      1
+    |}
+
+
 let test_fixup _ =
   (* Fix empty bodies. *)
   assert_deobfuscation
@@ -514,6 +538,7 @@ let () =
   "deobfuscation">:::[
     "forward">::test_forward;
     "scheduling">::test_scheduling;
+    "dead_store_elimination">::test_dead_store_elimination;
     "fixup">::test_fixup;
   ]
   |> Test.run
