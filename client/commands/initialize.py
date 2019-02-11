@@ -42,15 +42,15 @@ class Initialize(Command):
         if binary_path is None:
             binary_path = os.path.abspath(
                 log.get_input(
-                    "No {} found, enter the path manually: ".format(BINARY_NAME)
+                    "No `{}` found, enter the path manually: ".format(BINARY_NAME)
                 )
             )
             if not os.path.isfile(binary_path):
                 raise EnvironmentException(
-                    "Unable to locate binary at {}.".format(binary_path)
+                    "Unable to locate binary at `{}`.".format(binary_path)
                 )
         else:
-            LOG.info("Binary found at {}".format(binary_path))
+            LOG.info("Binary found at `{}`".format(binary_path))
         configuration["binary"] = binary_path
 
         typeshed = find_typeshed()
@@ -60,7 +60,7 @@ class Initialize(Command):
             )
             if not os.path.isdir(typeshed):
                 raise EnvironmentException(
-                    "No typeshed directory found at {}.".format(typeshed)
+                    "No typeshed directory found at `{}`.".format(typeshed)
                 )
         configuration["typeshed"] = typeshed
 
@@ -96,11 +96,13 @@ class Initialize(Command):
         configuration_path = os.path.join(self._original_directory, CONFIGURATION_FILE)
         if os.path.isfile(configuration_path):
             raise EnvironmentException(
-                "A pyre configuration already exists at {}.".format(configuration_path)
+                "A pyre configuration already exists at `{}`.".format(
+                    configuration_path
+                )
             )
         if os.path.isfile(configuration_path + ".local"):
             raise EnvironmentException(
-                "A local pyre configuration already exists at {}.".format(
+                "A local pyre configuration already exists at `{}`.".format(
                     configuration_path + ".local"
                 )
             )

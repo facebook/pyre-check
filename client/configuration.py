@@ -435,9 +435,8 @@ class Configuration:
                 unused_keys = configuration.unused_keys()
                 if unused_keys:
                     LOG.warning(
-                        "Some configuration items were not recognized in {}: {}".format(
-                            path, ", ".join(unused_keys)
-                        )
+                        "Some configuration items were not recognized in "
+                        "`{}`: {}".format(path, ", ".join(unused_keys))
                     )
         except IOError:
             LOG.debug("No configuration found at `{}`.".format(path))

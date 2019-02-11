@@ -395,7 +395,7 @@ def run_global_version_update(
             configuration_file.write("\n")
 
     try:
-        commit_summary = "Automatic upgrade to hash {}".format(arguments.hash)
+        commit_summary = "Automatic upgrade to hash `{}`".format(arguments.hash)
         _commit_changes(
             _commit_message("global configuration", summary_override=commit_summary)
         )

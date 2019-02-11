@@ -681,7 +681,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     "--message",
                     upgrade._commit_message(
                         "global configuration",
-                        summary_override="Automatic upgrade to hash abcd",
+                        summary_override="Automatic upgrade to hash `abcd`",
                     ),
                 ]
             )
@@ -725,7 +725,7 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                     "--message",
                     upgrade._commit_message(
                         "global configuration",
-                        summary_override="Automatic upgrade to hash abcd",
+                        summary_override="Automatic upgrade to hash `abcd`",
                     ),
                 ]
             )
