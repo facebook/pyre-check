@@ -26,9 +26,11 @@ module Deferred : sig
   type t
 
   val of_list: File.t list -> t
-  val add: t -> File.Set.t -> t
-  val take_n: elements: int -> t -> (File.t list * t)
+  val add: t -> files: File.Set.t -> t
+  val take_n: t -> elements: int -> (File.t list * t)
   val take_all: t -> (File.t list * t)
+  val add_visited: t -> visited: File.Set.t -> t
+  val reset_visited: t -> t
   val is_empty: t -> bool
   val length: t -> int
 end

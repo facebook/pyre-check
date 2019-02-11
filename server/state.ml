@@ -26,39 +26,54 @@ module Deferred = struct
   type t = {
     files_to_analyze_ordered: File.t list;
     files_to_analyze: File.Set.t;
+    visited_since_last_reset: File.Set.t;
   }
 
   let of_list files =
     {
       files_to_analyze_ordered = files;
       files_to_analyze = File.Set.of_list files;
+      visited_since_last_reset = File.Set.empty;
     }
 
-  let add { files_to_analyze_ordered; files_to_analyze } files =
-    let files = Set.diff files files_to_analyze in
+  let add { files_to_analyze_ordered; files_to_analyze; visited_since_last_reset } ~files =
+    let files =
+      let files = Set.diff files files_to_analyze in
+      Set.diff files visited_since_last_reset
+    in
     {
       files_to_analyze_ordered = List.append files_to_analyze_ordered (File.Set.to_list files);
       files_to_analyze = Set.union files files_to_analyze;
+      visited_since_last_reset = visited_since_last_reset;
     }
 
-  let take_n ~elements { files_to_analyze_ordered; files_to_analyze } =
+  let take_n { files_to_analyze_ordered; files_to_analyze; visited_since_last_reset } ~elements =
     let taken, remaining = List.split_n files_to_analyze_ordered elements in
+    let taken_set = (File.Set.of_list taken) in
     let state =
       {
         files_to_analyze_ordered = remaining;
-        files_to_analyze = Set.diff files_to_analyze (File.Set.of_list taken);
+        files_to_analyze = Set.diff files_to_analyze taken_set;
+        visited_since_last_reset = Set.union visited_since_last_reset taken_set;
       }
     in
     taken, state
 
-  let take_all { files_to_analyze_ordered; _ } =
+  let take_all { files_to_analyze_ordered; files_to_analyze; visited_since_last_reset; } =
     let state =
       {
         files_to_analyze_ordered = [];
         files_to_analyze = File.Set.empty;
+        visited_since_last_reset = Set.union visited_since_last_reset files_to_analyze;
       }
     in
     files_to_analyze_ordered, state
+
+  let add_visited ({ visited_since_last_reset; _ } as state) ~visited =
+    { state with visited_since_last_reset = Set.union visited_since_last_reset visited }
+
+  let reset_visited state =
+    { state with visited_since_last_reset = File.Set.empty }
 
   let is_empty { files_to_analyze; _ } =
     File.Set.is_empty files_to_analyze
