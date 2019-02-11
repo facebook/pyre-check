@@ -900,6 +900,16 @@ let test_less_or_equal _ =
        order
        ~left:(Type.variable ~constraints:(Type.Bound !"A") "T")
        ~right:(Type.union [Type.variable ~constraints:(Type.Bound !"A") "T"; Type.string]));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound !"A") "T")
+       ~right:(Type.optional (Type.variable ~constraints:(Type.Bound !"A") "T")));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Bound (Type.optional !"A")) "T")
+       ~right:(Type.optional !"A"));
 
   assert_true
     (less_or_equal

@@ -634,7 +634,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             current && less_or_equal order ~left ~right)
         left
 
-  (* We have to consider both the variables' constraint and its full value against the union *)
+  (* We have to consider both the variables' constraint and its full value against the union. *)
   | Type.Variable { constraints = Type.Explicit constraints; _ }, Type.Union union ->
       List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
       less_or_equal order ~left:(Type.union constraints) ~right
@@ -646,13 +646,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | left, Type.Union right ->
       List.exists ~f:(fun right -> less_or_equal order ~left ~right) right
 
-  | Type.Variable { constraints = Type.Explicit left; _ }, right ->
-      less_or_equal order ~left:(Type.union left) ~right
-  | Type.Variable { constraints = Type.Bound left; _ }, right ->
-      less_or_equal order ~left ~right
-  | Type.Variable { constraints = Type.Unconstrained; _ }, _ ->
-      false
-
+  (* We have to consider both the variables' constraint and its full value against the optional. *)
+  | Type.Variable { constraints = Type.Explicit constraints; _ }, Type.Optional optional ->
+      less_or_equal order ~left ~right:optional ||
+      less_or_equal order ~left:(Type.union constraints) ~right
+  | Type.Variable { constraints = Type.Bound bound; _ }, Type.Optional optional ->
+      less_or_equal order ~left ~right:optional || less_or_equal order ~left:bound ~right
 
   (* A <= B -> A <= Optional[B].*)
   | Type.Optional left, Type.Optional right ->
@@ -660,6 +659,13 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Optional parameter ->
       less_or_equal order ~left ~right:parameter
   | Type.Optional _, _ ->
+      false
+
+  | Type.Variable { constraints = Type.Explicit left; _ }, right ->
+      less_or_equal order ~left:(Type.union left) ~right
+  | Type.Variable { constraints = Type.Bound left; _ }, right ->
+      less_or_equal order ~left ~right
+  | Type.Variable { constraints = Type.Unconstrained; _ }, _ ->
       false
 
   (* Tuple variables are covariant. *)
