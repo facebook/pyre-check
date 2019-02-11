@@ -466,8 +466,7 @@ let variables (module Handler: Handler) annotation =
       (* This is not the "real" typing.Callable. We are just
          proxying to the Callable instance in the type order here. *)
       Some [Type.variable ~variance:Type.Covariant "_T_meta"]
-  | _ ->
-      let primitive = Type.split annotation |> fst in
+  | primitive, _ ->
       Handler.find (Handler.indices ()) Type.generic
       >>= fun generic_index ->
       Handler.find (Handler.indices ()) primitive
