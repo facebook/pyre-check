@@ -168,6 +168,7 @@ let test_check_undefined_type _ =
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
 
+  (* Attributes *)
   assert_type_errors
     {|
       class Foo:
@@ -182,6 +183,7 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
 
+  (* Class bases *)
   assert_type_errors
     {|
       class Foo(Bar): ...
@@ -216,6 +218,56 @@ let test_check_undefined_type _ =
       "Undefined type [11]: Type `BB` is not defined.";
       "Undefined type [11]: Type `BB` is not defined.";
       "Undefined type [11]: Type `DD` is not defined.";
+    ];
+
+  (* Globals *)
+  assert_type_errors
+    {|
+      x: Derp = 1
+      y: typing.List[Derp] = 1
+      z: Derp
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+    ];
+
+  (* Assigns *)
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: Derp = 1
+        y: typing.List[Derp] = 1
+        z: Derp
+    |}
+    [
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+      "Undefined type [11]: Type `Derp` is not defined.";
+    ];
+
+  (* cast, isinstance *)
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = 1
+        typing.cast(Derp, x)
+    |}
+    ["Undefined type [11]: Type `Derp` is not defined."];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = 1
+        if isinstance(x, Derp):
+          return x
+        return
+
+    |}
+    [
+      "Undefined name [18]: Global name `Derp` is undefined.";
+      "Incompatible return type [7]: Expected `None` but got `unknown`.";
     ]
 
 
