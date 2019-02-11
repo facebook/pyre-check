@@ -359,6 +359,17 @@ module State = struct
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
     let annotation = Resolution.parse_annotation ~allow_untracked:true resolution expression in
+    let errors =
+      if Type.equal annotation Type.Top then
+        (* Could not even parse expression. *)
+        Error.create
+          ~location
+          ~kind:(Error.InvalidType (Type.Primitive (Expression.show expression)))
+          ~define
+        |> Set.add errors
+      else
+        errors
+    in
     let resolved = Resolution.resolve resolution expression in
     let annotation_errors = check_annotation ~resolution ~location ~define ~annotation ~resolved in
     let errors =

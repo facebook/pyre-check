@@ -339,7 +339,19 @@ let test_check_invalid_type _ =
       "must be specified as type other than `Any`.";
       "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
       "as type that does not contain `Any`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      def foo() -> (int, str):
+        return 1
+    |}
+    ["Invalid type [31]: Expression `(int, str)` is not a valid type."];
+  assert_type_errors
+    {|
+      def foo(x: int + str) -> None:
+        return
+    |}
+    ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."]
 
 
 let test_check_missing_type_parameters _ =
