@@ -109,7 +109,6 @@ class InitializeTest(unittest.TestCase):
             self.assertEqual(
                 command._get_local_configuration(),
                 {
-                    "continuous": True,
                     "push_blocking": True,
                     "differential": False,
                     "targets": ["//target/..."],
@@ -120,7 +119,6 @@ class InitializeTest(unittest.TestCase):
             self.assertEqual(
                 command._get_local_configuration(),
                 {
-                    "continuous": True,
                     "differential": True,
                     "push_blocking": True,
                     "targets": ["//target/..."],

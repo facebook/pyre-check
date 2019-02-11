@@ -87,6 +87,8 @@ class Initialize(Command):
             )
             configuration["push_blocking"] = push_blocking
             if push_blocking:
+                # Push blocking implies continuous, it's confusing to have both.
+                del configuration["continuous"]
                 configuration["differential"] = log.get_yes_no_input(
                     "Should pyre only be push-blocking on newly introduced errors?"
                 )
