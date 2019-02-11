@@ -86,8 +86,11 @@ let run_check
 
      (* Print results. *)
      Yojson.Safe.to_string
-       (`List
-          (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors))
+       (`Assoc [
+           "errors",
+           `List
+             (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors);
+         ])
      |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 

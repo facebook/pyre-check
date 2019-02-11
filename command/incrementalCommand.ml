@@ -84,10 +84,13 @@ let run
              |> List.map ~f:snd
              |> List.concat
              |> (fun errors ->
-                 `List
-                   (List.map
-                      ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
-                      errors))
+                 `Assoc [
+                   "errors",
+                   `List
+                     (List.map
+                        ~f:(fun error -> Analysis.Error.to_json ~detailed:show_error_traces error)
+                        errors)
+                 ])
          | _ -> failwith "Unexpected response in incremental check."
        in
        Log.print "%s" (Yojson.Safe.to_string response_json))
