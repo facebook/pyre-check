@@ -368,7 +368,10 @@ let test_check_globals _ =
     {|
       A = MappBoo[int, str]
     |}
-    ["Undefined name [18]: Global name `MappBoo` is undefined."]
+    [
+      "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
+      "Undefined name [18]: Global name `MappBoo` is undefined.";
+    ]
 
 
 let () =

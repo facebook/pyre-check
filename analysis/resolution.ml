@@ -105,6 +105,17 @@ let unset_local ({ annotations; _ } as resolution) ~access =
   { resolution with annotations = Map.remove annotations access }
 
 
+let is_global { annotations; global; _ } ~access =
+  match Map.find annotations access with
+  | Some ({ Annotation.annotation; _ } as full_annotation)
+    when not (Type.equal annotation Type.Deleted) ->
+      Annotation.is_global full_annotation
+  | _ ->
+      Access.delocalize access
+      |> global
+      |> Option.is_some
+
+
 let annotations { annotations; _ } =
   annotations
 

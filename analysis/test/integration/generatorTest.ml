@@ -189,6 +189,8 @@ let test_check_generators _ =
         return x
     |}
     [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
+      "as type that does not contain `Any`.";
       "Missing return annotation [3]: Return type must be specified as type " ^
       "that does not contain `Any`."
     ];

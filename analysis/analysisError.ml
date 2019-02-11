@@ -328,23 +328,23 @@ let messages ~detailed:_ ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Object ->
             [
               Format.asprintf
-                "Parameter `%s` has type `%a` but type `Any` is specified."
-                (Access.show_sanitized name)
+                "Parameter `%a` has type `%a` but type `Any` is specified."
+                Access.pp_sanitized name
                 Type.pp annotation
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
-                "Parameter `%s` is used as type `%a` \
+                "Parameter `%a` is used as type `%a` \
                  and must have a type that does not contain `Any`"
-                (Access.show_sanitized name)
+                Access.pp_sanitized name
                 Type.pp annotation
             ]
         | _ ->
             [
               Format.asprintf
-                "Parameter `%s` has type `%a` but no type is specified."
-                (Access.show_sanitized name)
+                "Parameter `%a` has type `%a` but no type is specified."
+                Access.pp_sanitized name
                 Type.pp annotation
             ]
       end
@@ -354,20 +354,20 @@ let messages ~detailed:_ ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Object ->
             [
               Format.asprintf
-                "Parameter `%s` must have a type other than `Any`."
-                (Access.show_sanitized name)
+                "Parameter `%a` must have a type other than `Any`."
+                Access.pp_sanitized name
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
-                "Parameter `%s` must have a type that does not contain `Any`."
-                (Access.show_sanitized name)
+                "Parameter `%a` must have a type that does not contain `Any`."
+                Access.pp_sanitized name
             ]
         | _ ->
             [
               Format.asprintf
-                "Parameter `%s` has no type specified."
-                (Access.show_sanitized name)
+                "Parameter `%a` has no type specified."
+                Access.pp_sanitized name
             ]
       end
   | MissingReturnAnnotation {
@@ -430,7 +430,7 @@ let messages ~detailed:_ ~define location kind =
       annotation = Some annotation;
       evidence_locations;
       given_annotation;
-    } ->
+    } when Type.is_concrete annotation ->
       begin
         let evidence_string =
           evidence_locations
@@ -441,12 +441,12 @@ let messages ~detailed:_ ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Object ->
             [
               Format.asprintf
-                "Globally accessible variable `%s` has type `%a` but type `Any` is specified."
-                (Access.show_sanitized name)
+                "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
+                Access.pp_sanitized name
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-                (Access.show_sanitized name)
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                Access.pp_sanitized name
                 start_line
                 Type.pp annotation
                 evidence_string
@@ -454,13 +454,13 @@ let messages ~detailed:_ ~define location kind =
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
-                "Globally accessible variable `%s` has type `%a` a type must be specified \
+                "Globally accessible variable `%a` has type `%a` a type must be specified \
                  that does not contain `Any`."
-                (Access.show_sanitized name)
+                Access.pp_sanitized name
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-                (Access.show_sanitized name)
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                Access.pp_sanitized name
                 start_line
                 Type.pp annotation
                 evidence_string
@@ -468,27 +468,40 @@ let messages ~detailed:_ ~define location kind =
         | _ ->
             [
               Format.asprintf
-                "Globally accessible variable `%s` has type `%a` but no type is specified."
-                (Access.show_sanitized name)
+                "Globally accessible variable `%a` has type `%a` but no type is specified."
+                Access.pp_sanitized name
                 Type.pp annotation;
               Format.asprintf
-                "Global variable `%s` declared on line %d, type `%a` deduced from %s."
-                (Access.show_sanitized name)
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                Access.pp_sanitized name
                 start_line
                 Type.pp annotation
                 evidence_string
             ]
       end
-  | MissingGlobalAnnotation {
-      name;
-      annotation = None;
-      _;
-    } ->
-      [
-        Format.asprintf
-          "Globally accessible variable `%s` has no type specified."
-          (Access.show name);
-      ]
+  | MissingGlobalAnnotation { name; given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Object ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` must be specified as type other than `Any`."
+              Access.pp_sanitized name
+          ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` must be specified as type that does not contain \
+              `Any`."
+              Access.pp_sanitized name
+          ]
+        | _ ->
+          [
+            Format.asprintf
+              "Globally accessible variable `%a` has no type specified."
+              Access.pp_sanitized name
+          ]
+      end
   | MissingTypeParameters { annotation; number_of_parameters } ->
       [
         Format.asprintf
@@ -603,15 +616,15 @@ let messages ~detailed:_ ~define location kind =
           Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
         else
           Format.asprintf
-            "%s is declared to have type `%a` but is used as type `%a`."
-            (Access.show_sanitized name)
+            "%a is declared to have type `%a` but is used as type `%a`."
+            Access.pp_sanitized name
             Type.pp expected
             Type.pp actual
       in
       let detail =
         Format.asprintf
-          "Redeclare `%s` on line %d if you wish to override the previously declared type.%s"
-          (Access.show_sanitized name)
+          "Redeclare `%a` on line %d if you wish to override the previously declared type.%s"
+          Access.pp_sanitized name
           start_line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
@@ -643,8 +656,8 @@ let messages ~detailed:_ ~define location kind =
               extra_detail
         | StrengthenedPrecondition (NotFound name) ->
             Format.asprintf
-              "Could not find parameter `%s` in overriding signature."
-              (Access.show_sanitized name)
+              "Could not find parameter `%a` in overriding signature."
+              Access.pp_sanitized name
       in
       [
         Format.asprintf

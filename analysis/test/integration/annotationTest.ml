@@ -257,13 +257,23 @@ let test_check_invalid_type _ =
       MyType: typing.Any
       x: MyType = 1
     |}
-    [];
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` " ^
+      "must be specified as type other than `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `x` has type `int` " ^
+      "but type `Any` is specified.";
+    ];
   assert_type_errors
     {|
       MyType: typing.Any
       x: typing.List[MyType] = [1]
     |}
-    []
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` " ^
+      "must be specified as type other than `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
+      "as type that does not contain `Any`.";
+    ]
 
 
 let test_check_missing_type_parameters _ =
@@ -532,7 +542,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = 1
     |}
-    [];
+    [
+      "Missing global annotation [5]: Globally accessible variable `constant` " ^
+      "has type `int` but type `Any` is specified."
+    ];
 
   assert_type_errors
     {|
@@ -764,6 +777,27 @@ let test_check_immutable_annotations _ =
       "Undefined name [18]: Global name `constant` is undefined.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
+      x = 1
+      y: typing.Any = 2
+      z: typing.List[typing.Any] = [3]
+      a: typing.Any
+
+      def foo() -> int:
+        global a
+        a = 1
+        return a
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `y` has type `int` " ^
+      "but type `Any` is specified.";
+      "Missing global annotation [5]: Globally accessible variable `z` must be specified " ^
+      "as type that does not contain `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `a` has type `int` " ^
+      "but type `Any` is specified.";
     ];
 
   assert_type_errors

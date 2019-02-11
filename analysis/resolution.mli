@@ -39,6 +39,7 @@ val create
 val set_local: t -> access: Access.t -> annotation: Annotation.t -> t
 val get_local: ?global_fallback: bool -> access: Access.t -> t -> Annotation.t option
 val unset_local: t -> access: Access.t -> t
+val is_global: t -> access: Access.t -> bool
 
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t

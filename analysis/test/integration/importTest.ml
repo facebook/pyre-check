@@ -38,13 +38,19 @@ let test_check_imports _ =
     {|
       a = durp.x
     |}
-    ["Undefined name [18]: Global name `durp` is undefined."];
+    [
+      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
+      "Undefined name [18]: Global name `durp` is undefined."
+    ];
   assert_type_errors
     {|
       import durp
       a = durp.x
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    [
+      "Undefined import [21]: Could not find a module corresponding to import `durp`.";
+      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
+    ];
   assert_type_errors
     {|
       from typing import Optional

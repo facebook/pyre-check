@@ -699,7 +699,10 @@ let test_check_attributes _ =
         foo = Foo()
         return foo.y
     |}
-    [];
+    [
+      "Missing global annotation [5]: Globally accessible variable `__property__` " ^
+      "must be specified as type other than `Any`."
+    ];
 
   assert_type_errors
     {|
@@ -797,7 +800,8 @@ let test_check_missing_attribute _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` " ^
+      "must have a type other than `Any`.";
     ];
 
   assert_type_errors

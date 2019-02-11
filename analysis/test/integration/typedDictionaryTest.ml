@@ -485,8 +485,8 @@ let test_check_typed_dictionaries _ =
         a = foo(movie['year'])
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` has type " ^
-      "`typing.Type[typing.Dict[typing.Any, typing.Any]]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `NamelessTypedDict` " ^
+      "has no type specified.";
       "Missing argument [20]: Call `mypy_extensions.TypedDict` expects argument `fields`.";
       "Invalid type [31]: Expression `NamelessTypedDict` is not a valid type.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^

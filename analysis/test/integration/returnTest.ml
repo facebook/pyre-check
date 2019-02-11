@@ -85,6 +85,8 @@ let test_check_return _ =
         return x
     |}
     [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
+      "as type that does not contain `Any`.";
       "Missing return annotation [3]: Return type must be specified as type " ^
       "that does not contain `Any`.";
     ];
@@ -228,6 +230,8 @@ let test_check_return_control_flow _ =
         return x
     |}
     [
+      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
+      "as type that does not contain `Any`.";
       "Missing return annotation [3]: Return type must be specified as type " ^
       "that does not contain `Any`."
     ];

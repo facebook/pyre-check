@@ -2411,28 +2411,35 @@ module State = struct
           >>| (fun (state, annotation) -> state, Some annotation)
           |> Option.value ~default:(state, None)
         in
-        let is_type_alias access =
-          Expression.Access.expression access
-          |> Resolution.parse_annotation resolution
-          |> function
-          | Type.Top -> false
-          | annotation -> Resolution.is_instantiated resolution annotation
+        let original_annotation =
+          original_annotation
+          >>| (fun annotation ->
+          Type.class_variable_value annotation
+          |> Option.value ~default:annotation)
+        in
+        let is_type_alias =
+          (* Consider anything with a RHS that is a type to be an alias. *)
+          match Node.value value with
+          | Expression.String _ -> false
+          | _ ->
+            begin
+              match Resolution.parse_annotation resolution value with
+              | Type.Top -> false
+              | Type.Optional Type.Bottom -> false
+              | annotation -> not (Resolution.contains_untracked resolution annotation)
+            end
         in
         let state, resolved =
           let { state = { resolution; _ } as new_state; resolved } =
             forward_expression ~state ~expression:value
           in
+          let resolved = Type.remove_undeclared resolved in
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
-          match Node.value value with
-          | Access (SimpleAccess access) ->
-              if is_type_alias access then
-                { state with resolution }, resolved
-              else
-                new_state, resolved
-          | _ ->
-              new_state, resolved
+          if is_type_alias then
+            { state with resolution }, resolved
+          else
+            new_state, resolved
         in
-        let resolved = Type.remove_undeclared resolved in
         let guide =
           (* This is the annotation determining how we recursively break up the assignment. *)
           match original_annotation with
@@ -2442,7 +2449,7 @@ module State = struct
         let explicit = Option.is_some annotation in
         let rec forward_assign
             ~state:({ resolution; _ } as state)
-            ~target:{ Node.location; value }
+            ~target:{ Node.location; value = target_value }
             ~guide
             ~resolved
             ~expression =
@@ -2535,46 +2542,29 @@ module State = struct
             | _ -> []
           in
 
-          match value with
+          match target_value with
           | Access (SimpleAccess access) ->
-              let annotation, element =
-                let annotation, element =
-                  let fold _ ~resolution:_ ~resolved ~element ~lead:_ =
-                    resolved, element
-                  in
-                  forward_access
-                    ~f:fold
-                    ~resolution
-                    ~initial:(Annotation.create Type.Top, AccessState.Value)
-                    access
-                in
-                let can_override_with_explicit =
-                  match element with
-                  | AccessState.Value -> true
-                  | AccessState.Attribute { origin = AccessState.Module []; _ } -> true
-                  | _ -> false
-                in
-                if can_override_with_explicit && explicit then
-                  Annotation.create_immutable ~global:false guide, element
-                else
-                  annotation, element
+              let target_annotation, element =
+                let fold _ ~resolution:_ ~resolved ~element ~lead:_ = resolved, element in
+                forward_access
+                  ~f:fold
+                  ~resolution
+                  ~initial:((Annotation.create Type.Top), AccessState.Value)
+                  access
               in
-              let expected =
-                (* If original_annotation is not None, use it instead of the actual postprocessed
-                   annotation - since Pyre only keeps around the annotation after all enum,
-                   ClassVar, etc. transformations are applied, this is the only way we can retain
-                   the user-given annotation. *)
+              let expected, is_immutable =
                 match original_annotation with
-                | Some original when not (Type.is_unknown original) ->
-                    Type.class_variable_value original
-                    |> Option.value ~default:original
+                | Some original ->
+                    original, true
                 | _ ->
-                    Annotation.original annotation
+                    if Annotation.is_immutable target_annotation then
+                      Annotation.original target_annotation, true
+                    else
+                      Type.Top, false
               in
               let resolved =
                 Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
               in
-              (* Check if assignment is valid. *)
               let is_typed_dictionary_initialization =
                 (* Special-casing to avoid throwing errors *)
                 let open Type in
@@ -2599,8 +2589,8 @@ module State = struct
                     ~right:Type.enumeration &&
                   Resolution.less_or_equal resolution ~left:expected ~right:resolved
                 in
-                if not (Type.equal resolved Type.ellipses) &&
-                   Annotation.is_immutable annotation &&
+                if is_immutable &&
+                   not (Type.equal resolved Type.ellipses) &&
                    not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
                    not is_typed_dictionary_initialization &&
                    not is_valid_enumeration_assignment then
@@ -2643,13 +2633,13 @@ module State = struct
               let state =
                 let error =
                   let insufficiently_annotated =
-                    match original_annotation with
-                    | Some annotation when Type.contains_any annotation ->
-                        Type.equal expected Type.Top || Type.contains_any expected
-                    | None ->
-                        Type.equal expected Type.Top || Type.contains_any expected
-                    | _ ->
-                        false
+                      match original_annotation with
+                      | Some annotation when Type.contains_any annotation ->
+                          true
+                      | None when is_immutable ->
+                          Type.equal expected Type.Top || Type.contains_any expected
+                      | _ ->
+                          false
                   in
                   let actual_annotation, evidence_locations =
                     if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
@@ -2667,7 +2657,7 @@ module State = struct
                               Error.name = access;
                               annotation = actual_annotation;
                               evidence_locations;
-                              given_annotation = original_annotation;
+                              given_annotation = Some expected;
                             })
                           ~define:define_node
                       )
@@ -2683,15 +2673,15 @@ module State = struct
                                 Error.name = access;
                                 annotation = actual_annotation;
                                 evidence_locations;
-                                given_annotation = original_annotation;
+                                given_annotation = Some expected;
                               };
                             })
                           ~define:define_node
                       )
                   | Value
-                    when Type.equal expected Type.Top &&
-                         not (Type.equal resolved Type.Top) &&
-                         not (is_type_alias access) ->
+                    when (Resolution.is_global ~access resolution) &&
+                         insufficiently_annotated &&
+                         not is_type_alias ->
                       let global_location =
                         Resolution.global resolution (Expression.Access.delocalize access)
                         >>| Node.location
@@ -2704,7 +2694,7 @@ module State = struct
                               Error.name = access;
                               annotation = actual_annotation;
                               evidence_locations;
-                              given_annotation = original_annotation;
+                              given_annotation = Some expected;
                             })
                           ~define:define_node
                       )
@@ -2718,10 +2708,12 @@ module State = struct
               let state =
                 let resolution =
                   let annotation =
-                    if Annotation.is_immutable annotation then
-                      Refinement.refine ~resolution annotation guide
-                    else if explicit then
-                      Annotation.create_immutable ~global:false guide
+                    if explicit then
+                      Annotation.create_immutable
+                        ~global:(Resolution.is_global ~access resolution)
+                        guide
+                    else if Annotation.is_immutable target_annotation then
+                      Refinement.refine ~resolution target_annotation guide
                     else
                       Annotation.create guide
                   in

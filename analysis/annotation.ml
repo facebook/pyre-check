@@ -64,10 +64,22 @@ let mutability { mutability; _ } =
   mutability
 
 
+let scope { mutability; _ } =
+  match mutability with
+  | Immutable { scope; _ } -> Some scope
+  | _ -> None
+
+
 let original { annotation; mutability; _ } =
   match mutability with
   | Immutable { original; _ } -> original
   | Mutable -> annotation
+
+
+let is_global annotation =
+  match scope annotation with
+  | Some Global -> true
+  | _ -> false
 
 
 let is_immutable { mutability; _ } =
