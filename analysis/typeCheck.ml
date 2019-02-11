@@ -1902,7 +1902,18 @@ module State = struct
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
-          if Type.equal cast_annotation resolved then
+          if Type.contains_any cast_annotation then
+            Error.create
+              ~location
+              ~kind:(Error.IncompleteAnnotation {
+                  Error.name = Access.create "typing.cast";
+                  annotation = None;
+                  evidence_locations = [];
+                  given_annotation = Some cast_annotation;
+                })
+              ~define
+            |> add_error ~state
+          else if Type.equal cast_annotation resolved then
             Error.create
               ~location
               ~kind:(Error.RedundantCast resolved)

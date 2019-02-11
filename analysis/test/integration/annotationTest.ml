@@ -906,16 +906,45 @@ let test_check_incomplete_annotations _ =
       "Incomplete annotation [33]: Explicit annotation for `x` " ^
       "must have a type that does not contain `Any`."
     ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        typing.cast(typing.Any, x)
+    |}
+    [
+      "Incomplete annotation [33]: Explicit annotation for `typing.cast` " ^
+      "must have a type other than `Any`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        typing.cast(typing.List[typing.Any], x)
+    |}
+    [
+      "Incomplete annotation [33]: Explicit annotation for `typing.cast` " ^
+      "must have a type that does not contain `Any`.";
+    ];
   assert_default_type_errors
     {|
       def foo() -> None:
         x: typing.Any = 1
     |}
     [];
+  
   assert_type_errors
     {|
       def foo() -> None:
         x: typing.Dict[str, typing.Any] = {}
+    |}
+    [];
+
+  assert_default_type_errors
+    {|
+      def foo() -> None:
+        x = 1
+        typing.cast(typing.Any, x)
     |}
     []
 
