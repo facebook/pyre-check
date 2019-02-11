@@ -887,6 +887,39 @@ let test_check_immutable_annotations _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
+let test_check_incomplete_annotations _ =
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Any = 1
+    |}
+    [
+      "Incomplete annotation [33]: Expression `x` has type `int`; " ^
+      "given explicit type cannot be `Any."
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.List[typing.Any] = []
+    |}
+    [
+      "Incomplete annotation [33]: Explicit annotation for `x` " ^
+      "must have a type that does not contain `Any`."
+    ];
+  assert_default_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Any = 1
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[str, typing.Any] = {}
+    |}
+    []
+
+
 let test_check_refinement _ =
   assert_type_errors
     {|
@@ -906,7 +939,10 @@ let test_check_refinement _ =
         l = [1]
         l.append('asdf')
     |}
-    [];
+    [
+      "Incomplete annotation [33]: Explicit annotation for `l` must have a type " ^
+      "that does not contain `Any`.";
+    ];
 
   assert_type_errors
     {|
@@ -1003,6 +1039,7 @@ let () =
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "check_analysis_failure">::test_check_analysis_failure;
     "check_immutable_annotations">::test_check_immutable_annotations;
+    "check_incomplete_annotations">::test_check_incomplete_annotations;
     "check_refinement">::test_check_refinement;
   ]
   |> Test.run

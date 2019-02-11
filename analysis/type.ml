@@ -1531,6 +1531,13 @@ let is_deleted = function
   | _ -> false
 
 
+let is_dictionary = function
+  | Parametric { name; _ } ->
+      name = "dict"
+  | _ ->
+      false
+
+
 let is_ellipses = function
   | Primitive "ellipses" -> true
   | _ -> false

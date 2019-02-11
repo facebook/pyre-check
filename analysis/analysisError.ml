@@ -79,6 +79,7 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompleteAnnotation of missing_annotation
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
@@ -149,6 +150,7 @@ let code = function
   | AnalysisFailure _ -> 30
   | InvalidType _ -> 31
   | InvalidArgument _ -> 32
+  | IncompleteAnnotation _ -> 33
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -165,6 +167,7 @@ let name = function
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
+  | IncompleteAnnotation _ -> "Incomplete annotation"
   | InconsistentOverride _ -> "Inconsistent override"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidType _ -> "Invalid type"
@@ -239,6 +242,41 @@ let messages ~detailed:_ ~define location kind =
            Type.pp actual
         );
       ]
+  | IncompleteAnnotation { name; annotation = Some annotation; given_annotation; _ }
+    when Type.is_concrete annotation ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Object ->
+            [
+              Format.asprintf
+                "Expression `%s` has type `%a`; given explicit type cannot be `Any."
+                (Access.show_sanitized name)
+                Type.pp annotation
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Expression `%s` is used as type `%a`; given explicit type cannot contain `Any`"
+                (Access.show_sanitized name)
+                Type.pp annotation
+            ]
+      end
+  | IncompleteAnnotation { name; given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Object ->
+            [
+              Format.asprintf
+                "Explicit annotation for `%s` must have a type other than `Any`."
+                (Access.show_sanitized name)
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Explicit annotation for `%s` must have a type that does not contain `Any`."
+                (Access.show_sanitized name)
+            ]
+      end
   | Top -> [ "Problem with analysis." ]
   | MissingAttributeAnnotation { parent; missing_annotation } ->
       begin
@@ -549,8 +587,6 @@ let messages ~detailed:_ ~define location kind =
         target
         Type.pp actual
       :: detailed_message;
-
-
   | IncompatibleConstructorAnnotation annotation ->
       [
         Format.asprintf
@@ -1028,6 +1064,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleReturnType { mismatch = { actual; _ }; _ }
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; _ }; _ }
+  | IncompleteAnnotation { given_annotation = Some actual; _ }
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
@@ -1051,6 +1088,7 @@ let due_to_analysis_limitations { kind; _ } =
   | AnalysisFailure _
   | Deobfuscation _
   | IncompatibleConstructorAnnotation _
+  | IncompleteAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | MissingArgument _
   | MissingAttributeAnnotation _
@@ -1112,8 +1150,10 @@ let due_to_mismatch_with_any { kind; _ } =
       Type.mismatch_with_any actual expected
   | AnalysisFailure _
   | Deobfuscation _
-  | TooManyArguments _
-  | Unpack _
+  | IncompatibleConstructorAnnotation _
+  | IncompleteAnnotation _
+  | InconsistentOverride _
+  | InvalidType _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1121,9 +1161,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingTypeParameters _
   | RedundantCast _
   | RevealedType _
-  | IncompatibleConstructorAnnotation _
-  | InconsistentOverride _
-  | InvalidType _
+  | TooManyArguments _
   | Top
   | TypedDictionaryAccessWithNonLiteral _
   | TypedDictionaryKeyNotFound _
@@ -1134,6 +1172,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
+  | Unpack _
   | UnusedIgnore _ ->
       false
 
@@ -1162,6 +1201,7 @@ let less_or_equal ~resolution left right =
     | MissingArgument left, MissingArgument right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         Access.equal_sanitized left.name right.name
+    | IncompleteAnnotation left, IncompleteAnnotation right
     | MissingParameterAnnotation left, MissingParameterAnnotation right
     | MissingReturnAnnotation left, MissingReturnAnnotation right
     | MissingAttributeAnnotation { missing_annotation = left; _ },
@@ -1270,6 +1310,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
     | IncompatibleVariableType _, _
+    | IncompleteAnnotation _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
@@ -1331,6 +1372,8 @@ let join ~resolution left right =
         Deobfuscation left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
+    | IncompleteAnnotation left, IncompleteAnnotation right ->
+        IncompleteAnnotation (join_missing_annotation left right)
     | MissingArgument left, MissingArgument right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
            Access.equal_sanitized left.name right.name ->
@@ -1508,6 +1551,7 @@ let join ~resolution left right =
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
     | IncompatibleVariableType _, _
+    | IncompleteAnnotation _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
@@ -1718,6 +1762,7 @@ let suppress ~mode error =
         _;
       } ->
         true
+    | IncompleteAnnotation _
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
@@ -1800,6 +1845,8 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | IncompleteAnnotation ({ annotation; _ } as missing_annotation) ->
+        IncompleteAnnotation { missing_annotation with annotation = annotation >>| dequalify }
     | InvalidArgument (Keyword { expression; annotation }) ->
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
     | InvalidArgument (Variable { expression; annotation }) ->

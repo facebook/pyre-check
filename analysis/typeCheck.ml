@@ -2633,13 +2633,20 @@ module State = struct
               let state =
                 let error =
                   let insufficiently_annotated =
-                      match original_annotation with
-                      | Some annotation when Type.contains_any annotation ->
-                          true
-                      | None when is_immutable ->
-                          Type.equal expected Type.Top || Type.contains_any expected
-                      | _ ->
-                          false
+                    let contains_any annotation =
+                      if Type.is_dictionary annotation then
+                        (* Special-case dictionaries to allow Anys for now. *)
+                        false
+                      else
+                        Type.contains_any annotation
+                    in
+                    match original_annotation with
+                    | Some annotation when contains_any annotation ->
+                        true
+                    | None when is_immutable ->
+                        Type.equal expected Type.Top || contains_any expected
+                    | _ ->
+                        false
                   in
                   let actual_annotation, evidence_locations =
                     if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
@@ -2691,6 +2698,18 @@ module State = struct
                         Error.create
                           ~location:global_location
                           ~kind:(Error.MissingGlobalAnnotation {
+                              Error.name = access;
+                              annotation = actual_annotation;
+                              evidence_locations;
+                              given_annotation = Some expected;
+                            })
+                          ~define:define_node
+                      )
+                  | Attribute _ when insufficiently_annotated && not is_type_alias ->
+                      Some (
+                        Error.create
+                          ~location
+                          ~kind:(Error.IncompleteAnnotation {
                               Error.name = access;
                               annotation = actual_annotation;
                               evidence_locations;
