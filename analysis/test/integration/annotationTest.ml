@@ -258,6 +258,20 @@ let test_check_undefined_type _ =
 
   assert_type_errors
     {|
+      Derp: typing.Any
+      Herp = typing.List[typing.Any]
+      def foo() -> None:
+        x: int = 1
+        typing.cast(Derp, x)
+        typing.cast(Herp, x)
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `Derp` " ^
+      "must be specified as type other than `Any`."
+    ];
+
+  assert_type_errors
+    {|
       def foo() -> None:
         x: int = 1
         if isinstance(x, Derp):

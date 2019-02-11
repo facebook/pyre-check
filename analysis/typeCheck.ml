@@ -1224,7 +1224,10 @@ module State = struct
     let check_return_annotation state =
       let update_define (state, annotation) =
         let updated_define =
-          { define with return_annotation = Some (Type.expression annotation) }
+          if Type.is_unknown annotation then
+            { define with return_annotation = Some (Type.expression annotation) }
+          else
+            define
         in
         { state with define = { define_node with Node.value = updated_define } }
       in
@@ -1348,8 +1351,13 @@ module State = struct
                 end
             | _ ->
                 let annotation_and_state = annotation >>| parse_and_check_annotation ~state in
+                let contains_literal_any =
+                  annotation
+                  >>| Type.expression_contains_any
+                  |> Option.value ~default:false
+                in
                 match annotation_and_state, value with
-                | Some (_, annotation), Some value when Type.contains_any annotation ->
+                | Some (_, annotation), Some value when contains_literal_any ->
                     let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
@@ -1361,7 +1369,7 @@ module State = struct
                       ~global:false
                       ~original:(Some annotation)
                       value_annotation
-                | Some (_, annotation), None when Type.contains_any annotation ->
+                | Some (_, annotation), None when contains_literal_any ->
                     add_missing_parameter_annotation_error
                       ~state
                       ~given_annotation:(Some annotation)
@@ -1899,10 +1907,11 @@ module State = struct
               location;
             }
           ]) ->
+        let contains_literal_any = Type.expression_contains_any cast_annotation in
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
-          if Type.contains_any cast_annotation then
+          if contains_literal_any then
             Error.create
               ~location
               ~kind:(Error.IncompleteAnnotation {
@@ -2337,7 +2346,11 @@ module State = struct
           resolution;
           define = ({
               Node.location = define_location;
-              value = { Define.async; _ } as define;
+              value = {
+                Define.async;
+                return_annotation = return_annotation_expression;
+                _;
+              } as define;
             } as define_node);
           _;
         } as state)
@@ -2391,7 +2404,12 @@ module State = struct
           state
       in
       let check_missing_return state =
-        if not (Define.has_return_annotation define) || Type.contains_any return_annotation then
+        let contains_literal_any =
+          return_annotation_expression
+          >>| Type.expression_contains_any
+          |> Option.value ~default:false
+        in
+        if not (Define.has_return_annotation define) || contains_literal_any then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
           in

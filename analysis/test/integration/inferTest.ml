@@ -34,6 +34,16 @@ let test_check_missing_parameter _ =
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
+      MyType: typing.Any
+      def foo(x: MyType) -> int:
+        return 1
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` must be specified " ^
+      "as type other than `Any`."
+    ];
+  assert_strict_type_errors
+    {|
       def foo(x: typing.Any = unknown) -> int:
         return 1
     |}
@@ -85,6 +95,17 @@ let test_check_missing_return _ =
         return 1
     |}
     ["Missing return annotation [3]: Returning `int` but type `Any` is specified."];
+
+  assert_type_errors
+    {|
+      MyType: typing.Any
+      def foo() -> MyType:
+        return 1
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` " ^
+      "must be specified as type other than `Any`.";
+    ];
 
   assert_type_errors
     {|

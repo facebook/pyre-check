@@ -1635,6 +1635,12 @@ let contains_any annotation =
   exists annotation ~predicate:(function | Object -> true | _ -> false)
 
 
+let expression_contains_any expression =
+  (* Check if there is a literal Any provided, not including type aliases to Any. *)
+  create ~aliases:(fun _ -> None) expression
+  |> contains_any
+
+
 let is_type_alias annotation = equal annotation (Primitive "typing.TypeAlias")
 
 
