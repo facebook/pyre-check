@@ -56,6 +56,9 @@ class AnalysisDirectory:
     def prepare(self) -> None:
         pass
 
+    def cleanup(self) -> None:
+        pass
+
 
 class SharedAnalysisDirectory(AnalysisDirectory):
     def __init__(
@@ -132,7 +135,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
             )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         try:
             if self._isolate:
                 shutil.rmtree(self.get_root())

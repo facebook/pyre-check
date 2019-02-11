@@ -518,7 +518,7 @@ def main():
     error_message = ""
     try:
         exit_code = ExitCode.SUCCESS
-        shared_analysis_directory = None
+        analysis_directory = None
 
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
@@ -555,8 +555,8 @@ def main():
         LOG.info(traceback.format_exc())
         exit_code = ExitCode.FAILURE
     finally:
-        if shared_analysis_directory:
-            shared_analysis_directory.cleanup()
+        if analysis_directory:
+            analysis_directory.cleanup()
         log.cleanup(arguments)
         if configuration and configuration.logger:
             log_statistics(

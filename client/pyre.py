@@ -316,7 +316,7 @@ def main() -> int:
             arguments.command = commands.Check
 
     configuration = None
-    shared_analysis_directory = None
+    analysis_directory = None
     # Having this as a fails-by-default helps flag unexpected exit
     # from exception flows.
     exit_code = ExitCode.FAILURE
@@ -391,8 +391,8 @@ def main() -> int:
         exit_code = ExitCode.SUCCESS
     finally:
         log.cleanup(arguments)
-        if shared_analysis_directory:
-            shared_analysis_directory.cleanup()
+        if analysis_directory:
+            analysis_directory.cleanup()
         if configuration and configuration.logger:
             log_statistics(
                 "perfpipe_pyre_usage",

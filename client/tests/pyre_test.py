@@ -15,6 +15,7 @@ from .. import (
     buck,
     commands,
     configuration,
+    filesystem,
     is_capable_terminal,
     pyre,
 )
@@ -65,10 +66,13 @@ class PyreTest(unittest.TestCase):
         _os_isatty.return_value = True
         _os_getenv.return_value = "term"
 
-        with patch.object(commands.Check, "run", return_value=mock_success):
+        with patch.object(
+            commands.Check, "run", return_value=mock_success
+        ), patch.object(filesystem.SharedAnalysisDirectory, "cleanup") as cleanup:
             with patch.object(sys, "argv", ["pyre", "check"]):
                 self.assertEqual(pyre.main(), 0)
                 generate_source_directories.assert_not_called()
+                cleanup.assert_has_calls([call()])
 
             # The generation of source directories is handled within _run, which is
             # mocked here (via the mock of run()), so verify that we don't
