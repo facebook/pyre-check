@@ -3,7 +3,7 @@
 from argparse import ArgumentTypeError
 from typing import Optional
 
-from tools.sapp.lib.sharded_files import ShardedFile
+from sapp.sharded_files import ShardedFile
 
 
 class AnalysisOutput(object):

@@ -3,7 +3,7 @@
 import gc
 from unittest import TestCase, mock
 
-from tools.sapp.decorators import disable_gc, log_time, retryable
+from sapp.decorators import disable_gc, log_time, retryable
 
 
 class RetryableTest(TestCase):

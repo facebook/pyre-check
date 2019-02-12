@@ -9,8 +9,8 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
 
 import xxhash  # pyre-ignore
-from tools.sapp.analysis_output import AnalysisOutput
-from tools.sapp.pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
+from sapp.analysis_output import AnalysisOutput
+from sapp.pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
 
 
 # if these imports have the same name we get a linter error

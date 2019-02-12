@@ -6,10 +6,10 @@
 import logging
 from typing import Any, Dict, Optional
 
-from tools.sapp.db import DB
-from tools.sapp.decorators import log_time
-from tools.sapp.iterutil import split_every
-from tools.sapp.models import (
+from sapp.db import DB
+from sapp.decorators import log_time
+from sapp.iterutil import split_every
+from sapp.models import (
     Issue,
     IssueInstance,
     IssueInstanceFixInfo,

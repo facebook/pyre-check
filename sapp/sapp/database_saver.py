@@ -3,10 +3,10 @@
 import logging
 from typing import Optional, Tuple
 
-from tools.sapp.bulk_saver import BulkSaver
-from tools.sapp.db import DB
-from tools.sapp.decorators import disable_gc, log_time
-from tools.sapp.models import (
+from sapp.bulk_saver import BulkSaver
+from sapp.db import DB
+from sapp.decorators import disable_gc, log_time
+from sapp.models import (
     Issue,
     Postcondition,
     Precondition,
@@ -17,8 +17,8 @@ from tools.sapp.models import (
     TraceFrame,
     TraceFrameAnnotation,
 )
-from tools.sapp.pipeline import PipelineStep, Summary
-from tools.sapp.trace_graph import TraceGraph
+from sapp.pipeline import PipelineStep, Summary
+from sapp.trace_graph import TraceGraph
 
 
 log = logging.getLogger()

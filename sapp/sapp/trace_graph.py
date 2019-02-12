@@ -4,8 +4,8 @@
 from collections import defaultdict
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
-from tools.sapp.bulk_saver import BulkSaver
-from tools.sapp.models import (
+from sapp.bulk_saver import BulkSaver
+from sapp.models import (
     DBID,
     Issue,
     IssueInstance,

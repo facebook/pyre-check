@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 from click import Choice, Path, argument, echo, group, option
-from tools.sapp.analysis_output import AnalysisOutput
-from tools.sapp.database_saver import DatabaseSaver
-from tools.sapp.db import DB
-from tools.sapp.model_generator import ModelGenerator
-from tools.sapp.models import PrimaryKeyGenerator
-from tools.sapp.pipeline import Pipeline
-from tools.sapp.pysa_taint_parser import Parser
-from tools.sapp.trim_trace_graph import TrimTraceGraph
+from sapp.analysis_output import AnalysisOutput
+from sapp.database_saver import DatabaseSaver
+from sapp.db import DB
+from sapp.model_generator import ModelGenerator
+from sapp.models import PrimaryKeyGenerator
+from sapp.pipeline import Pipeline
+from sapp.pysa_taint_parser import Parser
+from sapp.trim_trace_graph import TrimTraceGraph
 
 
 @group()

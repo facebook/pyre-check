@@ -3,10 +3,10 @@
 import os
 import unittest
 
-from tools.sapp.lib.sharded_files import ShardedFile
+from sapp.sharded_files import ShardedFile
 
 
-test_path = "tools/sapp/lib/tests/sharded_files"
+test_path = "tools/sapp/sapp//tests/sharded_files"
 
 
 class TestShardedFiles(unittest.TestCase):

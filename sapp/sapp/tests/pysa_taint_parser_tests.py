@@ -5,9 +5,9 @@
 
 import unittest
 
-from tools.sapp.analysis_output import AnalysisOutput
-from tools.sapp.base_parser import ParseType
-from tools.sapp.pysa_taint_parser import Parser
+from sapp.analysis_output import AnalysisOutput
+from sapp.base_parser import ParseType
+from sapp.pysa_taint_parser import Parser
 
 
 class TestParser(unittest.TestCase):

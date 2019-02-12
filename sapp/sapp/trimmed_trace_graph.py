@@ -2,8 +2,8 @@
 
 from typing import Any, Iterable, List, Set, Tuple
 
-from tools.sapp.models import Postcondition, Precondition, SharedTextKind, TraceFrame
-from tools.sapp.trace_graph import TraceGraph
+from sapp.models import Postcondition, Precondition, SharedTextKind, TraceFrame
+from sapp.trace_graph import TraceGraph
 
 
 class TrimmedTraceGraph(TraceGraph):

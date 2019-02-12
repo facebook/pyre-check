@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from tools.sapp.base_parser import ParseType
-from tools.sapp.pipeline import Pipeline
-from tools.sapp.warning_code_filter import WarningCodeFilter
+from sapp.pipeline import Pipeline
+from sapp.warning_code_filter import WarningCodeFilter
 
 
 class TestWarningCodeFilter(TestCase):

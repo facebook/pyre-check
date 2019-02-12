@@ -8,11 +8,11 @@ from contextlib import contextmanager
 from typing import Iterator
 
 import sqlalchemy
+from sapp import errors, models
+from sapp.decorators import retryable
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import AssertionPool
-from tools.sapp import errors, models
-from tools.sapp.decorators import retryable
 
 
 log = logging.getLogger()

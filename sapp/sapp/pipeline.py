@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
-from tools.sapp.analysis_output import AnalysisOutput
+from sapp.analysis_output import AnalysisOutput
 
 
 T = TypeVar("T")

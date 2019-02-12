@@ -4,15 +4,15 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from tools.sapp.bin.sapp_cli import cli
+
+from ..sapp_cli import cli
 
 
-PIPELINE_RUN = "tools.sapp.pipeline.Pipeline.run"
+PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
 
 
 @patch(
-    "tools.sapp.analysis_output.AnalysisOutput.from_file",
-    return_value="fake_analysis_output",
+    "sapp.analysis_output.AnalysisOutput.from_file", return_value="fake_analysis_output"
 )
 class TestSappCli(TestCase):
     def setUp(self):

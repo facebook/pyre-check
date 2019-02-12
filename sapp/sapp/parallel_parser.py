@@ -3,7 +3,7 @@
 import logging
 from multiprocessing import Pool
 
-from tools.sapp.base_parser import BaseParser
+from sapp.base_parser import BaseParser
 
 
 log: logging.Logger = logging.getLogger()
