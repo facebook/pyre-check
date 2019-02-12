@@ -222,7 +222,7 @@ val contains_callable: t -> bool
 
 val is_callable: t -> bool
 val is_concrete: t -> bool
-val is_dictionary: t -> bool
+val is_dictionary: ?with_key: t option -> t -> bool
 val is_ellipses: t -> bool
 val is_generator: t -> bool
 val is_generic: t -> bool

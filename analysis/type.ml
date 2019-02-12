@@ -1519,9 +1519,14 @@ let is_concrete annotation =
       not (exists annotation ~predicate)
 
 
-let is_dictionary = function
-  | Parametric { name; _ } ->
-      name = "dict"
+let is_dictionary ?(with_key = None) = function
+  | Parametric { name; parameters } when name = "dict" ->
+      begin
+        (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
+        match with_key, parameters with
+        | Some key, key_parameter :: [_] -> equal key key_parameter
+        | _ -> true
+      end
   | _ ->
       false
 

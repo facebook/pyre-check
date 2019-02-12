@@ -150,6 +150,17 @@ let test_check_attributes _ =
   assert_type_errors
     {|
       class Foo:
+        bar: typing.Dict[str, typing.Any] = {}
+        baz: typing.Dict[typing.Any, typing.Any] = {}
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type " ^
+      "that does not contain `Any`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Foo:
         bar: typing.Any
         def foo(self) -> int:
           self.bar = 'foo'

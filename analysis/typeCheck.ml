@@ -1368,7 +1368,9 @@ module State = struct
                   |> Option.value ~default:false
                 in
                 match annotation_and_state, value with
-                | Some (_, annotation), Some value when contains_literal_any ->
+                | Some (_, annotation), Some value
+                  when contains_literal_any &&
+                       not (Type.is_dictionary ~with_key:(Some Type.string) annotation) ->
                     let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
@@ -1380,7 +1382,9 @@ module State = struct
                       ~global:false
                       ~original:(Some annotation)
                       value_annotation
-                | Some (_, annotation), None when contains_literal_any ->
+                | Some (_, annotation), None
+                  when contains_literal_any &&
+                       not (Type.is_dictionary ~with_key:(Some Type.string) annotation) ->
                     add_missing_parameter_annotation_error
                       ~state
                       ~given_annotation:(Some annotation)
@@ -2420,7 +2424,10 @@ module State = struct
           >>| Type.expression_contains_any
           |> Option.value ~default:false
         in
-        if not (Define.has_return_annotation define) || contains_literal_any then
+        if not (Define.has_return_annotation define) ||
+          (contains_literal_any &&
+          not (Type.is_dictionary ~with_key:(Some Type.string) return_annotation))
+        then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
           in
@@ -2674,8 +2681,7 @@ module State = struct
                 let error =
                   let insufficiently_annotated =
                     let contains_any annotation =
-                      if Type.is_dictionary annotation then
-                        (* Special-case dictionaries to allow Anys for now. *)
+                      if Type.is_dictionary ~with_key:(Some Type.string) annotation then
                         false
                       else
                         Type.contains_any annotation

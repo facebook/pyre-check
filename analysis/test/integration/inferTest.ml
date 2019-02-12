@@ -34,6 +34,15 @@ let test_check_missing_parameter _ =
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
   assert_strict_type_errors
     {|
+      def foo(x: typing.Dict[str, typing.Any], y: typing.Dict[int, typing.Any]) -> int:
+        return 1
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `y` must have a type " ^
+      "that does not contain `Any`.";
+    ];
+  assert_strict_type_errors
+    {|
       MyType: typing.Any
       def foo(x: MyType) -> int:
         return 1
@@ -95,6 +104,19 @@ let test_check_missing_return _ =
         return 1
     |}
     ["Missing return annotation [3]: Returning `int` but type `Any` is specified."];
+
+  assert_type_errors
+    {|
+      def foo() -> typing.Dict[str, typing.Any]:
+        return {}
+
+      def bar() -> typing.Dict[typing.Any, typing.Any]:
+        return {}
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type " ^
+      "that does not contain `Any`.";
+    ];
 
   assert_type_errors
     {|
