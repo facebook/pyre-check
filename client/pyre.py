@@ -133,6 +133,7 @@ def main() -> int:
         action="append",
         dest="source_directories",
         help="The source directory to check",
+        type=os.path.abspath,
     )
     source_directories.add_argument(
         "--filter-directory", help=argparse.SUPPRESS  # override filter directory
