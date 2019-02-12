@@ -1131,6 +1131,18 @@ let test_check_invalid_type_variables _ =
       class D(C[T]):
         pass
   |}
+  [];
+
+  (* Callables can mint their type variables. *)
+  assert_type_errors
+  {|
+      import typing
+      T = typing.TypeVar("T")
+      def f() -> typing.Callable[[T], T]:
+        def g(x: T) -> T:
+          return x
+        return g
+  |}
   []
 
 

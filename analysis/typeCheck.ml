@@ -350,7 +350,7 @@ module State = struct
       | _ ->
           errors
     in
-    let check_invalid_variables errors variable =
+    let check_invalid_variables resolution errors variable =
       if not (Resolution.type_variable_exists resolution ~variable) then
         let error =
           let origin =
@@ -371,9 +371,33 @@ module State = struct
         errors
     in
     let primitives = Type.primitives annotation in
+    let resolution =
+      match annotation with
+      | Type.Callable {
+          Type.Callable.implementation = {
+            Type.Callable.parameters = Type.Callable.Defined parameters;
+            _;
+          };
+          _;
+        } ->
+          let parameters =
+            List.map parameters ~f:Type.Callable.Parameter.annotation
+            |> List.concat_map ~f:Type.variables
+          in
+          List.fold
+            parameters
+            ~f:(fun resolution variable -> Resolution.add_type_variable resolution ~variable)
+            ~init:resolution
+      | _ ->
+          resolution
+    in
     List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
     |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
-    |> (fun errors -> List.fold (Type.variables annotation) ~f:check_invalid_variables ~init:errors)
+    |> (fun errors ->
+        List.fold
+          (Type.variables annotation)
+          ~f:(check_invalid_variables resolution)
+          ~init:errors)
 
 
   let parse_and_check_annotation
