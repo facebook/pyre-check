@@ -1,3 +1,4 @@
+click
 python-munch
 SQLAlchemy
 ultrajson~=1.35

@@ -77,11 +77,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         """setting boilerplate when creating a Run object"""
         run = Run(
             job_id=self.summary["job_id"],
-            hh_version=self.summary["hh_version"],
             issue_instances=[],
             date=datetime.datetime.now(),
             status=status,
             status_description=status_description,
+            repository=self.summary["repository"],
+            branch=self.summary["branch"],
+            commit_hash=self.summary["commit_hash"],
             kind=self.summary["run_kind"],
         )
         return run

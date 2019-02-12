@@ -1006,6 +1006,12 @@ class Run(Base):  # noqa
         index=True,
     )
 
+    repository = Column(
+        String(length=255),
+        doc=("The repository that static analysis was run on."),
+        nullable=True,
+    )
+
     def get_summary(self, **kwargs):
         session = Session.object_session(self)
 
