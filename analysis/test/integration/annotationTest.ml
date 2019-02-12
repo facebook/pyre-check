@@ -195,7 +195,11 @@ let test_check_undefined_type _ =
       _T = typing.TypeVar('_T')
       class Foo(Generic[_T]): ...
     |}
-    ["Undefined type [11]: Type `Generic` is not defined."];
+    [
+      "Invalid type variable [34]: The current class isn't generic with respect to the type \
+       variable `Variable[_T]`.";
+      "Undefined type [11]: Type `Generic` is not defined.";
+    ];
 
   assert_type_errors
     {|
@@ -1076,10 +1080,65 @@ let test_check_refinement _ =
     ]
 
 
+let test_check_invalid_type_variables _ =
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      def f(x: T) -> T:
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      def f() -> T:
+        return T
+    |}
+    [
+      "Invalid type variable [34]: The type variable `Variable[T]` isn't present in the function's \
+       parameters.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      class C:
+        x: T = 1
+    |}
+    [
+      "Invalid type variable [34]: The current class isn't generic with respect to the type \
+       variable `Variable[T]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
+      x: T = ...
+    |}
+    [
+      "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
+       generic classes or functions.";
+    ];
+  (* We don't error for inferred generics. *)
+  assert_type_errors
+  {|
+      import typing
+      T = typing.TypeVar("T")
+      class C(typing.Generic[T]):
+        pass
+      class D(C[T]):
+        pass
+  |}
+  []
+
+
 let () =
   "annotation">:::[
     "check_undefined_type">::test_check_undefined_type;
     "check_invalid_type">::test_check_invalid_type;
+    "check_invalid_type_variables">::test_check_invalid_type_variables;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "check_analysis_failure">::test_check_analysis_failure;
     "check_immutable_annotations">::test_check_immutable_annotations;

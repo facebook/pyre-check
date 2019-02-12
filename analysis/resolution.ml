@@ -27,6 +27,7 @@ type class_representation = {
 
 type t = {
   annotations: Annotation.t Access.Map.t;
+  type_variables: Type.Set.t;
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
@@ -56,6 +57,7 @@ let create
     () =
   {
     annotations;
+    type_variables = Type.Set.empty;
     order;
     resolve;
     parse_annotation;
@@ -68,17 +70,21 @@ let create
   }
 
 
-let pp format { annotations; _ } =
+let pp format { annotations; type_variables; _ } =
   let annotation_map_entry (access, annotation) =
     Format.asprintf
       "%a -> %a"
       Access.pp access
       Annotation.pp annotation;
   in
+  Type.Set.to_list type_variables
+  |> List.map ~f:Type.show
+  |> String.concat ~sep:", "
+  |> Format.fprintf format "Type variables: [%s]\n";
   Map.to_alist annotations
   |> List.map ~f:annotation_map_entry
   |> String.concat ~sep:", "
-  |> Format.fprintf format "[%s]"
+  |> Format.fprintf format "Annotations: [%s]"
 
 
 let show resolution =
@@ -113,6 +119,14 @@ let is_global { annotations; global; _ } ~access =
       Access.delocalize access
       |> global
       |> Option.is_some
+
+
+let add_type_variable ({ type_variables; _ } as resolution) ~variable =
+  { resolution with type_variables = Type.Set.add type_variables variable }
+
+
+let type_variable_exists { type_variables; _ } ~variable =
+  Type.Set.mem type_variables variable
 
 
 let annotations { annotations; _ } =

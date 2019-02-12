@@ -41,6 +41,9 @@ val get_local: ?global_fallback: bool -> access: Access.t -> t -> Annotation.t o
 val unset_local: t -> access: Access.t -> t
 val is_global: t -> access: Access.t -> bool
 
+val add_type_variable: t -> variable: Type.t -> t
+val type_variable_exists: t -> variable: Type.t -> bool
+
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 

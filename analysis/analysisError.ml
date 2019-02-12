@@ -65,6 +65,13 @@ type unpack_problem =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type type_variable_origin =
+  | ClassToplevel
+  | Define
+  | Toplevel
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
@@ -82,6 +89,7 @@ type kind =
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
+  | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -151,6 +159,7 @@ let code = function
   | InvalidType _ -> 31
   | InvalidArgument _ -> 32
   | ProhibitedAny _ -> 33
+  | InvalidTypeVariable _ -> 34
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -170,6 +179,7 @@ let name = function
   | InconsistentOverride _ -> "Inconsistent override"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidType _ -> "Invalid type"
+  | InvalidTypeVariable _ -> "Invalid type variable"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -726,6 +736,19 @@ let messages ~detailed:_ ~define location kind =
           "Expression `%a` is not a valid type."
           Type.pp annotation
       ]
+  | InvalidTypeVariable { annotation; origin } ->
+      (* The explicit annotation is necessary to appease the compiler. *)
+      let format: ('a, Format.formatter, unit, string) format4 =
+        match origin with
+        | ClassToplevel ->
+            "The current class isn't generic with respect to the type variable `%a`."
+        | Define ->
+            "The type variable `%a` isn't present in the function's parameters."
+        | Toplevel ->
+            "The type variable `%a` can only be used to annotate generic classes or functions."
+      in
+      [Format.asprintf format Type.pp annotation]
+
   | MissingArgument { callee; name } ->
       let callee =
         match callee with
@@ -1089,6 +1112,7 @@ let due_to_analysis_limitations { kind; _ } =
   | Deobfuscation _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
+  | InvalidTypeVariable _
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
@@ -1153,6 +1177,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
   | InvalidType _
+  | InvalidTypeVariable _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1258,6 +1283,9 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
+    | InvalidTypeVariable { annotation = left; origin = left_origin },
+      InvalidTypeVariable { annotation = right; origin = right_origin } ->
+        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
     | TooManyArguments left, TooManyArguments right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
@@ -1313,6 +1341,7 @@ let less_or_equal ~resolution left right =
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
+    | InvalidTypeVariable _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -1476,6 +1505,10 @@ let join ~resolution left right =
           })
     | InvalidType left, InvalidType right when Type.equal left right ->
         InvalidType left
+    | InvalidTypeVariable { annotation = left; origin = left_origin },
+      InvalidTypeVariable { annotation = right; origin = right_origin }
+      when Type.equal left right && left_origin = right_origin ->
+        InvalidTypeVariable { annotation = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
            left.expected = right.expected &&
@@ -1554,6 +1587,7 @@ let join ~resolution left right =
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
+    | InvalidTypeVariable _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -1851,6 +1885,8 @@ let dequalify
         InvalidArgument (Variable { expression; annotation = dequalify annotation })
     | InvalidType annotation ->
         InvalidType (dequalify annotation)
+    | InvalidTypeVariable { annotation; origin } ->
+        InvalidTypeVariable { annotation = dequalify annotation; origin }
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

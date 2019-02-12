@@ -55,6 +55,14 @@ type unpack_problem =
   | CountMismatch of int
 [@@deriving compare, eq, sexp, show, hash]
 
+
+type type_variable_origin =
+  | ClassToplevel
+  | Define
+  | Toplevel
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
@@ -72,6 +80,7 @@ type kind =
   | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
+  | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | MissingArgument of { callee: Access.t option; name: Access.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation

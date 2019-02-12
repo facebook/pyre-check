@@ -51,7 +51,10 @@ let test_check_variable_bindings _ =
       def foo() -> T:
         return 1.0
     |}
-    ["Incompatible return type [7]: Expected `Variable[T (bound to int)]` but got `float`."];
+    [
+      "Invalid type variable [34]: The type variable `Variable[T (bound to int)]` isn't present \
+       in the function's parameters.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T', bound=int)

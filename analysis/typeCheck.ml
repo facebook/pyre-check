@@ -350,9 +350,30 @@ module State = struct
       | _ ->
           errors
     in
+    let check_invalid_variables errors variable =
+      if not (Resolution.type_variable_exists resolution ~variable) then
+        let error =
+          let origin =
+            if Define.is_toplevel (Node.value define) then
+              Error.Toplevel
+            else if Define.is_class_toplevel (Node.value define) then
+              Error.ClassToplevel
+            else
+              Error.Define
+          in
+          Error.create
+            ~location
+            ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
+            ~define
+        in
+        error :: errors
+      else
+        errors
+    in
     let primitives = Type.primitives annotation in
     List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
     |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
+    |> (fun errors -> List.fold (Type.variables annotation) ~f:check_invalid_variables ~init:errors)
 
 
   let parse_and_check_annotation
@@ -3423,7 +3444,7 @@ module State = struct
     in
     let state =
       let nested_defines =
-        let schedule ~define =
+        let schedule ~variables ~define =
           let update = function
             | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
                 let resolution, bottom =
@@ -3449,9 +3470,14 @@ module State = struct
                   let update ~key ~data initial_resolution =
                     Resolution.set_local initial_resolution ~access:key ~annotation:data
                   in
+                  let add_variable resolution variable =
+                    Resolution.add_type_variable resolution ~variable
+                  in
                   Resolution.annotations resolution
                   |> Map.fold ~init:initial_resolution ~f:update
-                in
+                  |> fun resolution -> List.fold variables ~init:resolution ~f:add_variable
+
+                  in
                 Some {
                   nested = define;
                   initial = { nested_resolution; nested_bottom = false };
@@ -3460,10 +3486,28 @@ module State = struct
           Map.change ~f:update nested_defines location
         in
         match Node.value statement with
-        | Class { Class.name; body; _ } ->
-            schedule ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
-        | Define define when not (Define.is_stub define) ->
-            schedule ~define
+        | Class ({ Class.name; body; _ } as definition) ->
+            let variables =
+              (Node.create ~location definition)
+              |> Annotated.Class.create
+              |> Annotated.Class.generics ~resolution
+            in
+            schedule
+              ~variables
+              ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
+        | Define ({ Define.parameters; _ } as define) when not (Define.is_stub define) ->
+            let variables =
+              let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
+                match annotation with
+                | None -> []
+                | Some annotation ->
+                    let annotation = Resolution.parse_annotation resolution annotation in
+                    Type.variables annotation
+              in
+              List.concat_map parameters ~f:extract_variables
+              |> List.dedup_and_sort ~compare:Type.compare
+            in
+            schedule ~variables ~define
         | _ ->
             nested_defines
       in
