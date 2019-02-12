@@ -302,6 +302,16 @@ let test_dead_store_elimination _ =
       if True:
         pass
       1
+    |};
+
+  assert_deobfuscation
+    {|
+      f = foo()
+      f.connect()
+    |}
+    {|
+      f = foo()
+      f.connect()
     |}
 
 

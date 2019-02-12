@@ -325,7 +325,8 @@ module UnusedStoreState (Context: Context) = struct
       let used_accesses =
         Visit.collect_accesses statement
         |> List.map ~f:Node.value
-        |> List.filter_map ~f:(function | Access.SimpleAccess access -> Some access | _ -> None)
+        |> List.filter_map
+          ~f:(function | Access.SimpleAccess (head :: _) -> Some [head] | _ -> None)
       in
       let used_locations =
         used_accesses
