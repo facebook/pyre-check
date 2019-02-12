@@ -75,7 +75,6 @@ and typed_dictionary_field = {
 and t =
   | Bottom
   | Callable of t Record.Callable.record
-  | Deleted
   | Any
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
@@ -223,7 +222,6 @@ val contains_callable: t -> bool
 
 val is_callable: t -> bool
 val is_concrete: t -> bool
-val is_deleted: t -> bool
 val is_dictionary: t -> bool
 val is_ellipses: t -> bool
 val is_generator: t -> bool

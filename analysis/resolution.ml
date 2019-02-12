@@ -91,7 +91,7 @@ let set_local ({ annotations; _ } as resolution) ~access ~annotation =
 
 let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
   match Map.find annotations access with
-  | Some ({ Annotation.annotation; _ } as result) when not (Type.equal annotation Type.Deleted) ->
+  | Some result ->
       Some result
   | _ when global_fallback ->
       Access.delocalize access
@@ -107,9 +107,8 @@ let unset_local ({ annotations; _ } as resolution) ~access =
 
 let is_global { annotations; global; _ } ~access =
   match Map.find annotations access with
-  | Some ({ Annotation.annotation; _ } as full_annotation)
-    when not (Type.equal annotation Type.Deleted) ->
-      Annotation.is_global full_annotation
+  | Some annotation ->
+      Annotation.is_global annotation
   | _ ->
       Access.delocalize access
       |> global

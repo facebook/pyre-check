@@ -211,7 +211,7 @@ let test_refine_class_definitions _ =
     in
     let expected =
       List.map expected ~f:(fun annotation -> Type.Primitive annotation)
-      |> (fun expected -> expected @ [Type.Any; Type.Deleted; Type.Top])
+      |> (fun expected -> expected @ [Type.Any; Type.Top])
     in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
@@ -650,11 +650,11 @@ let test_connect_type_order _ =
 
   TypeOrder.connect_annotations_to_top order ~top:Type.Any all_annotations;
 
-  assert_successors (Type.Primitive "C") [Type.Any; Type.Deleted; Type.Top];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Deleted; Type.Top];
+  assert_successors (Type.Primitive "C") [Type.Any; Type.Top];
+  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Top];
   assert_successors
     (Type.Primitive "CallMe")
-    [Type.Primitive "typing.Callable"; Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
+    [Type.Primitive "typing.Callable"; Type.object_primitive; Type.Any; Type.Top]
 
 
 let test_populate _ =
@@ -1258,10 +1258,10 @@ let test_supertypes_type_order _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    [Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
+    [Type.object_primitive; Type.Any; Type.Top]
     (TypeOrder.successors order (Type.Primitive "foo"));
   assert_equal
-    [Type.Primitive "foo"; Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
+    [Type.Primitive "foo"; Type.object_primitive; Type.Any; Type.Top]
     (TypeOrder.successors order (Type.Primitive "bar"));
 
   let environment =
@@ -1285,7 +1285,6 @@ let test_supertypes_type_order _ =
       };
       Type.object_primitive;
       Type.Any;
-      Type.Deleted;
       Type.Top;
     ]
     (TypeOrder.successors order (Type.parametric "typing.Iterable" [Type.integer]))

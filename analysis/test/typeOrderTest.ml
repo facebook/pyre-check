@@ -444,8 +444,6 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
-  assert_true (less_or_equal order ~left:Type.Deleted ~right:Type.Top);
-  assert_true (less_or_equal order ~left:Type.Any ~right:Type.Deleted);
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
@@ -2376,18 +2374,18 @@ let test_to_dot _ =
   assert_equal
     ~printer:ident
     ({|
-       digraph {
-         129913994[label="undefined"]
-         152507349[label="unknown"]
-         234594981[label="2"]
-         547049050[label="1"]
-         611166579[label="3"]
-         847044026[label="0"]
-         234594981 -> 611166579
-         547049050 -> 611166579
-         847044026 -> 234594981
-         847044026 -> 547049050[label="(str)"]
-       }
+        digraph {
+          129913994[label="undefined"]
+          234594981[label="2"]
+          547049050[label="1"]
+          611166579[label="3"]
+          648017920[label="unknown"]
+          847044026[label="0"]
+          234594981 -> 611166579
+          547049050 -> 611166579
+          847044026 -> 234594981
+          847044026 -> 547049050[label="(str)"]
+        }
      |}
      |> Test.trim_extra_indentation)
     ("\n" ^ TypeOrder.to_dot order)

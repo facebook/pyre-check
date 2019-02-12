@@ -484,11 +484,6 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | Type.Top, _ ->
       false
 
-  | _, Type.Deleted ->
-      true
-  | Type.Deleted, _ ->
-      false
-
   | _, Type.Any ->
       true
   | Type.Any, _ ->
@@ -1034,10 +1029,6 @@ and join ((module Handler: Handler) as order) left right =
     | _, Type.Top ->
         Type.Top
 
-    | Type.Deleted, _
-    | _, Type.Deleted ->
-        Type.Deleted
-
     | Type.Any, _
     | _, Type.Any ->
         Type.Any
@@ -1282,10 +1273,6 @@ and meet ((module Handler: Handler) as order) left right =
     match left, right with
     | Type.Top, other
     | other, Type.Top ->
-        other
-
-    | Type.Deleted, other
-    | other, Type.Deleted when not (Type.equal other Type.Top) ->
         other
 
     | Type.Any, other
@@ -1972,7 +1959,7 @@ module Builder = struct
   let default_annotations =
     let singleton annotation = [Type.Bottom; annotation; Type.object_primitive] in
     [
-      [Type.Bottom; Type.object_primitive; Type.Any; Type.Deleted; Type.Top];
+      [Type.Bottom; Type.object_primitive; Type.Any; Type.Top];
       (* Special forms *)
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;

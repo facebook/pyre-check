@@ -105,7 +105,7 @@ let test_superclasses _ =
       ~cmp:(List.equal ~equal) expected actual
   in
 
-  assert_successors !"Foo" [Type.object_primitive; Type.Any; Type.Deleted; Type.Top];
+  assert_successors !"Foo" [Type.object_primitive; Type.Any; Type.Top];
   assert_successors
     !"SubRedundant"
     [
@@ -114,7 +114,6 @@ let test_superclasses _ =
       Type.Primitive "Bar";
       Type.object_primitive;
       Type.Any;
-      Type.Deleted;
       Type.Top;
     ];
   assert_superclasses !"Foo" [!"object"];

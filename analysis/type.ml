@@ -108,7 +108,6 @@ and typed_dictionary_field = {
 and t =
   | Bottom
   | Callable of t Record.Callable.record
-  | Deleted
   | Any
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
@@ -259,8 +258,6 @@ let rec pp format annotation =
           |> Format.sprintf "[[%s]]"
       in
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
-  | Deleted ->
-      Format.fprintf format "deleted"
   | Any ->
       Format.fprintf format "typing.Any"
   | Optional Bottom ->
@@ -530,8 +527,6 @@ let rec optional parameter =
   match parameter with
   | Top ->
       Top
-  | Deleted ->
-      Deleted
   | Any ->
       Any
   | Optional _ ->
@@ -637,7 +632,6 @@ let primitive_substitution_map =
   in
   [
     "$bottom", Bottom;
-    "$deleted", Deleted;
     "$unknown", Top;
     "None", none;
     "function", callable ~annotation:Any ();
@@ -795,7 +789,6 @@ let rec expression annotation =
             ]
         in
         (Access.create "typing.Callable") @ (convert implementation) @ overloads
-    | Deleted -> Access.create "$deleted"
     | Any -> Access.create "typing.Any"
     | Optional Bottom ->
         split "None"
@@ -948,7 +941,6 @@ let rec create ~aliases { Node.value = expression; _ } =
                           Union (List.map elements ~f:(resolve visited))
                       | Bottom
                       | Callable _
-                      | Deleted
                       | Any
                       | Primitive _
                       | Top ->
@@ -1463,7 +1455,6 @@ module Transform = struct
             Variable { variable with constraints }
 
         | Bottom
-        | Deleted
         | Top
         | Any
         | Primitive _ ->
@@ -1520,18 +1511,12 @@ let is_concrete annotation =
   | _ ->
       let predicate = function
         | Top
-        | Deleted
         | Any ->
             true
         | _ ->
             false
       in
       not (exists annotation ~predicate)
-
-
-let is_deleted = function
-  | Deleted -> true
-  | _ -> false
 
 
 let is_dictionary = function
@@ -1631,7 +1616,7 @@ let is_unbound = function
 
 
 let is_unknown annotation =
-  exists annotation ~predicate:(function | Top | Deleted -> true | _ -> false)
+  exists annotation ~predicate:(function | Top -> true | _ -> false)
 
 
 let contains_any annotation =
@@ -1708,7 +1693,6 @@ let elements annotation =
         | Union _ ->
             Primitive "typing.Union" :: sofar, annotation
         | Bottom
-        | Deleted
         | Any
         | Top
         | Variable _ ->

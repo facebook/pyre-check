@@ -555,7 +555,6 @@ let register_aliases (module Handler: Handler) sources =
               else
                 false, annotation
           | Bottom
-          | Deleted
           | Top ->
               false, annotation
           | _ ->
