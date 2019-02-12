@@ -28,7 +28,7 @@ let test_create _ =
   assert_create "foo.$local_qualifier$bar" (Type.Primitive "foo.bar");
 
   assert_create "$deleted" Type.Deleted;
-  assert_create "object" Type.Any;
+  assert_create "object" (Type.Primitive "object");
   assert_create "$unknown" Type.Top;
 
   assert_create "foo[bar]" (Type.parametric "foo" [Type.Primitive "bar"]);

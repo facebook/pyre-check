@@ -504,7 +504,7 @@ let meta annotation =
   let parameter =
     match annotation with
     | Variable _ ->
-        Any
+        Primitive "object"
     | annotation ->
         annotation
   in
@@ -520,6 +520,10 @@ let named_tuple =
 
 let none =
   Optional Bottom
+
+
+let object_primitive =
+  Primitive "object"
 
 
 let rec optional parameter =
@@ -639,7 +643,6 @@ let primitive_substitution_map =
     "function", callable ~annotation:Any ();
     "dict", parametric_anys "dict" 2;
     "list", list Any;
-    "object", Any;
     "type", parametric_anys "type" 1;
     "typing.Any", Any;
     "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
@@ -793,7 +796,7 @@ let rec expression annotation =
         in
         (Access.create "typing.Callable") @ (convert implementation) @ overloads
     | Deleted -> Access.create "$deleted"
-    | Any -> Access.create "object"
+    | Any -> Access.create "typing.Any"
     | Optional Bottom ->
         split "None"
     | Optional parameter ->

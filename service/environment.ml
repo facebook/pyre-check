@@ -44,12 +44,12 @@ let populate
 
   TypeOrder.connect_annotations_to_top
     (module Handler.TypeOrderHandler)
-    ~top:Type.Any
+    ~top:Type.object_primitive
     all_annotations;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
     ~bottom:Type.Bottom
-    ~top:Type.Any
+    ~top:Type.object_primitive
     all_annotations;
 
   List.iter ~f:(Environment.register_functions (module Handler) resolution) sources;

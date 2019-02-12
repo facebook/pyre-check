@@ -214,7 +214,6 @@ let test_check_tuple _ =
       "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
-      "Undefined attribute [16]: `typing.Any` has no attribute `__add__`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
 

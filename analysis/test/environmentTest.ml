@@ -654,7 +654,7 @@ let test_connect_type_order _ =
   assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Deleted; Type.Top];
   assert_successors
     (Type.Primitive "CallMe")
-    [Type.Primitive "typing.Callable"; Type.Any; Type.Deleted; Type.Top]
+    [Type.Primitive "typing.Callable"; Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
 
 
 let test_populate _ =
@@ -734,8 +734,8 @@ let test_populate _ =
     assert_equal
       ~printer:show_targets
       ~cmp:(Option.equal (List.equal ~equal:TypeOrder.Target.equal))
-      targets
       (Some (List.map superclasses ~f:to_target))
+      targets
   in
   (* Metaclasses aren't superclasses. *)
   let environment =
@@ -746,7 +746,7 @@ let test_populate _ =
         class C(metaclass=abc.ABCMeta): ...
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.Any];
+  assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
@@ -759,7 +759,7 @@ let test_populate _ =
           pass
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.Any];
+  assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -1258,10 +1258,10 @@ let test_supertypes_type_order _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    [Type.Any; Type.Deleted; Type.Top]
+    [Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
     (TypeOrder.successors order (Type.Primitive "foo"));
   assert_equal
-    [Type.Primitive "foo"; Type.Any; Type.Deleted; Type.Top]
+    [Type.Primitive "foo"; Type.object_primitive; Type.Any; Type.Deleted; Type.Top]
     (TypeOrder.successors order (Type.Primitive "bar"));
 
   let environment =
@@ -1283,6 +1283,7 @@ let test_supertypes_type_order _ =
         name = "typing.Generic";
         parameters = [Type.integer];
       };
+      Type.object_primitive;
       Type.Any;
       Type.Deleted;
       Type.Top;
@@ -1311,7 +1312,7 @@ let test_class_definition _ =
   assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
 
   let any =
-    class_definition environment Type.Any
+    class_definition environment Type.object_primitive
     |> value
     |> Node.value
   in

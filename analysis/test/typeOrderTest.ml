@@ -457,6 +457,12 @@ let test_default _ =
   assert_has_special_form "typing.Callable";
   assert_has_special_form "typing.ClassVar";
 
+  (* Object *)
+  assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);
+  assert_true (less_or_equal order ~left:(Type.list Type.integer) ~right:Type.object_primitive);
+  assert_false
+    (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
+
   (* Mock. *)
   assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);
   assert_true

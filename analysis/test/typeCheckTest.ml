@@ -345,7 +345,7 @@ let test_redirect _ =
         class Subclass(Superclass): pass
       |}
     "super().foo()"
-    ("$super.foo()", ["$super", Type.Any]);
+    ("$super.foo()", ["$super", Type.object_primitive]);
 
   assert_redirect
     ~parent:(Access.create "Superclass")

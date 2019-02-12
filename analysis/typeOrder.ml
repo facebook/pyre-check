@@ -499,6 +499,9 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
   | _, Type.Bottom ->
       false
 
+  | _, Type.Primitive name when name = "object" ->
+      true
+
   | _ , Type.Variable _ ->
       false
 
@@ -1967,9 +1970,9 @@ module Builder = struct
 
 
   let default_annotations =
-    let singleton annotation = [Type.Bottom; annotation; Type.Any] in
+    let singleton annotation = [Type.Bottom; annotation; Type.object_primitive] in
     [
-      [Type.Bottom; Type.Any; Type.Deleted; Type.Top];
+      [Type.Bottom; Type.object_primitive; Type.Any; Type.Deleted; Type.Top];
       (* Special forms *)
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
@@ -1986,7 +1989,7 @@ module Builder = struct
       singleton (Type.Primitive "unittest.mock.Base");
       singleton (Type.Primitive "unittest.mock.NonCallableMock");
       singleton (Type.Primitive "typing.ClassVar");
-      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.Any];
+      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.object_primitive];
       singleton (Type.Primitive "None");
       (* Numerical hierarchy. *)
       [
@@ -1996,11 +1999,11 @@ module Builder = struct
         Type.complex;
         Type.Primitive "numbers.Complex";
         Type.Primitive "numbers.Number";
-        Type.Any;
+        Type.object_primitive;
       ];
-      [Type.integer; Type.Primitive "numbers.Integral"; Type.Any];
-      [Type.float; Type.Primitive "numbers.Rational"; Type.Any];
-      [Type.float; Type.Primitive "numbers.Real"; Type.Any];
+      [Type.integer; Type.Primitive "numbers.Integral"; Type.object_primitive];
+      [Type.float; Type.Primitive "numbers.Rational"; Type.object_primitive];
+      [Type.float; Type.Primitive "numbers.Real"; Type.object_primitive];
     ]
 
 

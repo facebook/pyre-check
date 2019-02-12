@@ -941,14 +941,13 @@ let constructor definition ~instantiated ~resolution =
   in
   let definitions =
     definition :: superclasses ~resolution definition
-    |> List.map ~f:name
+    |> List.map ~f:(fun definition -> annotation ~resolution definition)
   in
   let definition_index attribute =
     attribute
     |> Attribute.parent
-    |> Type.show
-    |> Access.create
-    |> (fun class_name -> List.findi definitions ~f:(fun _ name -> Access.equal name class_name))
+    |> (fun class_annotation ->
+        List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
     >>| fst
     |> Option.value ~default:Int.max_value
   in

@@ -102,7 +102,7 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.Any) or Access.show name = "object" then
+  if not (Type.equal primitive Type.object_primitive) or Access.show name = "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =
       let value = Expression.delocalize value in
@@ -878,7 +878,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
       let edges =
         let add_edge sofar source =
           (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
-          if Type.equal source protocol || Type.equal source Type.Any then
+          if Type.equal source protocol || Type.equal source Type.object_primitive then
             sofar
           else
             Set.add sofar { Edge.source; target = protocol }
@@ -1099,7 +1099,7 @@ module Builder = struct
       in
       let successors =
         let successor { Argument.value; _ } = Type.create value ~aliases:(fun _ -> None) in
-        (List.map bases ~f:successor) @ [Type.Any]
+        (List.map bases ~f:successor) @ [Type.object_primitive]
       in
       Hashtbl.set
         ~key:(Type.Primitive name)

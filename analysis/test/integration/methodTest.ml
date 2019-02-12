@@ -695,7 +695,17 @@ let test_check_method_resolution _ =
       def foo(input: str) -> None:
         input.lower()
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class Foo:
+        def __getattr__(self, name: str) -> typing.Any: ...
+      def foo(x: Foo) -> None:
+        reveal_type(x.attribute)
+        x.attribute + 1
+    |}
+    ["Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`."]
 
 
 let test_check_callables _ =
