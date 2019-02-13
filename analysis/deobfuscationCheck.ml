@@ -448,19 +448,38 @@ let run
     let last_identifier = ref "" in
     let generate_identifier () =
       let identifier =
+        let bump character =
+          Char.to_int character
+          |> (+) 1
+          |> Char.of_int_exn
+        in
+        let to_string reversed_list =
+          List.rev reversed_list
+          |> String.of_char_list
+        in
         match String.to_list_rev !last_identifier with
-        | []
-        | 'z' :: _ ->
-            !last_identifier ^ "a"
-        | character :: tail ->
-            let character =
-              Char.to_int character
-              |> (+) 1
-              |> Char.of_int_exn
+        | [] ->
+            "a"
+        | ('z' :: _) as characters ->
+            let next_identifier =
+              let next_identifier =
+                let rec next_identifier = function
+                  | 'z' :: tail -> 'a' :: (next_identifier tail)
+                  | character :: tail -> (bump character) :: tail
+                  | [] -> []
+                in
+                next_identifier characters
+              in
+              if List.for_all next_identifier ~f:(Char.equal 'a') then
+                'a' :: next_identifier
+              else
+                next_identifier
             in
-            character :: tail
-            |> List.rev
-            |> String.of_char_list
+            next_identifier
+            |> to_string
+        | character :: tail ->
+            (bump character) :: tail
+            |> to_string
       in
       last_identifier := identifier;
       identifier
