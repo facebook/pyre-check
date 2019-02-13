@@ -282,8 +282,9 @@ def _commit_message(directory, summary_override: Optional[str] = None):
     commit_message = """[typing] Update pyre version for {}
 
         Summary: {}
+        #accept2ship
 
-        Test Plan: sandcastle
+        Test Plan: sandcastle pyre run
 
         Reviewers: pyre
 
@@ -297,7 +298,7 @@ def _commit_message(directory, summary_override: Optional[str] = None):
         """.format(
         directory, summary
     ).replace(
-        "            ", ""
+        "        ", ""
     )
     return commit_message
 
@@ -306,7 +307,7 @@ def _submit_changes(arguments, message):
     LOG.info("Committing changes.")
     subprocess.call(["hg", "commit", "--message", message])
     if arguments.submit is True:
-        subprocess.call(["jf", "submit"])
+        subprocess.call(["jf", "submit", "--update-fields"])
 
 
 # Exposed for testing.

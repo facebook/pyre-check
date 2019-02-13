@@ -277,7 +277,7 @@ class FixmeAllTest(unittest.TestCase):
         run_fixme.called_once_with(arguments, _result(errors))
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-            call(["jf", "submit"]),
+            call(["jf", "submit", "--update-fields"]),
         ]
         subprocess.assert_has_calls(calls)
 
@@ -355,7 +355,7 @@ class FixmeSingleTest(unittest.TestCase):
             run_fixme.assert_not_called()
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
 
@@ -380,7 +380,7 @@ class FixmeSingleTest(unittest.TestCase):
             run_fixme.called_once_with(arguments, _result(errors))
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             call.assert_has_calls(calls)
 
@@ -788,6 +788,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                         ),
                     ]
                 ),
-                call(["jf", "submit"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
