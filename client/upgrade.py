@@ -479,8 +479,9 @@ def run_fixme_all(
             sandcastle_command = json.load(sandcastle_file)
         sandcastle_command["args"]["hash"] = arguments.hash
         sandcastle_command["args"]["paths"] = paths
+        sandcastle_command["args"]["push_blocking_only"] = arguments.push_blocking_only
         command = ["scutil", "create"]
-        subprocess.run(command, input=str(sandcastle_command).encode("utf-8"))
+        subprocess.run(command, input=json.dumps(sandcastle_command))
         return
 
     # Run locally.

@@ -288,7 +288,7 @@ class FixmeAllTest(unittest.TestCase):
         command_json = """
         {
             "command": "CommandName",
-            "args": {"hash": null, "paths": null},
+            "args": {"hash": null, "paths": null, "push_blocking_only": null},
             "hash": "repository/hash",
             "priority": 0,
             "user": "unixname",
@@ -298,15 +298,17 @@ class FixmeAllTest(unittest.TestCase):
         }
         """
 
-        def generate_sandcastle_command(hash, paths):
+        def generate_sandcastle_command(hash, paths, push_blocking):
             paths = [os.path.realpath(path) for path in paths]
             command = json.loads(command_json)
             command["args"]["hash"] = hash
             command["args"]["paths"] = paths
-            return str(command).encode("utf-8")
+            command["args"]["push_blocking_only"] = push_blocking
+            return json.dumps(command)
 
         arguments = MagicMock()
         arguments.sandcastle = "sandcastle.json"
+        arguments.push_blocking_only = False
         with patch("builtins.open", mock_open(read_data=command_json)):
             arguments.hash = "abc"
             gather.return_value = [
@@ -317,7 +319,7 @@ class FixmeAllTest(unittest.TestCase):
             find_configuration.assert_not_called()
             run.assert_called_once_with(
                 ["scutil", "create"],
-                input=generate_sandcastle_command("abc", ["a", "b"]),
+                input=generate_sandcastle_command("abc", ["a", "b"], False),
             )
 
         run.reset_mock()
