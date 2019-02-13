@@ -34,7 +34,7 @@ class DB(object):
         self, dbtype, dbname=None, debug=False, read_only=False, assertions=False
     ):
         self.dbtype = dbtype
-        self.dbname = dbname
+        self.dbname = dbname or self.DEFAULT_DB_FILE
         self.debug = debug
         self.read_only = read_only
         self.assertions = assertions
@@ -49,9 +49,7 @@ class DB(object):
             )
         elif dbtype == DBType.SQLITE:
             self.engine = sqlalchemy.create_engine(
-                sqlalchemy.engine.url.URL(
-                    "sqlite", database=dbname or self.DEFAULT_DB_FILE
-                ),
+                sqlalchemy.engine.url.URL("sqlite", database=self.dbname),
                 echo=debug,
                 poolclass=self.poolclass,
             )

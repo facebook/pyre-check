@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from click import Choice, Path, argument, echo, group, option
+from click import Choice, Path, argument, group, option
 from sapp.analysis_output import AnalysisOutput
 from sapp.database_saver import DatabaseSaver
 from sapp.db import DB
+from sapp.interactive import Interactive
 from sapp.model_generator import ModelGenerator
 from sapp.models import PrimaryKeyGenerator
 from sapp.pipeline import Pipeline
@@ -17,8 +18,15 @@ def cli():
 
 
 @cli.command(help="interactive exploration of issues")
-def explore():
-    echo("Interactive mode not yet implemented")
+@option(
+    "--database",
+    type=Choice(["memory", "sqlite"]),
+    default="sqlite",
+    help="database engine to use",
+)
+@option("--database-name", "--dbname", type=str)
+def explore(database, database_name):
+    Interactive(database, database_name).cmdloop()
 
 
 @cli.command(help="parse static analysis output and save to disk")
