@@ -84,6 +84,12 @@ class Configuration:
                 )
                 if configuration.push_blocking or (not arguments.push_blocking_only):
                     configurations.append(configuration)
+        LOG.info(
+            "Found %d %sconfiguration%s",
+            len(configurations),
+            "push-blocking " if arguments.push_blocking_only else "",
+            "s" if len(configurations) != 1 else "",
+        )
         return configurations
 
     def get_path(self) -> str:
@@ -141,12 +147,6 @@ class Configuration:
 
 def errors_from_configurations(arguments) -> List[Dict[str, Any]]:
     configurations = Configuration.gather_local_configurations(arguments)
-    LOG.info(
-        "Found %d %sconfiguration%s",
-        len(configurations),
-        "push-blocking " if arguments.push_blocking_only else "",
-        "s" if len(configurations) != 1 else "",
-    )
     total_errors = []
     for configuration in configurations:
         total_errors += configuration.get_errors()
@@ -463,17 +463,9 @@ def run_fixme_single(
 def run_fixme_all(
     arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
 ) -> None:
-    # Find local configurations.
-    configurations = Configuration.gather_local_configurations(arguments)
-    LOG.info(
-        "Found %d %sconfiguration%s",
-        len(configurations),
-        "push-blocking " if arguments.push_blocking_only else "",
-        "s" if len(configurations) != 1 else "",
-    )
-
     # Create sandcastle command.
     if arguments.sandcastle and isinstance(arguments.sandcastle, str):
+        configurations = Configuration.gather_local_configurations(arguments)
         if not arguments.hash:
             LOG.error("Must provide binary hash to fixme-all --sandcastle")
             return
@@ -498,6 +490,7 @@ def run_fixme_all(
     else:
         root = os.path.dirname(root)
 
+    configurations = Configuration.gather_local_configurations(arguments)
     for configuration in configurations:
         _upgrade_configuration(arguments, configuration, root)
 
