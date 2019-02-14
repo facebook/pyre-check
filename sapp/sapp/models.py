@@ -859,38 +859,7 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     @classmethod
     def merge(cls, session, issues):
-        attr = cls.handle
-        new_issues = {}
-        existing_ids = {}
-        issues_iter1, issues_iter2 = tee(issues)
-        attr_key = attr.key
-        all_keys = {getattr(i, attr_key) for i in issues_iter1}
-
-        # First, see if any of these keys exist in the database already
-        cls_attr = getattr(cls, attr.key)
-        for fetch_keys in split_every(BATCH_SIZE, all_keys):
-            for key, id in (
-                session.query(cls_attr, cls.id).filter(cls_attr.in_(fetch_keys)).all()
-            ):
-                existing_ids[key] = id
-
-        # Now see if we can merge
-        for i in issues_iter2:
-            key = getattr(i, attr_key)
-            if key in new_issues:
-                # We don't expect the exact same issue to show up twice, so
-                # lets warn about it. This must be done before the existing
-                # issues check in order to warn on duplicates within the run.
-                log.warning("Same issue (handle=%s) showed up twice in a run", i.handle)
-                i.id.resolve(new_issues[key].id, is_new=False)
-            elif key in existing_ids:
-                orig_id = existing_ids[key]
-                # The key is already in the DB
-                i.id.resolve(orig_id, is_new=False)
-            else:
-                # The key is new
-                new_issues[key] = i
-                yield i
+        return cls._merge_by_key(session, issues, cls.handle)
 
 
 class RunStatus(Enum):
