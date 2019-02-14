@@ -299,7 +299,6 @@ class FixmeAllTest(unittest.TestCase):
         """
 
         def generate_sandcastle_command(hash, paths, push_blocking):
-            paths = [os.path.realpath(path) for path in paths]
             command = json.loads(command_json)
             command["args"]["hash"] = hash
             command["args"]["paths"] = paths

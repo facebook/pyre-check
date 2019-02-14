@@ -90,7 +90,7 @@ class Configuration:
         return self._path
 
     def get_directory(self) -> str:
-        return os.path.dirname(os.path.realpath(self._path))
+        return os.path.dirname(self._path)
 
     def remove_version(self) -> None:
         with open(self._path) as configuration_file:
@@ -314,7 +314,7 @@ def _submit_changes(arguments, message):
 def _upgrade_configuration(
     arguments: argparse.Namespace, configuration: Configuration, root: str
 ) -> None:
-    LOG.info("Processing %s", configuration.get_path())
+    LOG.info("Processing %s", configuration.get_directory())
     if not configuration.is_local or not configuration.version:
         return
     configuration.remove_version()
@@ -327,8 +327,11 @@ def _upgrade_configuration(
         errors = itertools.groupby(sorted(errors, key=error_path), error_path)
         run_fixme(arguments, errors)
     try:
-        directory = os.path.relpath(os.path.dirname(configuration.get_path()), root)
-        _submit_changes(arguments, _commit_message(directory))
+        project_root = os.path.realpath(root)
+        local_root = os.path.realpath(configuration.get_directory())
+        _submit_changes(
+            arguments, _commit_message(os.path.relpath(local_root, project_root))
+        )
     except subprocess.CalledProcessError:
         LOG.info("Error while running hg.")
 
