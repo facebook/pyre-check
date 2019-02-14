@@ -822,15 +822,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         index=True,
     )
 
-    visible = Column(
-        Boolean,
-        doc="Not visible if the issue disappears in recent runs",
-        default=True,
-        server_default="1",
-        nullable=False,
-        index=True,
-    )
-
     instances = relationship(
         "IssueInstance",
         primaryjoin="Issue.id == foreign(IssueInstance.issue_id)",
@@ -844,10 +835,11 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         index=True,
     )
 
-    last_seen = Column(
+    last_seen_DEPRECATED = Column(
+        "last_seen",
         DateTime,
-        doc="time of most recent run that found this issue",
-        nullable=False,
+        doc="Deprecated. Time of most recent run that found this issue",
+        nullable=True,
         index=True,
     )
 
@@ -882,14 +874,9 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
             ):
                 existing_ids[key] = id
 
-        # This should be the same for all of them, we're just going to grab it
-        # as we go. At the end we will update them in bulk.
-        last_seen = None
-
         # Now see if we can merge
         for i in issues_iter2:
             key = getattr(i, attr_key)
-            last_seen = i["last_seen"]
             if key in new_issues:
                 # We don't expect the exact same issue to show up twice, so
                 # lets warn about it. This must be done before the existing
@@ -904,17 +891,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
                 # The key is new
                 new_issues[key] = i
                 yield i
-
-        # Update the last seen and visible fields of existing issues in bulk.
-        ids = existing_ids.values()
-        for update in split_every(BATCH_SIZE, ids):
-            (
-                session.query(Issue)
-                .filter(Issue.id.in_(update))
-                .update(
-                    {"visible": True, "last_seen": last_seen}, synchronize_session=False
-                )
-            )
 
 
 class RunStatus(Enum):
