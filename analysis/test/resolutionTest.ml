@@ -239,7 +239,7 @@ let test_resolve_mutable_literals _ =
 
 
 let test_function_definitions _ =
-  let assert_functions sources access count =
+  let assert_functions sources access expected =
     let sources =
       let source (path, content) = path, trim_extra_indentation content in
       List.map sources ~f:source
@@ -274,12 +274,12 @@ let test_function_definitions _ =
     in
     let functions =
       Resolution.function_definitions resolution (Access.create access)
-      >>| List.length
-      |> Option.value ~default:0
+      >>| List.map ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.show name)
+      |> Option.value ~default:[]
     in
-    assert_equal functions count
+    assert_equal ~printer:(String.concat ~sep:", ") expected functions
   in
-  assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" 1;
+  assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" ["foo.foo"];
   assert_functions
     [
       "bar.py",
@@ -290,21 +290,31 @@ let test_function_definitions _ =
       |};
     ]
     "bar.bar"
-    2;
+    ["bar.bar"; "bar.bar"];
+  assert_functions
+    [
+      "baz.py",
+      {|
+        def foo(a: int) -> str: ...
+        def bar(a: str) -> int: ...
+      |};
+    ]
+    "baz.foo"
+    ["baz.foo"];
   assert_functions
     []
     "undefined.undefined"
-    0;
+    [];
   assert_functions
     [
-      "foo.py",
+      "yarp.py",
       {|
         def foo():
           def nested(): pass
       |};
     ]
-    "foo.foo.nested"
-    1;
+    "yarp.foo.nested"
+    ["yarp.foo.nested"];
   assert_functions
     [
       "builtins.py",
@@ -313,7 +323,7 @@ let test_function_definitions _ =
       |};
     ]
     "len"
-    1;
+    ["len"];
   ()
 
 

@@ -190,6 +190,7 @@ let function_definitions resolution access =
   in
   Ast.SharedMemory.Sources.get_for_qualifier qualifier
   >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
+  >>| List.filter ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.equal access name)
 
 
 let less_or_equal { order; _ } =
