@@ -7,7 +7,7 @@ from unittest import TestCase
 
 from sapp.db import DB
 from sapp.interactive import Interactive
-from sapp.models import Issue, IssueInstance, Run, SharedText, SourceLocation
+from sapp.models import Issue, IssueInstance, Run, RunStatus, SharedText, SourceLocation
 
 
 class InteractiveTest(TestCase):
@@ -88,8 +88,8 @@ class InteractiveTest(TestCase):
 
         message = SharedText(id=1, contents="message1")
         runs = [
-            Run(id=1, date=datetime.now(), status="finished"),
-            Run(id=2, date=datetime.now(), status="finished"),
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
         ]
 
         issue_instances = [
@@ -132,3 +132,90 @@ class InteractiveTest(TestCase):
             self.interactive.start_repl()
         stderr = self.stderr.getvalue().strip()
         self.assertIn("No runs found.", stderr)
+
+    def testListRuns(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.INCOMPLETE),
+            Run(id=3, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+
+        with self.db.make_session() as session:
+            session.add(runs[0])
+            session.add(runs[1])
+            session.add(runs[2])
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.runs()
+        output = self.stdout.getvalue().strip()
+
+        self.assertIn("Run 1", output)
+        self.assertNotIn("Run 2", output)
+        self.assertIn("Run 3", output)
+
+    def testSetRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instances = [
+            IssueInstance(
+                id=1,
+                run_id=1,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+            IssueInstance(
+                id=2,
+                run_id=2,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            session.add(runs[0])
+            session.add(runs[1])
+            session.add(issue)
+            session.add(issue_instances[0])
+            session.add(issue_instances[1])
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_run(1)
+        self.interactive.issues()
+        output = self.stdout.getvalue().strip()
+
+        self.assertIn("Issue 1", output)
+        self.assertNotIn("Issue 2", output)
+
+    def testSetRunNonExistent(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.INCOMPLETE),
+        ]
+
+        with self.db.make_session() as session:
+            session.add(runs[0])
+            session.add(runs[1])
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_run(2)
+        self.interactive.set_run(3)
+        stderr = self.stderr.getvalue().strip()
+
+        self.assertIn("Run 2 doesn't exist", stderr)
+        self.assertIn("Run 3 doesn't exist", stderr)

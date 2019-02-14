@@ -12,14 +12,21 @@ from sqlalchemy.sql import func
 
 class Interactive:
     help_message = """
-issues()        list all issues
+runs()          list all completed runs
+set_run(ID)     select a specific run
+issues()        list all for the selected run
 help()          show this message
     """
     welcome_message = "Interactive issue exploration. Type 'help()' for help."
 
     def __init__(self, database, database_name):
         self.db = DB(database, database_name, assertions=True)
-        self.scope_vars = {"help": self.help, "issues": self.issues}
+        self.scope_vars = {
+            "help": self.help,
+            "runs": self.runs,
+            "set_run": self.set_run,
+            "issues": self.issues,
+        }
 
     def start_repl(self):
         with self.db.make_session() as session:
@@ -47,6 +54,35 @@ help()          show this message
     def help(self):
         print(self.help_message)
 
+    def runs(self):
+        with self.db.make_session() as session:
+            runs = session.query(Run).filter(Run.status == RunStatus.FINISHED).all()
+
+        for run in runs:
+            print(f"Run {run.id}")
+            print(f"Date: {run.date}")
+            print("-" * 80)
+        print(f"Found {len(runs)} runs.")
+
+    def set_run(self, run_id):
+        with self.db.make_session() as session:
+            selected_run = (
+                session.query(Run)
+                .filter(Run.status == RunStatus.FINISHED)
+                .filter(Run.id == run_id)
+                .scalar()
+            )
+
+        if selected_run is None:
+            print(
+                f"Run {run_id} doesn't exist or is not finished. "
+                "Type 'runs' for available runs.",
+                file=sys.stderr,
+            )
+            return
+
+        self.current_run_id = selected_run.id
+
     def issues(self):
         with self.db.make_session() as session:
             issues = (
@@ -67,5 +103,4 @@ help()          show this message
                 f":{SourceLocation.to_string(issue_instance.location)}"
             )
             print("-" * 80)
-
         print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
