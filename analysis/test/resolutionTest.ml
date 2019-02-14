@@ -305,6 +305,15 @@ let test_function_definitions _ =
     ]
     "foo.foo.nested"
     1;
+  assert_functions
+    [
+      "builtins.py",
+      {|
+        def len(): pass
+      |};
+    ]
+    "len"
+    1;
   ()
 
 
