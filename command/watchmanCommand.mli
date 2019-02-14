@@ -14,8 +14,6 @@ type state = {
   symlinks: Path.t Path.Map.t;
 }
 
-(* Exposed for testing. *)
-val build_symlink_map: PyrePath.t list -> PyrePath.t Path.Map.t
 val process_response: state -> string -> (state * Server.Protocol.Request.t) Option.t
 
 val run_command

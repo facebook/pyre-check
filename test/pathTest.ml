@@ -222,6 +222,41 @@ let test_remove context =
   Path.remove path  (* Yolo *)
 
 
+let test_build_symlink_map context =
+  let root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let path relative = Path.create_relative ~root ~relative in
+  let create_file path = Out_channel.write_all ~data:"" (Path.absolute path) in
+  let link = path "link.py" in
+  let target = path "original.py" in
+  create_file target;
+  Unix.symlink ~src:(Path.absolute target) ~dst:(Path.absolute link);
+
+  let assert_keys ~links expected =
+    let expected_map = Path.Map.of_alist_exn expected in
+    let map = Path.build_symlink_map ~links in
+    assert_equal ~cmp:(Path.Map.equal Path.equal) expected_map map
+  in
+  assert_keys ~links:[link] [target, link];
+
+  let broken = path "broken.py" in
+  create_file broken;
+
+  let broken_link = path "broken_link.py" in
+  Unix.symlink ~src:(Path.absolute broken) ~dst:(Path.absolute broken_link);
+  Unix.remove (Path.absolute broken);
+  assert_keys
+    ~links:[link; broken_link]
+    [target, link];
+
+  let nonexistent = path "nonexistent.py" in
+  assert_keys
+    ~links:[link; broken_link; nonexistent]
+    [target, link]
+
+
 let () =
   "path">:::[
     "create">::test_create;
@@ -238,5 +273,6 @@ let () =
     "link">::test_link;
     "remove">::test_remove;
     "create_search_path">::test_create_search_path;
+    "build_symlink_map">::test_build_symlink_map;
   ]
   |> Test.run

@@ -264,3 +264,15 @@ let search_for_path ~search_path ~path =
   search_path
   |> List.map ~f:SearchPath.get_root
   |> List.find_map ~f:(under_root ~path)
+
+
+let build_symlink_map ~links =
+  let add_symlink map path =
+    try
+      let key = real_path path in
+      Map.set map ~key ~data:path
+    with Unix.Unix_error (error, name, parameters) ->
+      Log.log_unix_error ~section:`Warning (error, name, parameters);
+      map
+  in
+  List.fold links ~init:Map.empty ~f:add_symlink
