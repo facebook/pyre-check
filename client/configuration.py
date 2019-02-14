@@ -439,7 +439,9 @@ class Configuration:
                         "`{}`: {}".format(path, ", ".join(unused_keys))
                     )
         except IOError:
-            LOG.debug("No configuration found at `{}`.".format(path))
+            # To avoid TOCTTOU bugs, handle IOErrors here silently.
+            # We error elsewhere if there weren't enough parameters passed into pyre.
+            pass
         except json.JSONDecodeError as error:
             raise EnvironmentException(
                 "Configuration file at `{}` is invalid: {}.".format(path, str(error))
