@@ -128,7 +128,10 @@ let test_resolve_literal _ =
   assert_resolve_literal "foo()" Type.Top;
   assert_resolve_literal "C()" (Type.Primitive "C");
   assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
-  assert_resolve_literal "none" Type.none;
+
+  (* None *)
+  assert_resolve_literal "None" (Type.none);
+  assert_resolve_literal "[None]" (Type.list Type.none);
 
   (* Dictionary *)
   assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);

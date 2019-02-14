@@ -90,6 +90,18 @@ let test_check_attributes _ =
     [];
 
   assert_type_errors
+    {|
+      class Foo:
+        a = None
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type " ^
+      "`typing.Optional[int]` but no type is specified.";
+    ];
+
+  assert_type_errors
     ~show_error_traces:true
     {|
       class Bar:

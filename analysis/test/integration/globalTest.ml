@@ -360,6 +360,26 @@ let test_check_globals _ =
 
   assert_type_errors
     {|
+      x = None
+      y = []
+      def foo() -> str:
+        global x
+        x = ""
+        return x
+      def bar() -> typing.List[int]:
+        global y
+        y.append(1)
+        return y
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `x` has type " ^
+      "`typing.Optional[str]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `y` has type " ^
+      "`typing.List[]` but no type is specified.";
+    ];
+
+  assert_type_errors
+    {|
       A = typing.Mapping[int, str]
     |}
     [];

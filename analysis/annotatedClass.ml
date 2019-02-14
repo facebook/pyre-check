@@ -433,7 +433,7 @@ module Attribute = struct
             in
             not (List.is_empty (get_dataclass_decorator parent))
           in
-          if not (Type.is_unknown literal_value_annotation) &&
+          if not (Type.is_partially_typed literal_value_annotation) &&
              not is_dataclass_attribute &&
              toplevel
           then

@@ -682,7 +682,9 @@ let register_globals
                       |> register_global
                     else if not exists then
                       (* Treat literal globals as having been explicitly annotated. *)
-                      let original = if Type.is_unknown annotation then (Some Type.Top) else None in
+                      let original =
+                        if Type.is_partially_typed annotation then (Some Type.Top) else None
+                      in
                       Annotation.create_immutable ~global:true ~original annotation
                       |> register_global
                     else
