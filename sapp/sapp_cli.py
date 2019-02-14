@@ -26,7 +26,7 @@ def cli():
 )
 @option("--database-name", "--dbname", type=str)
 def explore(database, database_name):
-    Interactive(database, database_name).cmdloop()
+    Interactive(database, database_name).start_repl()
 
 
 @cli.command(help="parse static analysis output and save to disk")

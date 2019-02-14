@@ -1,4 +1,5 @@
 click
+ipython
 munch
 SQLAlchemy
 ujson~=1.35

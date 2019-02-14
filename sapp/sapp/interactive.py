@@ -1,22 +1,32 @@
 #!/usr/bin/env python3
 
-import cmd
-
+import IPython
 from sapp.db import DB
 from sapp.models import Issue, IssueInstance, SourceLocation
 from sqlalchemy.orm import joinedload
 
 
-class Interactive(cmd.Cmd):
-    intro = "Welcome to issue explorer. Type help or ? to list commands."
+class Interactive:
+    help_message = """
+issues()        list all issues
+help()          show this message
+    """
+    welcome_message = "Interactive issue exploration. Type 'help()' for help."
 
     def __init__(self, database, database_name):
-        super().__init__()
         self.db = DB(database, database_name, assertions=True)
-        self.prompt = f"{self.db.dbtype}:{self.db.dbname}> "
+        self.scope_vars = {"help": self.help, "issues": self.issues}
 
-    def do_list(self, arg):
-        "list all issues instances"
+    def start_repl(self):
+        print("=" * len(self.welcome_message))
+        print(self.welcome_message)
+        print("=" * len(self.welcome_message))
+        IPython.start_ipython(argv=[], user_ns=self.scope_vars)
+
+    def help(self):
+        print(self.help_message)
+
+    def issues(self):
         with self.db.make_session() as session:
             issues = (
                 session.query(IssueInstance, Issue)

@@ -27,7 +27,6 @@ class InteractiveTest(TestCase):
                 id=1,
                 handle="1",
                 first_seen=datetime.now(),
-                last_seen=datetime.now(),
                 code=1000,
                 callable="module.function1",
             ),
@@ -35,7 +34,6 @@ class InteractiveTest(TestCase):
                 id=2,
                 handle="2",
                 first_seen=datetime.now(),
-                last_seen=datetime.now(),
                 code=1001,
                 callable="module.function2",
             ),
@@ -61,7 +59,7 @@ class InteractiveTest(TestCase):
             session.add(issue_instances[0])
             session.commit()
 
-        self.interactive.onecmd("list")
+        self.interactive.issues()
         list_output = self.stdout.getvalue().strip()
 
         self.assertEqual(6, len(list_output.split("\n")))
