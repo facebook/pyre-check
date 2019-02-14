@@ -1,2 +1,0 @@
-Overrides
-object::__init__ (override) -> [test_taint_in_taint_out.Data::__init__ (override)]

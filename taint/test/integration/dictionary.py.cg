@@ -1,0 +1,4 @@
+Call dependencies
+dictionary.dictionary_entry_sink (fun) -> [__testSink (fun)]
+dictionary.dictionary_source (fun) -> [__testSource (fun)]
+dictionary.dictionary_tito (fun) -> []

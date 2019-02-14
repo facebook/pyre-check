@@ -1,4 +1,0 @@
-Call dependencies
-test_model_simplification._asdict_inner (fun) -> [getattr (fun) isinstance (fun) list::append (method) test_model_simplification._asdict_inner (fun)]
-test_model_simplification.asdict (fun) -> [test_model_simplification._asdict_inner (fun)]
-test_model_simplification.asdict_test (fun) -> [test_model_simplification.asdict (fun)]

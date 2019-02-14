@@ -1,7 +1,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_dictionary.dictionary_entry_sink",
+    "callable": "dictionary.dictionary_entry_sink",
     "sources": [],
     "sinks": [
       {
@@ -9,7 +9,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_dictionary.py",
+              "filename": "dictionary.py",
               "line": 10,
               "start": 30,
               "end": 33
@@ -25,14 +25,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_dictionary.dictionary_source",
+    "callable": "dictionary.dictionary_source",
     "sources": [
       {
         "port": "result[a]",
         "taint": [
           {
             "root": {
-              "filename": "test_dictionary.py",
+              "filename": "dictionary.py",
               "line": 5,
               "start": 31,
               "end": 33
@@ -49,7 +49,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_dictionary.dictionary_tito",
+    "callable": "dictionary.dictionary_tito",
     "sources": [],
     "sinks": [],
     "tito": [

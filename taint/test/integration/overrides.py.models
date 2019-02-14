@@ -1,69 +1,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testB",
-    "callable_line": 103,
-    "code": 5002,
-    "line": 106,
-    "start": 20,
-    "end": 21,
-    "filename": "test_overrides.py",
-    "message":
-      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "test_overrides.py",
-                "line": 104,
-                "start": 17,
-                "end": 19
-              },
-              "resolves_to": [
-                "test_overrides.B.methodB", "test_overrides.D.methodB"
-              ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "call": {
-              "position": {
-                "filename": "test_overrides.py",
-                "line": 106,
-                "start": 20,
-                "end": 21
-              },
-              "resolves_to": [ "test_overrides.B.classMethod" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "test_overrides.testB",
+    "callable": "overrides.testB",
     "callable_line": 103,
     "code": 5002,
     "line": 105,
     "start": 14,
     "end": 15,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -73,14 +17,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 104,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [
-                "test_overrides.B.methodB", "test_overrides.D.methodB"
-              ],
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -94,12 +36,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 105,
                 "start": 14,
                 "end": 15
               },
-              "resolves_to": [ "test_overrides.D.methodA" ],
+              "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -113,13 +55,67 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testBase",
+    "callable": "overrides.testB",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 106,
+    "start": 20,
+    "end": 21,
+    "filename": "overrides.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 104,
+                "start": 17,
+                "end": 19
+              },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 106,
+                "start": 20,
+                "end": 21
+              },
+              "resolves_to": [ "overrides.B.classMethod" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testBase",
     "callable_line": 71,
     "code": 5002,
     "line": 73,
     "start": 14,
     "end": 15,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -129,14 +125,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 72,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [
-                "test_overrides.B.methodB", "test_overrides.D.methodB"
-              ],
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -150,14 +144,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 73,
                 "start": 14,
                 "end": 15
               },
-              "resolves_to": [
-                "test_overrides.D.methodA", "test_overrides.A.methodA"
-              ],
+              "resolves_to": [ "overrides.D.methodA", "overrides.A.methodA" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -171,13 +163,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testBase",
+    "callable": "overrides.testBase",
     "callable_line": 71,
     "code": 5002,
     "line": 74,
     "start": 20,
     "end": 21,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -187,14 +179,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 72,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [
-                "test_overrides.B.methodB", "test_overrides.D.methodB"
-              ],
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -208,12 +198,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 74,
                 "start": 20,
                 "end": 21
               },
-              "resolves_to": [ "test_overrides.B.classMethod" ],
+              "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -227,13 +217,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testC",
+    "callable": "overrides.testC",
     "callable_line": 119,
     "code": 5002,
     "line": 121,
     "start": 14,
     "end": 15,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -243,12 +233,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 120,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [ "test_overrides.D.methodB" ],
+              "resolves_to": [ "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -262,12 +252,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 121,
                 "start": 14,
                 "end": 15
               },
-              "resolves_to": [ "test_overrides.D.methodA" ],
+              "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -281,13 +271,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testD",
+    "callable": "overrides.testD",
     "callable_line": 135,
     "code": 5002,
     "line": 137,
     "start": 14,
     "end": 15,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -297,12 +287,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 136,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [ "test_overrides.D.methodB" ],
+              "resolves_to": [ "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -316,12 +306,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 137,
                 "start": 14,
                 "end": 15
               },
-              "resolves_to": [ "test_overrides.D.methodA" ],
+              "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -335,13 +325,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_overrides.testStaticB",
+    "callable": "overrides.testStaticB",
     "callable_line": 109,
     "code": 5002,
     "line": 111,
     "start": 18,
     "end": 19,
-    "filename": "test_overrides.py",
+    "filename": "overrides.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -351,14 +341,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 110,
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [
-                "test_overrides.B.methodB", "test_overrides.D.methodB"
-              ],
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
               "length": 1
             },
@@ -372,12 +360,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_overrides.py",
+                "filename": "overrides.py",
                 "line": 111,
                 "start": 18,
                 "end": 19
               },
-              "resolves_to": [ "test_overrides.B.classMethod" ],
+              "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -410,7 +398,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.B::__init__}",
+    "callable": "Ovr{overrides.B::__init__}",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -429,7 +417,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.B::classMethod}",
+    "callable": "Ovr{overrides.B::classMethod}",
     "sources": [],
     "sinks": [
       {
@@ -437,7 +425,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 43,
               "start": 19,
               "end": 22
@@ -453,14 +441,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.B::methodB}",
+    "callable": "Ovr{overrides.B::methodB}",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 39,
               "start": 27,
               "end": 29
@@ -469,7 +457,7 @@
           },
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 68,
               "start": 27,
               "end": 29
@@ -486,7 +474,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.Base::__init__}",
+    "callable": "Ovr{overrides.Base::__init__}",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -505,7 +493,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.Base::classMethod}",
+    "callable": "Ovr{overrides.Base::classMethod}",
     "sources": [],
     "sinks": [
       {
@@ -513,7 +501,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 43,
               "start": 19,
               "end": 22
@@ -529,7 +517,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.Base::methodA}",
+    "callable": "Ovr{overrides.Base::methodA}",
     "sources": [],
     "sinks": [
       {
@@ -537,7 +525,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 29,
               "start": 19,
               "end": 22
@@ -546,7 +534,7 @@
           },
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 65,
               "start": 19,
               "end": 22
@@ -562,14 +550,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.Base::methodB}",
+    "callable": "Ovr{overrides.Base::methodB}",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 39,
               "start": 27,
               "end": 29
@@ -578,7 +566,7 @@
           },
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 68,
               "start": 27,
               "end": 29
@@ -595,7 +583,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.C::__init__}",
+    "callable": "Ovr{overrides.C::__init__}",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -614,7 +602,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{test_overrides.C::methodA}",
+    "callable": "Ovr{overrides.C::methodA}",
     "sources": [],
     "sinks": [
       {
@@ -622,7 +610,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 65,
               "start": 19,
               "end": 22
@@ -638,7 +626,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.A.__init__",
+    "callable": "overrides.A.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -657,7 +645,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.A.methodA",
+    "callable": "overrides.A.methodA",
     "sources": [],
     "sinks": [
       {
@@ -665,7 +653,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 29,
               "start": 19,
               "end": 22
@@ -681,7 +669,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.B.__init__",
+    "callable": "overrides.B.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -700,7 +688,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.B.classMethod",
+    "callable": "overrides.B.classMethod",
     "sources": [],
     "sinks": [
       {
@@ -708,7 +696,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 43,
               "start": 19,
               "end": 22
@@ -724,14 +712,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.B.methodB",
+    "callable": "overrides.B.methodB",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 39,
               "start": 27,
               "end": 29
@@ -748,7 +736,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.Base.__init__",
+    "callable": "overrides.Base.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -767,7 +755,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.C.__init__",
+    "callable": "overrides.C.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -786,7 +774,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.D.__init__",
+    "callable": "overrides.D.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -805,7 +793,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.D.methodA",
+    "callable": "overrides.D.methodA",
     "sources": [],
     "sinks": [
       {
@@ -813,7 +801,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 65,
               "start": 19,
               "end": 22
@@ -829,14 +817,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_overrides.D.methodB",
+    "callable": "overrides.D.methodB",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_overrides.py",
+              "filename": "overrides.py",
               "line": 68,
               "start": 27,
               "end": 29

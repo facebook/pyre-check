@@ -1,13 +1,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.match_flows",
+    "callable": "port.match_flows",
     "callable_line": 14,
     "code": 5002,
     "line": 16,
     "start": 15,
     "end": 16,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -17,12 +17,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 15,
                 "start": 20,
                 "end": 22
               },
-              "resolves_to": [ "test_port.source_field" ],
+              "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
               "length": 1
             },
@@ -36,12 +36,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 16,
                 "start": 15,
                 "end": 16
               },
-              "resolves_to": [ "test_port.sink_field" ],
+              "resolves_to": [ "port.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
@@ -55,13 +55,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.match_star_arg_directly",
+    "callable": "port.match_star_arg_directly",
     "callable_line": 32,
     "code": 5002,
     "line": 33,
     "start": 31,
     "end": 43,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -71,12 +71,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 33,
                 "start": 43,
                 "end": 45
               },
-              "resolves_to": [ "test_port.source_field" ],
+              "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
               "length": 1
             },
@@ -90,12 +90,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 33,
                 "start": 31,
                 "end": 43
               },
-              "resolves_to": [ "test_port.star_arg_wrapper" ],
+              "resolves_to": [ "port.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
@@ -109,13 +109,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.match_star_arg_with_star",
+    "callable": "port.match_star_arg_with_star",
     "callable_line": 27,
     "code": 5002,
     "line": 29,
     "start": 26,
     "end": 31,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -125,12 +125,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 28,
                 "start": 27,
                 "end": 29
               },
-              "resolves_to": [ "test_port.source_field" ],
+              "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
               "length": 1
             },
@@ -144,12 +144,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 29,
                 "start": 26,
                 "end": 31
               },
-              "resolves_to": [ "test_port.star_arg_wrapper" ],
+              "resolves_to": [ "port.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
@@ -163,13 +163,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.match_star_star_arg_directly",
+    "callable": "port.match_star_star_arg_directly",
     "callable_line": 49,
     "code": 5002,
     "line": 50,
     "start": 40,
     "end": 52,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -179,12 +179,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 50,
                 "start": 52,
                 "end": 54
               },
-              "resolves_to": [ "test_port.source_field" ],
+              "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
               "length": 1
             },
@@ -198,12 +198,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 50,
                 "start": 40,
                 "end": 52
               },
-              "resolves_to": [ "test_port.star_star_arg_wrapper" ],
+              "resolves_to": [ "port.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
@@ -217,13 +217,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.match_star_star_arg_with_star",
+    "callable": "port.match_star_star_arg_with_star",
     "callable_line": 44,
     "code": 5002,
     "line": 46,
     "start": 31,
     "end": 37,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -233,12 +233,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 45,
                 "start": 39,
                 "end": 41
               },
-              "resolves_to": [ "test_port.source_field" ],
+              "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
               "length": 1
             },
@@ -252,12 +252,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 46,
                 "start": 31,
                 "end": 37
               },
-              "resolves_to": [ "test_port.star_star_arg_wrapper" ],
+              "resolves_to": [ "port.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
@@ -271,14 +271,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.Foo.some_source",
+    "callable": "port.Foo.some_source",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_port.py",
+              "filename": "port.py",
               "line": 56,
               "start": 27,
               "end": 29
@@ -295,7 +295,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.refer_to_method_as_field",
+    "callable": "port.refer_to_method_as_field",
     "sources": [],
     "sinks": [
       {
@@ -303,7 +303,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_port.py",
+              "filename": "port.py",
               "line": 62,
               "start": 15,
               "end": 20
@@ -319,13 +319,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_port.refer_to_method_as_field",
+    "callable": "port.refer_to_method_as_field",
     "callable_line": 59,
     "code": 5002,
     "line": 62,
     "start": 15,
     "end": 20,
-    "filename": "test_port.py",
+    "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -335,12 +335,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 61,
                 "start": 12,
                 "end": 27
               },
-              "resolves_to": [ "test_port.Foo.some_source" ],
+              "resolves_to": [ "port.Foo.some_source" ],
               "port": "result",
               "length": 1
             },
@@ -353,7 +353,7 @@
         "roots": [
           {
             "root": {
-              "filename": "test_port.py",
+              "filename": "port.py",
               "line": 62,
               "start": 15,
               "end": 20
@@ -368,7 +368,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.sink_field",
+    "callable": "port.sink_field",
     "sources": [],
     "sinks": [
       {
@@ -376,7 +376,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_port.py",
+              "filename": "port.py",
               "line": 11,
               "start": 15,
               "end": 20
@@ -392,14 +392,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.source_field",
+    "callable": "port.source_field",
     "sources": [
       {
         "port": "result[a]",
         "taint": [
           {
             "root": {
-              "filename": "test_port.py",
+              "filename": "port.py",
               "line": 6,
               "start": 27,
               "end": 29
@@ -416,7 +416,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.star_arg",
+    "callable": "port.star_arg",
     "sources": [],
     "sinks": [
       {
@@ -425,12 +425,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 20,
                 "start": 15,
                 "end": 19
               },
-              "resolves_to": [ "test_port.sink_field" ],
+              "resolves_to": [ "port.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
@@ -445,7 +445,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.star_arg_wrapper",
+    "callable": "port.star_arg_wrapper",
     "sources": [],
     "sinks": [
       {
@@ -454,12 +454,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 24,
                 "start": 16,
                 "end": 21
               },
-              "resolves_to": [ "test_port.star_arg" ],
+              "resolves_to": [ "port.star_arg" ],
               "port": "formal(*rest1)[1][a]",
               "length": 2
             },
@@ -474,7 +474,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.star_star_arg",
+    "callable": "port.star_star_arg",
     "sources": [],
     "sinks": [
       {
@@ -483,12 +483,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 37,
                 "start": 15,
                 "end": 21
               },
-              "resolves_to": [ "test_port.sink_field" ],
+              "resolves_to": [ "port.sink_field" ],
               "port": "formal(arg)[a]",
               "length": 1
             },
@@ -503,7 +503,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_port.star_star_arg_wrapper",
+    "callable": "port.star_star_arg_wrapper",
     "sources": [],
     "sinks": [
       {
@@ -512,12 +512,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_port.py",
+                "filename": "port.py",
                 "line": 41,
                 "start": 21,
                 "end": 29
               },
-              "resolves_to": [ "test_port.star_star_arg" ],
+              "resolves_to": [ "port.star_star_arg" ],
               "port": "formal(**kw)[arg][a]",
               "length": 2
             },

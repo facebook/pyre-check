@@ -38,7 +38,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_taint_in_taint_out.Data.__init__",
+    "callable": "taint_in_taint_out.Data.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -75,7 +75,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_taint_in_taint_out.get_data",
+    "callable": "taint_in_taint_out.get_data",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -97,7 +97,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_taint_in_taint_out.product_data",
+    "callable": "taint_in_taint_out.product_data",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -132,7 +132,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_taint_in_taint_out.product_data_wrapper",
+    "callable": "taint_in_taint_out.product_data_wrapper",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -153,14 +153,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_taint_in_taint_out.test_tito",
+    "callable": "taint_in_taint_out.tito",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_taint_in_taint_out.py",
+              "filename": "taint_in_taint_out.py",
               "line": 37,
               "start": 44,
               "end": 46

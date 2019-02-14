@@ -1,6 +1,0 @@
-Call dependencies
-test_source_sink_flow.bad (fun) -> [test_source_sink_flow.qux (fun)]
-test_source_sink_flow.bar (fun) -> [__testSource (fun)]
-test_source_sink_flow.match_flows (fun) -> [test_source_sink_flow.bad (fun) test_source_sink_flow.some_source (fun)]
-test_source_sink_flow.qux (fun) -> [__testSink (fun)]
-test_source_sink_flow.some_source (fun) -> [test_source_sink_flow.bar (fun)]

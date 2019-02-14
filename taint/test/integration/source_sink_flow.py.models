@@ -1,13 +1,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "test_source_sink_flow.match_flows",
+    "callable": "source_sink_flow.match_flows",
     "callable_line": 20,
     "code": 5002,
     "line": 22,
     "start": 11,
     "end": 12,
-    "filename": "test_source_sink_flow.py",
+    "filename": "source_sink_flow.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -17,12 +17,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_source_sink_flow.py",
+                "filename": "source_sink_flow.py",
                 "line": 21,
                 "start": 19,
                 "end": 21
               },
-              "resolves_to": [ "test_source_sink_flow.some_source" ],
+              "resolves_to": [ "source_sink_flow.some_source" ],
               "port": "result",
               "length": 2
             },
@@ -36,12 +36,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_source_sink_flow.py",
+                "filename": "source_sink_flow.py",
                 "line": 22,
                 "start": 11,
                 "end": 12
               },
-              "resolves_to": [ "test_source_sink_flow.bad" ],
+              "resolves_to": [ "source_sink_flow.bad" ],
               "port": "formal(arg)",
               "length": 2
             },
@@ -55,7 +55,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_source_sink_flow.bad",
+    "callable": "source_sink_flow.bad",
     "sources": [],
     "sinks": [
       {
@@ -64,12 +64,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_source_sink_flow.py",
+                "filename": "source_sink_flow.py",
                 "line": 13,
                 "start": 8,
                 "end": 11
               },
-              "resolves_to": [ "test_source_sink_flow.qux" ],
+              "resolves_to": [ "source_sink_flow.qux" ],
               "port": "formal(arg)",
               "length": 1
             },
@@ -84,14 +84,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_source_sink_flow.bar",
+    "callable": "source_sink_flow.bar",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
             "root": {
-              "filename": "test_source_sink_flow.py",
+              "filename": "source_sink_flow.py",
               "line": 5,
               "start": 23,
               "end": 25
@@ -108,7 +108,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_source_sink_flow.qux",
+    "callable": "source_sink_flow.qux",
     "sources": [],
     "sinks": [
       {
@@ -116,7 +116,7 @@
         "taint": [
           {
             "root": {
-              "filename": "test_source_sink_flow.py",
+              "filename": "source_sink_flow.py",
               "line": 9,
               "start": 15,
               "end": 18
@@ -132,7 +132,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "test_source_sink_flow.some_source",
+    "callable": "source_sink_flow.some_source",
     "sources": [
       {
         "port": "result",
@@ -140,12 +140,12 @@
           {
             "call": {
               "position": {
-                "filename": "test_source_sink_flow.py",
+                "filename": "source_sink_flow.py",
                 "line": 17,
                 "start": 14,
                 "end": 16
               },
-              "resolves_to": [ "test_source_sink_flow.bar" ],
+              "resolves_to": [ "source_sink_flow.bar" ],
               "port": "result",
               "length": 1
             },

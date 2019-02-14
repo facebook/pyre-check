@@ -1,0 +1,11 @@
+Overrides
+object::__init__ (override) -> [overrides.Base::__init__ (override)]
+overrides.B::__init__ (override) -> [overrides.C::__init__ (override)]
+overrides.B::classMethod (override) -> [overrides.C::classMethod (override)]
+overrides.B::methodB (override) -> [overrides.D::methodB (override)]
+overrides.Base::__init__ (override) -> [overrides.A::__init__ (override) overrides.B::__init__ (override)]
+overrides.Base::classMethod (override) -> [overrides.B::classMethod (override)]
+overrides.Base::methodA (override) -> [overrides.A::methodA (override) overrides.C::methodA (override)]
+overrides.Base::methodB (override) -> [overrides.B::methodB (override)]
+overrides.C::__init__ (override) -> [overrides.D::__init__ (override)]
+overrides.C::methodA (override) -> [overrides.D::methodA (override)]
