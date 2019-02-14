@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+import os
+import sys
+
 import IPython
 from sapp.db import DB
-from sapp.models import Issue, IssueInstance, SourceLocation
+from sapp.models import Issue, IssueInstance, Run, RunStatus, SourceLocation
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 
 class Interactive:
@@ -18,6 +22,23 @@ help()          show this message
         self.scope_vars = {"help": self.help, "issues": self.issues}
 
     def start_repl(self):
+        with self.db.make_session() as session:
+            latest_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+
+        if latest_run_id.resolved() is None:
+            print(
+                "No runs found. "
+                f"Try running '{os.path.basename(sys.argv[0])} analyze' first.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        self.current_run_id = latest_run_id
+
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
         print("=" * len(self.welcome_message))
@@ -30,6 +51,7 @@ help()          show this message
         with self.db.make_session() as session:
             issues = (
                 session.query(IssueInstance, Issue)
+                .filter(IssueInstance.run_id == self.current_run_id)
                 .join(Issue, IssueInstance.issue_id == Issue.id)
                 .options(joinedload(IssueInstance.message))
                 .all()
@@ -45,3 +67,5 @@ help()          show this message
                 f":{SourceLocation.to_string(issue_instance.location)}"
             )
             print("-" * 80)
+
+        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
