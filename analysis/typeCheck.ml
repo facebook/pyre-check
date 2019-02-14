@@ -1354,8 +1354,9 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation {
                     name = sanitized_access;
                     annotation;
-                    evidence_locations = [];
                     given_annotation;
+                    evidence_locations = [];
+                    thrown_at_source = true;
                   })
                 ~define:define_node
               |> add_error ~state
@@ -1977,8 +1978,9 @@ module State = struct
               ~kind:(Error.ProhibitedAny {
                   Error.name = Access.create "typing.cast";
                   annotation = None;
-                  evidence_locations = [];
                   given_annotation = Some cast_annotation;
+                  evidence_locations = [];
+                  thrown_at_source = true;
                 })
               ~define
             |> add_error ~state
@@ -2482,8 +2484,9 @@ module State = struct
               ~kind:(Error.MissingReturnAnnotation {
                   name = Access.create "$return_annotation";
                   annotation = Some actual;
-                  evidence_locations = [instantiate location];
                   given_annotation;
+                  evidence_locations = [instantiate location];
+                  thrown_at_source = true;
                 })
               ~define:define_node
           in
@@ -2724,20 +2727,24 @@ module State = struct
               (* Check for missing annotations. *)
               let state =
                 let error =
-                  let insufficiently_annotated =
-                    let contains_any annotation =
-                      if Type.is_dictionary ~with_key:(Some Type.string) annotation then
-                        false
-                      else
-                        Type.contains_any annotation
-                    in
-                    match original_annotation with
-                    | Some annotation when contains_any annotation ->
-                        true
+                  let insufficiently_annotated, thrown_at_source =
+                    match annotation with
+                    | Some annotation when Type.expression_contains_any annotation ->
+                        original_annotation
+                        >>| Type.is_dictionary ~with_key:(Some Type.string)
+                        |> Option.value ~default:false
+                        |> not
+                        |> (fun insufficient -> insufficient, true)
                     | None when is_immutable ->
-                        Type.equal expected Type.Top || contains_any expected
+                        let contains_any annotation =
+                          if Type.is_dictionary ~with_key:(Some Type.string) annotation then
+                            false
+                          else
+                            Type.contains_any annotation
+                        in
+                        Type.equal expected Type.Top || contains_any expected, false
                     | _ ->
-                        false
+                        false, false
                   in
                   let actual_annotation, evidence_locations =
                     if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
@@ -2754,8 +2761,9 @@ module State = struct
                           ~kind:(Error.MissingGlobalAnnotation {
                               Error.name = access;
                               annotation = actual_annotation;
-                              evidence_locations;
                               given_annotation = Some expected;
+                              evidence_locations;
+                              thrown_at_source = true;
                             })
                           ~define:define_node
                       )
@@ -2770,8 +2778,9 @@ module State = struct
                               missing_annotation = {
                                 Error.name = access;
                                 annotation = actual_annotation;
-                                evidence_locations;
                                 given_annotation = Some expected;
+                                evidence_locations;
+                                thrown_at_source;
                               };
                             })
                           ~define:define_node
@@ -2783,8 +2792,9 @@ module State = struct
                           ~kind:(Error.ProhibitedAny {
                               Error.name = access;
                               annotation = actual_annotation;
-                              evidence_locations;
                               given_annotation = Some expected;
+                              evidence_locations;
+                              thrown_at_source = true;
                             })
                           ~define:define_node
                       )
@@ -2803,8 +2813,9 @@ module State = struct
                           ~kind:(Error.MissingGlobalAnnotation {
                               Error.name = access;
                               annotation = actual_annotation;
-                              evidence_locations;
                               given_annotation = Some expected;
+                              evidence_locations;
+                              thrown_at_source;
                             })
                           ~define:define_node
                       )
@@ -2815,10 +2826,11 @@ module State = struct
                           ~kind:(Error.ProhibitedAny {
                               Error.name = access;
                               annotation = None;
-                              evidence_locations;
                               given_annotation = Some (
                                 Resolution.parse_annotation resolution value
                               );
+                              evidence_locations;
+                              thrown_at_source = true;
                             })
                           ~define:define_node
                       )

@@ -129,8 +129,9 @@ module State = struct
                 ~kind:(Error.MissingParameterAnnotation {
                     name;
                     annotation = Some annotation;
-                    evidence_locations = [];
                     given_annotation;
+                    evidence_locations = [];
+                    thrown_at_source = true;
                   })
                 ~define:define_node
             in

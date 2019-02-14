@@ -647,7 +647,7 @@ let test_recursive_infer _ =
         global a
         a = 1
     |}
-    [{|"int"|}];
+    [];
 
   assert_infer ~recursive_infer:true ~fields:["inference.annotation"]
     {|

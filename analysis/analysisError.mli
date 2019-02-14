@@ -23,8 +23,9 @@ type mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t option;
-  evidence_locations: Location.Instantiated.t list;
   given_annotation: Type.t option;
+  evidence_locations: Location.Instantiated.t list;
+  thrown_at_source: bool;
 }
 [@@deriving compare, eq, sexp, hash]
 

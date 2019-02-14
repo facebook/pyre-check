@@ -27,8 +27,9 @@ type mismatch = {
 type missing_annotation = {
   name: Access.t;
   annotation: Type.t option;
-  evidence_locations: Location.Instantiated.t list;
   given_annotation: Type.t option;
+  evidence_locations: Location.Instantiated.t list;
+  thrown_at_source: bool;
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -317,7 +318,7 @@ let messages ~detailed:_ ~define location kind =
                       Type.pp parent;
                   ]
             end
-        | { name; annotation = Some annotation; evidence_locations; given_annotation } ->
+        | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } ->
             let detail =
               let evidence_string =
                 evidence_locations
@@ -478,6 +479,7 @@ let messages ~detailed:_ ~define location kind =
       annotation = Some annotation;
       evidence_locations;
       given_annotation;
+      _;
     } when Type.is_concrete annotation ->
       begin
         let evidence_string =
@@ -1386,11 +1388,12 @@ let join ~resolution left right =
     {
       left with
       annotation = join_annotation_options left.annotation right.annotation;
+      given_annotation = join_annotation_options left.given_annotation right.given_annotation;
       evidence_locations =
         List.dedup_and_sort
           ~compare:Location.Instantiated.compare
           (left.evidence_locations @ right.evidence_locations);
-      given_annotation = join_annotation_options left.given_annotation right.given_annotation;
+      thrown_at_source = left.thrown_at_source || right.thrown_at_source;
     }
   in
   let kind =
@@ -1746,8 +1749,9 @@ let filter ~configuration ~resolution errors =
     let is_stub_error error =
       String.is_suffix ~suffix:".pyi" (path error)
     in
-    (* Ignore naming mismatches on parameters of dunder methods due to unofficial typeshed naming *)
     let is_override_on_dunder_method { kind; _ } =
+      (* Ignore naming mismatches on parameters of dunder methods due to unofficial
+         typeshed naming *)
       match kind with
       | InconsistentOverride { overridden_method; override; _ }
         when String.is_prefix ~prefix:"__" (Access.show overridden_method) &&
@@ -1759,12 +1763,22 @@ let filter ~configuration ~resolution errors =
           end
       | _ -> false
     in
-
+    let is_unnecessary_missing_annotation_error { kind; _ } =
+      (* Ignore missing annotations thrown at assigns but not thrown where global or attribute was
+         originally defined. *)
+      match kind with
+      | MissingGlobalAnnotation { thrown_at_source; _ }
+      | MissingAttributeAnnotation { missing_annotation = { thrown_at_source; _ }; _ } ->
+          not thrown_at_source
+      | _ ->
+          false
+    in
     is_stub_error error ||
     is_mock_error error ||
     is_unimplemented_return_error error ||
     is_builtin_import_error error ||
-    is_override_on_dunder_method error
+    is_override_on_dunder_method error ||
+    is_unnecessary_missing_annotation_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors

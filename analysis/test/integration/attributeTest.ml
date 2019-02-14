@@ -174,6 +174,40 @@ let test_check_attributes _ =
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
+  (* Annotations containing `Any` in strict are not permitted. *)
+  assert_type_errors
+    {|
+      class Foo:
+        bar: typing.Any
+        def foo(self) -> int:
+          self.bar = 'foo'
+          self.bar = 1
+          return self.bar
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type " ^
+      "`typing.Union[int, str]` but type `Any` is specified.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
+      "non-optional type `typing.Any` but is never initialized.";
+    ];
+
+  (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
+     are thrown in debug that are filtered away in strict. *)
+  assert_strict_type_errors
+    {|
+      MyType: typing.Any
+      class Foo:
+        bar: MyType
+        def foo(self) -> int:
+          self.bar = 'foo'
+          self.bar = 1
+          return self.bar
+    |}
+    [
+      "Missing global annotation [5]: Globally accessible variable `MyType` must be specified " ^
+      "as type other than `Any`."
+    ];
+
   assert_type_errors
     {|
       class Foo:

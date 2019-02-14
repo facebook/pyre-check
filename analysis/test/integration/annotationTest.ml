@@ -315,7 +315,7 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
-  assert_type_errors
+  assert_strict_type_errors
     {|
       MyType = 1
       x: MyType = 1
@@ -331,8 +331,6 @@ let test_check_invalid_type _ =
     [
       "Missing global annotation [5]: Globally accessible variable `MyType` " ^
       "must be specified as type other than `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `x` has type `int` " ^
-      "but type `Any` is specified.";
     ];
   assert_type_errors
     {|
@@ -342,8 +340,6 @@ let test_check_invalid_type _ =
     [
       "Missing global annotation [5]: Globally accessible variable `MyType` " ^
       "must be specified as type other than `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
-      "as type that does not contain `Any`.";
     ];
   assert_type_errors
     {|
