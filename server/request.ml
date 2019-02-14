@@ -943,6 +943,7 @@ let rec process_deferred_state
     ~flush =
   (* The chunk size is an heuristic - the attempt is to have a request that can be completed
      in a few seconds. *)
+  SharedMem.collect `aggressive;
   let current_batch, remaining =
     if flush then
       Deferred.take_all deferred_state
