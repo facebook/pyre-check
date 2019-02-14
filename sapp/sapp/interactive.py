@@ -4,6 +4,7 @@ import os
 import sys
 
 import IPython
+from IPython.core import page
 from sapp.db import DB
 from sapp.models import Issue, IssueInstance, Run, RunStatus, SourceLocation
 from sqlalchemy.orm import joinedload
@@ -54,14 +55,19 @@ help()          show this message
     def help(self):
         print(self.help_message)
 
-    def runs(self):
+    def runs(self, use_pager=None):
+        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
+        pager = page.page if use_pager else page.display_page
+
         with self.db.make_session() as session:
             runs = session.query(Run).filter(Run.status == RunStatus.FINISHED).all()
 
-        for run in runs:
-            print(f"Run {run.id}")
-            print(f"Date: {run.date}")
-            print("-" * 80)
+        run_strings = [
+            "\n".join([f"Run {run.id}", f"Date: {run.date}", "-" * 80]) for run in runs
+        ]
+        run_output = "\n".join(run_strings)
+
+        pager(run_output)
         print(f"Found {len(runs)} runs.")
 
     def set_run(self, run_id):
@@ -83,7 +89,10 @@ help()          show this message
 
         self.current_run_id = selected_run.id
 
-    def issues(self):
+    def issues(self, use_pager=None):
+        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
+        pager = page.page if use_pager else page.display_page
+
         with self.db.make_session() as session:
             issues = (
                 session.query(IssueInstance, Issue)
@@ -93,14 +102,23 @@ help()          show this message
                 .all()
             )
 
-        for issue_instance, issue in issues:
-            print(f"Issue {issue_instance.id}")
-            print(f"    Code: {issue.code}")
-            print(f" Message: {issue_instance.message.contents}")
-            print(f"Callable: {issue.callable}")
-            print(
-                f"Location: {issue_instance.filename}"
-                f":{SourceLocation.to_string(issue_instance.location)}"
+        issue_strings = [
+            "\n".join(
+                [
+                    f"Issue {issue_instance.id}",
+                    f"    Code: {issue.code}",
+                    f" Message: {issue_instance.message.contents}",
+                    f"Callable: {issue.callable}",
+                    (
+                        f"Location: {issue_instance.filename}"
+                        f":{SourceLocation.to_string(issue_instance.location)}"
+                    ),
+                    "-" * 80,
+                ]
             )
-            print("-" * 80)
+            for issue_instance, issue in issues
+        ]
+        issue_output = "\n".join(issue_strings)
+
+        pager(issue_output)
         print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")

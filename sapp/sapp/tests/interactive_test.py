@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from io import StringIO
 from unittest import TestCase
+from unittest.mock import patch
 
 from sapp.db import DB
 from sapp.interactive import Interactive
@@ -219,3 +220,45 @@ class InteractiveTest(TestCase):
 
         self.assertIn("Run 2 doesn't exist", stderr)
         self.assertIn("Run 3 doesn't exist", stderr)
+
+    def mock_pager(self, output_string):
+        self.pager_calls += 1
+
+    def testPager(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instance = IssueInstance(
+            id=1,
+            run_id=1,
+            message_id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            issue_id=1,
+        )
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            session.commit()
+
+        # Default is no pager in tests
+        self.pager_calls = 0
+        with patch("IPython.core.page.page", self.mock_pager):
+            self.interactive.start_repl()
+            self.interactive.issues()
+            self.interactive.runs()
+        self.assertEqual(self.pager_calls, 0)
+
+        self.pager_calls = 0
+        with patch("IPython.core.page.page", self.mock_pager):
+            self.interactive.start_repl()
+            self.interactive.issues(use_pager=True)
+            self.interactive.runs(use_pager=True)
+        self.assertEqual(self.pager_calls, 2)
