@@ -2410,6 +2410,7 @@ module State = struct
               Node.location = define_location;
               value = {
                 Define.async;
+                parent = define_parent;
                 return_annotation = return_annotation_expression;
                 _;
               } as define;
@@ -2725,126 +2726,157 @@ module State = struct
               in
 
               (* Check for missing annotations. *)
-              let state =
-                let error =
-                  let insufficiently_annotated, thrown_at_source =
-                    match annotation with
-                    | Some annotation when Type.expression_contains_any annotation ->
-                        original_annotation
-                        >>| Type.is_dictionary ~with_key:(Some Type.string)
-                        |> Option.value ~default:false
-                        |> not
-                        |> (fun insufficient -> insufficient, true)
-                    | None when is_immutable ->
-                        let contains_any annotation =
-                          if Type.is_dictionary ~with_key:(Some Type.string) annotation then
-                            false
-                          else
-                            Type.contains_any annotation
-                        in
-                        Type.equal expected Type.Top || contains_any expected, false
-                    | _ ->
-                        false, false
-                  in
-                  let actual_annotation, evidence_locations =
-                    if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
-                      None, []
-                    else
-                      Some resolved, [instantiate location]
-                  in
-                  match element with
-                  | Attribute { attribute = access; origin = Module _; defined }
-                    when defined && insufficiently_annotated ->
-                      Some (
-                        Error.create
-                          ~location
-                          ~kind:(Error.MissingGlobalAnnotation {
-                              Error.name = access;
-                              annotation = actual_annotation;
-                              given_annotation = Some expected;
-                              evidence_locations;
-                              thrown_at_source = true;
-                            })
-                          ~define:define_node
-                      )
-                  | Attribute { attribute = access; origin = Instance attribute; defined }
-                    when defined && insufficiently_annotated ->
-                      let attribute_location = Annotated.Attribute.location attribute in
-                      Some (
-                        Error.create
-                          ~location:attribute_location
-                          ~kind:(Error.MissingAttributeAnnotation {
-                              parent = Annotated.Attribute.parent attribute;
-                              missing_annotation = {
-                                Error.name = access;
-                                annotation = actual_annotation;
-                                given_annotation = Some expected;
-                                evidence_locations;
-                                thrown_at_source;
-                              };
-                            })
-                          ~define:define_node
-                      )
-                  | Attribute _ when insufficiently_annotated && not is_type_alias ->
-                      Some (
-                        Error.create
-                          ~location
-                          ~kind:(Error.ProhibitedAny {
-                              Error.name = access;
-                              annotation = actual_annotation;
-                              given_annotation = Some expected;
-                              evidence_locations;
-                              thrown_at_source = true;
-                            })
-                          ~define:define_node
-                      )
-                  | Value
-                    when (Resolution.is_global ~access resolution) &&
-                         insufficiently_annotated &&
-                         not is_type_alias ->
-                      let global_location =
-                        Resolution.global resolution (Expression.Access.delocalize access)
-                        >>| Node.location
-                        |> Option.value ~default:location
+              let error =
+                let insufficiently_annotated, thrown_at_source =
+                  match annotation with
+                  | Some annotation when Type.expression_contains_any annotation ->
+                      original_annotation
+                      >>| Type.is_dictionary ~with_key:(Some Type.string)
+                      |> Option.value ~default:false
+                      |> not
+                      |> (fun insufficient -> insufficient, true)
+                  | None when is_immutable ->
+                      let contains_any annotation =
+                        if Type.is_dictionary ~with_key:(Some Type.string) annotation then
+                          false
+                        else
+                          Type.contains_any annotation
                       in
-                      Some (
-                        Error.create
-                          ~location:global_location
-                          ~kind:(Error.MissingGlobalAnnotation {
-                              Error.name = access;
-                              annotation = actual_annotation;
-                              given_annotation = Some expected;
-                              evidence_locations;
-                              thrown_at_source;
-                            })
-                          ~define:define_node
-                      )
-                  | Value when is_type_alias && Type.expression_contains_any value ->
-                      Some (
-                        Error.create
-                          ~location
-                          ~kind:(Error.ProhibitedAny {
-                              Error.name = access;
-                              annotation = None;
-                              given_annotation = Some (
-                                Resolution.parse_annotation resolution value
-                              );
-                              evidence_locations;
-                              thrown_at_source = true;
-                            })
-                          ~define:define_node
-                      )
+                      Type.equal expected Type.Top || contains_any expected, false
                   | _ ->
-                      None
+                      false, false
                 in
-                error >>| add_error ~state |> Option.value ~default:state
+                let actual_annotation, evidence_locations =
+                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
+                    None, []
+                  else
+                    Some resolved, [instantiate location]
+                in
+                let is_illegal_attribute_annotation
+                    {
+                      Node.value = { AnnotatedClass.Attribute.parent = attribute_parent; _ };
+                      _;
+                    } =
+                  let parent_annotation =
+                    define_parent
+                    >>| Access.expression
+                    >>| Resolution.parse_annotation resolution
+                    |> (fun annotation -> Option.value annotation ~default:Type.Top)
+                  in
+                  explicit && (not (Type.equal parent_annotation attribute_parent))
+                in
+                match element with
+                | Attribute { attribute = access; origin = Module _; defined }
+                  when defined && insufficiently_annotated ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.MissingGlobalAnnotation {
+                          Error.name = access;
+                          annotation = actual_annotation;
+                          given_annotation = Some expected;
+                          evidence_locations;
+                          thrown_at_source = true;
+                        })
+                      ~define:define_node
+                    |> Option.some
+                | Attribute { origin = Instance attribute; _ }
+                  when is_illegal_attribute_annotation attribute ->
+                    (* Non-self attributes may not be annotated. *)
+                    Error.create
+                      ~location
+                      ~kind:(Error.IllegalAnnotationTarget target)
+                      ~define:define_node
+                    |> Option.some
+                | Attribute { attribute = access; origin = Instance attribute; defined }
+                  when defined && insufficiently_annotated ->
+                    let attribute_location = Annotated.Attribute.location attribute in
+                    Error.create
+                      ~location:attribute_location
+                      ~kind:(Error.MissingAttributeAnnotation {
+                          parent = Annotated.Attribute.parent attribute;
+                          missing_annotation = {
+                            Error.name = access;
+                            annotation = actual_annotation;
+                            given_annotation = Some expected;
+                            evidence_locations;
+                            thrown_at_source;
+                          };
+                        })
+                      ~define:define_node
+                    |> Option.some
+                | Attribute _ when insufficiently_annotated && not is_type_alias ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.ProhibitedAny {
+                          Error.name = access;
+                          annotation = actual_annotation;
+                          given_annotation = Some expected;
+                          evidence_locations;
+                          thrown_at_source = true;
+                        })
+                      ~define:define_node
+                    |> Option.some
+                | Attribute _ ->
+                    None
+                | Value
+                  when (Resolution.is_global ~access resolution) &&
+                       insufficiently_annotated &&
+                       not is_type_alias ->
+                    let global_location =
+                      Resolution.global resolution (Expression.Access.delocalize access)
+                      >>| Node.location
+                      |> Option.value ~default:location
+                    in
+                    Error.create
+                      ~location:global_location
+                      ~kind:(Error.MissingGlobalAnnotation {
+                          Error.name = access;
+                          annotation = actual_annotation;
+                          given_annotation = Some expected;
+                          evidence_locations;
+                          thrown_at_source;
+                        })
+                      ~define:define_node
+                    |> Option.some
+                | Value when is_type_alias && Type.expression_contains_any value ->
+                    Some (
+                      Error.create
+                        ~location
+                        ~kind:(Error.ProhibitedAny {
+                            Error.name = access;
+                            annotation = None;
+                            given_annotation = Some (Resolution.parse_annotation resolution value);
+                            evidence_locations;
+                            thrown_at_source = true;
+                          })
+                        ~define:define_node
+                    )
+                | _ ->
+                    begin
+                      match explicit, access with
+                      | false, _
+                      | _, [_] ->
+                          None
+                      | _ ->
+                          Error.create
+                            ~location
+                            ~kind:(Error.IllegalAnnotationTarget target)
+                            ~define:define_node
+                          |> Option.some
+                    end
+              in
+              let state = error >>| add_error ~state |> Option.value ~default:state in
+              let is_valid_annotation =
+                error
+                >>| Error.kind
+                |> function | Some (Error.IllegalAnnotationTarget _) -> false | _ -> true
               in
 
               (* Propagate annotations. *)
               let state =
                 let resolution =
                   let annotation =
-                    if explicit then
+                    if explicit && is_valid_annotation then
                       Annotation.create_immutable
                         ~global:(Resolution.is_global ~access resolution)
                         guide
@@ -2983,7 +3015,14 @@ module State = struct
                       ~resolved:Type.Top
                       ~expression:None)
           | _ ->
-              state
+              if Option.is_some annotation then
+                Error.create
+                  ~location
+                  ~kind:(Error.IllegalAnnotationTarget target)
+                  ~define:define_node
+                |> add_error ~state
+              else
+                state
         in
         forward_assign ~state ~target ~guide ~resolved ~expression:(Some value)
 

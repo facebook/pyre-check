@@ -41,6 +41,7 @@ module type Error = sig
 
   val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
 
+  val kind: t -> kind
   val path: t -> string
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t

@@ -1132,6 +1132,11 @@ let show_sanitized { Node.location; value } =
       show { Node.location; value }
 
 
+let pp_sanitized formatter expression =
+  show_sanitized expression
+  |> Format.fprintf formatter "%s"
+
+
 let pp_expression_list formatter expression_list =
   Format.fprintf
     formatter

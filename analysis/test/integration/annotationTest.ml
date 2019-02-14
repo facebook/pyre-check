@@ -355,6 +355,55 @@ let test_check_invalid_type _ =
     ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."]
 
 
+let test_check_illegal_annotation_target _ =
+  assert_type_errors
+    {|
+      class Bar:
+        a: str = "string"
+      class Foo:
+        def foo(self) -> None:
+          x = Bar()
+          x.a: int = 1
+          reveal_type(x.a)
+    |}
+    [
+      "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
+      "Revealed type [-1]: Revealed type for `x.a` is `str`.";
+    ];
+
+  assert_type_errors
+    {|
+      class Bar: ...
+      class Foo:
+        def foo(self) -> None:
+          Bar(): int = 1
+    |}
+    ["Illegal annotation target [35]: Target `Bar.(...)` cannot be annotated."];
+
+  assert_type_errors
+    {|
+      class Bar: ...
+      class Foo:
+        def foo(self, x: Bar) -> None:
+          self.a: int = 1
+          x.a: int = 1
+    |}
+    ["Illegal annotation target [35]: Target `x.a` cannot be annotated."];
+
+  assert_type_errors
+    {|
+      class Foo:
+        a: int = 1
+
+      Foo.a: str = "string"
+      reveal_type(Foo.a)
+    |}
+    [
+      "Illegal annotation target [35]: Target `Foo.a` cannot be annotated.";
+      "Revealed type [-1]: Revealed type for `Foo.a` is `int`.";
+    ]
+
+
 let test_check_missing_type_parameters _ =
   assert_type_errors
     {|
@@ -1146,6 +1195,7 @@ let () =
   "annotation">:::[
     "check_undefined_type">::test_check_undefined_type;
     "check_invalid_type">::test_check_invalid_type;
+    "check_illegal_annotation_target">::test_check_illegal_annotation_target;
     "check_invalid_type_variables">::test_check_invalid_type_variables;
     "check_missing_type_parameters">::test_check_missing_type_parameters;
     "check_analysis_failure">::test_check_analysis_failure;

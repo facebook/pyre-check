@@ -75,6 +75,7 @@ type type_variable_origin =
 
 type kind =
   | AnalysisFailure of Type.t
+  | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleAwaitableType of Type.t
@@ -161,6 +162,7 @@ let code = function
   | InvalidArgument _ -> 32
   | ProhibitedAny _ -> 33
   | InvalidTypeVariable _ -> 34
+  | IllegalAnnotationTarget _ -> 35
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -170,6 +172,7 @@ let code = function
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
   | Deobfuscation _ -> "Deobfuscation"
+  | IllegalAnnotationTarget _ -> "Illegal annotation target"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
@@ -236,6 +239,12 @@ let messages ~detailed:_ ~define location kind =
       ]
   | Deobfuscation source ->
       [Format.asprintf "\n%a" Source.pp source]
+  | IllegalAnnotationTarget expression ->
+      [
+        Format.asprintf
+          "Target `%a` cannot be annotated."
+          Expression.pp_sanitized expression
+      ]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
       [
@@ -1112,6 +1121,7 @@ let due_to_analysis_limitations { kind; _ } =
       Type.is_unknown annotation
   | AnalysisFailure _
   | Deobfuscation _
+  | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidTypeVariable _
@@ -1176,6 +1186,7 @@ let due_to_mismatch_with_any { kind; _ } =
       Type.mismatch_with_any actual expected
   | AnalysisFailure _
   | Deobfuscation _
+  | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
   | InvalidType _
@@ -1216,6 +1227,8 @@ let less_or_equal ~resolution left right =
         Type.equal left right
     | Deobfuscation left, Deobfuscation right ->
         Source.equal left right
+    | IllegalAnnotationTarget left, IllegalAnnotationTarget right ->
+        Expression.equal left right
     | ImpossibleIsinstance left, ImpossibleIsinstance right
       when Expression.equal left.expression right.expression ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -1333,6 +1346,7 @@ let less_or_equal ~resolution left right =
     | _, Top -> true
     | AnalysisFailure _, _
     | Deobfuscation _, _
+    | IllegalAnnotationTarget _, _
     | ImpossibleIsinstance _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
@@ -1402,6 +1416,9 @@ let join ~resolution left right =
         AnalysisFailure (Type.union [left; right])
     | Deobfuscation left, Deobfuscation right when Source.equal left right ->
         Deobfuscation left
+    | IllegalAnnotationTarget left, IllegalAnnotationTarget right
+      when Expression.equal left right ->
+        IllegalAnnotationTarget left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
@@ -1580,6 +1597,7 @@ let join ~resolution left right =
         Top
     | AnalysisFailure _, _
     | Deobfuscation _, _
+    | IllegalAnnotationTarget _, _
     | ImpossibleIsinstance _, _
     | IncompatibleAttributeType _, _
     | IncompatibleAwaitableType _, _
@@ -1877,6 +1895,8 @@ let dequalify
         AnalysisFailure (dequalify annotation)
     | Deobfuscation left ->
         Deobfuscation left
+    | IllegalAnnotationTarget left ->
+        IllegalAnnotationTarget left
     | ImpossibleIsinstance ({
         mismatch = { actual; expected; due_to_invariance };
         _;

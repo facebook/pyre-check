@@ -282,6 +282,8 @@ val show : t -> string
 
 val show_sanitized: t -> string
 
+val pp_sanitized: Format.formatter -> t -> unit
+
 val exists_in_list : ?match_prefix:bool -> expression_list: t list -> string -> bool
 
 val pp_expression_list : Format.formatter -> t list -> unit

@@ -66,6 +66,7 @@ type type_variable_origin =
 
 type kind =
   | AnalysisFailure of Type.t
+  | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
   | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleAwaitableType of Type.t

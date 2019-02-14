@@ -43,6 +43,7 @@ module type Error = sig
 
   val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
 
+  val kind: t -> kind
   val path: t -> string
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t
@@ -82,6 +83,10 @@ module Make(Kind: Kind) = struct
       kind;
       define
     }
+
+
+  let kind { kind; _ } =
+    kind
 
 
   let path { location = { Location.path; _ }; _ } =
