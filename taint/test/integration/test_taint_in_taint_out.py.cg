@@ -1,6 +1,6 @@
 Call dependencies
-qualifier.Data::__init__ (method) -> []
-qualifier.get_data (fun) -> []
-qualifier.product_data (fun) -> [qualifier.get_data (fun) qualifier.product_data (fun)]
-qualifier.product_data_wrapper (fun) -> [qualifier.product_data (fun)]
-qualifier.test_tito (fun) -> [__testSource (fun) qualifier.product_data_wrapper (fun)]
+test_taint_in_taint_out.Data::__init__ (method) -> []
+test_taint_in_taint_out.get_data (fun) -> []
+test_taint_in_taint_out.product_data (fun) -> [test_taint_in_taint_out.get_data (fun) test_taint_in_taint_out.product_data (fun)]
+test_taint_in_taint_out.product_data_wrapper (fun) -> [test_taint_in_taint_out.product_data (fun)]
+test_taint_in_taint_out.test_tito (fun) -> [__testSource (fun) test_taint_in_taint_out.product_data_wrapper (fun)]

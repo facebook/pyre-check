@@ -1,7 +1,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "qualifier.rce_problem",
+    "callable": "remote_code_execution.rce_problem",
     "callable_line": 4,
     "code": 5001,
     "line": 6,
@@ -47,7 +47,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "qualifier.subprocess_problem",
+    "callable": "remote_code_execution.subprocess_problem",
     "callable_line": 9,
     "code": 5001,
     "line": 11,

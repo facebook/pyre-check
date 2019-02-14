@@ -499,7 +499,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         ~section:`Taint
         "State: %a\nAnalyzing statement: %a"
         pp state
-        Statement.pp_statement statement;
+        Statement.pp (Node.create_with_default_location statement);
       let resolution =
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment

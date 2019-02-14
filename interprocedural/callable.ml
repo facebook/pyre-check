@@ -163,10 +163,9 @@ let class_matches search { Node.value = { Class.name; _ } ; _ } =
 
 let get_definition ~resolution = function
   | `Function name ->
-      FileOfDefinition.get name
-      >>= Ast.SharedMemory.Sources.get
-      >>| Preprocessing.defines
-      >>= List.find ~f:(define_matches name)
+      (Access.create name)
+      |> Resolution.function_definitions resolution
+      >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
   | `Method { class_name; method_name; } ->
       Type.Primitive class_name
       |> Resolution.class_definition resolution

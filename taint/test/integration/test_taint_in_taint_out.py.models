@@ -38,7 +38,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qualifier.Data.__init__",
+    "callable": "test_taint_in_taint_out.Data.__init__",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -75,7 +75,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qualifier.get_data",
+    "callable": "test_taint_in_taint_out.get_data",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -97,7 +97,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qualifier.product_data",
+    "callable": "test_taint_in_taint_out.product_data",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -132,7 +132,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qualifier.product_data_wrapper",
+    "callable": "test_taint_in_taint_out.product_data_wrapper",
     "sources": [],
     "sinks": [],
     "tito": [
@@ -153,7 +153,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "qualifier.test_tito",
+    "callable": "test_taint_in_taint_out.test_tito",
     "sources": [
       {
         "port": "result",

@@ -11,7 +11,6 @@ open Analysis
 module AnalysisError = Analysis.Error
 
 open Ast
-open Expression
 open Pyre
 open Taint
 
@@ -32,18 +31,33 @@ type test_environment = {
   environment: (module Environment.Handler);
 }
 
-let create_call_graph ?(path = "test.py") source =
+let create_call_graph ?(path = "test.py") source_content =
+  let source_content = Test.trim_extra_indentation source_content in
   let handle = File.Handle.create path in
   let source =
-    Test.parse ~qualifier:(Access.create "qualifier") ~handle:path source
+    Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:path source_content
     |> Preprocessing.preprocess
   in
-  let () = Ast.SharedMemory.Sources.remove ~handles:[handle] in
-  let () = Ast.SharedMemory.Sources.add handle source in
+  let path =
+    let path = Test.mock_path path in
+    File.create ~content:source_content path
+    |> File.write;
+    path
+  in
+  let configuration = Configuration.Analysis.create ~strict:true () in
+
+  (* Parse sources. *)
+  Ast.SharedMemory.Sources.remove ~handles:[handle];
+  Service.Parser.parse_sources
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~preprocessing_state:None
+    ~files:[File.create ~content:source_content path]
+  |> ignore;
+
   let environment = Test.environment () in
   Service.Environment.populate ~configuration:Test.mock_configuration environment [source];
 
-  let configuration = Configuration.Analysis.create ~strict:true () in
   let errors =
     TypeCheck.run ~configuration ~environment ~source
     |> List.filter ~f:(fun error -> AnalysisError.code error = 11)  (* Undefined types. *)
@@ -92,7 +106,11 @@ let create_call_graph ?(path = "test.py") source =
 
 let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
-  let { all_callables; callgraph; environment; overrides } = create_call_graph source in
+  let { all_callables; callgraph; environment; overrides } =
+    create_call_graph
+      ~path:"qualifier"
+      source
+  in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
     |> DependencyGraph.union overrides
