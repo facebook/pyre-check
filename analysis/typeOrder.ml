@@ -199,7 +199,6 @@ let insert (module Handler: Handler) annotation =
 
 let connect
     ?(parameters = [])
-    ?(add_backedge = true)
     ((module Handler: Handler) as order)
     ~predecessor
     ~successor =
@@ -234,8 +233,7 @@ let connect
           ~data:(target :: successors)
       in
       connect ~edges ~predecessor ~successor;
-      if add_backedge then
-        connect ~edges:backedges ~predecessor:successor ~successor:predecessor
+      connect ~edges:backedges ~predecessor:successor ~successor:predecessor
     end
 
 
@@ -1682,42 +1680,6 @@ let widen order ~widening_threshold ~previous ~next ~iteration =
     Type.Top
   else
     join order previous next
-
-
-let add_backedges (module Handler: Handler) ~bottom =
-  let backedges = Handler.backedges () in
-  let edge_keys = Handler.keys () in
-  let bottom = Handler.find_unsafe (Handler.indices ()) bottom in
-  let add_backedges predecessor =
-    let successors = Handler.find (Handler.edges ()) predecessor in
-    let add_backedge { Target.target = successor; parameters } =
-      let node = { Target.target = predecessor; parameters } in
-      match (Handler.find (Handler.backedges ()) successor) with
-      | None ->
-          Handler.set backedges ~key:successor ~data:[node]
-      | Some nodes ->
-          Handler.set backedges ~key:successor ~data:(node :: nodes)
-    in
-    match successors with
-    | Some successors ->
-        List.iter ~f:add_backedge successors
-    | None ->
-        ()
-  in
-  let clear_backedge key =
-    Handler.set backedges ~key ~data:[]
-  in
-  let add_bottom key =
-    match key <> bottom, Handler.find backedges key with
-    | true, None
-    | true, Some [] ->
-        Handler.set backedges ~key ~data:[{ Target.target = bottom; parameters = [] }]
-    | _ ->
-        ()
-  in
-  List.iter ~f:clear_backedge edge_keys;
-  List.iter ~f:add_backedges edge_keys;
-  List.iter ~f:add_bottom edge_keys
 
 
 let deduplicate (module Handler: Handler) ~annotations =

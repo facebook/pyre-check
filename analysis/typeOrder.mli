@@ -69,7 +69,6 @@ val handler: t -> (module Handler)
 val insert: (module Handler) -> Type.t -> unit
 val connect
   :  ?parameters: Type.t list
-  -> ?add_backedge: bool
   -> (module Handler)
   -> predecessor: Type.t
   -> successor: Type.t
@@ -122,7 +121,6 @@ val instantiate_successors_parameters
   -> target: Type.t
   -> Type.t List.t Option.t
 
-val add_backedges: (module Handler) -> bottom: Type.t -> unit
 val deduplicate: (module Handler) -> annotations: Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
 val connect_annotations_to_top

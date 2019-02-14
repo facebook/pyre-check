@@ -2253,60 +2253,6 @@ let test_connect_annotations_to_top _ =
     [!"1"]
 
 
-let test_add_backedges _ =
-  (*
-     TOP
-      |
-      A
-     / \
-    B   C
-     \ /
-      D
-      |
-   BOTTOM
-  *)
-  let (module Handler: TypeOrder.Handler) =
-    (* Don't add backedges when connecting *)
-    let order = Builder.create () |> TypeOrder.handler in
-    insert order Type.Bottom;
-    insert order Type.Top;
-    insert order !"A";
-    insert order !"B";
-    insert order !"C";
-    insert order !"D";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:Type.Bottom ~successor:!"D";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"B";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:!"D" ~successor:!"C";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:!"B" ~successor:!"A";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:!"C" ~successor:!"A";
-    TypeOrder.connect order ~add_backedge:false ~predecessor:!"A" ~successor:Type.Top;
-    order
-  in
-  let assert_backedges annotation number_of_backedges =
-    let index = Handler.find_unsafe (Handler.indices ()) annotation in
-    match Handler.find (Handler.backedges ()) index with
-    | None ->
-        assert_equal number_of_backedges 0
-    | Some backedges ->
-        assert_equal number_of_backedges (List.length backedges)
-  in
-  assert_backedges !"A" 0;
-  assert_backedges !"B" 0;
-  assert_backedges !"C" 0;
-  assert_backedges !"D" 0;
-
-  TypeOrder.add_backedges (module Handler) ~bottom:Type.Bottom;
-  assert_backedges !"A" 2;
-  assert_backedges !"B" 1;
-  assert_backedges !"C" 1;
-  assert_backedges !"D" 1;
-
-  (* Ensure that backedges only get added once by re-adding. *)
-  TypeOrder.add_backedges (module Handler) ~bottom:Type.Bottom;
-  assert_backedges !"A" 2;
-  assert_backedges !"B" 1
-
-
 let test_check_integrity _ =
   check_integrity order;
   check_integrity butterfly;
@@ -2455,7 +2401,6 @@ let test_is_instantiated _ =
 
 let () =
   "order">:::[
-    "add_backedges">::test_add_backedges;
     "check_integrity">::test_check_integrity;
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "deduplicate">::test_deduplicate;
