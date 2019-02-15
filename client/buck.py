@@ -9,6 +9,7 @@ from collections import namedtuple
 from typing import Dict, List  # noqa
 
 from . import log
+from .filesystem import find_root
 
 
 LOG = logging.getLogger(__name__)
@@ -34,6 +35,10 @@ def _find_source_directories(targets_map) -> BuckOut:
     targets = list(targets_map.keys())
     targets_not_found = []
     source_directories = []
+    buck_root = find_root(os.getcwd(), ".buckconfig")
+    if buck_root is None:
+        raise Exception("No .buckconfig found in ancestors of the current directory.")
+
     for target in targets:
         target_path = target
         target_prefix_index = target_path.find("//")
@@ -42,7 +47,7 @@ def _find_source_directories(targets_map) -> BuckOut:
         target_path = target_path.replace(":", "/")
 
         discovered_source_directories = glob.glob(
-            os.path.join("buck-out/gen/", target_path + "#*link-tree")
+            os.path.join(buck_root, "buck-out/gen/", target_path + "#*link-tree")
         )
         target_destination = targets_map[target]
         built = target_destination is not None and (

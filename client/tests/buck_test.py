@@ -27,7 +27,8 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
-    def test_find_source_directories(self) -> None:
+    @patch("{}.find_root".format(buck.__name__), return_value="/root")
+    def test_find_source_directories(self, find_root) -> None:
         trees = [
             "blah-vs_debugger#link-tree",
             "blah-blah#link-tree",
@@ -50,10 +51,10 @@ class BuckTest(unittest.TestCase):
             )
             glob_glob.assert_has_calls(
                 [
-                    call("buck-out/gen/path/targets/name#*link-tree"),
-                    call("buck-out/gen/path/targets/namelibrary#*link-tree"),
-                    call("buck-out/gen/path/...#*link-tree"),
-                    call("buck-out/gen/path/targets/name#*link-tree"),
+                    call("/root/buck-out/gen/path/targets/name#*link-tree"),
+                    call("/root/buck-out/gen/path/targets/namelibrary#*link-tree"),
+                    call("/root/buck-out/gen/path/...#*link-tree"),
+                    call("/root/buck-out/gen/path/targets/name#*link-tree"),
                 ],
                 any_order=True,
             )
