@@ -4,7 +4,16 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+open Pyre
+
 exception IncompatibleState of string
+
+(* Exposed for testing. *)
+val restore_symbolic_links
+  :  changed_paths: Path.t list
+  -> local_root: Path.t
+  -> get_old_link_path: (Path.t -> Path.t option)
+  -> Path.t list
 
 val load
   :  server_configuration: Configuration.Server.t

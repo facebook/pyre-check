@@ -1,7 +1,8 @@
 (tests
  (names
   requestTest
-  operationsTest)
+  operationsTest
+  savedStateTest)
  (preprocess
   (pps
    ppx_deriving_yojson))
