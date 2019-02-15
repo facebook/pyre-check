@@ -435,7 +435,7 @@ end
 (** First dumps environment to shared memory, then exposes through
     Environment_handler *)
 let populate_shared_memory
-    ~configuration
+    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -503,7 +503,8 @@ let populate_shared_memory
   let resolution = TypeCheck.resolution (module InProcessHandler) () in
   Environment.infer_protocols ~handler:(module InProcessHandler) resolution ();
 
-  TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
+  if debug then
+    TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
   add_to_shared_memory environment;
   Statistics.event
     ~section:`Memory
