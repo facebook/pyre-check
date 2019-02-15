@@ -21,6 +21,7 @@ from ..filesystem import (  # noqa
     __name__ as filesystem_name,
     _find_python_paths,
     acquire_lock,
+    find_root,
     remove_if_exists,
 )
 
@@ -494,3 +495,12 @@ class FilesystemTest(unittest.TestCase):
             self.assertEqual(
                 analysis_directory._source_directories, {"realpath(root/.)"}
             )
+
+    @patch("os.path.isfile")
+    def test_find_configuration(self, os_mock_isfile) -> None:
+        os_mock_isfile.side_effect = [False, False, False, True]
+        self.assertEqual(find_root("/a/b/c/d", "configuration"), "/a")
+        os_mock_isfile.side_effect = [True]
+        self.assertEqual(find_root("/a", "configuration"), "/a")
+        os_mock_isfile.side_effect = [False, False]
+        self.assertEqual(find_root("/a/b", "configuration"), None)

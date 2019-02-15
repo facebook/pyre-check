@@ -42,6 +42,16 @@ def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
     return {translate_path(translation, path) for path in paths}
 
 
+def find_root(original_directory: str, target_file: str) -> Optional[str]:
+    current_directory = original_directory
+    while current_directory != "/":
+        absolute = os.path.join(current_directory, target_file)
+        if os.path.isfile(absolute):
+            return current_directory
+        current_directory = os.path.dirname(current_directory)
+    return None
+
+
 class AnalysisDirectory:
     def __init__(self, path: str, filter_paths: Optional[List[str]] = None) -> None:
         self._path = path

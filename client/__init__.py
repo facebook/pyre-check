@@ -19,6 +19,7 @@ from .exceptions import EnvironmentException
 from .filesystem import (  # noqa
     AnalysisDirectory,
     SharedAnalysisDirectory,
+    find_root,
     translate_path,
     translate_paths,
 )
@@ -61,26 +62,10 @@ def get_binary_version(configuration) -> str:
     return "No version set"
 
 
-def find_configuration_root(
-    original_directory: str, configuration_file: str
-) -> Optional[str]:
-    current_directory = original_directory
-    while current_directory != "/":
-        absolute = os.path.join(current_directory, configuration_file)
-        if os.path.isfile(absolute):
-            return current_directory
-        current_directory = os.path.dirname(current_directory)
-    return None
-
-
 def switch_root(arguments) -> None:
     arguments.original_directory = os.getcwd()
-    local_root = find_configuration_root(
-        arguments.original_directory, CONFIGURATION_FILE + ".local"
-    )
-    global_root = find_configuration_root(
-        arguments.original_directory, CONFIGURATION_FILE
-    )
+    local_root = find_root(arguments.original_directory, CONFIGURATION_FILE + ".local")
+    global_root = find_root(arguments.original_directory, CONFIGURATION_FILE)
 
     # If the global configuration root is deeper than local configuration, ignore local.
     if global_root and local_root and global_root.startswith(local_root):

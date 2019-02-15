@@ -7,8 +7,8 @@ import os
 import subprocess
 from typing import Dict, Mapping  # noqa
 
-from tools.pyre.client import find_configuration_root
 from tools.pyre.client.commands.command import ExitCode
+from tools.pyre.client.filesystem import find_root
 
 
 class PyreServerException(Exception):
@@ -84,7 +84,7 @@ class PyreAst:
         ):
             self._local_configuration = configuration_path
             self._command = ["pyre", "-l", self._local_configuration]
-            project_configuration = find_configuration_root(
+            project_configuration = find_root(
                 os.path.dirname(configuration_path), ".pyre_configuration"
             )
             if not project_configuration:

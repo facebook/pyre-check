@@ -8,28 +8,21 @@ from unittest.mock import MagicMock, patch
 
 from .. import (
     EnvironmentException,
-    __name__ as client_name,
     _resolve_filter_paths,
     buck,
     commands,
-    find_configuration_root,
     resolve_analysis_directory,
     switch_root,
     translate_paths,
 )
-from ..filesystem import AnalysisDirectory, SharedAnalysisDirectory
+from ..filesystem import (
+    AnalysisDirectory,
+    SharedAnalysisDirectory,
+    __name__ as filesystem_name,
+)
 
 
 class InitTest(unittest.TestCase):
-    @patch("os.path.isfile")
-    def test_find_configuration(self, os_mock_isfile) -> None:
-        os_mock_isfile.side_effect = [False, False, False, True]
-        self.assertEqual(find_configuration_root("/a/b/c/d", "configuration"), "/a")
-        os_mock_isfile.side_effect = [True]
-        self.assertEqual(find_configuration_root("/a", "configuration"), "/a")
-        os_mock_isfile.side_effect = [False, False]
-        self.assertEqual(find_configuration_root("/a/b", "configuration"), None)
-
     @patch("os.chdir")
     def test_switch_root(self, chdir) -> None:
         arguments = MagicMock()
@@ -49,14 +42,12 @@ class InitTest(unittest.TestCase):
                 self.assertEqual(arguments.original_directory, "/a/b/c")
                 self.assertEqual(arguments.local_configuration, "/a/b")
 
-        with patch(
-            "{}.find_configuration_root".format(client_name)
-        ) as mock_find_configuation_root:
+        with patch("{}.find_root".format(filesystem_name)) as mock_find_root:
             with patch("os.getcwd", return_value="/a/b"):
                 arguments.original_directory = "/a/b"
                 arguments.current_directory = "/a/b"
                 arguments.local_configuration = None
-                mock_find_configuation_root.side_effect = ["/a", "/a/b"]
+                mock_find_root.side_effect = ["/a", "/a/b"]
                 switch_root(arguments)
                 self.assertEqual(arguments.original_directory, "/a/b")
                 self.assertEqual(arguments.current_directory, "/a/b")
