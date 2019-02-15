@@ -174,7 +174,6 @@ class Configuration:
             )
 
         # Order matters. The values will only be updated if a field is None.
-        self._read(CONFIGURATION_FILE + ".local")
         self._read(CONFIGURATION_FILE)
         self._override_version_hash()
         self._resolve_versioned_paths()
