@@ -3,10 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import hashlib  # noqa
 import os
 import sys
 import unittest
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 from .. import CONFIGURATION_FILE, EnvironmentException, number_of_workers
 from ..configuration import (  # noqa
@@ -22,7 +23,8 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.exists")
     @patch("os.access", return_value=True)
     @patch("builtins.open")
-    @patch("json.load")
+    @patch("hashlib.sha1")
+    @patch("json.loads")
     @patch.object(os, "getenv", return_value=None)
     @patch.object(Configuration, "_validate")
     def test_init(
@@ -30,12 +32,16 @@ class ConfigurationTest(unittest.TestCase):
         configuration_validate,
         os_environ,
         json_load,
+        sha1,
         builtins_open,
         access,
         exists,
         isdir,
         _abspath,
     ) -> None:
+        sha1_mock = MagicMock()
+        sha1_mock.hexdigest = lambda: "HASH"
+        sha1.return_value = sha1_mock
         exists.return_value = True
         json_load.side_effect = [
             {
@@ -50,6 +56,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.targets, [])
         self.assertEqual(configuration.logger, "/usr/logger")
         self.assertEqual(configuration.ignore_all_errors, ["buck-out/dev/gen"])
+        self.assertEqual(configuration.file_hash, None)
 
         json_load.side_effect = [
             {"source_directories": ["a"]},
@@ -66,12 +73,14 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.version_hash, "unversioned")
         self.assertEqual(configuration.logger, None)
         self.assertEqual(configuration.ignore_all_errors, [])
+        self.assertEqual(configuration.file_hash, None)
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
+        self.assertEqual(configuration.file_hash, None)
 
         json_load.side_effect = [
             {
@@ -87,6 +96,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, False)
 
         json_load.side_effect = [
@@ -104,6 +114,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, True)
 
         json_load.side_effect = [
@@ -124,6 +135,7 @@ class ConfigurationTest(unittest.TestCase):
             configuration.search_path, ["additional/", "root/$subdirectory"]
         )
         self.assertEqual(configuration.number_of_workers, 20)
+        self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.taint_models_path, None)
 
         json_load.side_effect = [
@@ -151,6 +163,20 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
+
+        json_load.side_effect = [
+            {
+                "search_path": "simple_string/",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "saved_state": "some_name",
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.search_path, ["simple_string/"])
+        self.assertEqual(configuration.file_hash, "HASH")
 
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.
@@ -421,12 +447,14 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.access", return_value=True)
     @patch("os.listdir", side_effect=[["stdlib"], ["3"]])
     @patch("builtins.open")
-    @patch("json.load")
+    @patch("json.loads")
+    @patch("hashlib.sha1")
     @patch.object(os, "getenv", return_value=None)
     def test_validate_configuration(
         self,
         os_environ,
-        json_load,
+        sha1,
+        json_loads,
         builtins_open,
         listdir,
         access,
@@ -436,7 +464,7 @@ class ConfigurationTest(unittest.TestCase):
     ) -> None:
         exists.return_value = True
         try:
-            json_load.side_effect = [
+            json_loads.side_effect = [
                 {
                     "source_directories": ["a"],
                     "binary": "abc",
@@ -454,7 +482,7 @@ class ConfigurationTest(unittest.TestCase):
             self.fail("Configuration should not raise.")
 
         with self.assertRaises(EnvironmentException):
-            json_load.side_effect = [
+            json_loads.side_effect = [
                 {
                     "source_directories": ["a"],
                     "binary": "abc",

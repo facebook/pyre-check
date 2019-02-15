@@ -25,6 +25,7 @@ class Start(Reporting):
         self._terminal = arguments.terminal  # type: bool
         self._no_watchman = arguments.no_watchman  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
+        self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
         # Saved state.
         self._save_initial_state_to = (
             arguments.save_initial_state_to
@@ -92,6 +93,8 @@ class Start(Reporting):
             flags.extend(["-save-initial-state-to", self._save_initial_state_to])
         if self._saved_state_project:
             flags.extend(["-saved-state-project", self._saved_state_project])
+        if self._configuration_file_hash:
+            flags.extend(["-configuration-file-hash", self._configuration_file_hash])
         if (
             self._load_initial_state_from is not None
             and self._changed_files_path is not None

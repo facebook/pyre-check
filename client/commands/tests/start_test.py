@@ -215,8 +215,35 @@ class StartTest(unittest.TestCase):
                 ],
             )
 
+        # Check configuration-file-hash.
+        arguments = mock_arguments(no_watchman=True)
+        configuration = mock_configuration(version_hash="hash", file_hash="ABCD")
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        with patch.object(command, "_get_directories_to_analyze") as get_directories:
+            get_directories.return_value = {"a", "b"}
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-project-root",
+                    ".",
+                    "-filter-directories",
+                    "a;b",
+                    "-configuration-file-hash",
+                    "ABCD",
+                    "-workers",
+                    "5",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                ],
+            )
+
         # Check save-initial-state-to.
         arguments = mock_arguments(save_initial_state_to="/tmp")
+        configuration = mock_configuration(version_hash="hash")
         command = commands.Start(arguments, configuration, AnalysisDirectory("."))
         self.assertEqual(
             command._flags(),

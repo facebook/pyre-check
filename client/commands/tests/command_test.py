@@ -48,7 +48,7 @@ def mock_arguments(
     return arguments
 
 
-def mock_configuration(version_hash=None) -> MagicMock:
+def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration = MagicMock()
     configuration.strict = False
     configuration.source_directories = ["."]
@@ -58,6 +58,7 @@ def mock_configuration(version_hash=None) -> MagicMock:
     configuration.taint_models_path = None
     configuration.typeshed = "stub"
     configuration.version_hash = version_hash
+    configuration.file_hash = file_hash
     return configuration
 
 

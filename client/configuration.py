@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import hashlib
 import json
 import logging
 import os
@@ -65,7 +66,9 @@ class SearchPathElement:
 class _ConfigurationFile:
     def __init__(self, file):
         self._deprecated = {"do_not_check": "ignore_all_errors"}
-        self._configuration = json.load(file)
+        contents = file.read()
+        self.file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
+        self._configuration = json.loads(contents)
 
     def consume(self, key, default=None, current=None, print_on_success=False):
         """
@@ -125,6 +128,7 @@ class Configuration:
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
         self.taint_models_path = None
+        self.file_hash = None  # type: Optional[str]
         self.extensions = []  # type: List[str]
 
         self._version_hash = None  # type: Optional[str]
@@ -429,6 +433,10 @@ class Configuration:
 
                 extensions = configuration.consume("extensions", default=[])
                 self.extensions.extend(extensions)
+
+                # We rely on the configuration SHA1 to make
+                if configuration.consume("saved_state"):
+                    self.file_hash = configuration.file_hash
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
