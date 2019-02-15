@@ -14,6 +14,8 @@ type state = {
   symlinks: Path.t Path.Map.t;
 }
 
+val subscription: string list -> Path.t -> Yojson.Safe.json
+
 val process_response: state -> string -> (state * Server.Protocol.Request.t) Option.t
 
 val run_command

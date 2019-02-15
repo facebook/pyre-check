@@ -22,18 +22,18 @@ type state = {
 }
 
 
-let subscription watchman_directory =
+let subscription extensions watchman_directory =
+  let extensions =
+    ["py"; "pyi"] @ extensions
+    |> List.map ~f:(fun extension -> `List [ `String "suffix"; `String extension ])
+  in
   let constraints =
     `List [
       `String "allof";
       `List [ `String "type"; `String "f" ];
       `List [ `String "not"; `String "empty" ];
-      `List [
-        (* Do not use 'suffix-set', it is watchman-5.0+ only. *)
-        `String "anyof";
-        `List [ `String "suffix"; `String "py" ];
-        `List [ `String "suffix"; `String "pyi" ];
-      ];
+      (* Do not use 'suffix-set', it is watchman-5.0+ only. *)
+      `List ((`String "anyof") :: extensions);
     ]
   in
   `List [
@@ -165,11 +165,15 @@ let process_response
 let listen_for_changed_files
     server_socket
     watchman_directory
-    ({ Configuration.Analysis.local_root; _ } as configuration) =
+    ({ Configuration.Analysis.local_root; extensions; _ } as configuration) =
   try
     (fun () ->
        let symlinks =
-         Path.list ~file_filter:(fun file -> Filename.check_suffix file ".py") ~root:local_root ()
+         let file_filter file =
+           let extensions = ".py" :: ".pyi" :: extensions in
+           List.exists extensions ~f:(fun extension -> Filename.check_suffix file extension)
+         in
+         Path.list ~file_filter ~root:local_root ()
          |> fun links -> Path.build_symlink_map ~links
        in
        let socket_path =
@@ -183,7 +187,7 @@ let listen_for_changed_files
        let in_channel, out_channel = Unix.open_connection (Unix.ADDR_UNIX socket_path) in
        Out_channel.output_lines
          out_channel
-         [Yojson.to_string (subscription watchman_directory)];
+         [Yojson.to_string (subscription extensions watchman_directory)];
        Out_channel.flush out_channel;
        let watchman_socket = Unix.descr_of_in_channel in_channel in
        let rec loop state =
@@ -240,11 +244,11 @@ let listen_for_changed_files
     raise uncaught_exception
 
 
-let initialize watchman_directory configuration =
+let initialize watchman_directory ({ Configuration.Analysis.extensions; _ } as configuration) =
   Version.log_version_banner ();
   Log.info
     "Watchman subscription: %s"
-    (Yojson.pretty_to_string (subscription watchman_directory));
+    (Yojson.pretty_to_string (subscription extensions watchman_directory));
   let server_socket =
     try
       Server.Operations.connect ~retries:5 ~configuration

@@ -236,6 +236,50 @@ let test_different_root context =
   cleanup ()
 
 
+let test_watchman_subscription _ =
+  let assert_subscription extensions directory expected =
+    let expected = Yojson.Safe.from_string expected in
+    assert_equal
+      ~printer:Yojson.Safe.pretty_to_string
+      expected
+      (Commands.Watchman.subscription extensions directory)
+  in
+  assert_subscription
+    []
+    (Path.create_absolute ~follow_symbolic_links:false "/root")
+    {|[
+      "subscribe",
+      "/root",
+      "pyre_file_change_subscription",
+      {
+        "expression": [
+          "allof",
+          [ "type", "f" ],
+          [ "not", "empty" ],
+          [ "anyof", [ "suffix", "py" ], [ "suffix", "pyi" ] ]
+        ],
+        "fields": [ "name" ]
+      }]
+    |};
+  assert_subscription
+    ["cconf"]
+    (Path.create_absolute ~follow_symbolic_links:false "/root")
+    {|[
+      "subscribe",
+      "/root",
+      "pyre_file_change_subscription",
+      {
+        "expression": [
+          "allof",
+          [ "type", "f" ],
+          [ "not", "empty" ],
+          [ "anyof", [ "suffix", "py" ], [ "suffix", "pyi" ], [ "suffix", "cconf" ] ]
+        ],
+        "fields": [ "name" ]
+      }]
+    |}
+
+
 let () =
   CommandTest.run_command_tests
     "watchman"
@@ -243,4 +287,5 @@ let () =
       "watchman_exists", test_watchman_exists;
       "watchman_client", test_watchman_client;
       "different_root", test_different_root;
+      "watchman_subscription", test_watchman_subscription;
     ]
