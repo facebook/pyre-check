@@ -159,7 +159,7 @@ type expression =
   | Complex of float
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
-  | Ellipses
+  | Ellipsis
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t

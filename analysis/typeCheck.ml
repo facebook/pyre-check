@@ -1000,7 +1000,7 @@ module State = struct
               else
                 annotation, false
             in
-            Option.some_if (not (Type.equal instantiated Type.ellipses)) instantiated
+            Option.some_if (not (Type.equal instantiated Type.ellipsis)) instantiated
             >>= Resolution.class_definition resolution
             >>| Annotated.Class.create
             >>| (fun definition ->
@@ -2262,8 +2262,8 @@ module State = struct
         { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
 
 
-    | Ellipses ->
-        { state; resolved = Type.ellipses }
+    | Ellipsis ->
+        { state; resolved = Type.ellipsis }
 
     | False ->
         { state; resolved = Type.bool }
@@ -2686,7 +2686,7 @@ module State = struct
                   Resolution.less_or_equal resolution ~left:expected ~right:resolved
                 in
                 if is_immutable &&
-                   not (Type.equal resolved Type.ellipses) &&
+                   not (Type.equal resolved Type.ellipsis) &&
                    not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
                    not is_typed_dictionary_initialization &&
                    not is_valid_enumeration_assignment then
@@ -2747,7 +2747,7 @@ module State = struct
                       false, false
                 in
                 let actual_annotation, evidence_locations =
-                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipses then
+                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipsis then
                     None, []
                   else
                     Some resolved, [instantiate location]

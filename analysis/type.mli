@@ -173,7 +173,7 @@ val callable
   -> t
 val complex: t
 val dictionary: key: t -> value: t -> t
-val ellipses: t
+val ellipsis: t
 val enumeration: t
 val float: t
 val generator: ?async: bool -> t -> t
@@ -223,7 +223,7 @@ val contains_callable: t -> bool
 val is_callable: t -> bool
 val is_concrete: t -> bool
 val is_dictionary: ?with_key: t option -> t -> bool
-val is_ellipses: t -> bool
+val is_ellipsis: t -> bool
 val is_generator: t -> bool
 val is_generic: t -> bool
 val is_iterable: t -> bool

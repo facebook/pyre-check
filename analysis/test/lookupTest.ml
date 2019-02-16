@@ -200,7 +200,7 @@ let test_lookup_class_attributes _ =
   assert_annotation_list
     ~lookup
     [
-      "3:11-3:11/ellipses";
+      "3:11-3:11/ellipsis";
       "3:4-3:5/bool";
       "3:4-3:5/typing.Type[test.Foo]";
       "3:7-3:11/typing.Type[bool]";

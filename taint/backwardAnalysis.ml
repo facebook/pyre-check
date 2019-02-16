@@ -343,7 +343,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
       | DictionaryComprehension _
-      | Ellipses
+      | Ellipsis
       | False
       | Float _ ->
           state

@@ -249,7 +249,7 @@ type expression =
   | Complex of float
   | Dictionary of t Dictionary.t
   | DictionaryComprehension of ((t Dictionary.entry), t) Comprehension.t
-  | Ellipses
+  | Ellipsis
   | False
   | Float of float
   | Generator of (t, t) Comprehension.t
@@ -1038,7 +1038,7 @@ module PrettyPrinter = struct
           ComparisonOperator.pp_comparison_operator operator
           pp_expression_t right
 
-    | Ellipses ->
+    | Ellipsis ->
         Format.fprintf formatter "..."
 
     | Float float_value

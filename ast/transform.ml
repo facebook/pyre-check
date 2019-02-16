@@ -150,7 +150,7 @@ module Make (Transformer : Transformer) = struct
                   generators
                   ~f:(transform_generator ~transform_expression);
             }
-        | Ellipses ->
+        | Ellipsis ->
             value
         | False ->
             value

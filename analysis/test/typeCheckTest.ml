@@ -1880,8 +1880,8 @@ let test_forward_expression _ =
     "{key: value for key in [1] for value in ['string']}"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
-  (* Ellipses. *)
-  assert_forward "..." Type.ellipses;
+  (* Ellipsis. *)
+  assert_forward "..." Type.ellipsis;
 
   (* False literal. *)
   assert_forward "False" Type.bool;

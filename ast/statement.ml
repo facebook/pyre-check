@@ -424,8 +424,8 @@ module Define = struct
 
   let is_stub { body; _ } =
     match List.rev body with
-    | { Node.value = Expression { Node.value = Expression.Ellipses; _ }; _ } :: _
-    | _ :: { Node.value = Expression { Node.value = Expression.Ellipses; _ }; _ } :: _ ->
+    | { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _
+    | _ :: { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _ ->
         true
     | _ ->
         false
@@ -1023,7 +1023,7 @@ module Class = struct
               | Some {
                   Node.value = Assign {
                       Assign.annotation;
-                      value = { Node.value = Expression.Ellipses; _ };
+                      value = { Node.value = Expression.Ellipsis; _ };
                       _;
                     };
                   _;
@@ -1079,7 +1079,7 @@ module Class = struct
             statement :: updated, undefined
       in
       let stub = match stub with
-        | [{ Node.value = Expression { Node.value = Ellipses; _ }; _ }] -> []
+        | [{ Node.value = Expression { Node.value = Ellipsis; _ }; _ }] -> []
         | _ -> stub
       in
       List.fold ~init:([], stub) ~f:update (List.rev body)
@@ -1207,7 +1207,7 @@ module Try = struct
         value = Assign {
             Assign.target;
             annotation = Some annotation;
-            value = Node.create Ellipses ~location;
+            value = Node.create Ellipsis ~location;
             parent = None;
           }
       }

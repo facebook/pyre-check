@@ -119,12 +119,12 @@
     Access (SimpleAccess (Access.call ~arguments ~location ~name:"slice" ()))
     |> Node.create ~location
 
-  let create_ellipses (start, stop) =
+  let create_ellipsis (start, stop) =
     let location = Location.create ~start ~stop in
-    Node.create Ellipses ~location
+    Node.create Ellipsis ~location
 
-  let create_ellipses_after { Node.location; _ } =
-    Node.create Ellipses ~location:{ location with start = location.stop }
+  let create_ellipsis_after { Node.location; _ } =
+    Node.create Ellipsis ~location:{ location with start = location.stop }
 
   let subscript_argument ~subscripts ~location =
     let value =
@@ -368,7 +368,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = create_ellipses_after annotation;
+          value = create_ellipsis_after annotation;
           parent = None;
         };
       }]
@@ -380,7 +380,7 @@ small_statement:
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = create_ellipses_after annotation;
+          value = create_ellipsis_after annotation;
           parent = None;
         };
       }]
@@ -402,20 +402,20 @@ small_statement:
   | targets = targets; value = value; annotation = comment_annotation? {
       List.map ~f:(fun target -> target ~value ~annotation) targets
   }
-  | targets = targets; ellipses = ELLIPSES {
-      let value = create_ellipses ellipses in
+  | targets = targets; ellipsis = ELLIPSES {
+      let value = create_ellipsis ellipsis in
       List.map ~f:(fun target -> target ~value ~annotation:None) targets
     }
   | target = test_list;
     annotation = annotation;
     EQUALS;
-    ellipses = ELLIPSES {
+    ellipsis = ELLIPSES {
       [{
         Node.location = target.Node.location;
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = create_ellipses ellipses;
+          value = create_ellipsis ellipsis;
           parent = None;
         };
       }]
@@ -797,10 +797,10 @@ async_statement:
   ;
 
 block_or_stub_body:
-  | ellipses = ELLIPSES; NEWLINE
-  | NEWLINE+; INDENT; ellipses = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
-    let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
-    let body = [Node.create (Expression (Node.create Ellipses ~location)) ~location] in
+  | ellipsis = ELLIPSES; NEWLINE
+  | NEWLINE+; INDENT; ellipsis = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
+    let location = Location.create ~start:(fst ellipsis) ~stop:(snd ellipsis) in
+    let body = [Node.create (Expression (Node.create Ellipsis ~location)) ~location] in
     location, body
    }
   | statements = block { statements }
@@ -1015,13 +1015,13 @@ from_string:
   | identifier = identifier; from_string = from_string {
       (Identifier.show (snd identifier)) ^ from_string
     }
-  | relative = nonempty_list(ellipses_or_dot);
+  | relative = nonempty_list(ellipsis_or_dot);
     from_string = from_string {
       (String.concat relative) ^ from_string
     }
   ;
 
-ellipses_or_dot:
+ellipsis_or_dot:
   | DOT { "." }
   | ELLIPSES { "..." }
   ;
@@ -1106,9 +1106,9 @@ atom:
       }
     }
 
-  | ellipses = ELLIPSES {
-      let location = Location.create ~start:(fst ellipses) ~stop:(snd ellipses) in
-      Node.create Ellipses ~location
+  | ellipsis = ELLIPSES {
+      let location = Location.create ~start:(fst ellipsis) ~stop:(snd ellipsis) in
+      Node.create Ellipsis ~location
     }
 
   | left = expression;

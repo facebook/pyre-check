@@ -410,8 +410,8 @@ let dictionary ~key ~value =
   }
 
 
-let ellipses =
-  Primitive "ellipses"
+let ellipsis =
+  Primitive "ellipsis"
 
 
 let enumeration =
@@ -768,7 +768,7 @@ let rec expression annotation =
                 List (List.map parameters ~f:parameter)
                 |> Node.create_with_default_location
             | Undefined ->
-                Node.create_with_default_location Ellipses
+                Node.create_with_default_location Ellipsis
           in
           get_item_call ~call_parameters [annotation]
         in
@@ -856,7 +856,7 @@ let rec expression annotation =
 
   let value =
     match annotation with
-    | Primitive "..." -> Ellipses
+    | Primitive "..." -> Ellipsis
     | _ -> Access (SimpleAccess (access annotation))
   in
   Node.create_with_default_location value
@@ -1347,7 +1347,7 @@ let rec create ~aliases { Node.value = expression; _ } =
         | Access (SimpleAccess access) ->
             parse_access access
 
-        | Ellipses ->
+        | Ellipsis ->
             Primitive "..."
 
         | String { StringLiteral.value; _ } ->
@@ -1531,8 +1531,8 @@ let is_dictionary ?(with_key = None) = function
       false
 
 
-let is_ellipses = function
-  | Primitive "ellipses" -> true
+let is_ellipsis = function
+  | Primitive "ellipsis" -> true
   | _ -> false
 
 

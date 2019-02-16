@@ -345,7 +345,7 @@ module Attribute = struct
     let class_annotation = annotation parent ~resolution in
     let initialized =
       match value with
-      | Some { Node.value = Ellipses; _ }
+      | Some { Node.value = Ellipsis; _ }
       | None ->
           false
       | _ ->
@@ -480,7 +480,7 @@ module Attribute = struct
         annotation
     in
 
-    let value = Option.value value ~default:(Node.create Ellipses ~location) in
+    let value = Option.value value ~default:(Node.create Ellipsis ~location) in
 
     {
       Node.location;

@@ -381,7 +381,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~f:(analyze_dictionary_entry ~resolution state)
             ~init:ForwardState.Tree.empty
       | DictionaryComprehension _
-      | Ellipses
+      | Ellipsis
       | False
       | Float _ ->
           ForwardState.Tree.empty

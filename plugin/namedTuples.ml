@@ -101,7 +101,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           Assign {
             Assign.target;
             annotation = Some annotation;
-            value = Option.value value ~default:(Node.create Ellipses ~location);
+            value = Option.value value ~default:(Node.create Ellipsis ~location);
             parent = Some parent;
           }
           |> Node.create ~location
@@ -117,7 +117,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         let to_parameter (name, annotation, value) =
           let value =
             match value with
-            | Some { Node.value = Ellipses; _ } -> None
+            | Some { Node.value = Ellipsis; _ } -> None
             | _ -> value
           in
           Parameter.create ?value ~annotation ~name:("$parameter$" ^ name) ()
@@ -128,7 +128,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         Define.name = parent @ Access.create "__init__";
         parameters;
         body = [
-          Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipses));
+          Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipsis));
         ];
         decorators = [];
         docstring = None;

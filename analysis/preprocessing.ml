@@ -992,7 +992,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None ->
           Yield None
-      | Complex _ | Ellipses | False | Float _ | Integer _ | True ->
+      | Complex _ | Ellipsis | False | Float _ | Integer _ | True ->
           value
     in
     { expression with Node.value }
@@ -1378,7 +1378,7 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
       Assign {
         target = node (Access (SimpleAccess (Access.create "TypedDict")));
         annotation = Some (node (Access (SimpleAccess (Access.create "typing._SpecialForm"))));
-        value = node Ellipses;
+        value = node Ellipsis;
         parent = None;
       } |> node
     in
@@ -1530,7 +1530,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                   Assign {
                     target = { Node.value = Access (SimpleAccess name); _ };
                     annotation = Some annotation;
-                    value = { Node.value = Ellipses; _ };
+                    value = { Node.value = Ellipsis; _ };
                     parent = _;
                   };
                 _;

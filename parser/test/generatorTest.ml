@@ -654,7 +654,7 @@ let test_define _ =
       +Define {
         Define.name = Access.create "foo";
         parameters = [];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
         return_annotation = None;
@@ -2777,7 +2777,7 @@ let test_class _ =
           +Assign {
             Assign.target = !"attribute";
             annotation = Some !"int";
-            value = +Ellipses;
+            value = +Ellipsis;
             parent = Some (Access.create "foo");
           };
         ];
@@ -2961,7 +2961,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -2971,7 +2971,7 @@ let test_assign _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some (+String (StringLiteral.create "int"));
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4037,7 +4037,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = None;
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4048,7 +4048,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some !"int";
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4059,7 +4059,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some (+String (StringLiteral.create "int"));
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4070,7 +4070,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some (+String (StringLiteral.create "Tuple[str]"));
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4081,7 +4081,7 @@ let test_stubs _ =
       +Assign {
         Assign.target = !"a";
         annotation = Some (+String (StringLiteral.create "Tuple[str, ...]"));
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4098,7 +4098,7 @@ let test_stubs _ =
                 Access.Call
                   (+[{ Argument.name = None; value = simple_access [Access.Identifier "int"] }]);
               ]);
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ];
@@ -4113,7 +4113,7 @@ let test_stubs _ =
           +Assign {
             Assign.target = !"a";
             annotation = Some (+String (StringLiteral.create "int"));
-            value = +Ellipses;
+            value = +Ellipsis;
             parent = Some (Access.create "A");
           };
         ];
@@ -4134,7 +4134,7 @@ let test_stubs _ =
             annotation = None;
           };
         ];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
         return_annotation = None;
@@ -4154,7 +4154,7 @@ let test_stubs _ =
             annotation = None;
           };
         ];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
         return_annotation = None;
@@ -4174,7 +4174,7 @@ let test_stubs _ =
             annotation = None;
           };
         ];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
         return_annotation = None;
@@ -4191,11 +4191,11 @@ let test_stubs _ =
         parameters = [
           +{
             Parameter.name = "a";
-            value = Some (+Ellipses);
+            value = Some (+Ellipsis);
             annotation = Some !"int";
           };
         ];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [!"overload"];
         docstring = None;
         return_annotation = None;
@@ -4210,7 +4210,7 @@ let test_stubs _ =
       +Class {
         Class.name = Access.create "foo";
         bases = [];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
       };
@@ -4221,7 +4221,7 @@ let test_stubs _ =
       +Class {
         Class.name = Access.create "foo";
         bases = [];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
       };
@@ -4232,7 +4232,7 @@ let test_stubs _ =
       +Class {
         Class.name = Access.create "foo";
         bases = [];
-        body = [+Expression (+Ellipses)];
+        body = [+Expression (+Ellipsis)];
         decorators = [];
         docstring = None;
       };
@@ -4255,7 +4255,7 @@ let test_ellipsis _ =
         parameters = [
           +{
             Parameter.name = "debug";
-            value = Some (+Ellipses);
+            value = Some (+Ellipsis);
             annotation = None;
           };
         ];
@@ -4274,7 +4274,7 @@ let test_ellipsis _ =
         If.test = +ComparisonOperator {
           ComparisonOperator.left = !"x";
           operator = ComparisonOperator.Is;
-          right = +Ellipses;
+          right = +Ellipsis;
         };
         body = [+Pass];
         orelse = [];
@@ -4476,14 +4476,14 @@ let test_setitem _ =
           Access.Identifier "__setitem__";
           Access.Call(+[
               { Argument.name = None; value = !"j" };
-              { Argument.name = None; value = +Ellipses };
+              { Argument.name = None; value = +Ellipsis };
             ]);
         ]
       );
       +Assign {
         target = !"x";
         annotation = Some (+String (StringLiteral.create "Something"));
-        value = +Ellipses;
+        value = +Ellipsis;
         parent = None;
       };
     ]

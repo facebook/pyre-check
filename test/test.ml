@@ -427,7 +427,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __new__(self) -> Any: pass
           def __sizeof__(self) -> int: pass
 
-        class ellipses: ...
+        class ellipsis: ...
 
         class slice:
           @overload
