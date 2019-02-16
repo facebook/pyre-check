@@ -650,7 +650,9 @@ let process_type_check_files
         _ } as state)
     ~configuration:({ debug; _ } as configuration)
     ~update_environment_with
-    ~check =
+    ~check
+    ~should_analyze_dependencies =
+
   Annotated.Class.Attribute.Cache.clear ();
   let update_environment_with, check =
     let keep file =
@@ -681,7 +683,7 @@ let process_type_check_files
   (* Compute requests we do not serve immediately. *)
   let compute_dependencies ~deferred_state =
     let files =
-      let old_signature_hashes, new_signature_hashes =
+      let old_signature_hashes, new_signature_hashes, old_exports =
         let signature_hashes ~default =
           let table = File.Handle.Table.create () in
           let add_signature_hash file =
@@ -704,14 +706,28 @@ let process_type_check_files
         (* Clear and re-populate ASTs in shared memory. *)
         let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
 
+        (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
+           them to analyze possible dependencies. *)
+        let old_exports =
+          let old_exports = Expression.Access.Table.create () in
+          let store_exports qualifier =
+            Ast.SharedMemory.Modules.get_exports ~qualifier
+            >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
+            |> ignore
+          in
+          List.map handles ~f:(fun handle -> Source.qualifier ~handle)
+          |> List.iter ~f:store_exports;
+          old_exports
+        in
         (* Update the tracked handles, if necessary. *)
         let newly_introduced_handles =
-          File.Handle.Set.Tree.of_list handles
-          |> File.Handle.Set.Tree.filter
+          List.filter
+            handles
             ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
         in
-        if not (File.Handle.Set.Tree.is_empty newly_introduced_handles) then
-          Ast.SharedMemory.HandleKeys.add ~handles:newly_introduced_handles;
+        if not (List.is_empty newly_introduced_handles) then
+          Ast.SharedMemory.HandleKeys.add
+            ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
         Ast.SharedMemory.Sources.remove ~handles;
         let targets =
           let find_target file = Path.readlink (File.path file) in
@@ -726,7 +742,7 @@ let process_type_check_files
         |> ignore;
 
         let new_signature_hashes = signature_hashes ~default:(-1) in
-        old_signature_hashes, new_signature_hashes
+        old_signature_hashes, new_signature_hashes, old_exports
       in
 
       let dependents =
@@ -767,7 +783,9 @@ let process_type_check_files
                     | Some exports ->
                         check_against_imports ~exports
                     | _ ->
-                        false
+                        Hashtbl.find old_exports from
+                        >>| (fun exports -> check_against_imports ~exports)
+                        |> Option.value ~default:false
                   end
               | _ ->
                   false
@@ -784,7 +802,7 @@ let process_type_check_files
           else
             None
         in
-        Dependencies.of_list
+        Dependencies.transitive_of_list
           ~get_dependencies
           ~handles:update_environment_with
         |> Fn.flip Set.diff (File.Handle.Set.of_list check)
@@ -792,7 +810,7 @@ let process_type_check_files
 
       Log.log
         ~section:`Server
-        "Inferred direct dependent files: %a"
+        "Inferred affected files: %a"
         Sexp.pp [%message (dependents: File.Handle.Set.t)];
       let to_file handle =
         Ast.SharedMemory.Sources.get handle
@@ -801,11 +819,14 @@ let process_type_check_files
       in
       File.Set.filter_map dependents ~f:to_file
     in
-
-    Deferred.add_visited ~visited:(File.Set.of_list update_environment_with) deferred_state
-    |> Deferred.add ~files
+    Deferred.add deferred_state ~files
   in
-  let deferred_state = compute_dependencies ~deferred_state in
+  let deferred_state =
+    if should_analyze_dependencies then
+      compute_dependencies ~deferred_state
+    else
+      deferred_state
+  in
 
   (* Repopulate the environment. *)
   let repopulate_handles =
@@ -927,17 +948,15 @@ let process_type_check_request
     ~state
     ~configuration
     ~request:{ TypeCheckRequest.update_environment_with; check} =
-  (* Since a new interactive request has been received, we need to start a new visit
-     of the dependency graph with the new files. Hence, clear the visited set. *)
-  let state = { state with deferred_state = Deferred.reset_visited state.deferred_state } in
   process_type_check_files
     ~state
     ~configuration
     ~update_environment_with
     ~check
+    ~should_analyze_dependencies:true
 
 
-let rec process_deferred_state
+let process_deferred_state
     ~state:({ State.deferred_state; _ } as state)
     ~configuration:({ number_of_workers; _ } as configuration)
     ~flush =
@@ -955,19 +974,12 @@ let rec process_deferred_state
     (List.length current_batch)
     (Deferred.length remaining);
   let state = { state with deferred_state = remaining } in
-  let result =
-    process_type_check_files
-      ~state
-      ~configuration
-      ~update_environment_with:current_batch
-      ~check:current_batch
-  in
-  match result with
-  | { state = { deferred_state; _ } as state; _ }
-    when flush && not (Deferred.is_empty deferred_state) ->
-      process_deferred_state ~state ~configuration ~flush
-  | result ->
-      result
+  process_type_check_files
+    ~state
+    ~configuration
+    ~update_environment_with:current_batch
+    ~check:current_batch
+    ~should_analyze_dependencies:false
 
 
 let process_display_type_errors_request ~state ~configuration ~files ~flush =
