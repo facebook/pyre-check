@@ -412,7 +412,7 @@ let emit_externalization kind emitter callable =
 
 
 (* Called on a worker with a set of functions to analyze. *)
-let one_analysis_pass ~analyses step ~environment ~callables =
+let one_analysis_pass ~analyses ~step ~environment ~callables =
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
     let result = analyze_callable analyses step callable environment in
@@ -565,7 +565,7 @@ let compute_fixpoint
           Scheduler.map_reduce
             scheduler
             ~configuration
-            ~map:(fun _ callables -> one_analysis_pass ~analyses step ~environment ~callables)
+            ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
             ~bucket_size:1000
             ~initial:0
             ~reduce

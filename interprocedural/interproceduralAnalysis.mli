@@ -6,9 +6,9 @@
 module Kind = AnalysisKind
 
 
-val one_analysis_pass:
-  analyses:Kind.abstract list
-  -> Fixpoint.step
+val one_analysis_pass
+  :  analyses:Kind.abstract list
+  -> step: Fixpoint.step
   -> environment: (module Analysis.Environment.Handler)
   -> callables:Callable.t list
   -> int  (* Returns num processed for progress *)
