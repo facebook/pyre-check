@@ -3753,7 +3753,7 @@ let run
         Log.dump
           "Checking `%s`..."
           (Log.Color.yellow (Access.show name));
-        Log.dump "AST:\n%s" (Annotated.Define.create define |> Annotated.Define.show);
+        Log.dump "AST:\n%a" Define.pp define;
       end;
 
     let dump_cfg cfg fixpoint =
