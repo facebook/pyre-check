@@ -6,12 +6,17 @@
 module Kind = AnalysisKind
 
 
+type result = {
+  callables_processed: int;
+  callables_to_dump: Callable.Set.t;
+}
+
 val one_analysis_pass
   :  analyses:Kind.abstract list
   -> step: Fixpoint.step
   -> environment: (module Analysis.Environment.Handler)
   -> callables:Callable.t list
-  -> int  (* Returns num processed for progress *)
+  -> result
 
 (* Returns number of iterations. *)
 val compute_fixpoint

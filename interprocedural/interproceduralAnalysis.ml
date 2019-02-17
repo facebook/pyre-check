@@ -296,6 +296,11 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
   widen_if_necessary step callable model Result.empty_result
 
 
+let callables_to_dump =
+  (* Set of defines we'll print models for at the end of the analysis. *)
+  ref Callable.Set.empty
+
+
 let analyze_callable analyses step callable environment =
   let resolution = Analysis.TypeCheck.resolution environment () in
   let () = (* Verify invariants *)
@@ -340,7 +345,9 @@ let analyze_callable analyses step callable environment =
               model = get_obscure_models analyses;
               result = Result.empty_result;
             }
-        | Some define ->
+        | Some ({ Node.value; _ } as define) ->
+            if Define.dump value then
+              callables_to_dump := Callable.Set.add callable !callables_to_dump;
             analyze_define step analyses callable environment define
       end
   | #Callable.override_target as callable ->
@@ -411,6 +418,12 @@ let emit_externalization kind emitter callable =
   |> List.iter ~f:emitter
 
 
+type result = {
+  callables_processed: int;
+  callables_to_dump: Callable.Set.t;
+}
+
+
 (* Called on a worker with a set of functions to analyze. *)
 let one_analysis_pass ~analyses ~step ~environment ~callables =
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
@@ -419,7 +432,7 @@ let one_analysis_pass ~analyses ~step ~environment ~callables =
     Fixpoint.add_state step callable result
   in
   List.iter callables ~f:analyze_and_cache;
-  List.length callables
+  { callables_processed = List.length callables; callables_to_dump = !callables_to_dump }
 
 
 let get_callable_dependents ~dependencies callable =
@@ -548,8 +561,8 @@ let compute_fixpoint
       let time_0 = Unix.gettimeofday () in
       let step = Fixpoint.{ epoch; iteration; } in
       let old_batch = Fixpoint.KeySet.of_list callables_to_analyze in
-      let reduce n m =
-        let callables_processed = n + m in
+      let reduce left right =
+        let callables_processed = left.callables_processed + right.callables_processed in
         let () =
           Log.log
             ~section:`Progress
@@ -557,21 +570,25 @@ let compute_fixpoint
             callables_processed
             number_of_callables
         in
-        callables_processed
+        {
+          callables_processed;
+          callables_to_dump = Callable.Set.union left.callables_to_dump right.callables_to_dump;
+        }
       in
       let () =
         Fixpoint.oldify old_batch;
-        let _ =
+        let { callables_to_dump = iteration_callables_to_dump; _ } =
           Scheduler.map_reduce
             scheduler
             ~configuration
             ~map:(fun _ callables -> one_analysis_pass ~analyses ~step ~environment ~callables)
             ~bucket_size:1000
-            ~initial:0
+            ~initial:{ callables_processed = 0; callables_to_dump = Callable.Set.empty }
             ~reduce
             ~inputs:callables_to_analyze
             ()
         in
+        callables_to_dump := Callable.Set.union !callables_to_dump iteration_callables_to_dump;
         Fixpoint.remove_old old_batch
       in
       let callables_to_analyze =
@@ -586,8 +603,35 @@ let compute_fixpoint
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
+
   try
-    iterate ~iteration:0 all_callables
+    let iterations = iterate ~iteration:0 all_callables in
+
+    let dump_callable callable =
+      let resolution = Analysis.TypeCheck.resolution environment () in
+      let ({ Define.name; _ } as define) =
+        match callable with
+        | #Callable.real_target as callable ->
+            Callable.get_definition callable ~resolution
+            >>| Node.value
+            |> (fun value -> Option.value_exn value)
+        | _ ->
+            failwith "No real target to dump"
+      in
+      let model =
+        Fixpoint.get_model callable
+        |> Option.value ~default:Result.empty_model
+      in
+      Log.dump
+        "Model for `%s` after %d iterations:"
+        (Log.Color.yellow (Access.show name))
+        iterations;
+      Log.dump "AST:\n%a" Define.pp define;
+      Log.dump "Model:\n%a" Result.pp_model_t model;
+    in
+    Callable.Set.iter dump_callable !callables_to_dump;
+
+    iterations
   with exn ->
     Log.error
       "Fixpoint iteration failed.\nException %s\nBacktrace: %s"
