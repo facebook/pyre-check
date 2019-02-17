@@ -23,11 +23,15 @@ let commands = [
 
 
 let () =
-  Random.self_init ();
-  Scheduler.Daemon.check_entry_point ();
-  Command.group
-    ~summary:"Analyze Python files"
-    commands
-  |> Command.run
-    ~build_info:(Version.build_info ())
-    ~version:(Version.version ())
+  try
+    Random.self_init ();
+    Scheduler.Daemon.check_entry_point ();
+    Command.group
+      ~summary:"Analyze Python files"
+      commands
+    |> Command.run
+      ~build_info:(Version.build_info ())
+      ~version:(Version.version ())
+  with error ->
+    Log.error "%s" (Exn.to_string error);
+    raise error

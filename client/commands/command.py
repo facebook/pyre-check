@@ -174,11 +174,8 @@ class Command:
                     buffer = log.Buffer(
                         section=match.groups()[0], data=[match.groups()[1]]
                     )
-                else:
-                    if buffer:
-                        buffer.flush()
-                        buffer = None
-                    LOG.error(line)
+                elif buffer:
+                    buffer.append(line)
             if buffer:
                 buffer.flush()
         except Exception:
