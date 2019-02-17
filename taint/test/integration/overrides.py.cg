@@ -1,3 +1,4 @@
+@generated
 Call dependencies
 overrides.A::__init__ (method) -> [overrides.Base::__init__ (method)]
 overrides.A::methodA (method) -> [__testSink (fun)]

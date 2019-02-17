@@ -1,3 +1,4 @@
+@generated
 Call dependencies
 model_simplification._asdict_inner (fun) -> [getattr (fun) isinstance (fun) list::append (method) model_simplification._asdict_inner (fun)]
 model_simplification.asdict (fun) -> [model_simplification._asdict_inner (fun)]

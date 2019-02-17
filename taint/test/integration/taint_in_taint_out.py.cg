@@ -1,3 +1,4 @@
+@generated
 Call dependencies
 taint_in_taint_out.Data::__init__ (method) -> []
 taint_in_taint_out.get_data (fun) -> []

@@ -498,15 +498,19 @@ let test_integration _ =
           ()
       in
       let get_expected ~suffix =
-        try
-          Path.show path
-          |> (fun path -> path ^ suffix)
-          |> Path.create_absolute
-          |> File.create
-          |> File.content
-          |> (fun content -> Option.value_exn content)
-        with Unix.Unix_error _ ->
-          ""
+        let expected =
+          try
+            Path.show path
+            |> (fun path -> path ^ suffix)
+            |> Path.create_absolute
+            |> File.create
+            |> File.content
+            |> (fun content -> Option.value_exn content)
+          with Unix.Unix_error _ ->
+            ""
+        in
+        String.chop_prefix expected ~prefix:("@" ^ "generated\n")
+        |> Option.value ~default:expected
       in
       let expected = get_expected ~suffix in
       if String.equal expected actual then

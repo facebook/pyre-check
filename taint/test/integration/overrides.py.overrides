@@ -1,3 +1,4 @@
+@generated
 Overrides
 object::__init__ (override) -> [overrides.Base::__init__ (override)]
 overrides.B::__init__ (override) -> [overrides.C::__init__ (override)]

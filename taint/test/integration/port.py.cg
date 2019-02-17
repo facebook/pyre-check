@@ -1,3 +1,4 @@
+@generated
 Call dependencies
 port.Foo::some_source (method) -> [__testSource (fun)]
 port.match_flows (fun) -> [port.sink_field (fun) port.source_field (fun)]
