@@ -221,6 +221,77 @@ class InteractiveTest(TestCase):
         self.assertIn("Run 2 doesn't exist", stderr)
         self.assertIn("Run 3 doesn't exist", stderr)
 
+    def testSetIssue(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instances = [
+            IssueInstance(
+                id=1,
+                run_id=1,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+            IssueInstance(
+                id=2,
+                run_id=2,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+            IssueInstance(
+                id=3,
+                run_id=3,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instances[0])
+            session.add(issue_instances[1])
+            session.commit()
+
+        self.interactive.start_repl()
+
+        self.interactive.set_issue(2)
+        self.interactive.show()
+        stdout = self.stdout.getvalue().strip()
+        self.assertNotIn("Issue 1", stdout)
+        self.assertIn("Issue 2", stdout)
+        self.assertNotIn("Issue 3", stdout)
+
+        self.interactive.set_issue(1)
+        self.interactive.show()
+        stdout = self.stdout.getvalue().strip()
+        self.assertIn("Issue 1", stdout)
+        self.assertNotIn("Issue 3", stdout)
+
+    def testSetIssueNonExistent(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_issue(1)
+        stderr = self.stderr.getvalue().strip()
+
+        self.assertIn("Issue 1 doesn't exist", stderr)
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 

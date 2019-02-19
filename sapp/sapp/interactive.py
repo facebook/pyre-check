@@ -13,20 +13,31 @@ from sqlalchemy.sql import func
 
 class Interactive:
     help_message = """
+Commands =======================================================================
+
 runs()          list all completed runs
-set_run(ID)     select a specific run
 issues()        list all for the selected run
-help()          show this message
+
+set_run(ID)     select a specific run
+set_issue(ID)   select a specific issue
+
+show()          show info about selected issue
+
+commands()      show this message
+help(COMAMND)   more info about a command
     """
-    welcome_message = "Interactive issue exploration. Type 'help()' for help."
+    welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
     def __init__(self, database, database_name):
         self.db = DB(database, database_name, assertions=True)
         self.scope_vars = {
-            "help": self.help,
+            "commands": self.help,
             "runs": self.runs,
-            "set_run": self.set_run,
             "issues": self.issues,
+            "set_run": self.set_run,
+            "set_issue": self.set_issue,
+            "show": self.show,
+            "trace": self.trace,
         }
 
     def start_repl(self):
@@ -46,6 +57,7 @@ help()          show this message
             sys.exit(1)
 
         self.current_run_id = latest_run_id
+        self.current_issue_id = None
 
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
@@ -54,10 +66,13 @@ help()          show this message
 
     def help(self):
         print(self.help_message)
+        print(f"State {'=' * 74}\n")
+        print(f"     Database: {self.db.dbtype}:{self.db.dbname}")
+        print(f"  Current run: {self.current_run_id}")
+        print(f"Current issue: {self.current_issue_id}")
 
     def runs(self, use_pager=None):
-        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
-        pager = page.page if use_pager else page.display_page
+        pager = self._resolve_pager(use_pager)
 
         with self.db.make_session() as session:
             runs = session.query(Run).filter(Run.status == RunStatus.FINISHED).all()
@@ -69,6 +84,27 @@ help()          show this message
 
         pager(run_output)
         print(f"Found {len(runs)} runs.")
+
+    def issues(self, use_pager=None):
+        pager = self._resolve_pager(use_pager)
+
+        with self.db.make_session() as session:
+            issues = (
+                session.query(IssueInstance, Issue)
+                .filter(IssueInstance.run_id == self.current_run_id)
+                .join(Issue, IssueInstance.issue_id == Issue.id)
+                .options(joinedload(IssueInstance.message))
+                .all()
+            )
+
+        issue_strings = [
+            self._create_issue_output_string(issue_instance, issue)
+            for issue_instance, issue in issues
+        ]
+        issue_output = f"\n{'-' * 80}\n".join(issue_strings)
+
+        pager(issue_output)
+        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
 
     def set_run(self, run_id):
         with self.db.make_session() as session:
@@ -82,43 +118,71 @@ help()          show this message
         if selected_run is None:
             print(
                 f"Run {run_id} doesn't exist or is not finished. "
-                "Type 'runs' for available runs.",
+                "Type 'runs()' for available runs.",
                 file=sys.stderr,
             )
             return
 
         self.current_run_id = selected_run.id
+        print(f"Set run to {run_id}.")
 
-    def issues(self, use_pager=None):
-        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
-        pager = page.page if use_pager else page.display_page
+    def set_issue(self, issue_id):
+        with self.db.make_session() as session:
+            selected_issue = (
+                session.query(IssueInstance)
+                .filter(IssueInstance.id == issue_id)
+                .scalar()
+            )
+
+        if selected_issue is None:
+            print(
+                f"Issue {issue_id} doesn't exist. "
+                "Type 'issues()' for available issues.",
+                file=sys.stderr,
+            )
+            return
+
+        self.current_issue_id = selected_issue.id
+        print(f"Set issue to {issue_id}.")
+        self.show()
+
+    def show(self):
+        """ More details about the selected issue.
+        """
+        if self.current_issue_id is None:
+            print("Use 'set_issue(ID)' to select an issue first.", file=sys.stderr)
+            return
 
         with self.db.make_session() as session:
-            issues = (
+            issue_instance, issue = (
                 session.query(IssueInstance, Issue)
-                .filter(IssueInstance.run_id == self.current_run_id)
+                .filter(IssueInstance.id == self.current_issue_id)
                 .join(Issue, IssueInstance.issue_id == Issue.id)
                 .options(joinedload(IssueInstance.message))
-                .all()
+                .first()
             )
 
-        issue_strings = [
-            "\n".join(
-                [
-                    f"Issue {issue_instance.id}",
-                    f"    Code: {issue.code}",
-                    f" Message: {issue_instance.message.contents}",
-                    f"Callable: {issue.callable}",
-                    (
-                        f"Location: {issue_instance.filename}"
-                        f":{SourceLocation.to_string(issue_instance.location)}"
-                    ),
-                    "-" * 80,
-                ]
-            )
-            for issue_instance, issue in issues
-        ]
-        issue_output = "\n".join(issue_strings)
+        page.display_page(self._create_issue_output_string(issue_instance, issue))
 
-        pager(issue_output)
-        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
+    def trace(self):
+        """ Show a trace for the selected issue.
+        """
+        pass
+
+    def _create_issue_output_string(self, issue_instance, issue):
+        return "\n".join(
+            [
+                f"Issue {issue_instance.id}",
+                f"    Code: {issue.code}",
+                f" Message: {issue_instance.message.contents}",
+                f"Callable: {issue.callable}",
+                (
+                    f"Location: {issue_instance.filename}"
+                    f":{SourceLocation.to_string(issue_instance.location)}"
+                ),
+            ]
+        )
+
+    def _resolve_pager(self, use_pager):
+        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
+        return page.page if use_pager else page.display_page
