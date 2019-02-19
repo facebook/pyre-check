@@ -206,6 +206,13 @@ let rules = [
     name = "User data to getattr.";
     message_format = "Attacker may control at least one argument to getattr(,)."
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.FileSystem ];
+    code = 5011;
+    name = "User data to filesystem operation.";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

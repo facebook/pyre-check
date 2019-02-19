@@ -15,6 +15,7 @@ type t =
   | Thrift
   | XMLParser
   | XSS
+  | FileSystem
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t
