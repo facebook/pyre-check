@@ -681,7 +681,7 @@ let process_type_check_files
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
 
   (* Compute requests we do not serve immediately. *)
-  let compute_dependencies ~deferred_state =
+  let compute_dependencies update_environment_with ~deferred_state =
     let files =
       let old_signature_hashes, new_signature_hashes, old_exports =
         let signature_hashes ~default =
@@ -747,16 +747,16 @@ let process_type_check_files
 
       let dependents =
         let handle file = File.handle file ~configuration in
-        let update_environment_with = List.map update_environment_with ~f:handle in
+        let handles = List.map update_environment_with ~f:handle in
         let check = List.map check ~f:handle in
         Log.log
           ~section:`Server
           "Handling type check request for files %a"
-          Sexp.pp [%message (update_environment_with: File.Handle.t list)];
+          Sexp.pp [%message (handles: File.Handle.t list)];
         let get_dependencies handle =
           let signature_hash_changed =
             (* If the hash is not found, then the handle was not part of
-               update_environment_with, hence its hash cannot have changed. *)
+               handles, hence its hash cannot have changed. *)
             Hashtbl.find old_signature_hashes handle
             >>= (fun old_hash ->
                 Hashtbl.find new_signature_hashes handle
@@ -804,7 +804,7 @@ let process_type_check_files
         in
         Dependencies.transitive_of_list
           ~get_dependencies
-          ~handles:update_environment_with
+          ~handles
         |> Fn.flip Set.diff (File.Handle.Set.of_list check)
       in
 
@@ -823,7 +823,21 @@ let process_type_check_files
   in
   let deferred_state =
     if should_analyze_dependencies then
-      compute_dependencies ~deferred_state
+      let timer = Timer.start () in
+      let result = compute_dependencies update_environment_with ~deferred_state in
+      begin
+        let handles =
+          List.map update_environment_with ~f:(File.handle ~configuration)
+          |> List.to_string ~f:File.Handle.show
+        in
+        Statistics.performance
+          ~randomly_log_every:1000
+          ~name:"Computed dependencies"
+          ~normals:["handles", handles]
+          ~timer
+          ();
+        result
+      end
     else
       deferred_state
   in
