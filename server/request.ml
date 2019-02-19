@@ -969,17 +969,22 @@ let process_deferred_state
     else
       Deferred.take_n ~elements:number_of_workers deferred_state
   in
-  Log.info
-    "Processing %d deferred requests, %d remaining"
-    (List.length current_batch)
-    (Deferred.length remaining);
-  let state = { state with deferred_state = remaining } in
-  process_type_check_files
-    ~state
-    ~configuration
-    ~update_environment_with:current_batch
-    ~check:current_batch
-    ~should_analyze_dependencies:false
+  if List.length current_batch > 0 then
+    begin
+      Log.info
+        "Processing %d deferred requests, %d remaining"
+        (List.length current_batch)
+        (Deferred.length remaining);
+      let state = { state with deferred_state = remaining } in
+      process_type_check_files
+        ~state
+        ~configuration
+        ~update_environment_with:current_batch
+        ~check:current_batch
+        ~should_analyze_dependencies:false
+    end
+  else
+    { state; response = None }
 
 
 let process_display_type_errors_request ~state ~configuration ~files ~flush =
