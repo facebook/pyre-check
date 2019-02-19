@@ -971,10 +971,17 @@ let process_deferred_state
   in
   if List.length current_batch > 0 then
     begin
+      let remaining_message =
+        let length = Deferred.length remaining in
+        if length <> 0 then
+          Format.sprintf ", %d remaining." length
+        else
+          "."
+      in
       Log.info
-        "Processing %d deferred requests, %d remaining"
+        "Processing %d deferred requests%s"
         (List.length current_batch)
-        (Deferred.length remaining);
+        remaining_message;
       let state = { state with deferred_state = remaining } in
       process_type_check_files
         ~state
