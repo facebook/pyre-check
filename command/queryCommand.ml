@@ -136,7 +136,7 @@ let run_query serialized local_root () =
              |> (fun errors ->
                  `Assoc [
                    "response",
-                   `List (List.map ~f:(Analysis.Error.to_json ~detailed:false) errors);
+                   `List (List.map ~f:(Analysis.Error.to_json ~show_error_traces:false) errors);
                  ])
          | response ->
              `Assoc [

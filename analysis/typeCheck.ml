@@ -259,7 +259,7 @@ module State = struct
           "    %a -> %s"
           Location.Instantiated.pp
           (Error.location error)
-          (Error.description error ~detailed:true)
+          (Error.description error ~show_error_traces:true)
       in
       List.map (Set.to_list errors) ~f:error_to_string
       |> String.concat ~sep:"\n"

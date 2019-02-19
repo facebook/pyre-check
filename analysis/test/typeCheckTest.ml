@@ -82,7 +82,7 @@ let test_initial _ =
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
-      (List.map (State.errors initial) ~f:(Error.description ~detailed:false))
+      (List.map (State.errors initial) ~f:(Error.description ~show_error_traces:false))
       errors
   in
 
@@ -218,7 +218,7 @@ let test_check_annotation _ =
     let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) () in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
-    let errors = List.map ~f:(Error.description ~detailed:false) (Set.to_list errors) in
+    let errors = List.map ~f:(Error.description ~show_error_traces:false) (Set.to_list errors) in
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
@@ -1745,7 +1745,7 @@ let test_forward_expression _ =
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
+      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
   in
 
   (* Access. *)
@@ -2074,7 +2074,7 @@ let test_forward_statement _ =
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~detailed:false))
+      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
   in
 
   (* Assignments. *)

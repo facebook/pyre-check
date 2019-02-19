@@ -583,7 +583,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               TypeQuery.Response (TypeQuery.Type annotation)
           | errors ->
               let descriptions =
-                List.map errors ~f:(Analysis.Error.description ~detailed:false)
+                List.map errors ~f:(Analysis.Error.description ~show_error_traces:false)
                 |> String.concat ~sep:", "
               in
               TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions)

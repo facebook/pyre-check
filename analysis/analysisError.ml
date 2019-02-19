@@ -209,7 +209,7 @@ let name = function
   | UnusedIgnore _ -> "Unused ignore"
 
 
-let messages ~detailed:_ ~define location kind =
+let messages ~concise:_ ~define location kind =
   let {
     Location.start = { Location.line = start_line; _ };
     Location.stop = { Location.line = stop_line; _ };

@@ -89,7 +89,7 @@ let run_check
        (`Assoc [
            "errors",
            `List
-             (List.map ~f:(fun error -> Error.to_json ~detailed:show_error_traces error) errors);
+             (List.map ~f:(fun error -> Error.to_json ~show_error_traces error) errors);
          ])
      |> Log.print "%s")
   |> Scheduler.run_process ~configuration

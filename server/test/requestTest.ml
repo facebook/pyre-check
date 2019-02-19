@@ -188,7 +188,7 @@ let assert_errors_equal ~actual_errors ~expected_errors =
   let actual_errors =
     let errors (handle, errors) =
       File.Handle.show handle,
-      List.map errors ~f:(Analysis.Error.description ~detailed:false)
+      List.map errors ~f:(Analysis.Error.description ~show_error_traces:false)
     in
     List.map actual_errors ~f:errors
   in

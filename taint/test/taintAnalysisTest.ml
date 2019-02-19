@@ -65,7 +65,7 @@ let create_call_graph ?(path = "test.py") source_content =
   if not (List.is_empty errors) then
     begin
       let errors =
-        List.map errors ~f:(AnalysisError.description ~detailed:false)
+        List.map errors ~f:(AnalysisError.description ~show_error_traces:false)
         |> String.concat ~sep:"\n"
       in
       failwithf
@@ -142,7 +142,7 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
         define
         (Error.code error)
       |> assert_failure;
-    let error_string = Error.description ~detailed:true error in
+    let error_string = Error.description ~show_error_traces:true error in
     let regexp = Str.regexp pattern in
     if not (Str.string_match regexp error_string 0) then
       Format.sprintf "Expected error for %s to match %s, but got %s"

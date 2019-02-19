@@ -40,7 +40,7 @@ let assert_errors ?filter_directories ~root ~files errors =
   Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
   let actual_errors =
     Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
-    |> List.map ~f:(Analysis.Error.description ~detailed:false)
+    |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
   Handler.purge handles;
   assert_equal

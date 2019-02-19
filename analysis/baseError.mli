@@ -16,7 +16,7 @@ module type Kind = sig
   val code: t -> int
   val name: t -> string
   val messages:
-    detailed: bool
+    concise: bool
     -> define: Define.t Node.t
     -> Location.Instantiated.t
     -> t
@@ -46,9 +46,14 @@ module type Error = sig
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t
   val code: t -> int
-  val description: ?separator:string -> t -> detailed: bool -> string
+  val description
+    :  ?separator: string
+    -> ?concise: bool
+    -> t
+    -> show_error_traces: bool
+    -> string
 
-  val to_json: detailed: bool -> t -> Yojson.Safe.json
+  val to_json: show_error_traces: bool -> t -> Yojson.Safe.json
 end
 
 module Make(Kind: Kind): Error with type kind := Kind.t

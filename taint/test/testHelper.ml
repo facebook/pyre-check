@@ -146,7 +146,7 @@ let check_expectation
         define_name
         (Error.code error)
       |> assert_failure;
-    let error_string = Error.description ~detailed:true error in
+    let error_string = Error.description ~show_error_traces:true error in
     let regexp = Str.regexp pattern in
     if not (Str.string_match regexp error_string 0) then
       Format.sprintf "Expected error for %s to match %s, but got %s"

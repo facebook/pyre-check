@@ -64,7 +64,7 @@ let assert_errors
       environment
       handles
     |> fun (errors, _) ->
-    List.map ~f:(fun error -> Error.description error ~detailed:show_error_traces) errors
+    List.map ~f:(fun error -> Error.description error ~show_error_traces) errors
   in
   Handler.purge handles;
   let description_list_to_string descriptions =

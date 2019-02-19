@@ -17,7 +17,7 @@ module type Kind = sig
   val code: t -> int
   val name: t -> string
   val messages:
-    detailed: bool
+    concise: bool
     -> define: Define.t Node.t
     -> Location.Instantiated.t
     -> t
@@ -48,9 +48,14 @@ module type Error = sig
   val location: t -> Location.Instantiated.t
   val key: t -> Location.t
   val code: t -> int
-  val description: ?separator:string -> t -> detailed:bool -> string
+  val description
+    :  ?separator: string
+    -> ?concise: bool
+    -> t
+    -> show_error_traces: bool
+    -> string
 
-  val to_json: detailed: bool -> t -> Yojson.Safe.json
+  val to_json: show_error_traces: bool -> t -> Yojson.Safe.json
 end
 
 
@@ -105,20 +110,21 @@ module Make(Kind: Kind) = struct
 
   let description
       ?(separator = " ")
+      ?(concise = false)
       ({
         kind;
         location;
         define;
         _;
       })
-      ~detailed =
-    let messages = Kind.messages ~detailed ~define location kind in
+      ~show_error_traces =
+    let messages = Kind.messages ~concise ~define location kind in
     Format.asprintf
       "%s [%d]: %s"
       (Kind.name kind)
       (Kind.code kind)
       (
-        if detailed then
+        if show_error_traces then
           String.concat ~sep:separator messages
         else
           List.nth_exn messages 0
@@ -130,7 +136,7 @@ module Make(Kind: Kind) = struct
 
 
   let to_json
-      ~detailed
+      ~show_error_traces
       ({
         location =
           { Location.path; start = { Location.line = start_line; column = start_column }; _ };
@@ -144,8 +150,13 @@ module Make(Kind: Kind) = struct
         "path", `String path;
         "code", `Int (Kind.code kind);
         "name", `String (Kind.name kind);
-        "description", `String (description error ~detailed);
-        "long_description", `String (description error ~detailed:true ~separator:"\n");
+        "description", `String (description error ~show_error_traces);
+        "long_description", `String (
+            description error ~show_error_traces:true ~concise:false ~separator:"\n"
+        );
+        "concise_description", `String (
+            description error ~show_error_traces:false ~concise:true ~separator:"\n"
+        );
         "inference", (Kind.inference_information ~define:define_node kind);
         "define", `String (Access.show_sanitized define.Define.name);
       ])

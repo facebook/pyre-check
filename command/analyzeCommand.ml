@@ -115,7 +115,7 @@ let run_analysis
      (* Print results. *)
      List.map
        errors
-       ~f:(fun error -> Interprocedural.Error.to_json ~detailed:show_error_traces error)
+       ~f:(fun error -> Interprocedural.Error.to_json ~show_error_traces error)
      |> (fun result -> Yojson.Safe.pretty_to_string (`List result))
      |> Log.print "%s";
      Scheduler.destroy scheduler)

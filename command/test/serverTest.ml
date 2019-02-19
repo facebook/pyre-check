@@ -1479,7 +1479,7 @@ let test_incremental_attribute_caching context =
           ~cmp:String.equal
           ~printer:ident
           "Undefined attribute [16]: `C` has no attribute `a`."
-          (Error.description ~detailed:false error)
+          (Error.description ~show_error_traces:false error)
     | _ ->
         assert_unreached ()
   end;

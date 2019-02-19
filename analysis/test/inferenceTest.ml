@@ -329,7 +329,7 @@ let assert_infer
         | _ -> `String "TEST FAIL: ERROR ACCESSING FIELD IN ERROR JSON"
       in
       List.fold
-        ~init:(Error.to_json ~detailed:show_error_traces error)
+        ~init:(Error.to_json ~show_error_traces error)
         ~f:access_field
         (String.split ~on:'.' field)
     in

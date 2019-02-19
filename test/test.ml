@@ -835,7 +835,7 @@ let assert_errors
     in
     List.map
       (check source)
-      ~f:(fun error -> Error.description error ~detailed:show_error_traces)
+      ~f:(fun error -> Error.description error ~show_error_traces)
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
