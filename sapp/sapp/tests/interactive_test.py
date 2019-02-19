@@ -25,6 +25,10 @@ class InteractiveTest(TestCase):
         sys.stdout = sys.__stdout__  # reset redirect
         sys.stderr = sys.__stderr__  # reset redirect
 
+    def _clear_stdout(self):
+        self.stdout = StringIO()
+        sys.stdout = self.stdout
+
     def testListIssuesBasic(self):
         issues = [
             Issue(
@@ -127,6 +131,134 @@ class InteractiveTest(TestCase):
 
         self.assertNotIn("Issue 1", output)
         self.assertIn("Issue 2", output)
+
+    def _list_issues_filter_setup(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issues = [
+            Issue(
+                id=1,
+                handle="1",
+                first_seen=datetime.now(),
+                code=1000,
+                callable="module.sub.function1",
+                filename="module/sub.py",
+            ),
+            Issue(
+                id=2,
+                handle="2",
+                first_seen=datetime.now(),
+                code=1001,
+                callable="module.sub.function2",
+                filename="module/sub.py",
+            ),
+            Issue(
+                id=3,
+                handle="3",
+                first_seen=datetime.now(),
+                code=1002,
+                callable="module.function3",
+                filename="module/__init__.py",
+            ),
+        ]
+        issue_instances = [
+            IssueInstance(
+                id=1,
+                run_id=1,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=1,
+            ),
+            IssueInstance(
+                id=2,
+                run_id=1,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=2,
+            ),
+            IssueInstance(
+                id=3,
+                run_id=1,
+                message_id=1,
+                filename="module.py",
+                location=SourceLocation(1, 2, 3),
+                issue_id=3,
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issues[0])
+            session.add(issues[1])
+            session.add(issues[2])
+            session.add(issue_instances[0])
+            session.add(issue_instances[1])
+            session.add(issue_instances[2])
+            session.commit()
+
+    def testListIssuesFilterCodes(self):
+        self._list_issues_filter_setup()
+
+        self.interactive.start_repl()
+        self.interactive.issues(codes=1000)
+        stderr = self.stderr.getvalue().strip()
+        self.assertIn("'codes' should be a list", stderr)
+
+        self.interactive.issues(codes=[1000])
+        output = self.stdout.getvalue().strip()
+        self.assertIn("Issue 1", output)
+        self.assertNotIn("Issue 2", output)
+        self.assertNotIn("Issue 3", output)
+
+        self._clear_stdout()
+        self.interactive.issues(codes=[1001, 1002])
+        output = self.stdout.getvalue().strip()
+        self.assertNotIn("Issue 1", output)
+        self.assertIn("Issue 2", output)
+        self.assertIn("Issue 3", output)
+
+    def testListIssuesFilterCallables(self):
+        self._list_issues_filter_setup()
+
+        self.interactive.start_repl()
+        self.interactive.issues(callables="function3")
+        stderr = self.stderr.getvalue().strip()
+        self.assertIn("'callables' should be a list", stderr)
+
+        self.interactive.issues(callables=["%sub%"])
+        output = self.stdout.getvalue().strip()
+        self.assertIn("Issue 1", output)
+        self.assertIn("Issue 2", output)
+        self.assertNotIn("Issue 3", output)
+
+        self._clear_stdout()
+        self.interactive.issues(callables=["%function3"])
+        output = self.stdout.getvalue().strip()
+        self.assertNotIn("Issue 1", output)
+        self.assertNotIn("Issue 2", output)
+        self.assertIn("Issue 3", output)
+
+    def testListIssuesFilterFilenames(self):
+        self._list_issues_filter_setup()
+
+        self.interactive.start_repl()
+        self.interactive.issues(filenames="hello.py")
+        stderr = self.stderr.getvalue().strip()
+        self.assertIn("'filenames' should be a list", stderr)
+
+        self.interactive.issues(filenames=["module/s%"])
+        output = self.stdout.getvalue().strip()
+        self.assertIn("Issue 1", output)
+        self.assertIn("Issue 2", output)
+        self.assertNotIn("Issue 3", output)
+
+        self._clear_stdout()
+        self.interactive.issues(filenames=["%__init__.py"])
+        output = self.stdout.getvalue().strip()
+        self.assertNotIn("Issue 1", output)
+        self.assertNotIn("Issue 2", output)
+        self.assertIn("Issue 3", output)
 
     def testNoRunsFound(self):
         with self.assertRaises(SystemExit):

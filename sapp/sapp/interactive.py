@@ -2,6 +2,7 @@
 
 import os
 import sys
+from typing import List, Optional
 
 import IPython
 from IPython.core import page
@@ -9,6 +10,7 @@ from sapp.db import DB
 from sapp.models import Issue, IssueInstance, Run, RunStatus, SourceLocation
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import or_
 
 
 class Interactive:
@@ -85,27 +87,6 @@ help(COMAMND)   more info about a command
         pager(run_output)
         print(f"Found {len(runs)} runs.")
 
-    def issues(self, use_pager=None):
-        pager = self._resolve_pager(use_pager)
-
-        with self.db.make_session() as session:
-            issues = (
-                session.query(IssueInstance, Issue)
-                .filter(IssueInstance.run_id == self.current_run_id)
-                .join(Issue, IssueInstance.issue_id == Issue.id)
-                .options(joinedload(IssueInstance.message))
-                .all()
-            )
-
-        issue_strings = [
-            self._create_issue_output_string(issue_instance, issue)
-            for issue_instance, issue in issues
-        ]
-        issue_output = f"\n{'-' * 80}\n".join(issue_strings)
-
-        pager(issue_output)
-        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
-
     def set_run(self, run_id):
         with self.db.make_session() as session:
             selected_run = (
@@ -163,6 +144,77 @@ help(COMAMND)   more info about a command
             )
 
         page.display_page(self._create_issue_output_string(issue_instance, issue))
+
+    def issues(
+        self,
+        use_pager: bool = None,
+        *,
+        codes: Optional[List[int]] = None,
+        callables: Optional[List[str]] = None,
+        filenames: Optional[List[str]] = None,
+    ):
+        """Lists issues for the selected run.
+
+        Parameters (all optional):
+            use_pager: bool         use a unix style pager for output
+            codes: list[int]        issue codes to filter on
+            callables: list[str]    callables to filter on (supports wildcards)
+            filenames: list[str]    filenames to filter on (supports wildcards)
+
+        String filters support LIKE wildcards (%, _) from SQL:
+            % matches anything (like .* in regex)
+            _ matches 1 character (like . in regex)
+
+        For example:
+            callables=[
+                "%occurs.anywhere%",
+                "%at.end",
+                "at.start%",
+                "etc.",
+            ])
+        """
+        pager = self._resolve_pager(use_pager)
+
+        with self.db.make_session() as session:
+            query = (
+                session.query(IssueInstance, Issue)
+                .filter(IssueInstance.run_id == self.current_run_id)
+                .join(Issue, IssueInstance.issue_id == Issue.id)
+            )
+
+            # Process filters
+
+            if codes is not None:
+                if not isinstance(codes, list):
+                    print("'codes' should be a list.", file=sys.stderr)
+                    return
+                query = query.filter(Issue.code.in_(codes))
+
+            if callables is not None:
+                if not isinstance(callables, list):
+                    print("'callables' should be a list.", file=sys.stderr)
+                    return
+                query = query.filter(
+                    or_(*[Issue.callable.like(callable) for callable in callables])
+                )
+
+            if filenames is not None:
+                if not isinstance(filenames, list):
+                    print("'filenames' should be a list.", file=sys.stderr)
+                    return
+                query = query.filter(
+                    or_(*[Issue.filename.like(filename) for filename in filenames])
+                )
+
+            issues = query.options(joinedload(IssueInstance.message)).all()
+
+        issue_strings = [
+            self._create_issue_output_string(issue_instance, issue)
+            for issue_instance, issue in issues
+        ]
+        issue_output = f"\n{'-' * 80}\n".join(issue_strings)
+        pager(issue_output)
+        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
 
     def trace(self):
         """ Show a trace for the selected issue.
