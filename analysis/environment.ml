@@ -267,6 +267,7 @@ let handler
       List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
 
+      SharedMem.collect `aggressive;
       if debug then
         TypeOrder.check_integrity (TypeOrder.handler order)
 
