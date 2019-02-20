@@ -1324,8 +1324,13 @@ let test_visit _ =
 
   let module CountTransform = Type.Transform.Make(struct
       type state = int
-      let visit state _ = (state + 1), Type.integer
-      let visit_children _  _ = true
+      let visit state _ =
+        {
+          Type.Transform.transformed_annotation = Type.integer;
+          new_state = state + 1;
+        }
+      let visit_children_before _  _ = true
+      let visit_children_after = false
     end)
   in
   let end_state, transformed = CountTransform.visit 0 (create "typing.List[int]") in
@@ -1339,12 +1344,16 @@ let test_visit _ =
   let module SubstitutionTransform = Type.Transform.Make(struct
       type state = int
       let visit state annotation =
-        match annotation with
-        | Type.Primitive integer when integer = "int" && state > 0 ->
-            (state - 1), Type.string
-        | _ ->
-            state, annotation
-      let visit_children _ = function | Type.Optional _ -> false | _ -> true
+        let new_state, transformed_annotation =
+          match annotation with
+          | Type.Primitive integer when integer = "int" && state > 0 ->
+              (state - 1), Type.string
+          | _ ->
+              state, annotation
+        in
+        { Type.Transform.transformed_annotation; new_state }
+      let visit_children_before _ = function | Type.Optional _ -> false | _ -> true
+      let visit_children_after = false
     end)
   in
 
@@ -1373,16 +1382,20 @@ let test_visit _ =
   let module ConcatenateTransform = Type.Transform.Make(struct
       type state = string
       let visit state annotation =
-        match annotation with
-        | Type.Primitive primitive ->
-            state ^ (primitive), annotation
-        | Type.Parametric { name; parameters; } ->
-            "",
-            Type.Parametric
-              { name = ((name) ^ state); parameters }
-        | _ ->
-            state, annotation
-      let visit_children _  _ = true
+        let new_state, transformed_annotation =
+          match annotation with
+          | Type.Primitive primitive ->
+              state ^ (primitive), annotation
+          | Type.Parametric { name; parameters; } ->
+              "",
+              Type.Parametric
+                { name = ((name) ^ state); parameters }
+          | _ ->
+              state, annotation
+        in
+        { Type.Transform.transformed_annotation; new_state }
+      let visit_children_before _  _ = true
+      let visit_children_after = false
     end)
   in
   let end_state, transformed =
@@ -1393,6 +1406,32 @@ let test_visit _ =
     (create "Foo[BarBazBop[Baz, Bop], BroLoopLand[Loop, typing.Optional[Land]]]");
   assert_equal "" end_state;
 
+  let module TopDownConcatenateTransform = Type.Transform.Make(struct
+      type state = string
+      let visit state annotation =
+        let new_state, transformed_annotation =
+          match annotation with
+          | Type.Primitive primitive ->
+              "", Type.Primitive (state ^ primitive)
+          | Type.Parametric { name; parameters; } ->
+              state ^ name,
+              Type.Parametric
+                { name; parameters }
+          | _ ->
+              state, annotation
+        in
+        { Type.Transform.transformed_annotation; new_state }
+      let visit_children_before _  _ = false
+      let visit_children_after = true
+    end)
+  in
+  let end_state, transformed =
+    TopDownConcatenateTransform.visit "" (create "Foo[Bar[Bro[typing.Optional[Land]]]]")
+  in
+  assert_types_equal
+    transformed
+    (create "Foo[Bar[Bro[typing.Optional[FooBarBroLand]]]]");
+  assert_equal "" end_state;
   ()
 
 

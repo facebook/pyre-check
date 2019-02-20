@@ -534,32 +534,37 @@ let register_aliases (module Handler: Handler) sources =
     let module TrackedTransform = Type.Transform.Make(struct
         type state = bool
 
-        let visit_children _ = function
+        let visit_children_before _ = function
           | Type.Optional Bottom -> false
           | _ -> true
 
+        let visit_children_after = false
+
         let visit sofar annotation =
-          match annotation with
-          | Type.Parametric { name = primitive; _ }
-          | Primitive primitive ->
-              let access =
-                match Node.value (Type.expression (Type.Primitive primitive)) with
-                | Expression.Access (SimpleAccess access) ->
-                    access
-                | _ ->
-                    Expression.Access.create "typing.Any"
-              in
-              if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
-                sofar, Type.Any
-              else if TypeOrder.contains order (Primitive primitive) then
-                sofar, annotation
-              else
+          let new_state, transformed_annotation =
+            match annotation with
+            | Type.Parametric { name = primitive; _ }
+            | Primitive primitive ->
+                let access =
+                  match Node.value (Type.expression (Type.Primitive primitive)) with
+                  | Expression.Access (SimpleAccess access) ->
+                      access
+                  | _ ->
+                      Expression.Access.create "typing.Any"
+                in
+                if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
+                  sofar, Type.Any
+                else if TypeOrder.contains order (Primitive primitive) then
+                  sofar, annotation
+                else
+                  false, annotation
+            | Bottom
+            | Top ->
                 false, annotation
-          | Bottom
-          | Top ->
-              false, annotation
-          | _ ->
-              sofar, annotation
+            | _ ->
+                sofar, annotation
+          in
+          { Type.Transform.transformed_annotation; new_state }
       end)
     in
     let all_valid, value_annotation = TrackedTransform.visit true value_annotation in

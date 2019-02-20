@@ -1381,10 +1381,13 @@ let rec create ~aliases { Node.value = expression; _ } =
 
 
 module Transform = struct
+  type 'state visit_result =
+    { transformed_annotation: t; new_state: 'state }
   module type Transformer = sig
     type state
-    val visit: state -> t -> state * t
-    val visit_children: state -> t -> bool
+    val visit: state -> t -> state visit_result
+    val visit_children_before: state -> t -> bool
+    val visit_children_after: bool
   end
   module Make (Transformer: Transformer) = struct
     let rec visit_annotation ~state annotation =
@@ -1461,14 +1464,19 @@ module Transform = struct
             annotation
       in
       let annotation =
-        if Transformer.visit_children !state annotation then
+        if Transformer.visit_children_before !state annotation then
           visit_children annotation
         else
           annotation
       in
-      let new_state, transformed_annotation = Transformer.visit !state annotation in
+      let { transformed_annotation; new_state } =
+        Transformer.visit !state annotation
+      in
       state := new_state;
-      transformed_annotation
+      if Transformer.visit_children_after then
+        visit_children transformed_annotation
+      else
+        transformed_annotation
 
 
     let visit state annotation =
@@ -1483,14 +1491,15 @@ let exists annotation ~predicate =
   let module ExistsTransform = Transform.Make(struct
       type state = bool
 
-      let visit_children _ _ =
+      let visit_children_before _ _ =
         true
 
+      let visit_children_after =
+        false
+
       let visit sofar annotation =
-        if predicate annotation then
-          true, annotation
-        else
-          sofar, annotation
+        let new_state = sofar || predicate annotation in
+        { Transform.transformed_annotation = annotation; new_state }
     end)
   in
   fst (ExistsTransform.visit false annotation)
@@ -1650,14 +1659,15 @@ let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make(struct
       type state = t list
 
-      let visit_children _ _ =
+      let visit_children_before _ _ =
         true
 
+      let visit_children_after =
+        false
+
       let visit sofar annotation =
-        if predicate annotation then
-          sofar @ [annotation], annotation
-        else
-          sofar, annotation
+        let new_state = if predicate annotation then sofar @ [annotation] else sofar in
+        { Transform.transformed_annotation = annotation; new_state }
     end)
   in
   fst (CollectorTransform.visit [] annotation)
@@ -1678,30 +1688,36 @@ let elements annotation =
   let module CollectorTransform = Transform.Make(struct
       type state = t list
 
-      let visit_children _ _ =
+      let visit_children_before _ _ =
         true
 
+      let visit_children_after =
+        false
+
       let visit sofar annotation =
-        match annotation with
-        | Callable _ ->
-            Primitive "typing.Callable" :: sofar, annotation
-        | Optional _ ->
-            Primitive "typing.Optional" :: sofar, annotation
-        | Parametric { name; _ } ->
-            Primitive name :: sofar, annotation
-        | Primitive _ ->
-            annotation :: sofar, annotation
-        | Tuple _ ->
-            Primitive "tuple" :: sofar, annotation
-        | TypedDictionary _ ->
-            Primitive "TypedDictionary" :: sofar, annotation
-        | Union _ ->
-            Primitive "typing.Union" :: sofar, annotation
-        | Bottom
-        | Any
-        | Top
-        | Variable _ ->
-            sofar, annotation
+        let new_state =
+          match annotation with
+          | Callable _ ->
+              Primitive "typing.Callable" :: sofar
+          | Optional _ ->
+              Primitive "typing.Optional" :: sofar
+          | Parametric { name; _ } ->
+              Primitive name :: sofar
+          | Primitive _ ->
+              annotation :: sofar
+          | Tuple _ ->
+              Primitive "tuple" :: sofar
+          | TypedDictionary _ ->
+              Primitive "TypedDictionary" :: sofar
+          | Union _ ->
+              Primitive "typing.Union" :: sofar
+          | Bottom
+          | Any
+          | Top
+          | Variable _ ->
+              sofar
+        in
+        { Transform.transformed_annotation = annotation; new_state }
     end)
   in
   fst (CollectorTransform.visit [] annotation)
@@ -1810,18 +1826,24 @@ let instantiate ?(widen = false) annotation ~constraints =
   let module InstantiateTransform = Transform.Make(struct
       type state = unit
 
-      let visit_children _ annotation =
+      let visit_children_before _ annotation =
         constraints annotation
         |>  Option.is_none
 
+      let visit_children_after =
+        false
+
       let visit _ annotation =
-        match constraints annotation with
-        | Some Bottom when widen ->
-            (), Top
-        | Some replacement ->
-            (), replacement
-        | None ->
-            (), annotation
+        let transformed_annotation =
+          match constraints annotation with
+          | Some Bottom when widen ->
+              Top
+          | Some replacement ->
+              replacement
+          | None ->
+              annotation
+        in
+        { Transform.transformed_annotation; new_state = () }
     end)
   in
   snd (InstantiateTransform.visit () annotation)
@@ -1858,24 +1880,29 @@ let rec dequalify map annotation =
   let module DequalifyTransform = Transform.Make(struct
       type state = unit
 
-      let visit_children _ _ =
+      let visit_children_before _ _ =
         true
 
+      let visit_children_after =
+        false
+
       let visit _ annotation =
-        (),
-        match annotation with
-        | Optional parameter ->
-            Parametric { name = dequalify_string "typing.Optional"; parameters = [parameter]; }
-        | Parametric { name; parameters } ->
-            Parametric { name = dequalify_identifier (reverse_substitute name); parameters; }
-        | Union parameters ->
-            Parametric { name = dequalify_string "typing.Union"; parameters; }
-        | Primitive name ->
-            Primitive (dequalify_identifier name)
-        | Variable { variable = name; constraints; variance } ->
-            Variable { variable = dequalify_identifier name; constraints; variance }
-        | _ ->
-            annotation
+        let transformed_annotation =
+          match annotation with
+          | Optional parameter ->
+              Parametric { name = dequalify_string "typing.Optional"; parameters = [parameter]; }
+          | Parametric { name; parameters } ->
+              Parametric { name = dequalify_identifier (reverse_substitute name); parameters; }
+          | Union parameters ->
+              Parametric { name = dequalify_string "typing.Union"; parameters; }
+          | Primitive name ->
+              Primitive (dequalify_identifier name)
+          | Variable { variable = name; constraints; variance } ->
+              Variable { variable = dequalify_identifier name; constraints; variance }
+          | _ ->
+              annotation
+        in
+        { Transform.transformed_annotation; new_state = () }
     end)
   in
   snd (DequalifyTransform.visit () annotation)
@@ -2191,35 +2218,41 @@ let remove_undeclared annotation =
   let module RemoveUndeclared = Transform.Make(struct
       type state = unit
 
-      let visit_children _ _ =
+      let visit_children_before _ _ =
         true
 
+      let visit_children_after =
+        false
+
       let visit _ annotation =
-        match annotation with
-        | Parametric { name; parameters } ->
-            let declare annotation =
-              match annotation with
-              | Primitive "typing.Undeclared" -> Any
-              | _ -> annotation
-            in
-            let parameters = List.map parameters ~f:declare in
-            (), Parametric { name; parameters}
-        | Union annotations ->
-            begin
-              let annotations =
-                let declared = function
-                  | Primitive "typing.Undeclared" -> false
-                  | _ -> true
-                in
-                List.filter ~f:declared annotations
+        let transformed_annotation =
+          match annotation with
+          | Parametric { name; parameters } ->
+              let declare annotation =
+                match annotation with
+                | Primitive "typing.Undeclared" -> Any
+                | _ -> annotation
               in
-              match annotations with
-              | [] -> (), Any
-              | [annotation] -> (), annotation
-              | _ -> (), union annotations
-            end
-        | _ ->
-            (), annotation
+              let parameters = List.map parameters ~f:declare in
+              Parametric { name; parameters}
+          | Union annotations ->
+              begin
+                let annotations =
+                  let declared = function
+                    | Primitive "typing.Undeclared" -> false
+                    | _ -> true
+                  in
+                  List.filter ~f:declared annotations
+                in
+                match annotations with
+                | [] -> Any
+                | [annotation] -> annotation
+                | _ -> union annotations
+              end
+          | _ ->
+              annotation
+        in
+        { Transform.transformed_annotation; new_state = () }
     end)
   in
   match annotation with

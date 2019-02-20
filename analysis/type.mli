@@ -205,10 +205,13 @@ val expression: t -> Expression.t
 val access: t -> Access.t
 
 module Transform : sig
+  type 'state visit_result =
+    { transformed_annotation: t; new_state: 'state }
   module type Transformer = sig
     type state
-    val visit: state -> t -> state * t
-    val visit_children: state -> t -> bool
+    val visit: state -> t -> state visit_result
+    val visit_children_before: state -> t -> bool
+    val visit_children_after: bool
   end
 
   module Make (Transformer : Transformer) : sig
