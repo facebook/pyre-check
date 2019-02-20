@@ -49,11 +49,6 @@ val copy: t -> t
 
 val handler: t -> (module Handler)
 
-val transitive
-  :  get_dependencies: (File.Handle.t -> File.Handle.Set.Tree.t option)
-  -> handle: File.Handle.t
-  -> File.Handle.Set.t
-
 val transitive_of_list
   :  get_dependencies: (File.Handle.t -> File.Handle.Set.Tree.t option)
   -> handles: File.Handle.t list

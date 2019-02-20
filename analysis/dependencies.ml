@@ -186,34 +186,27 @@ let copy {
   }
 
 
-let transitive ~get_dependencies ~handle =
-  let transitive_closure handle =
-    let rec closure ~visited node =
-      if Set.mem visited node then
-        visited
-      else
-        let visited = Set.add visited node in
-        match get_dependencies node with
-        | None -> visited
-        | Some neighbors ->
-            File.Handle.Set.Tree.fold
-              ~init:visited
-              ~f:(fun visited neighbor ->
-                  closure ~visited neighbor)
-              neighbors
-    in
-    closure ~visited:File.Handle.Set.empty handle
-    |> fun handles -> Set.remove handles handle
-  in
-  transitive_closure handle
-
-
 let transitive_of_list ~get_dependencies ~handles =
-  handles
-  |> List.map ~f:(fun handle -> transitive ~get_dependencies ~handle)
-  |> File.Handle.Set.union_list
-  (* Ensure no file gets double-checked. *)
-  |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))
+  let rec transitive ~visited ~frontier =
+    if File.Handle.Set.Tree.is_empty frontier then
+      visited
+    else
+      let visited = File.Handle.Set.Tree.union visited frontier in
+      let frontier =
+        let add_dependencies current node =
+          match get_dependencies node with
+          | Some dependencies -> File.Handle.Set.Tree.union current dependencies
+          | None -> current
+        in
+        File.Handle.Set.Tree.fold frontier ~init:File.Handle.Set.Tree.empty ~f:add_dependencies
+        |> fun new_frontier -> File.Handle.Set.Tree.diff new_frontier visited
+      in
+      transitive ~visited ~frontier
+  in
+  let handles = File.Handle.Set.Tree.of_list handles in
+  transitive ~visited:File.Handle.Set.Tree.empty ~frontier:handles
+  |> (fun dependents -> File.Handle.Set.Tree.diff dependents handles)
+  |> File.Handle.Set.of_tree
 
 
 let of_list ~get_dependencies ~handles =

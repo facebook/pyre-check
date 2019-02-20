@@ -85,7 +85,7 @@ let assert_dependencies ~environment ~handles ~expected function_to_test =
     |> List.sort ~compare:String.compare
   in
   let expected = List.sort ~compare:String.compare expected in
-  assert_equal expected dependencies
+  assert_equal ~printer:(List.to_string ~f:ident) expected dependencies
 
 
 let test_dependent_of_list _ =
@@ -174,8 +174,8 @@ let test_transitive_dependents _ =
   let assert_dependents ~handle ~expected =
     let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
-      Dependencies.transitive
-        ~handle:(File.Handle.create handle)
+      Dependencies.transitive_of_list
+        ~handles:[File.Handle.create handle]
         ~get_dependencies
       |> Set.to_list
       |> List.map ~f:File.Handle.show
