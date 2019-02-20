@@ -183,11 +183,13 @@ let test_create _ =
 
   (* Nested aliasing. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" -> Some (Type.list (Type.Primitive "B"))
-    | Type.Primitive name when Identifier.show name = "B" -> Some (Type.Primitive "C")
+    | Type.Primitive "A" -> Some (Type.list (Type.Primitive "B"))
+    | Type.Primitive "B" -> Some (Type.Primitive "C")
+    | Type.Primitive "X" -> Some (Type.callable ~annotation:(Type.Primitive "A") ());
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
+  assert_create ~aliases "X" (Type.callable ~annotation:(Type.list (Type.Primitive "C")) ());
   (* Aliasing of subclasses through imports. *)
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" ->

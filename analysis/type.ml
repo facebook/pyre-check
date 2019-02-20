@@ -868,6 +868,113 @@ let access annotation =
   | _ -> failwith "Annotation expression is not an access"
 
 
+module Transform = struct
+  type 'state visit_result =
+    { transformed_annotation: t; new_state: 'state }
+  module type Transformer = sig
+    type state
+    val visit: state -> t -> state visit_result
+    val visit_children_before: state -> t -> bool
+    val visit_children_after: bool
+  end
+  module Make (Transformer: Transformer) = struct
+    let rec visit_annotation ~state annotation =
+      let visit_children annotation =
+        match annotation with
+        | Callable ({ implementation; overloads; _ } as callable) ->
+            let open Record.Callable in
+            let visit_overload { annotation; parameters } =
+              let visit_parameters parameter =
+                let visit_named ({ RecordParameter.annotation; _ } as named) =
+                  { named with annotation = visit_annotation annotation ~state }
+                in
+                let visit_defined = function
+                  | RecordParameter.Named named ->
+                      RecordParameter.Named (visit_named named)
+                  | RecordParameter.Variable named ->
+                      RecordParameter.Variable (visit_named named)
+                  | RecordParameter.Keywords named ->
+                      RecordParameter.Keywords (visit_named named)
+                in
+                match parameter with
+                | Defined defined ->
+                    Defined (List.map defined ~f:visit_defined)
+                | Undefined ->
+                    Undefined
+              in
+              {
+                annotation = visit_annotation annotation ~state;
+                parameters = visit_parameters parameters;
+              }
+            in
+            Callable {
+              callable with
+              implementation = visit_overload implementation;
+              overloads = List.map overloads ~f:visit_overload;
+            }
+
+        | Optional annotation ->
+            optional (visit_annotation annotation ~state)
+
+        | Parametric { name; parameters } ->
+            Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
+
+        | Tuple (Bounded annotations) ->
+            Tuple (Bounded (List.map annotations ~f:(visit_annotation ~state)))
+        | Tuple (Unbounded annotation) ->
+            Tuple (Unbounded (visit_annotation annotation ~state))
+
+        | TypedDictionary ({ fields; _ } as typed_dictionary) ->
+            let visit_field ({ annotation; _ } as field) =
+              { field with annotation = visit_annotation annotation ~state}
+            in
+            TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field}
+
+        | Union annotations ->
+            union (List.map annotations ~f:(visit_annotation ~state))
+
+        | Variable ({ constraints; _ } as variable) ->
+            let constraints =
+              match constraints with
+              | Bound bound ->
+                  Bound (visit_annotation bound ~state)
+              | Explicit constraints ->
+                  Explicit (List.map constraints ~f:(visit_annotation ~state))
+              | Unconstrained ->
+                  Unconstrained
+            in
+            Variable { variable with constraints }
+
+        | Bottom
+        | Top
+        | Any
+        | Primitive _ ->
+            annotation
+      in
+      let annotation =
+        if Transformer.visit_children_before !state annotation then
+          visit_children annotation
+        else
+          annotation
+      in
+      let { transformed_annotation; new_state } =
+        Transformer.visit !state annotation
+      in
+      state := new_state;
+      if Transformer.visit_children_after then
+        visit_children transformed_annotation
+      else
+        transformed_annotation
+
+
+    let visit state annotation =
+      let state = ref state in
+      let transformed_annotation = visit_annotation ~state annotation in
+      !state, transformed_annotation
+  end
+end
+
+
 let rec create ~aliases { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result ->
@@ -876,78 +983,54 @@ let rec create ~aliases { Node.value = expression; _ } =
       let parse_access type_access =
         let resolved =
           let resolve_aliases annotation =
-            let rec resolve visited annotation =
-              if Set.mem visited annotation then
-                annotation
-              else
-                let visited = Set.add visited annotation in
-                match aliases annotation with
-                | Some alias ->
-                    resolve visited alias
-                | _ ->
-                    begin
-                      match annotation with
-                      | Optional annotation ->
-                          Optional (resolve visited annotation)
-                      | Tuple (Bounded elements) ->
-                          Tuple (Bounded (List.map elements ~f:(resolve visited)))
-                      | Tuple (Unbounded annotation) ->
-                          Tuple (Unbounded (resolve visited annotation))
-                      | Parametric { name; parameters } ->
+            let module ResolveTransform = Transform.Make(struct
+                type state = Set.t
+
+                let visit_children_before _ _ =
+                  false
+
+                let visit_children_after =
+                  true
+
+                let rec visit visited annotation =
+                  let rec resolve visited annotation =
+                    if Set.mem visited annotation then
+                      visited, annotation
+                    else
+                      let visited = Set.add visited annotation in
+                      match aliases annotation, annotation with
+                      | Some aliased, _ ->
+                          (* We need to fully resolve aliases to aliases before we go on to resolve
+                             the aliases those may contain *)
+                          resolve visited aliased
+                      | None, Parametric { name; parameters } ->
+                          let visited, annotation = resolve visited (Primitive name) in
+                          visited,
                           begin
-                            let parametric name =
-                              Parametric {
-                                name;
-                                parameters = List.map parameters ~f:(resolve visited);
-                              }
-                            in
-                            match aliases (Primitive name) with
-                            | Some (Primitive name) ->
-                                parametric name
-                            | Some (Parametric { name; _ }) ->
+                            match annotation with
+                            | Primitive name ->
+                                parametric name parameters
+                            | Parametric { name; _ } ->
                                 (* Ignore parameters for now. *)
-                                parametric name
-                            | Some (Union elements) ->
+                                parametric name parameters
+                            | Union elements ->
                                 let replace_parameters = function
-                                  | Parametric parametric ->
-                                      Parametric { parametric with parameters }
-                                  | annotation ->
-                                      annotation
+                                  | Parametric { name; _ } -> parametric name parameters
+                                  | annotation -> annotation
                                 in
                                 Union (List.map elements ~f:replace_parameters)
                             | _ ->
-                                parametric name
+                                (* This should probably error or something *)
+                                parametric name parameters
                           end
-                      | Variable ({ constraints; _ } as variable) ->
-                          let constraints =
-                            match constraints with
-                            | Bound bound ->
-                                Bound (resolve visited bound)
-                            | Explicit constraints ->
-                                Explicit (List.map constraints ~f:(resolve visited))
-                            | Unconstrained ->
-                                Unconstrained
-                          in
-                          Variable { variable with constraints }
-                      | TypedDictionary { fields; name; total } ->
-                          let fields =
-                            let resolve_field_annotation { name; annotation } =
-                              { name; annotation = resolve visited annotation }
-                            in
-                            List.map fields ~f:resolve_field_annotation;
-                          in
-                          TypedDictionary { name; fields; total }
-                      | Union elements ->
-                          Union (List.map elements ~f:(resolve visited))
-                      | Bottom
-                      | Callable _
-                      | Any
-                      | Primitive _
-                      | Top ->
-                          annotation
-                    end
+                      | _ ->
+                          visited, annotation
+                  in
+                  let new_state, transformed_annotation = resolve visited annotation in
+                  { Transform.transformed_annotation; new_state }
+              end)
             in
-            resolve Set.empty annotation
+            snd (ResolveTransform.visit Set.empty annotation)
           in
 
           let type_access_fold type_access =
@@ -1378,113 +1461,6 @@ let rec create ~aliases { Node.value = expression; _ } =
       in
       Cache.set ~key:expression ~data:result;
       result
-
-
-module Transform = struct
-  type 'state visit_result =
-    { transformed_annotation: t; new_state: 'state }
-  module type Transformer = sig
-    type state
-    val visit: state -> t -> state visit_result
-    val visit_children_before: state -> t -> bool
-    val visit_children_after: bool
-  end
-  module Make (Transformer: Transformer) = struct
-    let rec visit_annotation ~state annotation =
-      let visit_children annotation =
-        match annotation with
-        | Callable ({ implementation; overloads; _ } as callable) ->
-            let open Record.Callable in
-            let visit_overload { annotation; parameters } =
-              let visit_parameters parameter =
-                let visit_named ({ RecordParameter.annotation; _ } as named) =
-                  { named with annotation = visit_annotation annotation ~state }
-                in
-                let visit_defined = function
-                  | RecordParameter.Named named ->
-                      RecordParameter.Named (visit_named named)
-                  | RecordParameter.Variable named ->
-                      RecordParameter.Variable (visit_named named)
-                  | RecordParameter.Keywords named ->
-                      RecordParameter.Keywords (visit_named named)
-                in
-                match parameter with
-                | Defined defined ->
-                    Defined (List.map defined ~f:visit_defined)
-                | Undefined ->
-                    Undefined
-              in
-              {
-                annotation = visit_annotation annotation ~state;
-                parameters = visit_parameters parameters;
-              }
-            in
-            Callable {
-              callable with
-              implementation = visit_overload implementation;
-              overloads = List.map overloads ~f:visit_overload;
-            }
-
-        | Optional annotation ->
-            optional (visit_annotation annotation ~state)
-
-        | Parametric { name; parameters } ->
-            Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
-
-        | Tuple (Bounded annotations) ->
-            Tuple (Bounded (List.map annotations ~f:(visit_annotation ~state)))
-        | Tuple (Unbounded annotation) ->
-            Tuple (Unbounded (visit_annotation annotation ~state))
-
-        | TypedDictionary ({ fields; _ } as typed_dictionary) ->
-            let visit_field ({ annotation; _ } as field) =
-              { field with annotation = visit_annotation annotation ~state}
-            in
-            TypedDictionary { typed_dictionary with fields = List.map fields ~f:visit_field}
-
-        | Union annotations ->
-            union (List.map annotations ~f:(visit_annotation ~state))
-
-        | Variable ({ constraints; _ } as variable) ->
-            let constraints =
-              match constraints with
-              | Bound bound ->
-                  Bound (visit_annotation bound ~state)
-              | Explicit constraints ->
-                  Explicit (List.map constraints ~f:(visit_annotation ~state))
-              | Unconstrained ->
-                  Unconstrained
-            in
-            Variable { variable with constraints }
-
-        | Bottom
-        | Top
-        | Any
-        | Primitive _ ->
-            annotation
-      in
-      let annotation =
-        if Transformer.visit_children_before !state annotation then
-          visit_children annotation
-        else
-          annotation
-      in
-      let { transformed_annotation; new_state } =
-        Transformer.visit !state annotation
-      in
-      state := new_state;
-      if Transformer.visit_children_after then
-        visit_children transformed_annotation
-      else
-        transformed_annotation
-
-
-    let visit state annotation =
-      let state = ref state in
-      let transformed_annotation = visit_annotation ~state annotation in
-      !state, transformed_annotation
-  end
-end
 
 
 let exists annotation ~predicate =

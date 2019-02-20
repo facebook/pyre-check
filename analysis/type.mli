@@ -196,14 +196,6 @@ val undeclared: t
 val union: t list -> t
 val yield: t -> t
 
-val create
-  :  aliases:(t -> t option)
-  -> Expression.t
-  -> t
-
-val expression: t -> Expression.t
-val access: t -> Access.t
-
 module Transform : sig
   type 'state visit_result =
     { transformed_annotation: t; new_state: 'state }
@@ -218,6 +210,14 @@ module Transform : sig
     val visit: Transformer.state -> t -> Transformer.state * t
   end
 end
+
+val create
+  :  aliases:(t -> t option)
+  -> Expression.t
+  -> t
+
+val expression: t -> Expression.t
+val access: t -> Access.t
 
 val exists: t -> predicate: (t -> bool) -> bool
 
