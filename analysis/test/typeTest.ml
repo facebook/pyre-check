@@ -46,6 +46,8 @@ let test_create _ =
   assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
   assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Any]);
   assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
+  assert_create "typing_extensions.Protocol[int]" (Type.parametric "typing.Protocol" [Type.integer]);
+  assert_create "typing_extensions.Protocol" (Type.Primitive "typing.Protocol");
 
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);

@@ -1191,6 +1191,21 @@ let test_check_invalid_type_variables _ =
   []
 
 
+let test_check_aliases _ =
+  assert_type_errors
+    {|
+      class C(typing_extensions.Protocol):
+        ...
+    |}
+    [];
+  assert_type_errors
+    {|
+      class C(typing_extensions.Protocol[int]):
+        ...
+    |}
+    []
+
+
 let () =
   "annotation">:::[
     "check_undefined_type">::test_check_undefined_type;
@@ -1202,5 +1217,6 @@ let () =
     "check_immutable_annotations">::test_check_immutable_annotations;
     "check_incomplete_annotations">::test_check_incomplete_annotations;
     "check_refinement">::test_check_refinement;
+    "check_aliases">::test_check_aliases;
   ]
   |> Test.run

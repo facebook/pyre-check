@@ -660,6 +660,7 @@ let primitive_substitution_map =
     "typing.Set", parametric_anys "typing.Set" 1;
     "typing.Tuple", Tuple (Unbounded Any);
     "typing.Type", parametric_anys "type" 1;
+    "typing_extensions.Protocol", Primitive "typing.Protocol";
   ]
   |> List.map
     ~f:(fun (original, substitute) -> original, substitute)
@@ -677,6 +678,7 @@ let parametric_substitution_map =
     "typing.List", "list";
     "typing.Set", "set";
     "typing.Type", "type";
+    "typing_extensions.Protocol", "typing.Protocol";
   ]
   |> List.map
     ~f:(fun (original, substitute) -> original, substitute)
