@@ -1004,6 +1004,10 @@ let test_mismatch_with_any _ =
     (Type.mismatch_with_any
        (Type.iterable Type.integer)
        (Type.set Type.Any));
+   assert_true
+     (Type.mismatch_with_any
+        (Type.parametric "typing.AbstractSet" [Type.object_primitive])
+        (Type.set Type.Any));
 
   assert_false
     (Type.mismatch_with_any

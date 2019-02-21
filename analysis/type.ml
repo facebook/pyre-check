@@ -2099,7 +2099,8 @@ let rec mismatch_with_any left right =
       (left = "typing.Iterable" && right = "typing.List") ||
       (left = "typing.Iterable" && right = "set") ||
       (left = "typing.Sequence" && right = "typing.List") ||
-      (left = "typing.Sequence" && right = "list")
+      (left = "typing.Sequence" && right = "list") ||
+      (left = "typing.AbstractSet" && right = "set")
     in
     Identifier.equal left right ||
     symmetric left right ||
