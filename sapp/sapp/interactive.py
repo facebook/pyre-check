@@ -7,7 +7,17 @@ from typing import List, Optional
 import IPython
 from IPython.core import page
 from sapp.db import DB
-from sapp.models import Issue, IssueInstance, Run, RunStatus, SourceLocation
+from sapp.models import (
+    Issue,
+    IssueInstance,
+    Postcondition,
+    Precondition,
+    Run,
+    RunStatus,
+    Sink,
+    Source,
+    SourceLocation,
+)
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
@@ -142,8 +152,12 @@ help(COMAMND)   more info about a command
                 .options(joinedload(IssueInstance.message))
                 .first()
             )
+            sources = self._get_sources(session, issue_instance)
+            sinks = self._get_sinks(session, issue_instance)
 
-        page.display_page(self._create_issue_output_string(issue_instance, issue))
+        page.display_page(
+            self._create_issue_output_string(issue_instance, issue, sources, sinks)
+        )
 
     def issues(
         self,
@@ -207,10 +221,19 @@ help(COMAMND)   more info about a command
                 )
 
             issues = query.options(joinedload(IssueInstance.message)).all()
+            sources_list = [
+                self._get_sources(session, issue_instance)
+                for issue_instance, _ in issues
+            ]
+            sinks_list = [
+                self._get_sinks(session, issue_instance) for issue_instance, _ in issues
+            ]
 
         issue_strings = [
-            self._create_issue_output_string(issue_instance, issue)
-            for issue_instance, issue in issues
+            self._create_issue_output_string(issue_instance, issue, sources, sinks)
+            for (issue_instance, issue), sources, sinks in zip(
+                issues, sources_list, sinks_list
+            )
         ]
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)
@@ -221,13 +244,17 @@ help(COMAMND)   more info about a command
         """
         pass
 
-    def _create_issue_output_string(self, issue_instance, issue):
+    def _create_issue_output_string(self, issue_instance, issue, sources, sinks):
+        sources_output = f"\n{' ' * 10}".join(sources)
+        sinks_output = f"\n{' ' * 10}".join(sinks)
         return "\n".join(
             [
                 f"Issue {issue_instance.id}",
                 f"    Code: {issue.code}",
                 f" Message: {issue_instance.message.contents}",
                 f"Callable: {issue.callable}",
+                f" Sources: {sources_output}",
+                f"   Sinks: {sinks_output}",
                 (
                     f"Location: {issue_instance.filename}"
                     f":{SourceLocation.to_string(issue_instance.location)}"
@@ -238,3 +265,27 @@ help(COMAMND)   more info about a command
     def _resolve_pager(self, use_pager):
         use_pager = sys.stdout.isatty() if use_pager is None else use_pager
         return page.page if use_pager else page.display_page
+
+    def _get_sources(self, session, issue_instance):
+        return [
+            source
+            for source, in session.query(Source.name)
+            .filter(
+                Source.postconditions.any(
+                    Postcondition.issue_instances.any(id=issue_instance.id)
+                )
+            )
+            .all()
+        ]
+
+    def _get_sinks(self, session, issue_instance):
+        return [
+            sink
+            for sink, in session.query(Sink.name)
+            .filter(
+                Sink.preconditions.any(
+                    Precondition.issue_instances.any(id=issue_instance.id)
+                )
+            )
+            .all()
+        ]
