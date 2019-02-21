@@ -453,7 +453,11 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments, result)
             path_write_text.assert_called_once_with(
-                "# pyre-fixme[1]: description\n1\n# pyre-fixme[1, 2]: description\n2"
+                "# pyre-fixme[1]: description\n"
+                "1\n"
+                "# pyre-fixme[1]: description\n"
+                "# pyre-fixme[2]: description\n"
+                "2"
             )
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             result = _result(
@@ -473,10 +477,51 @@ class FixmeTest(unittest.TestCase):
             path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments, result)
             path_write_text.assert_called_once_with(
-                "1\n# pyre-fixme[10, 11]: Description one. Description two.\n2"
+                "1\n"
+                "# pyre-fixme[10]: Description one.\n"
+                "# pyre-fixme[11]: Description two.\n"
+                "2"
+            )
+        arguments.max_line_length = 40
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "concise_description": "Error [1]: Description one.",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "concise_description": "Error [2]: Very long description two.",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "concise_description": "Error [3]: Very long "
+                        "description three.",
+                    },
+                    {
+                        "path": "path.py",
+                        "line": 2,
+                        "concise_description": "Error [4]: Description four.",
+                    },
+                ]
+            )
+            path_read_text.return_value = "1\n2"
+            upgrade.run_fixme(arguments, result)
+            path_write_text.assert_called_once_with(
+                "1\n"
+                "# pyre-fixme[1]: Description one.\n"
+                "# pyre-fixme[2]: Very long descriptio...\n"
+                "# pyre-fixme[3]: Very long descriptio...\n"
+                "# pyre-fixme[4]: Description four.\n"
+                "2"
             )
 
         # Test errors in multiple files.
+        arguments.max_line_length = 88
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             result = _result(
                 [
@@ -517,6 +562,21 @@ class FixmeTest(unittest.TestCase):
             arguments.comment = None
             path_write_text.assert_called_once_with("2")
 
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 1,
+                        "concise_description": "Error [0]: extraneous ignore",
+                    }
+                ]
+            )
+            path_read_text.return_value = "# pyre-fixme[1]\n# pyre-fixme[2]\n2"
+            upgrade.run_fixme(arguments, result)
+            arguments.comment = None
+            path_write_text.assert_called_once_with("# pyre-fixme[2]\n2")
+
         # Test removal of extraneous ignore (trailing comment).
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             result = _result(
@@ -545,13 +605,13 @@ class FixmeTest(unittest.TestCase):
                         "path": "path.py",
                         "line": 1,
                         "concise_description": "Error [1]: description one, "
-                        + "that has a pretty verbose text",
+                        "that has a pretty verbose text",
                     },
                     {
                         "path": "path.py",
                         "line": 2,
                         "concise_description": "Error [2]: description-that-will-not-break-"
-                        + "even-when-facing-adversities",
+                        "even-when-facing-adversities",
                     },
                 ]
             )

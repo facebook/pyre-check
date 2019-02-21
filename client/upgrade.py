@@ -174,19 +174,8 @@ def partition_on_any_delimiter(
     return prefix, delimiter, suffix
 
 
-def generate_comment(
-    max_line_length: Optional[int], indent: str, codes: List[str], description: str
-) -> str:
-    prefix = "{}# pyre-fixme[{}]".format(indent, ", ".join(codes))
-    comment = prefix + ": " + description
-
-    if not max_line_length or len(comment) <= max_line_length:
-        return comment
-    else:
-        return comment[: (max_line_length - 3)] + "..."
-
-
 def remove_comment_preamble(lines: List[str]) -> None:
+    # Deprecated: leaving remove logic until live old-style comments are cleaned up.
     while lines:
         old_line = lines.pop()
         new_line = re.sub(r"# pyre: .*$", "", old_line).rstrip()
@@ -199,8 +188,7 @@ def remove_comment_preamble(lines: List[str]) -> None:
 def fix(
     arguments: argparse.Namespace,
     filename: str,
-    codes: Dict[int, str],
-    descriptions: Dict[int, str],
+    errors: Dict[int, List[Dict[str, str]]],
 ) -> None:
     custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
     max_line_length = (
@@ -213,32 +201,37 @@ def fix(
     new_lines = []
     for index, line in enumerate(lines):
         number = index + 1
-        if number in codes:
-            if list(codes[number]) == ["0"]:
-                # Handle unused ignores.
-                replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
-                if replacement == "":
-                    remove_comment_preamble(new_lines)
-                else:
-                    new_lines.append(replacement)
-                continue
+        if number not in errors:
+            new_lines.append(line)
+            continue
+        if errors[number][0]["code"] == "0":
+            # Handle unused ignores.
+            replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
+            if replacement == "":
+                remove_comment_preamble(new_lines)
+            else:
+                new_lines.append(replacement)
+            continue
 
-            sorted_codes = sorted(list(codes[number]))
-            sorted_descriptions = sorted(list(descriptions[number]))
+        comments = []
+        for error in errors[number]:
+            indent = line[: -len(line.lstrip(" "))]
+            prefix = "{}# pyre-fixme[{}]".format(indent, error["code"])
+            description = custom_comment if custom_comment else error["description"]
+            comment = prefix + ": " + description
+            if not max_line_length or len(comment) <= max_line_length:
+                comments.append(comment)
+            else:
+                comments.append(comment[: (max_line_length - 3)] + "...")
 
-            description = (
-                custom_comment if custom_comment else " ".join(sorted_descriptions)
-            )
-
-            indent = line[: (-len(line.lstrip(" ")))]
-            comment = generate_comment(
-                max_line_length, indent, sorted_codes, description
-            )
-            LOG.info("Adding comment on line %d: %s", number, comment)
-            new_lines.append(comment)
-
+        LOG.info(
+            "Adding comment%s on line %d: %s",
+            "s" if len(comments) > 1 else "",
+            number,
+            " \n".join(comments),
+        )
+        new_lines.extend(comments)
         new_lines.append(line)
-
     path.write_text("\n".join(new_lines))
 
 
@@ -311,15 +304,15 @@ def run_fixme(
         LOG.info("Processing `%s`", path)
 
         # Build map from line to error codes.
-        codes = defaultdict(lambda: set())
-        descriptions = defaultdict(lambda: set())
+        error_map = defaultdict(lambda: [])
         for error in errors:
             match = re.search(r"\[(\d+)\]: (.*)", error["concise_description"])
             if match:
-                codes[error["line"]].add(match.group(1))
-                descriptions[error["line"]].add(match.group(2))
+                error_map[error["line"]].append(
+                    {"code": match.group(1), "description": match.group(2)}
+                )
 
-        fix(arguments, path, codes, descriptions)
+        fix(arguments, path, error_map)
 
 
 def run_global_version_update(
