@@ -850,6 +850,39 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         primaryjoin="Issue.id == foreign(IssueTriageInfoAssoc.issue_id)",
     )
 
+    status = Column(
+        Enum(
+            IssueStatus.UNCATEGORIZED,
+            IssueStatus.BAD_PRACTICE,
+            IssueStatus.FALSE_POSITIVE,
+            IssueStatus.VALID_BUG,
+            IssueStatus.DO_NOT_CARE,
+            name="issue_states",
+        ),
+        doc="Shows the issue status from the latest run",
+        server_default=IssueStatus.UNCATEGORIZED,
+        nullable=False,
+        index=True,
+    )
+
+    task_number = Column(
+        Integer, doc="Task number (not fbid) that is tracking this issue"
+    )
+
+    triage_history_fbid = Column(
+        BIGINT(unsigned=True),
+        nullable=True,
+        unique=True,
+        doc="FBID for EntZoncolanIssueTriageHistory",
+    )
+
+    feedback_fbid = Column(
+        BIGINT(unsigned=True),
+        nullable=True,
+        unique=True,
+        doc="FBID for EntZoncolanFeedback",
+    )
+
     json = Column(types.TEXT, doc="Raw JSON of original issue", nullable=True)
 
     @classmethod
