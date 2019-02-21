@@ -234,6 +234,13 @@ let test_concise _ =
     |}
     ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
 
+  assert_type_errors ~concise:true
+  {|
+    def foo(x: int) -> None: ...
+    await foo
+  |}
+  ["Incompatible awaitable type [12]: Expected an awaitable but got `Callable[[int], None]`."];
+
   (* Prohibited Any *)
   assert_type_errors ~concise:true
     {|
@@ -266,10 +273,10 @@ let test_concise _ =
   (* Incompatible Annotation *)
   assert_type_errors ~concise:true
     {|
-      def foo(x: int = 1.0) -> None:
+      def foo(x: typing.Union[int, str] = 1.0) -> None:
         return
     |}
-    ["Incompatible variable type [9]: x has type `int`; used as `float`."];
+    ["Incompatible variable type [9]: x has type `Union[int, str]`; used as `float`."];
 
   assert_type_errors ~concise:true
     {|

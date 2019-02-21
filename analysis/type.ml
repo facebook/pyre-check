@@ -346,6 +346,88 @@ and show annotation =
   Format.asprintf "%a" pp annotation
 
 
+let rec pp_concise format annotation =
+  let pp_comma_separated =
+    (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_concise)
+  in
+  let strip_qualification identifier =
+    String.split ~on:'.' identifier
+    |> List.last
+    |> Option.value ~default:identifier
+  in
+  match annotation with
+  | Bottom ->
+      Format.fprintf format "?"
+  | Callable { implementation; _ } ->
+      let signature_to_string { annotation; parameters } =
+        let parameters =
+          match parameters with
+          | Undefined ->
+              "..."
+          | Defined parameters ->
+              let parameter = function
+                | Parameter.Named { Parameter.annotation; _ } ->
+                    Format.asprintf "%a" pp_concise annotation
+                | Parameter.Variable { Parameter.annotation; _ } ->
+                    Format.asprintf "*(%a)" pp_concise annotation
+                | Parameter.Keywords { Parameter.annotation; _ } ->
+                    Format.asprintf "**(%a)" pp_concise annotation
+              in
+              List.map parameters ~f:parameter
+              |> String.concat ~sep:", "
+              |> fun parameters -> Format.asprintf "[%s]" parameters
+        in
+        Format.asprintf "%s, %a" parameters pp_concise annotation
+      in
+      Format.fprintf format "Callable[%s]" (signature_to_string implementation)
+  | Any ->
+      Format.fprintf format "Any"
+  | Optional Bottom ->
+      Format.fprintf format "None"
+  | Optional parameter ->
+      Format.fprintf format "Optional[%a]" pp_concise parameter
+  | Parametric { name; parameters }
+    when (name = "typing.Optional" or name = "Optional") &&
+         parameters = [Bottom] ->
+      Format.fprintf format "None"
+  | Parametric { name; parameters } ->
+      let name = strip_qualification (reverse_substitute name) in
+      if List.for_all
+          parameters
+          ~f:(fun parameter -> equal parameter Bottom || equal parameter Top)
+      then
+        Format.fprintf format "%s[]" name
+      else
+        Format.fprintf format "%s[%a]" name pp_comma_separated parameters
+  | Primitive name ->
+      Format.fprintf format "%s" (strip_qualification name)
+  | Top ->
+      Format.fprintf format "?"
+  | Tuple (Bounded parameters) ->
+      Format.fprintf format "Tuple[%a]" pp_comma_separated parameters
+  | Tuple (Unbounded parameter) ->
+      Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
+  | TypedDictionary { name; fields; _ } ->
+      if name = "$anonymous" then
+        let fields =
+          fields
+          |> List.map
+              ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp_concise annotation)
+          |> String.concat ~sep:", "
+        in
+        Format.fprintf format "TypedDict(%s)" fields
+      else
+        Format.fprintf format "%s" (strip_qualification name)
+  | Union parameters ->
+      Format.fprintf format "Union[%a]" pp_comma_separated parameters
+  | Variable { variable; _ } ->
+      Format.fprintf format "%s" (strip_qualification variable)
+
+
+and show_concise annotation =
+  Format.asprintf "%a" pp_concise annotation
+
+
 let rec serialize = function
   | Bottom ->
       "$bottom"

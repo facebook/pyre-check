@@ -554,6 +554,73 @@ let test_expression _ =
     "mypy_extensions.TypedDict[(\"Movie\", False, (\"title\", str), (\"year\", int))]"
 
 
+let test_concise _ =
+  let assert_concise annotation expected =
+    assert_equal
+      ~printer:(fun annotation -> annotation)
+      expected
+      (Type.show_concise annotation)
+  in
+  assert_concise Type.Bottom "?";
+  assert_concise Type.Top "?";
+  assert_concise
+    (Type.callable
+      ~name:(Access.create "foo")
+      ~annotation:Type.integer
+      ~parameters:(Type.Callable.Undefined)
+      ())
+    "Callable[..., int]";
+  assert_concise
+    (Type.callable
+      ~name:(Access.create "foo")
+      ~annotation:Type.integer
+      ~parameters:(Type.Callable.Defined [
+        Type.Callable.Parameter.Named {
+          Type.Callable.Parameter.name = Access.create "x";
+          annotation = Type.Any;
+          default = true;
+        };
+        Type.Callable.Parameter.Named {
+          Type.Callable.Parameter.name = Access.create "y";
+          annotation = Type.float;
+          default = true;
+        }
+      ])
+      ())
+    "Callable[[Any, float], int]";
+  assert_concise Type.Any "Any";
+  assert_concise (Type.Optional Type.Bottom) "None";
+  assert_concise (Type.Optional Type.integer) "Optional[int]";
+  assert_concise (Type.parametric "Optional" [Type.Bottom]) "None";
+  assert_concise (Type.parametric "parametric" [Type.Top; Type.Top]) "parametric[]";
+  assert_concise (Type.parametric "parametric" [Type.Top; Type.float]) "parametric[?, float]";
+  assert_concise (Type.Primitive "a.b.c") "c";
+  assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
+  assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
+  assert_concise
+    (Type.TypedDictionary {
+        name = "Movie";
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+        total = true;
+      })
+    "Movie";
+  assert_concise
+    (Type.TypedDictionary {
+        name = "$anonymous";
+        fields = [
+          { name = "year"; annotation = Type.integer };
+          { name = "name"; annotation = Type.string };
+        ];
+        total = true;
+      })
+    "TypedDict(year: int, name: str)";
+  assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
+  assert_concise (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T") "T"
+
+
 let test_union _ =
   assert_equal
     (Type.union [Type.string; Type.float])
@@ -1446,6 +1513,7 @@ let () =
     "create">::test_create;
     "instantiate">::test_instantiate;
     "expression">::test_expression;
+    "concise">::test_concise;
     "union">::test_union;
     "primitives">::test_primitives;
     "elements">::test_elements;

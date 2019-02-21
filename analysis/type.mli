@@ -153,7 +153,8 @@ module TypedDictionary : sig
   val setter: callable: Callable.t -> annotation: t -> Callable.t
 end
 
-
+val pp_concise: Format.formatter -> t -> unit
+val show_concise: t -> string
 val serialize: t -> string
 
 val parametric: string -> t list -> t
