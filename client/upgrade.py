@@ -346,7 +346,7 @@ def run_fixme(
         codes = defaultdict(lambda: set())
         descriptions = defaultdict(lambda: set())
         for error in errors:
-            match = re.search(r"\[(\d+)\]: (.*)", error["description"])
+            match = re.search(r"\[(\d+)\]: (.*)", error["concise_description"])
             if match:
                 codes[error["line"]].add(match.group(1))
                 descriptions[error["line"]].add(match.group(2))

@@ -186,7 +186,7 @@ class FixmeAllTest(unittest.TestCase):
                 "path": "local.py",
                 "code": 7,
                 "name": "Kind",
-                "description": "Error",
+                "concise_description": "Error",
                 "inference": {},
                 "ignore_error": False,
                 "external_to_global_root": False,
@@ -242,7 +242,7 @@ class FixmeAllTest(unittest.TestCase):
                 "path": "local.py",
                 "code": 7,
                 "name": "Kind",
-                "description": "Error",
+                "concise_description": "Error",
                 "inference": {},
                 "ignore_error": False,
                 "external_to_global_root": False,
@@ -369,7 +369,7 @@ class FixmeSingleTest(unittest.TestCase):
                 "path": "local.py",
                 "code": 7,
                 "name": "Kind",
-                "description": "Error",
+                "concise_description": "Error",
                 "inference": {},
                 "ignore_error": False,
                 "external_to_global_root": False,
@@ -402,7 +402,7 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [1]: description",
+                        "concise_description": "Error [1]: description",
                     }
                 ]
             )
@@ -419,7 +419,7 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [1]: description",
+                        "concise_description": "Error [1]: description",
                     }
                 ]
             )
@@ -436,17 +436,17 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [1]: description",
+                        "concise_description": "Error [1]: description",
                     },
                     {
                         "path": "path.py",
                         "line": 2,
-                        "description": "Error [1]: description",
+                        "concise_description": "Error [1]: description",
                     },
                     {
                         "path": "path.py",
                         "line": 2,
-                        "description": "Error [2]: description",
+                        "concise_description": "Error [2]: description",
                     },
                 ]
             )
@@ -461,12 +461,12 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 2,
-                        "description": "Error [10]: Description one.",
+                        "concise_description": "Error [10]: Description one.",
                     },
                     {
                         "path": "path.py",
                         "line": 2,
-                        "description": "Error [11]: Description two.",
+                        "concise_description": "Error [11]: Description two.",
                     },
                 ]
             )
@@ -483,12 +483,12 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [1]: description",
+                        "concise_description": "Error [1]: description",
                     },
                     {
                         "path": "other.py",
                         "line": 2,
-                        "description": "Error [2]: description",
+                        "concise_description": "Error [2]: description",
                     },
                 ]
             )
@@ -508,7 +508,7 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [0]: extraneous ignore",
+                        "concise_description": "Error [0]: extraneous ignore",
                     }
                 ]
             )
@@ -524,7 +524,7 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [0]: extraneous ignore",
+                        "concise_description": "Error [0]: extraneous ignore",
                     }
                 ]
             )
@@ -544,25 +544,25 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 1,
-                        "description": "Error [1]: description one, "
+                        "concise_description": "Error [1]: description one, "
                         + "that has a pretty verbose text",
                     },
                     {
                         "path": "path.py",
                         "line": 2,
-                        "description": "Error [2]: description-that-will-not-break-"
+                        "concise_description": "Error [2]: description-that-will-not-break-"
                         + "even-when-facing-adversities",
                     },
                     {
                         "path": "path.py",
                         "line": 3,
-                        "description": "Error [3]: description.with "
+                        "concise_description": "Error [3]: description.with "
                         + "mixed.separators.that should.also.break",
                     },
                     {
                         "path": "path.py",
                         "line": 4,
-                        "description": "Error [4]: description starts short, "
+                        "concise_description": "Error [4]: description starts short, "
                         + "but-then-has-a-very-long-type-name-or-similar "
                         + "that does not break",
                     },
@@ -601,17 +601,17 @@ class FixmeTest(unittest.TestCase):
                     {
                         "path": "path.py",
                         "line": 3,
-                        "description": "Error [0]: extraneous ignore",
+                        "concise_description": "Error [0]: extraneous ignore",
                     },
                     {
                         "path": "path.py",
                         "line": 9,
-                        "description": "Error [0]: extraneous ignore",
+                        "concise_description": "Error [0]: extraneous ignore",
                     },
                     {
                         "path": "path.py",
                         "line": 13,
-                        "description": "Error [0]: extraneous ignore",
+                        "concise_description": "Error [0]: extraneous ignore",
                     },
                 ]
             )
