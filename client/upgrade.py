@@ -174,46 +174,16 @@ def partition_on_any_delimiter(
     return prefix, delimiter, suffix
 
 
-def generate_full_comment(
+def generate_comment(
     max_line_length: Optional[int], indent: str, codes: List[str], description: str
-) -> List[str]:
-    prefix = "{}# pyre-fixme[{}]: ".format(indent, ", ".join(codes))
-    comment = prefix + description
+) -> str:
+    prefix = "{}# pyre-fixme[{}]".format(indent, ", ".join(codes))
+    comment = prefix + ": " + description
 
-    if (
-        not max_line_length
-        or len(comment) <= max_line_length
-        # If the prefix is too long, there is no way we can split this description.
-        or len(prefix) > max_line_length
-    ):
-        return [comment]
-
-    preamble_prefix = indent + "# pyre: "
-    # Even if the preamble prefix is definitely shorter than the prefix, use the
-    # length of the prefix to determine the available columns for ease of
-    # implementation.
-    available_columns = max_line_length - len(prefix)
-
-    buffered_line = ""
-    result = []
-    while len(description):
-        token, delimiter, remaining = partition_on_any_delimiter(
-            description, delimiters=[" ", "."]
-        )
-
-        if buffered_line and (
-            len(buffered_line) + len(token) + len(delimiter) > available_columns
-        ):
-            # This new token would make the line exceed the limit,
-            # hence terminate what we have accumulated.
-            result.append((preamble_prefix + buffered_line).rstrip())
-            buffered_line = ""
-
-        buffered_line = buffered_line + token + delimiter
-        description = remaining
-
-    result.append((prefix + buffered_line).rstrip())
-    return result
+    if not max_line_length or len(comment) <= max_line_length:
+        return comment
+    else:
+        return comment[: (max_line_length - 3)] + "..."
 
 
 def remove_comment_preamble(lines: List[str]) -> None:
@@ -260,14 +230,12 @@ def fix(
                 custom_comment if custom_comment else " ".join(sorted_descriptions)
             )
 
-            full_comment = generate_full_comment(
-                max_line_length,
-                line[: (len(line) - len(line.lstrip(" ")))],  # indent
-                sorted_codes,
-                description,
+            indent = line[: (-len(line.lstrip(" ")))]
+            comment = generate_comment(
+                max_line_length, indent, sorted_codes, description
             )
-            LOG.info("Adding comment on line %d: %s", number, "\n".join(full_comment))
-            new_lines.extend(full_comment)
+            LOG.info("Adding comment on line %d: %s", number, comment)
+            new_lines.append(comment)
 
         new_lines.append(line)
 
