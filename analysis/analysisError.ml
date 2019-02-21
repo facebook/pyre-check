@@ -343,7 +343,7 @@ let messages ~concise ~define location kind =
                   ]
             end
         | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } ->
-            let detail =
+            let trace =
               let evidence_string =
                 evidence_locations
                 |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
@@ -365,7 +365,7 @@ let messages ~concise ~define location kind =
                       Access.pp name
                       Type.pp parent
                       Type.pp annotation;
-                    detail;
+                    trace;
                   ]
               | Some given_annotation when Type.contains_any given_annotation ->
                   [
@@ -375,7 +375,7 @@ let messages ~concise ~define location kind =
                       Access.pp name
                       Type.pp parent
                       Type.pp annotation;
-                    detail;
+                    trace;
                   ]
               | _ ->
                   [
@@ -384,7 +384,7 @@ let messages ~concise ~define location kind =
                       Access.pp name
                       Type.pp parent
                       Type.pp annotation;
-                    detail;
+                    trace;
                   ]
             end
         | { name; annotation = None; _ } ->
@@ -464,7 +464,7 @@ let messages ~concise ~define location kind =
       _;
     }
     when Type.is_concrete annotation ->
-      let detail =
+      let trace =
         let evidence_string =
           evidence_locations
           |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_line)
@@ -484,7 +484,7 @@ let messages ~concise ~define location kind =
               (Format.asprintf
                  "Returning `%a` but type `Any` is specified."
                  Type.pp annotation);
-              detail;
+              trace;
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
@@ -492,14 +492,14 @@ let messages ~concise ~define location kind =
                  "Returning `%a` but return type must be specified as type \
                   that does not contain `Any`."
                  Type.pp annotation);
-              detail;
+              trace;
             ]
         | _ ->
             [
               (Format.asprintf
                  "Returning `%a` but no return type is specified."
                  Type.pp annotation);
-              detail;
+              trace;
             ]
       end
   | MissingReturnAnnotation { given_annotation; _ } ->
@@ -611,7 +611,7 @@ let messages ~concise ~define location kind =
       callee;
       mismatch = { actual; expected; due_to_invariance };
     } ->
-      let detailed_message =
+      let trace =
         if due_to_invariance then
           [
             Format.asprintf "This call might modify the type of the parameter.";
@@ -646,7 +646,7 @@ let messages ~concise ~define location kind =
         Type.pp expected
         target
         Type.pp actual
-      :: detailed_message;
+      :: trace;
   | IncompatibleConstructorAnnotation _ when concise ->
       ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
@@ -657,13 +657,13 @@ let messages ~concise ~define location kind =
           annotation;
       ]
   | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit } ->
-      let detail =
-        (Format.asprintf
-           "Type `%a` expected on line %d, specified on line %d.%s"
-           Type.pp expected
-           stop_line
-           define.Node.location.Location.start.Location.line
-           (if due_to_invariance then " " ^ invariance_message else ""))
+      let trace =
+        Format.asprintf
+          "Type `%a` expected on line %d, specified on line %d.%s"
+          Type.pp expected
+          stop_line
+          define.Node.location.Location.start.Location.line
+          (if due_to_invariance then " " ^ invariance_message else "")
       in
       let message =
         if is_implicit then
@@ -676,7 +676,7 @@ let messages ~concise ~define location kind =
             Type.pp expected
             Type.pp actual
       in
-      [message; detail]
+      [message; trace]
   | IncompatibleAttributeType {
       parent;
       incompatible_type = {
@@ -699,7 +699,7 @@ let messages ~concise ~define location kind =
             Type.pp expected
             Type.pp actual
       in
-      let detail =
+      let trace =
         if due_to_invariance then
           invariance_message
         else
@@ -709,7 +709,7 @@ let messages ~concise ~define location kind =
             declare_location.Location.start.Location.line
             start_line
       in
-      [message; detail]
+      [message; trace]
   | IncompatibleVariableType {
       name;
       mismatch = { actual; expected; due_to_invariance };
@@ -731,14 +731,14 @@ let messages ~concise ~define location kind =
             Type.pp expected
             Type.pp actual
       in
-      let detail =
+      let trace =
         Format.asprintf
           "Redeclare `%a` on line %d if you wish to override the previously declared type.%s"
           Access.pp_sanitized name
           start_line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
-      [message; detail]
+      [message; trace]
   | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
@@ -929,7 +929,7 @@ let messages ~concise ~define location kind =
         | Module access ->
             (Format.asprintf "Module `%a`" Access.pp access)
       in
-      let detail =
+      let trace =
         match origin with
         | Class { class_attribute; _ } when class_attribute ->
             [
@@ -940,7 +940,7 @@ let messages ~concise ~define location kind =
             []
       in
       [Format.asprintf "%s has no attribute `%s`." target (Access.show_sanitized attribute)]
-      @ detail
+      @ trace
   | UndefinedName access ->
       [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
   | UndefinedImport access when concise ->
