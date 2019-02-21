@@ -64,8 +64,8 @@ let test_parse _ =
   assert_ignore
     ["def foo() -> str: return 1.0  # pyre-ignore"; "def bar() -> int: return ''  # pyre-ignore"]
     [
+      create_ignore 2 [] PyreIgnore 2 31 2 42;
       create_ignore 1 [] PyreIgnore 1 32 1 43;
-      create_ignore 2 [] PyreIgnore 2 31 2 42
     ];
 
   assert_ignore
@@ -107,8 +107,8 @@ let test_parse _ =
       "def bar() -> int: return ''  # pyre-ignore[7]"
     ]
     [
+      create_ignore 2 [7] PyreIgnore 2 31 2 45;
       create_ignore 1 [7] PyreIgnore 1 32 1 46;
-      create_ignore 2 [7] PyreIgnore 2 31 2 45
     ];
 
   assert_ignore
@@ -143,7 +143,34 @@ let test_parse _ =
     [create_ignore 1 [] PyreIgnore 1 53 1 64];
   assert_ignore
     ["def foo() -> int: return 1.0  # 'still in quotes' 'pyre-ignore'"]
-    []
+    [];
+
+  (* Ignores apply to next non-comment line *)
+  assert_ignore
+    [
+      "# pyre-ignore[7]";
+      "# another comment";
+      "def foo() -> str: return"
+    ]
+    [create_ignore 3 [7] PyreIgnore 1 2 1 16];
+
+  assert_ignore
+    [
+      "# pyre-ignore[7]";
+      "def foo() -> str: return  # applies to this line"
+    ]
+    [create_ignore 2 [7] PyreIgnore 1 2 1 16];
+
+  assert_ignore
+    [
+      "# pyre-ignore[6]";
+      "# pyre-ignore[7]";
+      "def foo() -> str: return"
+    ]
+    [
+      create_ignore 3 [6] PyreIgnore 1 2 1 16;
+      create_ignore 3 [7] PyreIgnore 2 2 2 16;
+    ]
 
 
 let test_qualifier _ =

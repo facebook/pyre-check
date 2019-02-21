@@ -35,6 +35,9 @@ let location { location; _ } =
 let kind { kind; _ } =
   kind
 
+let increment ({ ignored_line; _ } as ignore) =
+  { ignore with ignored_line = ignored_line + 1 }
+
 let key { location; ignored_line; _ } =
   let start = { Location.line = ignored_line; column = -1 } in
   { location with Location.start; stop = start }
