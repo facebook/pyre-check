@@ -2839,18 +2839,21 @@ module State = struct
                       ~define:define_node
                     |> Option.some
                 | Value when is_type_alias && Type.expression_contains_any value ->
-                    Some (
+                    let value_annotation = Resolution.parse_annotation resolution value in
+                    if Type.is_dictionary ~with_key:(Some Type.string) value_annotation then
+                      None
+                    else
                       Error.create
                         ~location
                         ~kind:(Error.ProhibitedAny {
                             Error.name = access;
                             annotation = None;
-                            given_annotation = Some (Resolution.parse_annotation resolution value);
+                            given_annotation = Some value_annotation;
                             evidence_locations;
                             thrown_at_source = true;
                           })
                         ~define:define_node
-                    )
+                      |> Option.some
                 | _ ->
                     begin
                       match explicit, access with

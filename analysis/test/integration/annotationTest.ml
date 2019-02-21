@@ -1013,6 +1013,12 @@ let test_check_incomplete_annotations _ =
         x = 1
         typing.cast(typing.Any, x)
     |}
+    [];
+
+  assert_type_errors
+    {|
+      MyDict = typing.Dict[str, typing.Any]
+    |}
     []
 
 
