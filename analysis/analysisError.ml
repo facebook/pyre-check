@@ -231,6 +231,17 @@ let messages ~concise ~define location kind =
     "-with-subclassing for mutable container errors."
   in
   let pp_type = if concise then Type.pp_concise else Type.pp in
+  let pp_access format access =
+    let access =
+      if concise then
+        Access.last access
+        >>| (fun last -> [last])
+        |> Option.value ~default:access
+      else
+        access
+    in
+    Access.pp_sanitized format access
+  in
   match kind with
   | AnalysisFailure annotation ->
       [
@@ -279,15 +290,15 @@ let messages ~concise ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
-                "Expression `%s` has type `%a`; given explicit type cannot be `Any`."
-                (Access.show_sanitized name)
+                "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
+                pp_access name
                 pp_type annotation
             ]
         | _ ->
             [
               Format.asprintf
-                "Expression `%s` is used as type `%a`; given explicit type cannot contain `Any`"
-                (Access.show_sanitized name)
+                "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`"
+                pp_access name
                 pp_type annotation
             ]
       end
@@ -297,14 +308,14 @@ let messages ~concise ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
-                "Explicit annotation for `%s` cannot be `Any`."
-                (Access.show_sanitized name)
+                "Explicit annotation for `%a` cannot be `Any`."
+                pp_access name
             ]
         | _ ->
             [
               Format.asprintf
-                "Explicit annotation for `%s` cannot contain `Any`."
-                (Access.show_sanitized name)
+                "Explicit annotation for `%a` cannot contain `Any`."
+                pp_access name
             ]
       end
   | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
@@ -325,21 +336,21 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type other than `Any`."
-                      Access.pp name
+                      pp_access name
                       pp_type parent;
                   ]
               | Some given_annotation when Type.contains_any given_annotation ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
-                      Access.pp name
+                      pp_access name
                       pp_type parent;
                   ]
               | _ ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has no type specified."
-                      Access.pp name
+                      pp_access name
                       pp_type parent;
                   ]
             end
@@ -352,7 +363,7 @@ let messages ~concise ~define location kind =
               in
               Format.asprintf
                 "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp name
+                pp_access name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -363,7 +374,7 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                      Access.pp name
+                      pp_access name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -373,7 +384,7 @@ let messages ~concise ~define location kind =
                     Format.asprintf
                       "Attribute `%a` of class `%a` is used as type `%a` \
                        and must have a type that does not contain `Any`."
-                      Access.pp name
+                      pp_access name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -382,7 +393,7 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                      Access.pp name
+                      pp_access name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -391,7 +402,7 @@ let messages ~concise ~define location kind =
         | { name; annotation = None; _ } ->
             [
               Format.asprintf "Attribute `%a` of class `%a` has no type specified."
-                Access.pp name
+                pp_access name
                 pp_type parent;
             ]
       end
@@ -410,7 +421,7 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but type `Any` is specified."
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
@@ -418,14 +429,14 @@ let messages ~concise ~define location kind =
               Format.asprintf
                 "Parameter `%a` is used as type `%a` \
                  and must have a type that does not contain `Any`"
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation
             ]
         | _ ->
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but no type is specified."
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation
             ]
       end
@@ -436,19 +447,19 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Parameter `%a` must have a type other than `Any`."
-                Access.pp_sanitized name
+                pp_access name
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
                 "Parameter `%a` must have a type that does not contain `Any`."
-                Access.pp_sanitized name
+                pp_access name
             ]
         | _ ->
             [
               Format.asprintf
                 "Parameter `%a` has no type specified."
-                Access.pp_sanitized name
+                pp_access name
             ]
       end
   | MissingReturnAnnotation { given_annotation; _ } when concise ->
@@ -538,11 +549,11 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp_sanitized name
+                pp_access name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -552,11 +563,11 @@ let messages ~concise ~define location kind =
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` a type must be specified \
                  that does not contain `Any`."
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp_sanitized name
+                pp_access name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -565,11 +576,11 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but no type is specified."
-                Access.pp_sanitized name
+                pp_access name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                Access.pp_sanitized name
+                pp_access name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -582,20 +593,20 @@ let messages ~concise ~define location kind =
           [
             Format.asprintf
               "Globally accessible variable `%a` must be specified as type other than `Any`."
-              Access.pp_sanitized name
+              pp_access name
           ]
         | Some given_annotation when Type.contains_any given_annotation ->
           [
             Format.asprintf
               "Globally accessible variable `%a` must be specified as type that does not contain \
               `Any`."
-              Access.pp_sanitized name
+              pp_access name
           ]
         | _ ->
           [
             Format.asprintf
               "Globally accessible variable `%a` has no type specified."
-              Access.pp_sanitized name
+              pp_access name
           ]
       end
   | MissingTypeParameters { annotation; number_of_parameters } ->
@@ -624,18 +635,13 @@ let messages ~concise ~define location kind =
       let target =
         let parameter =
           match name with
-          | Some name ->
-              Access.show_sanitized name
-              |> Format.asprintf "parameter `%s`"
-          | _ ->
-              "anonymous parameter"
+          | Some name -> Format.asprintf "parameter `%a`" pp_access name
+          | _ -> "anonymous parameter"
         in
         let callee =
           match callee with
-          | Some callee ->
-              Format.asprintf "call `%a`" Access.pp callee
-          | _ ->
-              "anoynmous call"
+          | Some callee -> Format.asprintf "call `%a`" pp_access callee
+          | _ -> "anoynmous call"
         in
         if concise then
           Format.asprintf "%s parameter" (ordinal position)
@@ -695,7 +701,7 @@ let messages ~concise ~define location kind =
         else
           Format.asprintf
             "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
-            Access.pp name
+            pp_access name
             pp_type parent
             pp_type expected
             pp_type actual
@@ -706,7 +712,7 @@ let messages ~concise ~define location kind =
         else
           Format.asprintf
             "Attribute `%a` declared on line %d, incorrectly used on line %d."
-            Access.pp name
+            pp_access name
             declare_location.Location.start.Location.line
             start_line
       in
@@ -722,20 +728,20 @@ let messages ~concise ~define location kind =
         else if concise then
           Format.asprintf
             "%a has type `%a`; used as `%a`."
-            Access.pp_sanitized name
+            pp_access name
             pp_type expected
             pp_type actual
         else
           Format.asprintf
             "%a is declared to have type `%a` but is used as type `%a`."
-            Access.pp_sanitized name
+            pp_access name
             pp_type expected
             pp_type actual
       in
       let trace =
         Format.asprintf
           "Redeclare `%a` on line %d if you wish to override the previously declared type.%s"
-          Access.pp_sanitized name
+          pp_access name
           start_line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
@@ -767,13 +773,13 @@ let messages ~concise ~define location kind =
         | StrengthenedPrecondition (NotFound name) ->
             Format.asprintf
               "Could not find parameter `%a` in overriding signature."
-              Access.pp_sanitized name
+              pp_access name
       in
       [
         Format.asprintf
           "`%a` overrides method defined in `%a` inconsistently.%s"
-          Access.pp define_name
-          Access.pp parent
+          pp_access define_name
+          pp_access parent
           (if concise then "" else " " ^ detail)
       ]
   | InvalidArgument argument when concise ->
@@ -820,16 +826,16 @@ let messages ~concise ~define location kind =
       [Format.asprintf format pp_type annotation]
 
   | MissingArgument { name; _ } when concise ->
-      [Format.asprintf "Argument `%s` expected." (Access.show_sanitized name)]
+      [Format.asprintf "Argument `%a` expected." pp_access name]
   | MissingArgument { callee; name } ->
       let callee =
         match callee with
         | Some name ->
-            Format.asprintf "Call `%a`" Access.pp name
+            Format.asprintf "Call `%a`" pp_access name
         | _ ->
             "Anonymous call"
       in
-      [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
+      [Format.asprintf "%s expects argument `%a`." callee pp_access name]
   | NotCallable annotation ->
       [ Format.asprintf "`%a` is not a function." pp_type annotation ]
   | TooManyArguments { expected; _ } when concise ->
@@ -841,10 +847,8 @@ let messages ~concise ~define location kind =
   | TooManyArguments { callee; expected; provided } ->
       let callee =
         match callee with
-        | Some name ->
-            Format.asprintf "Call `%a`" Access.pp name
-        | _ ->
-            "Anonymous call"
+        | Some name -> Format.asprintf "Call `%a`" pp_access name
+        | _ -> "Anonymous call"
       in
       [
         Format.asprintf "%s expects %d positional argument%s, %d %s provided."
@@ -915,7 +919,7 @@ let messages ~concise ~define location kind =
           pp_type annotation;
       ]
   | UnawaitedAwaitable name ->
-      [Format.asprintf "`%a` is never awaited." Access.pp name]
+      [Format.asprintf "`%a` is never awaited." pp_access name]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
@@ -928,7 +932,7 @@ let messages ~concise ~define location kind =
             in
             name
         | Module access ->
-            (Format.asprintf "Module `%a`" Access.pp access)
+            (Format.asprintf "Module `%a`" pp_access access)
       in
       let trace =
         match origin with
@@ -940,21 +944,17 @@ let messages ~concise ~define location kind =
         | _ ->
             []
       in
-      [Format.asprintf "%s has no attribute `%s`." target (Access.show_sanitized attribute)]
+      [Format.asprintf "%s has no attribute `%a`." target pp_access attribute]
       @ trace
   | UndefinedName access ->
-      [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
+      [Format.asprintf "Global name `%a` is undefined." pp_access access]
   | UndefinedImport access when concise ->
-      [
-        Format.asprintf
-          "Could not find `%s`."
-          (Access.show_sanitized access);
-      ]
+      [Format.asprintf "Could not find `%a`." pp_access access]
   | UndefinedImport access ->
       [
         Format.asprintf
-          "Could not find a module corresponding to import `%s`."
-          (Access.show_sanitized access);
+          "Could not find a module corresponding to import `%a`."
+          pp_access access;
       ]
   | UndefinedType annotation ->
       [
@@ -971,10 +971,8 @@ let messages ~concise ~define location kind =
   | UnexpectedKeyword { name; callee } ->
       let callee =
         match callee with
-        | Some name ->
-            Format.asprintf "call `%a`" Access.pp name
-        | _ ->
-            "anonymous call"
+        | Some name -> Format.asprintf "call `%a`" pp_access name
+        | _ -> "anonymous call"
       in
       [
         Format.asprintf
@@ -985,14 +983,12 @@ let messages ~concise ~define location kind =
   | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ } } ->
       let message =
         if concise then
-          Format.asprintf
-            "Attribute `%a` is never initialized."
-            Access.pp name
+          Format.asprintf "Attribute `%a` is never initialized." pp_access name
         else
           Format.asprintf
             "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
             initialized."
-            Access.pp name
+            pp_access name
             pp_type parent
             pp_type expected
       in
@@ -1000,7 +996,7 @@ let messages ~concise ~define location kind =
         message;
         (Format.asprintf
            "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
-           Access.pp name
+           pp_access name
            start_line
            pp_type actual)
       ]

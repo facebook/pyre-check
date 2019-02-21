@@ -299,17 +299,54 @@ let test_concise _ =
     |}
     ["Incompatible variable type [9]: x has type `int`; used as `str`."];
 
+  assert_type_errors ~concise:true
+    ~update_environment_with:[
+      {
+        qualifier = Ast.Statement.Access.create "export";
+        handle = "export.py";
+        source = "class Foo:\n  a: int = 1"
+      };
+    ]
+    {|
+      from export import Foo
+      Foo.a = "string"
+    |}
+    ["Incompatible attribute type [8]: Attribute has type `int` but is used as type `str`."];
+
+  assert_type_errors ~concise:true
+    ~update_environment_with:[
+      {
+        qualifier = Ast.Statement.Access.create "export";
+        handle = "export.py";
+        source = "a: int = 1"
+      };
+    ]
+    {|
+      import export
+      export.a = "string"
+    |}
+    ["Incompatible variable type [9]: a has type `int`; used as `str`."];
+
   (* Inconsistent Override *)
   assert_type_errors ~concise:true
+    ~update_environment_with:[
+      {
+        qualifier = Ast.Statement.Access.create "export";
+        handle = "export.py";
+        source = {|
+          class Foo:
+            def foo(self, x: int) -> None:
+              return
+        |}
+      };
+    ]
     {|
-      class Foo:
-        def foo(self, x: int) -> None:
-          return
+      from export import Foo
       class Bar(Foo):
         def foo(self, x: str) -> None:
           return
     |}
-    ["Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [14]: `foo` overrides method defined in `Foo` inconsistently."];
 
   assert_type_errors ~concise:true
     {|
@@ -320,7 +357,7 @@ let test_concise _ =
         def foo(self, x: int) -> str:
           return "string"
     |}
-    ["Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently."];
+    ["Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently."];
 
   (* Invalid Type *)
   assert_type_errors ~concise:true
@@ -388,7 +425,7 @@ let test_concise _ =
     {|
       from a.b import c
     |}
-    ["Undefined import [21]: Could not find `a.b`."];
+    ["Undefined import [21]: Could not find `b`."];
 
   assert_type_errors ~concise:true
     {|
