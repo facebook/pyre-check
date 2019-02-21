@@ -785,6 +785,7 @@ let assert_errors
     ?(declare = false)
     ?(infer = false)
     ?(show_error_traces = false)
+    ?(concise = false)
     ?(qualifier = [])
     ?(handle = "test.py")
     ?(update_environment_with = [])
@@ -835,7 +836,7 @@ let assert_errors
     in
     List.map
       (check source)
-      ~f:(fun error -> Error.description error ~show_error_traces)
+      ~f:(fun error -> Error.description error ~show_error_traces ~concise)
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)

@@ -20,7 +20,7 @@
   controlFlowTest
   dataClassTest
   decoratorTest
-  errorTracesTest
+  errorMessageTest
   formatStringTest
   generatorTest
   globalTest

@@ -971,7 +971,7 @@ let test_check_incomplete_annotations _ =
     |}
     [
       "Prohibited any [33]: Expression `x` has type `int`; " ^
-      "given explicit type cannot be `Any."
+      "given explicit type cannot be `Any`."
     ];
   assert_type_errors
     {|

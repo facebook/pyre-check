@@ -209,7 +209,7 @@ let name = function
   | UnusedIgnore _ -> "Unused ignore"
 
 
-let messages ~concise:_ ~define location kind =
+let messages ~concise ~define location kind =
   let {
     Location.start = { Location.line = start_line; _ };
     Location.stop = { Location.line = stop_line; _ };
@@ -245,6 +245,8 @@ let messages ~concise:_ ~define location kind =
           "Target `%a` cannot be annotated."
           Expression.pp_sanitized expression
       ]
+  | ImpossibleIsinstance _ when concise ->
+      ["isinstance check will always fail."]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
       let expression_string = Expression.show expression in
       [
@@ -262,7 +264,13 @@ let messages ~concise:_ ~define location kind =
            Type.pp actual
         );
       ]
-  | Top -> [ "Problem with analysis." ]
+  | Top ->
+      [ "Problem with analysis." ]
+  | ProhibitedAny { given_annotation; _ } when concise ->
+      if given_annotation >>| Type.equal Type.Any |> Option.value ~default:false then
+        ["Given annotation cannot be `Any`."]
+      else
+        ["Given annotation cannot contain `Any`."]
   | ProhibitedAny { name; annotation = Some annotation; given_annotation; _ }
     when Type.is_concrete annotation ->
       begin
@@ -270,7 +278,7 @@ let messages ~concise:_ ~define location kind =
         | Some given_annotation when Type.equal given_annotation Type.Any ->
             [
               Format.asprintf
-                "Expression `%s` has type `%a`; given explicit type cannot be `Any."
+                "Expression `%s` has type `%a`; given explicit type cannot be `Any`."
                 (Access.show_sanitized name)
                 Type.pp annotation
             ]
@@ -298,6 +306,13 @@ let messages ~concise:_ ~define location kind =
                 (Access.show_sanitized name)
             ]
       end
+  | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Attribute annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Attribute annotation cannot contain `Any`."]
+      else
+        ["Attribute must be annotated."]
   | MissingAttributeAnnotation { parent; missing_annotation } ->
       begin
         match missing_annotation with
@@ -379,6 +394,13 @@ let messages ~concise:_ ~define location kind =
                 Type.pp parent;
             ]
       end
+  | MissingParameterAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Parameter annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Parameter annotation cannot contain `Any`."]
+      else
+        ["Parameter must be annotated."]
   | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
     when Type.is_concrete annotation ->
       begin
@@ -428,6 +450,13 @@ let messages ~concise:_ ~define location kind =
                 Access.pp_sanitized name
             ]
       end
+  | MissingReturnAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Return annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Return annotation cannot contain `Any`."]
+      else
+        ["Return type must be annotated."]
   | MissingReturnAnnotation {
       annotation = Some annotation;
       evidence_locations;
@@ -483,6 +512,13 @@ let messages ~concise:_ ~define location kind =
         | _ ->
             ["Return type is not specified."]
       end
+  | MissingGlobalAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Global annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Global annotation cannot contain `Any`."]
+      else
+        ["Global expression must be annotated."]
   | MissingGlobalAnnotation {
       name;
       annotation = Some annotation;
@@ -575,6 +611,15 @@ let messages ~concise:_ ~define location kind =
       callee;
       mismatch = { actual; expected; due_to_invariance };
     } ->
+      let detailed_message =
+        if due_to_invariance then
+          [
+            Format.asprintf "This call might modify the type of the parameter.";
+            invariance_message
+          ]
+        else
+          []
+      in
       let target =
         let parameter =
           match name with
@@ -591,16 +636,10 @@ let messages ~concise:_ ~define location kind =
           | _ ->
               "anoynmous call"
         in
-        Format.asprintf "%s %s to %s" (ordinal position) parameter callee
-      in
-      let detailed_message =
-        if due_to_invariance then
-          [
-            Format.asprintf "This call might modify the type of the parameter.";
-            invariance_message
-          ]
+        if concise then
+          Format.asprintf "%s parameter" (ordinal position)
         else
-          []
+          Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
       Format.asprintf
         "Expected `%a` for %s but got `%a`."
@@ -608,6 +647,8 @@ let messages ~concise:_ ~define location kind =
         target
         Type.pp actual
       :: detailed_message;
+  | IncompatibleConstructorAnnotation _ when concise ->
+      ["`__init__` should return `None`."]
   | IncompatibleConstructorAnnotation annotation ->
       [
         Format.asprintf
@@ -644,6 +685,20 @@ let messages ~concise:_ ~define location kind =
         declare_location;
       };
     } ->
+      let message =
+        if concise then
+          Format.asprintf
+            "Attribute has type `%a` but is used as type `%a`."
+            Type.pp expected
+            Type.pp actual
+        else
+          Format.asprintf
+            "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
+            Access.pp name
+            Type.pp parent
+            Type.pp expected
+            Type.pp actual
+      in
       let detail =
         if due_to_invariance then
           invariance_message
@@ -654,15 +709,7 @@ let messages ~concise:_ ~define location kind =
             declare_location.Location.start.Location.line
             start_line
       in
-      [
-        (Format.asprintf
-           "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
-           Access.pp name
-           Type.pp parent
-           Type.pp expected
-           Type.pp actual);
-        detail;
-      ]
+      [message; detail]
   | IncompatibleVariableType {
       name;
       mismatch = { actual; expected; due_to_invariance };
@@ -670,7 +717,13 @@ let messages ~concise:_ ~define location kind =
     } ->
       let message =
         if Type.is_tuple expected && not (Type.is_tuple actual) then
-          Format.asprintf "Unable to unpack `%a`, expected a `Tuple`." Type.pp actual
+          Format.asprintf "Unable to unpack `%a`, expected a tuple." Type.pp actual
+        else if concise then
+          Format.asprintf
+            "%a has type `%a`; used as `%a`."
+            Access.pp_sanitized name
+            Type.pp expected
+            Type.pp actual
         else
           Format.asprintf
             "%a is declared to have type `%a` but is used as type `%a`."
@@ -694,8 +747,7 @@ let messages ~concise:_ ~define location kind =
               Format.asprintf
                 "The overriding method is not annotated but should return a subtype of `%a`."
                 Type.pp expected
-            else
-            if due_to_invariance then
+            else if due_to_invariance then
               invariance_message
             else
               Format.asprintf
@@ -718,11 +770,17 @@ let messages ~concise:_ ~define location kind =
       in
       [
         Format.asprintf
-          "`%a` overrides method defined in `%a` inconsistently. %s"
+          "`%a` overrides method defined in `%a` inconsistently.%s"
           Access.pp define_name
           Access.pp parent
-          detail
+          (if concise then "" else " " ^ detail)
       ]
+  | InvalidArgument argument when concise ->
+      begin
+        match argument with
+        | Keyword _ -> ["Keyword argument must be a mapping with string keys."]
+        | Variable _ -> ["Variable argument must be an iterable."]
+      end
   | InvalidArgument argument ->
       begin
         match argument with
@@ -760,6 +818,8 @@ let messages ~concise:_ ~define location kind =
       in
       [Format.asprintf format Type.pp annotation]
 
+  | MissingArgument { name; _ } when concise ->
+      [Format.asprintf "Argument `%s` expected." (Access.show_sanitized name)]
   | MissingArgument { callee; name } ->
       let callee =
         match callee with
@@ -771,6 +831,12 @@ let messages ~concise:_ ~define location kind =
       [Format.asprintf "%s expects argument `%s`." callee (Access.show_sanitized name)]
   | NotCallable annotation ->
       [ Format.asprintf "`%a` is not a function." Type.pp annotation ]
+  | TooManyArguments { expected; _ } when concise ->
+      [
+        Format.asprintf "Expected %d positional argument%s."
+          expected
+          (if expected <> 1 then "s" else "");
+      ]
   | TooManyArguments { callee; expected; provided } ->
       let callee =
         match callee with
@@ -794,7 +860,7 @@ let messages ~concise:_ ~define location kind =
           |> String.concat ~sep:", "
         in
         (* Use heuristic to limit message from going crazy. *)
-        if String.length acceptable_keys < 80 then
+        if not concise && String.length acceptable_keys < 80 then
           Format.asprintf " Expected one of (%s)." acceptable_keys
         else
           ""
@@ -832,6 +898,8 @@ let messages ~concise:_ ~define location kind =
             in
             [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
       end
+  | RedundantCast _ when concise ->
+      ["The cast is redundant."]
   | RedundantCast annotation ->
       [
         Format.asprintf
@@ -875,6 +943,12 @@ let messages ~concise:_ ~define location kind =
       @ detail
   | UndefinedName access ->
       [Format.asprintf "Global name `%s` is undefined." (Access.show_sanitized access)]
+  | UndefinedImport access when concise ->
+      [
+        Format.asprintf
+          "Could not find `%s`."
+          (Access.show_sanitized access);
+      ]
   | UndefinedImport access ->
       [
         Format.asprintf
@@ -886,6 +960,12 @@ let messages ~concise:_ ~define location kind =
         Format.asprintf
           "Type `%a` is not defined."
           Type.pp annotation
+      ]
+  | UnexpectedKeyword { name; _ } when concise ->
+      [
+        Format.asprintf
+          "Unexpected keyword argument `%s`."
+          (Identifier.sanitized name)
       ]
   | UnexpectedKeyword { name; callee } ->
       let callee =
@@ -901,18 +981,22 @@ let messages ~concise:_ ~define location kind =
           (Identifier.sanitized name)
           callee
       ]
-  | UninitializedAttribute {
-      name;
-      parent;
-      mismatch = { actual; expected; _ };
-    } ->
-      [
-        (Format.asprintf
-           "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
+  | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ } } ->
+      let message =
+        if concise then
+          Format.asprintf
+            "Attribute `%a` is never initialized."
+            Access.pp name
+        else
+          Format.asprintf
+            "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
             initialized."
-           Access.pp name
-           Type.pp parent
-           Type.pp expected);
+            Access.pp name
+            Type.pp parent
+            Type.pp expected
+      in
+      [
+        message;
         (Format.asprintf
            "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
            Access.pp name

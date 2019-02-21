@@ -210,8 +210,205 @@ let test_show_error_traces _ =
     ]
 
 
+let test_concise _ =
+  (* Illegal Annotation Target *)
+  assert_type_errors ~concise:true
+    {|
+      class Foo: ...
+      Foo().a: int = 1
+    |}
+    ["Illegal annotation target [35]: Target `Foo.(...).a` cannot be annotated."];
+
+  (* Impossible Isinstance *)
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: int) -> None:
+        assert not isinstance(x, int)
+    |}
+    ["Impossible isinstance check [25]: isinstance check will always fail."];
+
+  (* Incompatible Awaitable *)
+  assert_type_errors ~concise:true
+    {|
+      await 1
+    |}
+    ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
+
+  (* Prohibited Any *)
+  assert_type_errors ~concise:true
+    {|
+      def foo() -> None:
+        x: typing.Any = 1
+    |}
+    ["Prohibited any [33]: Given annotation cannot be `Any`."];
+
+  (* Missing Annotation *)
+  assert_type_errors ~concise:true
+    {|
+      x: typing.Any = 1
+    |}
+    ["Missing global annotation [5]: Global annotation cannot be `Any`."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo():
+        return 1
+    |}
+    ["Missing return annotation [3]: Return type must be annotated."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo(x = 1) -> None:
+        return
+    |}
+    ["Missing parameter annotation [2]: Parameter must be annotated."];
+
+  (* Incompatible Annotation *)
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: int = 1.0) -> None:
+        return
+    |}
+    ["Incompatible variable type [9]: x has type `int`; used as `float`."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo() -> int:
+        return
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `None`."];
+
+  assert_type_errors ~concise:true
+    {|
+      class Foo:
+        a: int = 1
+      Foo.a = "string"
+    |}
+    ["Incompatible attribute type [8]: Attribute has type `int` but is used as type `str`."];
+
+  assert_type_errors ~concise:true
+    {|
+      x: int = "string"
+    |}
+    ["Incompatible variable type [9]: x has type `int`; used as `str`."];
+
+  (* Inconsistent Override *)
+  assert_type_errors ~concise:true
+    {|
+      class Foo:
+        def foo(self, x: int) -> None:
+          return
+      class Bar(Foo):
+        def foo(self, x: str) -> None:
+          return
+    |}
+    ["Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently."];
+
+  assert_type_errors ~concise:true
+    {|
+      class Foo:
+        def foo(self, x: int) -> int:
+          return 1
+      class Bar(Foo):
+        def foo(self, x: int) -> str:
+          return "string"
+    |}
+    ["Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently."];
+
+  (* Invalid Type *)
+  assert_type_errors ~concise:true
+    {|
+      MyType = 1
+      def foo() -> MyType:
+        return
+    |}
+    ["Invalid type [31]: Expression `MyType` is not a valid type."];
+
+  (* Argument Errors *)
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: int) -> None:
+       return
+      foo(y=1)
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `y`."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: int, y: int) -> None:
+       return
+      foo(1, 2, 3)
+    |}
+    ["Too many arguments [19]: Expected 2 positional arguments."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: int, y: int) -> None:
+       return
+      foo(1)
+    |}
+    ["Missing argument [20]: Argument `y` expected."];
+
+  (* Not Callable *)
+  assert_type_errors ~concise:true
+    {|
+      x = 1
+      x()
+    |}
+    ["Call error [29]: `int` is not a function."];
+
+  (* TypedDict *)
+  assert_type_errors ~concise:true
+    {|
+      Cat = mypy_extensions.TypedDict('Cat', {'name': str, 'breed': str})
+      def foo(x: Cat) -> None:
+          y = x["year"]
+    |}
+    [
+      "TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`.";
+    ];
+
+  (* Redundant Cast *)
+  assert_type_errors ~concise:true
+    {|
+      x = 1
+      y: int = typing.cast(int, x)
+    |}
+    ["Redundant cast [22]: The cast is redundant."];
+
+  (* Undefined Import, Name, Type *)
+  assert_type_errors ~concise:true
+    {|
+      from a.b import c
+    |}
+    ["Undefined import [21]: Could not find `a.b`."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo() -> None:
+        y = x
+    |}
+    ["Undefined name [18]: Global name `x` is undefined."];
+
+  assert_type_errors ~concise:true
+    {|
+      def foo(x: X) -> None:
+        return
+    |}
+    ["Undefined type [11]: Type `X` is not defined."];
+
+  (* Uninitialized Attribute *)
+  assert_type_errors ~concise:true
+    {|
+      class Foo:
+        x: int
+    |}
+    ["Uninitialized attribute [13]: Attribute `x` is never initialized."]
+
+
 let () =
-  "errorTraces">:::[
-    "check_error_traces">::test_show_error_traces;
+  "errorMessage">:::[
+    "check_show_error_traces">::test_show_error_traces;
+    "check_concise">::test_concise;
   ]
   |> Test.run
