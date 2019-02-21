@@ -145,33 +145,9 @@ class Configuration:
             return []
 
 
-def errors_from_configurations(arguments) -> List[Dict[str, Any]]:
-    configurations = Configuration.gather_local_configurations(arguments)
-    total_errors = []
-    for configuration in configurations:
-        total_errors += configuration.get_errors()
-    return total_errors
-
-
 def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
     input = sys.stdin.read()
     return json_to_errors(input)
-
-
-def partition_on_any_delimiter(
-    string: str, delimiters: List[str]
-) -> Tuple[str, str, str]:
-    prefix = ""
-    delimiter = ""
-    suffix = ""
-    for index, char in enumerate(string):
-        if char in delimiters:
-            delimiter = str(char)
-            suffix = string[index + 1 :]
-            break
-        prefix += char
-
-    return prefix, delimiter, suffix
 
 
 def remove_comment_preamble(lines: List[str]) -> None:
