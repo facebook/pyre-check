@@ -428,6 +428,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __sizeof__(self) -> int: pass
 
         class ellipsis: ...
+        Ellipsis: ellipsis
+
+        class BaseException(object): ...
+        class Exception(BaseException): ...
 
         class slice:
           @overload

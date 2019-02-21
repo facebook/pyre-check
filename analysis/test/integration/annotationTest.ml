@@ -297,6 +297,7 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     [];
+
   assert_type_errors
     {|
       # Type aliases cannot be annotated
@@ -304,17 +305,20 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
+
   assert_type_errors
     {|
       x: MyType = 1
     |}
     ["Undefined type [11]: Type `MyType` is not defined."];
+
   assert_type_errors
     {|
       MyType: int
       x: MyType = 1
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
+
   assert_strict_type_errors
     {|
       MyType = 1
@@ -323,6 +327,8 @@ let test_check_invalid_type _ =
     [
       "Invalid type [31]: Expression `MyType` is not a valid type."
     ];
+
+  (* Type aliases to Any *)
   assert_type_errors
     {|
       MyType: typing.Any
@@ -332,6 +338,7 @@ let test_check_invalid_type _ =
       "Missing global annotation [5]: Globally accessible variable `MyType` " ^
       "must be specified as type other than `Any`.";
     ];
+
   assert_type_errors
     {|
       MyType: typing.Any
@@ -341,18 +348,56 @@ let test_check_invalid_type _ =
       "Missing global annotation [5]: Globally accessible variable `MyType` " ^
       "must be specified as type other than `Any`.";
     ];
+
+  (* Un-parseable expressions *)
   assert_type_errors
     {|
       def foo() -> (int, str):
         return 1
     |}
     ["Invalid type [31]: Expression `(int, str)` is not a valid type."];
+
   assert_type_errors
     {|
       def foo(x: int + str) -> None:
         return
     |}
-    ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."]
+    ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."];
+
+  (* Using expressions of type meta-type *)
+  assert_type_errors
+    {|
+      def f(my_type: typing.Type[int]) -> None:
+       x: my_type = ...
+    |}
+    ["Invalid type [31]: Expression `my_type` is not a valid type."];
+
+  assert_type_errors
+    {|
+      def f(my_type: typing.Type[int]) -> None:
+       y = typing.cast(my_type, "string")
+    |}
+    ["Invalid type [31]: Expression `my_type` is not a valid type."];
+
+  assert_type_errors
+    {|
+      def f(my_type: typing.Type[int]) -> None:
+       y = "string"
+       assert isinstance(y, my_type)
+       reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `int`."];
+
+  assert_type_errors
+    {|
+      def takes_exception(x: Exception) -> None: ...
+      def f(e: typing.Type[Exception]) -> None:
+       try:
+         pass
+       except e as myexception:
+         takes_exception(myexception)
+    |}
+    []
 
 
 let test_check_illegal_annotation_target _ =

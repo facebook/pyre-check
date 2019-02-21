@@ -850,7 +850,7 @@ let test_preamble _ =
       except Exception as error:
         pass
     |}
-    ["error: Exception"];
+    ["error = ...\nassert isinstance(error, Exception)"];
   assert_preamble
     {|
       try:
@@ -860,7 +860,10 @@ let test_preamble _ =
       except Exception as error:
         pass
     |}
-    ["error: IOError"; "error: Exception"];
+    [
+      "error = ...\nassert isinstance(error, IOError)";
+      "error = ...\nassert isinstance(error, Exception)";
+    ];
   assert_preamble
     {|
       try:
@@ -868,7 +871,7 @@ let test_preamble _ =
       except (IOError, ValueError) as error:
         pass
     |}
-    ["error: typing.Union[IOError, ValueError]"]
+    ["error=...\nassert isinstance(error, typing.Union[IOError, ValueError])"]
 
 
 let test_assume _ =

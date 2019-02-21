@@ -1202,19 +1202,43 @@ module Try = struct
       >>| Access.create
     in
     let assume ~location ~target ~annotation =
-      {
-        Node.location;
-        value = Assign {
-            Assign.target;
-            annotation = Some annotation;
-            value = Node.create Ellipsis ~location;
-            parent = None;
+      [
+        {
+          Node.location;
+          value = Assign {
+              Assign.target;
+              annotation = None;
+              value = Node.create ~location Ellipsis;
+              parent = None;
           }
-      }
+        };
+        {
+          Node.location;
+          value = Assert {
+            Assert.test = {
+              Node.location;
+              value = Access (
+                Access.SimpleAccess [
+                  Access.Identifier "isinstance";
+                  Access.Call {
+                    Node.location;
+                    Node.value = [
+                      { Argument.name = None; value = target };
+                      { Argument.name = None; value = annotation };
+                    ];
+                  };
+                ]
+              );
+            };
+            message = None;
+            origin = Assert.Assertion
+          }
+        }
+      ]
     in
     match kind, name with
     | Some ({ Node.location; value = Access _; _ } as annotation), Some name ->
-        [assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation]
+        assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation
     | Some { Node.location; value = Tuple values; _ }, Some name ->
         let annotation =
           let get_item =
@@ -1233,7 +1257,7 @@ module Try = struct
             value = Access (SimpleAccess ((Access.create "typing.Union") @ get_item));
           }
         in
-        [assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation]
+        assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
         [Node.create ~location (Expression expression)]

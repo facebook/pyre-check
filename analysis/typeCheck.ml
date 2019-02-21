@@ -3035,6 +3035,26 @@ module State = struct
             forward_expression ~state ~expression:test
             |> fun { state; _ } -> state
           in
+          let parse_isinstance_annotation annotation =
+            let parse_meta annotation =
+              match parse_and_check_annotation ~state annotation |> snd with
+              | Type.Top ->
+                  (* Try to resolve meta-types given as expressions. *)
+                  let annotation = Resolution.resolve resolution annotation in
+                  if Type.is_meta annotation then
+                    (Type.single_parameter annotation)
+                  else
+                    Type.Top
+              | annotation ->
+                  annotation
+            in
+            match annotation with
+            | { Node.value = Tuple elements; _ } ->
+                List.map ~f:parse_meta elements
+                |> (fun elements -> Type.Union elements)
+            | _ ->
+                parse_meta annotation
+          in
           match Node.value test with
           | False ->
               (* Explicit bottom. *)
@@ -3054,15 +3074,7 @@ module State = struct
                     _;
                   }
                 ]) ->
-              let annotation =
-                match annotation with
-                | { Node.value = Tuple elements; _ } ->
-                    List.map ~f:(parse_and_check_annotation ~state) elements
-                    |> List.map ~f:snd
-                    |> (fun elements -> Type.Union elements)
-                | _ ->
-                    parse_and_check_annotation ~state annotation |> snd
-              in
+              let annotation = parse_isinstance_annotation annotation in
               let updated_annotation =
                 let refinement_unnecessary existing_annotation =
                   Refinement.less_or_equal
@@ -3070,6 +3082,7 @@ module State = struct
                     existing_annotation
                     (Annotation.create annotation)
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
+                  && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
                 in
                 match Resolution.get_local resolution ~access with
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
@@ -3104,26 +3117,7 @@ module State = struct
               };
             } ->
               begin
-                let annotation =
-                  let parse_meta annotation =
-                    match parse_and_check_annotation ~state annotation |> snd with
-                    | Type.Top ->
-                        (* Try to resolve meta-types given as expressions. *)
-                        let annotation = Resolution.resolve resolution annotation_expression in
-                        if Type.is_meta annotation then
-                          (Type.single_parameter annotation)
-                        else
-                          Type.Top
-                    | annotation ->
-                        annotation
-                  in
-                  match annotation_expression with
-                  | { Node.value = Tuple elements; _ } ->
-                      List.map ~f:parse_meta elements
-                      |> (fun elements -> Type.Union elements)
-                  | _ ->
-                      parse_meta annotation_expression
-                in
+                let annotation = parse_isinstance_annotation annotation_expression in
                 let contradiction_error =
                   match annotation with
                   | Type.Top ->
