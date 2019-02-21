@@ -835,14 +835,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         index=True,
     )
 
-    last_seen_DEPRECATED = Column(
-        "last_seen",
-        DateTime,
-        doc="Deprecated. Time of most recent run that found this issue",
-        nullable=True,
-        index=True,
-    )
-
     run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
 
     triage_info_assoc = relationship(

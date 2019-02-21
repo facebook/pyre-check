@@ -143,7 +143,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             filename=entry["filename"],
             status=IssueStatus.UNCATEGORIZED,
             first_seen=run.date,
-            last_seen_DEPRECATED=run.date,  # Remove when db schema is updated.
             run_id=run.id,
             json=self.summary["compress"](
                 json.dumps(entry.get("json", {})).encode("utf-8")
