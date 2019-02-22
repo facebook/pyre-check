@@ -11,9 +11,6 @@ open Pyre
 open Test
 open TypeCheck
 
-module Scheduler = Service.Scheduler
-
-
 let create_files ~root content =
   let default_content =
     {|
@@ -32,7 +29,7 @@ let create_files ~root content =
   let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
   [
     File.create
-      ~content:(Some (default_content ^ "\n" ^ (content |> trim_extra_indentation)))
+      ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
       (Path.create_relative ~root ~relative:path);
   ]
 
@@ -46,25 +43,22 @@ let assert_errors
     Configuration.Analysis.create ~local_root:root ~project_root:(Path.create_absolute "/") ()
   in
   let scheduler = Scheduler.mock () in
-  let handles =
+  let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
       ~configuration
       ~scheduler
+      ~preprocessing_state:None
       ~files:(create_files ~root input_source)
   in
-  let ((module Handler: Environment.Handler) as environment) =
-    Service.Environment.handler ~configuration ~stubs:[] ~sources:handles
+  Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
+  let ((module Handler: Analysis.Environment.Handler) as environment) =
+    (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
-  add_defaults_to_environment environment;
-  Service.Ignore.register ~configuration scheduler handles;
+  add_defaults_to_environment ~configuration environment;
+  Service.Postprocess.register_ignores ~configuration scheduler handles;
   let descriptions =
-    Service.Check.analyze_sources
-      scheduler
-      configuration
-      environment
-      handles
-    |> fun (errors, _) ->
-    List.map ~f:(fun error -> Error.description error ~show_error_traces) errors
+    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
+    |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
   in
   Handler.purge handles;
   let description_list_to_string descriptions =
