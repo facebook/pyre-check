@@ -21,7 +21,8 @@ class Monitor:
     ) -> None:
         self.arguments = arguments
         self.configuration = configuration
-        self.analysis_directory = analysis_directory.get_root()
+        self.analysis_directory = analysis_directory
+        self.analysis_directory_root = analysis_directory.get_root()
 
     @property
     @functools.lru_cache(1)
@@ -49,14 +50,16 @@ class Monitor:
 
     def _run(self) -> None:
         try:
-            os.makedirs(os.path.join(self.analysis_directory, ".pyre/monitor"))
+            os.makedirs(os.path.join(self.analysis_directory_root, ".pyre/monitor"))
         except OSError:
             pass
-        lock_path = os.path.join(self.analysis_directory, ".pyre/monitor/monitor.lock")
+        lock_path = os.path.join(
+            self.analysis_directory_root, ".pyre/monitor/monitor.lock"
+        )
         # Die silently if unable to acquire the lock.
         with acquire_lock(lock_path, blocking=False):
             file_handler = logging.FileHandler(
-                os.path.join(self.analysis_directory, ".pyre/monitor/monitor.log")
+                os.path.join(self.analysis_directory_root, ".pyre/monitor/monitor.log")
             )
             file_handler.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -64,7 +67,7 @@ class Monitor:
             LOG.addHandler(file_handler)
 
             pid_path = os.path.join(
-                self.analysis_directory, ".pyre/monitor/monitor.pid"
+                self.analysis_directory_root, ".pyre/monitor/monitor.pid"
             )
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
