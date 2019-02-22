@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import List, Optional
+from typing import List, NamedTuple, Optional
 
 import IPython
 from IPython.core import page
@@ -17,6 +17,8 @@ from sapp.models import (
     Sink,
     Source,
     SourceLocation,
+    TraceFrame,
+    TraceKind,
 )
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
@@ -39,6 +41,8 @@ commands()      show this message
 help(COMAMND)   more info about a command
     """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
+
+    LEAF_NAMES = {"source", "sink", "leaf"}
 
     def __init__(self, database, database_name):
         self.db = DB(database, database_name, assertions=True)
@@ -70,6 +74,12 @@ help(COMAMND)   more info about a command
 
         self.current_run_id = latest_run_id
         self.current_issue_id = None
+        # Tuples representing the trace of the current issue
+        self.trace_tuples: List[TraceTuple] = []
+        # Active trace frame of the current trace
+        self.current_trace_frame_index = None
+        # The current issue id when 'trace' was last run
+        self.trace_tuples_id = None
 
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
@@ -134,6 +144,7 @@ help(COMAMND)   more info about a command
             return
 
         self.current_issue_id = selected_issue.id
+        self.current_trace_frame_index = 1  # first one after the source
         print(f"Set issue to {issue_id}.")
         self.show()
 
@@ -145,13 +156,7 @@ help(COMAMND)   more info about a command
             return
 
         with self.db.make_session() as session:
-            issue_instance, issue = (
-                session.query(IssueInstance, Issue)
-                .filter(IssueInstance.id == self.current_issue_id)
-                .join(Issue, IssueInstance.issue_id == Issue.id)
-                .options(joinedload(IssueInstance.message))
-                .first()
-            )
+            issue_instance, issue = self._get_current_issue(session)
             sources = self._get_sources(session, issue_instance)
             sinks = self._get_sinks(session, issue_instance)
 
@@ -240,9 +245,123 @@ help(COMAMND)   more info about a command
         print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
 
     def trace(self):
-        """ Show a trace for the selected issue.
+        """Show a trace for the selected issue.
+
+        The '-->' token points to the currently active trace frame within the
+        trace.
         """
-        pass
+        if self.current_issue_id is None:
+            print("Use 'set_issue(ID)' to select an issue first.", file=sys.stderr)
+            return
+
+        self._generate_trace()
+
+        self._output_trace_tuples(self.trace_tuples)
+
+    def _generate_trace(self):
+        if self.trace_tuples_id == self.current_issue_id:
+            return  # already generated
+
+        with self.db.make_session() as session:
+            issue_instance, issue = self._get_current_issue(session)
+
+            postcondition_traces = self._navigate_trace_frames(
+                session, self._initial_trace_frame(session, TraceKind.POSTCONDITION)
+            )
+            precondition_traces = self._navigate_trace_frames(
+                session, self._initial_trace_frame(session, TraceKind.PRECONDITION)
+            )
+
+        self.trace_tuples = self._create_trace_tuples(
+            postcondition_traces[::-1], precondition_traces
+        )
+        self.trace_tuples_id = self.current_issue_id
+
+    def _output_trace_tuples(self, trace_tuples):
+        max_length_callable = max(
+            len(trace_tuple.callable) for trace_tuple in trace_tuples
+        )
+        max_length_condition = max(
+            len(trace_tuple.condition) for trace_tuple in trace_tuples
+        )
+
+        for i in range(len(trace_tuples)):
+            prefix = "-->" if i == self.current_trace_frame_index else " " * 3
+            callable, condition, filename, location = trace_tuples[i]
+            output_string = (
+                f" {prefix}"
+                f" {callable:{max_length_callable}}"
+                f" {condition:{max_length_condition}}"
+            )
+            if filename is not None and location is not None:
+                output_string += f" {filename}:{location}"
+            print(output_string)
+
+    def _create_trace_tuples(self, postcondition_traces, precondition_traces):
+        trace_tuples = [
+            TraceTuple(
+                postcondition_traces[0].callee, postcondition_traces[0].callee_port
+            )
+        ]
+        for i in range(1, len(postcondition_traces)):
+            trace_tuples.append(
+                TraceTuple(
+                    postcondition_traces[i].callee,
+                    postcondition_traces[i].callee_port,
+                    # i - 1 since it's a postcondition
+                    postcondition_traces[i - 1].filename,
+                    postcondition_traces[i - 1].callee_location,
+                )
+            )
+
+        trace_tuples.append(
+            TraceTuple(
+                postcondition_traces[-1].caller,
+                postcondition_traces[-1].caller_port,
+                postcondition_traces[-1].filename,
+                postcondition_traces[-1].callee_location,
+            )
+        )  # add the issue root
+
+        for trace_frame in precondition_traces:
+            trace_tuples.append(
+                TraceTuple(
+                    trace_frame.callee,
+                    trace_frame.callee_port,
+                    trace_frame.filename,
+                    trace_frame.callee_location,
+                )
+            )
+
+        return trace_tuples
+
+    def _initial_trace_frame(self, session, kind):
+        return (
+            session.query(TraceFrame)
+            .filter(TraceFrame.issue_instances.any(id=self.current_issue_id))
+            .filter(TraceFrame.kind == kind)
+            .first()  # just first for now
+        )
+
+    def _navigate_trace_frames(self, session, initial_trace_frame):
+        trace_frames = [initial_trace_frame]
+        while not self._is_leaf(trace_frames[-1]):
+            trace_frames.append(self._next_trace_frame(session, trace_frames[-1]))
+        return trace_frames
+
+    def _is_leaf(self, trace_frame: TraceFrame) -> bool:
+        return trace_frame.callee_port in self.LEAF_NAMES
+
+    def _next_trace_frame(self, session, trace_frame):
+        return (
+            session.query(TraceFrame)
+            .filter(
+                TraceFrame.caller != TraceFrame.callee
+            )  # skip recursive calls for now
+            .filter(TraceFrame.caller == trace_frame.callee)
+            .filter(TraceFrame.caller_port == trace_frame.callee_port)
+            .first()  # just first for now
+        )
 
     def _create_issue_output_string(self, issue_instance, issue, sources, sinks):
         sources_output = f"\n{' ' * 10}".join(sources)
@@ -265,6 +384,15 @@ help(COMAMND)   more info about a command
     def _resolve_pager(self, use_pager):
         use_pager = sys.stdout.isatty() if use_pager is None else use_pager
         return page.page if use_pager else page.display_page
+
+    def _get_current_issue(self, session):
+        return (
+            session.query(IssueInstance, Issue)
+            .filter(IssueInstance.id == self.current_issue_id)
+            .join(Issue, IssueInstance.issue_id == Issue.id)
+            .options(joinedload(IssueInstance.message))
+            .first()
+        )
 
     def _get_sources(self, session, issue_instance):
         return [
@@ -289,3 +417,10 @@ help(COMAMND)   more info about a command
             )
             .all()
         ]
+
+
+class TraceTuple(NamedTuple):
+    callable: str
+    condition: str
+    filename: Optional[str] = None
+    location: Optional[SourceLocation] = None

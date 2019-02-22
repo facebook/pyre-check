@@ -224,6 +224,9 @@ class SourceLocation(object):
             and self.end_column == other.end_column
         )
 
+    def __str__(self):
+        return SourceLocation.to_string(self)
+
     @staticmethod
     def from_string(location_string):
         location_points = location_string.split("|")
