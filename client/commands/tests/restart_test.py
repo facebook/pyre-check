@@ -6,8 +6,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ... import commands
-from ...commands import monitor, restart
+from ... import commands, monitor
+from ...commands import restart
 from .command_test import mock_arguments, mock_configuration
 
 

@@ -8,9 +8,8 @@ import logging
 import os
 from typing import List, Optional
 
-from .. import filesystem
+from .. import filesystem, monitor
 from .command import ExitCode
-from .monitor import Monitor
 from .reporting import Reporting
 
 
@@ -43,7 +42,7 @@ class Start(Reporting):
             # a message when the lock is being waited on.
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
-                    Monitor(
+                    monitor.Monitor(
                         self._arguments, self._configuration, self._analysis_directory
                     ).daemonize()
                     # This unsafe call is OK due to the client lock always

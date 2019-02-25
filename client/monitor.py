@@ -7,9 +7,9 @@ import logging
 import os
 from typing import Any, Dict, List
 
-from . import stop
-from ..filesystem import AnalysisDirectory
-from ..watchman_subscriber import Subscription, WatchmanSubscriber
+from .commands import stop
+from .filesystem import AnalysisDirectory
+from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
 LOG = logging.getLogger(__name__)

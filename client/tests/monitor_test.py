@@ -9,8 +9,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import call, patch
 
-from .. import watchman_subscriber
-from ..commands import monitor  # noqa
+from .. import monitor, watchman_subscriber
 from ..filesystem import AnalysisDirectory
 from .infer_test import mock_arguments, mock_configuration
 

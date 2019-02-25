@@ -8,8 +8,7 @@ import fcntl
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from .. import monitor  # noqa
-from ... import commands  # noqa
+from ... import commands, monitor  # noqa
 from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 

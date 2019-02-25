@@ -7,9 +7,7 @@ import io
 import unittest
 from unittest.mock import call, patch
 
-from .. import monitor  # noqa
-from ... import EnvironmentException  # noqa
-from ... import commands  # noqa
+from ... import EnvironmentException, commands, monitor  # noqa
 from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
