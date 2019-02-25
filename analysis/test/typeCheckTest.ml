@@ -2118,6 +2118,14 @@ let test_forward_statement _ =
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
 
+  assert_forward
+    ~errors:
+      (`Specific ["Undefined type [11]: Type `Derp` is not defined."])
+    ~postcondition_immutables:["x", false]
+    []
+    "x: Derp"
+    ["x", Type.Top];
+
   (* Assignments with tuples. *)
   assert_forward
     ["c", Type.integer; "d", Type.Top]

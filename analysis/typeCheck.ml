@@ -2540,7 +2540,7 @@ module State = struct
           (* This is the annotation determining how we recursively break up the assignment. *)
           match original_annotation with
           | Some annotation when not (Type.is_unknown annotation) -> annotation
-          | _ -> resolved
+          | _ -> if Type.equal Type.ellipsis resolved then Type.Top else resolved
         in
         let explicit = Option.is_some annotation in
         let rec forward_assign
