@@ -3,40 +3,36 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import functools
 import logging
 import os
-import sys
+from typing import Any, Dict, List
 
 from . import stop
-from ..filesystem import AnalysisDirectory, acquire_lock
+from ..filesystem import AnalysisDirectory
+from ..watchman_subscriber import Subscription, WatchmanSubscriber
 
 
 LOG = logging.getLogger(__name__)
 
 
-class Monitor:
+class Monitor(WatchmanSubscriber):
     def __init__(
         self, arguments, configuration, analysis_directory: AnalysisDirectory
     ) -> None:
+        super(Monitor, self).__init__(analysis_directory)
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory
         self.analysis_directory_root = analysis_directory.get_root()
 
     @property
-    @functools.lru_cache(1)
-    def _watchman_client(self):
-        try:
-            import pywatchman  # noqa
+    def _name(self) -> str:
+        return "pyre-monitor"
 
-            return pywatchman.client(timeout=3600.0)
-        except ImportError as exception:
-            LOG.info("Not starting monitor due to %s", str(exception))
-            sys.exit(1)
-
-    def _subscribe_to_watchman(self, root: str) -> None:
-        name = "pyre_monitor_{}".format(os.path.basename(root))
+    @property
+    def _subscriptions(self) -> List[Subscription]:
+        roots = self._watchman_client.query("watch-list")["roots"]
+        names = ["pyre_monitor_{}".format(os.path.basename(root)) for root in roots]
         subscription = {
             "expression": [
                 "allof",
@@ -46,72 +42,14 @@ class Monitor:
             ],
             "fields": ["name"],
         }
-        self._watchman_client.query("subscribe", root, name, subscription)
+        return [
+            Subscription(root, name, subscription) for (root, name) in zip(roots, names)
+        ]
 
-    def _run(self) -> None:
-        try:
-            os.makedirs(os.path.join(self.analysis_directory_root, ".pyre/monitor"))
-        except OSError:
-            pass
-        lock_path = os.path.join(
-            self.analysis_directory_root, ".pyre/monitor/monitor.lock"
+    def _handle_response(self, response: Dict[str, Any]) -> None:
+        LOG.info(
+            "Update to local configuration at %s",
+            os.path.join(response["root"], ",".join(response["files"])),
         )
-        # Die silently if unable to acquire the lock.
-        with acquire_lock(lock_path, blocking=False):
-            file_handler = logging.FileHandler(
-                os.path.join(self.analysis_directory_root, ".pyre/monitor/monitor.log")
-            )
-            file_handler.setFormatter(
-                logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-            )
-            LOG.addHandler(file_handler)
-
-            pid_path = os.path.join(
-                self.analysis_directory_root, ".pyre/monitor/monitor.pid"
-            )
-            with open(pid_path, "w+") as pid_file:
-                pid_file.write(str(os.getpid()))
-
-            watched_roots = self._watchman_client.query("watch-list")["roots"]
-            for root in watched_roots:
-                self._subscribe_to_watchman(root)
-
-            while True:
-                # This call is blocking, which prevents this loop from burning CPU.
-                response = self._watchman_client.recvConn.receive()
-                try:
-                    if response["is_fresh_instance"]:
-                        LOG.info(
-                            "Ignoring initial watchman message for %s", response["root"]
-                        )
-                    else:
-                        LOG.info(
-                            "Update to local configuration at %s",
-                            os.path.join(response["root"], ",".join(response["files"])),
-                        )
-                        LOG.info("Stopping running pyre server.")
-                        stop.Stop(
-                            self.arguments, self.configuration, self.analysis_directory
-                        ).run()
-                except KeyError:
-                    pass
-
-    def daemonize(self) -> None:
-        """We double-fork here to detach the daemon process from the parent.
-           If we were to just fork the child as a daemon, we'd have to worry about the
-           parent process exiting zombifying the daemon."""
-        if os.fork() == 0:
-            pid = os.fork()
-            if pid == 0:
-                try:
-                    # Closing the sys.stdout and stderr file descriptors here causes
-                    # the program to crash when attempting to log.
-                    os.close(sys.stdout.fileno())
-                    os.close(sys.stderr.fileno())
-                    self._run()
-                    sys.exit(0)
-                except Exception as exception:
-                    LOG.info("Not running pyre-monitor due to %s", str(exception))
-                    sys.exit(1)
-            else:
-                sys.exit(0)
+        LOG.info("Stopping running pyre server.")
+        stop.Stop(self.arguments, self.configuration, self.analysis_directory).run()

@@ -9,6 +9,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import call, patch
 
+from .. import watchman_subscriber
 from ..commands import monitor  # noqa
 from ..filesystem import AnalysisDirectory
 from .infer_test import mock_arguments, mock_configuration
@@ -40,7 +41,7 @@ class MonitorTest(unittest.TestCase):
         _exit.assert_has_calls([call(0), call(1)])
 
     @patch("os.makedirs")
-    @patch.object(monitor, "acquire_lock")
+    @patch.object(watchman_subscriber, "acquire_lock")
     def test_run(self, _lock, _makedirs) -> None:
         @contextmanager
         def yield_once(path, blocking):
