@@ -467,10 +467,11 @@ module Attribute = struct
       in
       if property && not (List.is_empty free_variables) then
         let constraints =
+          let instantiated = Option.value instantiated ~default:class_annotation in
           List.fold
             free_variables
             ~init:Type.Map.empty
-            ~f:(fun map variable -> Map.set map ~key:variable ~data:class_annotation)
+            ~f:(fun map variable -> Map.set map ~key:variable ~data:instantiated)
           |> Map.find
         in
         Annotation.annotation annotation

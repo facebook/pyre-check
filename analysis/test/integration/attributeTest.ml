@@ -639,6 +639,18 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
+      _T = typing.TypeVar('_T')
+      class A:
+        @property
+        def property(self: _T) -> _T: ...
+      class B(A):
+        def foo(self) -> None:
+          reveal_type(self.property)
+    |}
+    ["Revealed type [-1]: Revealed type for `self.property` is `B`."];
+
+  assert_type_errors
+    {|
       T = typing.TypeVar('T')
       def f(t: typing.Type[T]) -> None:
         a = t()
