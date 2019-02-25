@@ -10,6 +10,7 @@ type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
   | RemoteCodeExecution
+  | RequestSend
   | SQL
   | Test
   | Thrift

@@ -213,6 +213,13 @@ let rules = [
     name = "User data to filesystem operation.";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.RequestSend ];
+    code = 5012;
+    name = "Potential Server-side request forgery (SSRF)";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

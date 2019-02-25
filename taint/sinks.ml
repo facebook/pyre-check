@@ -10,6 +10,7 @@ type t =
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
   | RemoteCodeExecution
+  | RequestSend
   | SQL
   | Test
   | Thrift
@@ -25,6 +26,7 @@ let show = function
   | LocalReturn -> "LocalReturn"
   | Logging -> "Logging"
   | RemoteCodeExecution -> "RemoteCodeExecution"
+  | RequestSend -> "RequestSend"
   | SQL -> "SQL"
   | Thrift -> "Thrift"
   | Test -> "Test"
@@ -39,6 +41,7 @@ let create = function
   | "LocalReturn" -> LocalReturn
   | "Logging" -> Logging
   | "RemoteCodeExecution" -> RemoteCodeExecution
+  | "RequestSend" -> RequestSend
   | "SQL" -> SQL
   | "Test" -> Test
   | "Thrift" -> Thrift
