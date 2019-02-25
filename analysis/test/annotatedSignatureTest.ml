@@ -250,8 +250,13 @@ let test_select _ =
     "(j=1, i=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
   assert_select
-    "[[Named(i, int), Named(j, int)], int]" "(j=1, q=2)"
+    "[[Named(i, int), Named(j, int)], int]"
+    "(j=1, q=2)"
     (`NotFoundUnexpectedKeyword "q");
+  assert_select
+    "[[], int]"
+    "(j=1, q=2)"
+    (`NotFoundUnexpectedKeyword "j");
   (* May want new class of error for `keyword argument repeated` *)
   assert_select
     "[[Named(i, int), Named(j, int)], int]"

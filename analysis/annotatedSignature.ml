@@ -193,8 +193,12 @@ let select
         [] ->
           (* Starred or double starred arguments; parameters empty *)
           consume ~arguments:arguments_tail ~parameters signature_match
+      | Argument { argument = { Argument.name = Some { Node.value = name; _ }; _ }; _ } :: _, [] ->
+          (* Named argument; parameters empty *)
+          let reasons = { reasons with arity = (UnexpectedKeyword name) :: arity } in
+          { signature_match with reasons }
       | _, [] ->
-          (* Arguments; parameters empty *)
+          (* Positional argument; parameters empty *)
           { signature_match with reasons = arity_mismatch ~arguments reasons }
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
