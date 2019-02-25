@@ -3030,11 +3030,19 @@ module State = struct
               match parse_and_check_annotation ~state annotation |> snd with
               | Type.Top ->
                   (* Try to resolve meta-types given as expressions. *)
-                  let annotation = Resolution.resolve resolution annotation in
-                  if Type.is_meta annotation then
-                    (Type.single_parameter annotation)
-                  else
-                    Type.Top
+                  begin
+                    match Resolution.resolve resolution annotation with
+                    | annotation when Type.is_meta annotation ->
+                        Type.single_parameter annotation
+                    | Type.Tuple Bounded elements
+                      when List.for_all ~f:Type.is_meta elements ->
+                        List.map ~f:Type.single_parameter elements
+                        |> Type.union
+                    | Type.Tuple Unbounded element when Type.is_meta element ->
+                        Type.single_parameter element
+                    | _ ->
+                        Type.Top
+                  end
               | annotation ->
                   annotation
             in

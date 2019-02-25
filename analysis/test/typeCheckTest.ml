@@ -2380,6 +2380,26 @@ let test_forward_statement _ =
       "$type", Type.meta Type.none;
       "x", Type.union [Type.integer; Type.string];
     ];
+  assert_forward
+    [
+      "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+      "x", Type.Top;
+    ]
+    "assert isinstance(x, my_type)"
+    [
+      "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+      "x", Type.union [Type.integer; Type.string];
+    ];
+  assert_forward
+    [
+      "my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer));
+      "x", Type.Top;
+    ]
+    "assert isinstance(x, my_type)"
+    [
+      "my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer));
+      "x", Type.integer;
+    ];
 
   (* Works for general expressions. *)
   assert_forward

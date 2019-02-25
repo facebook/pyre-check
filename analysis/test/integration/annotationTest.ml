@@ -364,7 +364,7 @@ let test_check_invalid_type _ =
     |}
     ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."];
 
-  (* Using expressions of type meta-type *)
+  (* Using expressions of type meta-type: only OK in isinstance *)
   assert_type_errors
     {|
       def f(my_type: typing.Type[int]) -> None:
