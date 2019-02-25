@@ -671,6 +671,42 @@ class FixmeTest(unittest.TestCase):
                 )
             )
 
+        # Fall back to normal description for backwards compatibility.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 1,
+                        "description": "Error [1]: description",
+                        "concise_description": "",
+                    }
+                ]
+            )
+            path_read_text.return_value = "  1\n2"
+            upgrade.run_fixme(arguments, result)
+            path_write_text.assert_called_once_with(
+                "  # pyre-fixme[1]: description\n  1\n2"
+            )
+
+        # Ensure that we prefer concise descriptions.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            result = _result(
+                [
+                    {
+                        "path": "path.py",
+                        "line": 1,
+                        "description": "Error [1]: description",
+                        "concise_description": "Error[1]: Concise.",
+                    }
+                ]
+            )
+            path_read_text.return_value = "  1\n2"
+            upgrade.run_fixme(arguments, result)
+            path_write_text.assert_called_once_with(
+                "  # pyre-fixme[1]: Concise.\n  1\n2"
+            )
+
 
 class DecodeTest(unittest.TestCase):
     def test_json_to_errors(self) -> None:

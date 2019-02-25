@@ -303,7 +303,11 @@ def run_fixme(
         # Build map from line to error codes.
         error_map = defaultdict(lambda: [])
         for error in errors:
-            match = re.search(r"\[(\d+)\]: (.*)", error["concise_description"])
+            if error["concise_description"]:
+                description = error["concise_description"]
+            else:
+                description = error["description"]
+            match = re.search(r"\[(\d+)\]: (.*)", description)
             if match:
                 error_map[error["line"]].append(
                     {"code": match.group(1), "description": match.group(2)}
