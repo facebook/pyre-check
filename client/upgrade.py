@@ -263,6 +263,27 @@ def _upgrade_configuration(
 
         errors = itertools.groupby(sorted(errors, key=error_path), error_path)
         run_fixme(arguments, errors)
+
+        # Lint and re-run pyre once to resolve most formatting issues
+        if arguments.lint:
+            lint_status = subprocess.call(
+                [
+                    "arc",
+                    "lint",
+                    "--never-apply-patches",
+                    "--enforce-lint-clean",
+                    "--output",
+                    "none",
+                ]
+            )
+            if lint_status:
+                LOG.info(
+                    "Lint was dirty after adding fixmes. Cleaning lint and re-checking."
+                )
+                subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
+                errors = configuration.get_errors()
+                errors = itertools.groupby(sorted(errors, key=error_path), error_path)
+                run_fixme(arguments, errors)
     try:
         project_root = os.path.realpath(root)
         local_root = os.path.realpath(configuration.get_directory())
@@ -479,6 +500,7 @@ if __name__ == "__main__":
         "path", help="Path to project root with local configuration"
     )
     fixme_single.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+    fixme_single.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
@@ -488,6 +510,7 @@ if __name__ == "__main__":
     )
     fixme_all.add_argument("-p", "--push-blocking-only", action="store_true")
     fixme_all.add_argument("--submit", action="store_true", help=argparse.SUPPRESS)
+    fixme_all.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
     fixme_all.add_argument(
         "-s", "--sandcastle", help="Create upgrade stack on sandcastle."
     )

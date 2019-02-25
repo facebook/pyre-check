@@ -171,13 +171,14 @@ class FixmeAllTest(unittest.TestCase):
         gather,
         get_errors,
         remove_version,
-        call,
+        subprocess,
     ) -> None:
         arguments = MagicMock()
+        arguments.lint = False
         gather.return_value = []
         upgrade.run_fixme_all(arguments, [])
         run_fixme.assert_not_called()
-        call.assert_not_called()
+        subprocess.assert_not_called()
 
         errors = [
             {
@@ -200,9 +201,33 @@ class FixmeAllTest(unittest.TestCase):
         upgrade._upgrade_configuration(arguments, configuration, "/root")
         run_global_version_update.assert_not_called()
         run_fixme.called_once_with(arguments, _result(errors))
-        call.assert_called_once_with(
+        subprocess.assert_called_once_with(
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
+
+        # Test with lint
+        subprocess.reset_mock()
+        run_fixme.reset_mock()
+        arguments.lint = True
+        upgrade._upgrade_configuration(arguments, configuration, "/root")
+        run_global_version_update.assert_not_called()
+        run_fixme.called_once_with(arguments, _result(errors))
+        calls = [
+            call(
+                [
+                    "arc",
+                    "lint",
+                    "--never-apply-patches",
+                    "--enforce-lint-clean",
+                    "--output",
+                    "none",
+                ]
+            ),
+            call().__bool__(),
+            call(["arc", "lint", "--apply-patches", "--output", "none"]),
+            call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+        ]
+        subprocess.assert_has_calls(calls)
 
     @patch("subprocess.call")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
@@ -222,6 +247,7 @@ class FixmeAllTest(unittest.TestCase):
         subprocess,
     ) -> None:
         arguments = MagicMock()
+        arguments.lint = False
         gather.return_value = [
             upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
         ]
@@ -256,6 +282,7 @@ class FixmeAllTest(unittest.TestCase):
             ["hg", "commit", "--message", upgrade._commit_message("local")]
         )
 
+        # Test configuraton with no version set
         run_fixme.reset_mock()
         subprocess.reset_mock()
         gather.return_value = [
@@ -265,6 +292,7 @@ class FixmeAllTest(unittest.TestCase):
         run_fixme.assert_not_called()
         subprocess.assert_not_called()
 
+        # Test with given hash
         run_fixme.reset_mock()
         subprocess.reset_mock()
         gather.return_value = [
@@ -272,6 +300,20 @@ class FixmeAllTest(unittest.TestCase):
         ]
         arguments.hash = "abc"
         arguments.submit = True
+        upgrade.run_fixme_all(arguments, [])
+        run_global_version_update.assert_called_once_with(arguments, [])
+        run_fixme.called_once_with(arguments, _result(errors))
+        calls = [
+            call(["hg", "commit", "--message", upgrade._commit_message("local")]),
+            call(["jf", "submit", "--update-fields"]),
+        ]
+        subprocess.assert_has_calls(calls)
+
+        # Test with linting
+        run_fixme.reset_mock()
+        subprocess.reset_mock()
+        run_global_version_update.reset_mock()
+        arguments.lint = True
         upgrade.run_fixme_all(arguments, [])
         run_global_version_update.assert_called_once_with(arguments, [])
         run_fixme.called_once_with(arguments, _result(errors))
