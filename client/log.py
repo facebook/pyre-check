@@ -229,6 +229,8 @@ class Buffer:
             LOG.error(message)
         elif self._section == "INFO":
             LOG.info(message)
+        elif self._section == "DUMP":
+            LOG.warning(message)
         elif self._section == "WARNING":
             LOG.warning(message)
         elif self._section == "PROGRESS":
