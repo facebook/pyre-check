@@ -402,7 +402,7 @@ let rec pp_concise format annotation =
   | Primitive name ->
       Format.fprintf format "%s" (strip_qualification name)
   | Top ->
-      Format.fprintf format "?"
+      Format.fprintf format "unknown"
   | Tuple (Bounded parameters) ->
       Format.fprintf format "Tuple[%a]" pp_comma_separated parameters
   | Tuple (Unbounded parameter) ->

@@ -217,7 +217,7 @@ let test_concise _ =
       class Foo: ...
       Foo().a: int = 1
     |}
-    ["Illegal annotation target [35]: Target `Foo.(...).a` cannot be annotated."];
+    ["Illegal annotation target [35]: Target cannot be annotated."];
 
   (* Impossible Isinstance *)
   assert_type_errors ~concise:true
@@ -291,7 +291,7 @@ let test_concise _ =
         a: int = 1
       Foo.a = "string"
     |}
-    ["Incompatible attribute type [8]: Attribute has type `int` but is used as type `str`."];
+    ["Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
 
   assert_type_errors ~concise:true
     {|
@@ -311,7 +311,7 @@ let test_concise _ =
       from export import Foo
       Foo.a = "string"
     |}
-    ["Incompatible attribute type [8]: Attribute has type `int` but is used as type `str`."];
+    ["Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
 
   assert_type_errors ~concise:true
     ~update_environment_with:[

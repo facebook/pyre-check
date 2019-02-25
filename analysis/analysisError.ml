@@ -243,6 +243,12 @@ let messages ~concise ~define location kind =
     Access.pp_sanitized format access
   in
   match kind with
+  | AnalysisFailure annotation when concise ->
+    [
+      Format.asprintf
+        "Terminating analysis - type `%a` not defined."
+        pp_type annotation
+    ]
   | AnalysisFailure annotation ->
       [
         Format.asprintf
@@ -251,6 +257,8 @@ let messages ~concise ~define location kind =
       ]
   | Deobfuscation source ->
       [Format.asprintf "\n%a" Source.pp source]
+  | IllegalAnnotationTarget _ when concise ->
+      ["Target cannot be annotated."]
   | IllegalAnnotationTarget expression ->
       [
         Format.asprintf
@@ -644,7 +652,7 @@ let messages ~concise ~define location kind =
           | _ -> "anoynmous call"
         in
         if concise then
-          Format.asprintf "%s parameter" (ordinal position)
+          Format.asprintf "%s param" (ordinal position)
         else
           Format.asprintf "%s %s to %s" (ordinal position) parameter callee
       in
@@ -695,7 +703,7 @@ let messages ~concise ~define location kind =
       let message =
         if concise then
           Format.asprintf
-            "Attribute has type `%a` but is used as type `%a`."
+            "Attribute has type `%a`; used as `%a`."
             pp_type expected
             pp_type actual
         else
@@ -812,6 +820,17 @@ let messages ~concise ~define location kind =
           "Expression `%a` is not a valid type."
           pp_type annotation
       ]
+  | InvalidTypeVariable { annotation; origin } when concise ->
+      let format: ('a, Format.formatter, unit, string) format4 =
+        match origin with
+        | ClassToplevel ->
+            "Current class isn't generic over `%a`."
+        | Define ->
+            "`%a` isn't present in the function's parameters."
+        | Toplevel ->
+            "`%a` can only be used to annotate generic classes or functions."
+      in
+      [Format.asprintf format pp_type annotation]
   | InvalidTypeVariable { annotation; origin } ->
       (* The explicit annotation is necessary to appease the compiler. *)
       let format: ('a, Format.formatter, unit, string) format4 =

@@ -46,7 +46,9 @@ let test_create _ =
   assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
   assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Any]);
   assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
-  assert_create "typing_extensions.Protocol[int]" (Type.parametric "typing.Protocol" [Type.integer]);
+  assert_create
+    "typing_extensions.Protocol[int]"
+    (Type.parametric "typing.Protocol" [Type.integer]);
   assert_create "typing_extensions.Protocol" (Type.Primitive "typing.Protocol");
 
   (* Check renaming. *)
@@ -562,7 +564,7 @@ let test_concise _ =
       (Type.show_concise annotation)
   in
   assert_concise Type.Bottom "?";
-  assert_concise Type.Top "?";
+  assert_concise Type.Top "unknown";
   assert_concise
     (Type.callable
       ~name:(Access.create "foo")
@@ -593,7 +595,9 @@ let test_concise _ =
   assert_concise (Type.Optional Type.integer) "Optional[int]";
   assert_concise (Type.parametric "Optional" [Type.Bottom]) "None";
   assert_concise (Type.parametric "parametric" [Type.Top; Type.Top]) "parametric[]";
-  assert_concise (Type.parametric "parametric" [Type.Top; Type.float]) "parametric[?, float]";
+  assert_concise
+    (Type.parametric "parametric" [Type.Top; Type.float])
+    "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
