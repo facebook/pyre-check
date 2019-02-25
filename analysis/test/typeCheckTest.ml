@@ -125,8 +125,10 @@ let test_initial _ =
     ~parent:"Foo"
     ~errors:[]
     ~environment:"class Foo: ..."
-    "def __eq__(self, other: typing.Any): ..."
-    (create ~immutables:["other", false] ["self", Type.Primitive "Foo"; "other", Type.Any]);
+    "def __eq__(self, other: object): ..."
+    (create
+      ~immutables:["other", false]
+      ["self", Type.Primitive "Foo"; "other", Type.object_primitive]);
 
   assert_initial
     ~parent:"Foo"

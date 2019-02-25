@@ -1336,17 +1336,7 @@ module State = struct
               |> Identifier.sanitized
               |> fun name -> [Access.Identifier name]
             in
-            let should_accept_any =
-              let has_any_annotation =
-                match given_annotation with
-                | Some Type.Any -> true
-                | _ -> false
-              in
-              Define.is_dunder_method define &&
-              not (Define.is_constructor define) &&
-              has_any_annotation
-            in
-            if Access.show sanitized_access = "*" || should_accept_any then
+            if Access.show sanitized_access = "*" then
               state
             else
               Error.create
