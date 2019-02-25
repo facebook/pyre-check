@@ -112,7 +112,15 @@ let test_check_async _ =
     |}
     [
       "Revealed type [-1]: Revealed type for `foo.(...)` is `typing.AsyncGenerator[bool, None]`.";
-    ]
+    ];
+
+  assert_type_errors
+    {|
+      async def foo(x: typing.AsyncGenerator[int, None]) -> None:
+        async for a in x:
+          reveal_type(a)
+    |}
+    ["Revealed type [-1]: Revealed type for `a` is `int`."]
 
 
 let () =
