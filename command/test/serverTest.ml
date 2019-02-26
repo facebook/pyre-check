@@ -163,18 +163,11 @@ let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer
 let environment ~local_root =
   let environment = Environment.Builder.create () in
   let configuration = configuration ~local_root in
+  let sources = typeshed_stubs ~include_helper_builtins: false () in
   Service.Environment.populate
     ~configuration
     (Environment.handler environment)
-    [
-      parse {|
-        class int(float): pass
-        class str: pass
-        class typing.Generic(object): pass
-        _T = TypeVar("_T")
-        class list(typing.Generic[_T]): pass
-      |}
-    ];
+    sources;
   environment
 
 
@@ -397,7 +390,11 @@ let test_query context =
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Superclasses [Type.integer]));
+    (Protocol.TypeQuery.Response
+      (Protocol.TypeQuery.Superclasses
+        [Type.integer; Type.float; Type.complex; Type.object_primitive]
+      )
+    );
 
   assert_type_query_response
     ~source:""
@@ -574,6 +571,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
+            (4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"]);
             (5, 2, 5, 3, Type.integer);
             (3, 2, 3, 3, Type.integer);
             (3, 6, 3, 7, Type.integer);
@@ -648,6 +646,7 @@ let test_query context =
             (2, 32, 2, 36, Type.none);
             (2, 23, 2, 26, Type.meta Type.integer);
             (2, 8, 2, 9, Type.list Type.integer);
+            (2, 11, 2, 22, Type.Primitive "typing.TypeAlias")
           ] |> create_types_at_locations)
        ));
 
@@ -1207,6 +1206,10 @@ let test_incremental_lookups _ =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler environment in
   let environment_handler = Environment.handler environment in
+  Service.Environment.populate
+    ~configuration
+    environment_handler
+    (typeshed_stubs ~include_helper_builtins: false ());
   add_defaults_to_environment ~configuration environment_handler;
   Service.Environment.populate ~configuration environment_handler [parse source];
 
@@ -1415,6 +1418,10 @@ let test_incremental_attribute_caching context =
     Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler
   in
+  Service.Environment.populate
+    ~configuration
+    environment
+    (typeshed_stubs ~include_helper_builtins:false ());
   add_defaults_to_environment ~configuration environment;
   let ({ State.connections; lock = server_lock; _ } as old_state) =
     mock_server_state ~local_root (File.Handle.Table.create ())
@@ -1422,6 +1429,13 @@ let test_incremental_attribute_caching context =
   let source_path = Path.create_relative ~root:local_root ~relative:"a.py" in
   let write_to_file ~content =
     Out_channel.write_all (Path.absolute source_path) ~data:(trim_extra_indentation content)
+  in
+  let error_printer errors_by_file =
+    errors_by_file
+    |> List.map ~f:snd
+    |> List.concat
+    |> List.map ~f:(Error.description ~show_error_traces:false)
+    |> String.concat ~sep:"\n"
   in
   let content_with_annotation =
     {|
@@ -1457,8 +1471,8 @@ let test_incremental_attribute_caching context =
     |> fun { Request.state; _ } -> state
   in
   let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
-  let state = request_typecheck initial_state in
-  assert_equal (get_errors state) [];
+  let state = request_typecheck { initial_state with State.environment } in
+  assert_equal ~printer:error_printer (get_errors state) [];
 
   let content_without_annotation =
     {|
@@ -1486,7 +1500,7 @@ let test_incremental_attribute_caching context =
 
   write_to_file ~content:content_with_annotation;
   let state = request_typecheck { state with State.environment } in
-  assert_equal (get_errors state) []
+  assert_equal ~printer: error_printer (get_errors state) []
 
 
 let () =

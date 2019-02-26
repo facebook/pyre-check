@@ -54,6 +54,10 @@ let assert_errors
   let ((module Handler: Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
+  Service.Environment.populate
+    ~configuration
+    environment
+    (typeshed_stubs ~include_helper_builtins: false ());
   add_defaults_to_environment ~configuration environment;
   Service.Postprocess.register_ignores ~configuration scheduler handles;
   let descriptions =

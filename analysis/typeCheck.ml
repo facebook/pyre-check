@@ -1407,15 +1407,18 @@ module State = struct
                   annotation
                   >>| parse_and_check_annotation ~state ~bind_variables:false
                 in
-                let contains_literal_any =
-                  annotation
-                  >>| Type.expression_contains_any
-                  |> Option.value ~default:false
+                let contains_prohibited_any parsed_annotation =
+                  let contains_literal_any =
+                    annotation
+                    >>| Type.expression_contains_any
+                    |> Option.value ~default:false
+                  in
+                  contains_literal_any &&
+                  not (Resolution.is_string_to_any_mapping resolution parsed_annotation)
                 in
                 match annotation_and_state, value with
                 | Some (_, annotation), Some value
-                  when contains_literal_any &&
-                       not (Type.is_dictionary ~with_key:(Some Type.string) annotation) ->
+                  when contains_prohibited_any annotation ->
                     let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
                     in
@@ -1428,8 +1431,7 @@ module State = struct
                       ~original:(Some annotation)
                       value_annotation
                 | Some (_, annotation), None
-                  when contains_literal_any &&
-                       not (Type.is_dictionary ~with_key:(Some Type.string) annotation) ->
+                  when contains_prohibited_any annotation ->
                     add_missing_parameter_annotation_error
                       ~state
                       ~given_annotation:(Some annotation)
@@ -2485,8 +2487,8 @@ module State = struct
           |> Option.value ~default:false
         in
         if not (Define.has_return_annotation define) ||
-           (contains_literal_any &&
-            not (Type.is_dictionary ~with_key:(Some Type.string) return_annotation))
+          (contains_literal_any &&
+           not (Resolution.is_string_to_any_mapping resolution return_annotation))
         then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
@@ -2743,13 +2745,13 @@ module State = struct
                   match annotation with
                   | Some annotation when Type.expression_contains_any annotation ->
                       original_annotation
-                      >>| Type.is_dictionary ~with_key:(Some Type.string)
+                      >>| Resolution.is_string_to_any_mapping resolution
                       |> Option.value ~default:false
                       |> not
                       |> (fun insufficient -> insufficient, true)
                   | None when is_immutable ->
                       let contains_any annotation =
-                        if Type.is_dictionary ~with_key:(Some Type.string) annotation then
+                        if Resolution.is_string_to_any_mapping resolution annotation then
                           false
                         else
                           Type.contains_any annotation
@@ -2852,7 +2854,7 @@ module State = struct
                     |> Option.some
                 | Value when is_type_alias && Type.expression_contains_any value ->
                     let value_annotation = Resolution.parse_annotation resolution value in
-                    if Type.is_dictionary ~with_key:(Some Type.string) value_annotation then
+                    if Resolution.is_string_to_any_mapping resolution value_annotation then
                       None
                     else
                       Error.create

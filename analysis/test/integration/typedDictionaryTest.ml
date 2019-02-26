@@ -194,10 +194,7 @@ let test_check_typed_dictionaries _ =
         baz: Baz
         a = foo(baz)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `dictionary` must have a type " ^
-      "that does not contain `Any`."
-    ];
+    [];
 
   assert_test_typed_dictionary
     {|

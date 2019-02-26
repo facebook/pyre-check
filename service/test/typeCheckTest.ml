@@ -38,6 +38,10 @@ let assert_errors ?filter_directories ~root ~files errors =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
   Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
+  Service.Environment.populate
+    ~configuration
+    environment
+    (typeshed_stubs ~include_helper_builtins:false ());
   let actual_errors =
     Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)

@@ -242,6 +242,14 @@ let contains_untracked resolution annotation =
     (Type.elements annotation)
 
 
+let is_string_to_any_mapping resolution annotation =
+  (* TODO(T40377122): Remove special-casing of Dict[str, Any] in strict. *)
+  less_or_equal
+    resolution
+    ~left:annotation
+    ~right:(Type.parametric "typing.Mapping" [Type.string; Type.Any])
+
+
 let parse_annotation
     ?(allow_untracked=false)
     ({ parse_annotation; module_definition; _ } as resolution)
