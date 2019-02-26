@@ -439,8 +439,11 @@ let test_is_protocol _ =
   assert_is_protocol [{ Argument.name = None; value = !"typing_extensions.Protocol" }] true;
   assert_is_protocol
     [{ Argument.name = Some ~+"metaclass"; value = !"abc.ABCMeta" }]
-    false
-
+    false;
+  assert_is_protocol
+    [{ Argument.name = None; value = (parse_single_expression "typing.Protocol[T]") }]
+    true;
+  ()
 
 let test_implements _ =
   (* TODO(T36516076) Adapt assert_conforms to fit testing idioms *)
@@ -473,16 +476,23 @@ let test_implements _ =
     | { Node.value = Statement.Class definition; _ },
       { Node.value = Statement.Class protocol; _ } ->
         assert_equal
+          ~printer:(function
+              | Class.Implements { parameters } ->
+                  List.map parameters ~f:Type.show |> String.concat ~sep:","
+              | Class.DoesNotImplement ->
+                  "None"
+            )
+          conforms
           (Class.implements
              ~resolution
              ~protocol:(Class.create (Node.create_with_default_location protocol))
              (Class.create (Node.create_with_default_location definition)))
-          conforms
     | _ ->
         assert_unreached ()
   in
+  let no_parameters = Class.Implements { parameters = [] } in
 
-  assert_conforms "class A: pass" "class Protocol: pass" true;
+  assert_conforms "class A: pass" "class Protocol: pass" no_parameters;
   assert_conforms
     {|
       class A:
@@ -492,7 +502,7 @@ let test_implements _ =
       class Protocol:
         def foo(): pass
     |}
-    true;
+    no_parameters;
   assert_conforms
     {|
       class A:
@@ -502,7 +512,7 @@ let test_implements _ =
       class Protocol:
         def bar(): pass
     |}
-    false;
+    DoesNotImplement;
   assert_conforms
     {|
       class A:
@@ -513,7 +523,7 @@ let test_implements _ =
         def foo(): pass
         def bar(): pass
     |}
-    false;
+    DoesNotImplement;
   assert_conforms
     {|
       class A:
@@ -526,7 +536,19 @@ let test_implements _ =
         def foo(): pass
         def bar(): pass
     |}
-    true;
+    no_parameters;
+  assert_conforms
+    {|
+      class A:
+        def bar(): pass
+        def foo(): pass
+    |}
+    {|
+      class Protocol:
+        def foo(): pass
+        def bar(): pass
+    |}
+    no_parameters;
   assert_conforms
     {|
       class List():
@@ -538,7 +560,7 @@ let test_implements _ =
         def empty() -> bool: pass
         def len() -> int: pass
     |}
-    false;
+    DoesNotImplement;
   assert_conforms
     {|
       class List():
@@ -554,7 +576,7 @@ let test_implements _ =
         def empty() -> bool: pass
         def length() -> int: pass
     |}
-    true;
+    no_parameters;
   assert_conforms
     {|
       class List():
@@ -569,7 +591,167 @@ let test_implements _ =
         def empty() -> bool: pass
         def length() -> int: pass
     |}
-    true
+    no_parameters;
+  assert_conforms
+    {|
+      class A():
+        def foo() -> int:
+          pass
+    |}
+    {|
+      class P(typing.Protocol):
+        def foo() -> float:
+          pass
+    |}
+    no_parameters;
+  assert_conforms
+    {|
+      class FooBarClass():
+        def foo(self) -> int:
+          return 7
+        def bar(self) -> int:
+          return 7
+    |}
+    {|
+      class FooProtocol(typing.Protocol):
+        def foo(self) -> int: ...
+
+      class BarProtocol(typing.Protocol):
+        def bar(self) -> int: ...
+
+      class FooBarProtocol(typing.Protocol, FooProtocol, BarProtocol):
+        pass
+    |}
+    no_parameters;
+  assert_conforms
+    {|
+      class FooClass():
+        def foo(self) -> int:
+          return 7
+    |}
+    {|
+      class FooProtocol(typing.Protocol):
+        def foo(self) -> int: ...
+
+      class BarProtocol(typing.Protocol):
+        def bar(self) -> int: ...
+
+      class FooBarProtocol(typing.Protocol, FooProtocol, BarProtocol):
+        pass
+    |}
+    DoesNotImplement;
+  assert_conforms
+    {|
+      _T = TypeVar('_T')
+      class list(typing.Generic[_T]):
+        def __len__(self) -> int: ...
+    |}
+    {|
+      class Size(typing.Protocol):
+        def __len__(self) -> int: ...
+    |}
+    no_parameters;
+  (* TODO(T40727281): No reason for AnnotatedClass.implements to do this if we're only checking
+     based on methods_to_implementing_classes *)
+  assert_conforms
+    {|
+      class A:
+          def foo(self) -> int: ...
+
+      class B(A):
+          def bar(self) -> int: ...
+    |}
+    {|
+      class P(typing.Protocol):
+        def foo(self) -> int: ...
+    |}
+    DoesNotImplement;
+  assert_conforms
+    {|
+    T = typing.TypeVar("T", bound=typing.Union[int, str])
+    class A(typing.Generic[T]):
+      x: T
+      def __init__(self, x: T) -> None:
+        self.x = x
+      def foo(self) -> T:
+        return self.x
+    |}
+    {|
+    T1 = typing.TypeVar("T1")
+    class P(typing.Protocol[T1]):
+      def foo() -> T1: ...
+    |}
+    (Implements {
+        parameters =
+          [Type.variable "T" ~constraints:(Type.Bound (Type.union [Type.integer; Type.string]))]
+      });
+
+  assert_conforms
+    {|
+      T = typing.TypeVar("T", int, str)
+      class A(typing.Generic[T]):
+        def foo() -> T:
+          pass
+    |}
+    {|
+      class P(typing.Protocol):
+        def foo() -> typing.Union[int, str]:
+          pass
+    |}
+    no_parameters;
+  assert_conforms
+    {|
+      T = typing.TypeVar("T", int, bool)
+      class A(typing.Generic[T]):
+        def foo() -> T:
+          pass
+    |}
+    {|
+      class P(typing.Protocol):
+        def foo() -> typing.Union[int, str]:
+          pass
+    |}
+    DoesNotImplement;
+  assert_conforms
+    {|
+      T = typing.TypeVar("T", bound=typing.Union[int, str])
+      class A(typing.Generic[T]):
+        def foo() -> T:
+          pass
+    |}
+    {|
+      class P(typing.Protocol):
+        def foo() -> typing.Union[int, str]:
+          pass
+    |}
+    no_parameters;
+  assert_conforms
+    {|
+      class A():
+        def foo() -> int:
+          pass
+    |}
+    {|
+      T = typing.TypeVar("T", int, str)
+      class P(typing.Protocol[T]):
+        def foo() -> T:
+          pass
+    |}
+    (Implements { parameters =  [Type.integer] });
+  assert_conforms
+    {|
+      class A():
+        def foo() -> bool:
+          pass
+    |}
+    {|
+      T = typing.TypeVar("T", int, str)
+      class P(typing.Protocol[T]):
+        def foo() -> T:
+          pass
+    |}
+    DoesNotImplement;
+  ()
 
 
 let test_class_attributes _ =

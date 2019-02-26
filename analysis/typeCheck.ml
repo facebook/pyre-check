@@ -2300,7 +2300,7 @@ module State = struct
         in
         {
           state = { state with resolution };
-          resolved = Type.callable ~parameters ~annotation:resolved ();
+          resolved = Type.Callable.create ~parameters ~annotation:resolved ();
         }
 
     | List elements ->

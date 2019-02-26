@@ -828,7 +828,7 @@ let test_populate _ =
     "function"
     (Annotation.create_immutable
        ~global:true
-       (Type.callable
+       (Type.Callable.create
           ~name:(Access.create "function")
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
@@ -849,7 +849,7 @@ let test_populate _ =
     "Class.__init__"
     (Annotation.create_immutable
        ~global:true
-       (Type.callable
+       (Type.Callable.create
           ~name:(Access.create "Class.__init__")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
@@ -984,21 +984,21 @@ let test_infer_protocols_edges _ =
          ~protocol:(Type.Primitive "SuperObject"))
     |> Set.union empty_edges
   in
-  let assert_edge_inferred source target =
-    assert_true (Set.mem edges { TypeOrder.Edge.source; target })
+  let assert_edge_inferred source target parameters =
+    assert_true (Set.mem edges { TypeOrder.Edge.source; target; parameters })
   in
-  let assert_edge_not_inferred source target =
-    assert_false (Set.mem edges { TypeOrder.Edge.source; target })
+  let assert_edge_not_inferred source target parameters =
+    assert_false (Set.mem edges { TypeOrder.Edge.source; target; parameters })
   in
 
   assert_equal ~printer:Int.to_string (Set.length edges) 11;
 
-  assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized");
-  assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized");
-  assert_edge_not_inferred (Type.Primitive "AlmostSet") (Type.Primitive "Sized");
-  assert_edge_not_inferred (Type.Any) (Type.Primitive "SuperObject");
-  assert_edge_inferred (Type.Primitive "List") (Type.Primitive "Empty");
-  assert_edge_not_inferred (Type.Any) (Type.Primitive "Empty")
+  assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized") [];
+  assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized") [];
+  assert_edge_not_inferred (Type.Primitive "AlmostSet") (Type.Primitive "Sized") [];
+  assert_edge_not_inferred (Type.Any) (Type.Primitive "SuperObject") [];
+  assert_edge_inferred (Type.Primitive "List") (Type.Primitive "Empty") [];
+  assert_edge_not_inferred (Type.Any) (Type.Primitive "Empty") []
 
 
 let test_less_or_equal_type_order _ =
@@ -1320,18 +1320,47 @@ let test_class_definition _ =
 
 let test_protocols _ =
   let environment =
-    populate {|
+    let environment = Environment.Builder.create () in
+    Service.Environment.populate
+      ~configuration
+      (Environment.handler environment)
+      ([]);
+    populate
+      ~environment
+      {|
       class A(): ...
       class B(typing.Protocol): pass
       class C(): pass
       class D(metaclass=abc.ABCMeta): ...
+      T = typing.TypeVar("T")
+      class E(typing.Protocol[T]): pass
     |} in
   let module Handler = (val environment) in
 
   assert_equal
     ~cmp:(List.equal ~equal:Type.equal)
+    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
     (Handler.protocols ())
-    ([Type.Primitive "B"])
+    ([Type.Primitive "B"; Type.Primitive "E"]);
+
+  let environment = populate "" in
+  let module Handler = (val environment) in
+  assert_equal
+    ~cmp:(List.equal ~equal:Type.equal)
+    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
+    (Handler.protocols ())
+    ([
+      "typing._Collection";
+      "typing.Awaitable";
+      "typing.Sized";
+      "typing.Collection";
+      "typing.AsyncIterable";
+      "typing.Iterable";
+      "typing.AsyncIterator";
+      "typing.Iterator"
+    ]
+      |> List.map ~f:(fun primitive -> Type.Primitive primitive));
+  ()
 
 
 let test_modules _ =
@@ -1461,10 +1490,11 @@ let test_infer_protocols _ =
   let assert_protocols ?classes_to_infer source expected_edges =
     Annotated.Class.Attribute.Cache.clear ();
     let expected_edges =
-      let to_edge (source, target) =
+      let to_edge (source, target, parameters) =
         {
           TypeOrder.Edge.source = Type.Primitive source;
-          target = Type.Primitive target
+          target = Type.Primitive target;
+          parameters = List.map parameters ~f:(fun parameter -> Type.Primitive parameter);
         }
       in
       List.map expected_edges ~f:to_edge
@@ -1491,11 +1521,12 @@ let test_infer_protocols _ =
     let expected_edges = Edge.Set.of_list expected_edges in
     assert_equal
       ~cmp:Edge.Set.equal
-      ~printer:(fun set -> Sexp.to_string [%message (set: Edge.Set.t)])
+      ~printer:(fun set -> Edge.Set.to_list set |> List.map ~f:Edge.show |> String.concat ~sep:", ")
       expected_edges
       edges
   in
   assert_protocols
+    ~classes_to_infer:["A"; "B"]
     {|
       class P(typing.Protocol):
         def foo() -> int:
@@ -1508,7 +1539,7 @@ let test_infer_protocols _ =
         def foo() -> str:
           pass
     |}
-    ["A", "P"];
+    ["A", "P", []];
 
   assert_protocols
     ~classes_to_infer:["A"]
@@ -1524,7 +1555,7 @@ let test_infer_protocols _ =
         def foo() -> int:
           pass
     |}
-    ["A", "P"];
+    ["A", "P", []];
 
   assert_protocols
     ~classes_to_infer:["B"]
@@ -1540,9 +1571,28 @@ let test_infer_protocols _ =
         def foo() -> int:
           pass
     |}
-    ["B", "P"];
+    ["B", "P", []];
 
   assert_protocols
+    ~classes_to_infer:["A"; "B"]
+    {|
+      T = typing.TypeVar("T")
+      class P(typing.Protocol, typing.Generic[T]):
+        def foo() -> T:
+          pass
+
+      class A:
+        def foo() -> str:
+          pass
+      class B():
+        def foo() -> int:
+          pass
+    |}
+    ["A", "P", ["str"]; "B", "P", ["int"]];
+
+
+  assert_protocols
+    ~classes_to_infer:["A"; "B"; "C"; "D"]
     {|
       class P(typing.Protocol):
         def foo() -> int:
@@ -1571,7 +1621,9 @@ let test_infer_protocols _ =
         def foo() -> str:
           pass
     |}
-    ["A", "P"; "C", "P"]
+    ["A", "P", []; "C", "P", []];
+
+  ()
 
 
 let test_propagate_nested_classes _ =

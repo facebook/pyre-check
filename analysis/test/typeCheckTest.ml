@@ -1922,7 +1922,7 @@ let test_forward_expression _ =
       in
       Defined (List.map parameters ~f:to_parameter)
     in
-    Type.callable ~parameters ~annotation ()
+    Type.Callable.create ~parameters ~annotation ()
   in
   assert_forward "lambda: 1" (callable ~parameters:[] ~annotation:Type.integer);
   assert_forward

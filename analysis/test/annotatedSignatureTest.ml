@@ -312,7 +312,7 @@ let test_select _ =
     "(str)"
     (`NotFoundMismatch (
         Type.meta Type.string,
-        Type.callable
+        Type.Callable.create
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = Access.create "$0";
@@ -582,7 +582,7 @@ let test_determine _ =
   let assert_determine ?(found = true) constraints actual expected =
     let signature =
       let callable =
-        match Type.callable ~annotation:Type.integer () with
+        match Type.Callable.create ~annotation:Type.integer () with
         | Type.Callable callable -> callable
         | _ -> failwith "Could not extract callable"
       in

@@ -189,11 +189,11 @@ let test_create _ =
   let aliases = function
     | Type.Primitive "A" -> Some (Type.list (Type.Primitive "B"))
     | Type.Primitive "B" -> Some (Type.Primitive "C")
-    | Type.Primitive "X" -> Some (Type.callable ~annotation:(Type.Primitive "A") ());
+    | Type.Primitive "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ());
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
-  assert_create ~aliases "X" (Type.callable ~annotation:(Type.list (Type.Primitive "C")) ());
+  assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
   (* Aliasing of subclasses through imports. *)
   let aliases = function
     | Type.Primitive name when Identifier.show name = "A" ->
@@ -223,14 +223,14 @@ let test_create _ =
 
   (* Callables. *)
   let open Type.Callable in
-  assert_create "typing.Callable" (Type.callable ~annotation:Type.Top ());
-  assert_create "typing.Callable[..., int]" (Type.callable ~annotation:Type.integer ());
+  assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Top ());
+  assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable.__getitem__((..., int))"
-    (Type.callable ~annotation:Type.integer ());
+    (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable[..., int][[..., str]]"
-    (Type.callable
+    (Type.Callable.create
        ~overloads:[
          {
            annotation = Type.string;
@@ -360,11 +360,11 @@ let test_create _ =
         overloads = [];
         implicit = None;
       });
-  assert_create "typing.Callable[int]" (Type.callable ~annotation:Type.Top ());
-  assert_create "function" (Type.callable ~annotation:Type.Any ());
+  assert_create "typing.Callable[int]" (Type.Callable.create ~annotation:Type.Top ());
+  assert_create "function" (Type.Callable.create ~annotation:Type.Any ());
   assert_create
     "typing.Callable[..., function]"
-    (Type.callable ~annotation:(Type.callable ~annotation:Type.Any ()) ());
+    (Type.Callable.create ~annotation:(Type.Callable.create ~annotation:Type.Any ()) ());
 
   assert_create
     "mypy_extensions.TypedDict[('Movie', True, ('year', int), ('name', str))]"
@@ -444,14 +444,14 @@ let test_expression _ =
   (* Callables. *)
   let open Type.Callable in
   assert_expression
-    (Type.callable ~annotation:Type.integer ())
+    (Type.Callable.create ~annotation:Type.integer ())
     "typing.Callable.__getitem__((..., int))";
   assert_expression
-    (Type.callable ~name:(Access.create "name") ~annotation:Type.integer ())
+    (Type.Callable.create ~name:(Access.create "name") ~annotation:Type.integer ())
     "typing.Callable.__getitem__((..., int))";
 
   assert_expression
-    (Type.callable
+    (Type.Callable.create
        ~overloads:[
          {
            Type.Callable.annotation = Type.string;
@@ -463,7 +463,7 @@ let test_expression _ =
     "typing.Callable.__getitem__((..., int)).__getitem__(__getitem__((..., str)))";
 
   assert_expression
-    (Type.callable
+    (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
              Parameter.name = Access.create "$0";
@@ -480,7 +480,7 @@ let test_expression _ =
        ())
     "typing.Callable.__getitem__(([Named($0, int), Named($1, str)], int))";
   assert_expression
-    (Type.callable
+    (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
              Parameter.name = Access.create "a";
@@ -497,7 +497,7 @@ let test_expression _ =
        ())
     "typing.Callable.__getitem__(([Named(a, int), Named(b, str)], int))";
   assert_expression
-    (Type.callable
+    (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
              Parameter.name = Access.create "a";
@@ -509,7 +509,7 @@ let test_expression _ =
        ())
     "typing.Callable.__getitem__(([Named(a, int, default)], int))";
   assert_expression
-    (Type.callable
+    (Type.Callable.create
        ~parameters:(Defined [
            Parameter.Named {
              Parameter.name = Access.create "$0";
@@ -566,29 +566,29 @@ let test_concise _ =
   assert_concise Type.Bottom "?";
   assert_concise Type.Top "unknown";
   assert_concise
-    (Type.callable
-      ~name:(Access.create "foo")
-      ~annotation:Type.integer
-      ~parameters:(Type.Callable.Undefined)
-      ())
+    (Type.Callable.create
+       ~name:(Access.create "foo")
+       ~annotation:Type.integer
+       ~parameters:(Type.Callable.Undefined)
+       ())
     "Callable[..., int]";
   assert_concise
-    (Type.callable
-      ~name:(Access.create "foo")
-      ~annotation:Type.integer
-      ~parameters:(Type.Callable.Defined [
-        Type.Callable.Parameter.Named {
-          Type.Callable.Parameter.name = Access.create "x";
-          annotation = Type.Any;
-          default = true;
-        };
-        Type.Callable.Parameter.Named {
-          Type.Callable.Parameter.name = Access.create "y";
-          annotation = Type.float;
-          default = true;
-        }
-      ])
-      ())
+    (Type.Callable.create
+       ~name:(Access.create "foo")
+       ~annotation:Type.integer
+       ~parameters:(Type.Callable.Defined [
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "x";
+             annotation = Type.Any;
+             default = true;
+           };
+           Type.Callable.Parameter.Named {
+             Type.Callable.Parameter.name = Access.create "y";
+             annotation = Type.float;
+             default = true;
+           }
+         ])
+       ())
     "Callable[[Any, float], int]";
   assert_concise Type.Any "Any";
   assert_concise (Type.Optional Type.Bottom) "None";
@@ -657,10 +657,10 @@ let test_union _ =
 let test_primitives _ =
   assert_equal
     []
-    (Type.primitives (Type.callable ~annotation:Type.Top ()));
+    (Type.primitives (Type.Callable.create ~annotation:Type.Top ()));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.callable ~annotation:Type.integer ()));
+    (Type.primitives (Type.Callable.create ~annotation:Type.integer ()));
 
   assert_equal
     []
@@ -729,10 +729,10 @@ let test_elements _ =
   let assert_equal = assert_equal ~printer:(List.to_string ~f:Type.show) in
   assert_equal
     [Type.Primitive "typing.Callable"]
-    (Type.elements (Type.callable ~annotation:Type.Top ()));
+    (Type.elements (Type.Callable.create ~annotation:Type.Top ()));
   assert_equal
     [Type.integer; Type.Primitive "typing.Callable"]
-    (Type.elements (Type.callable ~annotation:Type.integer ()));
+    (Type.elements (Type.Callable.create ~annotation:Type.integer ()));
   assert_equal
     [Type.integer; Type.Primitive "typing.Optional"]
     (Type.elements (Type.optional Type.integer));
@@ -796,8 +796,8 @@ let test_elements _ =
 let test_exists _ =
   let top_exists = Type.exists ~predicate:(function | Type.Top -> true | _ -> false) in
 
-  assert_true (top_exists (Type.callable ~annotation:Type.Top ()));
-  assert_false (top_exists (Type.callable ~annotation:Type.integer ()));
+  assert_true (top_exists (Type.Callable.create ~annotation:Type.Top ()));
+  assert_false (top_exists (Type.Callable.create ~annotation:Type.integer ()));
   assert_true (top_exists (Type.optional Type.Top));
   assert_false (top_exists (Type.optional Type.integer));
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
@@ -831,10 +831,12 @@ let test_is_generator _ =
 
 
 let test_contains_callable _ =
-  assert_true (Type.contains_callable (Type.callable ~annotation:Type.integer ()));
-  assert_true (Type.contains_callable (Type.Optional (Type.callable ~annotation:Type.integer ())));
+  assert_true (Type.contains_callable (Type.Callable.create ~annotation:Type.integer ()));
   assert_true
-    (Type.contains_callable (Type.union[Type.string; (Type.callable ~annotation:Type.integer ())]));
+    (Type.contains_callable (Type.Optional (Type.Callable.create ~annotation:Type.integer ())));
+  assert_true
+    (Type.contains_callable
+       (Type.union[Type.string; (Type.Callable.create ~annotation:Type.integer ())]));
   assert_false (Type.contains_callable (Type.Primitive "foo"))
 
 
@@ -1008,10 +1010,10 @@ let test_mismatch_with_any _ =
     (Type.mismatch_with_any
        (Type.iterable Type.integer)
        (Type.set Type.Any));
-   assert_true
-     (Type.mismatch_with_any
-        (Type.parametric "typing.AbstractSet" [Type.object_primitive])
-        (Type.set Type.Any));
+  assert_true
+    (Type.mismatch_with_any
+       (Type.parametric "typing.AbstractSet" [Type.object_primitive])
+       (Type.set Type.Any));
 
   assert_false
     (Type.mismatch_with_any
@@ -1076,16 +1078,16 @@ let test_mismatch_with_any _ =
 
   assert_true
     (Type.mismatch_with_any
-       (Type.callable ~annotation:Type.integer ())
+       (Type.Callable.create ~annotation:Type.integer ())
        Type.Any);
   assert_true
     (Type.mismatch_with_any
        Type.Any
-       (Type.callable ~annotation:Type.integer ()));
+       (Type.Callable.create ~annotation:Type.integer ()));
   assert_true
     (Type.mismatch_with_any
        Type.Any
-       (Type.union [Type.integer; Type.callable ~annotation:Type.integer ()]));
+       (Type.union [Type.integer; Type.Callable.create ~annotation:Type.integer ()]));
 
   assert_true
     (Type.mismatch_with_any

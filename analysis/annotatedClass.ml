@@ -294,10 +294,11 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
 
 
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
-  let is_protocol { Argument.name; value } =
-    match name, Expression.show value with
-    | None, "typing.Protocol"
-    | None, "typing_extensions.Protocol" ->
+  let is_protocol { Argument.name; value = { Node.value; _ } } =
+    match name, value with
+    | None, Access (SimpleAccess ((Identifier "typing") :: (Identifier "Protocol") :: _))
+    | None,
+      Access (SimpleAccess ((Identifier "typing_extensions") :: (Identifier "Protocol") :: _)) ->
         true
     | _ ->
         false
@@ -713,51 +714,80 @@ let attributes
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
+type implements_result =
+  | DoesNotImplement
+  | Implements of { parameters: Type.t list }
+
 let implements ~resolution definition ~protocol =
-  let overload_implements (name, overload) (protocol_name, protocol_overload) =
-    let open Type.Callable in
-    Access.equal name protocol_name &&
-    Type.equal overload.annotation protocol_overload.annotation &&
-    equal_parameters Type.equal overload.parameters protocol_overload.parameters
+  let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
+    if  Access.equal name protocol_name then
+      Resolution.solve_constraints
+        resolution
+        ~source:(Type.Callable.create_from_implementation overload)
+        ~target:(Type.Callable.create_from_implementation protocol_overload)
+        ~constraints
+    else
+      None
   in
-  let rec implements instance_methods protocol_methods =
+  let callables_of_attributes =
+    let callables_of_attribute =
+      function
+      | { Node.value =
+            { Attribute.annotation = {
+                  Annotation.annotation = Type.Callable {
+                      kind = Type.Record.Callable.Named callable_name;
+                      implementation;
+                      overloads;
+                      _ };
+                  _ };
+              parent;
+              _ }; _ } ->
+          (* We have to split the type here due to our built-in aliasing. Namely, the "list" and
+             "dict" classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
+          let parent = fst (Type.split parent) in
+          let local_name =
+            Access.drop_prefix callable_name ~prefix:(Expression.Access.create (Type.show parent))
+          in
+          List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
+      | _ -> []
+    in
+    List.concat_map ~f:callables_of_attribute
+  in
+  (* TODO(T40727281): This needs to be transitive once we're actually checking based on
+       transitive *)
+  let all_instance_methods = callables_of_attributes (attributes ~resolution definition) in
+  let all_protocol_methods =
+    attributes ~resolution ~transitive:true protocol
+    |> List.filter ~f:(fun { Node.value = {Attribute.parent; _}; _} ->
+        parent <> Type.object_primitive && parent <> Type.generic)
+    |> callables_of_attributes
+  in
+  let rec implements ~constraints instance_methods protocol_methods =
     match instance_methods, protocol_methods with
     | _, [] ->
-        true
+        Some constraints
     | [], _ :: _ ->
-        false
+        None
     | instance_method :: instance_methods,
       ((protocol_method :: protocol_methods) as old_protocol_methods) ->
-        if overload_implements instance_method protocol_method then
-          implements instance_methods protocol_methods
-        else
-          implements instance_methods old_protocol_methods
+        match overload_implements ~constraints instance_method protocol_method with
+        | Some constraints ->
+            implements ~constraints all_instance_methods protocol_methods
+        | None ->
+            implements ~constraints instance_methods old_protocol_methods
   in
-  let callables_of_attribute =
-    function
-    | { Node.value =
-          { Attribute.annotation = {
-                Annotation.annotation = Type.Callable {
-                    kind = Type.Record.Callable.Named callable_name;
-                    implementation;
-                    overloads;
-                    _ };
-                _ };
-            parent;
-            _ }; _ } ->
-        let local_name =
-          Access.drop_prefix
-            callable_name
-            ~prefix:(Expression.Access.create (Type.show parent))
-        in
-        List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
-    | _ -> []
+  let constraints =
+    let to_bottom constraints variable = Map.set constraints ~key:variable ~data:Type.Bottom in
+    generics ~resolution protocol
+    |> List.fold ~f:to_bottom ~init:Type.Map.empty
   in
-  let definition_attributes = attributes ~resolution definition in
-  let protocol_attributes = attributes ~resolution protocol in
-  implements
-    (List.concat_map ~f:callables_of_attribute definition_attributes)
-    (List.concat_map ~f:callables_of_attribute protocol_attributes)
+  implements ~constraints all_instance_methods all_protocol_methods
+  >>| (fun constraints ->
+      List.map
+        (generics ~resolution protocol)
+        ~f:(Type.instantiate ~constraints:(Type.Map.find constraints)))
+  >>| (fun parameters -> Implements { parameters })
+  |> Option.value ~default:DoesNotImplement
 
 let attribute_fold
     ?(transitive = false)

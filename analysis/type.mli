@@ -98,6 +98,64 @@ module Cache: sig
   val disable: unit -> unit
 end
 
+val pp_concise: Format.formatter -> t -> unit
+val show_concise: t -> string
+val serialize: t -> string
+
+val parametric: string -> t list -> t
+val variable: ?constraints: constraints -> ?variance: variance -> string -> t
+
+val awaitable: t -> t
+val coroutine: t list -> t
+val bool: t
+val bytes: t
+val complex: t
+val dictionary: key: t -> value: t -> t
+val ellipsis: t
+val enumeration: t
+val float: t
+val generator: ?async: bool -> t -> t
+val generic: t
+val integer: t
+val iterable: t -> t
+val iterator: t -> t
+val lambda: parameters: (Access.t * t) list -> return_annotation: t -> t
+val list: t -> t
+val meta: t -> t
+val named_tuple: t
+val none: t
+val object_primitive: t
+val optional: t -> t
+val sequence: t -> t
+val set: t -> t
+val string: t
+val tuple: t list -> t
+val undeclared: t
+val union: t list -> t
+val yield: t -> t
+
+val expression: t -> Expression.t
+val access: t -> Access.t
+
+module Transform : sig
+  type 'state visit_result =
+    { transformed_annotation: t; new_state: 'state }
+  module type Transformer = sig
+    type state
+    val visit: state -> t -> state visit_result
+    val visit_children_before: state -> t -> bool
+    val visit_children_after: bool
+  end
+
+  module Make (Transformer : Transformer) : sig
+    val visit: Transformer.state -> t -> Transformer.state * t
+  end
+end
+
+val exists: t -> predicate: (t -> bool) -> bool
+
+val is_unknown: t -> bool
+
 module Callable : sig
   module Parameter: sig
     include module type of struct include Record.Callable.RecordParameter end
@@ -135,92 +193,23 @@ module Callable : sig
   val map: t -> f:(type_t -> type_t) -> t option
 
   val with_return_annotation: t -> annotation: type_t -> t
-end
 
-module TypedDictionary : sig
-  val anonymous: total: bool -> typed_dictionary_field list -> t
+  val create
+    :  ?name: Access.t
+    -> ?overloads: (type_t overload) list
+    -> ?parameters: type_t parameters
+    -> ?implicit: implicit
+    -> annotation: type_t
+    -> unit
+    -> type_t
 
-  val fields_have_colliding_keys
-    : typed_dictionary_field list
-    -> typed_dictionary_field list
-    -> bool
-
-  val constructor
-    : name: Identifier.t
-    -> fields: typed_dictionary_field list
-    -> total: bool
-    -> Callable.t
-  val setter: callable: Callable.t -> annotation: t -> Callable.t
-end
-
-val pp_concise: Format.formatter -> t -> unit
-val show_concise: t -> string
-val serialize: t -> string
-
-val parametric: string -> t list -> t
-val variable: ?constraints: constraints -> ?variance: variance -> string -> t
-
-val awaitable: t -> t
-val coroutine: t list -> t
-val bool: t
-val bytes: t
-val callable
-  :  ?name: Access.t
-  -> ?overloads: (t Callable.overload) list
-  -> ?parameters: t Callable.parameters
-  -> ?implicit: Callable.implicit
-  -> annotation: t
-  -> unit
-  -> t
-val complex: t
-val dictionary: key: t -> value: t -> t
-val ellipsis: t
-val enumeration: t
-val float: t
-val generator: ?async: bool -> t -> t
-val generic: t
-val integer: t
-val iterable: t -> t
-val iterator: t -> t
-val lambda: parameters: (Access.t * t) list -> return_annotation: t -> t
-val list: t -> t
-val meta: t -> t
-val named_tuple: t
-val none: t
-val object_primitive: t
-val optional: t -> t
-val sequence: t -> t
-val set: t -> t
-val string: t
-val tuple: t list -> t
-val undeclared: t
-val union: t list -> t
-val yield: t -> t
-
-module Transform : sig
-  type 'state visit_result =
-    { transformed_annotation: t; new_state: 'state }
-  module type Transformer = sig
-    type state
-    val visit: state -> t -> state visit_result
-    val visit_children_before: state -> t -> bool
-    val visit_children_after: bool
-  end
-
-  module Make (Transformer : Transformer) : sig
-    val visit: Transformer.state -> t -> Transformer.state * t
-  end
+  val create_from_implementation: type_t overload -> type_t
 end
 
 val create
   :  aliases:(t -> t option)
   -> Expression.t
   -> t
-
-val expression: t -> Expression.t
-val access: t -> Access.t
-
-val exists: t -> predicate: (t -> bool) -> bool
 
 val contains_callable: t -> bool
 
@@ -242,7 +231,6 @@ val is_protocol: t -> bool
 val is_tuple: t -> bool
 val is_typed_dictionary: t -> bool
 val is_unbound: t -> bool
-val is_unknown: t -> bool
 val contains_any: t -> bool
 val expression_contains_any: Expression.t -> bool
 val is_type_alias: t -> bool
@@ -280,6 +268,22 @@ val instantiate_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t
+
+module TypedDictionary : sig
+  val anonymous: total: bool -> typed_dictionary_field list -> t
+
+  val fields_have_colliding_keys
+    : typed_dictionary_field list
+    -> typed_dictionary_field list
+    -> bool
+
+  val constructor
+    : name: Identifier.t
+    -> fields: typed_dictionary_field list
+    -> total: bool
+    -> Callable.t
+  val setter: callable: Callable.t -> annotation: t -> Callable.t
+end
 
 val remove_undeclared: t -> t
 

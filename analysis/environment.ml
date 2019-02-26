@@ -869,26 +869,42 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             List.concat_map ~f:get_implementing_methods names
             |> List.dedup_and_sort ~compare:Type.compare
         in
+        let validate definition =
+          (* TODO(T40726328): temporary workaround until proxying implemented *)
+          Option.some_if
+            (
+              not (Class.is_protocol definition) ||
+              (
+                Class.name protocol_definition = [Identifier "typing"; Identifier "Sized"] &&
+                (
+                  Class.name definition = [Identifier "typing"; Identifier "_Collection"] ||
+                  Class.name definition = [Identifier "typing"; Identifier "Collection"]
+                )
+              )
+            )
+            definition
+        in
         let implements annotation =
           Handler.class_definition annotation
           >>| (fun { class_definition; _ } -> class_definition)
           >>| Class.create
-          >>| (fun definition ->
-              not (Class.is_protocol definition) &&
-              Class.implements ~resolution ~protocol:protocol_definition definition)
-          |> Option.value ~default:false
+          >>= validate
+          >>| Class.implements ~resolution ~protocol:protocol_definition
+          >>= function
+          | Class.Implements { parameters } -> Some (annotation, parameters)
+          | Class.DoesNotImplement -> None
         in
-        List.filter ~f:implements classes_to_analyze
+        List.filter_map ~f:implements classes_to_analyze
       in
 
       (* Get edges to protocol. *)
       let edges =
-        let add_edge sofar source =
+        let add_edge sofar (source, parameters) =
           (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
           if Type.equal source protocol || Type.equal source Type.object_primitive then
             sofar
           else
-            Set.add sofar { Edge.source; target = protocol }
+            Set.add sofar { Edge.source; target = protocol; parameters }
         in
         List.fold ~init:Edge.Set.empty ~f:add_edge implementations
       in
@@ -896,7 +912,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
         ~section:`Protocols
         "Found implementations for protocol %a: %s"
         Type.pp protocol
-        (List.map ~f:Type.show implementations |> String.concat ~sep:", ");
+        (List.map ~f:fst implementations |> List.map ~f:Type.show |> String.concat ~sep:", ");
       edges)
   |> Option.value ~default:Edge.Set.empty
 
@@ -923,6 +939,7 @@ let infer_protocol_edges
     List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
   in
   let implementing_classes =
+    (* TODO(T40727281): This ignores transitive methods, for perf reasons *)
     let methods_to_implementing_classes =
       let open Statement in
       let protocol_methods =
@@ -994,9 +1011,10 @@ let infer_protocols
         Handler.TypeOrderHandler.keys ()
   in
   infer_protocol_edges ~handler resolution ~classes_to_infer
-  |> Set.iter ~f:(fun { TypeOrder.Edge.source; target } ->
+  |> Set.iter ~f:(fun { TypeOrder.Edge.source; target; parameters } ->
       TypeOrder.connect
         (module Handler.TypeOrderHandler)
+        ~parameters
         ~predecessor:source
         ~successor:target);
 

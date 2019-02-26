@@ -412,7 +412,7 @@ let rec pp_concise format annotation =
         let fields =
           fields
           |> List.map
-              ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp_concise annotation)
+            ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp_concise annotation)
           |> String.concat ~sep:", "
         in
         Format.fprintf format "TypedDict(%s)" fields
@@ -463,22 +463,6 @@ let bool =
 
 let bytes =
   Primitive "bytes"
-
-
-let callable
-    ?name
-    ?(overloads = [])
-    ?(parameters = Undefined)
-    ?implicit
-    ~annotation
-    () =
-  let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-  Callable {
-    kind;
-    implementation = { annotation; parameters };
-    overloads;
-    implicit;
-  }
 
 
 let complex =
@@ -701,52 +685,6 @@ let yield parameter =
     name = "Yield";
     parameters = [parameter];
   }
-
-
-let primitive_substitution_map =
-  let parametric_anys name number_of_anys =
-    let rec parameters sofar remaining =
-      match remaining with
-      | 0 -> sofar
-      | _ -> parameters (Any :: sofar) (remaining - 1)
-    in
-    Parametric { name; parameters = (parameters [] number_of_anys) }
-  in
-  [
-    "$bottom", Bottom;
-    "$unknown", Top;
-    "None", none;
-    "function", callable ~annotation:Any ();
-    "dict", parametric_anys "dict" 2;
-    "list", list Any;
-    "type", parametric_anys "type" 1;
-    "typing.Any", Any;
-    "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
-    "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
-    "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
-    "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
-    "typing.Callable", callable ~annotation:Any ();
-    "typing.ChainMap", parametric_anys "collections.ChainMap" 1;
-    "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
-    "typing.Counter", parametric_anys "collections.Counter" 1;
-    "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
-    "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
-    "typing.Deque", parametric_anys "collections.deque" 1;
-    "typing.Dict", parametric_anys "dict" 2;
-    "typing.Generator", parametric_anys "typing.Generator" 3;
-    "typing.Iterable", parametric_anys "typing.Iterable" 1;
-    "typing.Iterator", parametric_anys "typing.Iterator" 1;
-    "typing.List", list Any;
-    "typing.Mapping", parametric_anys "typing.Mapping" 2;
-    "typing.Sequence", parametric_anys "typing.Sequence" 1;
-    "typing.Set", parametric_anys "typing.Set" 1;
-    "typing.Tuple", Tuple (Unbounded Any);
-    "typing.Type", parametric_anys "type" 1;
-    "typing_extensions.Protocol", Primitive "typing.Protocol";
-  ]
-  |> List.map
-    ~f:(fun (original, substitute) -> original, substitute)
-  |> Identifier.Map.of_alist_exn
 
 
 let parametric_substitution_map =
@@ -1057,6 +995,215 @@ module Transform = struct
       !state, transformed_annotation
   end
 end
+
+
+let exists annotation ~predicate =
+  let module ExistsTransform = Transform.Make(struct
+      type state = bool
+
+      let visit_children_before _ _ =
+        true
+
+      let visit_children_after =
+        false
+
+      let visit sofar annotation =
+        let new_state = sofar || predicate annotation in
+        { Transform.transformed_annotation = annotation; new_state }
+    end)
+  in
+  fst (ExistsTransform.visit false annotation)
+
+
+let is_unknown annotation =
+  exists annotation ~predicate:(function | Top -> true | _ -> false)
+
+
+module Callable = struct
+  module Parameter = struct
+    include Record.Callable.RecordParameter
+
+    type parameter = type_t t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map = Core.Map.Make(struct
+        type nonrec t = parameter
+        let compare = compare type_compare
+        let sexp_of_t = sexp_of_t type_sexp_of_t
+        let t_of_sexp = t_of_sexp type_t_of_sexp
+      end)
+
+    let name = function
+      | Named { name; _ } -> (Access.show name)
+      | Variable { name; _ } -> ("*" ^ (Access.show name))
+      | Keywords { name; _ } -> ("**" ^ (Access.show name))
+
+
+    let annotation = function
+      | Named { annotation; _ }
+      | Variable { annotation; _ }
+      | Keywords { annotation; _ } ->
+          annotation
+
+
+    let default = function
+      | Named { default; _ }
+      | Variable { default; _ }
+      | Keywords { default; _ } ->
+          default
+
+
+    let is_anonymous = function
+      | Named { name; _ } when String.is_prefix ~prefix:"$" (Access.show name) ->
+          true
+      | _ ->
+          false
+
+
+    let names_compatible left right =
+      match left, right with
+      | Named { name = left; _ }, Named { name = right; _ }
+      | Variable { name = left; _ }, Variable { name = right; _ }
+      | Keywords { name = left; _ }, Keywords { name = right; _ } ->
+          let left = Access.show_sanitized left in
+          let right = Access.show_sanitized right in
+          if String.is_prefix ~prefix:"$" left ||
+             String.is_prefix ~prefix:"$" right then
+            true
+          else
+            let left = Identifier.remove_leading_underscores left in
+            let right = Identifier.remove_leading_underscores right in
+            Identifier.equal left right
+      | _ ->
+          false
+  end
+
+
+  include Record.Callable
+
+  type implicit = type_t Record.Callable.implicit_record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t = type_t Record.Callable.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+
+  module Overload = struct
+    let parameters { parameters; _ } =
+      match parameters with
+      | Defined parameters -> Some parameters
+      | Undefined -> None
+
+    let return_annotation { annotation; _ } = annotation
+
+    let is_undefined { parameters; annotation } =
+      match parameters with
+      | Undefined -> is_unknown annotation
+      | _ -> false
+  end
+
+
+  let from_overloads overloads =
+    match overloads with
+    | ({ kind = Named _; _ } as initial) :: overloads ->
+        let fold sofar signature =
+          match sofar, signature with
+          | Some sofar, { kind; implementation; overloads; implicit } ->
+              if equal_kind kind sofar.kind then
+                Some {
+                  kind;
+                  implementation;
+                  overloads = sofar.overloads @ overloads;
+                  implicit
+                }
+              else
+                None
+          | _ ->
+              None
+        in
+        List.fold ~init:(Some initial) ~f:fold overloads
+    | _ ->
+        None
+
+  let map callable ~f =
+    Callable callable
+    |> f
+    |> (function | Callable callable -> Some callable | _ -> None)
+
+
+  let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
+    let re_annotate implementation = { implementation with annotation } in
+    {
+      initial with
+      implementation = re_annotate implementation;
+      overloads = List.map ~f:re_annotate overloads
+    }
+
+  let create
+      ?name
+      ?(overloads = [])
+      ?(parameters = Undefined)
+      ?implicit
+      ~annotation
+      () =
+    let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
+    Callable {
+      kind;
+      implementation = { annotation; parameters };
+      overloads;
+      implicit;
+    }
+
+
+  let create_from_implementation implementation =
+    create ~parameters:implementation.parameters ~annotation:implementation.annotation ()
+end
+
+
+let primitive_substitution_map =
+  let parametric_anys name number_of_anys =
+    let rec parameters sofar remaining =
+      match remaining with
+      | 0 -> sofar
+      | _ -> parameters (Any :: sofar) (remaining - 1)
+    in
+    Parametric { name; parameters = (parameters [] number_of_anys) }
+  in
+  [
+    "$bottom", Bottom;
+    "$unknown", Top;
+    "None", none;
+    "function", Callable.create ~annotation:Any ();
+    "dict", parametric_anys "dict" 2;
+    "list", list Any;
+    "type", parametric_anys "type" 1;
+    "typing.Any", Any;
+    "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
+    "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
+    "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
+    "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
+    "typing.Callable", Callable.create ~annotation:Any ();
+    "typing.ChainMap", parametric_anys "collections.ChainMap" 1;
+    "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
+    "typing.Counter", parametric_anys "collections.Counter" 1;
+    "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
+    "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
+    "typing.Deque", parametric_anys "collections.deque" 1;
+    "typing.Dict", parametric_anys "dict" 2;
+    "typing.Generator", parametric_anys "typing.Generator" 3;
+    "typing.Iterable", parametric_anys "typing.Iterable" 1;
+    "typing.Iterator", parametric_anys "typing.Iterator" 1;
+    "typing.List", list Any;
+    "typing.Mapping", parametric_anys "typing.Mapping" 2;
+    "typing.Sequence", parametric_anys "typing.Sequence" 1;
+    "typing.Set", parametric_anys "typing.Set" 1;
+    "typing.Tuple", Tuple (Unbounded Any);
+    "typing.Type", parametric_anys "type" 1;
+    "typing_extensions.Protocol", Primitive "typing.Protocol";
+  ]
+  |> List.map
+    ~f:(fun (original, substitute) -> original, substitute)
+  |> Identifier.Map.of_alist_exn
 
 
 let rec create ~aliases { Node.value = expression; _ } =
@@ -1547,24 +1694,6 @@ let rec create ~aliases { Node.value = expression; _ } =
       result
 
 
-let exists annotation ~predicate =
-  let module ExistsTransform = Transform.Make(struct
-      type state = bool
-
-      let visit_children_before _ _ =
-        true
-
-      let visit_children_after =
-        false
-
-      let visit sofar annotation =
-        let new_state = sofar || predicate annotation in
-        { Transform.transformed_annotation = annotation; new_state }
-    end)
-  in
-  fst (ExistsTransform.visit false annotation)
-
-
 let contains_callable annotation =
   exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
 
@@ -1687,10 +1816,6 @@ let is_typed_dictionary = function
 let is_unbound = function
   | Bottom -> true
   | _ -> false
-
-
-let is_unknown annotation =
-  exists annotation ~predicate:(function | Top -> true | _ -> false)
 
 
 let contains_any annotation =
@@ -1966,128 +2091,6 @@ let rec dequalify map annotation =
     end)
   in
   snd (DequalifyTransform.visit () annotation)
-
-
-module Callable = struct
-  module Parameter = struct
-    include Record.Callable.RecordParameter
-
-    type parameter = type_t t
-    [@@deriving compare, eq, sexp, show, hash]
-
-    module Map = Core.Map.Make(struct
-        type nonrec t = parameter
-        let compare = compare type_compare
-        let sexp_of_t = sexp_of_t type_sexp_of_t
-        let t_of_sexp = t_of_sexp type_t_of_sexp
-      end)
-
-    let name = function
-      | Named { name; _ } -> (Access.show name)
-      | Variable { name; _ } -> ("*" ^ (Access.show name))
-      | Keywords { name; _ } -> ("**" ^ (Access.show name))
-
-
-    let annotation = function
-      | Named { annotation; _ }
-      | Variable { annotation; _ }
-      | Keywords { annotation; _ } ->
-          annotation
-
-
-    let default = function
-      | Named { default; _ }
-      | Variable { default; _ }
-      | Keywords { default; _ } ->
-          default
-
-
-    let is_anonymous = function
-      | Named { name; _ } when String.is_prefix ~prefix:"$" (Access.show name) ->
-          true
-      | _ ->
-          false
-
-
-    let names_compatible left right =
-      match left, right with
-      | Named { name = left; _ }, Named { name = right; _ }
-      | Variable { name = left; _ }, Variable { name = right; _ }
-      | Keywords { name = left; _ }, Keywords { name = right; _ } ->
-          let left = Access.show_sanitized left in
-          let right = Access.show_sanitized right in
-          if String.is_prefix ~prefix:"$" left ||
-             String.is_prefix ~prefix:"$" right then
-            true
-          else
-            let left = Identifier.remove_leading_underscores left in
-            let right = Identifier.remove_leading_underscores right in
-            Identifier.equal left right
-      | _ ->
-          false
-  end
-
-
-  include Record.Callable
-
-  type implicit = type_t Record.Callable.implicit_record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type t = type_t Record.Callable.record
-  [@@deriving compare, eq, sexp, show, hash]
-
-
-  module Overload = struct
-    let parameters { parameters; _ } =
-      match parameters with
-      | Defined parameters -> Some parameters
-      | Undefined -> None
-
-    let return_annotation { annotation; _ } = annotation
-
-    let is_undefined { parameters; annotation } =
-      match parameters with
-      | Undefined -> is_unknown annotation
-      | _ -> false
-  end
-
-
-  let from_overloads overloads =
-    match overloads with
-    | ({ kind = Named _; _ } as initial) :: overloads ->
-        let fold sofar signature =
-          match sofar, signature with
-          | Some sofar, { kind; implementation; overloads; implicit } ->
-              if equal_kind kind sofar.kind then
-                Some {
-                  kind;
-                  implementation;
-                  overloads = sofar.overloads @ overloads;
-                  implicit
-                }
-              else
-                None
-          | _ ->
-              None
-        in
-        List.fold ~init:(Some initial) ~f:fold overloads
-    | _ ->
-        None
-
-  let map callable ~f =
-    Callable callable
-    |> f
-    |> (function | Callable callable -> Some callable | _ -> None)
-
-
-  let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
-    let re_annotate implementation = { implementation with annotation } in
-    {
-      initial with
-      implementation = re_annotate implementation;
-      overloads = List.map ~f:re_annotate overloads
-    }
-end
 
 
 let rec mismatch_with_any left right =

@@ -548,6 +548,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __getitem__(self, s: slice) -> List[_T]: ...
           def __contains__(self, o: object) -> bool: ...
 
+          def __len__(self) -> int: ...
+
         class set(Iterable[_T], Generic[_T]):
           def __init__(self, iterable: Iterable[_T] = ...) -> None: ...
 
@@ -604,7 +606,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Protocol: _SpecialForm = ...
         Type: _SpecialForm = ...
 
-        class Sized: ...
+        @runtime
+        class Sized(Protocol, metaclass=ABCMeta):
+            @abstractmethod
+            def __len__(self) -> int: ...
 
         _T = TypeVar('_T')
         _S = TypeVar('_S')
@@ -630,10 +635,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
 
         if sys.version_info >= (3, 6):
-          class Collection(Iterable[_T_co]): ...
+          class Collection(Iterable[_T_co], Protocol[_T_co]):
+            @abstractmethod
+            def __len__(self) -> int: ...
           _Collection = Collection
         else:
-          class _Collection(Iterable[_T_co]): ...
+          class _Collection(Iterable[_T_co], Protocol[_T_co]):
+            @abstractmethod
+            def __len__(self) -> int: ...
         class Sequence(_Collection[_T_co], Generic[_T_co]): pass
 
         class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
@@ -831,6 +840,8 @@ let assert_errors
             ()
         in
         Service.Environment.populate ~configuration:mock_configuration environment sources;
+        let resolution = TypeCheck.resolution environment () in
+        Analysis.Environment.infer_protocols ~handler:environment resolution ();
         environment
       in
       let configuration =

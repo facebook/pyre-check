@@ -30,6 +30,7 @@
   inferTest
   isinstanceTest
   methodTest
+  protocolTest
   redundantCastTest
   revealTypeTest
   returnTest

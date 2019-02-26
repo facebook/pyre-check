@@ -87,7 +87,11 @@ val immediate_superclasses
 val methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
-val implements: resolution: Resolution.t -> t -> protocol: t -> bool
+
+type implements_result =
+  | DoesNotImplement
+  | Implements of { parameters: Type.t list }
+val implements: resolution: Resolution.t -> t -> protocol: t -> implements_result
 
 module Attribute : sig
   type attribute = {
