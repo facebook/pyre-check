@@ -7,6 +7,7 @@
 type t =
   | Demo
   | GetAttr
+  | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
   | RemoteCodeExecution

@@ -220,6 +220,13 @@ let rules = [
     name = "Potential Server-side request forgery (SSRF)";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.IdentityCreation ];
+    code = 5013;
+    name = "User-controlled identity creation (experimental)";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 
