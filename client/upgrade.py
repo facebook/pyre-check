@@ -229,7 +229,7 @@ def _commit_message(directory, summary_override: Optional[str] = None):
 
         Tasks:
 
-        Tags:
+        Tags: codemod
 
         Blame Revision:
         """.format(
