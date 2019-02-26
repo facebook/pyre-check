@@ -65,10 +65,9 @@ help(COMAMND)   more info about a command
             )
 
         if latest_run_id.resolved() is None:
-            print(
+            self.warning(
                 "No runs found. "
-                f"Try running '{os.path.basename(sys.argv[0])} analyze' first.",
-                file=sys.stderr,
+                f"Try running '{os.path.basename(sys.argv[0])} analyze' first."
             )
             sys.exit(1)
 
@@ -117,10 +116,9 @@ help(COMAMND)   more info about a command
             )
 
         if selected_run is None:
-            print(
+            self.warning(
                 f"Run {run_id} doesn't exist or is not finished. "
-                "Type 'runs()' for available runs.",
-                file=sys.stderr,
+                "Type 'runs()' for available runs."
             )
             return
 
@@ -136,10 +134,9 @@ help(COMAMND)   more info about a command
             )
 
         if selected_issue is None:
-            print(
+            self.warning(
                 f"Issue {issue_id} doesn't exist. "
-                "Type 'issues()' for available issues.",
-                file=sys.stderr,
+                "Type 'issues()' for available issues."
             )
             return
 
@@ -152,7 +149,7 @@ help(COMAMND)   more info about a command
         """ More details about the selected issue.
         """
         if self.current_issue_id is None:
-            print("Use 'set_issue(ID)' to select an issue first.", file=sys.stderr)
+            self.warning("Use 'set_issue(ID)' to select an issue first.")
             return
 
         with self.db.make_session() as session:
@@ -205,13 +202,13 @@ help(COMAMND)   more info about a command
 
             if codes is not None:
                 if not isinstance(codes, list):
-                    print("'codes' should be a list.", file=sys.stderr)
+                    self.warning("'codes' should be a list.")
                     return
                 query = query.filter(Issue.code.in_(codes))
 
             if callables is not None:
                 if not isinstance(callables, list):
-                    print("'callables' should be a list.", file=sys.stderr)
+                    self.warning("'callables' should be a list.")
                     return
                 query = query.filter(
                     or_(*[Issue.callable.like(callable) for callable in callables])
@@ -219,7 +216,7 @@ help(COMAMND)   more info about a command
 
             if filenames is not None:
                 if not isinstance(filenames, list):
-                    print("'filenames' should be a list.", file=sys.stderr)
+                    self.warning("'filenames' should be a list.")
                     return
                 query = query.filter(
                     or_(*[Issue.filename.like(filename) for filename in filenames])
@@ -251,7 +248,7 @@ help(COMAMND)   more info about a command
         trace.
         """
         if self.current_issue_id is None:
-            print("Use 'set_issue(ID)' to select an issue first.", file=sys.stderr)
+            self.warning("Use 'set_issue(ID)' to select an issue first.")
             return
 
         self._generate_trace()
@@ -287,20 +284,31 @@ help(COMAMND)   more info about a command
 
         for i in range(len(trace_tuples)):
             prefix = "-->" if i == self.current_trace_frame_index else " " * 3
-            callable, condition, filename, location = trace_tuples[i]
-            output_string = (
-                f" {prefix}"
-                f" {callable:{max_length_callable}}"
-                f" {condition:{max_length_condition}}"
-            )
-            if filename is not None and location is not None:
-                output_string += f" {filename}:{location}"
+            callable, condition, filename, location, missing = trace_tuples[i]
+
+            if missing:
+                output_string = (
+                    f" {prefix}"
+                    f" [Missing trace frame: {trace_tuples[i].callable}:"
+                    f"{trace_tuples[i].condition}]"
+                )
+            else:
+                output_string = (
+                    f" {prefix}"
+                    f" {callable:{max_length_callable}}"
+                    f" {condition:{max_length_condition}}"
+                )
+                if filename is not None and location is not None:
+                    output_string += f" {filename}:{location}"
+
             print(output_string)
 
     def _create_trace_tuples(self, postcondition_traces, precondition_traces):
         trace_tuples = [
             TraceTuple(
-                postcondition_traces[0].callee, postcondition_traces[0].callee_port
+                postcondition_traces[0].callee,
+                postcondition_traces[0].callee_port,
+                missing=postcondition_traces[0].caller is None,
             )
         ]
         for i in range(1, len(postcondition_traces)):
@@ -311,6 +319,7 @@ help(COMAMND)   more info about a command
                     # i - 1 since it's a postcondition
                     postcondition_traces[i - 1].filename,
                     postcondition_traces[i - 1].callee_location,
+                    missing=postcondition_traces[i].caller is None,
                 )
             )
 
@@ -330,6 +339,7 @@ help(COMAMND)   more info about a command
                     trace_frame.callee_port,
                     trace_frame.filename,
                     trace_frame.callee_location,
+                    missing=trace_frame.caller is None,
                 )
             )
 
@@ -346,7 +356,20 @@ help(COMAMND)   more info about a command
     def _navigate_trace_frames(self, session, initial_trace_frame):
         trace_frames = [initial_trace_frame]
         while not self._is_leaf(trace_frames[-1]):
-            trace_frames.append(self._next_trace_frame(session, trace_frames[-1]))
+            next_trace_frame = self._next_trace_frame(session, trace_frames[-1])
+
+            if next_trace_frame is None:
+                # Denote a missing frame by setting caller to None
+                trace_frames.append(
+                    TraceFrame(
+                        callee=trace_frames[-1].callee,
+                        callee_port=trace_frames[-1].callee_port,
+                        caller=None,
+                    )
+                )
+                return trace_frames
+
+            trace_frames.append(next_trace_frame)
         return trace_frames
 
     def _is_leaf(self, trace_frame: TraceFrame) -> bool:
@@ -418,9 +441,13 @@ help(COMAMND)   more info about a command
             .all()
         ]
 
+    def warning(self, message: str) -> None:
+        print(message, file=sys.stderr)
+
 
 class TraceTuple(NamedTuple):
     callable: str
     condition: str
     filename: Optional[str] = None
     location: Optional[SourceLocation] = None
+    missing: bool = False

@@ -620,12 +620,14 @@ class InteractiveTest(TestCase):
             TraceFrame(
                 callee="leaf",
                 callee_port="source",
+                caller="dummy caller",
                 filename="file1.py",
                 callee_location=SourceLocation(1, 1, 1),
             ),
             TraceFrame(
                 callee="call2",
                 callee_port="result",
+                caller="dummy caller",
                 filename="file2.py",
                 callee_location=SourceLocation(1, 1, 2),
             ),
@@ -642,18 +644,21 @@ class InteractiveTest(TestCase):
             TraceFrame(
                 callee="call4",
                 callee_port="result",
+                caller="dummy caller",
                 filename="file4.py",
                 callee_location=SourceLocation(1, 1, 4),
             ),
             TraceFrame(
                 callee="call5",
                 callee_port="result",
+                caller="dummy caller",
                 filename="file5.py",
                 callee_location=SourceLocation(1, 1, 5),
             ),
             TraceFrame(
                 callee="leaf",
                 callee_port="sink",
+                caller="dummy caller",
                 filename="file6.py",
                 callee_location=SourceLocation(1, 1, 6),
             ),
@@ -763,6 +768,41 @@ class InteractiveTest(TestCase):
         self.assertIn("     leaf  source", output)
         self.assertIn(" --> call1 root   file.py:1|1|1", output)
         self.assertIn("     leaf  sink   file.py:1|1|2", output)
+
+    def testTraceMissingFrames(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1, handle="1", first_seen=datetime.now(), code=1000, callable="call1"
+        )
+        issue_instance = IssueInstance(
+            id=1,
+            run_id=1,
+            message_id=1,
+            filename="file.py",
+            location=SourceLocation(1, 1, 1),
+            issue_id=1,
+        )
+        trace_frames = self._basic_trace_frames()
+        assocs = [
+            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
+            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+        ]
+
+        # trace_frame[0] no longer connects to trace_frame[1]
+        trace_frames[0].callee = "ends_here"
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_issue(1)
+        self.interactive.trace()
+        stdout = self.stdout.getvalue().strip()
+        self.assertIn("Missing trace frame: ends_here:formal", stdout)
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
