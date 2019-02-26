@@ -497,14 +497,6 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
       | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
       | List.Or_unequal_lengths.Unequal_lengths, false -> None
     in
-    let source =
-      (* This needs to eventually also be in normal less_or_equal, as is, could cause problems with
-         variance check *)
-      Option.some_if (Type.is_meta source && Type.is_callable target) source
-      >>| Type.single_parameter
-      >>= constructor
-      |> Option.value ~default:source
-    in
     match source with
     | Type.Bottom ->
         (* This is needed for representing unbound variables between statements, which can't totally
@@ -631,6 +623,10 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
                 ~ignore_length_mismatch:true
                 ~sources:(parameter_annotations source_parameters)
                 ~targets:(parameter_annotations target_parameters)
+          | _, Type.Callable _  when Type.is_meta source ->
+              Type.single_parameter source
+              |> constructor
+              >>= (fun source -> solve_constraints_throws order ~constraints ~source ~target)
           | _ ->
               None
         else if Type.equal source Type.Top && Type.equal target Type.Any then
@@ -645,7 +641,10 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
   with Untracked _ -> None
 
 
-and less_or_equal ({ handler= ((module Handler: Handler) as handler); _ } as order) ~left ~right =
+and less_or_equal
+    ({ handler = ((module Handler: Handler) as handler); constructor } as order)
+    ~left
+    ~right =
   Type.equal left right ||
   match left, right with
   | other, Type.Top ->
@@ -952,6 +951,12 @@ and less_or_equal ({ handler= ((module Handler: Handler) as handler); _ } as ord
       in
       less_or_equal order ~left:left.annotation ~right:right.annotation &&
       parameters_less_or_equal ()
+  | _, Type.Callable _  when Type.is_meta left ->
+      Type.single_parameter left
+      |> constructor
+      >>| (fun left -> less_or_equal order ~left ~right)
+      |> Option.value ~default:false
+
 
   (* A[...] <= B iff A <= B. *)
   | Type.Parametric _, Type.Primitive _  ->
@@ -1180,7 +1185,7 @@ and join_implementations ~parameter_join ~return_join order left right =
   { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
 
-and join ({ handler= ((module Handler: Handler) as handler); _ } as order) left right =
+and join ({ handler= ((module Handler: Handler) as handler); constructor } as order) left right =
   if Type.equal left right then
     left
   else
@@ -1411,18 +1416,21 @@ and join ({ handler= ((module Handler: Handler) as handler); _ } as order) left 
           |> Option.value ~default:Type.Any
         else
           Type.Any
-
     | Type.Callable callable, other
     | other, Type.Callable callable ->
-        let other = join order (Type.parametric "typing.Callable" [Type.Bottom]) other in
-        begin
+        let default =
+          let other = join order (Type.parametric "typing.Callable" [Type.Bottom]) other in
           match other with
           | Type.Parametric { name; parameters = [other_callable] }
             when Identifier.equal name "typing.Callable" ->
               join order (Type.Callable callable) other_callable
           | _ ->
               Type.union [left; right]
-        end
+        in
+        Option.some_if (Type.is_meta other) other
+        >>= constructor
+        >>| join order (Type.Callable callable)
+        |> Option.value ~default
     | _ ->
         match List.hd (least_upper_bound handler left right) with
         | Some joined ->
@@ -1435,7 +1443,7 @@ and join ({ handler= ((module Handler: Handler) as handler); _ } as order) left 
             Type.Any
 
 
-and meet ({ handler= ((module Handler: Handler) as handler); _ } as order) left right =
+and meet ({ handler= ((module Handler: Handler) as handler); constructor } as order) left right =
   if Type.equal left right then
     left
   else
@@ -1589,9 +1597,12 @@ and meet ({ handler= ((module Handler: Handler) as handler); _ } as order) left 
       Type.Callable { Callable.kind = Callable.Named right; _ }
       when Expression.Access.equal left right ->
         callable
-    | Type.Callable _, _
-    | _, Type.Callable _ ->
-        Type.Bottom
+    | Type.Callable callable, other
+    | other, Type.Callable callable ->
+        Option.some_if (Type.is_meta other) other
+        >>= constructor
+        >>| meet order (Type.Callable callable)
+        |> Option.value ~default:Type.Bottom
     | Type.TypedDictionary { fields = left_fields; total = left_total; _ },
       Type.TypedDictionary { fields = right_fields; total = right_total; _ } ->
         if

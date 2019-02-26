@@ -181,7 +181,16 @@ let test_check_return _ =
       def bar() -> int:
         return foo(8) + 9
     |}
-    ["Incompatible return type [7]: Expected `Variable[T <: [int, str]]` but got `str`."]
+    ["Incompatible return type [7]: Expected `Variable[T <: [int, str]]` but got `str`."];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      def foo() -> typing.Callable[[], C]:
+        return C
+    |}
+    []
 
 
 let test_check_return_control_flow _ =
