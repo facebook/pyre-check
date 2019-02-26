@@ -707,6 +707,24 @@ class InteractiveTest(TestCase):
             ],
         )
 
+        self._clear_stdout()
+        self.interactive.current_trace_frame_index = 4
+        self.interactive._output_trace_tuples(trace_tuples)
+        output = self.stdout.getvalue()
+        self.assertEqual(
+            output.split("\n"),
+            [
+                "     leaf  source",
+                "     call2 result file1.py:1|1|1",
+                "     call3 result file2.py:1|1|2",
+                "     main  root   file3.py:1|1|3",
+                " --> call4 result file4.py:1|1|4",
+                "     call5 result file5.py:1|1|5",
+                "     leaf  sink   file6.py:1|1|6",
+                "",
+            ],
+        )
+
     def testTrace(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = Issue(
@@ -803,6 +821,71 @@ class InteractiveTest(TestCase):
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Missing trace frame: ends_here:formal", stdout)
+
+    def testTraceCursorLocation(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instance = IssueInstance(
+            id=1,
+            run_id=1,
+            message_id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            issue_id=1,
+        )
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.POSTCONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="source",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="sink",
+                callee_location=SourceLocation(1, 2),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        assocs = [
+            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
+            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+        ]
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_issue(1)
+        self.assertEqual(self.interactive.current_trace_frame_index, 1)
+        self.interactive.next_cursor_location()
+        self.assertEqual(self.interactive.current_trace_frame_index, 2)
+        self.interactive.next_cursor_location()
+        self.assertEqual(self.interactive.current_trace_frame_index, 2)
+        self.interactive.prev_cursor_location()
+        self.assertEqual(self.interactive.current_trace_frame_index, 1)
+        self.interactive.prev_cursor_location()
+        self.assertEqual(self.interactive.current_trace_frame_index, 1)
 
     def mock_pager(self, output_string):
         self.pager_calls += 1

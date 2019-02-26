@@ -36,6 +36,9 @@ set_run(ID)     select a specific run
 set_issue(ID)   select a specific issue
 
 show()          show info about selected issue
+trace()         trace of the selected issue
+prev()[p()]     move backward within the trace
+next()[n()]     move forward within the trace
 
 commands()      show this message
 help(COMAMND)   more info about a command
@@ -54,6 +57,10 @@ help(COMAMND)   more info about a command
             "set_issue": self.set_issue,
             "show": self.show,
             "trace": self.trace,
+            "next": self.next_cursor_location,
+            "n": self.next_cursor_location,
+            "prev": self.prev_cursor_location,
+            "p": self.prev_cursor_location,
         }
 
     def start_repl(self):
@@ -148,8 +155,7 @@ help(COMAMND)   more info about a command
     def show(self):
         """ More details about the selected issue.
         """
-        if self.current_issue_id is None:
-            self.warning("Use 'set_issue(ID)' to select an issue first.")
+        if not self._verify_issue_selected():
             return
 
         with self.db.make_session() as session:
@@ -247,8 +253,7 @@ help(COMAMND)   more info about a command
         The '-->' token points to the currently active trace frame within the
         trace.
         """
-        if self.current_issue_id is None:
-            self.warning("Use 'set_issue(ID)' to select an issue first.")
+        if not self._verify_issue_selected():
             return
 
         self._generate_trace()
@@ -273,6 +278,28 @@ help(COMAMND)   more info about a command
             postcondition_traces[::-1], precondition_traces
         )
         self.trace_tuples_id = self.current_issue_id
+
+    def next_cursor_location(self):
+        """Move cursor to the next trace frame.
+        """
+        if not self._verify_issue_selected():
+            return
+
+        self._generate_trace()  # make sure self.trace_tuples exists
+        self.current_trace_frame_index = min(
+            self.current_trace_frame_index + 1, len(self.trace_tuples) - 1
+        )
+        self.trace()
+
+    def prev_cursor_location(self):
+        """Move cursor to the previous trace frame.
+        """
+        if not self._verify_issue_selected():
+            return
+
+        self._generate_trace()  # make sure self.trace_tuples exists
+        self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 1)
+        self.trace()
 
     def _output_trace_tuples(self, trace_tuples):
         max_length_callable = max(
@@ -440,6 +467,12 @@ help(COMAMND)   more info about a command
             )
             .all()
         ]
+
+    def _verify_issue_selected(self) -> bool:
+        if self.current_issue_id is None:
+            self.warning("Use 'set_issue(ID)' to select an issue first.")
+            return False
+        return True
 
     def warning(self, message: str) -> None:
         print(message, file=sys.stderr)
