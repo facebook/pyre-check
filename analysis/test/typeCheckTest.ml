@@ -76,6 +76,21 @@ let test_initial _ =
         | _ ->
             failwith "Unable to parse define."
       in
+      let variables =
+        let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
+          match annotation with
+          | None -> []
+          | Some annotation ->
+              let annotation = Resolution.parse_annotation resolution annotation in
+              Type.free_variables annotation
+        in
+        List.concat_map define.parameters ~f:extract_variables
+        |> List.dedup_and_sort ~compare:Type.compare
+      in
+      let add_variable resolution variable =
+        Resolution.add_type_variable resolution ~variable
+      in
+      let resolution = List.fold variables ~init:resolution ~f:add_variable in
       State.initial ~resolution (+define)
     in
     assert_state_equal state initial;
@@ -140,7 +155,14 @@ let test_initial _ =
     ~environment:"class Foo: ..."
     ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
-    (create ["a", Type.Any])
+    (create ["a", Type.Any]);
+
+  assert_initial
+    ~environment:"T = typing.TypeVar('T')"
+    "def foo(x: T): ..."
+    (create
+       ~immutables:["x", false]
+       ["x", Type.mark_variables_as_bound (Type.variable "T")])
 
 
 let test_less_or_equal _ =
@@ -736,11 +758,7 @@ let test_forward_access _ =
     ];
 
   let bound_type_variable =
-    Type.Variable {
-      variable = "TV_Bound";
-      constraints = Bound (Type.Primitive "Class");
-      variance = Invariant;
-    }
+    Type.variable "TV_Bound" ~constraints:(Bound (Type.Primitive "Class"))
   in
 
   assert_fold
@@ -816,11 +834,9 @@ let test_forward_access _ =
     ];
 
   let explicit_type_variable =
-    Type.Variable {
-      variable = "TV_Explicit";
-      constraints = Explicit [Type.Primitive "Class"; Type.Primitive "Other"];
-      variance = Invariant;
-    }
+    Type.variable
+      "TV_Explicit"
+      ~constraints:(Explicit [Type.Primitive "Class"; Type.Primitive "Other"])
   in
 
   assert_fold

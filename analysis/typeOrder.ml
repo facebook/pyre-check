@@ -1298,7 +1298,7 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
                      List.length left = List.length variables ->
                   let join_parameters left right variable =
                     join_parameters left right variable
-                    |> Type.instantiate_variables ~replacement:Type.Top
+                    |> Type.instantiate_free_variables ~replacement:Type.Top
                   in
                   Some (List.map3_exn ~f:join_parameters left right variables)
               | _ ->

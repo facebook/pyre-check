@@ -124,7 +124,7 @@ let select
         overloads = [];
         implicit = None;
       }
-      |> Type.variables
+      |> Type.free_variables
       |> List.fold ~f:to_bottom ~init:Type.Map.empty
     in
     let base_signature_match =
@@ -640,8 +640,7 @@ let determine signature ~resolution ~annotation =
                 Type.Parametric { name; parameters }
               in
               Type.instantiate ~constraints:(Map.find constraints) uninstantiated
-              |> Type.instantiate
-                ~constraints:(function | Type.Variable _ -> Some Type.Bottom | _ -> None)
+              |> Type.instantiate_free_variables ~replacement:Type.Bottom
             in
             Some instantiated
           else

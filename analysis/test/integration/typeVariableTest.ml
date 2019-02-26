@@ -116,11 +116,68 @@ let test_bottom_unbound_variables _ =
     ]
 
 
+let test_distinguish _ =
+  assert_type_errors
+    {|
+      _T1 = typing.TypeVar("_T1")
+      _T2 = typing.TypeVar("_T2")
+      class C(typing.Generic[_T1]):
+        def pair(self, a: _T1, b: _T2) -> typing.Tuple[_T1, _T2]:
+          return (a, b)
+      def foo(q: C[_T2], x: _T2, y:_T1) -> typing.Tuple[_T2, _T1]:
+        A = q.pair(x, y)
+        reveal_type(A)
+        return A
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `A` is `typing.Tuple[Variable[_T2], Variable[_T1]]`.";
+    ];
+  assert_type_errors
+    {|
+      _T1 = typing.TypeVar("_T1")
+      _T2 = typing.TypeVar("_T2")
+      def foo(f: typing.Callable[[_T1], _T2], p: _T1) -> _T2:
+        v = f(p)
+        reveal_type(v)
+        return v
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `Variable[_T2]`.";
+    ];
+  assert_type_errors
+    {|
+      _T1 = typing.TypeVar("_T1")
+      _T2 = typing.TypeVar("_T2")
+      def foo(f: typing.Callable[[_T1], _T2], p: _T1) -> _T2:
+        return f(1)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `Variable[_T1]` for 1st anonymous parameter to " ^
+      "anoynmous call but got `int`.";
+    ];
+  assert_type_errors
+    {|
+      _T1 = typing.TypeVar("_T1")
+      _T2 = typing.TypeVar("_T2")
+      class B: pass
+      class C(B): pass
+      def foo(f: typing.Callable[[typing.List[typing.Tuple[_T1, B]]], _T2], p: _T1) -> _T2:
+        v = f([(p, C())])
+        reveal_type(v)
+        return v
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `Variable[_T2]`.";
+    ];
+  ()
+
+
 
 let () =
   "typeVariable">:::[
     "check_unbounded_variables">::test_check_unbounded_variables;
     "check_variable_bindings">::test_check_variable_bindings;
     "bottom_unbound_variables">::test_bottom_unbound_variables;
+    "distinguish">::test_distinguish;
   ]
   |> Test.run

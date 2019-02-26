@@ -116,7 +116,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance; free: bool }
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -315,7 +315,7 @@ let rec pp format annotation =
         "typing.Union[%s]"
         (List.map parameters ~f:show
          |> String.concat ~sep:", ")
-  | Variable { variable; constraints; variance } ->
+  | Variable { variable; constraints; variance; _ } ->
       let constraints =
         match constraints with
         | Bound bound ->
@@ -337,7 +337,7 @@ let rec pp format annotation =
       Format.fprintf
         format
         "Variable[%s%s]%s"
-        variable
+        (Identifier.sanitized variable)
         constraints
         variance
 
@@ -440,7 +440,7 @@ let parametric name parameters =
 
 
 let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = name; constraints; variance }
+  Variable { variable = name; constraints; variance; free = true }
 
 
 let awaitable parameter =
@@ -1579,11 +1579,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               List.find_map arguments ~f:variance_definition
               |> Option.value ~default:Invariant
             in
-            Variable {
-              variable = value;
-              constraints;
-              variance;
-            }
+            variable value ~constraints ~variance
 
         | Access
             (SimpleAccess
@@ -1858,12 +1854,6 @@ let collect annotation ~predicate =
   fst (CollectorTransform.visit [] annotation)
 
 
-
-let variables annotation =
-  let predicate = function | Variable _ -> true | _ -> false in
-  collect annotation ~predicate
-
-
 let primitives annotation =
   let predicate = function | Primitive _ -> true | _ -> false in
   collect annotation ~predicate
@@ -1907,10 +1897,6 @@ let elements annotation =
   in
   fst (CollectorTransform.visit [] annotation)
   |> List.rev
-
-
-let is_resolved annotation =
-  List.is_empty (variables annotation)
 
 
 let is_partially_typed annotation =
@@ -2034,9 +2020,30 @@ let instantiate ?(widen = false) annotation ~constraints =
   snd (InstantiateTransform.visit () annotation)
 
 
-let instantiate_variables ~replacement annotation =
+let mark_variables_as_bound annotation =
+  let constraints annotation =
+    match annotation with
+    | Variable variable -> Some (Variable { variable with free = false })
+    | _ -> None
+  in
+  instantiate annotation ~constraints
+
+
+let free_variables annotation =
+  let is_free_variable = function
+    | Variable { free; _ } -> free
+    | _ -> false
+  in
+  collect annotation ~predicate:is_free_variable
+
+
+let is_resolved annotation =
+  List.is_empty (free_variables annotation)
+
+
+let instantiate_free_variables ~replacement annotation =
   let constraints =
-    variables annotation
+    free_variables annotation
     |> List.fold
       ~init:Map.empty
       ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
@@ -2082,8 +2089,8 @@ let rec dequalify map annotation =
               Parametric { name = dequalify_string "typing.Union"; parameters; }
           | Primitive name ->
               Primitive (dequalify_identifier name)
-          | Variable { variable = name; constraints; variance } ->
-              Variable { variable = dequalify_identifier name; constraints; variance }
+          | Variable ({ variable = name; _ } as annotation) ->
+              Variable { annotation with variable = dequalify_identifier name }
           | _ ->
               annotation
         in

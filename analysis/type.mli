@@ -83,7 +83,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance }
+  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance; free: bool }
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
@@ -238,11 +238,8 @@ val is_type_alias: t -> bool
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool
 
-val variables: t -> t list
 val primitives: t -> t list
 val elements: t -> t list
-(* Does not contain `Variable`. *)
-val is_resolved: t -> bool
 
 val is_partially_typed: t -> bool
 val is_untyped: t -> bool
@@ -264,7 +261,11 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
-val instantiate_variables: replacement:t -> t -> t
+val mark_variables_as_bound: t -> t
+val free_variables: t -> t list
+(* Does not contain free variables. *)
+val is_resolved: t -> bool
+val instantiate_free_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Access.t Access.Map.t -> t -> t

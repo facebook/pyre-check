@@ -1219,7 +1219,7 @@ let test_check_invalid_type_variables _ =
     ];
   (* We don't error for inferred generics. *)
   assert_type_errors
-  {|
+    {|
       import typing
       T = typing.TypeVar("T")
       class C(typing.Generic[T]):
@@ -1227,11 +1227,14 @@ let test_check_invalid_type_variables _ =
       class D(C[T]):
         pass
   |}
-  [];
+    [];
 
-  (* Callables can mint their type variables. *)
+  (* This is fact valid, but not for the reason it looked like here, as the Ts are in different
+     scopes.  This means that changing the return value to Callable[[int], int] or anything else
+     should work because of behavioral subtyping, but having that work will have to wait for
+     the implementation of pseudocalling *)
   assert_type_errors
-  {|
+    {|
       import typing
       T = typing.TypeVar("T")
       def f() -> typing.Callable[[T], T]:
@@ -1239,7 +1242,10 @@ let test_check_invalid_type_variables _ =
           return x
         return g
   |}
-  []
+    [
+      "Incompatible return type [7]: Expected `typing.Callable[[Variable[T]], Variable[T]]` " ^
+      "but got `typing.Callable(f.g)[[Named(x, Variable[T])], Variable[T]]`.";
+    ]
 
 
 let test_check_aliases _ =

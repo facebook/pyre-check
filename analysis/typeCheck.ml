@@ -382,7 +382,7 @@ module State = struct
         } ->
           let parameters =
             List.map parameters ~f:Type.Callable.Parameter.annotation
-            |> List.concat_map ~f:Type.variables
+            |> List.concat_map ~f:Type.free_variables
           in
           List.fold
             parameters
@@ -395,12 +395,13 @@ module State = struct
     |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
     |> (fun errors ->
         List.fold
-          (Type.variables annotation)
+          (Type.free_variables annotation)
           ~f:(check_invalid_variables resolution)
           ~init:errors)
 
 
   let parse_and_check_annotation
+      ?(bind_variables = true)
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
     let annotation = Resolution.parse_annotation ~allow_untracked:true resolution expression in
@@ -422,6 +423,9 @@ module State = struct
         ~init:errors
         ~f:(fun errors error -> Set.add errors error)
         annotation_errors
+    in
+    let annotation =
+      if bind_variables then Type.mark_variables_as_bound annotation else annotation
     in
     let annotation = if List.is_empty annotation_errors then annotation else Type.Top in
     { state with errors }, annotation
@@ -1388,7 +1392,9 @@ module State = struct
                 begin
                   match annotation with
                   | Some annotation ->
-                      let state, annotation = parse_and_check_annotation ~state annotation in
+                      let state, annotation =
+                        parse_and_check_annotation ~state ~bind_variables:false annotation
+                      in
                       let state =
                         add_incompatible_variable_error ~state annotation resolved
                       in
@@ -1397,7 +1403,10 @@ module State = struct
                       state, Annotation.create resolved
                 end
             | _ ->
-                let annotation_and_state = annotation >>| parse_and_check_annotation ~state in
+                let annotation_and_state =
+                  annotation
+                  >>| parse_and_check_annotation ~state ~bind_variables:false
+                in
                 let contains_literal_any =
                   annotation
                   >>| Type.expression_contains_any
@@ -1449,6 +1458,7 @@ module State = struct
                     Annotation.create Type.Any
           in
           let annotation =
+            let annotation = Type.mark_variables_as_bound annotation in
             if String.is_prefix ~prefix:"**" name then
               Type.dictionary ~key:Type.string ~value:annotation
             else if String.is_prefix ~prefix:"*" name then
@@ -1456,6 +1466,17 @@ module State = struct
             else
               annotation
           in
+          let mutability =
+            match mutability with
+            | Immutable { original; scope } ->
+                Annotation.Immutable {
+                  original = Type.mark_variables_as_bound original;
+                  scope;
+                }
+            | _ ->
+                mutability
+          in
+
           state, Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability }
         in
         List.foldi ~init:(state, (Resolution.annotations resolution)) ~f:check_parameter parameters
@@ -2424,6 +2445,7 @@ module State = struct
         else
           annotation
       in
+      let return_annotation = Type.mark_variables_as_bound return_annotation in
       let actual =
         Resolution.resolve_mutable_literals
           resolution
@@ -2463,8 +2485,8 @@ module State = struct
           |> Option.value ~default:false
         in
         if not (Define.has_return_annotation define) ||
-          (contains_literal_any &&
-          not (Type.is_dictionary ~with_key:(Some Type.string) return_annotation))
+           (contains_literal_any &&
+            not (Type.is_dictionary ~with_key:(Some Type.string) return_annotation))
         then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
@@ -2500,20 +2522,20 @@ module State = struct
         let original_annotation =
           original_annotation
           >>| (fun annotation ->
-          Type.class_variable_value annotation
-          |> Option.value ~default:annotation)
+              Type.class_variable_value annotation
+              |> Option.value ~default:annotation)
         in
         let is_type_alias =
           (* Consider anything with a RHS that is a type to be an alias. *)
           match Node.value value with
           | Expression.String _ -> false
           | _ ->
-            begin
-              match Resolution.parse_annotation resolution value with
-              | Type.Top -> false
-              | Type.Optional Type.Bottom -> false
-              | annotation -> not (Resolution.contains_untracked resolution annotation)
-            end
+              begin
+                match Resolution.parse_annotation resolution value with
+                | Type.Top -> false
+                | Type.Optional Type.Bottom -> false
+                | annotation -> not (Resolution.contains_untracked resolution annotation)
+              end
         in
         let state, resolved =
           let { state = { resolution; _ } as new_state; resolved } =
@@ -3547,7 +3569,7 @@ module State = struct
                   |> Map.fold ~init:initial_resolution ~f:update
                   |> fun resolution -> List.fold variables ~init:resolution ~f:add_variable
 
-                  in
+                in
                 Some {
                   nested = define;
                   initial = { nested_resolution; nested_bottom = false };
@@ -3572,7 +3594,7 @@ module State = struct
                 | None -> []
                 | Some annotation ->
                     let annotation = Resolution.parse_annotation resolution annotation in
-                    Type.variables annotation
+                    Type.free_variables annotation
               in
               List.concat_map parameters ~f:extract_variables
               |> List.dedup_and_sort ~compare:Type.compare

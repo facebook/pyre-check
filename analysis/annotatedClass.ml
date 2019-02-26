@@ -456,7 +456,7 @@ module Attribute = struct
       let free_variables =
         let variables =
           Annotation.annotation annotation
-          |> Type.variables
+          |> Type.free_variables
           |> Type.Set.of_list
         in
         let generics =
