@@ -1909,10 +1909,6 @@ let suppress ~mode error =
       true
     else
       match kind with
-      (* TODO(T39440306): mirror behavior in other mismatch errors. *)
-      | IncompatibleParameterType { mismatch = { actual; expected; due_to_invariance }; _ }
-        when due_to_invariance ->
-          Type.equal actual Type.Any || Type.equal expected Type.Any
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
