@@ -1009,7 +1009,12 @@ let test_less_or_equal_type_order _ =
     |} in
 
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order =
+    {
+      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+      constructor = (fun _ -> None);
+    }
+  in
 
   let super =
     parse_annotation
@@ -1038,7 +1043,12 @@ let test_less_or_equal_type_order _ =
     |} in
 
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order =
+    {
+      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+      constructor = (fun _ -> None);
+    }
+  in
 
   let super =
     parse_annotation
@@ -1069,7 +1079,12 @@ let test_less_or_equal_type_order _ =
       class C(typing.Optional[A]): ...
     |} in
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order =
+    {
+      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+      constructor = (fun _ -> None);
+    }
+  in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -1107,7 +1122,12 @@ let test_less_or_equal_type_order _ =
       class float(): ...
     |} in
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order =
+    {
+      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+      constructor = (fun _ -> None);
+    }
+  in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -1170,7 +1190,10 @@ let test_join_type_order _ =
       class bar(L[T]): ...
     |} in
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order = {
+    TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+    constructor = (fun _ -> None);
+  } in
   let foo = Type.Primitive "foo" in
   let bar = Type.Primitive "bar" in
 
@@ -1215,7 +1238,12 @@ let test_meet_type_order _ =
       class D(B,C): ...
     |} in
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order =
+    {
+      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+      constructor = (fun _ -> None);
+    }
+  in
   let assert_meet left right expected =
     assert_equal
       ~cmp:Type.equal

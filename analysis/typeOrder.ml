@@ -475,7 +475,177 @@ let variables (module Handler: Handler) annotation =
       >>| fun { Target.parameters; _ } -> parameters
 
 
-let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
+type order = {
+  handler: (module Handler);
+  constructor: Type.t -> Type.t option;
+}
+
+
+let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target =
+  let rec solve_constraints_throws order ~constraints ~source ~target =
+    let solve_all ?(ignore_length_mismatch = false) constraints ~sources ~targets =
+      let folded_constraints =
+        let solve_pair constraints source target =
+          constraints
+          >>= (fun constraints ->
+              solve_constraints_throws order ~constraints ~source ~target)
+        in
+        List.fold2 ~init:(Some constraints) ~f:solve_pair sources targets
+      in
+      match folded_constraints, ignore_length_mismatch with
+      | List.Or_unequal_lengths.Ok constraints, _ -> constraints
+      | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
+      | List.Or_unequal_lengths.Unequal_lengths, false -> None
+    in
+    let source =
+      (* This needs to eventually also be in normal less_or_equal, as is, could cause problems with
+         variance check *)
+      Option.some_if (Type.is_meta source && Type.is_callable target) source
+      >>| Type.single_parameter
+      >>= constructor
+      |> Option.value ~default:source
+    in
+    match source with
+    | Type.Bottom ->
+        (* This is needed for representing unbound variables between statements, which can't totally
+           be done by filtering because of the promotion done for explicit type variables *)
+        Some constraints
+    | Type.Union sources ->
+        solve_all constraints ~sources ~targets:(List.map sources ~f:(fun _ -> target))
+    | _ ->
+        if not (Type.is_resolved target) then
+          match source, target with
+          | _, (Type.Variable { constraints = target_constraints; _ } as variable) ->
+              let joined_source =
+                let true_join left right =
+                  (* Join right now sometimes gives any when it could give a union, we need to
+                     avoid that behavior *)
+                  let joined = join order left right in
+                  let unionized = Type.union [left; right] in
+                  if not (less_or_equal order ~left:joined ~right:unionized) then
+                    unionized
+                  else
+                    joined
+                in
+                Map.find constraints variable
+                >>| (fun existing -> true_join existing source)
+                |> Option.value ~default:source
+              in
+              begin
+                match joined_source, target_constraints with
+                | Type.Variable { constraints = Type.Explicit source_constraints; _ },
+                  Type.Explicit target_constraints ->
+                    let exists_in_target_constraints source_constraint =
+                      List.exists target_constraints ~f:(Type.equal source_constraint)
+                    in
+                    Option.some_if
+                      (List.for_all source_constraints ~f:exists_in_target_constraints)
+                      joined_source
+                | Type.Variable { constraints = Type.Bound joined_source; _ },
+                  Type.Explicit target_constraints
+                | joined_source, Type.Explicit target_constraints ->
+                    let in_constraint bound =
+                      less_or_equal order ~left:joined_source ~right:bound
+                    in
+                    (* When doing multiple solves, all of these options ought to be considered, *)
+                    (* and solved in a fixpoint *)
+                    List.find ~f:in_constraint target_constraints
+                | _, Type.Bound bound ->
+                    Option.some_if
+                      (less_or_equal order ~left:joined_source ~right:bound)
+                      joined_source
+                | _, Type.Unconstrained ->
+                    Some joined_source
+              end
+              >>| (fun data -> Map.set constraints ~key:variable ~data)
+          | _, Type.Parametric { name = target_name; parameters = target_parameters } ->
+              let enforce_variance constraints =
+                let instantiated_target =
+                  Type.instantiate target ~constraints:(Type.Map.find constraints)
+                in
+                Option.some_if
+                  (less_or_equal order ~left:source ~right:instantiated_target)
+                  constraints
+              in
+              begin
+                instantiate_successors_parameters
+                  order
+                  ~source
+                  ~target:(Type.Primitive target_name)
+                >>= (fun resolved_parameters ->
+                    solve_all
+                      constraints
+                      ~sources:resolved_parameters
+                      ~targets:target_parameters)
+                >>= enforce_variance
+              end
+          | Optional source, Optional target
+          | source, Optional target
+          | Type.Tuple (Type.Unbounded source),
+            Type.Tuple (Type.Unbounded target) ->
+              solve_constraints_throws order ~constraints ~source ~target
+          | Type.Tuple (Type.Bounded sources),
+            Type.Tuple (Type.Bounded targets) ->
+              solve_all constraints ~sources ~targets
+          | Type.Tuple (Type.Unbounded source),
+            Type.Tuple (Type.Bounded targets) ->
+              let sources =
+                List.init (List.length targets) ~f:(fun _ -> source)
+              in
+              solve_all constraints ~sources ~targets
+          | Type.Tuple (Type.Bounded sources),
+            Type.Tuple (Type.Unbounded target) ->
+              let source = Type.union sources in
+              solve_constraints_throws order ~constraints ~source ~target
+          | _, Type.Union targets ->
+              (* When doing multiple solves, all of these options ought to be considered, *)
+              (* and solved in a fixpoint *)
+              List.filter_map targets
+                ~f:(fun target ->
+                    solve_constraints_throws order ~constraints ~source ~target)
+              |> List.hd
+          | Type.Callable {
+              Type.Callable.implementation = {
+                Type.Callable.annotation = source;
+                parameters = source_parameters;
+              };
+              _;
+            },
+            Type.Callable {
+              Type.Callable.implementation = {
+                Type.Callable.annotation = target;
+                parameters = target_parameters;
+              };
+              _;
+            } ->
+              let parameter_annotations = function
+                | Type.Callable.Defined parameters ->
+                    List.map parameters ~f:Type.Callable.Parameter.annotation
+                | _ ->
+                    []
+              in
+              solve_constraints_throws order ~constraints ~source ~target
+              >>= solve_all
+                (* Don't ignore previous constraints if encountering a mismatch due to
+                 *args/**kwargs vs. concrete parameters or default arguments. *)
+                ~ignore_length_mismatch:true
+                ~sources:(parameter_annotations source_parameters)
+                ~targets:(parameter_annotations target_parameters)
+          | _ ->
+              None
+        else if Type.equal source Type.Top && Type.equal target Type.Any then
+          Some constraints
+        else if less_or_equal order ~left:source ~right:target then
+          Some constraints
+        else
+          None
+  in
+  (* TODO(T39612118): unwrap this when attributes are safe *)
+  try solve_constraints_throws order ~constraints ~source ~target
+  with Untracked _ -> None
+
+
+and less_or_equal ({ handler= ((module Handler: Handler) as handler); _ } as order) ~left ~right =
   Type.equal left right ||
   match left, right with
   | other, Type.Top ->
@@ -526,10 +696,10 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
 
       let left_primitive, left_parameters = Type.split left in
       let right_primitive, right_parameters = Type.split right in
-      raise_if_untracked order left_primitive;
-      raise_if_untracked order right_primitive;
+      raise_if_untracked handler left_primitive;
+      raise_if_untracked handler right_primitive;
       let generic_index = Handler.find (Handler.indices ()) Type.generic in
-      let left_variables = variables order left in
+      let left_variables = variables handler left in
 
       if Type.equal left_primitive right_primitive then
         (* Left and right primitives coincide, a simple parameter comparison is enough. *)
@@ -562,7 +732,7 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
             |> fun primitive -> parametric ~primitive ~parameters
           in
           let successors =
-            let left_index = index_of order left_primitive in
+            let left_index = index_of handler left_primitive in
             Handler.find (Handler.edges ()) left_index
             |> Option.value ~default:[]
           in
@@ -793,12 +963,12 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       less_or_equal order ~left ~right
 
   | left, Type.Callable _ ->
-      let joined = join (module Handler) (Type.parametric "typing.Callable" [Type.Bottom]) left in
+      let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
       begin
         match joined with
         | Type.Parametric { name; parameters = [left] }
           when Identifier.equal name "typing.Callable" ->
-            less_or_equal (module Handler) ~left ~right
+            less_or_equal order ~left ~right
         | _ ->
             false
       end
@@ -823,18 +993,18 @@ let rec less_or_equal ((module Handler: Handler) as order) ~left ~right =
       false
 
   | _ ->
-      raise_if_untracked order left;
-      raise_if_untracked order right;
+      raise_if_untracked handler left;
+      raise_if_untracked handler right;
 
       let worklist = Queue.create () in
       Queue.enqueue
         worklist
-        { Target.target = index_of order left; parameters = [] };
+        { Target.target = index_of handler left; parameters = [] };
 
       let rec iterate worklist =
         match Queue.dequeue worklist with
         | Some { Target.target; _ } ->
-            if target = (index_of order right) then
+            if target = (index_of handler right) then
               true
             else
               begin
@@ -1010,7 +1180,7 @@ and join_implementations ~parameter_join ~return_join order left right =
   { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
 
-and join ((module Handler: Handler) as order) left right =
+and join ({ handler= ((module Handler: Handler) as handler); _ } as order) left right =
   if Type.equal left right then
     left
   else
@@ -1087,7 +1257,7 @@ and join ((module Handler: Handler) as order) left right =
           if Handler.contains (Handler.indices ()) target then
             let left_parameters = instantiate_successors_parameters order ~source:left ~target in
             let right_parameters = instantiate_successors_parameters order ~source:right ~target in
-            let variables = variables order target in
+            let variables = variables handler target in
             let parameters =
               let join_parameters left right variable =
                 match left, right, variable with
@@ -1244,17 +1414,17 @@ and join ((module Handler: Handler) as order) left right =
 
     | Type.Callable callable, other
     | other, Type.Callable callable ->
-        let other = join (module Handler) (Type.parametric "typing.Callable" [Type.Bottom]) other in
+        let other = join order (Type.parametric "typing.Callable" [Type.Bottom]) other in
         begin
           match other with
           | Type.Parametric { name; parameters = [other_callable] }
             when Identifier.equal name "typing.Callable" ->
-              join (module Handler) (Type.Callable callable) other_callable
+              join order (Type.Callable callable) other_callable
           | _ ->
               Type.union [left; right]
         end
     | _ ->
-        match List.hd (least_upper_bound order left right) with
+        match List.hd (least_upper_bound handler left right) with
         | Some joined ->
             if Type.equal joined left || Type.equal joined right then
               joined
@@ -1265,7 +1435,7 @@ and join ((module Handler: Handler) as order) left right =
             Type.Any
 
 
-and meet ((module Handler: Handler) as order) left right =
+and meet ({ handler= ((module Handler: Handler) as handler); _ } as order) left right =
   if Type.equal left right then
     left
   else
@@ -1317,7 +1487,7 @@ and meet ((module Handler: Handler) as order) left right =
                 ~source:right
                 ~target
             in
-            let variables = variables order target in
+            let variables = variables handler target in
 
             let parameters =
               let meet_parameters left right variable =
@@ -1446,7 +1616,7 @@ and meet ((module Handler: Handler) as order) left right =
         Type.Bottom
 
     | _ ->
-        match List.hd (greatest_lower_bound order left right) with
+        match List.hd (greatest_lower_bound handler left right) with
         | Some bound -> bound
         | None ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
@@ -1537,7 +1707,7 @@ and get_instantiated_predecessors
 
 
 and instantiate_successors_parameters
-    ((module Handler: Handler) as order)
+    ({ handler= ((module Handler: Handler) as handler); _ } as order)
     ~source
     ~target =
   let primitive, parameters = Type.split source in
@@ -1549,19 +1719,19 @@ and instantiate_successors_parameters
       parameters
   in
 
-  raise_if_untracked order primitive;
-  raise_if_untracked order target;
+  raise_if_untracked handler primitive;
+  raise_if_untracked handler target;
 
   let generic_index = Handler.find (Handler.indices ()) Type.generic in
 
   let worklist = Queue.create () in
   Queue.enqueue
     worklist
-    { Target.target = index_of order primitive; parameters };
+    { Target.target = index_of handler primitive; parameters };
   let rec iterate worklist =
     match Queue.dequeue worklist with
     | Some { Target.target = target_index; parameters } ->
-        if target_index = index_of order target then
+        if target_index = index_of handler target then
           Some parameters
         else
           begin
@@ -1578,29 +1748,29 @@ and instantiate_successors_parameters
 
 
 and instantiate_predecessors_parameters
-    ((module Handler: Handler) as order)
+    { handler= ((module Handler: Handler) as handler); _ }
     ~source
     ~target =
   let primitive, parameters = Type.split source in
 
-  raise_if_untracked order primitive;
-  raise_if_untracked order target;
+  raise_if_untracked handler primitive;
+  raise_if_untracked handler target;
 
   let generic_index = Handler.find (Handler.indices ()) Type.generic in
 
   let worklist = Queue.create () in
   Queue.enqueue
     worklist
-    { Target.target = index_of order primitive; parameters };
+    { Target.target = index_of handler primitive; parameters };
   let rec iterate worklist =
     match Queue.dequeue worklist with
     | Some { Target.target = target_index; parameters } ->
-        if target_index = index_of order target then
+        if target_index = index_of handler target then
           Some parameters
         else
           begin
             Handler.find (Handler.backedges ()) target_index
-            >>| get_instantiated_predecessors order ~generic_index ~parameters
+            >>| get_instantiated_predecessors handler ~generic_index ~parameters
             >>| List.iter ~f:(Queue.enqueue worklist)
             |> ignore;
             iterate worklist
@@ -1753,7 +1923,7 @@ let remove_extra_edges (module Handler: Handler) ~bottom ~top annotations =
 
 
 let connect_annotations_to_top
-    ((module Handler: Handler) as order)
+    ((module Handler: Handler) as handler)
     ~top
     annotations =
   let indices =
@@ -1762,13 +1932,14 @@ let connect_annotations_to_top
   in
   let connect_to_top index =
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
+    let order = { handler; constructor = fun _ -> None } in
     if not (less_or_equal order ~left:top ~right:annotation) then
       begin
         match Handler.find (Handler.edges ()) index with
         | Some targets when List.length targets > 0 ->
             ()
         | _ ->
-            connect order ~predecessor:annotation ~successor:top
+            connect handler ~predecessor:annotation ~successor:top
       end in
   List.iter ~f:connect_to_top indices
 

@@ -434,19 +434,19 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        TypeOrder.join order left right
+        Resolution.join resolution left right
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
     | TypeQuery.LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        TypeOrder.less_or_equal order ~left ~right
+        Resolution.less_or_equal resolution ~left ~right
         |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
 
     | TypeQuery.Meet (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        TypeOrder.meet order left right
+        Resolution.meet resolution left right
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
     | TypeQuery.Methods annotation ->

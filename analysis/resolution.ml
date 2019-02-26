@@ -193,20 +193,39 @@ let function_definitions resolution access =
   >>| List.filter ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.equal access name)
 
 
-let less_or_equal { order; _ } =
-  TypeOrder.less_or_equal order
+let order_and_constructor ({ order; _ } as resolution) =
+  let constructor instantiated =
+    class_definition resolution instantiated
+    >>| constructor resolution ~instantiated
+  in
+  { TypeOrder.handler = order; constructor }
+
+let solve_constraints resolution =
+  order_and_constructor resolution
+  |> TypeOrder.solve_constraints
+
+let constraints_solution_exists ~source ~target resolution =
+  solve_constraints resolution ~constraints:Type.Map.empty ~source ~target
+  |> Option.is_some
+
+let less_or_equal resolution =
+  order_and_constructor resolution
+  |> TypeOrder.less_or_equal
 
 
-let join { order; _ } =
-  TypeOrder.join order
+let join resolution =
+  order_and_constructor resolution
+  |> TypeOrder.join
 
 
-let meet { order; _ } =
-  TypeOrder.meet order
+let meet resolution =
+  order_and_constructor resolution
+  |> TypeOrder.meet
 
 
-let widen { order; _ } =
-  TypeOrder.widen order
+let widen resolution =
+  order_and_constructor resolution
+  |> TypeOrder.widen
 
 
 let is_instantiated { order; _ } =
@@ -259,13 +278,13 @@ let parse_annotation
     annotation
 
 
-let is_invariance_mismatch { order; _ } ~left ~right =
+let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | Type.Parametric { name = left_name; parameters = left_parameters },
     Type.Parametric { name = right_name; parameters = right_parameters }
     when Identifier.equal left_name right_name ->
       let zipped =
-        TypeOrder.variables order left
+        TypeOrder.variables (order resolution) left
         >>= fun variables ->
         (List.map3
            variables
@@ -279,7 +298,7 @@ let is_invariance_mismatch { order; _ } ~left ~right =
       let due_to_invariant_variable (variable, left, right) =
         match variable with
         | Type.Variable { variance = Type.Invariant; _ } ->
-            TypeOrder.less_or_equal order ~left ~right
+            less_or_equal resolution ~left ~right
         | _ ->
             false
       in
@@ -461,173 +480,3 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
 
   | _ ->
       resolved
-
-
-let solve_constraints resolution ~constraints ~source ~target =
-  let rec solve_constraints_throws resolution ~constraints ~source ~target =
-    let solve_all ?(ignore_length_mismatch = false) constraints ~sources ~targets =
-      let folded_constraints =
-        let solve_pair constraints source target =
-          constraints
-          >>= (fun constraints -> solve_constraints_throws resolution ~constraints ~source ~target)
-        in
-        List.fold2 ~init:(Some constraints) ~f:solve_pair sources targets
-      in
-      match folded_constraints, ignore_length_mismatch with
-      | List.Or_unequal_lengths.Ok constraints, _ -> constraints
-      | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
-      | List.Or_unequal_lengths.Unequal_lengths, false -> None
-    in
-    let source =
-      (* This needs to eventually also be in normal less_or_equal, as is, could cause problems with
-         variance check *)
-      let instantiated_constructor instantiated =
-        class_definition resolution instantiated
-        >>| constructor resolution ~instantiated
-      in
-      Option.some_if (Type.is_meta source && Type.is_callable target) source
-      >>| Type.single_parameter
-      >>= instantiated_constructor
-      |> Option.value ~default:source
-    in
-    match source with
-    | Type.Bottom ->
-        (* This is needed for representing unbound variables between statements, which can't totally
-           be done by filtering because of the promotion done for explicit type variables *)
-        Some constraints
-    | Type.Union sources ->
-        solve_all constraints ~sources ~targets:(List.map sources ~f:(fun _ -> target))
-    | _ ->
-        if not (Type.is_resolved target) then
-          match source, target with
-          | _, (Type.Variable { constraints = target_constraints; _ } as variable) ->
-              let joined_source =
-                let true_join left right =
-                  (* Join right now sometimes gives any when it could give a union, we need to
-                     avoid that behavior *)
-                  let joined = join resolution left right in
-                  let unionized = Type.union [left; right] in
-                  if not (less_or_equal resolution ~left:joined ~right:unionized) then
-                    unionized
-                  else
-                    joined
-                in
-                Map.find constraints variable
-                >>| (fun existing -> true_join existing source)
-                |> Option.value ~default:source
-              in
-              begin
-                match joined_source, target_constraints with
-                | Type.Variable { constraints = Type.Explicit source_constraints; _ },
-                  Type.Explicit target_constraints ->
-                    let exists_in_target_constraints source_constraint =
-                      List.exists target_constraints ~f:(Type.equal source_constraint)
-                    in
-                    Option.some_if
-                      (List.for_all source_constraints ~f:exists_in_target_constraints)
-                      joined_source
-                | Type.Variable { constraints = Type.Bound joined_source; _ },
-                  Type.Explicit target_constraints
-                | joined_source, Type.Explicit target_constraints ->
-                    let in_constraint bound =
-                      less_or_equal resolution ~left:joined_source ~right:bound
-                    in
-                    (* When doing multiple solves, all of these options ought to be considered, *)
-                    (* and solved in a fixpoint *)
-                    List.find ~f:in_constraint target_constraints
-                | _, Type.Bound bound ->
-                    Option.some_if
-                      (less_or_equal resolution ~left:joined_source ~right:bound)
-                      joined_source
-                | _, Type.Unconstrained ->
-                    Some joined_source
-              end
-              >>| (fun data -> Map.set constraints ~key:variable ~data)
-          | _, Type.Parametric { name = target_name; parameters = target_parameters } ->
-              let enforce_variance constraints =
-                let instantiated_target =
-                  Type.instantiate target ~constraints:(Type.Map.find constraints)
-                in
-                Option.some_if
-                  (less_or_equal resolution ~left:source ~right:instantiated_target)
-                  constraints
-              in
-              begin
-                TypeOrder.instantiate_successors_parameters
-                  (order resolution)
-                  ~source
-                  ~target:(Type.Primitive target_name)
-                >>= (fun resolved_parameters ->
-                    solve_all
-                      constraints
-                      ~sources:resolved_parameters
-                      ~targets:target_parameters)
-                >>= enforce_variance
-              end
-          | Optional source, Optional target
-          | source, Optional target
-          | Type.Tuple (Type.Unbounded source),
-            Type.Tuple (Type.Unbounded target) ->
-              solve_constraints_throws resolution ~constraints ~source ~target
-          | Type.Tuple (Type.Bounded sources),
-            Type.Tuple (Type.Bounded targets) ->
-              solve_all constraints ~sources ~targets
-          | Type.Tuple (Type.Unbounded source),
-            Type.Tuple (Type.Bounded targets) ->
-              let sources =
-                List.init (List.length targets) ~f:(fun _ -> source)
-              in
-              solve_all constraints ~sources ~targets
-          | Type.Tuple (Type.Bounded sources),
-            Type.Tuple (Type.Unbounded target) ->
-              solve_constraints_throws resolution ~constraints ~source:(Type.union sources) ~target
-          | _, Type.Union targets ->
-              (* When doing multiple solves, all of these options ought to be considered, *)
-              (* and solved in a fixpoint *)
-              List.filter_map targets
-                ~f:(fun target -> solve_constraints_throws resolution ~constraints ~source ~target)
-              |> List.hd
-          | Type.Callable {
-              Type.Callable.implementation = {
-                Type.Callable.annotation = source;
-                parameters = source_parameters;
-              };
-              _;
-            },
-            Type.Callable {
-              Type.Callable.implementation = {
-                Type.Callable.annotation = target;
-                parameters = target_parameters;
-              };
-              _;
-            } ->
-              let parameter_annotations = function
-                | Type.Callable.Defined parameters ->
-                    List.map parameters ~f:Type.Callable.Parameter.annotation
-                | _ ->
-                    []
-              in
-              solve_constraints_throws resolution ~constraints ~source ~target
-              >>= solve_all
-                (* Don't ignore previous constraints if encountering a mismatch due to
-                 *args/**kwargs vs. concrete parameters or default arguments. *)
-                ~ignore_length_mismatch:true
-                ~sources:(parameter_annotations source_parameters)
-                ~targets:(parameter_annotations target_parameters)
-          | _ ->
-              None
-        else if Type.equal source Type.Top && Type.equal target Type.Any then
-          Some constraints
-        else if less_or_equal resolution ~left:source ~right:target then
-          Some constraints
-        else
-          None
-  in
-  (* TODO(T39612118): unwrap this when attributes are safe *)
-  try solve_constraints_throws resolution ~constraints ~source ~target
-  with TypeOrder.Untracked _ -> None
-
-
-let constraints_solution_exists ~source ~target resolution =
-  solve_constraints resolution ~constraints:Type.Map.empty ~source ~target
-  |> Option.is_some

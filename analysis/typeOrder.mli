@@ -101,13 +101,24 @@ val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 
-val less_or_equal: (module Handler) -> left: Type.t -> right: Type.t -> bool
+type order = {
+  handler: (module Handler);
+  constructor: Type.t -> Type.t option;
+}
+
+val solve_constraints
+  :  order
+  -> constraints: Type.t Type.Map.t
+  -> source: Type.t
+  -> target: Type.t
+  -> Type.t Type.Map.t option
+val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
-val join: (module Handler) -> Type.t -> Type.t -> Type.t
-val meet: (module Handler) -> Type.t -> Type.t -> Type.t
+val join: order -> Type.t -> Type.t -> Type.t
+val meet: order -> Type.t -> Type.t -> Type.t
 val widen
-  :  (module Handler)
+  :  order
   -> widening_threshold: int
   -> previous: Type.t
   -> next: Type.t
@@ -117,7 +128,7 @@ val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
 
 
 val instantiate_successors_parameters
-  :  (module Handler)
+  :  order
   -> source: Type.t
   -> target: Type.t
   -> Type.t List.t Option.t
