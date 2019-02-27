@@ -279,11 +279,13 @@ type model_t = {
 
 
 let pp_model_t formatter { models; is_obscure } =
-  Format.fprintf formatter "is_obscure: %b\n" is_obscure;
+  Format.fprintf formatter "Obscure: %b\n" is_obscure;
+  let pp_model (kind, model) =
+    Format.fprintf formatter "%s Models:\n" (Kind.show kind |> Core.String.capitalize);
+    Format.fprintf formatter "%a" pp_model_pkg model
+  in
   Kind.Map.bindings models
-  |> Core.List.unzip
-  |> snd
-  |> Format.pp_print_list pp_model_pkg formatter
+  |> Core.List.iter ~f:pp_model
 
 
 let show_model_t model =

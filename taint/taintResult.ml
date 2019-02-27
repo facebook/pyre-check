@@ -9,11 +9,30 @@ open Domains
 open Pyre
 
 
+let json_to_string json =
+  Yojson.Safe.to_string json
+  |> Yojson.Safe.prettify
+  |> String.split ~on:'\n'
+  |> List.map ~f:(fun line -> "      " ^ line)
+  |> String.concat ~sep:"\n"
+
+
 module Forward = struct
   type model = {
     source_taint: ForwardState.t;
   }
-  [@@deriving show, sexp]
+  [@@deriving sexp]
+
+
+  let pp_model formatter { source_taint } =
+    Format.fprintf
+      formatter
+      "    Sources:\n%s"
+      (json_to_string (ForwardState.to_json source_taint))
+
+
+  let show_model =
+    Format.asprintf "%a" pp_model
 
   let empty = {
     source_taint = ForwardState.empty;
@@ -49,7 +68,19 @@ module Backward = struct
     taint_in_taint_out: BackwardState.t;
     sink_taint: BackwardState.t;
   }
-  [@@deriving show, sexp]
+  [@@deriving sexp]
+
+
+  let pp_model formatter { taint_in_taint_out; sink_taint } =
+    Format.fprintf
+      formatter
+      "    Taint-in-taint-out:\n%s\n    Sinks:\n%s"
+      (json_to_string (BackwardState.to_json taint_in_taint_out))
+      (json_to_string (BackwardState.to_json sink_taint))
+
+
+  let show_model =
+    Format.asprintf "%a" pp_model
 
   let empty = {
     sink_taint = BackwardState.empty;
@@ -100,7 +131,19 @@ type call_model = {
   forward: Forward.model;
   backward: Backward.model;
 }
-[@@deriving show, sexp]
+[@@deriving sexp]
+
+
+let pp_call_model formatter { forward; backward } =
+  Format.fprintf
+    formatter
+    "  Forward:\n%a\n  Backward:\n%a"
+    Forward.pp_model forward
+    Backward.pp_model backward
+
+
+let show_call_model =
+  Format.asprintf "%a" pp_call_model
 
 
 type result = Flow.issue list
