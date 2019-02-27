@@ -149,9 +149,7 @@ class PyreAst:
 
     def typed_ast(self, existing_ast: ast.AST, file_path: str) -> ast.Module:
         file_path = os.path.abspath(file_path)
-        types_by_location = self._query_file_types(
-            os.path.relpath(file_path, self._local_configuration)
-        )
+        types_by_location = self._query_file_types(file_path)
         # TODO(T37004997): ASTs are re-used between flake8 plugins.
         # If types already exist on the provided AST, do nothing.
         return AddTypes(types_by_location).visit(existing_ast)
