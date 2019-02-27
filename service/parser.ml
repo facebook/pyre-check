@@ -284,7 +284,21 @@ let find_stubs
           String.is_suffix path ~suffix:".pyi" &&
           not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
         in
+        (* The typeshed resource cache and the search path might live under the local root.
+           If that's the case, we should make sure that we don't add these stubs when analyzing the
+           local root, as that would clobber the order. The method of solving this is by only adding
+           handles that correspond directly to the root. *)
+        let keep path =
+          let reconstructed =
+            File.create path
+            |> File.handle ~configuration
+            |> File.Handle.show
+            |> fun relative -> Path.create_relative ~root ~relative
+          in
+          Path.equal reconstructed path
+        in
         Path.list ~file_filter ~directory_filter ~root ()
+        |> List.filter ~f:keep
       in
       let search_path = List.map search_path ~f:Path.SearchPath.to_path in
       List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))

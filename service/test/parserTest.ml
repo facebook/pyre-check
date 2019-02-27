@@ -89,52 +89,65 @@ let test_parse_stubs_modules_list _ =
 
 
 let test_find_stubs context =
-  let handles =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let module_root = Path.create_absolute (bracket_tmpdir context) in
-    let virtual_root = Path.create_absolute (bracket_tmpdir context) in
-    Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
-    let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
-      |> File.write
+  let assert_stubs configuration expected =
+    let handles =
+      Service.Parser.find_stubs
+        ~configuration
+      |> List.map ~f:File.create
+      |> List.map ~f:(File.handle ~configuration)
+      |> List.map ~f:File.Handle.show
+      |> List.sort ~compare:String.compare
     in
-    write_file local_root "a.pyi";
-    write_file local_root "d.py";
-    write_file module_root "a.pyi";
-    write_file module_root "b.pyi";
-    write_file module_root "c.py";
-
-    write_file local_root "ttypes.py";
-    write_file local_root "ttypes.pyi";
-    write_file local_root "dir/legit.pyi";
-    write_file local_root "excluded.pyi";
-    write_file local_root "nested/excluded.pyi";
-
-    write_file (virtual_root ^| "package") "virtual.py";
-    write_file (virtual_root ^| "external") "other.py";
-
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
-        ~search_path:[
-          Path.SearchPath.Root module_root;
-          Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" };
-        ]
-        ()
-    in
-    Service.Parser.find_stubs
-      ~configuration
-    |> List.map ~f:File.create
-    |> List.map ~f:(File.handle ~configuration)
-    |> List.map ~f:File.Handle.show
-    |> List.sort ~compare:String.compare
+    assert_equal
+      ~cmp:(List.equal ~equal:String.equal)
+      ~printer:(String.concat ~sep:", ")
+      expected
+      handles
   in
-  assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.py"; "ttypes.pyi"]
-    handles
+
+  let local_root = Path.create_absolute (bracket_tmpdir context) in
+  let local_subdirectory_root = Path.create_relative ~root:local_root ~relative:"subdirectory" in
+  Sys_utils.mkdir_no_fail (Path.absolute local_subdirectory_root);
+  let module_root = Path.create_absolute (bracket_tmpdir context) in
+  let virtual_root = Path.create_absolute (bracket_tmpdir context) in
+  Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
+  let write_file root relative =
+    File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+    |> File.write
+  in
+  write_file local_root "a.pyi";
+  write_file local_root "d.py";
+  write_file module_root "a.pyi";
+  write_file module_root "b.pyi";
+  write_file module_root "c.py";
+  write_file local_subdirectory_root "stub.pyi";
+
+  write_file local_root "ttypes.py";
+  write_file local_root "ttypes.pyi";
+  write_file local_root "dir/legit.pyi";
+  write_file local_root "excluded.pyi";
+  write_file local_root "nested/excluded.pyi";
+
+  write_file (virtual_root ^| "package") "virtual.py";
+  write_file (virtual_root ^| "external") "other.py";
+
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
+      ~search_path:[
+        Path.SearchPath.Root local_subdirectory_root;
+        Path.SearchPath.Root module_root;
+        Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" };
+      ]
+      ()
+  in
+  assert_stubs
+    configuration
+    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.py"; "stub.pyi"; "ttypes.pyi"];
+
+  let configuration = { configuration with Configuration.Analysis.search_path = [] } in
+  assert_stubs configuration ["a.pyi"; "subdirectory/stub.pyi"; "ttypes.pyi"]
 
 
 let test_find_sources context =
