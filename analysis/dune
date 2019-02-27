@@ -20,4 +20,5 @@
   pyrelib.pyreParser
   pyrelib.recognized
   pyrelib.statistics
-  pyrelib.file))
+  pyrelib.file
+  pyrelib.decorators))

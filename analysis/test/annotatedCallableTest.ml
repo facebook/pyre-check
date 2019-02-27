@@ -149,7 +149,17 @@ let test_apply_decorators _ =
     ~decorators:[make_click_decorator "group"]
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
-  |> assert_apply_click_decorators ~expected_count:2
+  |> assert_apply_click_decorators ~expected_count:2;
+
+  (* Custom decorators. *)
+  let resolution = resolution () in
+  create_define
+    ~decorators:[!"$strip_parameters"]
+    ~parameters:[Parameter.create ~name:"self" ()]
+    ~return_annotation:None
+  |> (fun define -> Callable.apply_decorators ~define ~resolution)
+  |> (fun { Define.parameters; _ } ->
+      assert_equal ~printer:Int.to_string 0 (List.length parameters))
 
 
 let test_create _ =

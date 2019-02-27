@@ -43,6 +43,16 @@
  (libraries
   core))
 
+
+(library
+ (name decorators)
+ (modules decorators)
+ (public_name pyrelib.decorators)
+ (libraries
+  core
+  pyrelib.ast))
+
+
 (library
  (name projectSpecificPreprocessing)
  (modules projectSpecificPreprocessing)
