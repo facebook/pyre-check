@@ -334,6 +334,7 @@ let find_sources
     ?(filter = fun _ -> true)
     { Configuration.Analysis.local_root; excludes; extensions; _ } =
   let directory_filter path =
+    not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
     not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
   in
   let valid_suffixes = ".py" :: extensions in
@@ -345,7 +346,6 @@ let find_sources
       |> Option.value ~default:""
     in
     List.exists ~f:(String.equal extension) valid_suffixes &&
-    not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
     not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)) &&
     filter path
   in
