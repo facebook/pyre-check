@@ -305,7 +305,7 @@ let messages ~concise ~define location kind =
         | _ ->
             [
               Format.asprintf
-                "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`"
+                "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
                 pp_access name
                 pp_type annotation
             ]
