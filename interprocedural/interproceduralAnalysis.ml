@@ -558,7 +558,7 @@ let compute_fixpoint
         failwith message
       end
     else
-      let time_0 = Unix.gettimeofday () in
+      let timer = Timer.start () in
       let step = Fixpoint.{ epoch; iteration; } in
       let old_batch = Fixpoint.KeySet.of_list callables_to_analyze in
       let reduce left right =
@@ -594,12 +594,13 @@ let compute_fixpoint
       let callables_to_analyze =
         compute_callables_to_reanalyze step callables_to_analyze ~dependencies ~all_callables
       in
-      let hs = SharedMem.heap_size () in
-      let time_f = Unix.gettimeofday () in
-      let elapsed = time_f -. time_0 |> Unix.gmtime in
       let () =
-        Log.log ~section:`Info "Iteration #%n, %d callables, heap size %n took %nm %02ds"
-          iteration number_of_callables hs elapsed.Unix.tm_min elapsed.Unix.tm_sec
+        Log.info
+          "Iteration #%n, %d callables, heap size %n took %fs"
+          iteration
+          number_of_callables
+          (SharedMem.heap_size ())
+          (Timer.stop timer)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
