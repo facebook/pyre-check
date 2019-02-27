@@ -1406,7 +1406,8 @@ let test_join _ =
   assert_join "typing.List[int]" "typing.Iterator[int]" "typing.Iterator[int]";
   assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
   assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
-  assert_join "typing.List[float]" "float[int]" "typing.Any";
+  assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
+  (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
 
   (* Optionals. *)
@@ -1586,7 +1587,7 @@ let test_join _ =
     "C[$bottom]"
     "C[typing.Union[float, typing.Tuple[int, str]]]";
 
-  assert_join ~order:disconnected_order "A" "B" "typing.Any";
+  assert_join ~order:disconnected_order "A" "B" "typing.Union[A, B]";
 
   assert_join
     "typing.Type[int]"
@@ -1613,7 +1614,10 @@ let test_join _ =
     "typing.Callable[..., int]";
 
   (* Do not join with overloads. *)
-  assert_join "typing.Callable[..., int][[..., str]]" "typing.Callable[..., int]" "typing.Any";
+  assert_join
+    "typing.Callable[..., int][[..., str]]"
+    "typing.Callable[..., int]"
+    "typing.Union[typing.Callable[..., int][[..., str]], typing.Callable[..., int]]";
 
   assert_join
     "typing.Callable[[Named(a, int), Named(b, str)], int]"
@@ -1640,7 +1644,7 @@ let test_join _ =
   assert_join
     "typing.Callable[[Named(b, int)], int]"
     "typing.Callable[[Named(a, int)], int]"
-    "typing.Any";
+    "typing.Union[typing.Callable[[Named(b, int)], int], typing.Callable[[Named(a, int)], int]]";
 
   (* Classes with __call__ are callables. *)
   assert_join
@@ -1727,11 +1731,21 @@ let test_join _ =
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[int, str]"
-    "typing.Any";
+    (
+      "typing.Union[" ^
+      "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))], " ^
+      "typing.Mapping[int, str]" ^
+      "]"
+    );
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Dict[str, str]"
-    "typing.Any";
+    (
+      "typing.Union[" ^
+      "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))], " ^
+      "typing.Dict[str, str]" ^
+      "]"
+    );
 
   (* Variables. *)
   assert_type_equal

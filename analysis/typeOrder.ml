@@ -521,18 +521,8 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
           match source, target with
           | _, (Type.Variable { constraints = target_constraints; _ } as variable) ->
               let joined_source =
-                let true_join left right =
-                  (* Join right now sometimes gives any when it could give a union, we need to
-                     avoid that behavior *)
-                  let joined = join order left right in
-                  let unionized = Type.union [left; right] in
-                  if not (less_or_equal order ~left:joined ~right:unionized) then
-                    unionized
-                  else
-                    joined
-                in
                 Map.find constraints variable
-                >>| (fun existing -> true_join existing source)
+                >>| (fun existing -> join order existing source)
                 |> Option.value ~default:source
               in
               begin
@@ -1201,6 +1191,7 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
   if Type.equal left right then
     left
   else
+    let union = Type.union [left; right] in
     match left, right with
     | Type.Bottom, other
     | other, Type.Bottom ->
@@ -1323,10 +1314,12 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
               | Type.Primitive _, None ->
                   target
               | _ ->
-                  Type.Any
+                  (* TODO(T41082573) throw here instead of unioning *)
+                  union
             end
           else
-            Type.Any
+            (* TODO(T41082573) throw here instead of unioning *)
+            union
 
     (* Special case joins of optional collections with their uninstantated counterparts. *)
     | Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
@@ -1406,7 +1399,7 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
 
     | Type.TypedDictionary _, _
     | _, Type.TypedDictionary _ ->
-        Type.Any
+        union
 
     | Type.Callable left,
       Type.Callable right ->
@@ -1425,9 +1418,10 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
             left.Callable.implementation
             right.Callable.implementation
           >>| (fun implementation -> Type.Callable { left with Callable.kind; implementation })
-          |> Option.value ~default:Type.Any
+          |> Option.value ~default:union
         else
-          Type.Any
+          union
+
     | Type.Callable callable, other
     | other, Type.Callable callable ->
         let default =
@@ -1449,10 +1443,11 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
             if Type.equal joined left || Type.equal joined right then
               joined
             else
-              Type.union [left; right]
+              union
+
         | None ->
             Log.debug "Couldn't find a upper bound for %a and %a" Type.pp left Type.pp right;
-            Type.Any
+            union
 
 
 and meet ({ handler= ((module Handler: Handler) as handler); constructor } as order) left right =
