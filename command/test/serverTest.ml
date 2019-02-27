@@ -210,12 +210,13 @@ let assert_response
     ~local_root
     ?state
     ?(handle = "test.py")
+    ?qualifier
     ~source
     ~request
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle source |> Preprocessing.preprocess in
+  let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -331,9 +332,15 @@ let test_query context =
     bracket_tmpdir context
     |> Path.create_absolute
   in
-  let assert_type_query_response ~source ~query response =
+  let assert_type_query_response ?handle ?qualifier ~source ~query response =
     let query = Commands.Query.parse_query ~root:local_root query in
-    assert_response ~local_root ~source ~request:query (Some (Protocol.TypeQueryResponse response))
+    assert_response
+      ?handle
+      ?qualifier
+      ~local_root
+      ~source
+      ~request:query
+      (Some (Protocol.TypeQueryResponse response))
   in
   let parse_annotation serialized =
     serialized
@@ -859,8 +866,21 @@ let test_query context =
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success ()));
 
-  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"))
+  assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
 
+  Path.create_relative ~root:local_root ~relative:"a.py"
+  |> File.create ~content:"pass"
+  |> File.write;
+
+  assert_type_query_response
+    ~qualifier:(Access.create "a")
+    ~handle:"a.py"
+    ~source:"pass"
+    ~query:"path_of_module(a)"
+    (Protocol.TypeQuery.Response
+       (Protocol.TypeQuery.FoundPath
+          (Path.create_relative ~root:local_root ~relative:"a.py"
+            |> Path.absolute)))
 
 
 let test_connect context =

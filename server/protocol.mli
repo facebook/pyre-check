@@ -35,6 +35,7 @@ module TypeQuery: sig
     | Meet of Access.t * Access.t
     | Methods of Access.t
     | NormalizeType of Access.t
+    | PathOfModule of Access.t
     | SaveServerState of Pyre.Path.t
     | Signature of Access.t
     | Superclasses of Access.t
@@ -81,6 +82,7 @@ module TypeQuery: sig
     | Boolean of bool
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
+    | FoundPath of string
     | FoundSignature of found_signature list
     | Success of unit
     | Superclasses of Type.t list

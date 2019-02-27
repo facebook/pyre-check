@@ -71,6 +71,8 @@ let parse_query ~root query =
             Request.TypeQueryRequest (Methods (access name))
         | "normalize_type", [name] ->
             Request.TypeQueryRequest (NormalizeType (access name))
+        | "path_of_module", [module_access] ->
+            Request.TypeQueryRequest (PathOfModule (access module_access))
         | "save_server_state", [path] ->
             Request.TypeQueryRequest
               (SaveServerState

@@ -117,7 +117,11 @@ let test_parse_query _ =
        (File.create (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py")));
   assert_fails_to_parse "dump_dependencies(unquoted)";
 
-  assert_parses "dump_memory_to_sqlite()" DumpMemoryToSqlite
+  assert_parses "dump_memory_to_sqlite()" DumpMemoryToSqlite;
+
+  assert_parses "path_of_module(a.b.c)" (PathOfModule (Expression.Access.create "a.b.c"));
+  assert_fails_to_parse "path_of_module('a.b.c')";
+  assert_fails_to_parse "path_of_module(a.b, b.c)"
 
 
 let () =

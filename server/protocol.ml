@@ -49,6 +49,7 @@ module TypeQuery = struct
     | Meet of Access.t * Access.t
     | Methods of Access.t
     | NormalizeType of Access.t
+    | PathOfModule of Access.t
     | SaveServerState of Pyre.Path.t
     | Signature of Access.t
     | Superclasses of Access.t
@@ -96,6 +97,7 @@ module TypeQuery = struct
     | Boolean of bool
     | FoundAttributes of attribute list
     | FoundMethods of method_representation list
+    | FoundPath of string
     | FoundSignature of found_signature list
     | Success of unit
     | Superclasses of Type.t list
@@ -111,6 +113,8 @@ module TypeQuery = struct
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
     | FoundMethods methods ->
         `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
+    | FoundPath path ->
+        `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
     | Success () ->
