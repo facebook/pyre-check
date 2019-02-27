@@ -41,22 +41,19 @@ let test_handle _ =
 
 
 let test_aliased_export _ =
-  let assert_aliased_exports ?(qualifier = []) source aliased_exports =
+  let assert_aliased_exports ?(qualifier = []) ?handle source aliased_exports =
     let module_definition =
       let { Source.statements; _ } = parse source in
-      Module.create ~qualifier ~local_mode:Source.Default ~stub:false statements
+      Module.create ?handle ~qualifier ~local_mode:Source.Default ~stub:false statements
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
         Access.create source
         |> Module.aliased_export module_definition
-        |> (fun value -> Option.value_exn value)
+        |> (fun value -> Option.value value ~default:[Access.Identifier "$not_exported"])
         |> Access.show
       in
-      assert_equal
-        ~printer:Fn.id
-        expected_target
-        actual_target
+      assert_equal ~printer:Fn.id expected_target actual_target
     in
     List.iter ~f:assert_aliased_export aliased_exports
   in
@@ -130,7 +127,21 @@ let test_aliased_export _ =
       from other import thing
       from other import thing
     |}
-    ["thing", "other.thing"]
+    ["thing", "other.thing"];
+
+  (* Exports through assignments. *)
+  assert_aliased_exports
+    ~qualifier:(Access.create "requests")
+    ~handle:(File.Handle.create "requests/__init__.pyi")
+    {|
+      from . import api
+      post = api.post
+      not_exported = other.assignment
+    |}
+    [
+      "post", "requests.api.post";
+      "not_exported", "$not_exported";
+    ]
 
 
 let test_wildcard_exports _ =

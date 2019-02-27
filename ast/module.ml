@@ -71,49 +71,51 @@ let wildcard_exports { wildcard_exports; _ } =
 
 let create ~qualifier ~local_mode ?handle ~stub statements =
   let aliased_exports =
-    let aliased_exports { Node.value; _ } =
+    let aliased_exports aliases { Node.value; _ } =
       match value with
+      | Assign {
+          Assign.target = { Node.value = Access (SimpleAccess ([_] as target)); _ };
+          value = { Node.value = Access (SimpleAccess (imported :: value)); _ };
+          _;
+        } ->
+          Map.find aliases [imported]
+          >>| (fun alias -> Map.set aliases ~key:target ~data:(alias @ value))
+          |> Option.value ~default:aliases
       | Import { Import.from = Some from; imports } ->
-          let from =
-            Source.expand_relative_import
-              ?handle
-              ~qualifier
-              ~from
-          in
-          let export { Import.name; alias } =
+          let from = Source.expand_relative_import ?handle ~qualifier ~from in
+          let export aliases { Import.name; alias } =
             let alias = Option.value ~default:name alias in
             let name = if Access.show alias = "*" then from else from @ name in
             (* The problem this bit solves is that we may generate an alias prefix <- prefix.rest
                after qualification, which would cause an infinite loop when folding over
                prefix.attribute. To avoid this, drop the prefix whenever we see that the
                qualified alias would cause a loop. *)
-            if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
-              alias, Access.drop_prefix ~prefix:qualifier name
-            else
-              alias, name
+            let source, target =
+              if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
+                alias, Access.drop_prefix ~prefix:qualifier name
+              else
+                alias, name
+            in
+            Map.set aliases ~key:source ~data:target
           in
-          List.map imports ~f:export
+          List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
-          let export { Import.name; alias } =
+          let export aliases { Import.name; alias } =
             let alias = Option.value ~default:name alias in
-            if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
-              alias, Access.drop_prefix ~prefix:qualifier name
-            else
-              alias, name
+            let source, target =
+              if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
+                alias, Access.drop_prefix ~prefix:qualifier name
+              else
+                alias, name
+            in
+            Map.set aliases ~key:source ~data:target
           in
-          List.map imports ~f:export
+          List.fold imports ~f:export ~init:aliases
       | _ ->
-          []
+          aliases
     in
-    let filter_duplicates (sofar, visited) (alias, target) =
-      if Set.mem visited alias then
-        (sofar, visited)
-      else
-        (alias, target) :: sofar, Set.add visited alias
-    in
-    List.concat_map ~f:aliased_exports statements
-    |> List.fold ~init:([], Access.Set.empty) ~f:filter_duplicates
-    |> fst
+    List.fold statements ~f:aliased_exports ~init:Access.Map.empty
+    |> Map.to_alist
   in
   let toplevel_public, dunder_all =
     let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
