@@ -290,12 +290,21 @@ def main() -> int:
     query = parsed_commands.add_parser(commands.Query.NAME)
     query_message = """One of:
     `help`,
-    `type_check(path, ...)`,
+    `attributes(type)`,
+    `dump_dependencies(path)`,
+    `dump_memory_to_sqlite`,
+    `join(left, right)`,
     `less_or_equal(left, right)`,
     `meet(left, right)`,
-    `join(left, right)`,
+    `methods(type)`,
     `normalize_type(type)`,
-    `superclasses(type)`
+    `save_server_state(path)`,
+    `signature(name)`,
+    `superclasses(type)`,
+    `type(name)`,
+    `type_at_position(path, row, column)`,
+    `types_in_file(path)`
+    `type_check(path, ...)`,
     """
     query.add_argument("query", help=query_message)
     query.set_defaults(command=commands.Query)
