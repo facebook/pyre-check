@@ -227,14 +227,13 @@ let connect
           Handler.find edges predecessor
           |> Option.value ~default:[]
         in
-        let target = { Target.target = successor; parameters} in
         Handler.set
           edges
           ~key:predecessor
-          ~data:(target :: successors)
+          ~data:({ Target.target = successor; parameters } :: successors)
       in
       connect ~edges ~predecessor ~successor;
-      connect ~edges:backedges ~predecessor:successor ~successor:predecessor
+      connect ~edges:backedges ~predecessor:successor ~successor:predecessor;
     end
 
 
@@ -275,6 +274,19 @@ let disconnect_successors ((module Handler: Handler) as order) annotation =
         )
       |> ignore
     end
+
+
+let normalize (module Handler: Handler) =
+  let backedges = Handler.backedges () in
+  let sort_backedges key =
+    let sorted =
+      Handler.find_unsafe backedges key
+      |> List.sort ~compare:Target.compare
+      |> List.remove_consecutive_duplicates ~equal:Target.equal
+    in
+    Handler.set backedges ~key ~data:sorted
+  in
+  List.iter (Handler.keys ()) ~f:sort_backedges
 
 
 let contains (module Handler: Handler) annotation =

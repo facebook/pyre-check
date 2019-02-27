@@ -79,6 +79,10 @@ val connect
    backedges. It does not remove the annotation from the TypeOrder. *)
 val disconnect_successors: (module Handler) -> Type.t -> unit
 
+(* Converts the type order representation into a canonical format in order to support comparing type
+   environment states. *)
+val normalize: (module Handler) -> unit
+
 (* Returns true if the type order contains the literal annotation. For example, if typing.List
    is in order, `contains order typing.List` will evaluate to true, whereas
    `contains order typing.List[int]` will evaluate to false. *)

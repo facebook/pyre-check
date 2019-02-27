@@ -426,9 +426,13 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           with Unix.Unix_error _ ->
             ()
         in
-        let seconds = Memory.save_table_sqlite path in
+        let timer = Timer.start () in
+        (* Normalize the type order for comparison. *)
+        TypeOrder.normalize (module Handler.TypeOrderHandler);
+        Memory.save_table_sqlite path
+        |> ignore;
         let { Memory.used_slots; _ } = Memory.hash_stats () in
-        Log.info "Dumped %d slots in %d seconds to %s" used_slots seconds path;
+        Log.info "Dumped %d slots in %.2f seconds to %s" used_slots (Timer.stop timer) path;
         TypeQuery.Response (TypeQuery.Success ())
 
     | TypeQuery.Join (left, right) ->

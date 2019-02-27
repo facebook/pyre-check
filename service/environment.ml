@@ -472,6 +472,8 @@ let populate_shared_memory
       in
       add_table add_backedge backedges;
 
+      add_table OrderBackedges.write_through backedges;
+
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
       OrderKeys.write_through "Order" (Hashtbl.keys annotations);
