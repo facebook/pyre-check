@@ -77,8 +77,8 @@ let build
   let get_sources =
     List.fold
       ~init:[]
-      ~f:(fun handles path ->
-          match Ast.SharedMemory.Sources.get path with
+      ~f:(fun handles handle ->
+          match Ast.SharedMemory.Sources.get handle with
           | Some handle -> handle :: handles
           | None -> handles)
   in
@@ -200,12 +200,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
     let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
 
-    let clear_keys_batch paths =
-      FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list paths);
-      ClassKeys.remove_batch (ClassKeys.KeySet.of_list paths);
-      AliasKeys.remove_batch (AliasKeys.KeySet.of_list paths);
-      GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list paths);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list paths)
+    let clear_keys_batch handles =
+      FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list handles);
+      ClassKeys.remove_batch (ClassKeys.KeySet.of_list handles);
+      AliasKeys.remove_batch (AliasKeys.KeySet.of_list handles);
+      GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list handles);
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
 
     let dependents = Dependents.get
   end: Dependencies.Handler)
@@ -385,13 +385,13 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let purge ?(debug = false) handles =
     let purge_dependents keys =
-      let remove_path dependents =
+      let remove_handle dependents =
         File.Handle.Set.Tree.filter
           ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
           dependents
       in
       List.iter
-        ~f:(fun key -> Dependents.get key >>| remove_path >>| Dependents.add key |> ignore)
+        ~f:(fun key -> Dependents.get key >>| remove_handle >>| Dependents.add key |> ignore)
         keys;
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
     in
@@ -403,7 +403,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     end;
 
     (* Remove the connection to the parent (if any) for all
-       classes defined in the updated paths. *)
+       classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
     |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
 
@@ -428,7 +428,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       (* If in debug mode, make sure the TypeOrder is still consistent. *)
       TypeOrder.check_integrity (module TypeOrderHandler)
 
-  let local_mode path = ErrorModes.get path
+  let local_mode handle = ErrorModes.get handle
 end
 
 
