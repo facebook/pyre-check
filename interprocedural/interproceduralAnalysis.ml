@@ -610,7 +610,7 @@ let compute_fixpoint
 
     let dump_callable callable =
       let resolution = Analysis.TypeCheck.resolution environment () in
-      let ({ Define.name; _ } as define) =
+      let { Define.name; _ } =
         match callable with
         | #Callable.real_target as callable ->
             Callable.get_definition callable ~resolution
@@ -624,11 +624,10 @@ let compute_fixpoint
         |> Option.value ~default:Result.empty_model
       in
       Log.dump
-        "Model for `%s` after %d iterations:"
+        "Model for `%s` after %d iterations:\n%a"
         (Log.Color.yellow (Access.show name))
-        iterations;
-      Log.dump "AST:\n%a" Define.pp define;
-      Log.dump "Model:\n%a" Result.pp_model_t model;
+        iterations
+        Result.pp_model_t model;
     in
     Callable.Set.iter dump_callable !callables_to_dump;
 
