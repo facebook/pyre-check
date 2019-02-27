@@ -521,6 +521,15 @@ let test_qualify _ =
   assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
   assert_qualify
     {|
+      def foo(): ...
+      "expression".foo()
+    |}
+    {|
+      def qualifier.foo(): ...
+      "expression".foo()
+    |};
+  assert_qualify
+    {|
       foo()
       def foo(): pass
     |}

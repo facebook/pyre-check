@@ -842,7 +842,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
 
   and qualify_expression
       ~qualify_strings
-      ~scope
+      ~scope:({ qualifier; _ } as scope)
       ({ Node.location; value } as expression) =
     let value =
       let qualify_entry ~qualify_strings ~scope { Dictionary.key; value } =
@@ -879,10 +879,16 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | Access (SimpleAccess access) ->
           Access (SimpleAccess (qualify_access ~qualify_strings ~scope access))
       | Access (ExpressionAccess { expression; access }) ->
+          let access =
+            (* We still want to qualify sub-accesses, e.g. arguments; but not the access after the
+               expression. *)
+            qualify_access ~qualify_strings ~scope access
+            |> Access.drop_prefix ~prefix:qualifier
+          in
           Access
             (ExpressionAccess {
                 expression = qualify_expression ~qualify_strings ~scope expression;
-                access = qualify_access ~qualify_strings ~scope access;
+                access;
               })
 
       | Await expression ->
