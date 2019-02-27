@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Tuple
 
 import IPython
 from IPython.core import page
@@ -18,8 +18,10 @@ from sapp.models import (
     Source,
     SourceLocation,
     TraceFrame,
+    TraceFrameLeafAssoc,
     TraceKind,
 )
+from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
@@ -252,6 +254,23 @@ help(COMAMND)   more info about a command
 
         The '-->' token points to the currently active trace frame within the
         trace.
+
+        Trace output has 4 columns:
+        - branches: the number of siblings a node has (including itself)
+          [indicates that the trace branches into multiple paths]
+        - callable: the name of the object that was called
+        - port/condition: a description of the type of trace frame
+          - source: where data originally comes from
+          - root: the main callable through which the data propagates
+          - sink: where data eventually flows to
+        - location: the relative location of the trace frame's source code
+
+        Example output:
+             [branches] [callable]            [port]    [location]
+             2          leaf                  source
+         -->            module.main           root      module/main.py:26|4|8
+                        module.helper.process root      module/helper.py:76|5|10
+             3          leaf                  sink      module/main.py:74|1|9
         """
         if not self._verify_issue_selected():
             return
@@ -267,15 +286,25 @@ help(COMAMND)   more info about a command
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
 
-            postcondition_traces = self._navigate_trace_frames(
+            postcondition_navigation = self._navigate_trace_frames(
                 session, self._initial_trace_frame(session, TraceKind.POSTCONDITION)
             )
-            precondition_traces = self._navigate_trace_frames(
+            precondition_navigation = self._navigate_trace_frames(
                 session, self._initial_trace_frame(session, TraceKind.PRECONDITION)
             )
 
-        self.trace_tuples = self._create_trace_tuples(
-            postcondition_traces[::-1], precondition_traces
+        root_trace_frame, _ = precondition_navigation[0]
+        self.trace_tuples = (
+            self._create_trace_tuples(reversed(postcondition_navigation))
+            + [
+                TraceTuple(
+                    callable=root_trace_frame.caller,
+                    condition=root_trace_frame.caller_port,
+                    filename=root_trace_frame.filename,
+                    location=root_trace_frame.callee_location,
+                )
+            ]
+            + self._create_trace_tuples(precondition_navigation)
         )
         self.trace_tuples_id = self.current_issue_id
 
@@ -302,114 +331,121 @@ help(COMAMND)   more info about a command
         self.trace()
 
     def _output_trace_tuples(self, trace_tuples):
+        expandable_token = "+ "
         max_length_callable = max(
-            len(trace_tuple.callable) for trace_tuple in trace_tuples
+            max(len(trace_tuple.callable) for trace_tuple in trace_tuples),
+            len("[callable]"),
         )
         max_length_condition = max(
-            len(trace_tuple.condition) for trace_tuple in trace_tuples
+            max(len(trace_tuple.condition) for trace_tuple in trace_tuples),
+            len("[port]"),
+        )
+        max_length_branches = max(
+            max(
+                len(str(trace_tuple.branches)) + len(expandable_token)
+                for trace_tuple in trace_tuples
+            ),
+            len("[branches]"),
+        )
+
+        print(  # table header
+            f"{' ' * 5}"
+            f"{'[branches]':{max_length_branches}}"
+            f" {'[callable]':{max_length_callable}}"
+            f" {'[port]':{max_length_condition}}"
+            f" [location]"
         )
 
         for i in range(len(trace_tuples)):
             prefix = "-->" if i == self.current_trace_frame_index else " " * 3
-            callable, condition, filename, location, missing = trace_tuples[i]
+            t = trace_tuples[i]
 
-            if missing:
+            if t.missing:
                 output_string = (
                     f" {prefix}"
-                    f" [Missing trace frame: {trace_tuples[i].callable}:"
-                    f"{trace_tuples[i].condition}]"
+                    f" [Missing trace frame: {t.callable}:"
+                    f"{t.condition}]"
                 )
             else:
+                branches_string = (
+                    f"{expandable_token}"
+                    f"{str(t.branches):{max_length_branches - len(expandable_token)}}"
+                    if t.branches > 1
+                    else " " * max_length_branches
+                )
                 output_string = (
                     f" {prefix}"
-                    f" {callable:{max_length_callable}}"
-                    f" {condition:{max_length_condition}}"
+                    f" {branches_string}"
+                    f" {t.callable:{max_length_callable}}"
+                    f" {t.condition:{max_length_condition}}"
+                    f" {t.filename}:{t.location}"
                 )
-                if filename is not None and location is not None:
-                    output_string += f" {filename}:{location}"
 
             print(output_string)
 
-    def _create_trace_tuples(self, postcondition_traces, precondition_traces):
-        trace_tuples = [
+    def _create_trace_tuples(self, navigation):
+        return [
             TraceTuple(
-                postcondition_traces[0].callee,
-                postcondition_traces[0].callee_port,
-                missing=postcondition_traces[0].caller is None,
+                callable=trace_frame.callee,
+                condition=trace_frame.callee_port,
+                filename=trace_frame.filename,
+                location=trace_frame.callee_location,
+                branches=branches,
+                missing=trace_frame.caller is None,
             )
+            for trace_frame, branches in navigation
         ]
-        for i in range(1, len(postcondition_traces)):
-            trace_tuples.append(
-                TraceTuple(
-                    postcondition_traces[i].callee,
-                    postcondition_traces[i].callee_port,
-                    # i - 1 since it's a postcondition
-                    postcondition_traces[i - 1].filename,
-                    postcondition_traces[i - 1].callee_location,
-                    missing=postcondition_traces[i].caller is None,
-                )
-            )
-
-        trace_tuples.append(
-            TraceTuple(
-                postcondition_traces[-1].caller,
-                postcondition_traces[-1].caller_port,
-                postcondition_traces[-1].filename,
-                postcondition_traces[-1].callee_location,
-            )
-        )  # add the issue root
-
-        for trace_frame in precondition_traces:
-            trace_tuples.append(
-                TraceTuple(
-                    trace_frame.callee,
-                    trace_frame.callee_port,
-                    trace_frame.filename,
-                    trace_frame.callee_location,
-                    missing=trace_frame.caller is None,
-                )
-            )
-
-        return trace_tuples
 
     def _initial_trace_frame(self, session, kind):
         return (
-            session.query(TraceFrame)
+            session.query(TraceFrame, func.count(distinct(TraceFrame.id)))
             .filter(TraceFrame.issue_instances.any(id=self.current_issue_id))
             .filter(TraceFrame.kind == kind)
-            .first()  # just first for now
+            .join(TraceFrame.leaf_assoc)
+            .order_by(TraceFrameLeafAssoc.trace_length)  # min trace_length
+            .first()
         )
 
     def _navigate_trace_frames(self, session, initial_trace_frame):
         trace_frames = [initial_trace_frame]
         while not self._is_leaf(trace_frames[-1]):
-            next_trace_frame = self._next_trace_frame(session, trace_frames[-1])
+            next_trace_frame, branches = self._next_trace_frame(
+                session, trace_frames[-1]
+            )
 
-            if next_trace_frame is None:
+            if branches == 0:
+                trace_frame, _ = trace_frames[-1]
                 # Denote a missing frame by setting caller to None
                 trace_frames.append(
-                    TraceFrame(
-                        callee=trace_frames[-1].callee,
-                        callee_port=trace_frames[-1].callee_port,
-                        caller=None,
+                    (
+                        TraceFrame(
+                            callee=trace_frame.callee,
+                            callee_port=trace_frame.callee_port,
+                            caller=None,
+                        ),
+                        0,
                     )
                 )
                 return trace_frames
 
-            trace_frames.append(next_trace_frame)
+            trace_frames.append((next_trace_frame, branches))
         return trace_frames
 
-    def _is_leaf(self, trace_frame: TraceFrame) -> bool:
+    def _is_leaf(self, node: Tuple[TraceFrame, int]) -> bool:
+        trace_frame, branches = node
         return trace_frame.callee_port in self.LEAF_NAMES
 
-    def _next_trace_frame(self, session, trace_frame):
+    def _next_trace_frame(self, session, node):
+        trace_frame, _ = node
         return (
-            session.query(TraceFrame)
+            session.query(TraceFrame, func.count(distinct(TraceFrame.id)))
             .filter(
                 TraceFrame.caller != TraceFrame.callee
             )  # skip recursive calls for now
             .filter(TraceFrame.caller == trace_frame.callee)
             .filter(TraceFrame.caller_port == trace_frame.callee_port)
+            .join(TraceFrame.leaf_assoc)
+            .order_by(TraceFrameLeafAssoc.trace_length)  # min trace_length
             .first()  # just first for now
         )
 
@@ -481,6 +517,7 @@ help(COMAMND)   more info about a command
 class TraceTuple(NamedTuple):
     callable: str
     condition: str
-    filename: Optional[str] = None
-    location: Optional[SourceLocation] = None
+    filename: str
+    location: SourceLocation
+    branches: int = 1
     missing: bool = False

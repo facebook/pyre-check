@@ -25,6 +25,7 @@ from sapp.models import (
     Source,
     SourceLocation,
     TraceFrame,
+    TraceFrameLeafAssoc,
     TraceKind,
 )
 
@@ -601,93 +602,87 @@ class InteractiveTest(TestCase):
 
     def testNextTraceFrame(self):
         trace_frames = self._basic_trace_frames()
+        assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
-            next_frame = self.interactive._next_trace_frame(session, trace_frames[0])
-            self.assertEqual(int(next_frame.id), trace_frames[1].id)
+            session.add(assoc)
+            session.commit()
+
+            next_frame, s = self.interactive._next_trace_frame(
+                session, (trace_frames[0], 1)
+            )
+            self.assertEqual(s, 1)
+            self.assertEqual(int(next_frame.id), int(trace_frames[1].id))
 
     def testNavigateTraceFrames(self):
         trace_frames = self._basic_trace_frames()
+        assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
-            result = self.interactive._navigate_trace_frames(session, trace_frames[0])
+            session.add(assoc)
+            session.commit()
+
+            result = self.interactive._navigate_trace_frames(
+                session, (trace_frames[0], 1)
+            )
             self.assertEqual(len(result), 2)
-            self.assertEqual(int(result[0].id), 1)
-            self.assertEqual(int(result[1].id), 2)
+            self.assertEqual(int(result[0][0].id), 1)
+            self.assertEqual(int(result[1][0].id), 2)
 
     def testCreateTraceTuples(self):
+        # reverse order
         postcondition_traces = [
-            TraceFrame(
-                callee="leaf",
-                callee_port="source",
-                caller="dummy caller",
-                filename="file1.py",
-                callee_location=SourceLocation(1, 1, 1),
+            (
+                TraceFrame(
+                    callee="call3",
+                    callee_port="result",
+                    filename="file3.py",
+                    callee_location=SourceLocation(1, 1, 3),
+                    caller="main",
+                    caller_port="root",
+                ),
+                1,
             ),
-            TraceFrame(
-                callee="call2",
-                callee_port="result",
-                caller="dummy caller",
-                filename="file2.py",
-                callee_location=SourceLocation(1, 1, 2),
+            (
+                TraceFrame(
+                    callee="call2",
+                    callee_port="result",
+                    caller="dummy caller",
+                    filename="file2.py",
+                    callee_location=SourceLocation(1, 1, 2),
+                ),
+                1,
             ),
-            TraceFrame(
-                callee="call3",
-                callee_port="result",
-                filename="file3.py",
-                callee_location=SourceLocation(1, 1, 3),
-                caller="main",
-                caller_port="root",
-            ),
-        ]
-        precondition_traces = [
-            TraceFrame(
-                callee="call4",
-                callee_port="result",
-                caller="dummy caller",
-                filename="file4.py",
-                callee_location=SourceLocation(1, 1, 4),
-            ),
-            TraceFrame(
-                callee="call5",
-                callee_port="result",
-                caller="dummy caller",
-                filename="file5.py",
-                callee_location=SourceLocation(1, 1, 5),
-            ),
-            TraceFrame(
-                callee="leaf",
-                callee_port="sink",
-                caller="dummy caller",
-                filename="file6.py",
-                callee_location=SourceLocation(1, 1, 6),
+            (
+                TraceFrame(
+                    callee="leaf",
+                    callee_port="source",
+                    caller="dummy caller",
+                    filename="file1.py",
+                    callee_location=SourceLocation(1, 1, 1),
+                ),
+                1,
             ),
         ]
-        trace_tuples = self.interactive._create_trace_tuples(
-            postcondition_traces, precondition_traces
-        )
-        self.assertEqual(len(trace_tuples), 7)
+        trace_tuples = self.interactive._create_trace_tuples(postcondition_traces)
+        self.assertEqual(len(trace_tuples), 3)
         self.assertEqual(
             trace_tuples,
             [
-                TraceTuple("leaf", "source"),
-                TraceTuple("call2", "result", "file1.py", SourceLocation(1, 1, 1)),
-                TraceTuple("call3", "result", "file2.py", SourceLocation(1, 1, 2)),
-                TraceTuple("main", "root", "file3.py", SourceLocation(1, 1, 3)),
-                TraceTuple("call4", "result", "file4.py", SourceLocation(1, 1, 4)),
-                TraceTuple("call5", "result", "file5.py", SourceLocation(1, 1, 5)),
-                TraceTuple("leaf", "sink", "file6.py", SourceLocation(1, 1, 6)),
+                TraceTuple("call3", "result", "file3.py", SourceLocation(1, 1, 3)),
+                TraceTuple("call2", "result", "file2.py", SourceLocation(1, 1, 2)),
+                TraceTuple("leaf", "source", "file1.py", SourceLocation(1, 1, 1)),
             ],
         )
 
     def testOutputTraceTuples(self):
         trace_tuples = [
-            TraceTuple("leaf", "source"),
-            TraceTuple("call2", "result", "file1.py", SourceLocation(1, 1, 1)),
-            TraceTuple("call3", "result", "file2.py", SourceLocation(1, 1, 2)),
-            TraceTuple("main", "root", "file3.py", SourceLocation(1, 1, 3)),
-            TraceTuple("call4", "result", "file4.py", SourceLocation(1, 1, 4)),
-            TraceTuple("call5", "result", "file5.py", SourceLocation(1, 1, 5)),
+            TraceTuple("leaf", "source", "file1.py", SourceLocation(1, 1, 1)),
+            TraceTuple("call2", "result", "file2.py", SourceLocation(1, 1, 2)),
+            TraceTuple("call3", "result", "file3.py", SourceLocation(1, 1, 3)),
+            TraceTuple("main", "root", "file4.py", SourceLocation(1, 1, 4)),
+            TraceTuple("call4", "param0", "file4.py", SourceLocation(1, 1, 4)),
+            TraceTuple("call5", "param1", "file5.py", SourceLocation(1, 1, 5)),
             TraceTuple("leaf", "sink", "file6.py", SourceLocation(1, 1, 6)),
         ]
         self.interactive.current_trace_frame_index = 1
@@ -696,13 +691,14 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             output.split("\n"),
             [
-                "     leaf  source",
-                " --> call2 result file1.py:1|1|1",
-                "     call3 result file2.py:1|1|2",
-                "     main  root   file3.py:1|1|3",
-                "     call4 result file4.py:1|1|4",
-                "     call5 result file5.py:1|1|5",
-                "     leaf  sink   file6.py:1|1|6",
+                "     [branches] [callable] [port] [location]",
+                "                leaf       source file1.py:1|1|1",
+                " -->            call2      result file2.py:1|1|2",
+                "                call3      result file3.py:1|1|3",
+                "                main       root   file4.py:1|1|4",
+                "                call4      param0 file4.py:1|1|4",
+                "                call5      param1 file5.py:1|1|5",
+                "                leaf       sink   file6.py:1|1|6",
                 "",
             ],
         )
@@ -714,13 +710,14 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             output.split("\n"),
             [
-                "     leaf  source",
-                "     call2 result file1.py:1|1|1",
-                "     call3 result file2.py:1|1|2",
-                "     main  root   file3.py:1|1|3",
-                " --> call4 result file4.py:1|1|4",
-                "     call5 result file5.py:1|1|5",
-                "     leaf  sink   file6.py:1|1|6",
+                "     [branches] [callable] [port] [location]",
+                "                leaf       source file1.py:1|1|1",
+                "                call2      result file2.py:1|1|2",
+                "                call3      result file3.py:1|1|3",
+                "                main       root   file4.py:1|1|4",
+                " -->            call4      param0 file4.py:1|1|4",
+                "                call5      param1 file5.py:1|1|5",
+                "                leaf       sink   file6.py:1|1|6",
                 "",
             ],
         )
@@ -765,6 +762,8 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
         ]
 
         with self.db.make_session() as session:
@@ -783,9 +782,9 @@ class InteractiveTest(TestCase):
         self.interactive.set_issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
-        self.assertIn("     leaf  source", output)
-        self.assertIn(" --> call1 root   file.py:1|1|1", output)
-        self.assertIn("     leaf  sink   file.py:1|1|2", output)
+        self.assertIn("                leaf       source file.py:1|1|1", output)
+        self.assertIn(" -->            call1      root   file.py:1|1|2", output)
+        self.assertIn("                leaf       sink   file.py:1|1|2", output)
 
     def testTraceMissingFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -804,6 +803,8 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
         ]
 
         # trace_frame[0] no longer connects to trace_frame[1]
@@ -866,6 +867,8 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
         ]
         with self.db.make_session() as session:
             session.add(run)
@@ -886,6 +889,66 @@ class InteractiveTest(TestCase):
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.prev_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
+
+    def testTraceBranches(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instance = IssueInstance(
+            id=1,
+            run_id=1,
+            message_id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            issue_id=1,
+        )
+
+        trace_frames = []
+        assocs = []
+        for i in range(5):
+            trace_frames.append(
+                TraceFrame(
+                    id=i + 1,
+                    caller="call1",
+                    caller_port="root",
+                    callee="leaf",
+                    callee_location=SourceLocation(1, 1),
+                    filename="file.py",
+                    run_id=1,
+                )
+            )
+            if i < 2:  # 2 postconditions
+                trace_frames[i].kind = TraceKind.POSTCONDITION
+                trace_frames[i].callee_port = "source"
+            else:
+                trace_frames[i].kind = TraceKind.PRECONDITION
+                trace_frames[i].callee_port = "sink"
+
+            assocs.append(
+                IssueInstanceTraceFrameAssoc(trace_frame_id=i + 1, issue_instance_id=1)
+            )
+            assocs.append(TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=1))
+
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.start_repl()
+        self.interactive.set_issue(1)
+        self.interactive.trace()
+        output = self.stdout.getvalue().strip()
+        self.assertIn("     + 2        leaf       source file.py:1|1|1", output)
+        self.assertIn(" -->            call1      root   file.py:1|1|1", output)
+        self.assertIn("     + 3        leaf       sink   file.py:1|1|1", output)
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
