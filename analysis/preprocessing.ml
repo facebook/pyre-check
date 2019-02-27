@@ -1452,21 +1452,20 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
       in
       let extract_totality arguments =
         let is_total ~total = Identifier.sanitized total = "total" in
-        match arguments with
-        | [] ->
-            Some true
-        | [{
-            Argument.name = Some { value = total; _ };
-            value = { Node.value = Expression.True; _ }
-          }] when is_total ~total ->
-            Some true
-        | [{
-            Argument.name = Some { value = total; _ };
-            value = { Node.value = Expression.False; _ }
-          }] when is_total ~total ->
-            Some false
-        | _ ->
-            None
+        List.find_map arguments ~f:(function
+            | {
+              Argument.name = Some { value = total; _ };
+              value = { Node.value = Expression.True; _ }
+            } when is_total ~total ->
+                Some true
+            | {
+              Argument.name = Some { value = total; _ };
+              value = { Node.value = Expression.False; _ }
+            } when is_total ~total ->
+                Some false
+            | _ ->
+                None)
+        |> Option.value ~default:true
       in
       match value with
       | Assign {
@@ -1495,11 +1494,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           _;
         }
         when is_typed_dictionary ~module_name ~typed_dictionary ->
-          let fields = List.map entries ~f:(fun { Dictionary.key; value } -> key, value) in
-          extract_totality argument_tail
-          >>| (fun total ->
-              typed_dictionary_declaration_assignment ~name ~fields ~target ~parent ~total)
-          |> Option.value ~default:value
+          typed_dictionary_declaration_assignment
+            ~name
+            ~fields:(List.map entries ~f:(fun { Dictionary.key; value } -> key, value))
+            ~target
+            ~parent
+            ~total:(extract_totality argument_tail)
       | Class {
           name = class_name;
           bases =
@@ -1549,24 +1549,19 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             in
             List.filter_map body ~f:extract
           in
-          if List.length fields = List.length body then
-            let declaration class_name =
-              let qualified = qualify_local_identifier class_name ~qualifier in
-              extract_totality bases_tail
-              >>| (fun total ->
-                  typed_dictionary_declaration_assignment
-                    ~name:(string_literal class_name)
-                    ~fields
-                    ~target:(Node.create (Access (SimpleAccess qualified)) ~location)
-                    ~parent:None
-                    ~total)
-            in
-            Access.drop_prefix class_name ~prefix:qualifier
-            |> single_identifier
-            >>= declaration
-            |> Option.value ~default:value
-          else
-            value
+          let declaration class_name =
+            let qualified = qualify_local_identifier class_name ~qualifier in
+            typed_dictionary_declaration_assignment
+              ~name:(string_literal class_name)
+              ~fields
+              ~target:(Node.create (Access (SimpleAccess qualified)) ~location)
+              ~parent:None
+              ~total:(extract_totality bases_tail)
+          in
+          Access.drop_prefix class_name ~prefix:qualifier
+          |> single_identifier
+          >>| declaration
+          |> Option.value ~default:value
       | _ ->
           value
     in

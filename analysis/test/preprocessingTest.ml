@@ -1668,7 +1668,16 @@ let test_expand_typed_dictionaries _ =
     ("Movie: " ^
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
-
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict, total=True):
+        """docstring"""
+        name: str
+        year: int
+    |}
+    ("Movie: " ^
+     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
+     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
   (* Invalid TypedDicts *)
   assert_expand
     {|
@@ -1683,7 +1692,46 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       TypedDictWithWrongArity = mypy_extensions.TypedDict(A, B, C)
+    |};
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict, total=True):
+        name: str
+        year: int
+        def ignored_method(self) -> None: pass
     |}
+    ("Movie: " ^
+     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
+     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict, total=True, total=False):
+        name: str
+        year: int
+    |}
+    ("Movie: " ^
+     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
+     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict, garbage=7):
+        name: str
+        year: int
+    |}
+    ("Movie: " ^
+     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
+     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+  assert_expand
+    {|
+      class Movie(mypy_extensions.TypedDict, OtherClass):
+        name: str
+        year: int
+    |}
+    ("Movie: " ^
+     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
+     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+  ()
+
 
 
 let test_try_preprocess _ =
