@@ -32,7 +32,20 @@ let test_check_unbounded_variables _ =
       def foo(input: T) -> int:
         return input
     |}
-    ["Incompatible return type [7]: Expected `int` but got `Variable[T]`."]
+    ["Incompatible return type [7]: Expected `int` but got `Variable[T]`."];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def mapping_get(k: str, default: typing.Union[int, T]) -> typing.Union[int, T]: ...
+      def foo() -> None:
+        reveal_type(mapping_get("A", "A"))
+        reveal_type(mapping_get("A", 7))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `typing.Union[int, str]`.";
+      "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `int`.";
+    ];
+  ()
 
 
 let test_check_variable_bindings _ =

@@ -657,6 +657,7 @@ let union parameters =
     Top
   else
     let normalize parameters =
+      let parameters = List.filter parameters ~f:(function | Bottom -> false | _ -> true) in
       match parameters with
       | [] -> Bottom
       | [parameter] -> parameter

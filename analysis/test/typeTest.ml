@@ -647,6 +647,8 @@ let test_union _ =
   assert_true
     (Type.equal (Type.union [Type.float; Type.string]) (Type.Union [Type.float; Type.string]));
   assert_true (Type.equal (Type.union [Type.float]) Type.float);
+  assert_true (Type.equal (Type.union [Type.float; Type.Bottom]) Type.float);
+  assert_true (Type.equal (Type.union [Type.Bottom; Type.Bottom]) Type.Bottom);
 
   (* Flatten unions. *)
   assert_equal
