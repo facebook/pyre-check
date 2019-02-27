@@ -956,19 +956,22 @@ let constructor definition ~instantiated ~resolution =
               Type.Tuple (Type.Unbounded tuple_variable)
           | _ ->
               Type.Tuple (Type.Unbounded Type.Any)
-        else if List.is_empty generics then
-          class_annotation
         else
           begin
-            match instantiated with
-            | Type.Parametric { parameters; _}
-              when List.length parameters = List.length generics ->
+            let backup = Type.Parametric { name; parameters = generics } in
+            match instantiated, generics with
+            | _, [] ->
                 instantiated
+            | Type.Primitive instantiated_name, _ when instantiated_name = name ->
+                backup
+            | Type.Parametric { parameters; name = instantiated_name }, _
+              when instantiated_name = name && List.length parameters <> List.length generics ->
+                backup
             | _ ->
-                Type.Parametric { name; parameters = generics }
+                instantiated
           end
     | _ ->
-        class_annotation
+        instantiated
   in
   let definitions =
     definition :: superclasses ~resolution definition

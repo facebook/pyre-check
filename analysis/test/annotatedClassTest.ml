@@ -335,7 +335,16 @@ let test_constructors _ =
         pass
     |}
     "C"
-    (Some "typing.Callable('Parent.__new__')[[Named(x, str)], C]")
+    (Some "typing.Callable('Parent.__new__')[[Named(x, str)], C]");
+  assert_constructor
+    {|
+      T = typing.TypeVar('T', bound=C)
+      class C:
+        def C.__init__(self, x: int) -> None: pass
+    |}
+    "T"
+    (Some "typing.Callable('C.__init__')[[Named(x, int)], T]");
+  ()
 
 
 let test_methods _ =

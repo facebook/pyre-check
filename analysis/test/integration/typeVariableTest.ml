@@ -91,7 +91,18 @@ let test_check_variable_bindings _ =
       "Incompatible return type [7]: Expected `None` but got `int`.";
       "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
        `f` but got `None`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      class C: pass
+      T = typing.TypeVar('T', bound=C)
+      def foo(input: typing.Type[T]) -> T:
+        v = input()
+        reveal_type(v)
+        return v
+    |}
+    ["Revealed type [-1]: Revealed type for `v` is `Variable[T (bound to C)]`."];
+  ()
 
 
 let test_bottom_unbound_variables _ =
