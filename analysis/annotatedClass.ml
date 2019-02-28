@@ -720,12 +720,17 @@ type implements_result =
 
 let implements ~resolution definition ~protocol =
   let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
-    if  Access.equal name protocol_name then
+    if Access.equal name protocol_name then
+      let source =
+        Type.Callable.create_from_implementation overload
+        |> Type.mark_variables_as_bound ~simulated:true
+      in
       Resolution.solve_constraints
         resolution
-        ~source:(Type.Callable.create_from_implementation overload)
+        ~source
         ~target:(Type.Callable.create_from_implementation protocol_overload)
         ~constraints
+      >>| Type.Map.map ~f:Type.free_simulated_bound_variables
     else
       None
   in

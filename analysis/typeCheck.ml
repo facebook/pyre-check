@@ -1878,6 +1878,11 @@ module State = struct
                       ~location
                       ~kind:(Error.MissingArgument { callee; name })
                       ~define
+                | MutuallyRecursiveTypeVariables ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.MutuallyRecursiveTypeVariables callee)
+                      ~define
                 | TooManyArguments { expected; provided } ->
                     Error.create
                       ~location

@@ -500,7 +500,113 @@ type order = {
 }
 
 
-let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target =
+(* TODO(T40105833): merge this with actual signature select, to get overload handling, etc. *)
+let rec simulate_signature_select order ~implementation ~called_as =
+  let open Callable in
+  let constraints =
+    let initial_constraints =
+      let to_bottom constraints variable =
+        Map.set constraints ~key:variable ~data:Type.Bottom
+      in
+      Type.Callable {
+        Type.Callable.kind = Anonymous;
+        implementation;
+        overloads = [];
+        implicit = None;
+      }
+      |> Type.free_variables
+      |> List.fold ~f:to_bottom ~init:Type.Map.empty
+    in
+    match implementation.parameters, called_as.parameters with
+    | Undefined, Undefined ->
+        Some initial_constraints
+    | Defined implementation_parameters, Defined right ->
+        begin
+          try
+            let rec solve_parameters left right constraints =
+              match left, right with
+              | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
+                :: left_parameters,
+                Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
+                :: right_parameters
+              | Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
+                :: left_parameters,
+                Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
+                :: right_parameters
+              | Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
+                :: left_parameters,
+                Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
+                :: right_parameters ->
+                  if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
+                    solve_constraints
+                      order
+                      ~constraints
+                      ~source:right_annotation
+                      ~target:left_annotation
+                    >>= solve_parameters left_parameters right_parameters
+                  else
+                    None
+
+              | Parameter.Variable { Parameter.annotation = left_annotation; _ }
+                :: _,
+                (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
+                :: right_parameters
+                when Parameter.is_anonymous right ->
+                  solve_constraints
+                    order
+                    ~constraints
+                    ~source:right_annotation
+                    ~target:left_annotation
+                  >>= solve_parameters left right_parameters
+              | Parameter.Variable _ :: left_parameters, []
+              | Parameter.Keywords _ :: left_parameters, [] ->
+                  solve_parameters left_parameters [] constraints
+
+              | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
+                (Parameter.Named _ as named) :: right ->
+                  (* SOLVE *)
+                  let is_compatible =
+                    Type.equal
+                      (Parameter.annotation variable)
+                      (Parameter.annotation keywords) &&
+                    less_or_equal
+                      order
+                      ~left:(Parameter.annotation named)
+                      ~right:(Parameter.annotation keywords)
+                  in
+                  if is_compatible then
+                    solve_parameters left right constraints
+                  else
+                    None
+
+              | left :: left_parameters, [] ->
+                  if Parameter.default left then
+                    solve_parameters left_parameters [] constraints
+                  else
+                    None
+
+              | [], [] ->
+                  Some constraints
+
+              | _ ->
+                  None
+            in
+            solve_parameters implementation_parameters right initial_constraints
+          with _ ->
+            None
+        end
+    | Defined _, Undefined ->
+        Some initial_constraints
+    | Undefined, Defined _ ->
+        None
+  in
+  constraints
+  >>| (fun constraints ->
+      map_implementation implementation ~f:(Type.instantiate ~constraints:(Map.find constraints))
+    )
+
+
+and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target =
   let rec solve_constraints_throws order ~constraints ~source ~target =
     let solve_all ?(ignore_length_mismatch = false) constraints ~sources ~targets =
       let folded_constraints =
@@ -532,33 +638,36 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
                 >>| (fun existing -> join order existing source)
                 |> Option.value ~default:source
               in
-              begin
-                match joined_source, target_constraints with
-                | Type.Variable { constraints = Type.Explicit source_constraints; _ },
-                  Type.Explicit target_constraints ->
-                    let exists_in_target_constraints source_constraint =
-                      List.exists target_constraints ~f:(Type.equal source_constraint)
-                    in
-                    Option.some_if
-                      (List.for_all source_constraints ~f:exists_in_target_constraints)
-                      joined_source
-                | Type.Variable { constraints = Type.Bound joined_source; _ },
-                  Type.Explicit target_constraints
-                | joined_source, Type.Explicit target_constraints ->
-                    let in_constraint bound =
-                      less_or_equal order ~left:joined_source ~right:bound
-                    in
-                    (* When doing multiple solves, all of these options ought to be considered, *)
-                    (* and solved in a fixpoint *)
-                    List.find ~f:in_constraint target_constraints
-                | _, Type.Bound bound ->
-                    Option.some_if
-                      (less_or_equal order ~left:joined_source ~right:bound)
-                      joined_source
-                | _, Type.Unconstrained ->
-                    Some joined_source
-              end
-              >>| (fun data -> Map.set constraints ~key:variable ~data)
+              if Type.equal source variable then
+                Some constraints
+              else
+                begin
+                  match joined_source, target_constraints with
+                  | Type.Variable { constraints = Type.Explicit source_constraints; _ },
+                    Type.Explicit target_constraints ->
+                      let exists_in_target_constraints source_constraint =
+                        List.exists target_constraints ~f:(Type.equal source_constraint)
+                      in
+                      Option.some_if
+                        (List.for_all source_constraints ~f:exists_in_target_constraints)
+                        joined_source
+                  | Type.Variable { constraints = Type.Bound joined_source; _ },
+                    Type.Explicit target_constraints
+                  | joined_source, Type.Explicit target_constraints ->
+                      let in_constraint bound =
+                        less_or_equal order ~left:joined_source ~right:bound
+                      in
+                      (* When doing multiple solves, all of these options ought to be considered, *)
+                      (* and solved in a fixpoint *)
+                      List.find ~f:in_constraint target_constraints
+                  | _, Type.Bound bound ->
+                      Option.some_if
+                        (less_or_equal order ~left:joined_source ~right:bound)
+                        joined_source
+                  | _, Type.Unconstrained ->
+                      Some joined_source
+                end
+                >>| (fun data -> Map.set constraints ~key:variable ~data)
           | _, Type.Parametric { name = target_name; parameters = target_parameters } ->
               let enforce_variance constraints =
                 let instantiated_target =
@@ -605,33 +714,36 @@ let rec solve_constraints ({ constructor; _ } as order) ~constraints ~source ~ta
                 ~f:(fun target ->
                     solve_constraints_throws order ~constraints ~source ~target)
               |> List.hd
-          | Type.Callable {
-              Type.Callable.implementation = {
-                Type.Callable.annotation = source;
-                parameters = source_parameters;
-              };
-              _;
-            },
-            Type.Callable {
-              Type.Callable.implementation = {
-                Type.Callable.annotation = target;
-                parameters = target_parameters;
-              };
-              _;
-            } ->
+          (* TODO(T40105833): We need to consider the overloads in source *)
+          | Type.Callable { Type.Callable.implementation = source; _ },
+            Type.Callable { Type.Callable.implementation = target; _ }   ->
               let parameter_annotations = function
                 | Type.Callable.Defined parameters ->
                     List.map parameters ~f:Type.Callable.Parameter.annotation
                 | _ ->
                     []
               in
-              solve_constraints_throws order ~constraints ~source ~target
+              let source =
+                let called_as =
+                  Type.Callable.map_implementation
+                    target
+                    ~f:(Type.mark_variables_as_bound ~simulated:true)
+                in
+                simulate_signature_select order ~implementation:source ~called_as
+                >>| Type.Callable.map_implementation ~f:(Type.free_simulated_bound_variables)
+                |> Option.value ~default:source
+              in
+              solve_constraints_throws
+                order
+                ~constraints
+                ~source:source.annotation
+                ~target:target.annotation
               >>= solve_all
                 (* Don't ignore previous constraints if encountering a mismatch due to
                  *args/**kwargs vs. concrete parameters or default arguments. *)
                 ~ignore_length_mismatch:true
-                ~sources:(parameter_annotations source_parameters)
-                ~targets:(parameter_annotations target_parameters)
+                ~sources:(parameter_annotations source.parameters)
+                ~targets:(parameter_annotations target.parameters)
           | _, Type.Callable _  when Type.is_meta source ->
               Type.single_parameter source
               |> constructor
@@ -881,85 +993,12 @@ and less_or_equal
     Type.Callable { Callable.kind = Callable.Named right; _ }
     when Expression.Access.equal left right ->
       true
+  (* TODO(T40105833): We need to consider the overloads in left *)
   | Type.Callable { Callable.implementation = left; _ },
     Type.Callable { Callable.implementation = right; _ } ->
-      let open Callable in
-      let parameters_less_or_equal () =
-        match left.parameters, right.parameters with
-        | Undefined, Undefined ->
-            true
-        | Defined left, Defined right ->
-            begin
-              try
-                let rec parameters_less_or_equal left right =
-                  match left, right with
-                  | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
-                    :: left_parameters,
-                    Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
-                    :: right_parameters
-                  | Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
-                    :: left_parameters,
-                    Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
-                    :: right_parameters
-                  | Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
-                    :: left_parameters,
-                    Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
-                    :: right_parameters ->
-                      Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) &&
-                      less_or_equal order ~left:right_annotation ~right:left_annotation &&
-                      parameters_less_or_equal left_parameters right_parameters
-
-
-                  | Parameter.Variable { Parameter.annotation = left_annotation; _ }
-                    :: _,
-                    (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
-                    :: right_parameters
-                    when Parameter.is_anonymous right ->
-                      less_or_equal order ~left:right_annotation ~right:left_annotation &&
-                      parameters_less_or_equal left right_parameters
-                  | Parameter.Variable _ :: left_parameters, []
-                  | Parameter.Keywords _ :: left_parameters, [] ->
-                      parameters_less_or_equal left_parameters []
-
-                  | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
-                    (Parameter.Named _ as named) :: right ->
-                      let is_compatible =
-                        Type.equal
-                          (Parameter.annotation variable)
-                          (Parameter.annotation keywords) &&
-                        less_or_equal
-                          order
-                          ~left:(Parameter.annotation named)
-                          ~right:(Parameter.annotation keywords)
-                      in
-                      if is_compatible then
-                        parameters_less_or_equal left right
-                      else
-                        false
-
-                  | left :: left_parameters, [] ->
-                      if Parameter.default left then
-                        parameters_less_or_equal left_parameters []
-                      else
-                        false
-
-                  | [], [] ->
-                      true
-
-                  | _ ->
-                      false
-                in
-                parameters_less_or_equal left right
-              with _ ->
-                false
-            end
-        | Defined _, Undefined ->
-            true
-        | Undefined, Defined _ ->
-            false
-      in
-      less_or_equal order ~left:left.annotation ~right:right.annotation &&
-      parameters_less_or_equal ()
+      simulate_signature_select order ~implementation:left ~called_as:right
+      >>| (fun left -> less_or_equal order ~left:left.annotation ~right:right.annotation)
+      |> Option.value ~default:false
   | _, Type.Callable _  when Type.is_meta left ->
       Type.single_parameter left
       |> constructor

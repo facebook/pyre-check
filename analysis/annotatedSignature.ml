@@ -34,6 +34,7 @@ type reason =
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
   | MissingArgument of Access.t
+  | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryMissingKey of { typed_dictionary_name: Identifier.t; missing_key: string }
@@ -525,7 +526,35 @@ let select
           List.rev arguments
           |> check signature_match
     in
+    let reduce_constraints
+        ({ constraints; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
+      let rec reduce_constraint_solution ?previous_free_count constraints =
+        let concrete, free = Type.Map.partition_tf constraints ~f:Type.is_resolved in
+        match Type.Map.length free, previous_free_count with
+        | 0, _ ->
+            Some constraints
+        | current_free_count, Some previous_free_count
+          when current_free_count >= previous_free_count ->
+            None
+        | current_free_count, _ ->
+            let take_either_preferring_left ~key:_ =
+              function | `Left value | `Right value | `Both (value, _) -> Some value
+            in
+            Type.Map.map free ~f:(Type.instantiate ~constraints:(Type.Map.find concrete))
+            |> Type.Map.merge concrete ~f:take_either_preferring_left
+            |> reduce_constraint_solution ~previous_free_count:current_free_count
+      in
+      match reduce_constraint_solution constraints with
+      | Some constraints ->
+          { signature_match with constraints }
+      | None ->
+          {
+            signature_match with
+            reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation}
+          }
+    in
     Map.fold ~init:signature_match ~f:update argument_mapping
+    |> reduce_constraints
   in
   let calculate_rank
       ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
@@ -582,6 +611,7 @@ let select
             | InvalidVariableArgument _ -> 0
             | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
             | MissingArgument _ -> 1
+            | MutuallyRecursiveTypeVariables -> 1
             | TooManyArguments _ -> 1
             | TypedDictionaryAccessWithNonLiteral _ -> 0
             | TypedDictionaryMissingKey _ -> 0

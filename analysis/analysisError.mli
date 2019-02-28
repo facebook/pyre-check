@@ -89,6 +89,7 @@ type kind =
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | MutuallyRecursiveTypeVariables of Access.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t

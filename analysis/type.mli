@@ -53,6 +53,8 @@ module Record : sig
   end
 end
 
+type variable_state
+
 type tuple =
   | Bounded of t list
   | Unbounded of t
@@ -83,7 +85,12 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance; free: bool }
+  | Variable of {
+      variable: Identifier.t;
+      constraints: constraints;
+      variance: variance;
+      state: variable_state;
+    }
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
@@ -191,6 +198,7 @@ module Callable : sig
   val from_overloads: t list -> t option
 
   val map: t -> f:(type_t -> type_t) -> t option
+  val map_implementation: type_t overload -> f: (type_t -> type_t) -> type_t overload
 
   val with_return_annotation: t -> annotation: type_t -> t
 
@@ -261,8 +269,9 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
-val mark_variables_as_bound: t -> t
+val mark_variables_as_bound: ?simulated: bool -> t -> t
 val free_variables: t -> t list
+val free_simulated_bound_variables: t -> t
 (* Does not contain free variables. *)
 val is_resolved: t -> bool
 val instantiate_free_variables: replacement:t -> t -> t

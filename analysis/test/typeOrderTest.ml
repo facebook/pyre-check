@@ -991,7 +991,14 @@ let test_less_or_equal _ =
 
   (* Behavioral subtyping of callables. *)
   let less_or_equal order ~left ~right =
-    less_or_equal order ~left:(parse_callable left) ~right:(parse_callable right)
+    let aliases = function
+      | Type.Primitive "T_Unconstrained" ->
+          Some (Type.variable "T_Unconstrained")
+      | Type.Primitive "T_int_bool" ->
+          Some (Type.variable "T_int_bool" ~constraints:(Type.Explicit [Type.integer; Type.bool]))
+      | _ -> None
+    in
+    less_or_equal order ~left:(parse_callable ~aliases left) ~right:(parse_callable ~aliases right)
   in
   assert_true
     (less_or_equal
@@ -1171,6 +1178,32 @@ let test_less_or_equal _ =
        ~left:"typing.Callable[[Variable(args, str), Keywords(kwargs, int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
 
+  (* Generic callables *)
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+       ~right:"typing.Callable[[Named(arg, int)], str]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+       ~right:"typing.Callable[[Named(arg, int)], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~right:"typing.Callable[[Named(arg, int)], str]"
+       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[T_int_bool], T_int_bool]"
+       ~right:"typing.Callable[[Named(arg, int)], int]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[T_int_bool], T_int_bool]"
+       ~right:"typing.Callable[[Named(arg, str)], str]");
 
   (* TypedDictionaries *)
   assert_true
@@ -2595,6 +2628,10 @@ let test_solve_constraints _ =
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
 
       T = typing.TypeVar('T')
+      T1 = typing.TypeVar('T1')
+      T2 = typing.TypeVar('T2')
+      T3 = typing.TypeVar('T3')
+      T4 = typing.TypeVar('T4')
       class G_invariant(typing.Generic[T]):
         pass
       T_Covariant = typing.TypeVar('T_Cov', covariant=True)
@@ -2602,7 +2639,7 @@ let test_solve_constraints _ =
         pass
 
       class Constructable:
-        def __init__(self, x: int) -> None:
+        def Constructable.__init__(self, x: int) -> None:
           pass
     |}
     |> fun environment -> TypeCheck.resolution environment ()
@@ -2615,17 +2652,40 @@ let test_solve_constraints _ =
     in
     { TypeOrder.handler = Resolution.order resolution; constructor }
   in
-  let assert_solve ~source ~target ?constraints expected =
+  let assert_solve
+      ~source
+      ~target
+      ?constraints
+      ?(leave_unbound_in_source = [])
+      ?(leave_constraint_values_unbound = false)
+      expected =
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
     in
-    let source = parse_annotation source in
+    let source =
+      let constraints annotation =
+        match annotation with
+        | Type.Variable { variable = variable_name; _ }
+          when not (List.exists leave_unbound_in_source ~f:((=) variable_name)) ->
+            Some (Type.mark_variables_as_bound annotation)
+        | _ -> None
+      in
+      parse_annotation source
+      |> Type.instantiate ~constraints
+    in
     let target = parse_annotation target in
     let parse_map map =
+      let mark =
+        if leave_constraint_values_unbound then
+          Fn.id
+        else
+          Type.mark_variables_as_bound ~simulated:false
+      in
       map
-      >>| List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value))
+      >>| List.map
+        ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
       >>| Type.Map.of_alist_exn
     in
     let expected = parse_map expected in
@@ -2774,6 +2834,42 @@ let test_solve_constraints _ =
     ~source:"T_D_Q"
     ~target:"T_C_Q_int"
     None;
+
+  assert_solve
+    ~leave_unbound_in_source:["T_Unconstrained"]
+    ~source:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    ~target:"typing.Callable[[int], int]"
+    (Some []);
+  assert_solve
+    ~source:"typing.Callable[[int], int]"
+    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    (Some ["T_Unconstrained", "int"]);
+  assert_solve
+    ~leave_unbound_in_source:["T"]
+    ~source:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
+    ~target:"typing.Callable[[], T_Unconstrained]"
+    (Some ["T_Unconstrained", "G_invariant[$bottom]"]);
+  assert_solve
+    ~leave_unbound_in_source:["T"]
+    ~source:"typing.Callable[[T], T]"
+    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    (Some []);
+  (* This will be handled in signature selection *)
+  assert_solve
+    ~leave_constraint_values_unbound:true
+    ~leave_unbound_in_source:["T"]
+    ~source:"typing.Callable[[T], G_invariant[T]]"
+    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    (Some ["T_Unconstrained", "G_invariant[T_Unconstrained]"]);
+  assert_solve
+    ~leave_unbound_in_source:["T1"]
+    ~source:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
+    ~target:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
+    (Some ["T4", "T2"]);
+  assert_solve
+    ~source:"typing.Type[Constructable]"
+    ~target:"typing.Callable[[T3], T4]"
+    (Some ["T3", "int"; "T4", "Constructable"]);
   ()
 
 

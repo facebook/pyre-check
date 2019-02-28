@@ -193,6 +193,78 @@ let test_distinguish _ =
     [
       "Revealed type [-1]: Revealed type for `v` is `Variable[_T2]`.";
     ];
+  assert_type_errors
+    {|
+      class C():
+        def __init__(self, x: int) -> None:
+          pass
+      def foo() -> typing.Iterator[C]:
+        v = map(C, [1, 2, 3])
+        reveal_type(v)
+        return v
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C]`.";
+    ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class C(typing.Generic[T]):
+        def __init__(self, x: T) -> None:
+          pass
+      def foo() -> typing.Iterator[C[int]]:
+        v = map(C, [1, 2, 3])
+        reveal_type(v)
+        return v
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[int]]`.";
+    ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class C(typing.Generic[T]):
+        def __init__(self, x: T) -> None:
+          pass
+      def foo(x: typing.List[T]) -> typing.Iterator[C[T]]:
+        v = map(C, x)
+        reveal_type(v)
+        return v
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.Iterator[C[Variable[T]]]`.";
+    ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def foo(x: T) -> typing.List[T]:
+        return [x]
+      T1 = typing.TypeVar("T1")
+      def bar(x: typing.Callable[[T1], T1]) -> None:
+        pass
+      def baz() -> None:
+         bar(foo)
+    |}
+    [
+      "Mutually recursive type variables [36]: Solving type variables for call `bar` " ^
+      "led to infinite recursion"
+    ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def foo(x: T) -> T:
+        return x
+      T1 = typing.TypeVar("T1")
+      T2 = typing.TypeVar("T2")
+      def bar(x: typing.Callable[[T1], T2], y: typing.Callable[[T2], T1]) -> None:
+        pass
+      def baz() -> None:
+         bar(foo, foo)
+    |}
+    [
+      "Mutually recursive type variables [36]: Solving type variables for call `bar` " ^
+      "led to infinite recursion"
+    ];
   ()
 
 

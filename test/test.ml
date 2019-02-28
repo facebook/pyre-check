@@ -571,6 +571,58 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         ) -> Any: ...
 
         def all(i: Iterable[_T]) -> bool: ...
+        _T1 = TypeVar("_T1")
+        _T2 = TypeVar("_T2")
+        _T3 = TypeVar("_T3")
+        _T4 = TypeVar("_T4")
+        _T5 = TypeVar("_T5")
+        @overload
+        def map(func: Callable[[_T1], _S], iter1: Iterable[_T1]) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            func: Callable[[_T1, _T2], _S], iter1: Iterable[_T1], iter2: Iterable[_T2]
+        ) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            func: Callable[[_T1, _T2, _T3], _S],
+            iter1: Iterable[_T1],
+            iter2: Iterable[_T2],
+            iter3: Iterable[_T3],
+        ) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            func: Callable[[_T1, _T2, _T3, _T4], _S],
+            iter1: Iterable[_T1],
+            iter2: Iterable[_T2],
+            iter3: Iterable[_T3],
+            iter4: Iterable[_T4],
+        ) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
+            iter1: Iterable[_T1],
+            iter2: Iterable[_T2],
+            iter3: Iterable[_T3],
+            iter4: Iterable[_T4],
+            iter5: Iterable[_T5],
+        ) -> Iterator[_S]:
+            ...
+        @overload
+        def map(
+            func: Callable[..., _S],
+            iter1: Iterable[Any],
+            iter2: Iterable[Any],
+            iter3: Iterable[Any],
+            iter4: Iterable[Any],
+            iter5: Iterable[Any],
+            iter6: Iterable[Any],
+            *iterables: Iterable[Any],
+        ) -> Iterator[_S]:
+            ...
       |}
     in
     if include_helper_builtins then

@@ -98,6 +98,7 @@ type kind =
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
   | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
+  | MutuallyRecursiveTypeVariables of Access.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
@@ -163,6 +164,7 @@ let code = function
   | ProhibitedAny _ -> 33
   | InvalidTypeVariable _ -> 34
   | IllegalAnnotationTarget _ -> 35
+  | MutuallyRecursiveTypeVariables _ -> 36
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -190,6 +192,7 @@ let name = function
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MissingTypeParameters _ -> "Missing type parameters"
+  | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
   | NotCallable _ -> "Call error"
   | ProhibitedAny _ -> "Prohibited any"
   | RedundantCast _ -> "Redundant cast"
@@ -244,11 +247,11 @@ let messages ~concise ~define location kind =
   in
   match kind with
   | AnalysisFailure annotation when concise ->
-    [
-      Format.asprintf
-        "Terminating analysis - type `%a` not defined."
-        pp_type annotation
-    ]
+      [
+        Format.asprintf
+          "Terminating analysis - type `%a` not defined."
+          pp_type annotation
+      ]
   | AnalysisFailure annotation ->
       [
         Format.asprintf
@@ -598,24 +601,24 @@ let messages ~concise ~define location kind =
       begin
         match given_annotation with
         | Some given_annotation when Type.equal given_annotation Type.Any ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%a` must be specified as type other than `Any`."
-              pp_access name
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` must be specified as type other than `Any`."
+                pp_access name
+            ]
         | Some given_annotation when Type.contains_any given_annotation ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%a` must be specified as type that does not contain \
-              `Any`."
-              pp_access name
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` must be specified as type that does not contain \
+                 `Any`."
+                pp_access name
+            ]
         | _ ->
-          [
-            Format.asprintf
-              "Globally accessible variable `%a` has no type specified."
-              pp_access name
-          ]
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` has no type specified."
+                pp_access name
+            ]
       end
   | MissingTypeParameters { annotation; number_of_parameters } ->
       [
@@ -625,6 +628,15 @@ let messages ~concise ~define location kind =
           number_of_parameters
           (if (number_of_parameters > 1) then "s" else "");
       ]
+  | MutuallyRecursiveTypeVariables callee ->
+      let callee =
+        match callee with
+        | Some callee ->
+            Format.asprintf "call `%a`" Access.pp callee
+        | _ ->
+            "anoynmous call"
+      in
+      [ Format.asprintf "Solving type variables for %s led to infinite recursion" callee ]
   | IncompatibleParameterType {
       name;
       position;
@@ -1006,7 +1018,7 @@ let messages ~concise ~define location kind =
         else
           Format.asprintf
             "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
-            initialized."
+             initialized."
             pp_access name
             pp_type parent
             pp_type expected
@@ -1230,6 +1242,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
+  | MutuallyRecursiveTypeVariables _
   | ProhibitedAny _
   | TooManyArguments _
   | TypedDictionaryAccessWithNonLiteral _
@@ -1296,6 +1309,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MissingTypeParameters _
+  | MutuallyRecursiveTypeVariables _
   | ProhibitedAny _
   | RedundantCast _
   | RevealedType _
@@ -1464,6 +1478,7 @@ let less_or_equal ~resolution left right =
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
     | MissingTypeParameters _, _
+    | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
     | ProhibitedAny _, _
     | RedundantCast _, _
@@ -1715,6 +1730,7 @@ let join ~resolution left right =
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
     | MissingTypeParameters _, _
+    | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
     | ProhibitedAny _, _
     | RedundantCast _, _
@@ -2039,6 +2055,8 @@ let dequalify
         }
     | MissingTypeParameters { annotation; number_of_parameters } ->
         MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }
+    | MutuallyRecursiveTypeVariables callee ->
+        MutuallyRecursiveTypeVariables callee
     | NotCallable annotation ->
         NotCallable (dequalify annotation)
     | ProhibitedAny ({ annotation; _ } as missing_annotation) ->

@@ -82,6 +82,13 @@ open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
 
+type variable_state =
+  | Free
+  | InFunction
+  | InSimulatedCall
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type tuple =
   | Bounded of t list
   | Unbounded of t
@@ -116,7 +123,12 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of { variable: Identifier.t; constraints: constraints; variance: variance; free: bool }
+  | Variable of {
+      variable: Identifier.t;
+      constraints: constraints;
+      variance: variance;
+      state: variable_state;
+    }
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -440,7 +452,7 @@ let parametric name parameters =
 
 
 let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = name; constraints; variance; free = true }
+  Variable { variable = name; constraints; variance; state = Free }
 
 
 let awaitable parameter =
@@ -1130,6 +1142,13 @@ module Callable = struct
     Callable callable
     |> f
     |> (function | Callable callable -> Some callable | _ -> None)
+
+
+  let map_implementation implementation ~f =
+    map { kind = Anonymous; implementation; overloads = []; implicit = None } ~f
+    |> (function
+        | Some { implementation; _ } -> implementation
+        | _ -> failwith "f did not return a callable")
 
 
   let with_return_annotation ({ implementation; overloads; _ } as initial) ~annotation =
@@ -2020,10 +2039,21 @@ let instantiate ?(widen = false) annotation ~constraints =
   snd (InstantiateTransform.visit () annotation)
 
 
-let mark_variables_as_bound annotation =
+let mark_variables_as_bound ?(simulated = false) annotation =
+  let state = if simulated then InSimulatedCall else InFunction in
   let constraints annotation =
     match annotation with
-    | Variable variable -> Some (Variable { variable with free = false })
+    | Variable variable -> Some (Variable { variable with state })
+    | _ -> None
+  in
+  instantiate annotation ~constraints
+
+
+let free_simulated_bound_variables annotation =
+  let constraints annotation =
+    match annotation with
+    | Variable ({ state = InSimulatedCall;  _ } as variable) ->
+        Some (Variable { variable with state = Free })
     | _ -> None
   in
   instantiate annotation ~constraints
@@ -2031,7 +2061,7 @@ let mark_variables_as_bound annotation =
 
 let free_variables annotation =
   let is_free_variable = function
-    | Variable { free; _ } -> free
+    | Variable { state = Free; _ } -> true
     | _ -> false
   in
   collect annotation ~predicate:is_free_variable
