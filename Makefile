@@ -7,7 +7,7 @@ export OCAMLFIND_IGNORE_DUPS_IN=$(dir $(OCAML_TOPLEVEL_PATH))ocaml/compiler-libs
 export MACOSX_DEPLOYMENT_TARGET=10.11
 
 .PHONY: all
-all: hack_parallel
+all: configure hack_parallel
 	@./scripts/generate-version-number.sh development
 	dune build @install -j auto --profile dev
 
@@ -35,11 +35,16 @@ release: hack_parallel
 .PHONY: clean
 clean:
 	dune clean
+	@if [ -f dune ]; then rm dune; fi
 	@make -C hack_parallel clean && make -C hack_parallel remove
 
 .PHONY: hack_parallel
 hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
+
+.PHONY: configure
+configure:
+	@if [ ! -f dune ]; then ./scripts/setup.sh --configure; fi
 
 .PHONY: lint
 lint:
