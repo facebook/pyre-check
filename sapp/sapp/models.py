@@ -867,15 +867,11 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     triage_history_fbid = Column(
         BIGINT(unsigned=True),
         nullable=True,
-        unique=True,
         doc="FBID for EntZoncolanIssueTriageHistory",
     )
 
     feedback_fbid = Column(
-        BIGINT(unsigned=True),
-        nullable=True,
-        unique=True,
-        doc="FBID for EntZoncolanFeedback",
+        BIGINT(unsigned=True), nullable=True, doc="FBID for EntZoncolanFeedback"
     )
 
     json = Column(types.TEXT, doc="Raw JSON of original issue", nullable=True)
