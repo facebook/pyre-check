@@ -4489,6 +4489,21 @@ let test_setitem _ =
     ]
 
 
+let test_byte_order_mark _ =
+  let byte_order_mark =
+    [0xEF; 0xBB; 0xBF]
+    |> List.map ~f:Char.of_int_exn
+    |> String.of_char_list
+  in
+  (* Ensure that we can parse UTF-8 files with byte order marks properly. *)
+  PyreParser.Parser.parse [byte_order_mark ^ "1"]
+  |> ignore;
+  assert_raises
+    (PyreParser.Parser.Error
+       "Could not parse file at $invalid_path:2:0-2:0\n  \239\187\1912\n  ^")
+    (fun () -> PyreParser.Parser.parse ["1"; byte_order_mark ^ "2"])
+
+
 let () =
   "parsing">:::[
     "lexer">::test_lexer;
@@ -4533,5 +4548,6 @@ let () =
     "nonlocal">::test_nonlocal;
     "ellipsis">::test_ellipsis;
     "setitem">::test_setitem;
+    "byte_order_mark">::test_byte_order_mark;
   ]
   |> Test.run

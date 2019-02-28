@@ -12,6 +12,22 @@ open Ast
 exception Error of string
 
 let sanitize_input lines =
+  (* Remove byte order mark from first line if it exists. *)
+  let lines =
+    match lines with
+    | first_line :: rest ->
+        let byte_order_mark =
+          [0xEF; 0xBB; 0xBF]
+          |> List.map ~f:Char.of_int_exn
+          |> String.of_char_list
+        in
+        if String.is_prefix first_line ~prefix:byte_order_mark then
+          String.drop_prefix first_line (String.length byte_order_mark) :: rest
+        else
+          lines
+    | [] ->
+        []
+  in
   List.map ~f:(fun line -> String.rstrip line) lines
   |> String.concat ~sep:"\n"
   |> fun input -> input ^ "\n"
