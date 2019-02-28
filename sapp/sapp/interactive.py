@@ -297,10 +297,12 @@ help(COMAMND)   more info about a command
             self._create_trace_tuples(reversed(postcondition_navigation))
             + [
                 TraceTuple(
-                    callable=root_trace_frame.caller,
-                    condition=root_trace_frame.caller_port,
-                    filename=root_trace_frame.filename,
-                    location=root_trace_frame.callee_location,
+                    trace_frame=TraceFrame(
+                        callee=root_trace_frame.caller,
+                        callee_port=root_trace_frame.caller_port,
+                        filename=root_trace_frame.filename,
+                        callee_location=root_trace_frame.callee_location,
+                    )
                 )
             ]
             + self._create_trace_tuples(precondition_navigation)
@@ -332,11 +334,13 @@ help(COMAMND)   more info about a command
     def _output_trace_tuples(self, trace_tuples):
         expandable_token = "+ "
         max_length_callable = max(
-            max(len(trace_tuple.callable) for trace_tuple in trace_tuples),
+            max(len(trace_tuple.trace_frame.callee) for trace_tuple in trace_tuples),
             len("[callable]"),
         )
         max_length_condition = max(
-            max(len(trace_tuple.condition) for trace_tuple in trace_tuples),
+            max(
+                len(trace_tuple.trace_frame.callee_port) for trace_tuple in trace_tuples
+            ),
             len("[port]"),
         )
         max_length_branches = max(
@@ -362,8 +366,8 @@ help(COMAMND)   more info about a command
             if t.missing:
                 output_string = (
                     f" {prefix}"
-                    f" [Missing trace frame: {t.callable}:"
-                    f"{t.condition}]"
+                    f" [Missing trace frame: {t.trace_frame.callee}:"
+                    f"{t.trace_frame.callee_port}]"
                 )
             else:
                 branches_string = (
@@ -375,9 +379,9 @@ help(COMAMND)   more info about a command
                 output_string = (
                     f" {prefix}"
                     f" {branches_string}"
-                    f" {t.callable:{max_length_callable}}"
-                    f" {t.condition:{max_length_condition}}"
-                    f" {t.filename}:{t.location}"
+                    f" {t.trace_frame.callee:{max_length_callable}}"
+                    f" {t.trace_frame.callee_port:{max_length_condition}}"
+                    f" {t.trace_frame.filename}:{t.trace_frame.callee_location}"
                 )
 
             print(output_string)
@@ -385,10 +389,7 @@ help(COMAMND)   more info about a command
     def _create_trace_tuples(self, navigation):
         return [
             TraceTuple(
-                callable=trace_frame.callee,
-                condition=trace_frame.callee_port,
-                filename=trace_frame.filename,
-                location=trace_frame.callee_location,
+                trace_frame=trace_frame,
                 branches=branches,
                 missing=trace_frame.caller is None,
             )
@@ -514,9 +515,6 @@ help(COMAMND)   more info about a command
 
 
 class TraceTuple(NamedTuple):
-    callable: str
-    condition: str
-    filename: str
-    location: SourceLocation
+    trace_frame: TraceFrame
     branches: int = 1
     missing: bool = False

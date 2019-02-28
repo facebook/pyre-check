@@ -651,7 +651,7 @@ class InteractiveTest(TestCase):
                     filename="file2.py",
                     callee_location=SourceLocation(1, 1, 2),
                 ),
-                1,
+                2,
             ),
             (
                 TraceFrame(
@@ -661,7 +661,7 @@ class InteractiveTest(TestCase):
                     filename="file1.py",
                     callee_location=SourceLocation(1, 1, 1),
                 ),
-                1,
+                3,
             ),
         ]
         trace_tuples = self.interactive._create_trace_tuples(postcondition_traces)
@@ -669,21 +669,70 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             trace_tuples,
             [
-                TraceTuple("call3", "result", "file3.py", SourceLocation(1, 1, 3)),
-                TraceTuple("call2", "result", "file2.py", SourceLocation(1, 1, 2)),
-                TraceTuple("leaf", "source", "file1.py", SourceLocation(1, 1, 1)),
+                TraceTuple(postcondition_traces[0][0], 1),
+                TraceTuple(postcondition_traces[1][0], 2),
+                TraceTuple(postcondition_traces[2][0], 3),
             ],
         )
 
     def testOutputTraceTuples(self):
         trace_tuples = [
-            TraceTuple("leaf", "source", "file1.py", SourceLocation(1, 1, 1)),
-            TraceTuple("call2", "result", "file2.py", SourceLocation(1, 1, 2)),
-            TraceTuple("call3", "result", "file3.py", SourceLocation(1, 1, 3)),
-            TraceTuple("main", "root", "file4.py", SourceLocation(1, 1, 4)),
-            TraceTuple("call4", "param0", "file4.py", SourceLocation(1, 1, 4)),
-            TraceTuple("call5", "param1", "file5.py", SourceLocation(1, 1, 5)),
-            TraceTuple("leaf", "sink", "file6.py", SourceLocation(1, 1, 6)),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="leaf",
+                    callee_port="source",
+                    filename="file1.py",
+                    callee_location=SourceLocation(1, 1, 1),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="call2",
+                    callee_port="result",
+                    filename="file2.py",
+                    callee_location=SourceLocation(1, 1, 2),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="call3",
+                    callee_port="result",
+                    filename="file3.py",
+                    callee_location=SourceLocation(1, 1, 3),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="main",
+                    callee_port="root",
+                    filename="file4.py",
+                    callee_location=SourceLocation(1, 1, 4),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="call4",
+                    callee_port="param0",
+                    filename="file4.py",
+                    callee_location=SourceLocation(1, 1, 4),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="call5",
+                    callee_port="param1",
+                    filename="file5.py",
+                    callee_location=SourceLocation(1, 1, 5),
+                )
+            ),
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    callee="leaf",
+                    callee_port="sink",
+                    filename="file6.py",
+                    callee_location=SourceLocation(1, 1, 6),
+                )
+            ),
         ]
         self.interactive.current_trace_frame_index = 1
         self.interactive._output_trace_tuples(trace_tuples)
