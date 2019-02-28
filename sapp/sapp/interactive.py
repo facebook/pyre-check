@@ -9,10 +9,10 @@ from sapp.db import DB
 from sapp.models import (
     Issue,
     IssueInstance,
-    Postcondition,
-    Precondition,
     Run,
     RunStatus,
+    SharedText,
+    SharedTextKind,
     Sink,
     Source,
     SourceLocation,
@@ -21,7 +21,7 @@ from sapp.models import (
     TraceKind,
 )
 from sqlalchemy import distinct
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
@@ -161,8 +161,8 @@ help(COMAMND)   more info about a command
 
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
-            sources = self._get_sources(session, issue_instance)
-            sinks = self._get_sinks(session, issue_instance)
+            sources = self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
+            sinks = self._get_leaves(session, issue_instance, SharedTextKind.SINK)
 
         page.display_page(
             self._create_issue_output_string(issue_instance, issue, sources, sinks)
@@ -231,11 +231,12 @@ help(COMAMND)   more info about a command
 
             issues = query.options(joinedload(IssueInstance.message)).all()
             sources_list = [
-                self._get_sources(session, issue_instance)
+                self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
                 for issue_instance, _ in issues
             ]
             sinks_list = [
-                self._get_sinks(session, issue_instance) for issue_instance, _ in issues
+                self._get_leaves(session, issue_instance, SharedTextKind.SINK)
+                for issue_instance, _ in issues
             ]
 
         issue_strings = [
@@ -286,10 +287,16 @@ help(COMAMND)   more info about a command
             issue_instance, issue = self._get_current_issue(session)
 
             postcondition_navigation = self._navigate_trace_frames(
-                session, self._initial_trace_frame(session, TraceKind.POSTCONDITION)
+                session,
+                self._initial_trace_frames(
+                    session, issue_instance.id, TraceKind.POSTCONDITION
+                )[0],
             )
             precondition_navigation = self._navigate_trace_frames(
-                session, self._initial_trace_frame(session, TraceKind.PRECONDITION)
+                session,
+                self._initial_trace_frames(
+                    session, issue_instance.id, TraceKind.PRECONDITION
+                )[0],
             )
 
         root_trace_frame, _ = precondition_navigation[0]
@@ -396,14 +403,14 @@ help(COMAMND)   more info about a command
             for trace_frame, branches in navigation
         ]
 
-    def _initial_trace_frame(self, session, kind):
+    def _initial_trace_frames(self, session, issue_instance_id, kind):
         return (
             session.query(TraceFrame, func.count(distinct(TraceFrame.id)))
-            .filter(TraceFrame.issue_instances.any(id=self.current_issue_id))
+            .filter(TraceFrame.issue_instances.any(id=issue_instance_id))
             .filter(TraceFrame.kind == kind)
             .join(TraceFrame.leaf_assoc)
             .order_by(TraceFrameLeafAssoc.trace_length)  # min trace_length
-            .first()
+            .all()
         )
 
     def _navigate_trace_frames(self, session, initial_trace_frame):
@@ -480,27 +487,15 @@ help(COMAMND)   more info about a command
             .first()
         )
 
-    def _get_sources(self, session, issue_instance):
+    def _get_leaves(
+        self, session: Session, issue_instance: IssueInstance, kind: SharedTextKind
+    ) -> List[str]:
         return [
-            source
-            for source, in session.query(Source.name)
-            .filter(
-                Source.postconditions.any(
-                    Postcondition.issue_instances.any(id=issue_instance.id)
-                )
-            )
-            .all()
-        ]
-
-    def _get_sinks(self, session, issue_instance):
-        return [
-            sink
-            for sink, in session.query(Sink.name)
-            .filter(
-                Sink.preconditions.any(
-                    Precondition.issue_instances.any(id=issue_instance.id)
-                )
-            )
+            leaf
+            for leaf, in session.query(distinct(SharedText.contents))
+            .join(SharedText.shared_text_issue_instance)
+            .filter(SharedText.issue_instances.any(id=issue_instance.id))
+            .filter(SharedText.kind == kind)
             .all()
         ]
 

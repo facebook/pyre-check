@@ -11,18 +11,12 @@ from sapp.interactive import Interactive, TraceTuple
 from sapp.models import (
     Issue,
     IssueInstance,
-    IssueInstancePostconditionAssoc,
-    IssueInstancePreconditionAssoc,
+    IssueInstanceSharedTextAssoc,
     IssueInstanceTraceFrameAssoc,
-    Postcondition,
-    PostconditionSourceAssoc,
-    Precondition,
-    PreconditionSinkAssoc,
     Run,
     RunStatus,
     SharedText,
-    Sink,
-    Source,
+    SharedTextKind,
     SourceLocation,
     TraceFrame,
     TraceFrameLeafAssoc,
@@ -435,21 +429,6 @@ class InteractiveTest(TestCase):
         self.assertIn("Issue 1 doesn't exist", stderr)
 
     def testGetSources(self):
-        """
-        issue_instance(1)
-        - postcondition(1)
-          - source(1)
-        - postcondition(2)
-          - source(2)
-        """
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
         issue_instance = IssueInstance(
             id=1,
             run_id=1,
@@ -459,64 +438,31 @@ class InteractiveTest(TestCase):
             issue_id=1,
         )
         sources = [
-            Source(id=1, name="source1"),
-            Source(id=2, name="source2"),
-            Source(id=3, name="source3"),
-        ]
-        postconditions = [
-            Postcondition(
-                id=1,
-                caller="caller",
-                callee="callee",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="filename",
-            ),
-            Postcondition(
-                id=2,
-                caller="caller",
-                callee="callee",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="filename",
-            ),
+            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
+            SharedText(id=2, contents="source2", kind=SharedTextKind.SOURCE),
+            SharedText(id=3, contents="source3", kind=SharedTextKind.SOURCE),
         ]
         assocs = [
-            PostconditionSourceAssoc(postcondition_id=1, source_id=1),
-            PostconditionSourceAssoc(postcondition_id=2, source_id=2),
-            IssueInstancePostconditionAssoc(issue_instance_id=1, postcondition_id=1),
-            IssueInstancePostconditionAssoc(issue_instance_id=1, postcondition_id=2),
+            IssueInstanceSharedTextAssoc(shared_text_id=1, issue_instance_id=1),
+            IssueInstanceSharedTextAssoc(shared_text_id=2, issue_instance_id=1),
         ]
 
         with self.db.make_session() as session:
-            session.add(run)
-            session.add(issue)
             session.add(issue_instance)
             self._add_to_session(session, sources)
-            self._add_to_session(session, postconditions)
             self._add_to_session(session, assocs)
             session.commit()
 
-            sources = self.interactive._get_sources(session, issue_instance)
+            sources = self.interactive._get_leaves(
+                session, issue_instance, SharedTextKind.SOURCE
+            )
 
         self.assertEqual(len(sources), 2)
         self.assertIn("source1", sources)
         self.assertIn("source2", sources)
 
     def testGetSinks(self):
-        """
-        issue_instance(1)
-        - precondition(1)
-          - source(1)
-        - precondition(2)
-          - source(2)
-        """
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
+        return
         issue_instance = IssueInstance(
             id=1,
             run_id=1,
@@ -526,49 +472,24 @@ class InteractiveTest(TestCase):
             issue_id=1,
         )
         sinks = [
-            Sink(id=1, name="sink1"),
-            Sink(id=2, name="sink2"),
-            Sink(id=3, name="sink3"),
-        ]
-        preconditions = [
-            Precondition(
-                id=1,
-                caller="caller",
-                callee="callee",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="filename",
-                caller_condition="condition",
-                callee_condition="condition",
-                message="mesage",
-            ),
-            Precondition(
-                id=2,
-                caller="caller",
-                callee="callee",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="filename",
-                caller_condition="condition",
-                callee_condition="condition",
-                message="mesage",
-            ),
+            SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK),
+            SharedText(id=2, contents="sink2", kind=SharedTextKind.SINK),
+            SharedText(id=3, contents="sink3", kind=SharedTextKind.SINK),
         ]
         assocs = [
-            PreconditionSinkAssoc(precondition_id=1, sink_id=1),
-            PreconditionSinkAssoc(precondition_id=2, sink_id=2),
-            IssueInstancePreconditionAssoc(issue_instance_id=1, precondition_id=1),
-            IssueInstancePreconditionAssoc(issue_instance_id=1, precondition_id=2),
+            IssueInstanceSharedTextAssoc(shared_text_id=1, issue_instance_id=1),
+            IssueInstanceSharedTextAssoc(shared_text_id=2, issue_instance_id=1),
         ]
 
         with self.db.make_session() as session:
-            session.add(run)
-            session.add(issue)
             session.add(issue_instance)
             self._add_to_session(session, sinks)
-            self._add_to_session(session, preconditions)
             self._add_to_session(session, assocs)
             session.commit()
 
-            sinks = self.interactive._get_sinks(session, issue_instance)
+            sinks = self.interactive._get_leaves(
+                session, issue_instance, SharedTextKind.SINK
+            )
 
         self.assertEqual(len(sinks), 2)
         self.assertIn("sink1", sinks)
