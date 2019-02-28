@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import IPython
 from click import Choice, Path, argument, group, option
 from sapp.analysis_output import AnalysisOutput
 from sapp.database_saver import DatabaseSaver
@@ -26,7 +27,8 @@ def cli():
 )
 @option("--database-name", "--dbname", type=str)
 def explore(database, database_name):
-    Interactive(database, database_name).start_repl()
+    scope_vars = Interactive(database, database_name).setup()
+    IPython.start_ipython(argv=[], user_ns=scope_vars)
 
 
 @cli.command(help="parse static analysis output and save to disk")

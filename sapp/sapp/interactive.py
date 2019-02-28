@@ -2,9 +2,8 @@
 
 import os
 import sys
-from typing import List, NamedTuple, Optional, Tuple
+from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
-import IPython
 from IPython.core import page
 from sapp.db import DB
 from sapp.models import (
@@ -65,7 +64,7 @@ help(COMAMND)   more info about a command
             "p": self.prev_cursor_location,
         }
 
-    def start_repl(self):
+    def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
             latest_run_id = (
                 session.query(func.max(Run.id))
@@ -92,7 +91,7 @@ help(COMAMND)   more info about a command
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
         print("=" * len(self.welcome_message))
-        IPython.start_ipython(argv=[], user_ns=self.scope_vars)
+        return self.scope_vars
 
     def help(self):
         print(self.help_message)

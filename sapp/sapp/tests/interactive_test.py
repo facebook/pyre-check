@@ -93,7 +93,7 @@ class InteractiveTest(TestCase):
             session.add(issue_instance)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.issues()
         output = self.stdout.getvalue().strip()
 
@@ -145,7 +145,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, issue_instances)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.issues()
         output = self.stdout.getvalue().strip()
 
@@ -216,7 +216,7 @@ class InteractiveTest(TestCase):
     def testListIssuesFilterCodes(self):
         self._list_issues_filter_setup()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.issues(codes=1000)
         stderr = self.stderr.getvalue().strip()
         self.assertIn("'codes' should be a list", stderr)
@@ -237,7 +237,7 @@ class InteractiveTest(TestCase):
     def testListIssuesFilterCallables(self):
         self._list_issues_filter_setup()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.issues(callables="function3")
         stderr = self.stderr.getvalue().strip()
         self.assertIn("'callables' should be a list", stderr)
@@ -258,7 +258,7 @@ class InteractiveTest(TestCase):
     def testListIssuesFilterFilenames(self):
         self._list_issues_filter_setup()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.issues(filenames="hello.py")
         stderr = self.stderr.getvalue().strip()
         self.assertIn("'filenames' should be a list", stderr)
@@ -278,7 +278,7 @@ class InteractiveTest(TestCase):
 
     def testNoRunsFound(self):
         with self.assertRaises(SystemExit):
-            self.interactive.start_repl()
+            self.interactive.setup()
         stderr = self.stderr.getvalue().strip()
         self.assertIn("No runs found.", stderr)
 
@@ -293,7 +293,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, runs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.runs()
         output = self.stdout.getvalue().strip()
 
@@ -338,7 +338,7 @@ class InteractiveTest(TestCase):
             session.add(issue)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_run(1)
         self.interactive.issues()
         output = self.stdout.getvalue().strip()
@@ -356,7 +356,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, runs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_run(2)
         self.interactive.set_run(3)
         stderr = self.stderr.getvalue().strip()
@@ -406,7 +406,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, issue_instances)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
 
         self.interactive.set_issue(2)
         self.interactive.show()
@@ -428,7 +428,7 @@ class InteractiveTest(TestCase):
             session.add(run)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_issue(1)
         stderr = self.stderr.getvalue().strip()
 
@@ -774,7 +774,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
         self.assertIn("Use 'set_issue(ID)' to select an issue first.", stderr)
@@ -817,7 +817,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_issue(1)
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
@@ -878,7 +878,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_issue(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.next_cursor_location()
@@ -942,7 +942,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
-        self.interactive.start_repl()
+        self.interactive.setup()
         self.interactive.set_issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
@@ -980,14 +980,14 @@ class InteractiveTest(TestCase):
         # Default is no pager in tests
         self.pager_calls = 0
         with patch("IPython.core.page.page", self.mock_pager):
-            self.interactive.start_repl()
+            self.interactive.setup()
             self.interactive.issues()
             self.interactive.runs()
         self.assertEqual(self.pager_calls, 0)
 
         self.pager_calls = 0
         with patch("IPython.core.page.page", self.mock_pager):
-            self.interactive.start_repl()
+            self.interactive.setup()
             self.interactive.issues(use_pager=True)
             self.interactive.runs(use_pager=True)
         self.assertEqual(self.pager_calls, 2)
