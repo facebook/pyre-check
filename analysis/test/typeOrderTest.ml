@@ -166,6 +166,7 @@ let variance_order =
 
   (* Variance examples borrowed from https://www.python.org/dev/peps/pep-0483 *)
   let variable_t = Type.variable "_T" in
+  let variable_t_2 = Type.variable "_T_2" in
   let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
   let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
   add_simple variable_t;
@@ -184,7 +185,7 @@ let variance_order =
     order
     ~predecessor:!"Map"
     ~successor:!"typing.Generic"
-    ~parameters:[variable_t; variable_t];
+    ~parameters:[variable_t; variable_t_2];
   connect
     order
     ~predecessor:!"Box"
@@ -433,7 +434,10 @@ let default =
   insert order !"str";
   connect order ~predecessor:Type.Bottom ~successor:!"str";
   connect order ~predecessor:!"str" ~successor:!"typing.Iterable" ~parameters:[!"str"];
-  connect order ~predecessor:!"str" ~successor:!"typing.Generic" ~parameters:[!"str"];
+
+  insert order !"AnyIterable";
+  connect order ~predecessor:Type.Bottom ~successor:!"AnyIterable";
+  connect order ~predecessor:!"AnyIterable" ~successor:!"typing.Iterable";
 
   insert order !"dict";
   connect order ~predecessor:Type.Bottom ~successor:!"dict";
@@ -445,6 +449,16 @@ let default =
     ~parameters:[variable; other_variable];
   connect order ~predecessor:!"dict" ~successor:!"typing.Iterator" ~parameters:[variable];
 
+  insert order !"PartiallySpecifiedDict";
+  connect order ~predecessor:Type.Bottom ~successor:!"PartiallySpecifiedDict";
+  connect order ~predecessor:!"PartiallySpecifiedDict" ~successor:!"dict" ~parameters:[!"int"];
+
+  insert order !"OverSpecifiedDict";
+  connect order ~predecessor:Type.Bottom ~successor:!"OverSpecifiedDict";
+  connect order
+    ~predecessor:!"OverSpecifiedDict"
+    ~successor:!"dict"
+    ~parameters:[!"int"; !"int"; !"str"];
   order
 
 
@@ -2190,7 +2204,29 @@ let test_instantiate_parameters _ =
        { handler = default; constructor = fun _ -> None }
        ~source:(Type.tuple [Type.integer; Type.integer])
        ~target:!"typing.Iterable")
-    (Some [Type.integer])
+    (Some [Type.integer]);
+
+  assert_equal
+    (instantiate_successors_parameters
+       { handler = default; constructor = fun _ -> None }
+       ~source:!"AnyIterable"
+       ~target:!"typing.Iterable")
+    (Some [Type.Any]);
+  (* If you're not completely specified, fill all with anys *)
+  assert_equal
+    (instantiate_successors_parameters
+       { handler = default; constructor = fun _ -> None }
+       ~source:!"PartiallySpecifiedDict"
+       ~target:!"dict")
+    (Some [Type.Any; Type.Any]);
+  (* If you're over-specified, fill all with anys *)
+  assert_equal
+    (instantiate_successors_parameters
+       { handler = default; constructor = fun _ -> None }
+       ~source:!"OverSpecifiedDict"
+       ~target:!"dict")
+    (Some [Type.Any; Type.Any]);
+  ()
 
 
 let test_deduplicate _ =

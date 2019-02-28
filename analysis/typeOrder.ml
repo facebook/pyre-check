@@ -487,6 +487,13 @@ let variables (module Handler: Handler) annotation =
       >>| fun { Target.parameters; _ } -> parameters
 
 
+let get_generic_parameters ~generic_index edges =
+  let generic_parameters { Target.target; parameters } =
+    Option.some_if (generic_index = Some target) parameters
+  in
+  List.find_map ~f:generic_parameters edges
+
+
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
@@ -1647,33 +1654,30 @@ and meet ({ handler= ((module Handler: Handler) as handler); constructor } as or
    variable. This function takes a target with concrete parameters and its supertypes,
    and instantiates the supertypes accordingly. *)
 and get_instantiated_successors ~generic_index ~parameters successors =
-  let generic_parameters =
-    let generic_parameters { Target.target; parameters } =
-      if Some target = generic_index then
-        Some parameters
-      else
-        None
-    in
-    List.find_map ~f:generic_parameters successors
+  let variables =
+    get_generic_parameters successors ~generic_index
+    |> Option.value ~default:[]
   in
-  generic_parameters
-  >>| (fun variables ->
-      if List.length variables = List.length parameters then
-        let constraints =
-          List.zip_exn variables parameters
-          |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
-          |> Map.find
-        in
-        let instantiate_parameters { Target.target; parameters } =
-          {
-            Target.target;
-            parameters = List.map parameters ~f:(Type.instantiate ~constraints);
-          }
-        in
-        List.map successors ~f:instantiate_parameters
-      else
-        successors)
-  |> Option.value ~default:successors
+  let parameters =
+    if List.length variables = List.length parameters then
+      parameters
+    else
+      (* This is the specified behavior for empty parameters, and other mismatched lengths should
+         have an error at the declaration site (T39693358), and this behavior seems reasonable *)
+      List.init (List.length variables) ~f:(fun _ -> Type.Any)
+  in
+  let constraints =
+    List.zip_exn variables parameters
+    |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
+    |> Map.find
+  in
+  let instantiate_parameters { Target.target; parameters } =
+    {
+      Target.target;
+      parameters = List.map parameters ~f:(Type.instantiate ~constraints);
+    }
+  in
+  List.map successors ~f:instantiate_parameters
 
 
 and get_instantiated_predecessors
@@ -1683,14 +1687,8 @@ and get_instantiated_predecessors
     predecessors =
   let instantiate { Target.target; parameters = predecessor_variables } =
     let generic_parameters =
-      let generic_parameters { Target.target; parameters } =
-        if Some target = generic_index then
-          Some parameters
-        else
-          None
-      in
       Handler.find (Handler.edges ()) target
-      >>= List.find_map ~f:generic_parameters
+      >>= get_generic_parameters ~generic_index
       |> Option.value ~default:[]
     in
 
@@ -1749,12 +1747,19 @@ and instantiate_successors_parameters
   let rec iterate worklist =
     match Queue.dequeue worklist with
     | Some { Target.target = target_index; parameters } ->
+        let instantiated_successors =
+          Handler.find (Handler.edges ()) target_index
+          >>| get_instantiated_successors ~generic_index ~parameters
+        in
         if target_index = index_of handler target then
-          Some parameters
+          if target = Type.Primitive "typing.Callable" then
+            Some parameters
+          else
+            instantiated_successors
+            >>= get_generic_parameters ~generic_index
         else
           begin
-            Handler.find (Handler.edges ()) target_index
-            >>| get_instantiated_successors ~generic_index ~parameters
+            instantiated_successors
             >>| List.iter ~f:(Queue.enqueue worklist)
             |> ignore;
             iterate worklist
