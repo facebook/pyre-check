@@ -840,11 +840,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
 
-    triage_info_assoc = relationship(
-        "IssueTriageInfoAssoc",
-        primaryjoin="Issue.id == foreign(IssueTriageInfoAssoc.issue_id)",
-    )
-
     status = Column(
         Enum(
             IssueStatus.UNCATEGORIZED,
@@ -1556,66 +1551,6 @@ class WarningMessage(Base):  # noqa
     code = Column(Integer, autoincrement=False, primary_key=True)
 
     message = Column(String(length=4096), nullable=False)
-
-
-class IssueTriageInfo(Base):  # noqa
-    __tablename__ = "issue_triage_info"
-
-    id = Column("id", BIGINT(unsigned=True), primary_key=True, nullable=False)
-
-    status = Column(
-        Enum(
-            IssueStatus.UNCATEGORIZED,
-            IssueStatus.BAD_PRACTICE,
-            IssueStatus.FALSE_POSITIVE,
-            IssueStatus.VALID_BUG,
-            IssueStatus.DO_NOT_CARE,
-            name="issue_states",
-        ),
-        doc="Shows the issue status from the latest run",
-        default=IssueStatus.UNCATEGORIZED,
-        nullable=False,
-        index=True,
-    )
-
-    task_number = Column(
-        Integer, doc="Task number (not fbid) that is tracking this " "issue"
-    )
-
-    triage_history_fbid = Column(
-        BIGINT(unsigned=True),
-        nullable=True,
-        unique=True,
-        doc="FBID for EntZoncolanIssueTriageHistory",
-    )
-
-    feedback_fbid = Column(
-        BIGINT(unsigned=True),
-        nullable=True,
-        unique=True,
-        doc="FBID for EntZoncolanFeedback",
-    )
-
-
-class IssueTriageInfoAssoc(Base):  # noqa
-    __tablename__ = "issue_triage_info_assoc"
-
-    issue_id = Column(BIGINT(unsigned=True), primary_key=True)
-    triage_info_id = Column(BIGINT(unsigned=True), primary_key=True)
-
-    issues = relationship(
-        Issue,
-        primaryjoin="IssueTriageInfoAssoc.issue_id == foreign(Issue.id)",
-        uselist=False,
-    )
-
-    triage_info = relationship(
-        IssueTriageInfo,
-        primaryjoin=(
-            "IssueTriageInfoAssoc.triage_info_id == " "foreign(IssueTriageInfo.id)"
-        ),
-        uselist=False,
-    )
 
 
 class WarningCodeCategory(Enum):
