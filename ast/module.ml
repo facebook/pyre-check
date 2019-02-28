@@ -75,12 +75,14 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       match value with
       | Assign {
           Assign.target = { Node.value = Access (SimpleAccess ([_] as target)); _ };
-          value = { Node.value = Access (SimpleAccess (imported :: value)); _ };
+          value = { Node.value = Access (SimpleAccess value); _ };
           _;
         } ->
-          Map.find aliases [imported]
-          >>| (fun alias -> Map.set aliases ~key:target ~data:(alias @ value))
-          |> Option.value ~default:aliases
+          if Access.is_strict_prefix value ~prefix:qualifier &&
+             List.for_all value ~f:(function | Access.Identifier _ -> true | _ -> false) then
+            Map.set aliases ~key:(Access.sanitized target) ~data:value
+          else
+            aliases
       | Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import ?handle ~qualifier ~from in
           let export aliases { Import.name; alias } =

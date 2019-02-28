@@ -135,11 +135,13 @@ let test_aliased_export _ =
     ~handle:(File.Handle.create "requests/__init__.pyi")
     {|
       from . import api
-      post = api.post
-      not_exported = other.assignment
+      $local_requests$post = requests.api.post
+      $local_requests$call = requests.api.call()
+      $local_requests$not_exported = other.assignment
     |}
     [
       "post", "requests.api.post";
+      "call", "$not_exported";
       "not_exported", "$not_exported";
     ]
 
