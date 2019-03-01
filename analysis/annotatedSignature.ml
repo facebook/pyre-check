@@ -553,8 +553,42 @@ let select
             reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation}
           }
     in
+    let special_case_dictionary_constructor
+        ({ argument_mapping; callable; constraints; _ } as signature_match) =
+      let open Type.Record.Callable in
+      let has_matched_keyword_parameter parameters =
+        List.find parameters ~f:(function RecordParameter.Keywords _ -> true | _ -> false)
+        >>= Type.Callable.Parameter.Map.find argument_mapping
+        >>| List.is_empty
+        >>| not
+        |> Option.value ~default:false
+      in
+      match callable with
+      | {
+        kind = Named name;
+        implementation = {
+          parameters = Defined parameters;
+          annotation = Type.Parametric { parameters = [ key_type; _ ]; _ }
+        };
+        _;
+      } when Access.show name = "dict.__init__" && has_matched_keyword_parameter parameters ->
+          Resolution.solve_constraints
+            resolution
+            ~constraints
+            ~source:Type.string
+            ~target:key_type
+          >>| (fun updated_constraints ->
+              { signature_match with constraints = updated_constraints }
+            )
+          (* TODO(T41074174): Error here, could come from instantiating a class that inherits from
+             dict[int, str] with the kwargs constructor *)
+          |> Option.value ~default:signature_match
+      | _ ->
+          signature_match
+    in
     Map.fold ~init:signature_match ~f:update argument_mapping
     |> reduce_constraints
+    |> special_case_dictionary_constructor
   in
   let calculate_rank
       ({ reasons = { arity; annotation; _ }; _ } as signature_match) =

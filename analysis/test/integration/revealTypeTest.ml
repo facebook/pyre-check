@@ -60,11 +60,15 @@ let test_reveal_type _ =
     {|
       def foo() -> dict[str, int]:
         d = dict(a = 1, b = 2)
+        reveal_type(d)
         bar = d['a']
         reveal_type(bar)
         return d
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+    [
+      "Revealed type [-1]: Revealed type for `d` is `typing.Dict[str, int]`.";
+      "Revealed type [-1]: Revealed type for `bar` is `int`.";
+    ];
 
   assert_type_errors
     {|

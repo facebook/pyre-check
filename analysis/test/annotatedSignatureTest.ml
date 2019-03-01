@@ -9,6 +9,7 @@ open OUnit2
 open Ast
 open Analysis
 open Statement
+open Pyre
 
 open Test
 open AnnotatedTest
@@ -57,7 +58,7 @@ let parse_annotation annotation =
 
 
 let test_select _ =
-  let assert_select ?(allow_undefined = false) callable arguments expected =
+  let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
       Format.asprintf "typing.Callable%s" callable
       |> parse_annotation
@@ -71,7 +72,10 @@ let test_select _ =
           if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
             failwith "Undefined parameters"
           else
-            callable
+            name
+            >>| Access.create
+            >>| (fun name -> { callable with kind = Named name })
+            |> Option.value ~default:callable
       | _ ->
           failwith "Could not extract signatures"
     in
@@ -575,7 +579,33 @@ let test_select _ =
   assert_select
     "[[typing.Callable[[_T], typing.List[bool]]], _T]"
     "(f)"
-    (`Found "[[typing.Callable[[int], typing.List[bool]]], int]")
+    (`Found "[[typing.Callable[[int], typing.List[bool]]], int]");
+
+  (* Special dictionary constructor *)
+  assert_select
+    ~name:"dict.__init__"
+    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "(a=1)"
+    (`Found "[[Keywords(kwargs, int)], dict[str, int]]");
+  assert_select
+    ~name:"dict.__init__"
+    "[[Named(map, typing.Mapping[_T, _S]), Keywords(kwargs, _S)], dict[_T, _S]]"
+    "({1: 1}, a=1)"
+    (`Found
+       ("[[Named(map, typing.Mapping[typing.Union[int, str], int]), Keywords(kwargs, int)], " ^
+        "dict[typing.Union[int, str], int]]")
+    );
+  assert_select
+    ~name:"dict.__init__"
+    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "()"
+    (`Found "[[Keywords(kwargs, $bottom)], dict[$bottom, $bottom]]");
+  assert_select
+    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "(a=1)"
+    (`Found "[[Keywords(kwargs, int)], dict[$bottom, int]]");
+
+  ()
 
 
 let test_determine _ =
