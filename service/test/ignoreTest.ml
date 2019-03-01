@@ -198,7 +198,18 @@ let ignore_lines_test context =
         def foo(a: int) -> str:
           return bar(a.undefined)  # pyre-ignore[7, 5, 16]
       |}
-      ["Unused ignore [0]: Pyre ignore [5] is extraneous."]
+      ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
+
+    assert_errors
+      {|
+        # pyre-strict
+        # pyre-fixme[3]: Return annotation cannot be `Any`.
+        # pyre-fixme[2]: Parameter annotation cannot be `Any`.
+        # pyre-fixme[2]: Parameter annotation cannot be `Any`.
+        def foo(x: typing.Any, y: typing.Any) -> typing.Any:
+            return x
+      |}
+      []
   in
   with_bracket_chdir context (bracket_tmpdir context) check
 

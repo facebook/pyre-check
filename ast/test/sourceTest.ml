@@ -170,6 +170,20 @@ let test_parse _ =
     [
       create_ignore 3 [6] PyreIgnore 1 2 1 16;
       create_ignore 3 [7] PyreIgnore 2 2 2 16;
+    ];
+
+  assert_ignore
+    [
+      "# pyre-fixme[3]";
+      "# pyre-fixme[2]";
+      "# pyre-fixme[2]";
+      "def foo(x: typing.Any, y:typing.Any) -> typing.Any";
+      " return x";
+    ]
+    [
+      create_ignore 4 [3] PyreFixme 1 2 1 15;
+      create_ignore 4 [2] PyreFixme 2 2 2 15;
+      create_ignore 4 [2] PyreFixme 3 2 3 15;
     ]
 
 

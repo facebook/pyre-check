@@ -39,9 +39,17 @@ let register_ignores ~configuration scheduler handles =
     match Ast.SharedMemory.Sources.get handle with
     | Some source ->
         let ignore_lines = Source.ignore_lines source in
-        List.iter
-          ~f:(fun ignore_line -> IgnoreLines.add (Ignore.key ignore_line) ignore_line)
-          ignore_lines;
+        let ignore_map =
+          let add_ignore ignore_map ignore_line =
+            Location.Reference.Map.add_multi
+              ~key:(Ignore.key ignore_line)
+              ~data:ignore_line ignore_map
+          in
+          List.fold ~init:Location.Reference.Map.empty ~f:add_ignore ignore_lines
+        in
+        Map.iteri
+          ~f:(fun ~key ~data -> IgnoreLines.add key data)
+          ignore_map;
         IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
     | _ ->
         ()
@@ -69,10 +77,11 @@ let ignore ~configuration scheduler handles errors =
     List.fold errors ~init:Location.Reference.Map.empty ~f:add_to_lookup in
   let errors =
     let not_ignored error =
+      let get_codes = List.concat_map ~f:Ignore.codes in
       IgnoreLines.get (Error.key error)
-      >>| (fun ignore_instance ->
-          not (List.is_empty (Ignore.codes ignore_instance) ||
-               List.mem ~equal:(=) (Ignore.codes ignore_instance) (Error.code error)))
+      >>| (fun ignores ->
+          not (List.is_empty (get_codes ignores) ||
+               List.mem ~equal:(=) (get_codes ignores) (Error.code error)))
       |> Option.value ~default:true
     in
     List.filter ~f:not_ignored errors
@@ -82,7 +91,7 @@ let ignore ~configuration scheduler handles errors =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key
-          >>| (fun ignore -> ignore :: sofar)
+          >>| (fun ignores -> ignores @ sofar)
           |> Option.value ~default:sofar
         in
         List.fold
