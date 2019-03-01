@@ -2907,9 +2907,15 @@ module State = struct
                 let resolution =
                   let annotation =
                     if explicit && is_valid_annotation then
-                      Annotation.create_immutable
-                        ~global:(Resolution.is_global ~access resolution)
-                        guide
+                      let annotation =
+                        Annotation.create_immutable
+                          ~global:(Resolution.is_global ~access resolution)
+                          guide
+                      in
+                      if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                        Refinement.refine ~resolution annotation resolved
+                      else
+                        annotation
                     else if Annotation.is_immutable target_annotation then
                       Refinement.refine ~resolution target_annotation guide
                     else

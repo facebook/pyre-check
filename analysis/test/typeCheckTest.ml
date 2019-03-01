@@ -33,8 +33,10 @@ let create
         let annotation =
           let create annotation =
             match Map.find immutables name with
-            | Some global -> Annotation.create_immutable ~global annotation
-            | _ -> Annotation.create annotation
+            | Some (global, original) ->
+                Annotation.create_immutable ~original:(Some original) ~global annotation
+            | _ ->
+                Annotation.create annotation
           in
           create annotation
         in
@@ -103,7 +105,7 @@ let test_initial _ =
 
   assert_initial
     "def foo(x: int): ..."
-    (create ~immutables:["x", false] ["x", Type.integer]);
+    (create ~immutables:["x", (false, Type.integer)] ["x", Type.integer]);
 
   assert_initial
     ~errors:[
@@ -111,7 +113,7 @@ let test_initial _ =
       "`float`.";
     ]
     "def foo(x: int = 1.0): ..."
-    (create ~immutables:["x", false] ["x", Type.integer]);
+    (create ~immutables:["x", (false, Type.integer)] ["x", Type.integer]);
 
   assert_initial
     ~errors:[
@@ -122,11 +124,15 @@ let test_initial _ =
 
   assert_initial
     "def foo(x: int) -> int: ..."
-    (create ~immutables:["x", false] ~expected_return:Type.integer ["x", Type.integer]);
+    (create
+      ~immutables:["x", (false, Type.integer)]
+      ~expected_return:Type.integer ["x", Type.integer]);
 
   assert_initial
     "def foo(x: float, y: str): ..."
-    (create ~immutables:["x", false; "y", false] ["x", Type.float; "y", Type.string]);
+    (create
+      ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
+      ["x", Type.float; "y", Type.string]);
 
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
@@ -135,14 +141,14 @@ let test_initial _ =
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     "def foo(x: typing.Any): ..."
-    (create ~immutables:["x", false] ["x", Type.Any]);
+    (create ~immutables:["x", (false, Type.Any)] ["x", Type.Any]);
   assert_initial
     ~parent:"Foo"
     ~errors:[]
     ~environment:"class Foo: ..."
     "def __eq__(self, other: object): ..."
     (create
-      ~immutables:["other", false]
+      ~immutables:["other", (false, Type.object_primitive)]
       ["self", Type.Primitive "Foo"; "other", Type.object_primitive]);
 
   assert_initial
@@ -161,7 +167,7 @@ let test_initial _ =
     ~environment:"T = typing.TypeVar('T')"
     "def foo(x: T): ..."
     (create
-       ~immutables:["x", false]
+       ~immutables:["x", (false, Type.mark_variables_as_bound (Type.variable "T"))]
        ["x", Type.mark_variables_as_bound (Type.variable "T")])
 
 
@@ -2139,10 +2145,26 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific ["Undefined type [11]: Type `Derp` is not defined."])
-    ~postcondition_immutables:["x", false]
+    ~postcondition_immutables:["x", (false, Type.Top)]
     []
     "x: Derp"
     ["x", Type.Top];
+
+  assert_forward
+    ~errors:
+      (`Specific [
+        "Incompatible variable type [9]: x is declared to have type `str` " ^
+        "but is used as type `int`."])
+    ~postcondition_immutables:["x", (false, Type.string)]
+    []
+    "x: str = 1"
+    ["x", Type.string];
+
+  assert_forward
+    ~postcondition_immutables:["x", (false, Type.union [Type.string; Type.integer])]
+    []
+    "x: typing.Union[int, str] = 1"
+    ["x", Type.integer];
 
   (* Assignments with tuples. *)
   assert_forward
@@ -2167,6 +2189,15 @@ let test_forward_statement _ =
     ["y", Type.integer; "z", Type.Top]
     "x = y, z"
     ["x", Type.tuple [Type.integer; Type.Top]; "y", Type.integer; "z", Type.Top];
+  assert_forward
+    ~postcondition_immutables:["x", (false, Type.tuple [Type.Any; Type.Any])]
+    ~errors:
+      (`Specific [
+        "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; " ^
+        "given explicit type cannot contain `Any`."])
+    []
+    "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
+    ["x", Type.tuple [Type.integer; Type.integer]];
   assert_forward
     ["z", Type.tuple [Type.integer; Type.string]]
     "x, y = z"
@@ -2246,27 +2277,31 @@ let test_forward_statement _ =
     ];
 
   (* Assignments with immutables. *)
-  assert_forward ~postcondition_immutables:["x", true] [] "global x" ["x", Type.Top];
-  assert_forward ~postcondition_immutables:["y", false] [] "y: int" ["y", Type.integer];
+  assert_forward ~postcondition_immutables:["x", (true, Type.Top)] [] "global x" ["x", Type.Top];
+  assert_forward
+    ~postcondition_immutables:["y", (false, Type.integer)]
+    []
+    "y: int"
+    ["y", Type.integer];
   assert_forward
     ~errors:(`Specific [
         "Incompatible variable type [9]: y is declared to have type `int` " ^
         "but is used as type `unknown`.";
         "Undefined name [18]: Global name `x` is undefined.";
       ])
-    ~postcondition_immutables:["y", false]
+    ~postcondition_immutables:["y", (false, Type.integer)]
     []
     "y: int = x"
     ["y", Type.integer];
   assert_forward
-    ~precondition_immutables:["y", false]
-    ~postcondition_immutables:["y", false]
+    ~precondition_immutables:["y", (false, Type.Top)]
+    ~postcondition_immutables:["y", (false, Type.Top)]
     ["x", Type.Top; "y", Type.Top]
     "y = x"
     ["x", Type.Top; "y", Type.Top];
   assert_forward
-    ~precondition_immutables:["y", false]
-    ~postcondition_immutables:["y", false]
+    ~precondition_immutables:["y", (false, Type.string)]
+    ~postcondition_immutables:["y", (false, Type.integer)]
     ["y", Type.string]
     "y: int"
     ["y", Type.integer];
