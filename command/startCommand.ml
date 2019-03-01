@@ -265,15 +265,12 @@ let request_handler_thread
           ~f:(fun () ->
               let { persistent_clients; file_notifiers; _ } = !connections in
               Socket.write socket (ClientConnectionResponse client);
-              connections :=
-                begin
-                  match client with
-                  | Persistent ->
-                      Hashtbl.set persistent_clients ~key:socket ~data:0;
-                      !connections
-                  | FileNotifier ->
-                      { !connections with file_notifiers = socket::file_notifiers }
-                end)
+              match client with
+              | Persistent ->
+                  Hashtbl.set persistent_clients ~key:socket ~data:0
+              | FileNotifier ->
+                  Hashtbl.set file_notifiers ~key:socket ~data:OCaml
+            )
     | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
@@ -307,16 +304,16 @@ let request_handler_thread
         Mutex.critical_section lock
           ~f:(fun () ->
               let file_notifiers =
-                List.concat_map
+                Hashtbl.filter_keys
                   ~f:(fun file_notifier_socket ->
                       if socket = file_notifier_socket then
                         begin
                           Log.log ~section:`Server "Removing file notifier";
                           Unix.close socket;
-                          []
+                          false
                         end
                       else
-                        [file_notifier_socket])
+                        true)
                   !(connections).file_notifiers
               in
               let old_watchman_pid = !(connections).watchman_pid in
@@ -335,7 +332,7 @@ let request_handler_thread
                 current_time -. (!last_watchman_created) >= watchman_creation_timeout
               in
               let watchman_pid =
-                if List.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
+                if Hashtbl.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
                   begin
                     last_watchman_created := Unix.time ();
                     Some (spawn_watchman_client server_configuration)
@@ -361,7 +358,9 @@ let request_handler_thread
     let readable =
       Unix.select
         ~restart:true
-        ~read:(server_socket :: (Hashtbl.keys persistent_clients) @ file_notifiers )
+        ~read:(
+          server_socket :: (Hashtbl.keys persistent_clients) @ (Hashtbl.keys file_notifiers)
+        )
         ~write:[]
         ~except:[]
         ~timeout:(`After (Time.of_sec 5.0))
@@ -426,7 +425,7 @@ let serve
          socket;
          json_socket;
          persistent_clients = Unix.File_descr.Table.create ();
-         file_notifiers = [];
+         file_notifiers = Unix.File_descr.Table.create ();
          watchman_pid;
        }
      in
