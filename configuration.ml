@@ -164,6 +164,7 @@ module Server = struct
   type t = {
     (* Server-specific configuration options *)
     socket: socket_path;
+    json_socket: socket_path;
     lock_path: Path.t;
     pid_path: Path.t;
     log_path: Path.t;

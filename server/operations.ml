@@ -24,8 +24,8 @@ exception ServerNotRunning
 
 (* Socket paths in OCaml are limited to a length of +-100 characters. We work around this by
    creating the socket in a temporary directory and symlinking to it from the pyre directory. *)
-let socket_path ?(create=false) configuration =
-  let link_path = Constants.Server.root configuration ^| "server.sock" in
+let socket_path ?(create = false) ?(name = "server") configuration =
+  let link_path = Constants.Server.root configuration ^| (name ^ ".sock") in
   if not create then
     try
       Unix.readlink (Path.absolute link_path)
@@ -38,7 +38,7 @@ let socket_path ?(create=false) configuration =
         let pid = Pid.to_string (Unix.getpid ()) in
         Path.create_relative
           ~root:(Path.create_absolute Filename.temp_dir_name)
-          ~relative:("pyre_" ^ pid ^ ".sock")
+          ~relative:(Format.sprintf "pyre_%s_%s.sock" name pid)
       in
       (try Unix.unlink (Path.absolute link_path) with | Unix.Unix_error _ -> ());
       Unix.symlink ~src:(Path.absolute socket_path) ~dst:(Path.absolute link_path);
@@ -61,6 +61,10 @@ let create_configuration
     Configuration.Server.socket = {
       path = socket_path ~create:true configuration;
       link = server_root ^| "server.sock";
+    };
+    json_socket = {
+      path = socket_path ~create:true ~name:"json_server" configuration;
+      link = server_root ^| "json_server.sock";
     };
     lock_path = server_root ^| "server.lock";
     pid_path = server_root ^| "server.pid";
@@ -186,6 +190,11 @@ let stop
       link = socket_link;
       _
     };
+    json_socket = {
+      path = json_socket_path;
+      link = json_socket_link;
+      _
+    };
     pid_path;
     _;
   }
@@ -210,7 +219,9 @@ let stop
 
   (* Cleanup server files. *)
   Path.remove socket_path;
+  Path.remove json_socket_path;
   Path.remove socket_link;
+  Path.remove json_socket_link;
   Path.remove pid_path;
 
   Unix.close socket;

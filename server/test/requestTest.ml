@@ -39,6 +39,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
     lock = Mutex.create ();
     connections = ref {
         State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+        json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
         persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = [];
         watchman_pid = None;

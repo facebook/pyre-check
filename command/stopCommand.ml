@@ -51,7 +51,7 @@ let stop ~local_root =
       | StopResponse -> Log.info "Server stopped, polling for deletion of socket."
       | _ -> Log.error "Invalid response from server to stop request"
     end;
-    let poll_for_deletion path =
+    let poll_for_deletion paths =
       let start_time = Unix.time () in
       let timeout = 3.0 in
       let rec poll () =
@@ -60,7 +60,7 @@ let stop ~local_root =
             Log.warning "Timed out while polling for server to stop.";
             1
           end
-        else if Path.file_exists path then
+        else if List.exists ~f:Path.file_exists paths then
           (Unix.nanosleep 0.1 |> ignore; poll ())
         else
           begin
@@ -70,7 +70,12 @@ let stop ~local_root =
       in
       poll ()
     in
-    match poll_for_deletion (Operations.socket_path configuration) with
+    let socket_paths = [
+      Operations.socket_path configuration;
+      Operations.socket_path ~name:"json_server" configuration
+    ]
+    in
+    match poll_for_deletion socket_paths with
     | exit_code ->
         exit_code
     | exception Operations.ServerNotRunning ->

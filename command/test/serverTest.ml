@@ -122,11 +122,13 @@ let test_server_stops context =
   |> ignore;
   let {
     Configuration.Server.socket = { path = socket_path; _ };
+    json_socket = { path = json_socket_path; _ };
     _
   } =
     Operations.create_configuration (Configuration.Analysis.create ~local_root ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
+  CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion json_socket_path;
   CommandTest.with_timeout
     ~seconds:1
     (fun () -> (match Unix.waitpid pid with
@@ -200,6 +202,7 @@ let mock_server_state
     lock = Mutex.create ();
     connections = ref {
         State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+        json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
         persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = [];
         watchman_pid = None;
@@ -895,6 +898,7 @@ let test_connect context =
   let {
     Configuration.Server.configuration;
     socket = { path = socket_path; _ };
+    json_socket = { path = json_socket_path; _ };
     _
   } =
     CommandTest.mock_server_configuration ~local_root ~expected_version:"B" ()
@@ -908,6 +912,7 @@ let test_connect context =
     Commands.Stop.stop ~local_root:(Path.absolute local_root)
     |> ignore;
     CommandTest.with_timeout CommandTest.poll_for_deletion socket_path ~seconds:3;
+    CommandTest.with_timeout CommandTest.poll_for_deletion json_socket_path ~seconds:3;
   in
   Exn.protect
     ~f:(fun () ->

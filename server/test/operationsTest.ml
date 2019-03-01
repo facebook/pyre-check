@@ -37,7 +37,7 @@ let test_socket_path context =
   (* The socket path gets written by the server, so simulate that. *)
   File.write (File.create ~content:"" socket_path);
   let expected_path =
-    Format.sprintf "%s/pyre_%d.sock" Filename.temp_dir_name (Unix.getpid () |> Pid.to_int)
+    Format.sprintf "%s/pyre_server_%d.sock" Filename.temp_dir_name (Unix.getpid () |> Pid.to_int)
     |> Path.create_absolute
   in
   assert_equal
@@ -48,7 +48,29 @@ let test_socket_path context =
   assert_equal
     ~printer:ident
     (Unix.readlink (Path.absolute socket_link))
-    (Path.absolute expected_path)
+    (Path.absolute expected_path);
+
+  let json_socket_link = Service.Constants.Server.root configuration ^| "json_server.sock" in
+  let json_socket_path =
+    Server.Operations.socket_path ~create:true ~name:"json_server" configuration
+  in
+  File.write (File.create ~content:"" json_socket_path);
+  let json_expected_path =
+    Format.sprintf
+      "%s/pyre_json_server_%d.sock"
+        Filename.temp_dir_name
+        (Unix.getpid () |> Pid.to_int)
+    |> Path.create_absolute
+  in
+  assert_equal
+    ~printer:Path.absolute
+    ~cmp:Path.equal
+    json_expected_path
+    json_socket_path;
+  assert_equal
+    ~printer:ident
+    (Unix.readlink (Path.absolute json_socket_link))
+    (Path.absolute json_expected_path)
 
 
 let () =

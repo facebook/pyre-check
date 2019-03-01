@@ -12,6 +12,7 @@ module Error = Analysis.Error
 
 type connections = {
   socket: Socket.t;
+  json_socket: Socket.t;
   persistent_clients: int Socket.Table.t;
   file_notifiers: Socket.t list;
   watchman_pid: Pid.t option;

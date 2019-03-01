@@ -412,6 +412,7 @@ let request_handler_thread
 (** Main server either as a daemon or in terminal *)
 let serve
     ~socket
+    ~json_socket
     ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
     ~watchman_pid =
   Version.log_version_banner ();
@@ -423,6 +424,7 @@ let serve
      let connections =
        ref {
          socket;
+         json_socket;
          persistent_clients = Unix.File_descr.Table.create ();
          file_notifiers = [];
          watchman_pid;
@@ -463,7 +465,7 @@ let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_pat
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
-  ((Socket.t * Configuration.Server.t * Pid.t option),
+  ((Socket.t * Socket.t * Configuration.Server.t * Pid.t option),
    unit Daemon.in_channel,
    unit Daemon.out_channel) Daemon.entry
 
@@ -474,19 +476,24 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, server_configuration, watchman_pid) (parent_in_channel, parent_out_channel)  ->
-       Daemon.close_in parent_in_channel;
-       Daemon.close_out parent_out_channel;
-       (* Detach the from a controlling terminal *)
-       Unix.Terminal_io.setsid () |> ignore;
-       acquire_lock ~server_configuration;
-       serve ~socket ~server_configuration ~watchman_pid)
+    (fun (socket, json_socket, server_configuration, watchman_pid)
+      (parent_in_channel, parent_out_channel)  ->
+      Daemon.close_in parent_in_channel;
+      Daemon.close_out parent_out_channel;
+      (* Detach the from a controlling terminal *)
+      Unix.Terminal_io.setsid () |> ignore;
+      acquire_lock ~server_configuration;
+      serve ~socket ~json_socket ~server_configuration ~watchman_pid)
 
 
 let run ({
     Configuration.Server.lock_path;
     socket = {
       path = socket_path;
+      _
+    };
+    json_socket = {
+      path = json_socket_path;
       _
     };
     log_path;
@@ -506,6 +513,7 @@ let run ({
 
        Log.log ~section:`Server "Creating server socket at `%a`" Path.pp socket_path;
        let socket = Socket.initialize_unix_socket socket_path in
+       let json_socket = Socket.initialize_unix_socket json_socket_path in
 
        let watchman_pid =
          if use_watchman then
@@ -527,7 +535,7 @@ let run ({
          let { Daemon.pid; _ } as handle =
            Daemon.spawn
              (stdin, stdout, stdout)
-             run_server_daemon_entry (socket, server_configuration, watchman_pid)
+             run_server_daemon_entry (socket, json_socket, server_configuration, watchman_pid)
          in
          Daemon.close handle;
          Log.log ~section:`Server "Forked off daemon with pid %d" pid;
@@ -536,7 +544,7 @@ let run ({
        else
          begin
            acquire_lock ~server_configuration;
-           serve ~socket ~server_configuration ~watchman_pid;
+           serve ~socket ~json_socket ~server_configuration ~watchman_pid;
            0
          end
      with AlreadyRunning ->

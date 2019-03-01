@@ -18,7 +18,7 @@ type version_mismatch = {
 
 exception ServerNotRunning
 
-val socket_path: ?create: bool -> Configuration.Analysis.t -> Path.t
+val socket_path: ?create: bool -> ?name: string -> Configuration.Analysis.t -> Path.t
 
 val create_configuration :
   ?daemonize: bool ->
