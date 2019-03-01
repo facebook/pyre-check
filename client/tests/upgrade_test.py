@@ -345,7 +345,7 @@ class FixmeAllTest(unittest.TestCase):
             command["args"]["hash"] = hash
             command["args"]["paths"] = paths
             command["args"]["push_blocking_only"] = push_blocking
-            return json.dumps(command)
+            return json.dumps(command).encode()
 
         arguments = MagicMock()
         arguments.sandcastle = "sandcastle.json"
