@@ -92,6 +92,48 @@ let initialize sources =
   configuration, state
 
 
+let test_deferred_take_n _ =
+  let assert_take to_analyze number ~expected =
+    let to_analyze =
+      let to_file relative =
+        Path.create_relative ~root:(Path.current_working_directory ()) ~relative
+        |> File.create
+      in
+      to_analyze
+      |> List.map ~f:to_file
+      |> File.Set.of_list
+    in
+    let taken, remaining = Server.State.Deferred.take_n to_analyze ~elements:number in
+    assert_equal ~cmp:File.Set.equal to_analyze (Set.union (File.Set.of_list taken) remaining);
+    assert_equal (List.length taken) expected;
+    assert_equal (Set.length remaining) (Set.length to_analyze - expected)
+  in
+  assert_take ["a.py"; "b.py"; "c.py"] ~expected:3 3;
+  assert_take ["a.py"; "b.py"; "c.py"] ~expected:2 2;
+  assert_take ["a.py"; "b.py"; "c.py"] ~expected:3 4;
+  assert_take ["a.py"; "a.py"; "b.py"] ~expected:2 3
+
+
+let test_deferred_add _ =
+  let assert_add ~initial ~files ~expected =
+    let to_file_set paths =
+      let to_file relative =
+        Path.create_relative ~root:(Path.current_working_directory ()) ~relative
+        |> File.create
+      in
+      List.map paths ~f:to_file
+      |> File.Set.of_list
+    in
+    assert_equal
+      ~cmp:File.Set.equal
+      (to_file_set expected)
+      (Server.State.Deferred.add (to_file_set initial) ~files:(to_file_set files))
+  in
+  assert_add ~initial:["b.py"] ~files:["a.py"] ~expected:["a.py"; "b.py"];
+  assert_add ~initial:["a.py"; "b.py"] ~files:["a.py"] ~expected:["a.py"; "b.py"];
+  assert_add ~initial:["a.py"; "b.py"] ~files:["a.py"; "c.py"] ~expected:["a.py"; "b.py"; "c.py"]
+
+
 let test_generate_lsp_response _ =
   let open LanguageServer.Types in
   let module MockResponse = struct
@@ -299,8 +341,7 @@ let test_process_type_check_request context =
                 File.handle file ~configuration
                 |> File.Handle.show
               in
-              State.Deferred.take_all deferred_state
-              |> fst
+              File.Set.to_list deferred_state
               |> List.map ~f:show_file
             in
             response, deferred
@@ -608,5 +649,7 @@ let () =
     "process_type_check_request">::test_process_type_check_request;
     "process_deferred_state">::test_process_deferred_state;
     "process_get_definition_request">::test_process_get_definition_request;
+    "deferred_take_n">::test_deferred_take_n;
+    "deferred_add">::test_deferred_add;
   ]
   |> Test.run

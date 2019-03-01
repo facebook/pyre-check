@@ -1175,7 +1175,7 @@ let test_incremental_dependencies context =
     assert_equal
       ~printer:(List.to_string ~f:File.show)
       [file ~local_root "a.py"]
-      (State.Deferred.take_all state.State.deferred_state |> fst);
+      (File.Set.to_list state.State.deferred_state);
     let { Request.state; response } =
       process
         (check_request
@@ -1197,7 +1197,7 @@ let test_incremental_dependencies context =
     assert_equal
       ~printer:(List.to_string ~f:(File.show))
       []
-      (State.Deferred.take_all state.State.deferred_state |> fst)
+      (File.Set.to_list state.State.deferred_state)
   in
   let finally () =
     Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]

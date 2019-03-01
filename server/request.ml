@@ -996,7 +996,7 @@ let process_deferred_state
   SharedMem.collect `aggressive;
   let current_batch, remaining =
     if flush then
-      Deferred.take_all deferred_state
+      File.Set.to_list deferred_state, File.Set.empty
     else
       Deferred.take_n ~elements:number_of_workers deferred_state
   in
