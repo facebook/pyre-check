@@ -109,9 +109,9 @@ class Configuration:
             json.dump(contents, configuration_file, sort_keys=True, indent=2)
             configuration_file.write("\n")
 
-    def get_errors(self) -> List[Dict[str, Any]]:
+    def get_errors(self, should_clean: bool = True) -> List[Dict[str, Any]]:
         # TODO(T37074129): Better parallelization or truncation needed for fbcode
-        if self.targets:
+        if self.targets and should_clean:
             try:
                 # If building targets, run clean or space may run out on device!
                 LOG.info("Running `buck clean`...")
@@ -281,7 +281,7 @@ def _upgrade_configuration(
                     "Lint was dirty after adding fixmes. Cleaning lint and re-checking."
                 )
                 subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
-                errors = configuration.get_errors()
+                errors = configuration.get_errors(should_clean=False)
                 errors = itertools.groupby(sorted(errors, key=error_path), error_path)
                 run_fixme(arguments, errors)
     try:
