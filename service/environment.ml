@@ -525,3 +525,12 @@ let populate_shared_memory
     ~name:"shared memory size"
     ~integers:["size", EnvironmentSharedMemory.heap_size ()]
     ()
+
+
+let normalize_shared_memory () =
+  TypeOrder.normalize (module SharedHandler.TypeOrderHandler);
+  Ast.SharedMemory.HandleKeys.normalize ();
+  let handles = Ast.SharedMemory.HandleKeys.get () in
+  File.Handle.Set.Tree.iter
+    handles
+    ~f:(fun handle -> SharedHandler.DependencyHandler.normalize ~handle)

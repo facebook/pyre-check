@@ -127,6 +127,15 @@ module HandleKeys = struct
     clear ();
     let handles = File.Handle.Set.Tree.union handles new_keys in
     HandleKeys.add 0 handles
+
+  let normalize () =
+    let handles = get () in
+    clear ();
+    handles
+    |> File.Handle.Set.Tree.to_list
+    |> List.sort ~compare:File.Handle.compare
+    |> File.Handle.Set.Tree.of_list
+    |> HandleKeys.add 0
 end
 
 

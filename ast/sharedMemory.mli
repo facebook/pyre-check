@@ -29,6 +29,8 @@ module HandleKeys: sig
 
   (* Can only be called from the master process. *)
   val clear: unit -> unit
+
+  val normalize: unit -> unit
 end
 
 module Modules: sig

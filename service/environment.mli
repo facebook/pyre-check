@@ -20,3 +20,5 @@ val populate_shared_memory
   -> stubs: File.Handle.t list
   -> sources: File.Handle.t list
   -> unit
+
+val normalize_shared_memory: unit -> unit

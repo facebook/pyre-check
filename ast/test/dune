@@ -5,6 +5,7 @@
   identifierTest
   moduleTest
   nodeTest
+  sharedMemoryTest
   sourceTest
   statementTest
   transformTest
@@ -24,4 +25,3 @@
   ppx_deriving
   pyrelib.test
   pyrelib.ast))
-
