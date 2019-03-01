@@ -1572,14 +1572,14 @@ module State = struct
                      errors
                  in
                  (* Check weakening of precondition. *)
-                 let overriding_parameters =
-                   let remove_unused_parameter_denotation ~key ~data map =
-                     String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
-                   in
-                   Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
-                   |> Method.parameter_annotations ~resolution
-                   |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
+                let overriding_parameters =
+                 let remove_unused_parameter_denotation ~key ~data map =
+                   String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                  in
+                 Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+                 |> Method.parameter_annotations ~resolution
+                 |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
+                in
                  let check_parameter errors overridden_parameter =
                    let expected = Type.Callable.Parameter.annotation overridden_parameter in
                    let name =
@@ -1589,12 +1589,20 @@ module State = struct
                    match Map.find overriding_parameters name with
                    | Some actual ->
                        begin
+                         let is_compatible =
+                           Resolution.less_or_equal
+                            resolution
+                            ~left:expected
+                            ~right:actual ||
+                           Resolution.solve_constraints
+                             resolution
+                             ~constraints:Type.Map.empty
+                             ~source:expected
+                             ~target:actual
+                           |> Option.is_some
+                         in
                          try
-                           if not (Type.equal Type.Top expected) &&
-                              not (Resolution.less_or_equal
-                                     resolution
-                                     ~left:expected
-                                     ~right:actual) then
+                           if not (Type.equal Type.Top expected) && not is_compatible then
                              let error =
                                Error.create
                                  ~location

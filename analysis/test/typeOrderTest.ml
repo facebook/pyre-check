@@ -916,6 +916,11 @@ let test_less_or_equal _ =
        order
        ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
        ~right:(Type.union [Type.float; Type.string; !"A"]));
+ assert_false
+   (less_or_equal
+      order
+      ~left:Type.string
+      ~right:(Type.variable ~constraints:(Type.Bound (Type.string)) "T"));
   let float_string_variable =
     Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"
   in

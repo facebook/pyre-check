@@ -115,7 +115,47 @@ let test_check_variable_bindings _ =
         return v
     |}
     ["Revealed type [-1]: Revealed type for `v` is `Variable[T (bound to C)]`."];
-  ()
+  assert_type_errors
+    {|
+      _T = typing.TypeVar("T", bound=int)
+      class Foo:
+        def foo(self, x: int) -> int:
+          return x
+      class Bar(Foo):
+        def foo(self, x: _T) -> _T:
+          return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar("T", bound=float)
+      class Foo:
+        def foo(self, x: int) -> int:
+          return x
+      class Bar(Foo):
+        def foo(self, x: _T) -> _T:
+          return x
+    |}
+    [
+      "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
+      "Returned type `Variable[_T (bound to float)]` is not a subtype of the overridden return " ^
+      "`int`."
+    ];
+  assert_type_errors
+    {|
+      _T = typing.TypeVar("T", bound=float)
+      class Foo:
+        def foo(self, x: _T) -> _T:
+          return x
+      class Bar(Foo):
+        def foo(self, x: int) -> int:
+          return x
+    |}
+    [
+      "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
+      "Parameter of type `int` is not a supertype of the overridden parameter " ^
+      "`Variable[_T (bound to float)]`."
+    ]
 
 
 let test_bottom_unbound_variables _ =
