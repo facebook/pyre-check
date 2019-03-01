@@ -427,8 +427,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             ()
         in
         let timer = Timer.start () in
-        (* Normalize the type order for comparison. *)
+        (* Normalize the environment for comparison. *)
         TypeOrder.normalize (module Handler.TypeOrderHandler);
+        let handles = Ast.SharedMemory.HandleKeys.get () in
+        File.Handle.Set.Tree.iter
+          handles
+          ~f:(fun handle -> Handler.DependencyHandler.normalize ~handle);
         Memory.save_table_sqlite path
         |> ignore;
         let { Memory.used_slots; _ } = Memory.hash_stats () in

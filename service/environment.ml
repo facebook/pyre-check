@@ -208,6 +208,18 @@ module SharedHandler: Analysis.Environment.Handler = struct
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
 
     let dependents = Dependents.get
+
+    let normalize ~handle =
+      let name = Source.qualifier ~handle in
+      match Dependents.get name with
+      | Some unnormalized ->
+          Dependents.remove_batch (Dependents.KeySet.singleton name);
+          File.Handle.Set.Tree.to_list unnormalized
+          |> List.sort ~compare:File.Handle.compare
+          |> File.Handle.Set.Tree.of_list
+          |> Dependents.add name
+      | None ->
+          ()
   end: Dependencies.Handler)
 
   module TypeOrderHandler = struct
