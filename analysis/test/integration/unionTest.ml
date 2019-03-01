@@ -222,7 +222,22 @@ let test_check_union _ =
       f(x)
     |}
     ["Incompatible parameter type [6]: Expected `typing.Union[int, str, typing.Tuple[int, int]]` \
-      for 1st anonymous parameter to call `f` but got `typing.Optional[typing.Union[int, str]]`."]
+      for 1st anonymous parameter to call `f` but got `typing.Optional[typing.Union[int, str]]`."];
+  assert_type_errors
+    {|
+      class A:
+        def __call__(self, x: int) -> bool:
+          return True
+      class B:
+        def __call__(self, x: int) -> str:
+          return "True"
+      def f(x: typing.Union[A, B]) -> None:
+        return x(8)
+
+    |}
+    ["Incompatible return type [7]: Expected `None` but got `typing.Union[bool, str]`."];
+  ()
+
 
 let () =
   "union">:::[

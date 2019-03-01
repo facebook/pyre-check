@@ -125,14 +125,14 @@ let test_initial _ =
   assert_initial
     "def foo(x: int) -> int: ..."
     (create
-      ~immutables:["x", (false, Type.integer)]
-      ~expected_return:Type.integer ["x", Type.integer]);
+       ~immutables:["x", (false, Type.integer)]
+       ~expected_return:Type.integer ["x", Type.integer]);
 
   assert_initial
     "def foo(x: float, y: str): ..."
     (create
-      ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
-      ["x", Type.float; "y", Type.string]);
+       ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
+       ["x", Type.float; "y", Type.string]);
 
   assert_initial
     ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
@@ -148,8 +148,8 @@ let test_initial _ =
     ~environment:"class Foo: ..."
     "def __eq__(self, other: object): ..."
     (create
-      ~immutables:["other", (false, Type.object_primitive)]
-      ["self", Type.Primitive "Foo"; "other", Type.object_primitive]);
+       ~immutables:["other", (false, Type.object_primitive)]
+       ["self", Type.Primitive "Foo"; "other", Type.object_primitive]);
 
   assert_initial
     ~parent:"Foo"
@@ -684,6 +684,57 @@ let test_forward_access _ =
       {
         annotation = Type.bool;
         element = SignatureNotFound None;
+      };
+    ];
+  assert_fold
+    ~source:"union: typing.Union[str, int] = 1"
+    "union.__lt__"
+    [
+      { annotation = Type.union [Type.string; Type.integer]; element = Value };
+      {
+        annotation =
+          {|
+            typing.Union[
+              typing.Callable('int.__lt__')[
+                [Named($parameter$other, int)],
+                bool,
+              ],
+              typing.Callable('str.__lt__')[
+                [Named($parameter$other, int)],
+                float,
+              ],
+            ]
+          |}
+          |> parse_annotation ~resolution;
+        element = Attribute { name = "__lt__"; defined = true };
+      };
+    ];
+  assert_fold
+    ~source:
+      {|
+        class C:
+          def __call__(self, x: int) -> bool: ...
+        class B:
+          def __init__(self, x: int) -> None: ...
+        union: typing.Union[C, typing.Callable[[int], str], typing.Type[B]]
+      |}
+    "union(7)"
+    [
+      {
+        annotation =
+          Type.union [
+            parse_annotation ~resolution "typing.Callable[[int], str]";
+            Type.Primitive "C";
+            Type.meta (Type.Primitive "B")
+          ];
+        element = Value;
+      };
+      {
+        annotation = Type.union [Type.bool; Type.string; Type.Primitive "B"];
+        element = SignatureFound {
+            callable = "typing.Callable[[int], typing.Union[B, bool, str]]";
+            callees = ["Anonymous"; "B.__init__"; "C.__call__"];
+          };
       };
     ];
 
@@ -2153,8 +2204,8 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
-        "Incompatible variable type [9]: x is declared to have type `str` " ^
-        "but is used as type `int`."])
+          "Incompatible variable type [9]: x is declared to have type `str` " ^
+          "but is used as type `int`."])
     ~postcondition_immutables:["x", (false, Type.string)]
     []
     "x: str = 1"
@@ -2193,8 +2244,8 @@ let test_forward_statement _ =
     ~postcondition_immutables:["x", (false, Type.tuple [Type.Any; Type.Any])]
     ~errors:
       (`Specific [
-        "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; " ^
-        "given explicit type cannot contain `Any`."])
+          "Prohibited any [33]: Expression `x` is used as type `typing.Tuple[int, int]`; " ^
+          "given explicit type cannot contain `Any`."])
     []
     "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
     ["x", Type.tuple [Type.integer; Type.integer]];

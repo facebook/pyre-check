@@ -735,11 +735,10 @@ module State = struct
             None
       in
       let resolve_callables
-          ~implicit_parameter_annotation
-          ~callables
+          callables_and_implicit_parameter_annotations
           ~arguments:{ Node.location; value = arguments } =
         let signatures =
-          let signature callable =
+          let signature (callable, implicit_parameter_annotation) =
             let resolve_independent_callable () =
               let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
               let backup () =
@@ -903,7 +902,7 @@ module State = struct
             | _ ->
                 resolve_independent_callable ()
           in
-          List.map callables ~f:signature
+          List.map callables_and_implicit_parameter_annotations ~f:signature
         in
 
         (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
@@ -1080,68 +1079,63 @@ module State = struct
                   else
                     target
                 in
-                let implicit_parameter_annotation, callables =
-                  let extract_callable annotation =
-                    if Type.is_meta annotation then
-                      match Type.single_parameter annotation with
-                      | TypedDictionary { name; fields; total } ->
-                          Type.TypedDictionary.constructor ~name ~fields ~total
-                          |> Option.some
-                      | Variable { constraints = Type.Unconstrained; _ } ->
-                          find_method ~parent:resolved ~name:(Access.create "__call__")
-                      | Variable { constraints = Type.Explicit constraints; _ }
-                        when List.length constraints > 1 ->
-                          find_method ~parent:resolved ~name:(Access.create "__call__")
-                      | meta_parameter ->
-                          let class_definition =
-                            let parent =
-                              match meta_parameter with
-                              | Variable { constraints = Type.Explicit [parent]; _ } ->
-                                  parent
-                              | Variable { constraints = Type.Bound parent; _ } ->
-                                  parent
-                              | _ ->
-                                  meta_parameter
-                            in
-                            Resolution.class_definition resolution parent
-                            >>| Annotated.Class.create
+                let callables_and_implicit_parameter_annotations =
+                  let callable_and_implicit_parameter =  function
+                    | meta when Type.is_meta meta ->
+                        let callable =
+                          let backup =
+                            find_method ~parent:meta ~name:(Access.create "__call__")
                           in
-                          let constructor =
-                            class_definition
-                            >>| Annotated.Class.constructor ~instantiated:meta_parameter ~resolution
-                          in
-                          match constructor with
-                          | Some (Type.Callable callable) -> Some callable
-                          | _ -> None
-                    else
-                      match annotation with
-                      | Type.Callable callable -> Some callable
-                      | _ -> None
-                  in
-                  let is_callable annotation =
-                    Type.is_callable annotation || Type.is_meta annotation
+                          match Type.single_parameter meta with
+                          | TypedDictionary { name; fields; total } ->
+                              Type.TypedDictionary.constructor ~name ~fields ~total
+                              |> Option.some
+                          | Variable { constraints = Type.Unconstrained; _ } ->
+                              backup
+                          | Variable { constraints = Type.Explicit constraints; _ }
+                            when List.length constraints > 1 ->
+                              backup
+                          | meta_parameter ->
+                              let parent =
+                                match meta_parameter with
+                                | Variable { constraints = Type.Explicit [parent]; _ } ->
+                                    parent
+                                | Variable { constraints = Type.Bound parent; _ } ->
+                                    parent
+                                | _ ->
+                                    meta_parameter
+                              in
+                              Resolution.class_definition resolution parent
+                              >>| Annotated.Class.create
+                              >>| Annotated.Class.constructor
+                                ~instantiated:meta_parameter
+                                ~resolution
+                              >>= function | Type.Callable callable -> Some callable | _ -> None
+                        in
+                        callable
+                        >>| (fun callable -> callable, target >>| AccessState.annotation)
+                    | Type.Callable callable ->
+                        (callable, target >>| AccessState.annotation)
+                        |> Option.some
+                    | resolved ->
+                        find_method ~parent:resolved ~name:(Access.create "__call__")
+                        >>| (fun callable -> callable, Some resolved)
                   in
                   match resolved with
-                  | meta when Type.is_meta resolved ->
-                      target >>| AccessState.annotation,
-                      extract_callable meta |> Option.to_list
-                  | Type.Callable callable ->
-                      target >>| AccessState.annotation,
-                      [callable]
-                  | Type.Union annotations when List.for_all annotations ~f:is_callable ->
-                      target >>| AccessState.annotation,
-                      List.map annotations ~f:extract_callable |> List.filter_opt
-                  | _ ->
-                      let callable =
-                        find_method ~parent:resolved ~name:(Access.create "__call__")
-                      in
-                      Some resolved,
-                      Option.to_list callable
+                  | Type.Union annotations ->
+                      List.map annotations ~f:callable_and_implicit_parameter
+                      |> Option.all
+                  | annotation ->
+                      callable_and_implicit_parameter annotation
+                      >>| (fun callable_and_implicit_parameter -> [callable_and_implicit_parameter])
                 in
-                if List.is_empty callables then
-                  abort state ~element:(NotCallable resolved) ~lead ()
-                else
-                  resolve_callables ~implicit_parameter_annotation ~callables ~arguments
+                callables_and_implicit_parameter_annotations
+                >>| resolve_callables  ~arguments
+                |> (function
+                    | Some state ->
+                        state
+                    | None ->
+                        abort state ~element:(NotCallable resolved) ~lead ())
 
             | Some resolved, Access.Identifier _
               when Type.is_callable (Annotation.annotation resolved) ->
@@ -1575,14 +1569,14 @@ module State = struct
                      errors
                  in
                  (* Check weakening of precondition. *)
-                let overriding_parameters =
-                 let remove_unused_parameter_denotation ~key ~data map =
-                   String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
+                 let overriding_parameters =
+                   let remove_unused_parameter_denotation ~key ~data map =
+                     String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
+                   in
+                   Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+                   |> Method.parameter_annotations ~resolution
+                   |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
                  in
-                 Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
-                 |> Method.parameter_annotations ~resolution
-                 |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
-                in
                  let check_parameter errors overridden_parameter =
                    let expected = Type.Callable.Parameter.annotation overridden_parameter in
                    let name =
@@ -1594,9 +1588,9 @@ module State = struct
                        begin
                          let is_compatible =
                            Resolution.less_or_equal
-                            resolution
-                            ~left:expected
-                            ~right:actual ||
+                             resolution
+                             ~left:expected
+                             ~right:actual ||
                            Resolution.solve_constraints
                              resolution
                              ~constraints:Type.Map.empty
@@ -2513,8 +2507,8 @@ module State = struct
           |> Option.value ~default:false
         in
         if not (Define.has_return_annotation define) ||
-          (contains_literal_any &&
-           not (Resolution.is_string_to_any_mapping resolution return_annotation))
+           (contains_literal_any &&
+            not (Resolution.is_string_to_any_mapping resolution return_annotation))
         then
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
