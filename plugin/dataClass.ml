@@ -99,6 +99,12 @@ let transform_environment (module Handler: Handler) resolution source =
                       let annotation =
                         Annotated.Attribute.annotation attribute
                         |> Annotation.original
+                        |> function
+                        | Type.Parametric {
+                            name = "dataclasses.InitVar";
+                            parameters = [single_parameter];
+                          } -> single_parameter
+                        | annotation -> annotation
                       in
                       begin
                         match List.last (Annotated.Attribute.access attribute) with

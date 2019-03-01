@@ -627,6 +627,30 @@ let test_transform_environment _ =
           def __eq__(self, o) -> bool:
             pass
       |};
+    ];
+  PluginTest.assert_environment_contains
+    {|
+      _T = typing.TypeVar("_T")
+      class dataclasses.InitVar(typing.Generic[_T]):
+        ...
+      @dataclass
+      class A:
+        x: int
+        init_variable: dataclasses.InitVar[str]
+    |}
+    [
+      {|
+        @dataclass
+        class A:
+          x: int
+          init_variable: dataclasses.InitVar[str]
+          def __init__(self, x: int, init_variable: str) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o) -> bool:
+            pass
+      |};
     ]
 
 

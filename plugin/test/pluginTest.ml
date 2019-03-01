@@ -16,13 +16,13 @@ open Test
 let assert_environment_contains source expected =
   Annotated.Class.Attribute.Cache.clear ();
   let (module Handler: Environment.Handler) =
-    environment ~sources:(typeshed_stubs ~include_helper_builtins:false ()) ()
+    environment ~sources:[] ()
   in
   let source = Preprocessing.preprocess (parse source) in
   Service.Environment.populate
     ~configuration:(Configuration.Analysis.create ())
     (module Handler)
-    [source];
+    (source :: typeshed_stubs ~include_helper_builtins:false ());
 
   let expected =
     List.map

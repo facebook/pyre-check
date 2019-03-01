@@ -768,6 +768,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
+      ~qualifier:(Access.create "dataclasses")
+      ~handle:"dataclasses.pyi"
+      {|
+        _T = TypeVar('_T')
+        class InitVar(typing.Generic[_T]): ...
+      |};
+    parse
       ~qualifier:(Access.create "os")
       ~handle:"os.pyi"
       {|
