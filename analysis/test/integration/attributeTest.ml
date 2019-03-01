@@ -1076,10 +1076,35 @@ let test_check_getattr _ =
     ]
 
 
+let test_check_metaclass_attributes _ =
+  assert_type_errors
+    {|
+      class C(enum.Enum):
+        ...
+      def f() -> None:
+        all_cases = [kind for kind in C]
+        reveal_type(all_cases)
+    |}
+    ["Revealed type [-1]: Revealed type for `all_cases` is `typing.List[]`."];
+
+  assert_type_errors
+    {|
+      class Meta(type):
+        def f(cls) -> int:
+          return 0
+      class Instance(metaclass=Meta):
+        pass
+      def g() -> str:
+        return Instance.f()
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+
+
 let () =
   "attribute">:::[
     "check_attributes">::test_check_attributes;
     "check_missing_attribute">::test_check_missing_attribute;
     "check_getattr">::test_check_getattr;
+    "check_metaclass_attributes">::test_check_metaclass_attributes;
   ]
   |> Test.run

@@ -784,7 +784,11 @@ let test_class_attributes _ =
         class type:
           type.__name__: str = 'asdf'
         foo: foo
-        class Attributes:
+        class Metaclass:
+          def Metaclass.implicit(cls) -> int:
+            return 0
+
+        class Attributes(metaclass=Metaclass):
           def Attributes.bar(self) -> int:
             pass
           def Attributes.baz(self, x:int) -> int:
@@ -1009,7 +1013,7 @@ let test_class_attributes _ =
   in
   let parent =
     {|
-    class Attributes:
+    class Attributes(metaclass=Metaclass):
       def Attributes.bar(self) -> int:
         pass
       def Attributes.baz(self, x:int) -> int:
@@ -1019,10 +1023,10 @@ let test_class_attributes _ =
     |}
     |> parse_single_class
   in
-  let create_expected_attribute name callable =
+  let create_expected_attribute ?(parent = Type.Primitive "Attributes") name callable =
     {
       Class.Attribute.name = Expression.Access (SimpleAccess (Access.create name));
-      parent = Type.Primitive "Attributes";
+      parent;
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = Node.create_with_default_location Expression.Ellipsis;
       defined = true;
@@ -1046,7 +1050,16 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        "typing.Callable('Attributes.baz')[[Named(x, str)], str]")
+        "typing.Callable('Attributes.baz')[[Named(x, str)], str]");
+  assert_attribute
+    ~parent
+    ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
+    ~attribute_name:(Access.create "implicit")
+    ~expected_attribute:(
+      create_expected_attribute
+        ~parent:(Type.Primitive "Metaclass")
+        "implicit"
+        "typing.Callable('Metaclass.implicit')[[], int]")
 
 
 let test_fallback_attribute _ =

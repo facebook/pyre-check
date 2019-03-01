@@ -612,6 +612,8 @@ let attributes
       let instantiated = Option.value instantiated ~default:(annotation definition ~resolution) in
       let definition_attributes
           ~in_test
+          ~instantiated
+          ~class_attributes
           attributes
           ({ Node.value = definition; _ } as parent) =
         let collect_attributes attributes attribute =
@@ -690,7 +692,7 @@ let attributes
             [definition]
         in
         List.fold
-          ~f:(definition_attributes ~in_test)
+          ~f:(definition_attributes ~in_test ~instantiated ~class_attributes)
           ~init:[]
           definitions
       in
@@ -706,7 +708,10 @@ let attributes
       in
       let result =
         List.fold
-          ~f:(definition_attributes ~in_test)
+          ~f:(definition_attributes
+                ~in_test
+                ~instantiated:(Type.meta instantiated)
+                ~class_attributes:false)
           ~init:accumulator
           meta_definitions
         |> List.rev

@@ -788,7 +788,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~qualifier:(Access.create "enum")
       ~handle:"enum.pyi"
       {|
-        class Enum:
+        _T = TypeVar('_T')
+        class EnumMeta(ABCMeta):
+            def __iter__(self: typing.Type[_T]) -> typing.Iterator[_T]: ...
+        class Enum(metaclass=EnumMeta):
           pass
         class IntEnum(int, Enum):
           value = ...  # type: int
