@@ -58,8 +58,10 @@ let create_configuration
     Option.value log_path ~default:(Constants.Server.log_path configuration)
   in
   {
-    Configuration.Server.socket_path = socket_path ~create:true configuration;
-    socket_link = server_root ^| "server.sock";
+    Configuration.Server.socket = {
+      path = socket_path ~create:true configuration;
+      link = server_root ^| "server.sock";
+    };
     lock_path = server_root ^| "server.lock";
     pid_path = server_root ^| "server.pid";
     log_path;
@@ -179,9 +181,12 @@ let stop
     ~configuration:{
     Configuration.Server.configuration;
     lock_path;
-    socket_path;
+    socket = {
+      path = socket_path;
+      link = socket_link;
+      _
+    };
     pid_path;
-    socket_link;
     _;
   }
     ~socket =

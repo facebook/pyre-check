@@ -485,7 +485,10 @@ let run_server_daemon_entry : run_server_daemon_entry =
 
 let run ({
     Configuration.Server.lock_path;
-    socket_path;
+    socket = {
+      path = socket_path;
+      _
+    };
     log_path;
     daemonize;
     configuration;

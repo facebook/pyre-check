@@ -138,7 +138,10 @@ let stop_server {
       Configuration.Analysis.local_root;
       _;
     };
-    socket_path;
+    socket = {
+      path = socket_path;
+      _
+    };
     _;
   } =
   Commands.Stop.stop ~local_root:(Path.absolute local_root)

@@ -120,7 +120,10 @@ let test_server_stops context =
   let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
   Commands.Stop.stop ~local_root:(Path.absolute local_root)
   |> ignore;
-  let { Configuration.Server.socket_path; _ } =
+  let {
+    Configuration.Server.socket = { path = socket_path; _ };
+    _
+  } =
     Operations.create_configuration (Configuration.Analysis.create ~local_root ())
   in
   CommandTest.with_timeout ~seconds:3 CommandTest.poll_for_deletion socket_path;
@@ -889,7 +892,11 @@ let test_connect context =
     |> Path.create_absolute
   in
   CommandTest.start_server ~local_root ~expected_version:"A" () |> ignore;
-  let { Configuration.Server.configuration; socket_path; _ } =
+  let {
+    Configuration.Server.configuration;
+    socket = { path = socket_path; _ };
+    _
+  } =
     CommandTest.mock_server_configuration ~local_root ~expected_version:"B" ()
   in
   (* This sleep ensures that the server doesn't receive an EPIPE while the Hack_parallel library is

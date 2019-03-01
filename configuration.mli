@@ -84,10 +84,14 @@ module Server: sig
     | Save of string
     | Load of load
 
+  type socket_path = {
+    path: Path.t; (* actual path to socket (OCaml has limits on socket path length) *)
+    link: Path.t; (* symbolic link to path in pyre directory *)
+  }
+
   type t = {
     (* Server-specific configuration options *)
-    socket_path: Path.t;
-    socket_link: Path.t;
+    socket: socket_path;
     lock_path: Path.t;
     pid_path: Path.t;
     log_path: Path.t;

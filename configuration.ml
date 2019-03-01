@@ -156,10 +156,14 @@ module Server = struct
     | Save of string
     | Load of load
 
+  type socket_path = {
+    path: Path.t;
+    link: Path.t;
+  }
+
   type t = {
     (* Server-specific configuration options *)
-    socket_path: Path.t;
-    socket_link: Path.t;
+    socket: socket_path;
     lock_path: Path.t;
     pid_path: Path.t;
     log_path: Path.t;

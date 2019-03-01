@@ -40,7 +40,12 @@ let sample
   in
   let server_configuration_metadata =
     match Configuration.Server.get_global () with
-    | Some { Configuration.Server.socket_path; saved_state_action; use_watchman; _ } ->
+    | Some {
+        Configuration.Server.socket = { path = socket_path; _ };
+        saved_state_action;
+        use_watchman;
+        _
+      } ->
         let saved_state_metadata =
           match saved_state_action with
           | Some
