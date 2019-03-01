@@ -700,10 +700,13 @@ module State = struct
 
 
   let add_error ~state:({ errors; _ } as state) error =
-    {
-      state with
-      errors = Set.add errors error;
-    }
+    { state with errors = Set.add errors error }
+
+
+  let emit_error ~state ~location ~kind ~define =
+    Error.create ~location ~kind ~define
+    |> add_error ~state
+
 
   type resolved = {
     state: t;
@@ -1319,7 +1322,8 @@ module State = struct
                   ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
                   location
               in
-              Error.create
+              emit_error
+                ~state
                 ~location
                 ~kind:(Error.IncompatibleVariableType {
                     name = [Expression.Access.Identifier name];
@@ -1332,7 +1336,6 @@ module State = struct
                     declare_location = instantiate location;
                   })
                 ~define:define_node
-              |> add_error ~state
           in
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
             let sanitized_access =
@@ -1343,7 +1346,8 @@ module State = struct
             if Access.show sanitized_access = "*" then
               state
             else
-              Error.create
+              emit_error
+                ~state
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
                     name = sanitized_access;
@@ -1353,7 +1357,6 @@ module State = struct
                     thrown_at_source = true;
                   })
                 ~define:define_node
-              |> add_error ~state
           in
           let state, { Annotation.annotation; mutability } =
             match index, parent with
@@ -1694,11 +1697,11 @@ module State = struct
             if Type.is_none annotation then
               state
             else
-              Error.create
+              emit_error
+                ~state
                 ~location
                 ~kind:(Error.IncompatibleConstructorAnnotation annotation)
                 ~define:define_node
-              |> add_error ~state
         | _ ->
             state
     in
@@ -1830,11 +1833,7 @@ module State = struct
         Type.exists
           (Annotation.annotation resolved)
           ~predicate:(fun annotation -> Type.equal annotation Type.undeclared) then
-        let state =
-          Error.UndefinedName lead
-          |> (fun kind -> Error.create ~location ~kind ~define)
-          |> add_error ~state
-        in
+        let state = emit_error ~state ~location ~kind:(Error.UndefinedName lead) ~define in
         true, state, Annotation.annotation resolved
       else
         let error =
@@ -1991,11 +1990,11 @@ module State = struct
         (* Special case reveal_type(). *)
         let { state; resolved = annotation } = forward_expression ~state ~expression:value in
         let state =
-          Error.create
+          emit_error
+            ~state
             ~location
             ~kind:(Error.RevealedType { expression = value; annotation })
             ~define
-          |> add_error ~state
         in
         { state; resolved = Type.none }
     | Access
@@ -2015,7 +2014,8 @@ module State = struct
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
         let state =
           if contains_literal_any then
-            Error.create
+            emit_error
+              ~state
               ~location
               ~kind:(Error.ProhibitedAny {
                   Error.name = Access.create "typing.cast";
@@ -2025,13 +2025,12 @@ module State = struct
                   thrown_at_source = true;
                 })
               ~define
-            |> add_error ~state
           else if Type.equal cast_annotation resolved then
-            Error.create
+            emit_error
+              ~state
               ~location
               ~kind:(Error.RedundantCast resolved)
               ~define
-            |> add_error ~state
           else
             state
         in
@@ -2078,7 +2077,8 @@ module State = struct
             state
           else
             let add_incompatible_non_meta_error state (non_meta, location) =
-              Error.create
+              emit_error
+                ~state
                 ~location
                 ~kind:(Error.IncompatibleParameterType {
                     name = None;
@@ -2090,7 +2090,6 @@ module State = struct
                       due_to_invariance = false;
                     }})
                 ~define
-              |> add_error ~state
             in
             List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation))
             >>| add_incompatible_non_meta_error state
@@ -2154,11 +2153,11 @@ module State = struct
               ~right:(Type.awaitable Type.Top)
           in
           if not is_awaitable then
-            Error.create
+            emit_error
+              ~state
               ~location
               ~kind:(Error.IncompatibleAwaitableType resolved)
               ~define
-            |> add_error ~state
           else
             state
         in
@@ -2490,22 +2489,20 @@ module State = struct
            not (Define.is_overloaded_method define) &&
            not (Type.is_none actual && (Annotated.Callable.is_generator define)) &&
            not (Type.is_none actual && Type.is_noreturn return_annotation) then
-          let error =
-            Error.create
-              ~location
-              ~kind:(Error.IncompatibleReturnType
-                       {
-                         mismatch =
-                           (Error.create_mismatch
-                              ~resolution
-                              ~actual
-                              ~expected:return_annotation
-                              ~covariant:true);
-                         is_implicit;
-                       })
-              ~define:define_node
-          in
-          add_error ~state error
+          emit_error
+            ~state
+            ~location
+            ~kind:(Error.IncompatibleReturnType
+                     {
+                       mismatch =
+                         (Error.create_mismatch
+                            ~resolution
+                            ~actual
+                            ~expected:return_annotation
+                            ~covariant:true);
+                       is_implicit;
+                     })
+            ~define:define_node
         else
           state
       in
@@ -2522,19 +2519,17 @@ module State = struct
           let given_annotation =
             Option.some_if (Define.has_return_annotation define) return_annotation
           in
-          let error =
-            Error.create
-              ~location:define_location
-              ~kind:(Error.MissingReturnAnnotation {
-                  name = Access.create "$return_annotation";
-                  annotation = Some actual;
-                  given_annotation;
-                  evidence_locations = [instantiate location];
-                  thrown_at_source = true;
-                })
-              ~define:define_node
-          in
-          add_error ~state error
+          emit_error
+            ~state
+            ~location:define_location
+            ~kind:(Error.MissingReturnAnnotation {
+                name = Access.create "$return_annotation";
+                annotation = Some actual;
+                given_annotation;
+                evidence_locations = [instantiate location];
+                thrown_at_source = true;
+              })
+            ~define:define_node
         else
           state
       in
@@ -2762,8 +2757,7 @@ module State = struct
                           declare_location = instantiate location;
                         }
                   in
-                  Error.create ~location ~kind ~define:define_node
-                  |> add_error ~state
+                  emit_error ~state ~location ~kind ~define:define_node
                 else
                   state
               in
@@ -3008,14 +3002,14 @@ module State = struct
               let state, annotations =
                 if List.length annotations <> List.length assignees then
                   let state =
-                    Error.create
+                    emit_error
+                      ~state
                       ~location
                       ~kind:(Error.Unpack {
                           expected_count = List.length assignees;
                           unpack_problem = CountMismatch (List.length annotations);
                         })
                       ~define:define_node
-                    |> add_error ~state
                   in
                   state, List.map assignees ~f:(fun _ -> Type.Top)
                 else
@@ -3049,13 +3043,7 @@ module State = struct
                         unpack_problem = UnacceptableType guide;
                       })
               in
-              let state =
-                Error.create
-                  ~location
-                  ~kind
-                  ~define:define_node
-                |> add_error ~state
-              in
+              let state = emit_error ~state ~location ~kind ~define:define_node in
               List.fold
                 elements
                 ~init:state
@@ -3068,11 +3056,11 @@ module State = struct
                       ~expression:None)
           | _ ->
               if Option.is_some annotation then
-                Error.create
+                emit_error
+                  ~state
                   ~location
                   ~kind:(Error.IllegalAnnotationTarget target)
                   ~define:define_node
-                |> add_error ~state
               else
                 state
         in
