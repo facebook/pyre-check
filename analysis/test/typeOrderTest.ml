@@ -2473,8 +2473,7 @@ let test_to_dot _ =
 
 
 let test_normalize _ =
-  let assert_normalize ~edges ~expected =
-    let edges = List.map edges ~f:(fun (left, right) -> (!left, !right)) in
+  let assert_normalize ~edges ~expected_edges ~expected_backedges =
     let nodes =
       List.fold
         edges
@@ -2486,8 +2485,8 @@ let test_normalize _ =
     Set.iter nodes ~f:(fun node -> insert order node);
     List.iter edges ~f:(fun (predecessor, successor) -> connect order ~predecessor ~successor);
     TypeOrder.normalize order;
-    let index annotation = Handler.find_unsafe (Handler.indices ()) (!annotation) in
-    let assert_backedges_match (name, expected) =
+    let index annotation = Handler.find_unsafe (Handler.indices ()) annotation in
+    let assert_match edges (name, expected) =
       let expected =
         List.map expected ~f:(fun name -> { Target.target = index name; parameters = [] })
       in
@@ -2502,37 +2501,82 @@ let test_normalize _ =
         ~printer:show_targets
         ~cmp:(List.equal ~equal:Target.equal)
         expected
-        (Handler.find_unsafe (Handler.backedges ()) (index name))
+        (Handler.find_unsafe edges (index name))
     in
-    List.iter expected ~f:assert_backedges_match
+    List.iter expected_edges ~f:(assert_match (Handler.edges ()));
+    List.iter expected_backedges ~f:(assert_match (Handler.backedges ()))
   in
   assert_normalize
-    ~edges:["1", "2"]
-    ~expected:[
-      "2", ["1"];
-      "1", [];
+    ~edges:[!"1", !"2"]
+    ~expected_edges:[
+      !"2", [];
+      !"1", [!"2"];
+    ]
+    ~expected_backedges:[
+      !"2", [!"1"];
+      !"1", [];
     ];
   assert_normalize
-    ~edges:["1", "2"; "2", "3"]
-    ~expected:[
-      "3", ["2"];
-      "2", ["1"];
-      "1", [];
+    ~edges:[!"1", !"2"; !"2", !"3"]
+    ~expected_edges:[
+      !"1", [!"2"];
+      !"2", [!"3"];
+      !"3", [];
+    ]
+    ~expected_backedges:[
+      !"3", [!"2"];
+      !"2", [!"1"];
+      !"1", [];
     ];
   assert_normalize
-    ~edges:["1", "3"; "2", "3"]
-    ~expected:[
-      "3", ["2"; "1"];
-      "2", [];
-      "1", [];
+    ~edges:[!"1", !"3"; !"2", !"3"]
+    ~expected_edges:[
+      !"1", [!"3"];
+      !"2", [!"3"];
+      !"3", [];
+    ]
+    ~expected_backedges:[
+      !"3", [!"2"; !"1"];
+      !"2", [];
+      !"1", [];
     ];
   (* Order doesn't matter. *)
   assert_normalize
-    ~edges:["2", "3"; "1", "3"]
-    ~expected:[
-      "3", ["2"; "1"];
-      "2", [];
-      "1", [];
+    ~edges:[!"2", !"3"; !"1", !"3"]
+    ~expected_edges:[
+      !"1", [!"3"];
+      !"2", [!"3"];
+      !"3", [];
+    ]
+    ~expected_backedges:[
+      !"3", [!"2"; !"1"];
+      !"2", [];
+      !"1", [];
+    ];
+
+  assert_normalize
+    ~edges:[Type.Bottom, !"A"; Type.Bottom, !"B"; !"other", !"A"; !"other", !"B"]
+    ~expected_edges:[
+      Type.Bottom, [!"A"; !"B"];
+      !"other", [!"B"; !"A"];
+    ]
+    ~expected_backedges:[
+      !"B", [Type.Bottom; !"other"];
+      !"A", [Type.Bottom; !"other"];
+      Type.Bottom, [];
+      !"other", [];
+    ];
+  assert_normalize
+    ~edges:[Type.Bottom, !"B"; Type.Bottom, !"A"; !"other", !"B"; !"other", !"A"]
+    ~expected_edges:[
+      Type.Bottom, [!"A"; !"B"];
+      !"other", [!"A"; !"B"];
+    ]
+    ~expected_backedges:[
+      !"B", [Type.Bottom; !"other"];
+      !"A", [Type.Bottom; !"other"];
+      Type.Bottom, [];
+      !"other", [];
     ]
 
 

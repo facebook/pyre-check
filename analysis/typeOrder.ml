@@ -286,7 +286,16 @@ let normalize (module Handler: Handler) =
     in
     Handler.set backedges ~key ~data:sorted
   in
-  List.iter (Handler.keys ()) ~f:sort_backedges
+  List.iter (Handler.keys ()) ~f:sort_backedges;
+
+  (* Because the edges of bottom are added in a random order when connecting the type order,
+     we can sort them here to ensure a consistent normalized view. *)
+  (Handler.find (Handler.indices ()) Type.Bottom
+   >>= fun key -> Handler.find (Handler.edges ()) key
+   >>| List.sort ~compare:Target.compare
+   >>| List.remove_consecutive_duplicates ~equal:Target.equal
+   >>| fun data -> Handler.set (Handler.edges ()) ~key ~data)
+  |> ignore
 
 
 let contains (module Handler: Handler) annotation =
