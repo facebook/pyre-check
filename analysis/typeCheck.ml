@@ -1766,7 +1766,23 @@ module State = struct
         Assign { Assign.target; annotation = None; value; parent = None }
         |> Node.create ~location
       in
-      let state = forward_statement ~state ~statement:iterator in
+      let state =
+        let { errors; _ } = state in
+        let ({ errors = iterator_errors; _ } as state) =
+          forward_statement ~state:{ state with errors = Error.Set.empty } ~statement:iterator
+        in
+        (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
+           temporarily minting a variable in a new scope and old annotations should be ignored. *)
+        let errors =
+          let is_not_assignment_error = function
+            | { Error.kind = Error.IncompatibleVariableType _; _ } -> false
+            | _ -> true
+          in
+          Set.filter ~f:(is_not_assignment_error) iterator_errors
+          |> Set.union errors
+        in
+        { state with errors = errors }
+      in
       List.map conditions ~f:Statement.assume
       |> List.fold ~init:state ~f:(fun state statement -> forward_statement ~state ~statement)
     in

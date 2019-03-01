@@ -45,6 +45,13 @@ let test_check_comprehensions _ =
 
   assert_type_errors
     {|
+      x: str = ""
+      [x for x in [1,2,3,4,5] if isinstance(x, int)]
+    |}
+    [];
+
+  assert_type_errors
+    {|
       def foo(l: typing.Dict[int, str]) -> None:
         [x if y else 0 for x, y in l.items()]
     |}
