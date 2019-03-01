@@ -12,7 +12,7 @@ import shutil
 import subprocess
 from contextlib import contextmanager
 from time import time
-from typing import Dict, Generator, List, Optional, Set
+from typing import Dict, Generator, Iterable, List, Optional, Set
 
 from . import buck, log
 from .exceptions import EnvironmentException
@@ -208,40 +208,46 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 continue
 
 
-def _find_python_paths(root: str) -> List[str]:
+def find_paths_with_extensions(root: str, extensions: Iterable[str]) -> List[str]:
     root = os.path.abspath(root)  # Return absolute paths.
-    try:
-        output = (
-            subprocess.check_output(
-                [
-                    "find",
-                    root,
-                    # All files ending in .py or .pyi ...
-                    "(",
-                    "-name",
-                    "*.py",
-                    "-or",
-                    "-name",
-                    "*.pyi",
-                    ")",
-                    # ... and that are either regular files ...
-                    "(",
-                    "-type",
-                    "f",
-                    "-or",
-                    # ... or symlinks.
-                    "-type",
-                    "l",
-                    ")",
-                    # Print all such files.
-                    "-print",
-                ],
-                stderr=subprocess.DEVNULL,
-            )
-            .decode("utf-8")
-            .strip()
+    extension_filter = []
+    for extension in extensions:
+        if len(extension_filter) > 0:
+            extension_filter.append("-or")
+        extension_filter.extend(["-name", "*.{}".format(extension)])
+
+    output = (
+        subprocess.check_output(
+            [
+                "find",
+                root,
+                # All files ending with the given extensions ...
+                "(",
+                *extension_filter,
+                ")",
+                # ... and that are either regular files ...
+                "(",
+                "-type",
+                "f",
+                "-or",
+                # ... or symlinks.
+                "-type",
+                "l",
+                ")",
+                # Print all such files.
+                "-print",
+            ],
+            stderr=subprocess.DEVNULL,
         )
-        return output.split("\n")
+        .decode("utf-8")
+        .strip()
+    )
+    return output.split("\n")
+
+
+def _find_python_paths(root: str) -> List[str]:
+    try:
+        return find_paths_with_extensions(root, ["py", "pyi"])
     except subprocess.CalledProcessError:
         raise EnvironmentException(
             "Pyre was unable to locate an analysis directory. "

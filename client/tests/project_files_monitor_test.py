@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os.path
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
@@ -67,3 +68,31 @@ class ProjectFilesMonitorTest(unittest.TestCase):
         monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
         monitor._subscriptions
         sys_exit.assert_called_once_with(0)
+
+    @patch.object(project_files_monitor, "find_paths_with_extensions")
+    @patch.object(
+        os.path,
+        "realpath",
+        side_effect=lambda path: path.replace("ANALYSIS_ROOT", "LOCAL_ROOT"),
+    )
+    def test_calculate_symbolic_links(self, realpath, find_paths_with_extensions):
+        find_paths_with_extensions.return_value = [
+            "ANALYSIS_ROOT/a.py",
+            "ANALYSIS_ROOT/b.thrift",
+            "ANALYSIS_ROOT/subX/d.pyi",
+            "ANALYSIS_ROOT/subX/e.py",
+            "ANALYSIS_ROOT/subY/subZ/g.pyi",
+        ]
+
+        self.assertDictEqual(
+            ProjectFilesMonitor._calculate_symbolic_links(
+                "ANALYSIS_ROOT", ["py", "pyi", "thrift"]
+            ),
+            {
+                "LOCAL_ROOT/a.py": "ANALYSIS_ROOT/a.py",
+                "LOCAL_ROOT/b.thrift": "ANALYSIS_ROOT/b.thrift",
+                "LOCAL_ROOT/subX/d.pyi": "ANALYSIS_ROOT/subX/d.pyi",
+                "LOCAL_ROOT/subX/e.py": "ANALYSIS_ROOT/subX/e.py",
+                "LOCAL_ROOT/subY/subZ/g.pyi": "ANALYSIS_ROOT/subY/subZ/g.pyi",
+            },
+        )

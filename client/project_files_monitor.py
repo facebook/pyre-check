@@ -8,11 +8,13 @@
 import argparse
 import functools
 import logging
+import os
+import subprocess
 import sys
-from typing import Any, Dict, List, Optional, Set  # noqa
+from typing import Any, Dict, Iterable, List, Optional, Set  # noqa
 
 from .configuration import Configuration
-from .filesystem import AnalysisDirectory, find_root
+from .filesystem import AnalysisDirectory, find_paths_with_extensions, find_root
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
@@ -37,6 +39,12 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._watchman_path = find_root(
             arguments.current_directory, ".watchmanconfig"
         )  # type: Optional[str]
+
+        # Mapping from (actual) source files in the project root to symbolic
+        # links in the analysis directory
+        self._symbolic_links = self._calculate_symbolic_links(
+            self._analysis_directory.get_root(), self._extensions
+        )  # type: Dict[str, str]
 
     @property
     def _name(self) -> str:
@@ -67,3 +75,30 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     # pyre-ignore: Dict[str, Any] allowed in strict on latest version
     def _handle_response(self, response: Dict[str, Any]) -> None:
         LOG.error("Received response from watchman: %s", response)
+
+    @staticmethod
+    def _calculate_symbolic_links(
+        directory: str, extensions: Iterable[str]
+    ) -> Dict[str, str]:
+        """
+            Given an analysis directory (usually containing symbolic links to actual
+            files), produce a mapping from actual source files to files contained
+            within this directory. Only includes files which have one of the provided
+            extensions.
+
+            Watchman watches actual source files, so when a change is detected to a
+            file, this mapping can be used to identify what file changed from Pyre's
+            perspective.
+        """
+        symbolic_links = {}
+        try:
+            for symbolic_link in find_paths_with_extensions(directory, extensions):
+                symbolic_links[os.path.realpath(symbolic_link)] = symbolic_link
+        except subprocess.CalledProcessError as error:
+            LOG.warning(
+                "Exception encountered trying to find source files "
+                "in the analysis directory: %s",
+                error,
+            )
+            LOG.warning("Starting with an empty symlink map.")
+        return symbolic_links
