@@ -312,7 +312,7 @@ def run_fixme(
                 error_map[error["line"]].append(
                     {"code": match.group(1), "description": match.group(2)}
                 )
-
+        # pyre-fixme[6]: Expected `Dict[int, List[Dict[str, str]]]` ...
         fix(arguments, path, error_map)
 
 

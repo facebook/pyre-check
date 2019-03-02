@@ -101,6 +101,7 @@ def _normalize(targets: List[str]) -> List[str]:
                 len(targets_to_destinations),
                 "s" if len(targets_to_destinations) > 1 else "",
             )
+        # pyre-fixme: inferred type is List[object] instead of List[str]
         return targets_to_destinations
     except subprocess.TimeoutExpired as error:
         LOG.error("Buck output so far: %s", error.stderr.decode().strip())

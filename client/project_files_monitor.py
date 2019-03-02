@@ -72,7 +72,6 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         }
         return [Subscription(self._watchman_path, self._name, subscription)]
 
-    # pyre-ignore: Dict[str, Any] allowed in strict on latest version
     def _handle_response(self, response: Dict[str, Any]) -> None:
         LOG.error("Received response from watchman: %s", response)
 

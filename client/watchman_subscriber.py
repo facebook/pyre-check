@@ -46,7 +46,6 @@ class WatchmanSubscriber(object):
         """
         raise NotImplementedError
 
-    # pyre-ignore: Dict[str, Any] allowed in strict on latest version
     def _handle_response(self, response: Dict[str, Any]) -> None:
         """
             Callback invoked when a message is received from watchman

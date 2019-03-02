@@ -76,7 +76,7 @@ class PyreAst:
         configuration_path = os.path.abspath(configuration_path)
         if os.path.isfile(os.path.join(configuration_path, ".pyre_configuration")):
             self._project_configuration = configuration_path
-            self._local_configuration = None  # pyre-ignore: fixed in D13928554
+            self._local_configuration = None
             self._command = ["pyre"]
             self._initialize_server()
         elif os.path.isfile(
