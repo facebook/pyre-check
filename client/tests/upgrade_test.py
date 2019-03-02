@@ -340,9 +340,10 @@ class FixmeAllTest(unittest.TestCase):
         }
         """
 
-        def generate_sandcastle_command(hash, paths, push_blocking):
+        def generate_sandcastle_command(binary_hash, paths, push_blocking):
             command = json.loads(command_json)
-            command["args"]["hash"] = hash
+            if binary_hash:
+                command["args"]["hash"] = binary_hash
             command["args"]["paths"] = paths
             command["args"]["push_blocking_only"] = push_blocking
             return json.dumps(command).encode()
@@ -364,13 +365,19 @@ class FixmeAllTest(unittest.TestCase):
             )
 
         run.reset_mock()
-        arguments.hash = None
-        gather.return_value = [
-            upgrade.Configuration("local/.pyre_configuration.local", {"version": 123})
-        ]
-        upgrade.run_fixme_all(arguments, [])
-        find_configuration.assert_not_called()
-        run.assert_not_called()
+        with patch("builtins.open", mock_open(read_data=command_json)):
+            arguments.hash = None
+            gather.return_value = [
+                upgrade.Configuration(
+                    "local/.pyre_configuration.local", {"version": 123}
+                )
+            ]
+            upgrade.run_fixme_all(arguments, [])
+            find_configuration.assert_not_called()
+            run.assert_called_once_with(
+                ["scutil", "create"],
+                input=generate_sandcastle_command(None, ["local"], False),
+            )
 
 
 class FixmeSingleTest(unittest.TestCase):

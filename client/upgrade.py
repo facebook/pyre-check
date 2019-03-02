@@ -430,13 +430,11 @@ def run_fixme_all(
     # Create sandcastle command.
     if arguments.sandcastle and isinstance(arguments.sandcastle, str):
         configurations = Configuration.gather_local_configurations(arguments)
-        if not arguments.hash:
-            LOG.error("Must provide binary hash to fixme-all --sandcastle")
-            return
         paths = [configuration.get_directory() for configuration in configurations]
         with open(arguments.sandcastle) as sandcastle_file:
             sandcastle_command = json.load(sandcastle_file)
-        sandcastle_command["args"]["hash"] = arguments.hash
+        if arguments.hash:
+            sandcastle_command["args"]["hash"] = arguments.hash
         sandcastle_command["args"]["paths"] = paths
         sandcastle_command["args"]["push_blocking_only"] = arguments.push_blocking_only
         command = ["scutil", "create"]
