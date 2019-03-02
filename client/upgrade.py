@@ -412,14 +412,16 @@ def run_missing_overridden_return_annotations(
 def run_fixme_single(
     arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
 ) -> None:
-    root = Configuration.find_project_configuration()
-    if root is None:
+    project_configuration = Configuration.find_project_configuration()
+    if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
         return
     configuration_path = arguments.path + "/.pyre_configuration.local"
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
-        _upgrade_configuration(arguments, configuration, root)
+        _upgrade_configuration(
+            arguments, configuration, os.path.dirname(project_configuration)
+        )
 
 
 def run_fixme_all(
@@ -445,16 +447,16 @@ def run_fixme_all(
     if arguments.hash and isinstance(arguments.hash, str):
         run_global_version_update(arguments, errors)
 
-    root = Configuration.find_project_configuration()
-    if root is None:
+    project_configuration = Configuration.find_project_configuration()
+    if project_configuration is None:
         LOG.info("No project configuration found for the current directory.")
         return
-    else:
-        root = os.path.dirname(root)
 
     configurations = Configuration.gather_local_configurations(arguments)
     for configuration in configurations:
-        _upgrade_configuration(arguments, configuration, root)
+        _upgrade_configuration(
+            arguments, configuration, os.path.dirname(project_configuration)
+        )
 
 
 if __name__ == "__main__":
