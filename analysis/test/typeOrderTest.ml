@@ -916,11 +916,11 @@ let test_less_or_equal _ =
        order
        ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
        ~right:(Type.union [Type.float; Type.string; !"A"]));
- assert_false
-   (less_or_equal
-      order
-      ~left:Type.string
-      ~right:(Type.variable ~constraints:(Type.Bound (Type.string)) "T"));
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.string
+       ~right:(Type.variable ~constraints:(Type.Bound (Type.string)) "T"));
   let float_string_variable =
     Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"
   in
@@ -2919,6 +2919,20 @@ let test_solve_constraints _ =
     ~source:"typing.Type[Constructable]"
     ~target:"typing.Callable[[T3], T4]"
     (Some ["T3", "int"; "T4", "Constructable"]);
+  assert_solve
+    ~source:"typing.Callable[[typing.Union[int, str]], str]"
+    ~target:"typing.Callable[[int], T4]"
+    (Some ["T4", "str"]);
+  (* This should solve to T3 => int, T4 => str, but can't because the simulated signature select
+     will fail because T3 isnt leq to int, so it has to fall back to pairwise solve, which breaks
+     because Union[int, str] isn't leq int.
+     Fundamentally the problem is that callable parameters need to be solved in both directions at
+     the same time, i.e. finding constraints such that x leq y where the variables you're trying
+     to constrain exist on both sides of the leq. *)
+  assert_solve
+    ~source:"typing.Callable[[typing.Union[int, str], int], str]"
+    ~target:"typing.Callable[[int, T3], T4]"
+    (None);
   ()
 
 

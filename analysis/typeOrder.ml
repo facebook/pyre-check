@@ -732,7 +732,7 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                 | _ ->
                     []
               in
-              let source =
+              let source, constraints =
                 let called_as =
                   Type.Callable.map_implementation
                     target
@@ -740,19 +740,28 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                 in
                 simulate_signature_select order ~implementation:source ~called_as
                 >>| Type.Callable.map_implementation ~f:(Type.free_simulated_bound_variables)
-                |> Option.value ~default:source
+                |> function
+                | Some source ->
+                    source, Some constraints
+                | None ->
+                    let constraints =
+                      solve_all
+                        (* Don't ignore previous constraints if encountering a mismatch due to
+                         *args/**kwargs vs. concrete parameters or default arguments. *)
+                        constraints
+                        ~ignore_length_mismatch:true
+                        ~sources:(parameter_annotations source.parameters)
+                        ~targets:(parameter_annotations target.parameters)
+                    in
+                    source, constraints
               in
-              solve_constraints_throws
-                order
-                ~constraints
-                ~source:source.annotation
-                ~target:target.annotation
-              >>= solve_all
-                (* Don't ignore previous constraints if encountering a mismatch due to
-                 *args/**kwargs vs. concrete parameters or default arguments. *)
-                ~ignore_length_mismatch:true
-                ~sources:(parameter_annotations source.parameters)
-                ~targets:(parameter_annotations target.parameters)
+              constraints
+              >>= (fun constraints ->
+                  solve_constraints_throws
+                    order
+                    ~constraints
+                    ~source:source.annotation
+                    ~target:target.annotation)
           | _, Type.Callable _  when Type.is_meta source ->
               Type.single_parameter source
               |> constructor
