@@ -41,6 +41,10 @@
         "title": "Querying Pyre",
         "sidebar_label": "Querying Pyre"
       },
+      "static-analysis-post-processor": {
+        "title": "Static Analysis Post Processor",
+        "sidebar_label": "Static Analysis Processor"
+      },
       "watchman-integration": {
         "title": "Watchman Integration",
         "sidebar_label": "Watchman Integration"

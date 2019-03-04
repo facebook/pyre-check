@@ -10,7 +10,8 @@
       "error-types",
       "lsp-integration",
       "watchman-integration",
-      "querying-pyre"
+      "querying-pyre",
+      "static-analysis-post-processor"
     ]
   }
 }
