@@ -1292,11 +1292,12 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         uselist=True,
     )
 
-    leaves = association_proxy("trace_frame_messages", "messages")
+    leaves = association_proxy("leaf_assoc", "leaves")
 
     leaf_assoc = relationship(
         "TraceFrameLeafAssoc",
         primaryjoin=("TraceFrame.id == " "foreign(TraceFrameLeafAssoc.trace_frame_id)"),
+        uselist=True,
     )
 
     issue_instances = association_proxy("trace_frame_issue_instance", "issue_instance")

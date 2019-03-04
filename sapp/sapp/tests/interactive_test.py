@@ -271,8 +271,7 @@ class InteractiveTest(TestCase):
         self.assertIn("Issue 3", output)
 
     def testNoRunsFound(self):
-        with self.assertRaises(SystemExit):
-            self.interactive.setup()
+        self.interactive.setup()
         stderr = self.stderr.getvalue().strip()
         self.assertIn("No runs found.", stderr)
 
@@ -522,30 +521,38 @@ class InteractiveTest(TestCase):
         ]
 
     def testNextTraceFrame(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         trace_frames = self._basic_trace_frames()
+        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
         assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
+            session.add(run)
+            session.add(sink)
             session.add(assoc)
             session.commit()
 
-            next_frame, s = self.interactive._next_trace_frame(
-                session, (trace_frames[0], 1)
-            )
-            self.assertEqual(s, 1)
-            self.assertEqual(int(next_frame.id), int(trace_frames[1].id))
+            self.interactive.setup()
+            self.interactive.sources = {"sink1"}
+            next_frames = self.interactive._next_trace_frames(session, trace_frames[0])
+            self.assertEqual(len(next_frames), 1)
+            self.assertEqual(int(next_frames[0].id), int(trace_frames[1].id))
 
     def testNavigateTraceFrames(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         trace_frames = self._basic_trace_frames()
+        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
         assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
+            session.add(run)
+            session.add(sink)
             session.add(assoc)
             session.commit()
 
-            result = self.interactive._navigate_trace_frames(
-                session, (trace_frames[0], 1)
-            )
+            self.interactive.setup()
+            self.interactive.sources = {"sink1"}
+            result = self.interactive._navigate_trace_frames(session, [trace_frames[0]])
             self.assertEqual(len(result), 2)
             self.assertEqual(int(result[0][0].id), 1)
             self.assertEqual(int(result[1][0].id), 2)
@@ -769,7 +776,30 @@ class InteractiveTest(TestCase):
             location=SourceLocation(1, 1, 1),
             issue_id=1,
         )
-        trace_frames = self._basic_trace_frames()
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.POSTCONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="source",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="call2",
+                callee_port="param0",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
@@ -777,8 +807,6 @@ class InteractiveTest(TestCase):
             TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
         ]
 
-        # trace_frame[0] no longer connects to trace_frame[1]
-        trace_frames[0].callee = "ends_here"
         with self.db.make_session() as session:
             session.add(run)
             session.add(issue)
@@ -791,7 +819,7 @@ class InteractiveTest(TestCase):
         self.interactive.set_issue(1)
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
-        self.assertIn("Missing trace frame: ends_here:formal", stdout)
+        self.assertIn("Missing trace frame: call2:param0", stdout)
 
     def testTraceCursorLocation(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -858,9 +886,11 @@ class InteractiveTest(TestCase):
         self.interactive.prev_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.prev_cursor_location()
-        self.assertEqual(self.interactive.current_trace_frame_index, 1)
+        self.assertEqual(self.interactive.current_trace_frame_index, 0)
+        self.interactive.prev_cursor_location()
+        self.assertEqual(self.interactive.current_trace_frame_index, 0)
 
-    def testTraceBranches(self):
+    def _set_up_branched_trace(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = Issue(
             id=1,
@@ -877,16 +907,21 @@ class InteractiveTest(TestCase):
             location=SourceLocation(1, 2, 3),
             issue_id=1,
         )
-
+        messages = [
+            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
+            SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
+        ]
         trace_frames = []
-        assocs = []
-        for i in range(5):
+        assocs = [
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=1),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=2),
+        ]
+        for i in range(6):
             trace_frames.append(
                 TraceFrame(
                     id=i + 1,
                     caller="call1",
                     caller_port="root",
-                    callee="leaf",
                     callee_location=SourceLocation(1, 1),
                     filename="file.py",
                     run_id=1,
@@ -894,31 +929,131 @@ class InteractiveTest(TestCase):
             )
             if i < 2:  # 2 postconditions
                 trace_frames[i].kind = TraceKind.POSTCONDITION
+                trace_frames[i].callee = "leaf"
                 trace_frames[i].callee_port = "source"
+                assocs.append(
+                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=1, trace_length=0)
+                )
+                assocs.append(
+                    IssueInstanceTraceFrameAssoc(
+                        trace_frame_id=i + 1, issue_instance_id=1
+                    )
+                )
+            elif i < 4:
+                trace_frames[i].kind = TraceKind.PRECONDITION
+                trace_frames[i].callee = "call2"
+                trace_frames[i].callee_port = "param2"
+                assocs.append(
+                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=2, trace_length=1)
+                )
+                assocs.append(
+                    IssueInstanceTraceFrameAssoc(
+                        trace_frame_id=i + 1, issue_instance_id=1
+                    )
+                )
             else:
                 trace_frames[i].kind = TraceKind.PRECONDITION
+                trace_frames[i].caller = "call2"
+                trace_frames[i].caller_port = "param2"
+                trace_frames[i].callee = "leaf"
                 trace_frames[i].callee_port = "sink"
-
-            assocs.append(
-                IssueInstanceTraceFrameAssoc(trace_frame_id=i + 1, issue_instance_id=1)
-            )
-            assocs.append(TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=1))
+                assocs.append(
+                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=2, trace_length=0)
+                )
 
         with self.db.make_session() as session:
             session.add(run)
             session.add(issue)
             session.add(issue_instance)
+            self._add_to_session(session, messages)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
 
+    def testTraceBranchNumber(self):
+        self._set_up_branched_trace()
+
         self.interactive.setup()
         self.interactive.set_issue(1)
+
+        self.assertEqual(self.interactive.sources, {"source1"})
+        self.assertEqual(self.interactive.sinks, {"sink1"})
+
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("     + 2        leaf       source file.py:1|1|1", output)
         self.assertIn(" -->            call1      root   file.py:1|1|1", output)
-        self.assertIn("     + 3        leaf       sink   file.py:1|1|1", output)
+        self.assertIn("     + 2        call2      param2 file.py:1|1|1", output)
+        self.assertIn("     + 2        leaf       sink   file.py:1|1|1", output)
+
+    def testExpand(self):
+        self._set_up_branched_trace()
+
+        self.interactive.setup()
+        self.interactive.set_issue(1)
+        # Parent at root
+        self.interactive.prev_cursor_location()
+        self.interactive.expand()
+        output = self.stdout.getvalue().strip()
+        self.assertIn(
+            "[*] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            output,
+        )
+        self.assertIn(
+            "[2] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            output,
+        )
+
+        self._clear_stdout()
+        # Move to call2:param2
+        self.interactive.next_cursor_location()
+        self.interactive.next_cursor_location()
+        self.interactive.expand()
+        output = self.stdout.getvalue().strip()
+        self.assertIn(
+            "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:1|1|1]",
+            output,
+        )
+        self.assertIn(
+            "[2] call2 : param2\n        [1 hops: sink1]\n        [file.py:1|1|1]",
+            output,
+        )
+
+        self._clear_stdout()
+        # Move to leaf:sink
+        self.interactive.next_cursor_location()
+        self.interactive.expand()
+        output = self.stdout.getvalue().strip()
+        self.assertIn(
+            "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:1|1|1]", output
+        )
+        self.assertIn(
+            "[2] leaf : sink\n        [0 hops: sink1]\n        [file.py:1|1|1]", output
+        )
+
+    def testGetTraceFrameBranches(self):
+        self._set_up_branched_trace()
+
+        self.interactive.setup()
+        self.interactive.set_issue(1)
+        # Parent at root
+        self.interactive.prev_cursor_location()
+
+        with self.db.make_session() as session:
+            branches = self.interactive._get_trace_frame_branches(session)
+            self.assertEqual(len(branches), 2)
+            self.assertEqual(int(branches[0].id), 1)
+            self.assertEqual(int(branches[1].id), 2)
+
+            # Parent is no longer root
+            self.interactive.next_cursor_location()
+            self.interactive.next_cursor_location()
+            self.interactive.next_cursor_location()
+
+            branches = self.interactive._get_trace_frame_branches(session)
+            self.assertEqual(len(branches), 2)
+            self.assertEqual(int(branches[0].id), 5)
+            self.assertEqual(int(branches[1].id), 6)
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
