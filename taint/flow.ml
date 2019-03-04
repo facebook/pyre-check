@@ -227,6 +227,13 @@ let rules = [
     name = "User-controlled identity creation (experimental)";
     message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
   };
+  {
+    sources = [ Sources.UserControlled ];
+    sinks = [ Sinks.ODS ];
+    code = 5014;
+    name = "User-controlled ODS key";
+    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+  };
 ]
 
 

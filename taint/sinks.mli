@@ -10,6 +10,7 @@ type t =
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
+  | ODS
   | RemoteCodeExecution
   | RequestSend
   | SQL

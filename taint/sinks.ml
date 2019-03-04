@@ -10,6 +10,7 @@ type t =
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
+  | ODS
   | RemoteCodeExecution
   | RequestSend
   | SQL
@@ -27,6 +28,7 @@ let show = function
   | IdentityCreation -> "IdentityCreation"
   | LocalReturn -> "LocalReturn"
   | Logging -> "Logging"
+  | ODS -> "ODS"
   | RemoteCodeExecution -> "RemoteCodeExecution"
   | RequestSend -> "RequestSend"
   | SQL -> "SQL"
@@ -43,6 +45,7 @@ let create = function
   | "IdentityCreation" -> IdentityCreation
   | "LocalReturn" -> LocalReturn
   | "Logging" -> Logging
+  | "ODS" -> ODS
   | "RemoteCodeExecution" -> RemoteCodeExecution
   | "RequestSend" -> RequestSend
   | "SQL" -> SQL
