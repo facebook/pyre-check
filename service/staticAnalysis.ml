@@ -66,23 +66,35 @@ let record_path_of_definitions ~path ~source =
   List.map ~f:record_toplevel_definition defines
 
 
-let add_models ~environment ~model_source =
+let add_models ~environment sources =
   let open Taint in
   let open Interprocedural in
-  let add_model_to_memory Model.{ call_target; model; _ } =
-    Log.info "Adding taint model %S to shared memory" (Callable.external_target_name call_target);
-    Result.empty_model
-    |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
+  let add_model_to_memory ~key:call_target ~data:model =
+    let () =
+      Log.info
+        "Adding taint model %S to shared memory\n%a\n"
+        (Callable.external_target_name call_target)
+        Result.pp_model_t model
+    in
+    Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
   in
   let models =
-    Model.create
-      ~resolution:(TypeCheck.resolution environment ())
-      ~model_source
-      ()
-    |> Or_error.ok_exn
+    let make_model Model.{ model; _ } =
+      Result.empty_model |> Result.with_model Taint.Result.kind model
+    in
+    List.concat_map
+      sources
+      ~f:(fun model_source ->
+          Model.create
+            ~resolution:(TypeCheck.resolution environment ())
+            ~model_source
+            ()
+          |> Or_error.ok_exn
+        )
+    |> List.map ~f:(fun model -> (model.Model.call_target, make_model model))
+    |> Callable.Map.of_alist_reduce ~f:Analysis.join_models
   in
-  List.iter models ~f:add_model_to_memory
+  Callable.Map.iteri models ~f:add_model_to_memory
 
 
 let analyze
@@ -107,19 +119,18 @@ let analyze
         in
         check_directory_exists directory;
         Log.info "Finding taint models in %a" Path.pp directory;
-        let add_models path =
+        let get_source_models path =
           Path.create_absolute path
           |> File.create
           |> File.content
-          >>| (fun model_source -> add_models ~environment ~model_source)
-          |> ignore
         in
         let directory = Path.absolute directory in
         Sys.readdir directory
         |> Array.to_list
         |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
         |> List.map ~f:((^/) directory)
-        |> List.iter ~f:add_models
+        |> List.filter_map ~f:get_source_models
+        |> add_models ~environment
     | None -> ()
   in
 
@@ -203,11 +214,11 @@ let analyze
     List.fold paths ~f:make_callables ~init:([], [])
   in
   let real_callables =
-    let skipped_definitions = ref 0 in
+    let model_definitions = ref 0 in
     let record_initial_inferred_model callable =
       let open Interprocedural in
       if Fixpoint.get_meta_data callable <> None then
-        (Int.incr skipped_definitions; None)
+        (Int.incr model_definitions; Some callable)
       else
         let () = Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model in
         Some callable
@@ -215,8 +226,8 @@ let analyze
     let result = List.filter_map callables ~f:record_initial_inferred_model in
     let () =
       Log.info
-        "Skipping %d source definitions due to initial models or duplicates."
-        !skipped_definitions
+        "Found %d source definitions with predefined models."
+        !model_definitions
     in
     result
   in

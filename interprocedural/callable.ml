@@ -52,6 +52,12 @@ type t = [ non_override_target | override_target ]
 [@@deriving show, sexp, compare, hash, eq]
 
 
+(* pp forces type to be equal to t, but we want [<t] *)
+let pretty_print formatter callable =
+  let callable = (callable :> t) in
+  pp formatter callable
+
+
 type target_with_result = real_target
 
 

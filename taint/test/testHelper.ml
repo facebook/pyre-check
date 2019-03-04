@@ -81,7 +81,7 @@ let check_expectation
         sink_map
   in
   let backward, forward =
-    let { backward; forward } = get_model callable in
+    let { backward; forward; _ } = get_model callable in
     backward, forward
   in
   let taint_map =
@@ -220,5 +220,5 @@ let run_with_taint_models tests =
     |> Test.trim_extra_indentation
   in
   let environment = Test.environment ~sources:[Test.parse model_source] () in
-  Service.StaticAnalysis.add_models ~environment ~model_source;
+  Service.StaticAnalysis.add_models ~environment [model_source];
   Test.run tests

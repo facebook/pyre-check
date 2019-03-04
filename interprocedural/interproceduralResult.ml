@@ -84,6 +84,7 @@ module type ANALYZER = sig
     :  callable: Callable.real_target
     -> environment:(module Analysis.Environment.Handler)
     -> define: Define.t Node.t
+    -> existing: call_model option
     -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)

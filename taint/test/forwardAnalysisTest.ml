@@ -40,7 +40,7 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
 
   models
   >>| Test.trim_extra_indentation
-  >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment ~model_source)
+  >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment [model_source])
   |> ignore;
 
   TypeCheck.run ~configuration ~environment ~source |> ignore;
@@ -1192,6 +1192,29 @@ let test_construction _ =
     ]
 
 
+let test_composed_models _ =
+  assert_taint
+    ~models:{|
+      def composed_model(x: TaintSink[Test], y, z) -> TaintSource[UserControlled]: ...
+      def composed_model(x, y: TaintSink[Demo], z: TaintInTaintOut[LocalReturn]): ...
+    |}
+    {|
+    |}
+    [
+      {
+        kind = `Function;
+        define_name = "composed_model";
+        returns = [Sources.UserControlled];
+        errors = [];
+        sink_parameters = [
+          { name = "x"; sinks = [Taint.Sinks.Test] };
+          { name = "y"; sinks = [Taint.Sinks.Demo] };
+        ];
+        tito_parameters = ["z"];
+      };
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -1215,5 +1238,6 @@ let () =
     "test_unary">::test_unary;
     "test_yield">::test_yield;
     "test_construction">::test_construction;
+    "test_composed_models">::test_composed_models;
   ]
   |> TestHelper.run_with_taint_models

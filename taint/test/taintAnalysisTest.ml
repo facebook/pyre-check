@@ -12,6 +12,7 @@ module AnalysisError = Analysis.Error
 
 open Ast
 open Pyre
+open Statement
 open Taint
 
 open Interprocedural
@@ -31,15 +32,15 @@ type test_environment = {
   environment: (module Environment.Handler);
 }
 
-let create_call_graph ?(path = "test.py") source_content =
+let initialize ?(qualifier = "test.py") ?models source_content =
   let source_content = Test.trim_extra_indentation source_content in
-  let handle = File.Handle.create path in
+  let handle = File.Handle.create qualifier in
   let source =
-    Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:path source_content
+    Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:qualifier source_content
     |> Preprocessing.preprocess
   in
   let path =
-    let path = Test.mock_path path in
+    let path = Test.mock_path qualifier in
     File.create ~content:source_content path
     |> File.write;
     path
@@ -55,7 +56,14 @@ let create_call_graph ?(path = "test.py") source_content =
     ~files:[File.create ~content:source_content path]
   |> ignore;
 
-  let environment = Test.environment () in
+  let environment =
+    let models =
+      models
+      >>| (fun model -> [Test.parse ~qualifier:(Access.create qualifier) model])
+      |> Option.value ~default:[]
+    in
+    Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
+  in
   Service.Environment.populate ~configuration:Test.mock_configuration environment [source];
 
   let errors =
@@ -92,25 +100,35 @@ let create_call_graph ?(path = "test.py") source_content =
     |> List.map ~f:(fun (callable, _define) -> (callable :> Callable.t))
     |> List.rev_append (Callable.Map.keys overrides)
   in
+  (* Initialize models *)
   let () =
-    let add_initial_model callable =
-      Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
-    in
     let keys = Fixpoint.KeySet.of_list all_callables in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
+    let () =
+      models
+      >>| Test.trim_extra_indentation
+      >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment [model_source])
+      |> ignore
+    in
+    let add_initial_model callable =
+      if not (Fixpoint.has_model callable) then
+        Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
+    in
     List.iter all_callables ~f:add_initial_model
   in
   { callgraph; overrides; all_callables; environment }
 
 
-let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
+let assert_fixpoint ?models source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let { all_callables; callgraph; environment; overrides } =
-    create_call_graph
-      ~path:"qualifier"
+    initialize
+      ?models
+      ~qualifier:"qualifier"
       source
   in
+
   let dependencies =
     DependencyGraph.from_callgraph callgraph
     |> DependencyGraph.union overrides
@@ -170,15 +188,14 @@ let assert_fixpoint ~source ~expect:{ iterations = expect_iterations; expect } =
     List.map expect ~f:create_result_patterns
   in
   assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);
-  assert_equal expect_iterations iterations ~printer:Int.to_string;
+  assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
   List.iter ~f:check_expectation expect;
   List.iter2_exn expect_results results ~f:assert_errors
 
 
 let test_fixpoint _ =
   assert_fixpoint
-    ~source:
-      {|
+    {|
       def bar():
         return __testSource()
 
@@ -264,7 +281,7 @@ let test_fixpoint _ =
       def test_deep_tito_match():
         obj = deep_tito(__userControlled(), __testSource())
         getattr('obj', obj.g.f)
-      |}
+    |}
     ~expect:{
       iterations = 4;
       expect = [
@@ -549,7 +566,7 @@ let test_integration _ =
         check_expectation ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
-        create_call_graph ~path:handle source
+        initialize ~qualifier:handle source
       in
       let dependencies =
         DependencyGraph.from_callgraph callgraph
@@ -584,9 +601,37 @@ let test_integration _ =
   List.iter test_paths ~f:run_test
 
 
+let test_combined_analysis _ =
+  assert_fixpoint
+    ~models:{|
+      def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut[LocalReturn]): ...
+    |}
+    {|
+      def combined_model(x, y, z):
+        __testSink(x)
+        return __userControlled()
+    |}
+    ~expect:{
+      expect = [
+        {
+          kind = `Function;
+          define_name = "qualifier.combined_model";
+          returns = [Sources.UserControlled];
+          errors = [];
+          sink_parameters = [
+            { name = "x"; sinks = [Taint.Sinks.Test] };
+            { name = "y"; sinks = [Taint.Sinks.Demo] };
+          ];
+          tito_parameters = ["z"];
+        };
+      ];
+      iterations = 2;
+    }
+
 let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
     "integration">::test_integration;
+    "combined_analysis">::test_combined_analysis;
   ]
   |> TestHelper.run_with_taint_models

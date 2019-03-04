@@ -38,7 +38,12 @@ val extract_errors:
   -> InterproceduralError.t list
 
 val save_results:
-  configuration: Configuration.StaticAnalysis.t ->
-  analyses: AnalysisKind.abstract list
+  configuration: Configuration.StaticAnalysis.t
+  -> analyses: AnalysisKind.abstract list
   -> Callable.t list
   -> unit
+
+val join_models:
+  InterproceduralResult.model_t
+  -> InterproceduralResult.model_t
+  -> InterproceduralResult.model_t

@@ -130,16 +130,18 @@ end
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
+  skip_analysis: bool;  (* If set, don't analyze this function. *)
 }
 [@@deriving sexp]
 
 
-let pp_call_model formatter { forward; backward } =
+let pp_call_model formatter { forward; backward; skip_analysis; } =
   Format.fprintf
     formatter
-    "  Forward:\n%a\n  Backward:\n%a"
+    "  Forward:\n%a\n  Backward:\n%a\n  Skip:%b\n"
     Forward.pp_model forward
     Backward.pp_model backward
+    skip_analysis
 
 
 let show_call_model =
@@ -147,6 +149,13 @@ let show_call_model =
 
 
 type result = Flow.issue list
+
+
+let empty_skip_model = {
+  forward = Forward.empty;
+  backward = Backward.empty;
+  skip_analysis = true;
+}
 
 
 module ResultArgument = struct
@@ -161,14 +170,16 @@ module ResultArgument = struct
   let obscure_model = {
     forward = Forward.obscure;
     backward = Backward.obscure;
+    skip_analysis = false;
   }
 
   let empty_model = {
     forward = Forward.empty;
     backward = Backward.empty;
+    skip_analysis = false;
   }
 
-  let is_empty { forward; backward } =
+  let is_empty { forward; backward; _ } =
     Forward.is_empty forward &&
     Backward.is_empty backward
 
@@ -176,12 +187,14 @@ module ResultArgument = struct
     {
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
+      skip_analysis = left.skip_analysis || right.skip_analysis;
     }
 
   let widen ~iteration ~previous ~next =
     {
       forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
+      skip_analysis = previous.skip_analysis || next.skip_analysis;
     }
 
   let get_errors result =

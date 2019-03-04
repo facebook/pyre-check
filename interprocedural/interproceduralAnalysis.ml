@@ -171,45 +171,41 @@ let widen ~iteration ~previous ~next =
     verify_widen ~iteration ~previous ~next
 
 
-let widen_if_necessary step callable { Result.models = new_model; is_obscure } result =
-  let callable = (callable :> Callable.t) in
+let widen_if_necessary step callable ~old_model { Result.models = new_model; is_obscure } result =
   (* Check if we've reached a fixed point *)
-  match Fixpoint.get_old_model callable with
-  | None ->
-      Format.asprintf "No initial model found for %a" Callable.pp callable
-      |> failwith
-  | Some old_model ->
-      if reached_fixpoint ~iteration:step.Fixpoint.iteration
-          ~previous:old_model.models ~next:new_model then begin
-        Log.log
-          ~section:`Interprocedural
-          "Reached fixpoint for %a\n%a"
-          Callable.pp callable
-          Result.pp_model_t old_model;
-        Fixpoint.{ is_partial = false; model = old_model; result }
-      end
-      else
-        let model = Result.{
-            models =
-              widen
-                ~iteration:step.Fixpoint.iteration
-                ~previous:old_model.models
-                ~next:new_model;
-            is_obscure;
-          }
-        in
-        Log.log
-          ~section:`Interprocedural
-          "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
-          Callable.pp callable
-          Result.pp_model_t old_model
-          Result.pp_model_t {models=new_model; is_obscure}
-          Result.pp_model_t model;
-        Fixpoint.{
-          is_partial = true;
-          model;
-          result;
-        }
+  if reached_fixpoint ~iteration:step.Fixpoint.iteration
+      ~previous:old_model.Result.models ~next:new_model
+  then
+    begin
+      Log.log
+        ~section:`Interprocedural
+        "Reached fixpoint for %a\n%a"
+        Callable.pretty_print callable
+        Result.pp_model_t old_model;
+      Fixpoint.{ is_partial = false; model = old_model; result }
+    end
+  else
+    let model = Result.{
+        models =
+          widen
+            ~iteration:step.Fixpoint.iteration
+            ~previous:old_model.models
+            ~next:new_model;
+        is_obscure;
+      }
+    in
+    Log.log
+      ~section:`Interprocedural
+      "Widened fixpoint for %a\nold: %anew: %a\nwidened: %a"
+      Callable.pretty_print callable
+      Result.pp_model_t old_model
+      Result.pp_model_t {models=new_model; is_obscure}
+      Result.pp_model_t model;
+    Fixpoint.{
+      is_partial = true;
+      model;
+      result;
+    }
 
 
 let analyze_define
@@ -224,12 +220,28 @@ let analyze_define
       "Analyzing %a"
       Callable.pp_real_target callable
   in
+  let old_model =
+    match Fixpoint.get_old_model callable with
+    | Some model ->
+        let () =
+          Log.log
+            ~section:`Interprocedural
+            "Analyzing %a, with initial model %a"
+            Callable.pp_real_target callable
+            Result.pp_model_t model
+        in
+        model
+    | None ->
+        Format.asprintf "No initial model found for %a" Callable.pretty_print callable
+        |> failwith
+  in
   let new_model, results =
     let analyze (Result.Analysis { Result.kind; analysis; }) =
       let open Result in
       let akind = Kind.abstract kind in
       let module Analysis = (val analysis) in
-      let method_result, method_model = Analysis.analyze ~callable ~environment ~define in
+      let existing = Result.get (ModelPart kind) old_model.models in
+      let method_result, method_model = Analysis.analyze ~callable ~environment ~define ~existing in
       (
         akind,
         Pkg { kind = ModelPart kind; value = method_model; },
@@ -260,7 +272,7 @@ let analyze_define
     | _ as exn ->
         analysis_failed step ~exn ~message:"Analysis failed" callable
   in
-  widen_if_necessary step callable { Result.models=new_model; is_obscure=false } results
+  widen_if_necessary step callable ~old_model { Result.models=new_model; is_obscure=false } results
 
 
 let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
@@ -293,7 +305,14 @@ let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
     in
     List.fold overrides ~f:lookup_and_join ~init:direct_model
   in
-  widen_if_necessary step callable model Result.empty_result
+  let old_model =
+    match Fixpoint.get_old_model callable with
+    | Some model -> model
+    | None ->
+        Format.asprintf "No initial model found for %a" Callable.pretty_print callable
+        |> failwith
+  in
+  widen_if_necessary step callable ~old_model model Result.empty_result
 
 
 let callables_to_dump =
@@ -720,3 +739,12 @@ let save_results ~configuration ~analyses all_callables =
       in
       List.iter analyses ~f:save_models;
       List.iter analyses ~f:save_metadata
+
+
+let join_models
+    { Result.is_obscure = is_obscure_left; models = models_left }
+    { Result.is_obscure = is_obscure_right; models = models_right } =
+  Result.{
+    is_obscure = is_obscure_left || is_obscure_right;
+    models = join_models ~iteration:0 models_left models_right;
+  }
