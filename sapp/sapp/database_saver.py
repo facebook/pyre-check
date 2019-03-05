@@ -38,13 +38,12 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
         self.database = database
         self.primary_key_generator = primary_key_generator or PrimaryKeyGenerator()
         self.bulk_saver = BulkSaver(self.primary_key_generator)
+        self.summary: Summary
 
     @disable_gc
     @log_time
-    def run(
-        self, trace_graph: TraceGraph, summary: Summary
-    ) -> Tuple[RunSummary, Summary]:
-        self.graph = trace_graph
+    def run(self, input: TraceGraph, summary: Summary) -> Tuple[RunSummary, Summary]:
+        self.graph = input
         self.summary = summary
 
         self._prep_save()

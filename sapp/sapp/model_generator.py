@@ -4,7 +4,7 @@ import datetime
 import logging
 import os
 from collections import defaultdict
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import ujson as json
 from sapp.models import (
@@ -26,7 +26,7 @@ from sapp.models import (
     TraceFrameAnnotation,
     TraceKind,
 )
-from sapp.pipeline import DictEntries, List, Optional, PipelineStep, Summary
+from sapp.pipeline import DictEntries, PipelineStep, Summary
 from sapp.trace_graph import TraceGraph
 
 
@@ -34,7 +34,12 @@ log = logging.getLogger()
 
 
 class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
-    def run(self, iters: DictEntries, summary: Summary) -> Tuple[TraceGraph, Summary]:
+    def __init__(self) -> None:
+        super().__init__()
+        self.summary: Summary
+        self.graph: TraceGraph
+
+    def run(self, input: DictEntries, summary: Summary) -> Tuple[TraceGraph, Summary]:
         self.summary = summary
 
         self.summary["extracted_features"] = {}  # Dict[int, Any]
@@ -52,12 +57,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         self.summary["run"] = self._create_empty_run(status=RunStatus.INCOMPLETE)
         self.summary["run"].id = DBID()
 
-        self.summary["precondition_entries"] = iters["preconditions"]
-        self.summary["postcondition_entries"] = iters["postconditions"]
-        callables = self._compute_callables_count(iters)
+        self.summary["precondition_entries"] = input["preconditions"]
+        self.summary["postcondition_entries"] = input["postconditions"]
+        callables = self._compute_callables_count(input)
 
         log.info("Generating instances")
-        for entry in iters["issues"]:
+        for entry in input["issues"]:
             self._generate_issue(self.summary["run"], entry, callables)
 
         return self.graph, self.summary
@@ -75,7 +80,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         self, status=RunStatus.FINISHED, status_description=None
     ) -> Run:
         """setting boilerplate when creating a Run object"""
-        run = Run(
+        run = Run(  # pyre-ignore: T41318465
             job_id=self.summary["job_id"],
             issue_instances=[],
             date=datetime.datetime.now(),

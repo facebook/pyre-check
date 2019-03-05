@@ -12,20 +12,16 @@ log = logging.getLogger()
 
 
 class TrimTraceGraph(PipelineStep[TraceGraph, TraceGraph]):
-    def run(
-        self, input: TraceGraph, summary: Summary = None
-    ) -> Tuple[TraceGraph, Summary]:
-        self.summary = summary or {}
-
-        if self.summary.get("affected_files") is None:
-            self.summary["graph"] = input  # used by ranker
-            return input, self.summary
+    def run(self, input: TraceGraph, summary: Summary) -> Tuple[TraceGraph, Summary]:
+        if summary.get("affected_files") is None:
+            summary["graph"] = input  # used by ranker
+            return input, summary
 
         log.info("Trimming graph to affected files.")
         trimmed_graph = TrimmedTraceGraph(
-            self.summary["affected_files"], self.summary.get("affected_issues_only")
+            summary["affected_files"], summary.get("affected_issues_only", False)
         )
         trimmed_graph.populate_from_trace_graph(input)
 
-        self.summary["graph"] = trimmed_graph  # used by ranker
-        return trimmed_graph, self.summary
+        summary["graph"] = trimmed_graph  # used by ranker
+        return trimmed_graph, summary

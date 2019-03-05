@@ -25,7 +25,7 @@ from sapp.models import (
 
 
 class InteractiveTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.db = DB("memory")
         self.interactive = Interactive("memory", "")
         self.interactive.db = self.db  # we need the tool to refer to the same db
@@ -34,7 +34,7 @@ class InteractiveTest(TestCase):
         sys.stdout = self.stdout  # redirect output
         sys.stderr = self.stderr  # redirect output
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         sys.stdout = sys.__stdout__  # reset redirect
         sys.stderr = sys.__stderr__  # reset redirect
 

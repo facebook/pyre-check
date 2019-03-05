@@ -20,17 +20,17 @@ class TrimmedTraceGraph(TraceGraph):
         super().__init__()
         self._affected_files = affected_files
         self._affected_issues_only = affected_issues_only
-        self._visited_post_ids = set()  # type: Set
-        self._visited_pre_ids = set()  # type: Set
-        self._visited_trace_frame_ids = set()  # type: Set
+        self._visited_post_ids: Set[int] = set()
+        self._visited_pre_ids: Set[int] = set()
+        self._visited_trace_frame_ids: Set[int] = set()
 
     def populate_from_trace_graph(self, graph: TraceGraph) -> None:
         """Populates this graph from the given one based on affected_files
         """
         # Track which post/preconditions have been visited as we populate
         # the full backward/forward traces of the graph.
-        self._visited_post_ids = set()  # type: Set
-        self._visited_pre_ids = set()  # type: Set
+        self._visited_post_ids: Set[int] = set()
+        self._visited_pre_ids: Set[int] = set()
 
         self._populate_affected_issues(graph)
 
@@ -88,12 +88,12 @@ class TrimmedTraceGraph(TraceGraph):
             self._populate_issue_and_traces(graph, instance_id)
 
     def _get_sink_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        kind: SharedTextKind = SharedTextKind.SINK
+        kind: SharedTextKind = SharedTextKind.SINK  # pyre-ignore
         sinks = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {sink.contents for sink in sinks}
 
     def _get_source_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        kind: SharedTextKind = SharedTextKind.SOURCE
+        kind: SharedTextKind = SharedTextKind.SOURCE  # pyre-ignore
         sources = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {source.contents for source in sources}
 
@@ -296,7 +296,7 @@ class TrimmedTraceGraph(TraceGraph):
         add_traces: Function that takes a list of initial conditions and
         adds all conditions reachable from these to the graph.
         """
-        visited = set()  # type: Set
+        visited: Set[int] = set()
         que = list(zip(initial_conditions, initial_conditions))
 
         while len(que) > 0:
@@ -439,7 +439,7 @@ class TrimmedTraceGraph(TraceGraph):
         Also copies all the post-source assocs since we don't know which ones
         are needed until we know the issue that reaches it.
         """
-        kind: SharedTextKind = SharedTextKind.SOURCE
+        kind: SharedTextKind = SharedTextKind.SOURCE  # pyre-ignore
         post_id = postcondition.id.local_id
         self.add_postcondition(postcondition)
         for (source_id, depth) in graph._postcondition_source_assoc[post_id]:
@@ -479,7 +479,7 @@ class TrimmedTraceGraph(TraceGraph):
     def _add_precondition(self, graph: TraceGraph, precondition: Precondition) -> None:
         """ Similar to _add_postcondition
         """
-        kind: SharedTextKind = SharedTextKind.SINK
+        kind: SharedTextKind = SharedTextKind.SINK  # pyre-ignore
         pre_id = precondition.id.local_id
         self.add_precondition(precondition)
         for (sink_id, depth) in graph._precondition_sink_assoc[pre_id]:

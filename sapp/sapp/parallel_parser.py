@@ -2,7 +2,9 @@
 
 import logging
 from multiprocessing import Pool
+from typing import Any, Dict, Iterable
 
+from sapp.analysis_output import AnalysisOutput
 from sapp.base_parser import BaseParser
 
 
@@ -23,7 +25,7 @@ class ParallelParser(BaseParser):
         super().__init__(repo_dir, extractor)
         self.parser = parser_class
 
-    def parse(self, input):
+    def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
         log.info("Parsing in parallel")
         files = list(input.file_names())
 

@@ -49,26 +49,26 @@ class TraceGraph(object):
 
         # Create a mapping of (caller, caller_port) to the corresponding
         # pre/postcondition's id.
-        self._preconditions_map: DefaultDict[Tuple[str, str], Set[int]] = defaultdict(
-            set
-        )
-        self._postconditions_map: DefaultDict[Tuple[str, str], Set[int]] = defaultdict(
-            set
-        )
-        self._trace_frames_map: DefaultDict[Tuple[str, str], Set[int]] = defaultdict(
-            set
-        )
+        self._preconditions_map: DefaultDict[  # pyre-ignore: T41307149
+            Tuple[str, str], Set[int]
+        ] = defaultdict(set)
+        self._postconditions_map: DefaultDict[  # pyre-ignore: T41307149
+            Tuple[str, str], Set[int]
+        ] = defaultdict(set)
+        self._trace_frames_map: DefaultDict[  # pyre-ignore: T41307149
+            Tuple[str, str], Set[int]
+        ] = defaultdict(set)
 
         # Similar to pre/postconditions_map, but maps the reverse direction
         # of the trace graph, i.e. (callee[, callee_port]) to the
         # pre/postcondition_id.
-        self._preconditions_rev_map: DefaultDict[
+        self._preconditions_rev_map: DefaultDict[  # pyre-ignore: T41307149
             Tuple[str, str], Set[int]
         ] = defaultdict(set)
-        self._postconditions_rev_map: DefaultDict[
+        self._postconditions_rev_map: DefaultDict[  # pyre-ignore: T41307149
             Tuple[str, str], Set[int]
         ] = defaultdict(set)
-        self._trace_frames_rev_map: DefaultDict[
+        self._trace_frames_rev_map: DefaultDict[  # pyre-ignore: T41307149
             Tuple[str, str], Set[int]
         ] = defaultdict(set)
 
@@ -81,39 +81,39 @@ class TraceGraph(object):
             DefaultDict[SharedTextKind, Dict[str, int]]
         ) = defaultdict(dict)
 
-        self._precondition_sink_assoc: DefaultDict[
+        self._precondition_sink_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[Tuple[int, int]]
         ] = defaultdict(set)
-        self._postcondition_source_assoc: DefaultDict[
+        self._postcondition_source_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[Tuple[int, int]]
         ] = defaultdict(set)
-        self._trace_frame_leaf_assoc: DefaultDict[
+        self._trace_frame_leaf_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[Tuple[int, int]]
         ] = defaultdict(set)
 
-        self._postcondition_issue_instance_assoc: DefaultDict[
+        self._postcondition_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._issue_instance_postcondition_assoc: DefaultDict[
+        self._issue_instance_postcondition_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._precondition_issue_instance_assoc: DefaultDict[
+        self._precondition_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._issue_instance_precondition_assoc: DefaultDict[
+        self._issue_instance_precondition_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._trace_frame_issue_instance_assoc: DefaultDict[
+        self._trace_frame_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._issue_instance_trace_frame_assoc: DefaultDict[
+        self._issue_instance_trace_frame_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
 
-        self._issue_instance_shared_text_assoc: DefaultDict[
+        self._issue_instance_shared_text_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
-        self._shared_text_issue_instance_assoc: DefaultDict[
+        self._shared_text_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
             int, Set[int]
         ] = defaultdict(set)
 
@@ -135,7 +135,7 @@ class TraceGraph(object):
     def get_issue(self, issue_id: DBID) -> Issue:
         return self._issues[issue_id.local_id]
 
-    def add_issue_instance(self, instance) -> None:
+    def add_issue_instance(self, instance: IssueInstance) -> None:
         assert (
             instance.id.local_id not in self._issue_instances
         ), "Instance already exists"
@@ -144,7 +144,9 @@ class TraceGraph(object):
     def get_issue_instances(self) -> Iterable[IssueInstance]:
         return (instance for instance in self._issue_instances.values())
 
-    def add_issue_instance_fix_info(self, instance, fix_info) -> None:
+    def add_issue_instance_fix_info(
+        self, instance: IssueInstance, fix_info: IssueInstanceFixInfo
+    ) -> None:
         assert (
             instance.id.local_id not in self._issue_instance_fix_info
         ), "Instance fix info already exists"
@@ -217,7 +219,7 @@ class TraceGraph(object):
         else:
             return []
 
-    def get_precondition_from_id(self, id) -> Precondition:
+    def get_precondition_from_id(self, id: int) -> Precondition:
         return self._preconditions[id]
 
     def add_trace_frame(self, trace_frame: TraceFrame) -> None:
@@ -243,7 +245,7 @@ class TraceGraph(object):
         else:
             return []
 
-    def get_trace_frame_from_id(self, id) -> TraceFrame:
+    def get_trace_frame_from_id(self, id: int) -> TraceFrame:
         return self._trace_frames[id]
 
     def add_trace_frame_to_precondition(

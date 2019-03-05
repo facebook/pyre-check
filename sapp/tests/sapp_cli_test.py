@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from ..sapp_cli import cli
+from ..sapp_cli import cli  # noqa
 
 
 PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
@@ -15,7 +15,7 @@ PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
     "sapp.analysis_output.AnalysisOutput.from_file", return_value="fake_analysis_output"
 )
 class TestSappCli(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.runner = CliRunner()
 
     def verify_input_file(self, input_files, summary_blob):

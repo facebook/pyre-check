@@ -8,7 +8,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
 
-import xxhash  # pyre-ignore
+import xxhash
 from sapp.analysis_output import AnalysisOutput
 from sapp.pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
 

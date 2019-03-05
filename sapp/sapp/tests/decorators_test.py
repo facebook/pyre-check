@@ -7,7 +7,7 @@ from sapp.decorators import disable_gc, log_time, retryable
 
 
 class RetryableTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.times_through = 0
 
     @retryable(num_tries=5)

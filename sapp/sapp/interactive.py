@@ -68,6 +68,17 @@ help(COMAMND)   more info about a command
             "branch": self.branch,
         }
 
+        self.current_issue_id: int = None
+        self.sources: Set[str] = set()
+        self.sinks: Set[str] = set()
+        # Tuples representing the trace of the current issue
+        self.trace_tuples: List[TraceTuple] = []
+        # Active trace frame of the current trace
+        self.current_trace_frame_index: int = None
+        self.root_trace_frame_index: int = None
+        # The current issue id when 'trace' was last run
+        self.trace_tuples_id: int = None
+
     def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
             latest_run_id = (
@@ -83,17 +94,6 @@ help(COMAMND)   more info about a command
             )
 
         self.current_run_id = latest_run_id
-        self.current_issue_id = None
-        self.sources: Set[str] = set()
-        self.sinks: Set[str] = set()
-        # Tuples representing the trace of the current issue
-        self.trace_tuples: List[TraceTuple] = []
-        # Active trace frame of the current trace
-        self.current_trace_frame_index: int
-        self.root_trace_frame_index: int
-        # The current issue id when 'trace' was last run
-        self.trace_tuples_id = None
-
         print("=" * len(self.welcome_message))
         print(self.welcome_message)
         print("=" * len(self.welcome_message))
