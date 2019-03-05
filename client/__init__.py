@@ -224,7 +224,7 @@ def _find_directory_upwards(base: str, target: str) -> Optional[str]:
     """
     Walk directories upwards from base, until the root directory is
     reached. At each step, check if the target directory exist, and return
-    it if found. Return None is the search is unsuccessful.
+    it if found. Return None if the search is unsuccessful.
     """
     while True:
         step = os.path.join(base, target)
