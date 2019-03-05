@@ -6,6 +6,7 @@
 
 type t =
   | Demo
+  | FileSystem
   | GetAttr
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
@@ -18,7 +19,6 @@ type t =
   | Thrift
   | XMLParser
   | XSS
-  | FileSystem
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t

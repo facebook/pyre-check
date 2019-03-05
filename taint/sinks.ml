@@ -6,6 +6,7 @@
 
 type t =
   | Demo
+  | FileSystem
   | GetAttr
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
@@ -18,12 +19,12 @@ type t =
   | Thrift
   | XMLParser
   | XSS
-  | FileSystem
 [@@deriving compare, eq, sexp, show, hash]
 
 
 let show = function
   | Demo -> "Demo"
+  | FileSystem -> "FileSystem"
   | GetAttr -> "GetAttr"
   | IdentityCreation -> "IdentityCreation"
   | LocalReturn -> "LocalReturn"
@@ -36,11 +37,11 @@ let show = function
   | Test -> "Test"
   | XMLParser -> "XMLParser"
   | XSS -> "XSS"
-  | FileSystem -> "FileSystem"
 
 
 let create = function
   | "Demo" -> Demo
+  | "FileSystem" -> FileSystem
   | "GetAttr" -> GetAttr
   | "IdentityCreation" -> IdentityCreation
   | "LocalReturn" -> LocalReturn
@@ -53,5 +54,4 @@ let create = function
   | "Thrift" -> Thrift
   | "XMLParser" -> XMLParser
   | "XSS" -> XSS
-  | "FileSystem" -> FileSystem
   | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)
