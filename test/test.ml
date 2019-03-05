@@ -812,6 +812,88 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           pass
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "collections")
+      ~handle:"collections.pyi"
+      {|
+        from typing import (
+            TypeVar,
+            Generic,
+            Dict,
+            overload,
+            List,
+            Tuple,
+            Any,
+            Type,
+            Optional,
+            Union,
+            Callable,
+            Mapping,
+            Iterable,
+            Tuple,
+        )
+
+        _DefaultDictT = TypeVar("_DefaultDictT", bound=defaultdict)
+        _KT = TypeVar("_KT")
+        _VT = TypeVar("_VT")
+
+
+        class defaultdict(Dict[_KT, _VT], Generic[_KT, _VT]):
+            default_factory = ...  # type: Optional[Callable[[], _VT]]
+
+            @overload
+            def __init__(self, **kwargs: _VT) -> None:
+                ...
+
+            @overload
+            def __init__(self, default_factory: Optional[Callable[[], _VT]]) -> None:
+                ...
+
+            @overload
+            def __init__(
+                self, default_factory: Optional[Callable[[], _VT]], **kwargs: _VT
+            ) -> None:
+                ...
+
+            @overload
+            def __init__(
+                self, default_factory: Optional[Callable[[], _VT]], map: Mapping[_KT, _VT]
+            ) -> None:
+                ...
+
+            @overload
+            def __init__(
+                self,
+                default_factory: Optional[Callable[[], _VT]],
+                map: Mapping[_KT, _VT],
+                **kwargs: _VT
+            ) -> None:
+                ...
+
+            @overload
+            def __init__(
+                self,
+                default_factory: Optional[Callable[[], _VT]],
+                iterable: Iterable[Tuple[_KT, _VT]],
+            ) -> None:
+                ...
+
+            @overload
+            def __init__(
+                self,
+                default_factory: Optional[Callable[[], _VT]],
+                iterable: Iterable[Tuple[_KT, _VT]],
+                **kwargs: _VT
+            ) -> None:
+                ...
+
+            def __missing__(self, key: _KT) -> _VT:
+                ...
+
+            def copy(self: _DefaultDictT) -> _DefaultDictT:
+                ...
+      |}
+    |> Preprocessing.qualify;
   ]
 
 

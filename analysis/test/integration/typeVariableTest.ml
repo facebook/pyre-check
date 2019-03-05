@@ -305,6 +305,16 @@ let test_distinguish _ =
       "Mutually recursive type variables [36]: Solving type variables for call `bar` " ^
       "led to infinite recursion"
     ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = collections.defaultdict(dict)
+        reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is " ^
+      "`typing.DefaultDict[undefined, typing.Dict[]]`."
+    ];
   ()
 
 

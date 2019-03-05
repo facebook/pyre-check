@@ -1209,6 +1209,12 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[T_int_bool], T_int_bool]"
        ~right:"typing.Callable[[Named(arg, str)], str]");
+  (* Callables with overloads *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[int], int][[float], float]"
+       ~right:"typing.Callable[[int], int]");
 
   (* TypedDictionaries *)
   assert_true

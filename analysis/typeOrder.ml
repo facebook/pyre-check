@@ -509,10 +509,11 @@ type order = {
 }
 
 
-(* TODO(T40105833): merge this with actual signature select, to get overload handling, etc. *)
-let rec simulate_signature_select order ~implementation ~called_as =
+(* TODO(T40105833): merge this with actual signature select *)
+let rec simulate_signature_select
+    order ~callable:{ Type.Callable.implementation; overloads; _ } ~called_as =
   let open Callable in
-  let constraints =
+  let constraints implementation =
     let initial_constraints =
       let to_bottom constraints variable =
         Map.set constraints ~key:variable ~data:Type.Bottom
@@ -609,9 +610,14 @@ let rec simulate_signature_select order ~implementation ~called_as =
     | Undefined, Defined _ ->
         None
   in
-  constraints
-  >>| (fun constraints ->
-      map_implementation implementation ~f:(Type.instantiate ~constraints:(Map.find constraints))
+  let overload_to_overload_and_constraints overload =
+    constraints overload
+    >>| (fun constraints -> overload, constraints)
+  in
+  List.filter_map (overloads @ [implementation]) ~f:overload_to_overload_and_constraints
+  |> List.hd
+  >>| (fun (overload, constraints) ->
+      map_implementation overload ~f:(Type.instantiate ~constraints:(Map.find constraints))
     )
 
 
@@ -723,9 +729,12 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                 ~f:(fun target ->
                     solve_constraints_throws order ~constraints ~source ~target)
               |> List.hd
-          (* TODO(T40105833): We need to consider the overloads in source *)
-          | Type.Callable { Type.Callable.implementation = source; _ },
-            Type.Callable { Type.Callable.implementation = target; _ }   ->
+          | Type.Callable (
+              { implementation = ({ parameters = source_parameters; _ } as original_source); _ }
+              as callable
+            ),
+            Type.Callable { implementation = ({ parameters = target_parameters; _ } as target); _ }
+            ->
               let parameter_annotations = function
                 | Type.Callable.Defined parameters ->
                     List.map parameters ~f:Type.Callable.Parameter.annotation
@@ -738,7 +747,7 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                     target
                     ~f:(Type.mark_variables_as_bound ~simulated:true)
                 in
-                simulate_signature_select order ~implementation:source ~called_as
+                simulate_signature_select order ~callable ~called_as
                 >>| Type.Callable.map_implementation ~f:(Type.free_simulated_bound_variables)
                 |> function
                 | Some source ->
@@ -750,10 +759,10 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                          *args/**kwargs vs. concrete parameters or default arguments. *)
                         constraints
                         ~ignore_length_mismatch:true
-                        ~sources:(parameter_annotations source.parameters)
-                        ~targets:(parameter_annotations target.parameters)
+                        ~sources:(parameter_annotations source_parameters)
+                        ~targets:(parameter_annotations target_parameters)
                     in
-                    source, constraints
+                    original_source, constraints
               in
               constraints
               >>= (fun constraints ->
@@ -1011,10 +1020,9 @@ and less_or_equal
     Type.Callable { Callable.kind = Callable.Named right; _ }
     when Expression.Access.equal left right ->
       true
-  (* TODO(T40105833): We need to consider the overloads in left *)
-  | Type.Callable { Callable.implementation = left; _ },
+  | Type.Callable callable,
     Type.Callable { Callable.implementation = right; _ } ->
-      simulate_signature_select order ~implementation:left ~called_as:right
+      simulate_signature_select order ~callable ~called_as:right
       >>| (fun left -> less_or_equal order ~left:left.annotation ~right:right.annotation)
       |> Option.value ~default:false
   | _, Type.Callable _  when Type.is_meta left ->
