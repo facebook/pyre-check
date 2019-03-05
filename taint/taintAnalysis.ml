@@ -12,14 +12,25 @@ include TaintResult.Register(struct
 
     let init ~types:_ ~functions:_ = ()
 
+    let analyze ~callable:_ ~environment ~define ~mode =
+      let forward, result = ForwardAnalysis.run ~environment ~define in
+      let backward = BackwardAnalysis.run ~environment ~define in
+      let model =
+        if mode = Normal then
+          { forward; backward; mode; }
+        else
+          { empty_model with mode }
+      in
+      result, model
+
     let analyze ~callable ~environment ~define ~existing =
       match existing with
-      | Some model when model.skip_analysis ->
+      | Some ({ mode = SkipAnalysis; _ } as model) ->
           let () = Log.info "Skipping taint analysis of %a" Callable.pretty_print callable in
           [], model
-      | _ ->
-          let forward, result = ForwardAnalysis.run ~environment ~define in
-          let backward = BackwardAnalysis.run ~environment ~define in
-          let model = { forward; backward; skip_analysis = false; } in
-          result, model
+      | Some { mode; _ } ->
+          analyze ~callable ~environment ~define ~mode
+      | None ->
+          analyze ~callable ~environment ~define ~mode:Normal
+
   end)

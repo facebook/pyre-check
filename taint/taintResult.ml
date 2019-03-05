@@ -127,21 +127,28 @@ module Backward = struct
 end
 
 
+type mode =
+  | SkipAnalysis  (* Don't analyze at all *)
+  | Sanitize      (* Analyze, but throw away inferred model *)
+  | Normal
+[@@deriving sexp, show]
+
+
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  skip_analysis: bool;  (* If set, don't analyze this function. *)
+  mode: mode;
 }
 [@@deriving sexp]
 
 
-let pp_call_model formatter { forward; backward; skip_analysis; } =
+let pp_call_model formatter { forward; backward; mode } =
   Format.fprintf
     formatter
-    "  Forward:\n%a\n  Backward:\n%a\n  Skip:%b\n"
+    "  Forward:\n%a\n  Backward:\n%a\n  Mode:%a"
     Forward.pp_model forward
     Backward.pp_model backward
-    skip_analysis
+    pp_mode mode
 
 
 let show_call_model =
@@ -154,7 +161,7 @@ type result = Flow.issue list
 let empty_skip_model = {
   forward = Forward.empty;
   backward = Backward.empty;
-  skip_analysis = true;
+  mode = SkipAnalysis;
 }
 
 
@@ -170,31 +177,41 @@ module ResultArgument = struct
   let obscure_model = {
     forward = Forward.obscure;
     backward = Backward.obscure;
-    skip_analysis = false;
+    mode = Normal;
   }
 
   let empty_model = {
     forward = Forward.empty;
     backward = Backward.empty;
-    skip_analysis = false;
+    mode = Normal;
   }
 
   let is_empty { forward; backward; _ } =
     Forward.is_empty forward &&
     Backward.is_empty backward
 
+
+  let join_modes left right =
+    match left, right with
+    | SkipAnalysis, _ -> SkipAnalysis
+    | _, SkipAnalysis -> SkipAnalysis
+    | Sanitize, _ -> Sanitize
+    | _, Sanitize -> Sanitize
+    | Normal, Normal -> Normal
+
+
   let join ~iteration:_ left right =
     {
       forward = Forward.join left.forward right.forward;
       backward = Backward.join left.backward right.backward;
-      skip_analysis = left.skip_analysis || right.skip_analysis;
+      mode = join_modes left.mode right.mode;
     }
 
   let widen ~iteration ~previous ~next =
     {
       forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
       backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
-      skip_analysis = previous.skip_analysis || next.skip_analysis;
+      mode = join_modes previous.mode next.mode;
     }
 
   let get_errors result =

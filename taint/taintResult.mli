@@ -25,10 +25,16 @@ module Forward : sig
   val empty: model
 end
 
+type mode =
+  | SkipAnalysis  (* Don't analyze at all *)
+  | Sanitize      (* Analyze, but throw away inferred model *)
+  | Normal
+[@@deriving sexp, show]
+
 type call_model = {
   forward: Forward.model;
   backward: Backward.model;
-  skip_analysis: bool;
+  mode: mode;
 }
 [@@deriving show, sexp]
 

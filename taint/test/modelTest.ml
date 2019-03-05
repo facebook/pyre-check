@@ -201,7 +201,7 @@ let test_sink_models _ =
 
 let test_taint_in_taint_out_models _ =
   assert_model
-    ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
+    ~model_source:"def tito(parameter: TaintInTaintOut): ..."
     ~expect:[
       {
         kind = `Function;
@@ -216,7 +216,7 @@ let test_taint_in_taint_out_models _ =
 
 let test_union_models _ =
   assert_model
-    ~model_source:"def both(parameter: Union[TaintInTaintOut[LocalReturn], TaintSink[XSS]]): ..."
+    ~model_source:"def both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
     ~expect:[
       {
         kind = `Function;
@@ -227,6 +227,21 @@ let test_union_models _ =
           { name = "parameter"; sinks = [Taint.Sinks.XSS] };
         ];
         tito_parameters = ["parameter"]
+      };
+    ]
+
+
+let test_any _ =
+  assert_model
+    ~model_source:"def any(parameter: Any): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "any";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
       };
     ]
 
@@ -265,12 +280,12 @@ let test_invalid_models _ =
     ~expect:"Unsupported taint source Invalid";
 
   assert_invalid_model
-    ~model_source:"def source() -> TaintInTaintOut[Test]: ..."
-    ~expect:{|"Unrecognized taint direction in return annotation: TaintInTaintOut"|};
+    ~model_source:"def source() -> TaintInTaintOut: ..."
+    ~expect:{|"Invalid return annotation: TaintInTaintOut"|};
 
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|"Unrecognized taint direction in parameter annotation InvalidTaintDirection"|};
+    ~expect:{|"Unrecognized taint annotation InvalidTaintDirection.__getitem__.(...)"|};
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
@@ -289,6 +304,7 @@ let () =
     "sink_models">::test_sink_models;
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
     "taint_union_models">::test_union_models;
+    "test_any">::test_any;
     "invalid_models">::test_invalid_models;
   ]
   |> Test.run

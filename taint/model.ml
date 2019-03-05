@@ -24,6 +24,15 @@ type t = {
 [@@deriving show, sexp]
 
 
+type taint_annotation =
+  | Sink of Sinks.t
+  | Source of Sources.t
+  | Tito
+  | SkipAnalysis  (* Don't analyze methods with SkipAnalysis *)
+  | Sanitize      (* Don't propagate inferred model of methods with Sanitize *)
+[@@deriving show, sexp]
+
+
 let introduce_sink_taint
     ~root
     ({ TaintResult.backward = { sink_taint; taint_in_taint_out }; _ } as taint)
@@ -53,21 +62,23 @@ let introduce_sink_taint
   { taint with backward }
 
 
-let introduce_source_taint taint_source_kinds =
+let introduce_source_taint
+    ~root
+    ({ TaintResult.forward = { source_taint }; _ } as taint)
+    taint_source_kind =
   let source_taint =
-    let source_taint =
-      List.fold
-        taint_source_kinds
-        ~init:ForwardTaint.bottom
-        ~f:(fun taint kind -> ForwardTaint.join taint (ForwardTaint.singleton kind))
+    let leaf_taint =
+      ForwardTaint.singleton taint_source_kind
+      |> ForwardState.Tree.create_leaf
     in
     ForwardState.assign
-      ~root:AccessPath.Root.LocalResult
+      ~weak:true
+      ~root
       ~path:[]
-      (ForwardState.Tree.create_leaf source_taint)
-      ForwardState.empty
+      leaf_taint
+      source_taint
   in
-  TaintResult.Forward.{ source_taint }
+  { taint with forward = { source_taint } }
 
 
 let extract_identifier = function
@@ -85,60 +96,119 @@ let rec extract_taint_kinds expression =
       []
 
 
-let rec taint_annotations = function
+let get_source_kinds expression =
+  extract_taint_kinds expression
+  |> List.map ~f:(fun kind -> Source (Sources.create kind))
+
+
+let get_sink_kinds expression =
+  extract_taint_kinds expression
+  |> List.map ~f:(fun kind -> Sink (Sinks.create kind))
+
+
+let rec parse_annotations = function
   | Some {
       Node.value =
         Expression.Access
-          (SimpleAccess
-             (Identifier union
-              :: _
-              :: Call {
-                value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
-              :: _));
-      _ } when union = "Union" ->
-      List.concat_map ~f:(fun expression -> taint_annotations (Some expression)) expressions
-  | Some {
-      Node.value =
-        Expression.Access
-          (SimpleAccess
-             (Identifier taint_direction
-              :: _
-              :: Call {
-                value = { Argument.value = expression; _; } :: _; _ }
-              :: _));
-      _ } ->
-      [taint_direction, extract_taint_kinds expression]
-  | _ ->
-      []
+          (SimpleAccess access); _ } ->
+      begin
+        match access with
+        | (Identifier "Union"
+           :: _
+           :: Call {
+             value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
+           :: _) ->
+            List.map ~f:(fun expression -> parse_annotations (Some expression)) expressions
+            |> Or_error.combine_errors
+            |> Or_error.map ~f:List.concat
+        | (Identifier "TaintSink"
+           :: _
+           :: Call {
+             value = { Argument.value = expression; _; } :: _; _ }
+           :: _) ->
+            get_sink_kinds expression
+            |> Or_error.return
+        | (Identifier "TaintSource"
+           :: _
+           :: Call {
+             value = { Argument.value = expression; _; } :: _; _ }
+           :: _) ->
+            get_source_kinds expression
+            |> Or_error.return
+        | [Identifier "TaintInTaintOut"] ->
+            [Tito]
+            |> Or_error.return
+        | [Identifier "SkipAnalysis"] ->
+            [SkipAnalysis]
+            |> Or_error.return
+        | [Identifier "Sanitize"] ->
+            [Sanitize]
+            |> Or_error.return
+        | [Identifier "Any"] ->  (* Ignore Any annotations *)
+            []
+            |> Or_error.return
+        | (Identifier "TaintInTaintOut"  (* Legacy support. Delete when IG updated. *)
+           :: _
+           :: Call {
+             value = { Argument.value = _; _; } :: _; _ }
+           :: _) ->
+            [Tito]
+            |> Or_error.return
+        | _ ->
+            Or_error.errorf "Unrecognized taint annotation %s" (Expression.Access.show access)
+      end
+  | None ->
+      Or_error.return []
+  | Some value ->
+      Or_error.errorf "Unrecognized taint annotation %s" (Expression.show value)
 
 
 let taint_parameter model (root, _name, annotation) =
-  let add_to_model model (taint_direction, taint_kinds) =
+  let add_to_model model annotation =
     model >>= fun model ->
-    match taint_direction with
-    | "TaintSink" | "TaintInTaintOut" ->
-        let taint_sink_kinds = List.map ~f:Sinks.create taint_kinds in
-        List.fold taint_sink_kinds ~f:(introduce_sink_taint ~root) ~init:model
+    match annotation with
+    | Sink sink ->
+        introduce_sink_taint ~root model sink
         |> Or_error.return
-    | _ ->
-        Or_error.errorf "Unrecognized taint direction in parameter annotation %s" taint_direction
+    | Source source ->
+        introduce_source_taint ~root model source
+        |> Or_error.return
+    | Tito ->
+        introduce_sink_taint ~root model Sinks.LocalReturn
+        |> Or_error.return
+    | SkipAnalysis ->
+        Or_error.error_string "SkipAnalysis annotation must be in return position"
+    | Sanitize ->
+        Or_error.error_string "Sanitize annotation must be in return position"
   in
-  taint_annotations annotation
-  |> List.fold ~init:model ~f:add_to_model
+  parse_annotations annotation
+  |> Or_error.map ~f:(List.fold ~init:model ~f:add_to_model)
+  |> Or_error.join
 
 
 let taint_return model expression =
-  let add_to_model model (taint_direction, taint_kinds) =
+  let add_to_model model annotation =
     model >>= fun model ->
-    match taint_direction with
-    | "TaintSource" ->
-        let taint_source_kinds = List.map ~f:Sources.create taint_kinds in
-        Or_error.return { model with forward = introduce_source_taint taint_source_kinds }
-    | _ ->
-        Or_error.errorf "Unrecognized taint direction in return annotation: %s" taint_direction
+    let root = AccessPath.Root.LocalResult in
+    match annotation with
+    | Sink sink ->
+        introduce_sink_taint ~root model sink
+        |> Or_error.return
+    | Source source ->
+        introduce_source_taint ~root model source
+        |> Or_error.return
+    | Tito ->
+        Or_error.error_string "Invalid return annotation: TaintInTaintOut"
+    | SkipAnalysis ->
+        { model with mode = TaintResult.SkipAnalysis; }
+        |> Or_error.return
+    | Sanitize ->
+        { model with mode = TaintResult.Sanitize; }
+        |> Or_error.return
   in
-  taint_annotations expression
-  |> List.fold ~init:model ~f:add_to_model
+  parse_annotations expression
+  |> Or_error.map ~f:(List.fold ~init:model ~f:add_to_model)
+  |> Or_error.join
 
 
 let create ~resolution ?(verify = true) ~model_source () =
@@ -312,8 +382,12 @@ let get_callsite_model ~resolution ~call_target ~arguments =
       | None ->
           { is_obscure = true; call_target; model = TaintResult.empty_model }
       | Some model ->
+          let strip_for_call_site model =
+            model
+          in
           let taint_model =
             Interprocedural.Result.get_model TaintResult.kind model
             |> Option.value ~default:TaintResult.empty_model
+            |> strip_for_call_site
           in
           { is_obscure = model.is_obscure; call_target; model = taint_model }

@@ -604,12 +604,12 @@ let test_integration _ =
 let test_combined_analysis _ =
   assert_fixpoint
     ~models:{|
-      def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut[LocalReturn]): ...
+      def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
       def combined_model(x, y, z):
         __testSink(x)
-        return __userControlled()
+        return x or __userControlled()
     |}
     ~expect:{
       expect = [
@@ -622,16 +622,79 @@ let test_combined_analysis _ =
             { name = "x"; sinks = [Taint.Sinks.Test] };
             { name = "y"; sinks = [Taint.Sinks.Demo] };
           ];
-          tito_parameters = ["z"];
+          tito_parameters = ["x"; "z"];
         };
       ];
       iterations = 2;
     }
+
+
+let test_skipped_analysis _ =
+  assert_fixpoint
+    ~models:{|
+      def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> SkipAnalysis: ...
+    |}
+    {|
+      def skipped_model(x, y, z):
+        __testSink(x)
+        return x or __userControlled()
+    |}
+    ~expect:{
+      expect = [
+        {
+          kind = `Function;
+          define_name = "qualifier.skipped_model";
+          returns = [];
+          errors = [];
+          sink_parameters = [
+            { name = "y"; sinks = [Taint.Sinks.Demo] };
+          ];
+          tito_parameters = ["z"];
+        };
+      ];
+      iterations = 1;
+    }
+
+
+let test_sanitized_analysis _ =
+  assert_fixpoint
+    ~models:{|
+      def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> Sanitize: ...
+    |}
+    {|
+      def sanitized_model(x, y, z):
+        eval(__userControlled())
+        __testSink(x)
+        return x or __userControlled()
+    |}
+    ~expect:{
+      expect = [
+        {
+          kind = `Function;
+          define_name = "qualifier.sanitized_model";
+          returns = [];
+          errors = [
+            {
+              code = 5001;
+              pattern = ".*";
+            };
+          ];
+          sink_parameters = [
+            { name = "y"; sinks = [Taint.Sinks.Demo] };
+          ];
+          tito_parameters = ["z"];
+        };
+      ];
+      iterations = 1;
+    }
+
 
 let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
     "integration">::test_integration;
     "combined_analysis">::test_combined_analysis;
+    "skipped_analysis">::test_skipped_analysis;
+    "sanitized_analysis">::test_sanitized_analysis;
   ]
   |> TestHelper.run_with_taint_models
