@@ -41,6 +41,7 @@ trace()         trace of the selected issue
 prev()[p()]     move backward within the trace
 next()[n()]     move forward within the trace
 expand()        show and select trace branches
+branch(INDEX)   select a trace branch
 
 commands()      show this message
 help(COMAMND)   more info about a command
@@ -64,6 +65,7 @@ help(COMAMND)   more info about a command
             "prev": self.prev_cursor_location,
             "p": self.prev_cursor_location,
             "expand": self.expand,
+            "branch": self.branch,
         }
 
     def setup(self) -> Dict[str, Callable]:
@@ -372,15 +374,10 @@ help(COMAMND)   more info about a command
                 [1 hops: source]
                 [module/main.py:21|4|8]
         """
-        if not self._verify_issue_selected():
+        if not self._verify_issue_selected() or not self._verify_multiple_branches():
             return
 
-        self._generate_trace()  # make sure self.trace_tuples exists
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
-        if current_trace_tuple.branches < 2:
-            self.warning("This trace frame has no alternate branches to take.")
-            return
-
         filter_leaves = (
             self.sources
             if current_trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION
@@ -401,15 +398,56 @@ help(COMAMND)   more info about a command
             ]
             self._output_trace_expansion(branches, leaves_strings)
 
-        self._user_input_branch()
+    def branch(self, selected_index: int) -> None:
+        """Selects a branch when there are multiple possible traces to follow.
+
+        The trace output that follows includes the new branch and its children
+        frames.
+
+        Parameters:
+            selected_index: int    branch index from expand() output
+        """
+        if not self._verify_issue_selected() or not self._verify_multiple_branches():
+            return
+
+        with self.db.make_session() as session:
+            branches = self._get_trace_frame_branches(session)
+
+            if selected_index < 0 or selected_index >= len(branches):
+                self.warning(
+                    "Branch index out of bounds "
+                    f"(expected 0-{len(branches) - 1} but got {selected_index})."
+                )
+                return
+
+            new_navigation = self._navigate_trace_frames(
+                session, branches, selected_index
+            )
+
+        new_trace_tuples = self._create_trace_tuples(new_navigation)
+
+        if self._is_before_root():
+            new_trace_tuples.reverse()
+            self.trace_tuples = (
+                new_trace_tuples
+                + self.trace_tuples[self.current_trace_frame_index + 1 :]
+            )
+
+            # If length of prefix changes, it will change some indices
+            trace_frame_index_delta = (
+                len(new_navigation) - self.current_trace_frame_index - 1
+            )
+            self.current_trace_frame_index += trace_frame_index_delta
+            self.root_trace_frame_index += trace_frame_index_delta
+        else:
+            self.trace_tuples = (
+                self.trace_tuples[: self.current_trace_frame_index] + new_trace_tuples
+            )
+
+        self.trace()
 
     def warning(self, message: str) -> None:
         print(message, file=sys.stderr)
-
-    def _user_input_branch(self):
-        """Helper function that prompts the user for a branch to use in a trace.
-        """
-        pass
 
     def _get_trace_frame_branches(self, session: Session) -> List[TraceFrame]:
         delta_from_parent = 1 if self._is_before_root() else -1
@@ -429,14 +467,22 @@ help(COMAMND)   more info about a command
     def _is_before_root(self) -> bool:
         return self.current_trace_frame_index < self.root_trace_frame_index
 
-    def _output_trace_expansion(
-        self, trace_frames: List[TraceFrame], leaves_strings: List[str]
-    ) -> None:
+    def _current_branch_index(self, branches: List[TraceFrame]) -> int:
         selected_branch_id = int(
             self.trace_tuples[self.current_trace_frame_index].trace_frame.id
         )
+        for i, branch in enumerate(branches):
+            if selected_branch_id == int(branch.id):
+                return i
+        return -1
+
+    def _output_trace_expansion(
+        self, trace_frames: List[TraceFrame], leaves_strings: List[str]
+    ) -> None:
         for i, (frame, leaves) in enumerate(zip(trace_frames, leaves_strings)):
-            prefix = "[*]" if selected_branch_id == int(frame.id) else f"[{i + 1}]"
+            prefix = (
+                "[*]" if i == self._current_branch_index(trace_frames) else f"[{i}]"
+            )
             print(f"{prefix} {frame.callee} : {frame.callee_port}")
             print(f"{' ' * 8}[{frame.leaf_assoc[0].trace_length} hops: {leaves}]")
             print(f"{' ' * 8}[{frame.filename}:{frame.callee_location}]")
@@ -517,8 +563,8 @@ help(COMAMND)   more info about a command
             .all()
         )
 
-    def _navigate_trace_frames(self, session, initial_trace_frames):
-        trace_frames = [(initial_trace_frames[0], len(initial_trace_frames))]
+    def _navigate_trace_frames(self, session, initial_trace_frames, index=0):
+        trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
         while not self._is_leaf(trace_frames[-1]):
             trace_frame, branches = trace_frames[-1]
             next_nodes = self._next_trace_frames(session, trace_frame)
@@ -616,9 +662,16 @@ help(COMAMND)   more info about a command
             return False
         return True
 
+    def _verify_multiple_branches(self) -> bool:
+        self._generate_trace()  # make sure self.trace_tuples exists
+        current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
+        if current_trace_tuple.branches < 2:
+            self.warning("This trace frame has no alternate branches to take.")
+            return False
+        return True
+
 
 class TraceTuple(NamedTuple):
     trace_frame: TraceFrame
     branches: int = 1
-    hops: int = 0
     missing: bool = False

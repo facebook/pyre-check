@@ -922,8 +922,8 @@ class InteractiveTest(TestCase):
                     id=i + 1,
                     caller="call1",
                     caller_port="root",
-                    callee_location=SourceLocation(1, 1),
                     filename="file.py",
+                    callee_location=SourceLocation(i, i, i),
                     run_id=1,
                 )
             )
@@ -981,10 +981,10 @@ class InteractiveTest(TestCase):
 
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
-        self.assertIn("     + 2        leaf       source file.py:1|1|1", output)
-        self.assertIn(" -->            call1      root   file.py:1|1|1", output)
-        self.assertIn("     + 2        call2      param2 file.py:1|1|1", output)
-        self.assertIn("     + 2        leaf       sink   file.py:1|1|1", output)
+        self.assertIn("     + 2        leaf       source file.py:0|0|0", output)
+        self.assertIn(" -->            call1      root   file.py:2|2|2", output)
+        self.assertIn("     + 2        call2      param2 file.py:2|2|2", output)
+        self.assertIn("     + 2        leaf       sink   file.py:4|4|4", output)
 
     def testExpand(self):
         self._set_up_branched_trace()
@@ -996,11 +996,11 @@ class InteractiveTest(TestCase):
         self.interactive.expand()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            "[*] leaf : source\n        [0 hops: source1]\n        [file.py:0|0|0]",
             output,
         )
         self.assertIn(
-            "[2] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            "[1] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
             output,
         )
 
@@ -1011,11 +1011,11 @@ class InteractiveTest(TestCase):
         self.interactive.expand()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:1|1|1]",
+            "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:2|2|2]",
             output,
         )
         self.assertIn(
-            "[2] call2 : param2\n        [1 hops: sink1]\n        [file.py:1|1|1]",
+            "[1] call2 : param2\n        [1 hops: sink1]\n        [file.py:3|3|3]",
             output,
         )
 
@@ -1025,10 +1025,10 @@ class InteractiveTest(TestCase):
         self.interactive.expand()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:1|1|1]", output
+            "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:4|4|4]", output
         )
         self.assertIn(
-            "[2] leaf : sink\n        [0 hops: sink1]\n        [file.py:1|1|1]", output
+            "[1] leaf : sink\n        [0 hops: sink1]\n        [file.py:5|5|5]", output
         )
 
     def testGetTraceFrameBranches(self):
@@ -1054,6 +1054,197 @@ class InteractiveTest(TestCase):
             self.assertEqual(len(branches), 2)
             self.assertEqual(int(branches[0].id), 5)
             self.assertEqual(int(branches[1].id), 6)
+
+    def testBranch(self):
+        self._set_up_branched_trace()
+
+        self.interactive.setup()
+        self.interactive.set_issue(1)
+        self.interactive.prev_cursor_location()
+
+        # We are testing for the source location, which differs between branches
+        self._clear_stdout()
+        self.interactive.branch(1)  # location 0|0|0 -> 1|1|1
+        output = self.stdout.getvalue().strip()
+        self.assertIn(" --> + 2        leaf       source file.py:1|1|1", output)
+
+        self._clear_stdout()
+        self.interactive.branch(0)  # location 1|1|1 -> 0|0|0
+        output = self.stdout.getvalue().strip()
+        self.assertIn(" --> + 2        leaf       source file.py:0|0|0", output)
+
+        self.interactive.next_cursor_location()
+        self.interactive.next_cursor_location()
+
+        self._clear_stdout()
+        self.interactive.branch(1)  # location 2|2|2 -> 3|3|3
+        output = self.stdout.getvalue().strip()
+        self.assertIn(" --> + 2        call2      param2 file.py:3|3|3", output)
+
+        self.interactive.next_cursor_location()
+
+        self._clear_stdout()
+        self.interactive.branch(1)  # location 4|4|4 -> 5|5|5
+        output = self.stdout.getvalue().strip()
+        self.assertIn("     + 2        call2      param2 file.py:3|3|3", output)
+        self.assertIn(" --> + 2        leaf       sink   file.py:5|5|5", output)
+
+        self.interactive.branch(2)  # location 4|4|4 -> 5|5|5
+        stderr = self.stderr.getvalue().strip()
+        self.assertIn("out of bounds", stderr)
+
+    def testBranchPrefixLengthChanges(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = Issue(
+            id=1,
+            handle="1",
+            first_seen=datetime.now(),
+            code=1000,
+            callable="module.function1",
+        )
+        issue_instance = IssueInstance(
+            id=1,
+            run_id=1,
+            message_id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            issue_id=1,
+        )
+        messages = [
+            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
+            SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
+        ]
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.POSTCONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="source",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.POSTCONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="prev_call",
+                callee_port="result",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=3,
+                kind=TraceKind.POSTCONDITION,
+                caller="prev_call",
+                caller_port="result",
+                callee="leaf",
+                callee_port="source",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=4,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="sink",
+                callee_location=SourceLocation(1, 2),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        assocs = [
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=1),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=2),
+            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=1),
+            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=2),
+            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=4),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=1, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=2, trace_length=0),
+        ]
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            self._add_to_session(session, messages)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.setup()
+        self.interactive.set_issue(1)
+
+        self._clear_stdout()
+        self.interactive.prev_cursor_location()
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     [branches] [callable] [port] [location]",
+                " --> + 2        leaf       source file.py:1|1|1",
+                "                call1      root   file.py:1|2|2",
+                "                leaf       sink   file.py:1|2|2",
+                "",
+            ],
+        )
+
+        self._clear_stdout()
+        self.interactive.branch(1)
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     [branches] [callable] [port] [location]",
+                "                leaf       source file.py:1|1|1",
+                " --> + 2        prev_call  result file.py:1|1|1",
+                "                call1      root   file.py:1|2|2",
+                "                leaf       sink   file.py:1|2|2",
+                "",
+            ],
+        )
+
+        self._clear_stdout()
+        self.interactive.expand()
+        output = self.stdout.getvalue().strip()
+        self.assertIn("[*] prev_call : result", output)
+        self.assertIn("        [1 hops: source1]", output)
+
+    def testCurrentBranchIndex(self):
+        trace_frames = [TraceFrame(id=1), TraceFrame(id=2), TraceFrame(id=3)]
+
+        self.interactive.current_trace_frame_index = 0
+        self.interactive.trace_tuples = [TraceTuple(trace_frame=TraceFrame(id=1))]
+
+        self.assertEqual(0, self.interactive._current_branch_index(trace_frames))
+        self.interactive.trace_tuples[0].trace_frame.id = 2
+        self.assertEqual(1, self.interactive._current_branch_index(trace_frames))
+        self.interactive.trace_tuples[0].trace_frame.id = 3
+        self.assertEqual(2, self.interactive._current_branch_index(trace_frames))
+
+        self.interactive.trace_tuples[0].trace_frame.id = 4
+        self.assertEqual(-1, self.interactive._current_branch_index(trace_frames))
+
+    def testVerifyMultipleBranches(self):
+        # Leads to no-op on _generate_trace
+        self.interactive.trace_tuples_id = 1
+        self.interactive.current_issue_id = 1
+
+        self.interactive.current_trace_frame_index = 0
+        self.interactive.trace_tuples = [
+            TraceTuple(trace_frame=TraceFrame(id=1), branches=1),
+            TraceTuple(trace_frame=TraceFrame(id=2), branches=2),
+        ]
+        self.assertFalse(self.interactive._verify_multiple_branches())
+
+        self.interactive.current_trace_frame_index = 1
+        self.assertTrue(self.interactive._verify_multiple_branches())
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
