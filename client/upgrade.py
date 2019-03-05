@@ -41,6 +41,13 @@ def json_to_errors(json_string: Optional[str]) -> List[Dict[str, Any]]:
     return []
 
 
+def sort_errors(errors: List[Dict[str, Any]]) -> List[Tuple[str, List[Any]]]:
+    def error_path(error):
+        return error["path"]
+
+    return itertools.groupby(sorted(errors, key=error_path), error_path)
+
+
 class Configuration:
     def __init__(self, path: str, json_contents: Dict[str, Any]):
         self._path = path
@@ -150,6 +157,18 @@ def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
     return json_to_errors(input)
 
 
+def errors_from_run(_arguments) -> List[Dict[str, Any]]:
+    configuration_path = Configuration.find_project_configuration()
+    if not configuration_path:
+        LOG.warning("Could not find pyre configuration.")
+        return []
+    with open(configuration_path) as configuration_file:
+        configuration = Configuration(configuration_path, json.load(configuration_file))
+        errors = configuration.get_errors()
+        LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
+        return errors
+
+
 def remove_comment_preamble(lines: List[str]) -> None:
     # Deprecated: leaving remove logic until live old-style comments are cleaned up.
     while lines:
@@ -161,7 +180,7 @@ def remove_comment_preamble(lines: List[str]) -> None:
             return
 
 
-def fix(
+def fix_file(
     arguments: argparse.Namespace,
     filename: str,
     errors: Dict[int, List[Dict[str, str]]],
@@ -248,7 +267,7 @@ def _submit_changes(arguments, message):
 
 
 # Exposed for testing.
-def _upgrade_configuration(
+def _upgrade_project(
     arguments: argparse.Namespace, configuration: Configuration, root: str
 ) -> None:
     LOG.info("Processing %s", configuration.get_directory())
@@ -257,12 +276,7 @@ def _upgrade_configuration(
     configuration.remove_version()
     errors = configuration.get_errors()
     if len(errors) > 0:
-
-        def error_path(error):
-            return error["path"]
-
-        errors = itertools.groupby(sorted(errors, key=error_path), error_path)
-        run_fixme(arguments, errors)
+        fix(arguments, sort_errors(errors))
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
@@ -282,8 +296,7 @@ def _upgrade_configuration(
                 )
                 subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
                 errors = configuration.get_errors(should_clean=False)
-                errors = itertools.groupby(sorted(errors, key=error_path), error_path)
-                run_fixme(arguments, errors)
+                fix(arguments, sort_errors(errors))
     try:
         project_root = os.path.realpath(root)
         local_root = os.path.realpath(configuration.get_directory())
@@ -294,9 +307,7 @@ def _upgrade_configuration(
         LOG.info("Error while running hg.")
 
 
-def run_fixme(
-    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
-) -> None:
+def fix(arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]) -> None:
     for path, errors in result:
         LOG.info("Processing `%s`", path)
 
@@ -313,12 +324,10 @@ def run_fixme(
                     {"code": match.group(1), "description": match.group(2)}
                 )
         # pyre-fixme[6]: Expected `Dict[int, List[Dict[str, str]]]` ...
-        fix(arguments, path, error_map)
+        fix_file(arguments, path, error_map)
 
 
-def run_global_version_update(
-    arguments: argparse.Namespace, result: List[Tuple[str, List[Any]]]
-) -> None:
+def run_global_version_update(arguments: argparse.Namespace) -> None:
     global_configuration = Configuration.find_project_configuration()
     if global_configuration is None:
         LOG.error("No global configuration file found.")
@@ -375,10 +384,9 @@ def run_global_version_update(
         LOG.info("Error while running hg.")
 
 
-def run_missing_overridden_return_annotations(
-    _arguments, result: List[Tuple[str, List[Any]]]
-) -> None:
-    for path, errors in result:
+def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> None:
+    errors = sort_errors(errors_from_stdin(arguments))
+    for path, errors in errors:
         LOG.info("Patching errors in `%s`.", path)
         errors = reversed(sorted(errors, key=lambda error: error["line"]))
 
@@ -409,9 +417,16 @@ def run_missing_overridden_return_annotations(
         path.write_text("\n".join(lines))
 
 
-def run_fixme_single(
-    arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
-) -> None:
+def run_fixme(arguments: argparse.Namespace) -> None:
+    if arguments.run:
+        errors = errors_from_run(arguments)
+    else:
+        errors = errors_from_stdin(arguments)
+
+    fix(arguments, sort_errors(errors))
+
+
+def run_fixme_single(arguments: argparse.Namespace) -> None:
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
         LOG.info("No project configuration found for the given directory.")
@@ -419,14 +434,12 @@ def run_fixme_single(
     configuration_path = arguments.path + "/.pyre_configuration.local"
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
-        _upgrade_configuration(
+        _upgrade_project(
             arguments, configuration, os.path.dirname(project_configuration)
         )
 
 
-def run_fixme_all(
-    arguments: argparse.Namespace, errors: List[Tuple[str, List[Any]]]
-) -> None:
+def run_fixme_all(arguments: argparse.Namespace) -> None:
     # Create sandcastle command.
     if arguments.sandcastle and isinstance(arguments.sandcastle, str):
         configurations = Configuration.gather_local_configurations(arguments)
@@ -443,7 +456,7 @@ def run_fixme_all(
 
     # Run locally.
     if arguments.hash and isinstance(arguments.hash, str):
-        run_global_version_update(arguments, errors)
+        run_global_version_update(arguments)
 
     project_configuration = Configuration.find_project_configuration()
     if project_configuration is None:
@@ -452,7 +465,7 @@ def run_fixme_all(
 
     configurations = Configuration.gather_local_configurations(arguments)
     for configuration in configurations:
-        _upgrade_configuration(
+        _upgrade_project(
             arguments, configuration, os.path.dirname(project_configuration)
         )
 
@@ -475,15 +488,13 @@ if __name__ == "__main__":
         "missing-overridden-return-annotations"
     )
     missing_overridden_return_annotations.set_defaults(
-        errors=errors_from_stdin, function=run_missing_overridden_return_annotations
+        function=run_missing_overridden_return_annotations
     )
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
-    update_global_version.set_defaults(
-        errors=(lambda arguments: []), function=run_global_version_update
-    )
+    update_global_version.set_defaults(function=run_global_version_update)
     update_global_version.add_argument("hash", help="Hash of new Pyre version")
     update_global_version.add_argument(
         "-p", "--push-blocking-only", action="store_true"
@@ -494,12 +505,14 @@ if __name__ == "__main__":
 
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")
-    fixme.set_defaults(errors=errors_from_stdin, function=run_fixme)
+    fixme.set_defaults(function=run_fixme)
     fixme.add_argument("--comment", help="Custom comment after fixme comments")
+    fixme.add_argument("--run", action="store_true")
+    fixme.add_argument("--lint", action="store_true", help=argparse.SUPPRESS)
 
     # Subcommand: Fixme all errors for a single project.
     fixme_single = commands.add_parser("fixme-single")
-    fixme_single.set_defaults(errors=lambda _arguments: [], function=run_fixme_single)
+    fixme_single.set_defaults(function=run_fixme_single)
     fixme_single.add_argument(
         "path", help="Path to project root with local configuration"
     )
@@ -508,7 +521,7 @@ if __name__ == "__main__":
 
     # Subcommand: Fixme all errors in all projects with local configurations.
     fixme_all = commands.add_parser("fixme-all")
-    fixme_all.set_defaults(errors=lambda _arguments: [], function=run_fixme_all)
+    fixme_all.set_defaults(function=run_fixme_all)
     fixme_all.add_argument(
         "-c", "--comment", help="Custom comment after fixme comments"
     )
@@ -526,8 +539,6 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
         arguments.function = run_fixme
-    if not hasattr(arguments, "errors"):
-        arguments.errors = errors_from_stdin
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
@@ -537,14 +548,7 @@ if __name__ == "__main__":
 
     try:
         exit_code = ExitCode.SUCCESS
-
-        def error_path(error):
-            return error["path"]
-
-        result = itertools.groupby(
-            sorted(arguments.errors(arguments), key=error_path), error_path
-        )
-        arguments.function(arguments, result)
+        arguments.function(arguments)
     except Exception as error:
         LOG.error(str(error))
         LOG.info(traceback.format_exc())
