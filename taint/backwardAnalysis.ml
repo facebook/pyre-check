@@ -350,12 +350,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (ExpressionAccess { expression; access }) ->
           List.fold access ~init:(Expression expression) ~f:normalize_access_list
           |> analyze_normalized_expression ~resolution state taint
+      | AccessNew _ ->
+          (* TODO: T37313693 *)
+          state
       | Await expression ->
           analyze_expression ~resolution taint expression state
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator=_; right } ->
           analyze_expression ~resolution taint right state
           |> analyze_expression ~resolution taint left
+      | Call _ ->
+          (* TODO: T37313693 *)
+          state
       | Complex _ ->
           state
       | Dictionary dictionary ->

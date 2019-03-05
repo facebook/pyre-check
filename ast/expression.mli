@@ -82,6 +82,29 @@ module Record : sig
   end
 end
 
+module AccessNew : sig
+  type 'expression t = {
+    base: 'expression;
+    attribute: Identifier.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+module Call : sig
+  module Argument : sig
+    type 'expression t = {
+      name: (Identifier.t Node.t) option;
+      value: 'expression;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+  type 'expression t = {
+    callee: 'expression;
+    arguments: (('expression Argument.t) list) Node.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
 module Lambda : sig
   type 'expression t = {
     parameters: ('expression Parameter.t) list;
@@ -153,8 +176,10 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
+  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
+  | Call of t Call.t
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t

@@ -118,6 +118,9 @@ module Make (Transformer : Transformer) = struct
                   expression = transform_expression expression;
                   access = transform_list access ~f:transform_access;
                 })
+        | AccessNew expression ->
+            (* TODO: T37313693 *)
+            AccessNew expression
         | Await expression ->
             Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right; } ->
@@ -126,6 +129,9 @@ module Make (Transformer : Transformer) = struct
               operator;
               right = transform_expression right;
             }
+        | Call expression ->
+            (* TODO: T37313693 *)
+            Call expression
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator {
               ComparisonOperator.left = transform_expression left;

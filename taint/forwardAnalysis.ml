@@ -381,6 +381,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (SimpleAccess access) ->
           AccessPath.normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution expression.Node.location state
+      | AccessNew _ ->
+          (* TODO: T37313693 *)
+          ForwardState.Tree.empty
       | Await expression ->
           analyze_expression ~resolution expression state
       | BooleanOperator { left; operator = _; right }
@@ -388,6 +391,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let left_taint = analyze_expression ~resolution left state in
           let right_taint = analyze_expression ~resolution right state in
           ForwardState.Tree.join left_taint right_taint
+      | Call _ ->
+          (* TODO: T37313693 *)
+          ForwardState.Tree.empty
       | Complex _ ->
           ForwardState.Tree.empty
       | Dictionary dictionary ->

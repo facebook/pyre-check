@@ -153,6 +153,32 @@ module Record = struct
 end
 
 
+module AccessNew = struct
+  type 'expression t = {
+    base: 'expression;
+    attribute: Identifier.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+
+module Call = struct
+  module Argument = struct
+    type 'expression t = {
+      name: (Identifier.t Node.t) option;
+      value: 'expression;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  type 'expression t = {
+    callee: 'expression;
+    arguments: (('expression Argument.t) list) Node.t;
+  }
+  [@@deriving compare, eq, sexp, show, hash]
+end
+
+
 module Lambda = struct
   type 'expression t = {
     parameters: ('expression Parameter.t) list;
@@ -243,8 +269,10 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
+  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
+  | Call of t Call.t
   | ComparisonOperator of t Record.ComparisonOperator.record
   | Complex of float
   | Dictionary of t Dictionary.t
@@ -1003,6 +1031,10 @@ module PrettyPrinter = struct
           pp_expression (Node.value expression)
           pp_access_list access_list
 
+    | AccessNew _ ->
+        (* TODO: T37313693 *)
+        ()
+
     | Await expression ->
         Format.fprintf
           formatter
@@ -1016,6 +1048,10 @@ module PrettyPrinter = struct
           pp_expression_t left
           BooleanOperator.pp_boolean_operator operator
           pp_expression_t right
+
+    | Call _ ->
+        (* TODO: T37313693 *)
+        ()
 
     | String { StringLiteral.value; kind } ->
         let bytes =

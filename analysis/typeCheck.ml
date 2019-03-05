@@ -2137,6 +2137,10 @@ module State = struct
         in
         { state; resolved }
 
+    | AccessNew _ ->
+        (* TODO: T37313693 *)
+        { state; resolved = Type.Top }
+
     | Await expression ->
         let { state; resolved } = forward_expression ~state ~expression in
         let state =
@@ -2197,6 +2201,10 @@ module State = struct
               Resolution.join resolution resolved_left resolved_right
         in
         { state; resolved }
+
+    | Call _ ->
+        (* TODO: T37313693 *)
+        { state; resolved = Type.Top }
 
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->

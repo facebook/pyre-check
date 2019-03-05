@@ -62,12 +62,18 @@ module Make (Visitor: Visitor) = struct
       | Access (ExpressionAccess { expression; access }) ->
           visit_expression expression;
           List.iter access ~f:visit_access
+      | AccessNew _ ->
+          (* TODO: T37313693 *)
+          ()
       | Await expression ->
           visit_expression expression
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;
           visit_expression right;
+      | Call _ ->
+          (* TODO: T37313693 *)
+          ()
       | Dictionary { Dictionary.entries; keywords } ->
           List.iter entries ~f:(visit_entry ~visit_expression);
           List.iter keywords ~f:(visit_expression) |> ignore

@@ -935,7 +935,7 @@ module Class = struct
                   ~location
                   ~target:(Node.create
                              ~location
-                             (Expression.Access (SimpleAccess [List.last_exn name])))
+                             (Access (SimpleAccess [List.last_exn name])))
                   ~annotation
                   ())
         | _ ->
@@ -967,7 +967,7 @@ module Class = struct
                   Attribute.create
                     ~location
                     ~target:
-                      (Node.create ~location (Expression.Access (SimpleAccess access)))
+                      (Node.create ~location (Access (SimpleAccess access)))
                     ()
                   |> fun attribute -> Access.SerializableMap.set map ~key:access ~data:attribute
               | _ ->
