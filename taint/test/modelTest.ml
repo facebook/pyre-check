@@ -246,21 +246,6 @@ let test_union_models _ =
     ]
 
 
-let test_any _ =
-  assert_model
-    ~model_source:"def any(parameter: Any): ..."
-    ~expect:[
-      {
-        kind = `Function;
-        define_name = "any";
-        returns = [];
-        errors = [];
-        sink_parameters = [];
-        tito_parameters = [];
-      };
-    ]
-
-
 let test_source_breadcrumbs _ =
   assert_model
     ~model_source:"def source() -> TaintSource[Test, Via[special]]: ..."
@@ -369,7 +354,11 @@ let test_invalid_models _ =
     ~model_source:"def sink(): ..."
     ~expect:(
       "Model signature parameters for `sink` do not match implementation " ^
-      "`typing.Callable(sink)[[Named(parameter, unknown)], None]`")
+      "`typing.Callable(sink)[[Named(parameter, unknown)], None]`");
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: Any): ..."
+    ~expect:{|"Unrecognized taint annotation `Any`"|}
 
 
 let () =
@@ -378,7 +367,6 @@ let () =
     "sink_models">::test_sink_models;
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
     "taint_union_models">::test_union_models;
-    "test_any">::test_any;
     "test_source_breadcrumbs">::test_source_breadcrumbs;
     "test_sink_breadcrumbs">::test_sink_breadcrumbs;
     "test_tito_breadcrumbs">::test_tito_breadcrumbs;

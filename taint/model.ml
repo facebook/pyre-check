@@ -239,9 +239,6 @@ let rec parse_annotations = function
         | [Identifier "Sanitize"] ->
             [Sanitize]
             |> Or_error.return
-        | [Identifier "Any"] ->  (* Ignore Any annotations *)
-            []
-            |> Or_error.return
         | _ ->
             Or_error.errorf "Unrecognized taint annotation `%s`" (Expression.Access.show access)
       end
