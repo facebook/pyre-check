@@ -89,10 +89,7 @@ let transform_environment (module Handler: Handler) resolution source =
               in
               let methods =
                 if init && not (
-                    Annotated.Class.has_method
-                      annotated_class
-                      ~resolution
-                      ~name:(Access.create "__init__")) then
+                    Annotated.Class.has_method annotated_class ~resolution ~name:"__init__") then
                   let parameters =
                     let collect_parameters parameters attribute =
                       (* Parameters must be annotated attributes *)
@@ -107,8 +104,8 @@ let transform_environment (module Handler: Handler) resolution source =
                         | annotation -> annotation
                       in
                       begin
-                        match List.last (Annotated.Attribute.access attribute) with
-                        | Some (Access.Identifier name) when not (Type.is_unknown annotation) ->
+                        match Annotated.Attribute.name attribute with
+                        | name when not (Type.is_unknown annotation) ->
                             let value =
                               if Annotated.Attribute.initialized attribute then
                                 Some (Annotated.Attribute.value attribute)
@@ -162,20 +159,14 @@ let transform_environment (module Handler: Handler) resolution source =
               in
               let methods =
                 if repr && not (
-                    Annotated.Class.has_method
-                      annotated_class
-                      ~resolution
-                      ~name:(Access.create "__repr__")) then
+                    Annotated.Class.has_method annotated_class ~resolution ~name:"__repr__") then
                   create_method ~name:"__repr__" ~parameters:[] ~return_annotation:"str" :: methods
                 else
                   methods
               in
               let methods =
                 if eq && not (
-                    Annotated.Class.has_method
-                      annotated_class
-                      ~resolution
-                      ~name:(Access.create "__eq__")) then
+                    Annotated.Class.has_method annotated_class ~resolution ~name:"__eq__") then
                   create_method
                     ~name:"__eq__"
                     ~parameters:[Parameter.create ~name:"o" ()]

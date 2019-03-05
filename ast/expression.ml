@@ -556,7 +556,6 @@ module Access = struct
           | "__or__" -> Some "__ror__"
           | _ -> None
         end
-        >>| fun name -> [Identifier name]
     | _ ->
         None
 

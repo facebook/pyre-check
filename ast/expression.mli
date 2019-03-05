@@ -264,7 +264,7 @@ module Access : sig
   val name_and_arguments: call: t -> call option
 
   (* Calls like `__add__` have backups that are called on exceptions. *)
-  val backup: name: t -> t option
+  val backup: name: t -> Identifier.t option
   (* Some calls are redirected to method calls, e.g. `repr(x)` will call
      `x.__repr__()`. *)
   val redirect

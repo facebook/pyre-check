@@ -229,7 +229,7 @@ let create_overrides ~environment ~source =
   let class_method_overrides class_node =
     let get_method_overrides class_ child_method =
       let method_name =
-        Statement.Define.unqualified_name (Annotated.Method.define child_method)
+        Statement.Define.unqualified_name_as_identifier (Annotated.Method.define child_method)
       in
       Annotated.Class.overrides
         class_
@@ -240,7 +240,7 @@ let create_overrides ~environment ~source =
         Annotated.Attribute.parent ancestor
         |> Type.access
       in
-      ancestor_parent @ method_name, Annotated.Class.name class_
+      ancestor_parent @ [Access.Identifier method_name], Annotated.Class.name class_
     in
     let annotated_class = Annotated.Class.create class_node in
     let methods = Annotated.Class.methods ~resolution annotated_class in

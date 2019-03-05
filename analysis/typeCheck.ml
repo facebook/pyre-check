@@ -453,12 +453,13 @@ module State = struct
          let propagate_initialization_errors errors attribute =
            let expected = Annotation.annotation (Attribute.annotation attribute) in
            match Attribute.name attribute with
-           | Access (Access.SimpleAccess name)
+           | name
              when not (Type.equal expected Type.Top ||
                        Type.is_optional expected ||
                        Attribute.initialized attribute) ->
                let access =
-                 (Expression.Access.Identifier (Statement.Define.self_identifier define)) :: name
+                 (Expression.Access.Identifier (Statement.Define.self_identifier define)) ::
+                 [Expression.Access.Identifier name]
                in
                if Map.mem (Resolution.annotations resolution) access &&
                   not (Statement.Define.is_class_toplevel define) then
@@ -469,7 +470,7 @@ module State = struct
                      ~location:(Attribute.location attribute)
                      ~kind:(
                        Error.UninitializedAttribute {
-                         name;
+                         name = [Expression.Access.Identifier name];
                          parent = Annotated.Class.annotation definition ~resolution;
                          mismatch = {
                            Error.expected;
@@ -1083,9 +1084,7 @@ module State = struct
                   let callable_and_implicit_parameter =  function
                     | meta when Type.is_meta meta ->
                         let callable =
-                          let backup =
-                            find_method ~parent:meta ~name:(Access.create "__call__")
-                          in
+                          let backup = find_method ~parent:meta ~name:"__call__" in
                           match Type.single_parameter meta with
                           | TypedDictionary { name; fields; total } ->
                               Type.TypedDictionary.constructor ~name ~fields ~total
@@ -1118,7 +1117,7 @@ module State = struct
                         (callable, target >>| AccessState.annotation)
                         |> Option.some
                     | resolved ->
-                        find_method ~parent:resolved ~name:(Access.create "__call__")
+                        find_method ~parent:resolved ~name:"__call__"
                         >>| (fun callable -> callable, Some resolved)
                   in
                   match resolved with
@@ -1144,7 +1143,7 @@ module State = struct
                 >>| (fun resolved -> step state ~resolved ~lead ())
                 |> Option.value ~default:(abort ~lead state ())
 
-            | Some resolved, Access.Identifier _ ->
+            | Some resolved, Access.Identifier name ->
                 (* Attribute access. *)
                 let target =
                   {
@@ -1152,7 +1151,7 @@ module State = struct
                     annotation = Annotation.annotation resolved;
                   }
                 in
-                let resolved, attributes = local_attributes ~resolved ~lead ~name:[head] in
+                let resolved, attributes = local_attributes ~resolved ~lead ~name in
                 if List.is_empty attributes then
                   abort ~lead state ()
                 else
@@ -1525,7 +1524,7 @@ module State = struct
              Class.overrides
                definition
                ~resolution
-               ~name:(Statement.Define.unqualified_name define)
+               ~name:(Statement.Define.unqualified_name_as_identifier define)
              >>| fun overridden_attribute ->
              (* Check strengthening of postcondition. *)
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
@@ -2216,7 +2215,7 @@ module State = struct
           | _ ->
               Resolution.class_definition resolution annotation
               >>| Annotated.Class.create
-              >>| Annotated.Class.has_method ~transitive:true ~resolution ~name:(Access.create name)
+              >>| Annotated.Class.has_method ~transitive:true ~resolution ~name
               |> Option.value ~default:false
         in
         let converted_call =
@@ -2601,11 +2600,7 @@ module State = struct
               let filter_attribute { Node.value = { annotation; name; _ }; _ } =
                 let fields =
                   let is_fields = function
-                    | { Node.value = {
-                        name = Access (SimpleAccess [Access.Identifier "_fields"]);
-                        _ };
-                        _;
-                      } ->
+                    | { Node.value = { name = "_fields"; _ }; _ } ->
                         true
                     | _ ->
                         false
@@ -2615,9 +2610,8 @@ module State = struct
                   | _ -> []
                 in
                 let equals name field =
-                  match name, Node.value field with
-                  | Access (SimpleAccess name),
-                    String { StringLiteral.value; _ } -> Access.show name = value
+                  match Node.value field with
+                  | String { StringLiteral.value; _ } -> name = value
                   | _ -> false
                 in
                 if List.exists ~f:(equals name) fields then

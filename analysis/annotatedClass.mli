@@ -95,7 +95,7 @@ val implements: resolution: Resolution.t -> t -> protocol: t -> implements_resul
 
 module Attribute : sig
   type attribute = {
-    name: Expression.expression;
+    name: Identifier.t;
     parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
@@ -118,8 +118,7 @@ module Attribute : sig
     -> Statement.Attribute.t
     -> t
 
-  val name: t -> Expression.expression
-  val access: t -> Access.t
+  val name: t -> Identifier.t
   val async: t -> bool
 
   val annotation: t -> Annotation.t
@@ -159,17 +158,17 @@ val attribute
   -> ?class_attributes: bool
   -> t
   -> resolution: Resolution.t
-  -> name: Access.t
+  -> name: Identifier.t
   -> instantiated: Type.t
   -> Attribute.t
 
 (* Attribute defined by `__getattr__`. *)
-val fallback_attribute: resolution: Resolution.t -> name: Access.t -> t -> Attribute.t option
+val fallback_attribute: resolution: Resolution.t -> name: Identifier.t -> t -> Attribute.t option
 
 val constructor: t -> instantiated:Type.t -> resolution: Resolution.t -> Type.t
 
-val overrides: t -> resolution: Resolution.t -> name: Access.t -> Attribute.t option
+val overrides: t -> resolution: Resolution.t -> name: Identifier.t -> Attribute.t option
 
-val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Access.t -> bool
+val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Identifier.t -> bool
 
 val inferred_callable_type: t -> resolution: Resolution.t -> Type.t option

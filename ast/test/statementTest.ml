@@ -273,13 +273,13 @@ let test_attributes _ =
       ?(property = false)
       ?(setter = false)
       ?(toplevel = true)
-      ~target
+      ~name
       ~annotation
       ?defines
       ~value
       () =
     {
-      Attribute.target = Expression.Access.expression (Access.create target);
+      Attribute.name;
       annotation;
       defines;
       value;
@@ -294,9 +294,9 @@ let test_attributes _ =
   (* Test define field assigns. *)
   let assert_implicit_attributes source expected =
     let expected =
-      let attribute (target, annotation, value, toplevel) =
+      let attribute (name, annotation, value, toplevel) =
         create_attribute
-          ~target
+          ~name
           ~annotation
           ~value
           ~toplevel
@@ -441,8 +441,8 @@ let test_attributes _ =
   let assert_property_attribute source expected =
     let expected =
       expected
-      >>| fun (target, annotation, value, setter) ->
-      create_attribute ~setter ~target ~annotation ~value ~property:true ()
+      >>| fun (name, annotation, value, setter) ->
+      create_attribute ~setter ~name ~annotation ~value ~property:true ()
     in
     let define =
       let define = parse_single_define source in
@@ -475,7 +475,7 @@ let test_attributes _ =
     (Some ("foo", Some (Type.expression Type.integer), None, false));
 
   (* Test class attributes. *)
-  let attribute ~target ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
+  let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
     let annotation =
       annotation
       >>| Type.expression
@@ -485,7 +485,7 @@ let test_attributes _ =
       >>| Access.create
       >>| Access.expression
     in
-    target, annotation, value, setter, number_of_defines
+    name, annotation, value, setter, number_of_defines
   in
   let assert_attributes
       ?(in_test = false)
@@ -493,7 +493,7 @@ let test_attributes _ =
       source
       expected =
     let expected =
-      let attribute (target, annotation, value, setter, number_of_defines) =
+      let attribute (name, annotation, value, setter, number_of_defines) =
         let defines =
           if number_of_defines > 0 then
             let define = {
@@ -511,7 +511,7 @@ let test_attributes _ =
           else
             None
         in
-        create_attribute ~target ~annotation ?defines ~value ~setter ()
+        create_attribute ~name ~annotation ?defines ~value ~setter ()
       in
       List.map expected ~f:attribute
     in
@@ -523,7 +523,7 @@ let test_attributes _ =
       let open Attribute in
       left.async = right.async &&
       left.setter = right.setter &&
-      Expression.equal left.target right.target &&
+      String.equal left.name right.name &&
       Option.equal Expression.equal left.annotation right.annotation &&
       Option.equal Expression.equal left.value right.value &&
       Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
@@ -544,7 +544,7 @@ let test_attributes _ =
         Foo.attribute: int = value
     |}
     [
-      attribute ~target:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
     ];
   assert_attributes
     {|
@@ -558,10 +558,10 @@ let test_attributes _ =
         whatever()['asdf'] = 5
     |}
     [
-      attribute ~target:"__init__" ~number_of_defines:1 ();
-      attribute ~target:"attribute" ~annotation:Type.integer ~value:"value" ();
-      attribute ~target:"ignored" ~value:"ignored" ();
-      attribute ~target:"implicit" ~value:"implicit" ();
+      attribute ~name:"__init__" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute ~name:"ignored" ~value:"ignored" ();
+      attribute ~name:"implicit" ~value:"implicit" ();
     ];
   assert_attributes
     {|
@@ -571,7 +571,7 @@ let test_attributes _ =
         def Foo.f(self, x: str) -> str: ...
     |}
     [
-      attribute ~target:"f" ~number_of_defines:2 ();
+      attribute ~name:"f" ~number_of_defines:2 ();
     ];
   assert_attributes
     {|
@@ -581,8 +581,8 @@ let test_attributes _ =
         Foo.attribute: int = value
     |}
     [
-      attribute ~target:"__init__" ~number_of_defines:1 ();
-      attribute ~target:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute ~name:"__init__" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
     ];
   assert_attributes
     {|
@@ -595,10 +595,10 @@ let test_attributes _ =
           self.other: int = 1
     |}
     [
-      attribute ~target:"__init__" ~number_of_defines:1 ();
-      attribute ~target:"attribute" ~annotation:Type.integer ~value:"value" ();
-      attribute ~target:"init" ~number_of_defines:1 ();
-      attribute ~target:"not_inlined" ~number_of_defines:1 ();
+      attribute ~name:"__init__" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
+      attribute ~name:"init" ~number_of_defines:1 ();
+      attribute ~name:"not_inlined" ~number_of_defines:1 ();
     ];
   assert_attributes
     {|
@@ -607,14 +607,14 @@ let test_attributes _ =
         def Foo.property(self) -> int:
           pass
     |}
-    [attribute ~target:"property" ~annotation:Type.integer ()];
+    [attribute ~name:"property" ~annotation:Type.integer ()];
   assert_attributes
     {|
       class Foo:
         @property
         def Foo.property(self) -> int: ...
     |}
-    [attribute ~target:"property" ~annotation:Type.integer ()];
+    [attribute ~name:"property" ~annotation:Type.integer ()];
   assert_attributes
     {|
       class Foo:
@@ -623,7 +623,7 @@ let test_attributes _ =
     |}
     [
       attribute
-        ~target:"Bar"
+        ~name:"Bar"
         ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
         ();
     ];
@@ -633,7 +633,7 @@ let test_attributes _ =
         @property.setter
         def Foo.property(self, value: str) -> None: ...
     |}
-    [attribute ~target:"property" ~annotation:Type.string ~setter:true ()];
+    [attribute ~name:"property" ~annotation:Type.string ~setter:true ()];
   assert_attributes
     {|
       class Foo:
@@ -642,7 +642,7 @@ let test_attributes _ =
         @x.setter
         def Foo.x(self, value:str) -> None: ...
     |}
-    [attribute ~target:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
+    [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
 
   (* Simultaneous assignment *)
   assert_attributes
@@ -673,8 +673,8 @@ let test_attributes _ =
           self.attribute = value
     |}
     [
-      attribute ~target:"attribute" ~value:"value" ();
-      attribute ~target:"setUp" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~value:"value" ();
+      attribute ~name:"setUp" ~number_of_defines:1 ();
     ];
   assert_attributes
     ~in_test:true
@@ -686,10 +686,10 @@ let test_attributes _ =
           self.context = value
     |}
     [
-      attribute ~target:"attribute" ~value:"value" ();
-      attribute ~target:"context" ~value:"value" ();
-      attribute ~target:"setUp" ~number_of_defines:1 ();
-      attribute ~target:"with_context" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~value:"value" ();
+      attribute ~name:"context" ~value:"value" ();
+      attribute ~name:"setUp" ~number_of_defines:1 ();
+      attribute ~name:"with_context" ~number_of_defines:1 ();
     ];
 
   (* __slot__ attributes *)
@@ -699,7 +699,7 @@ let test_attributes _ =
         __slots__ = ['attribute']
     |}
     [
-      attribute ~target:"attribute" ();
+      attribute ~name:"attribute" ();
     ];
   assert_attributes
     {|
@@ -707,8 +707,8 @@ let test_attributes _ =
         __slots__ = ['name', 'identifier']
     |}
     [
-      attribute ~target:"identifier" ();
-      attribute ~target:"name" ();
+      attribute ~name:"identifier" ();
+      attribute ~name:"name" ();
     ]
 
 

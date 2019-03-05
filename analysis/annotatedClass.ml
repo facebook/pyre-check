@@ -308,7 +308,7 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
 
 module Attribute = struct
   type attribute = {
-    name: Expression.expression;
+    name: Identifier.t;
     parent: Type.t;
     annotation: Annotation.t;
     value: Expression.t;
@@ -332,7 +332,7 @@ module Attribute = struct
       {
         Node.location;
         value = {
-          Attribute.target = { Node.value = target; _ };
+          Attribute.name = attribute_name;
           annotation = attribute_annotation;
           defines;
           value;
@@ -487,7 +487,7 @@ module Attribute = struct
     {
       Node.location;
       value = {
-        name = target;
+        name = attribute_name;
         parent = class_annotation;
         annotation;
         value;
@@ -502,12 +502,6 @@ module Attribute = struct
 
   let name { Node.value = { name; _ }; _ } =
     name
-
-
-  let access { Node.value = { name; _ }; _ } =
-    match name with
-    | Access (SimpleAccess access) -> access
-    | _ -> []
 
 
   let annotation { Node.value = { annotation; async; _ }; _ } =
@@ -638,9 +632,7 @@ let attributes
           in
           let existing_attribute =
             let compare_names existing_attribute =
-              Expression.equal_expression
-                (Attribute.name attribute_node)
-                (Attribute.name existing_attribute)
+              String.equal (Attribute.name attribute_node) (Attribute.name existing_attribute)
             in
             List.find ~f:compare_names attributes
           in
@@ -827,8 +819,7 @@ let attribute
       {
         Node.location;
         value = {
-          Statement.Attribute.target =
-            Node.create (Access (SimpleAccess name)) ~location;
+          Statement.Attribute.name;
           annotation = None;
           defines = None;
           value = None;
@@ -848,10 +839,7 @@ let attribute
     ~resolution
     definition
   |> List.find
-    ~f:(fun attribute ->
-        Expression.equal_expression
-          (Access (SimpleAccess name))
-          (Attribute.name attribute))
+    ~f:(fun attribute -> String.equal name (Attribute.name attribute))
   |> Option.value ~default:undefined
   |> (fun attribute ->
       Attribute.parent attribute
@@ -871,7 +859,7 @@ let attribute
 let rec fallback_attribute ~resolution ~name definition =
   let compound_backup =
     let name =
-      match Access.show name with
+      match name with
       | "__iadd__" -> Some "__add__"
       | "__isub__" -> Some "__sub__"
       | "__imul__" -> Some "__mul__"
@@ -895,7 +883,7 @@ let rec fallback_attribute ~resolution ~name definition =
           ~class_attributes:false
           ~transitive:true
           ~resolution
-          ~name:(Access.create name)
+          ~name
           ~instantiated:(annotation definition ~resolution)
         |> Option.some
     | _ ->
@@ -908,7 +896,7 @@ let rec fallback_attribute ~resolution ~name definition =
         ~class_attributes:true
         ~transitive:true
         ~resolution
-        ~name:(Access.create "__getattr__")
+        ~name:"__getattr__"
         ~instantiated:(annotation definition ~resolution)
     in
     if Attribute.defined fallback then
@@ -929,8 +917,7 @@ let rec fallback_attribute ~resolution ~name definition =
                  {
                    Node.location;
                    value = {
-                     Statement.Attribute.target =
-                       Node.create ~location (Access (SimpleAccess name));
+                     Statement.Attribute.name;
                      annotation = Some (Type.expression return_annotation);
                      defines = None;
                      value = None;
@@ -1001,7 +988,7 @@ let constructor definition ~instantiated ~resolution =
         definition
         ~transitive:true
         ~resolution
-        ~name:(Access.create "__init__")
+        ~name:"__init__"
         ~instantiated
     in
     let signature =
@@ -1017,7 +1004,7 @@ let constructor definition ~instantiated ~resolution =
         definition
         ~transitive:true
         ~resolution
-        ~name:(Access.create "__new__")
+        ~name:"__new__"
         ~instantiated
     in
     let signature =

@@ -379,7 +379,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           } =
           let annotation = Annotation.annotation annotation in
           {
-            TypeQuery.name = Expression.show (Node.create_with_default_location name);
+            TypeQuery.name;
             annotation;
           }
         in

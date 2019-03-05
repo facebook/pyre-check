@@ -176,9 +176,9 @@ let test_refine_class_definitions _ =
   Handler.refine_class_definition (Type.Primitive "D");
   Handler.refine_class_definition (Type.Primitive "E");
   let attribute_equal
-      (expected_target, expected_value)
-      { Node.value = { Statement.Attribute.target; value; _ }; _ } =
-    Expression.equal expected_target target &&
+      (expected_name, expected_value)
+      { Node.value = { Statement.Attribute.name; value; _ }; _ } =
+    String.equal expected_name name &&
     Option.equal Expression.equal expected_value value
   in
   let assert_attribute ~implicit class_name attribute_name expected =
@@ -201,9 +201,9 @@ let test_refine_class_definitions _ =
         assert_unreached ()
   in
   assert_attribute ~implicit:false "C" "x" None;
-  assert_attribute ~implicit:true "C" "x" (Some (!"x", Some ~+(Expression.Integer 3)));
-  assert_attribute ~implicit:true "D" "y" (Some (!"y", Some ~+(Expression.Integer 4)));
-  assert_attribute ~implicit:false "D" "z" (Some (!"z", Some ~+(Expression.Integer 5)));
+  assert_attribute ~implicit:true "C" "x" (Some ("x", Some ~+(Expression.Integer 3)));
+  assert_attribute ~implicit:true "D" "y" (Some ("y", Some ~+(Expression.Integer 4)));
+  assert_attribute ~implicit:false "D" "z" (Some ("z", Some ~+(Expression.Integer 5)));
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =

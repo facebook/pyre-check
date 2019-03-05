@@ -392,7 +392,7 @@ let test_has_method _ =
         let actual =
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.has_method ~resolution ~name:(Access.create target_method)
+          |> Class.has_method ~resolution ~name:target_method
         in
         actual
     | _ ->
@@ -816,7 +816,7 @@ let test_class_attributes _ =
       ?(toplevel = true)
       name =
     +{
-      Statement.Attribute.target = !name;
+      Statement.Attribute.name;
       annotation;
       defines;
       value;
@@ -833,15 +833,13 @@ let test_class_attributes _ =
     Annotated.Class.Attribute.Cache.clear ();
     let attribute_list_equal =
       let equal left right =
-        Expression.equal_expression (Attribute.name left) (Attribute.name right) &&
+        (Attribute.name left) = (Attribute.name right) &&
         Type.equal (Attribute.parent left) (Attribute.parent right)
       in
       List.equal ~equal
     in
     let print_attributes attributes =
-      let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } =
-        Format.asprintf "%a" Expression.pp_expression name
-      in
+      let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } = name in
       List.map attributes ~f:print_attribute
       |> String.concat ~sep:", "
     in
@@ -875,7 +873,7 @@ let test_class_attributes _ =
   in
   assert_equal
     (Attribute.name attribute)
-    (Expression.Access (SimpleAccess (Access.create "first")));
+    "first";
   assert_equal
     (Attribute.annotation attribute)
     (Annotation.create_immutable ~global:true (Type.Primitive "int"));
@@ -894,13 +892,7 @@ let test_class_attributes _ =
   (* Test `attribute_fold`. *)
   let assert_fold ?(class_attributes = false) source fold =
     Annotated.Class.Attribute.Cache.clear ();
-    let callback
-        string_names
-        attribute =
-      match Attribute.name attribute with
-      | Expression.Access (SimpleAccess access) -> (Access.show access) :: string_names
-      | _ -> string_names
-    in
+    let callback names attribute = (Attribute.name attribute) :: names in
     let resolution, parent = setup source in
     let actual =
       Class.attribute_fold ~class_attributes ~resolution ~initial:[] ~f:callback parent
@@ -1025,7 +1017,7 @@ let test_class_attributes _ =
   in
   let create_expected_attribute ?(parent = Type.Primitive "Attributes") name callable =
     {
-      Class.Attribute.name = Expression.Access (SimpleAccess (Access.create name));
+      Class.Attribute.name;
       parent;
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
       value = Node.create_with_default_location Expression.Ellipsis;
@@ -1038,7 +1030,7 @@ let test_class_attributes _ =
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.Primitive "Attributes")
-    ~attribute_name:(Access.create "bar")
+    ~attribute_name:"bar"
     ~expected_attribute:(
       create_expected_attribute
         "bar"
@@ -1046,7 +1038,7 @@ let test_class_attributes _ =
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.Primitive "Attributes")
-    ~attribute_name:(Access.create "baz")
+    ~attribute_name:"baz"
     ~expected_attribute:(
       create_expected_attribute
         "baz"
@@ -1054,7 +1046,7 @@ let test_class_attributes _ =
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
-    ~attribute_name:(Access.create "implicit")
+    ~attribute_name:"implicit"
     ~expected_attribute:(
       create_expected_attribute
         ~parent:(Type.Primitive "Metaclass")
@@ -1076,7 +1068,7 @@ let test_fallback_attribute _ =
               Class.create (Node.create ~location definition)
           | _ ->
               failwith "Last statement was not a class")
-      |> Class.fallback_attribute ~resolution ~name:(Access.create name)
+      |> Class.fallback_attribute ~resolution ~name
     in
     match annotation with
     | None ->
@@ -1533,14 +1525,13 @@ let test_overrides _ =
     Option.value_exn ~message:"Missing definition."  definition
   in
 
-  assert_is_none (Class.overrides definition ~resolution ~name:(Access.create "baz"));
-  let overrides = Class.overrides definition ~resolution ~name:(Access.create "foo") in
+  assert_is_none (Class.overrides definition ~resolution ~name:"baz");
+  let overrides = Class.overrides definition ~resolution ~name:"foo" in
   assert_is_some overrides;
   assert_equal
-    ~cmp:Access.equal
-    ~printer:Access.show
-    (Attribute.access (Option.value_exn overrides))
-    (Access.create "foo");
+    ~cmp:String.equal
+    (Attribute.name (Option.value_exn overrides))
+    "foo";
   assert_equal
     ~cmp:Access.equal
     ~printer:Access.show

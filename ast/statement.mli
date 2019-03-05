@@ -169,7 +169,7 @@ type statement_t = t
 
 module Attribute : sig
   type attribute = {
-    target: Expression.t;
+    name: Identifier.t;
     annotation: Expression.t option;
     defines: ((statement_t Record.Define.record) list) option;
     value: Expression.t option;
@@ -195,6 +195,7 @@ module Define : sig
   val create_class_toplevel: qualifier: Access.t -> statements: statement_t list -> t
 
   val unqualified_name: t -> Access.t
+  val unqualified_name_as_identifier: t -> Identifier.t
   val self_identifier: t -> Identifier.t
 
   val is_method: t -> bool
