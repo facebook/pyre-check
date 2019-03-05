@@ -144,6 +144,11 @@ def main() -> int:
         action="store_true",
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--no-saved-state",
+        action="store_true",
+        help="Don't attempt to load Pyre from a saved state.",
+    )
 
     # Handling of search path
     parser.add_argument(

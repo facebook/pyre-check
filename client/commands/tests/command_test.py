@@ -19,10 +19,12 @@ def mock_arguments(
     save_initial_state_to=None,
     load_initial_state_from=None,
     changed_files_path=None,
+    no_saved_state=False,
 ) -> MagicMock:
     arguments = MagicMock()
     arguments.current_directory = "."
     arguments.debug = False
+    arguments.no_saved_state = no_saved_state
     arguments.additional_check = []
     arguments.filter_directories = ["."]
     arguments.local = False

@@ -348,3 +348,46 @@ class StartTest(unittest.TestCase):
                 "path1,path2",
             ],
         )
+        # Check --no-saved-state.
+        arguments = mock_arguments(
+            saved_state_project="pyre/saved_state", no_saved_state=True
+        )
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+
+        arguments = mock_arguments(no_saved_state=True)
+        arguments.load_initial_state_from = "/do/not/load"
+        arguments.save_initial_state_to = "/do/not/save"
+        arguments.changed_files_path = "/do/not/change"
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-project-root",
+                ".",
+                "-use-watchman",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )

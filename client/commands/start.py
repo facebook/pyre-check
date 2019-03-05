@@ -25,15 +25,25 @@ class Start(Reporting):
         self._no_watchman = arguments.no_watchman  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
         self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
-        # Saved state.
-        self._save_initial_state_to = (
-            arguments.save_initial_state_to
-        )  # type: Optional[str]
-        self._changed_files_path = arguments.changed_files_path  # type: Optional[str]
-        self._load_initial_state_from = (
-            arguments.load_initial_state_from
-        )  # type: Optional[str]
-        self._saved_state_project = arguments.saved_state_project  # type: Optional[str]
+        if not arguments.no_saved_state:
+            # Saved state.
+            self._save_initial_state_to = (
+                arguments.save_initial_state_to
+            )  # type: Optional[str]
+            self._changed_files_path = (
+                arguments.changed_files_path
+            )  # type: Optional[str]
+            self._load_initial_state_from = (
+                arguments.load_initial_state_from
+            )  # type: Optional[str]
+            self._saved_state_project = (
+                arguments.saved_state_project
+            )  # type: Optional[str]
+        else:
+            self._save_initial_state_to = None
+            self._changed_files_path = None
+            self._load_initial_state_from = None
+            self._saved_state_project = None
 
     def _run(self) -> None:
         blocking = False
