@@ -320,6 +320,7 @@ class FixmeAllTest(unittest.TestCase):
             "user": "unixname",
             "alias": "pyre-upgrade",
             "capabilities": {"type": "type", "vcs": "vcs"},
+            "timeout": 18000,
             "oncall": "pyre"
         }
         """
