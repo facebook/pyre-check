@@ -36,7 +36,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           },
           {
             "call": {
@@ -52,7 +56,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           },
           {
             "call": {
@@ -68,7 +76,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           },
           {
             "call": {
@@ -84,7 +96,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
@@ -148,7 +164,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
@@ -172,7 +192,7 @@
             "decl": null,
             "tito": [ { "line": 14, "start": 25, "end": 28 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
       }
@@ -202,7 +222,11 @@
             },
             "tito": [ { "line": 23, "start": 42, "end": 45 } ],
             "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "object" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
@@ -215,7 +239,7 @@
             "decl": null,
             "tito": [ { "line": 56, "start": 18, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
       }

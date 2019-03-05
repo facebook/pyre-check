@@ -15,7 +15,8 @@
               "start": 30,
               "end": 33
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -38,7 +39,8 @@
               "start": 31,
               "end": 33
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }

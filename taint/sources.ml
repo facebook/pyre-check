@@ -35,4 +35,4 @@ let create = function
   | "Test" -> Test
   | "Thrift" -> Thrift
   | "UserControlled" -> UserControlled
-  | name -> failwith (Format.sprintf "Unsupported taint source %s" name)
+  | name -> failwith (Format.sprintf "Unsupported taint source `%s`" name)

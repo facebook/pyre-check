@@ -120,16 +120,31 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let { Node.location; _ } = argument in
             let argument_taint = analyze_unstarred_expression ~resolution argument state in
             let tito =
-              let add_tito_location features =
-                (SimpleFeatures.Breadcrumb Breadcrumb.Tito) ::
-                (SimpleFeatures.TitoPosition location) ::
-                features
-              in
               let convert_tito tito {BackwardState.Tree.path; tip=return_taint; _} =
+                let breadcrumbs =
+                  let gather_breadcrumbs breadcrumbs feature =
+                    match feature with
+                    | (SimpleFeatures.Breadcrumb _) as breadcrumb ->
+                        breadcrumb :: breadcrumbs
+                    | _ ->
+                        breadcrumbs
+                  in
+                  BackwardTaint.fold
+                    BackwardTaint.simple_feature
+                    return_taint
+                    ~f:gather_breadcrumbs
+                    ~init:[
+                      SimpleFeatures.Breadcrumb Breadcrumb.Tito;
+                      SimpleFeatures.TitoPosition location;
+                    ]
+                in
+                let add_features features =
+                  List.rev_append breadcrumbs features
+                in
                 let taint_to_propagate =
                   ForwardState.Tree.read path argument_taint
                   |> ForwardState.Tree.collapse
-                  |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:add_tito_location
+                  |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:add_features
                   |> ForwardState.Tree.create_leaf
                 in
                 let return_paths =

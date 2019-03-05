@@ -189,14 +189,22 @@ module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 module Breadcrumb = struct
   type t =
     | Obscure
+    | SimpleVia of string  (* Declared breadcrumbs *)
     | Tito
+
   [@@deriving show, sexp, compare]
 
   let to_json = function
     | Obscure ->
         `Assoc ["via", `String "obscure" ]
+    | SimpleVia name ->
+        `Assoc ["via", `String name ]
     | Tito ->
         `Assoc ["via", `String "tito" ]
+
+  let simple_via name =
+    SimpleVia name
+
 end
 
 

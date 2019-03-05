@@ -70,12 +70,14 @@ let add_models ~environment sources =
   let open Taint in
   let open Interprocedural in
   let add_model_to_memory ~key:call_target ~data:model =
+    (*
     let () =
       Log.info
         "Adding taint model %S to shared memory\n%a\n"
         (Callable.external_target_name call_target)
         Result.pp_model_t model
     in
+    *)
     Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
   in
   let models =
@@ -112,25 +114,33 @@ let analyze
   let () =
     match taint_models_directory with
     | Some directory ->
-        let directory = Path.create_absolute directory in
-        let check_directory_exists directory =
-          if not (Path.is_directory directory) then
-            raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
-        in
-        check_directory_exists directory;
-        Log.info "Finding taint models in %a" Path.pp directory;
-        let get_source_models path =
-          Path.create_absolute path
-          |> File.create
-          |> File.content
-        in
-        let directory = Path.absolute directory in
-        Sys.readdir directory
-        |> Array.to_list
-        |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
-        |> List.map ~f:((^/) directory)
-        |> List.filter_map ~f:get_source_models
-        |> add_models ~environment
+        begin
+          try
+            let directory = Path.create_absolute directory in
+            let check_directory_exists directory =
+              if not (Path.is_directory directory) then
+                raise
+                  (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+            in
+            check_directory_exists directory;
+            Log.info "Finding taint models in %a" Path.pp directory;
+            let get_source_models path =
+              Path.create_absolute path
+              |> File.create
+              |> File.content
+            in
+            let directory = Path.absolute directory in
+            Sys.readdir directory
+            |> Array.to_list
+            |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
+            |> List.map ~f:((^/) directory)
+            |> List.filter_map ~f:get_source_models
+            |> add_models ~environment
+          with exn ->
+            Log.dump
+              "Error getting taint models: %s" (Exn.to_string exn);
+            raise exn
+        end
     | None -> ()
   in
 

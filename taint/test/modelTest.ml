@@ -100,7 +100,7 @@ let test_sink_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter"; sinks = [Taint.Sinks.Test] }
+          { name = "parameter"; sinks = [Sinks.Test] }
         ];
         tito_parameters = []
       }
@@ -115,7 +115,7 @@ let test_sink_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter1"; sinks = [Taint.Sinks.Test] }
+          { name = "parameter1"; sinks = [Sinks.Test] }
         ];
         tito_parameters = []
       };
@@ -130,8 +130,8 @@ let test_sink_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter0"; sinks = [Taint.Sinks.Test] };
-          { name = "parameter1"; sinks = [Taint.Sinks.Test] }
+          { name = "parameter0"; sinks = [Sinks.Test] };
+          { name = "parameter1"; sinks = [Sinks.Test] }
         ];
         tito_parameters = []
       };
@@ -146,8 +146,8 @@ let test_sink_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter0"; sinks = [Taint.Sinks.Test] };
-          { name = "parameter1"; sinks = [Taint.Sinks.Test] }
+          { name = "parameter0"; sinks = [Sinks.Test] };
+          { name = "parameter1"; sinks = [Sinks.Test] }
         ];
         tito_parameters = []
       };
@@ -161,7 +161,7 @@ let test_sink_models _ =
         define_name = "thrift";
         returns = [Taint.Sources.Thrift];
         sink_parameters = [
-          { name = "parameter0"; sinks = [Taint.Sinks.Thrift] };
+          { name = "parameter0"; sinks = [Sinks.Thrift] };
         ];
         tito_parameters = [];
         errors = [];
@@ -176,7 +176,7 @@ let test_sink_models _ =
         define_name = "xss";
         returns = [];
         sink_parameters = [
-          { name = "parameter"; sinks = [Taint.Sinks.XSS] };
+          { name = "parameter"; sinks = [Sinks.XSS] };
         ];
         tito_parameters = [];
         errors = [];
@@ -191,7 +191,7 @@ let test_sink_models _ =
         define_name = "multiple";
         returns = [];
         sink_parameters = [
-          { name = "parameter"; sinks = [Taint.Sinks.Thrift; Taint.Sinks.XSS] };
+          { name = "parameter"; sinks = [Sinks.Thrift; Sinks.XSS] };
         ];
         tito_parameters = [];
         errors = [];
@@ -214,6 +214,21 @@ let test_taint_in_taint_out_models _ =
     ]
 
 
+let test_taint_in_taint_out_models_alternate _ =
+  assert_model
+    ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "tito";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = ["parameter"]
+      };
+    ]
+
+
 let test_union_models _ =
   assert_model
     ~model_source:"def both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
@@ -224,7 +239,7 @@ let test_union_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter"; sinks = [Taint.Sinks.XSS] };
+          { name = "parameter"; sinks = [Sinks.XSS] };
         ];
         tito_parameters = ["parameter"]
       };
@@ -242,6 +257,53 @@ let test_any _ =
         errors = [];
         sink_parameters = [];
         tito_parameters = [];
+      };
+    ]
+
+
+let test_source_breadcrumbs _ =
+  assert_model
+    ~model_source:"def source() -> TaintSource[Test, Via[special]]: ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "source";
+        returns = [Sources.Test];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = [];
+      };
+    ]
+
+
+let test_sink_breadcrumbs _ =
+  assert_model
+    ~model_source:"def sink(parameter: TaintSink[Test, Via[special]]): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "sink";
+        returns = [];
+        errors = [];
+        sink_parameters = [
+          { name = "parameter"; sinks = [Sinks.Test] };
+        ];
+        tito_parameters = [];
+      };
+    ]
+
+
+let test_tito_breadcrumbs _ =
+  assert_model
+    ~model_source:"def tito(parameter: TaintInTaintOut[Via[special]]): ..."
+    ~expect:[
+      {
+        kind = `Function;
+        define_name = "tito";
+        returns = [];
+        errors = [];
+        sink_parameters = [];
+        tito_parameters = ["parameter"];
       };
     ]
 
@@ -269,23 +331,35 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Unsupported]): ..."
-    ~expect:"Unsupported taint sink Unsupported";
+    ~expect:"Unsupported taint sink `Unsupported`";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[UserControlled]): ..."
-    ~expect:"Unsupported taint sink UserControlled";
+    ~expect:"Unsupported taint sink `UserControlled`";
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: SkipAnalysis): ..."
+    ~expect:{|"SkipAnalysis annotation must be in return position"|};
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: TaintSink[LocalReturn]): ..."
+    ~expect:{|"Invalid TaintSink annotation `LocalReturn`"|};
 
   assert_invalid_model
     ~model_source:"def source() -> TaintSource[Invalid]: ..."
-    ~expect:"Unsupported taint source Invalid";
+    ~expect:"Unsupported taint source `Invalid`";
 
   assert_invalid_model
     ~model_source:"def source() -> TaintInTaintOut: ..."
     ~expect:{|"Invalid return annotation: TaintInTaintOut"|};
 
   assert_invalid_model
+    ~model_source:"def sink(parameter: TaintInTaintOut[Test]): ..."
+    ~expect:{|"Invalid TaintInTaintOut annotation `Test`"|};
+
+  assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|"Unrecognized taint annotation InvalidTaintDirection.__getitem__.(...)"|};
+    ~expect:{|"Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`"|};
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
@@ -305,6 +379,9 @@ let () =
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
     "taint_union_models">::test_union_models;
     "test_any">::test_any;
+    "test_source_breadcrumbs">::test_source_breadcrumbs;
+    "test_sink_breadcrumbs">::test_sink_breadcrumbs;
+    "test_tito_breadcrumbs">::test_tito_breadcrumbs;
     "invalid_models">::test_invalid_models;
   ]
   |> Test.run

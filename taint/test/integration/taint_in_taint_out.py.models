@@ -144,7 +144,7 @@
             "decl": null,
             "tito": [ { "line": 33, "start": 24, "end": 25 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
       }
@@ -168,12 +168,48 @@
             },
             "tito": [ { "line": 37, "start": 32, "end": 44 } ],
             "leaves": [ { "kind": "Test", "name": "__testSource" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [
+              { "via": "tito" },
+              { "via": "special_source" },
+              { "via": "obscure" }
+            ]
           }
         ]
       }
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.via_getattr",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 41, "start": 29, "end": 30 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "via": "default" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 41, "start": 19, "end": 20 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "via": "object" } ]
+          }
+        ]
+      }
+    ]
   }
 }

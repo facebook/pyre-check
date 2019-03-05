@@ -54,4 +54,4 @@ let create = function
   | "Thrift" -> Thrift
   | "XMLParser" -> XMLParser
   | "XSS" -> XSS
-  | name -> failwith (Format.sprintf "Unsupported taint sink %s" name)
+  | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)

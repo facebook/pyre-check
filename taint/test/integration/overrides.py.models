@@ -27,7 +27,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -46,7 +47,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -81,7 +83,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -100,7 +103,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -135,7 +139,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -154,7 +159,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -189,7 +195,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -208,7 +215,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -243,7 +251,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -262,7 +271,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -297,7 +307,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -316,7 +327,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -351,7 +363,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -370,7 +383,8 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -431,7 +445,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -454,7 +469,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           },
           {
             "root": {
@@ -463,7 +479,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }
@@ -507,7 +524,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -531,7 +549,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           },
           {
             "root": {
@@ -540,7 +559,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -563,7 +583,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           },
           {
             "root": {
@@ -572,7 +593,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }
@@ -616,7 +638,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -659,7 +682,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -702,7 +726,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -725,7 +750,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }
@@ -807,7 +833,8 @@
               "start": 19,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -830,7 +857,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }

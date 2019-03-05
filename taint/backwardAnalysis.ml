@@ -160,11 +160,29 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   ~f:gather_paths
                   ~init:[]
               in
+              let breadcrumbs =
+                let gather_breadcrumbs breadcrumbs feature =
+                  match feature with
+                  | (SimpleFeatures.Breadcrumb _) as breadcrumb ->
+                      breadcrumb :: breadcrumbs
+                  | _ ->
+                      breadcrumbs
+                in
+                BackwardTaint.fold
+                  BackwardTaint.simple_feature
+                  element
+                  ~f:gather_breadcrumbs
+                  ~init:[]
+              in
+              let add_features features =
+                List.rev_append breadcrumbs features
+              in
               List.fold
                 extra_paths
                 ~f:(fun taint extra_path ->
                     read_tree extra_path call_taint
                     |> BackwardState.Tree.collapse
+                    |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_features
                     |> BackwardState.Tree.create_leaf
                     |> BackwardState.Tree.prepend tito_path
                     |> BackwardState.Tree.join taint

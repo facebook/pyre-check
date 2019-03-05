@@ -515,19 +515,15 @@ let test_integration _ =
           ()
       in
       let get_expected ~suffix =
-        let expected =
-          try
-            Path.show path
-            |> (fun path -> path ^ suffix)
-            |> Path.create_absolute
-            |> File.create
-            |> File.content
-            |> (fun content -> Option.value_exn content)
-          with Unix.Unix_error _ ->
-            ""
-        in
-        String.chop_prefix expected ~prefix:("@" ^ "generated\n")
-        |> Option.value ~default:expected
+        try
+          Path.show path
+          |> (fun path -> path ^ suffix)
+          |> Path.create_absolute
+          |> File.create
+          |> File.content
+          |> (fun content -> Option.value_exn content)
+        with Unix.Unix_error _ ->
+          ""
       in
       let expected = get_expected ~suffix in
       if String.equal expected actual then
@@ -558,11 +554,21 @@ let test_integration _ =
       in
       let check_call_graph_expectation call_graph =
         let dependencies = DependencyGraph.from_callgraph call_graph in
-        let actual = Format.asprintf "Call dependencies\n%a" DependencyGraph.pp dependencies in
+        let actual =
+          Format.asprintf
+            "@%s\nCall dependencies\n%a"
+            "generated"
+            DependencyGraph.pp dependencies
+        in
         check_expectation ~suffix:".cg" actual
       in
       let check_overrides_expectation overrides =
-        let actual = Format.asprintf "Overrides\n%a" DependencyGraph.pp overrides in
+        let actual =
+          Format.asprintf
+            "@%s\nOverrides\n%a"
+            "generated"
+            DependencyGraph.pp overrides
+        in
         check_expectation ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
@@ -596,7 +602,7 @@ let test_integration _ =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    check_expectation ~suffix:".models" serialized_models
+    check_expectation ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
   in
   List.iter test_paths ~f:run_test
 

@@ -27,7 +27,8 @@
               "port": "result[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -46,7 +47,8 @@
               "port": "formal(arg)[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -81,7 +83,8 @@
               "port": "result[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -100,7 +103,8 @@
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -135,7 +139,8 @@
               "port": "result[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -154,7 +159,8 @@
               "port": "formal(*rest1)[1][a]",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -189,7 +195,8 @@
               "port": "result[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -208,7 +215,8 @@
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -243,7 +251,8 @@
               "port": "result[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -262,7 +271,8 @@
               "port": "formal(**kw)[arg][a]",
               "length": 3
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -284,7 +294,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }
@@ -309,7 +320,8 @@
               "start": 15,
               "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -345,7 +357,8 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       },
@@ -359,7 +372,8 @@
               "start": 15,
               "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -382,7 +396,8 @@
               "start": 15,
               "end": 20
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -405,7 +420,8 @@
               "start": 27,
               "end": 29
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [ { "via": "special_source" } ]
           }
         ]
       }
@@ -435,7 +451,8 @@
               "port": "formal(arg)[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -464,7 +481,8 @@
               "port": "formal(*rest1)[1][a]",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -493,7 +511,8 @@
               "port": "formal(arg)[a]",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }
@@ -522,7 +541,8 @@
               "port": "formal(**kw)[arg][a]",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ]
+            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "features": [ { "via": "special_sink" } ]
           }
         ]
       }

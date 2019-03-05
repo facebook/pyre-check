@@ -24,19 +24,31 @@ type t = {
 [@@deriving show, sexp]
 
 
+type breadcrumbs = Breadcrumb.t list
+[@@deriving show, sexp]
+
+
 type taint_annotation =
-  | Sink of Sinks.t
-  | Source of Sources.t
-  | Tito
+  | Sink of { sink: Sinks.t; breadcrumbs: breadcrumbs }
+  | Source of { source: Sources.t; breadcrumbs: breadcrumbs }
+  | Tito of { tito: Sinks.t; breadcrumbs: breadcrumbs }
   | SkipAnalysis  (* Don't analyze methods with SkipAnalysis *)
   | Sanitize      (* Don't propagate inferred model of methods with Sanitize *)
 [@@deriving show, sexp]
 
 
+let add_breadcrumbs breadcrumbs init =
+  List.fold
+    breadcrumbs
+    ~f:(fun set breadcrumb -> SimpleFeatures.Breadcrumb breadcrumb :: set)
+    ~init
+
+
 let introduce_sink_taint
     ~root
-    ({ TaintResult.backward = { sink_taint; taint_in_taint_out }; _ } as taint)
-    taint_sink_kind =
+    ({ TaintResult.backward = { sink_taint; _ }; _ } as taint)
+    taint_sink_kind
+    breadcrumbs =
   let backward =
     let assign_backward_taint environment taint =
       BackwardState.assign
@@ -48,27 +60,64 @@ let introduce_sink_taint
     in
     match taint_sink_kind with
     | Sinks.LocalReturn ->
-        let return_taint = Domains.local_return_taint |> BackwardState.Tree.create_leaf in
-        let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
-        { taint.backward with taint_in_taint_out }
+        Or_error.errorf "Invalid TaintSink annotation `LocalReturn`"
     | _ ->
         let leaf_taint =
           BackwardTaint.singleton taint_sink_kind
+          |> BackwardTaint.transform
+            BackwardTaint.simple_feature_set
+            ~f:(add_breadcrumbs breadcrumbs)
           |> BackwardState.Tree.create_leaf
         in
         let sink_taint = assign_backward_taint sink_taint leaf_taint in
         { taint.backward with sink_taint }
+        |> Or_error.return
   in
-  { taint with backward }
+  backward
+  |> Or_error.map ~f:(fun backward -> { taint with backward })
+
+
+let introduce_taint_in_taint_out
+    ~root
+    ({ TaintResult.backward = { taint_in_taint_out; _ }; _ } as taint)
+    taint_sink_kind
+    breadcrumbs =
+  let backward =
+    let assign_backward_taint environment taint =
+      BackwardState.assign
+        ~weak:true
+        ~root
+        ~path:[]
+        taint
+        environment
+    in
+    match taint_sink_kind with
+    | Sinks.LocalReturn ->
+        let return_taint =
+          Domains.local_return_taint
+          |> BackwardTaint.transform
+            BackwardTaint.simple_feature_set
+            ~f:(add_breadcrumbs breadcrumbs)
+          |> BackwardState.Tree.create_leaf in
+        let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
+        { taint.backward with taint_in_taint_out }
+        |> Or_error.return
+    | _ ->
+        Or_error.errorf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
+  in
+  backward
+  |> Or_error.map ~f:(fun backward -> { taint with backward })
 
 
 let introduce_source_taint
     ~root
     ({ TaintResult.forward = { source_taint }; _ } as taint)
-    taint_source_kind =
+    taint_source_kind
+    breadcrumbs =
   let source_taint =
     let leaf_taint =
       ForwardTaint.singleton taint_source_kind
+      |> ForwardTaint.transform ForwardTaint.simple_feature_set ~f:(add_breadcrumbs breadcrumbs)
       |> ForwardState.Tree.create_leaf
     in
     ForwardState.assign
@@ -86,24 +135,63 @@ let extract_identifier = function
   | _ -> None
 
 
-let rec extract_taint_kinds expression =
+type leaf_kind =
+  | Leaf of string
+  | Breadcrumbs of breadcrumbs
+
+
+let rec extract_breadcrumbs expression =
   match expression.Node.value with
-  | Access (SimpleAccess [Identifier taint_kind]) ->
-      [taint_kind]
+  | Access (SimpleAccess [Identifier breadcrumb]) ->
+      [Breadcrumb.simple_via breadcrumb]
   | Tuple expressions ->
-      List.concat_map ~f:extract_taint_kinds expressions
+      List.concat_map ~f:extract_breadcrumbs expressions
   | _ ->
       []
 
 
+let rec extract_kinds expression =
+  match expression.Node.value with
+  | Access (SimpleAccess [Identifier taint_kind]) ->
+      [Leaf taint_kind]
+  | Access (SimpleAccess (
+      (Identifier "Via"
+       :: _
+       :: Call {
+         value = { Argument.value = expression; _; } :: _; _ }
+       :: _))) ->
+      [Breadcrumbs (extract_breadcrumbs expression)]
+  | Tuple expressions ->
+      List.concat_map ~f:extract_kinds expressions
+  | _ ->
+      []
+
+
+let extract_leafs expression =
+  let kinds, breadcrumbs =
+    extract_kinds expression
+    |> List.partition_map ~f:(function Leaf l -> `Fst l | Breadcrumbs b -> `Snd b)
+  in
+  kinds, List.concat breadcrumbs
+
+
 let get_source_kinds expression =
-  extract_taint_kinds expression
-  |> List.map ~f:(fun kind -> Source (Sources.create kind))
+  let kinds, breadcrumbs = extract_leafs expression in
+  List.map kinds ~f:(fun kind -> Source { source = Sources.create kind; breadcrumbs })
 
 
 let get_sink_kinds expression =
-  extract_taint_kinds expression
-  |> List.map ~f:(fun kind -> Sink (Sinks.create kind))
+  let kinds, breadcrumbs = extract_leafs expression in
+  List.map kinds ~f:(fun kind -> Sink { sink = Sinks.create kind; breadcrumbs })
+
+
+let get_taint_in_taint_out expression =
+  let kinds, breadcrumbs = extract_leafs expression in
+  match kinds with
+  | [] ->
+      [Tito { tito = Sinks.LocalReturn; breadcrumbs }]
+  | _ ->
+      List.map kinds ~f:(fun kind -> Tito { tito = Sinks.create kind; breadcrumbs })
 
 
 let rec parse_annotations = function
@@ -136,7 +224,14 @@ let rec parse_annotations = function
             get_source_kinds expression
             |> Or_error.return
         | [Identifier "TaintInTaintOut"] ->
-            [Tito]
+            [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
+            |> Or_error.return
+        | (Identifier "TaintInTaintOut"
+           :: _
+           :: Call {
+             value = { Argument.value = expression; _; } :: _; _ }
+           :: _) ->
+            get_taint_in_taint_out expression
             |> Or_error.return
         | [Identifier "SkipAnalysis"] ->
             [SkipAnalysis]
@@ -147,35 +242,26 @@ let rec parse_annotations = function
         | [Identifier "Any"] ->  (* Ignore Any annotations *)
             []
             |> Or_error.return
-        | (Identifier "TaintInTaintOut"  (* Legacy support. Delete when IG updated. *)
-           :: _
-           :: Call {
-             value = { Argument.value = _; _; } :: _; _ }
-           :: _) ->
-            [Tito]
-            |> Or_error.return
         | _ ->
-            Or_error.errorf "Unrecognized taint annotation %s" (Expression.Access.show access)
+            Or_error.errorf "Unrecognized taint annotation `%s`" (Expression.Access.show access)
       end
   | None ->
       Or_error.return []
   | Some value ->
-      Or_error.errorf "Unrecognized taint annotation %s" (Expression.show value)
+      Or_error.errorf "Unrecognized taint annotation `%s`" (Expression.show value)
 
 
 let taint_parameter model (root, _name, annotation) =
   let add_to_model model annotation =
     model >>= fun model ->
     match annotation with
-    | Sink sink ->
-        introduce_sink_taint ~root model sink
+    | Sink { sink; breadcrumbs } ->
+        introduce_sink_taint ~root model sink breadcrumbs
+    | Source { source; breadcrumbs } ->
+        introduce_source_taint ~root model source breadcrumbs
         |> Or_error.return
-    | Source source ->
-        introduce_source_taint ~root model source
-        |> Or_error.return
-    | Tito ->
-        introduce_sink_taint ~root model Sinks.LocalReturn
-        |> Or_error.return
+    | Tito { tito; breadcrumbs } ->
+        introduce_taint_in_taint_out ~root model tito breadcrumbs
     | SkipAnalysis ->
         Or_error.error_string "SkipAnalysis annotation must be in return position"
     | Sanitize ->
@@ -191,13 +277,12 @@ let taint_return model expression =
     model >>= fun model ->
     let root = AccessPath.Root.LocalResult in
     match annotation with
-    | Sink sink ->
-        introduce_sink_taint ~root model sink
+    | Sink { sink;  breadcrumbs } ->
+        introduce_sink_taint ~root model sink breadcrumbs
+    | Source { source; breadcrumbs } ->
+        introduce_source_taint ~root model source breadcrumbs
         |> Or_error.return
-    | Source source ->
-        introduce_source_taint ~root model source
-        |> Or_error.return
-    | Tito ->
+    | Tito _ ->
         Or_error.error_string "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis ->
         { model with mode = TaintResult.SkipAnalysis; }
