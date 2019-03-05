@@ -206,16 +206,7 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update.assert_not_called()
         fix.called_once_with(arguments, upgrade.sort_errors(errors))
         calls = [
-            call(
-                [
-                    "arc",
-                    "lint",
-                    "--never-apply-patches",
-                    "--enforce-lint-clean",
-                    "--output",
-                    "none",
-                ]
-            ),
+            call(["arc", "lint", "--never-apply-patches", "--output", "none"]),
             call().__bool__(),
             call(["arc", "lint", "--apply-patches", "--output", "none"]),
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
@@ -429,13 +420,17 @@ class FixmeSingleTest(unittest.TestCase):
 
 
 class FixmeTest(unittest.TestCase):
+    @patch("subprocess.call")
     @patch.object(pathlib.Path, "read_text")
     @patch("%s.errors_from_run" % upgrade.__name__)
     @patch("%s.errors_from_stdin" % upgrade.__name__)
-    def test_fixme(self, stdin_errors, run_errors, path_read_text) -> None:
+    def test_run_fixme(
+        self, stdin_errors, run_errors, path_read_text, subprocess
+    ) -> None:
         arguments = MagicMock()
         arguments.comment = None
         arguments.max_line_length = 88
+        arguments.run = False
 
         stdin_errors.return_value = []
         run_errors.return_value = []
@@ -457,6 +452,35 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with(
                 "  # pyre-fixme[1]: description\n  1\n2"
             )
+
+        # Test single error with lint.
+        arguments.run = True
+        arguments.lint = True
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "concise_description": "Error [1]: description",
+                }
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = "  1\n2"
+            upgrade.run_fixme(arguments)
+            calls = [
+                call("  # pyre-fixme[1]: description\n  1\n2"),
+                call("  # pyre-fixme[1]: description\n  1\n2"),
+            ]
+            path_write_text.assert_has_calls(calls)
+            calls = [
+                call(["arc", "lint", "--never-apply-patches", "--output", "none"]),
+                call().__bool__(),
+                call(["arc", "lint", "--apply-patches", "--output", "none"]),
+            ]
+            subprocess.assert_has_calls(calls)
+        arguments.run = False
+        arguments.lint = False
 
         # Test error with comment.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
@@ -643,6 +667,7 @@ class FixmeTest(unittest.TestCase):
             arguments_short = MagicMock()
             arguments_short.comment = None
             arguments_short.max_line_length = 35
+            arguments_short.run = False
 
             errors = [
                 {

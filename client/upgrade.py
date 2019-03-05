@@ -165,8 +165,19 @@ def errors_from_run(_arguments) -> List[Dict[str, Any]]:
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         errors = configuration.get_errors()
-        LOG.info("Found %d error%s.", len(errors), "s" if len(errors) != 1 else "")
         return errors
+
+
+def _get_lint_status() -> int:
+    lint_status = subprocess.call(
+        ["arc", "lint", "--never-apply-patches", "--output", "none"]
+    )
+    return lint_status
+
+
+def _apply_lint() -> None:
+    LOG.info("Lint was dirty after adding fixmes. Cleaning lint and re-checking.")
+    subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
 
 
 def remove_comment_preamble(lines: List[str]) -> None:
@@ -280,21 +291,9 @@ def _upgrade_project(
 
         # Lint and re-run pyre once to resolve most formatting issues
         if arguments.lint:
-            lint_status = subprocess.call(
-                [
-                    "arc",
-                    "lint",
-                    "--never-apply-patches",
-                    "--enforce-lint-clean",
-                    "--output",
-                    "none",
-                ]
-            )
+            lint_status = _get_lint_status()
             if lint_status:
-                LOG.info(
-                    "Lint was dirty after adding fixmes. Cleaning lint and re-checking."
-                )
-                subprocess.call(["arc", "lint", "--apply-patches", "--output", "none"])
+                _apply_lint()
                 errors = configuration.get_errors(should_clean=False)
                 fix(arguments, sort_errors(errors))
     try:
@@ -420,10 +419,17 @@ def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> 
 def run_fixme(arguments: argparse.Namespace) -> None:
     if arguments.run:
         errors = errors_from_run(arguments)
+        fix(arguments, sort_errors(errors))
+
+        if arguments.lint:
+            lint_status = _get_lint_status()
+            if lint_status:
+                _apply_lint()
+                errors = errors_from_run(arguments)
+                fix(arguments, sort_errors(errors))
     else:
         errors = errors_from_stdin(arguments)
-
-    fix(arguments, sort_errors(errors))
+        fix(arguments, sort_errors(errors))
 
 
 def run_fixme_single(arguments: argparse.Namespace) -> None:
