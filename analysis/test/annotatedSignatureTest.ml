@@ -110,11 +110,11 @@ let test_select _ =
           in
           NotFound { callable; reason }
       | `NotFoundMissingArgument name ->
-          NotFound { callable; reason = Some (MissingArgument (Access.create name)) }
+          NotFound { callable; reason = Some (MissingArgument name) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
           NotFound {
             callable = parse_callable closest;
-            reason = Some (MissingArgument (Access.create name));
+            reason = Some (MissingArgument name);
           }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound {

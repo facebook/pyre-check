@@ -1895,7 +1895,7 @@ module State = struct
                 | MissingArgument name ->
                     Error.create
                       ~location
-                      ~kind:(Error.MissingArgument { callee; name })
+                      ~kind:(Error.MissingArgument { callee; name = (Access.create name) })
                       ~define
                 | MutuallyRecursiveTypeVariables ->
                     Error.create

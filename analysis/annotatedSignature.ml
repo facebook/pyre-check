@@ -33,7 +33,7 @@ type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
-  | MissingArgument of Access.t
+  | MissingArgument of Identifier.t
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | TypedDictionaryAccessWithNonLiteral of string list
@@ -392,12 +392,7 @@ let select
           signature_match
       | _, [] ->
           (* Parameter was not matched *)
-          let reasons =
-            {
-              reasons with
-              arity = (MissingArgument (Access.create parameter_name)) :: arity
-            }
-          in
+          let reasons = { reasons with arity = (MissingArgument parameter_name) :: arity } in
           { signature_match with reasons }
       | _, arguments ->
           let rec set_constraints_and_reasons

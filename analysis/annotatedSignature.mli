@@ -25,7 +25,7 @@ type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
-  | MissingArgument of Access.t
+  | MissingArgument of Identifier.t
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | TypedDictionaryAccessWithNonLiteral of string list
