@@ -261,7 +261,7 @@ let test_due_to_analysis_limitations _ =
   (* Parameter. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -272,7 +272,7 @@ let test_due_to_analysis_limitations _ =
       });
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -283,7 +283,7 @@ let test_due_to_analysis_limitations _ =
       });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -295,7 +295,7 @@ let test_due_to_analysis_limitations _ =
 
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -386,7 +386,7 @@ let test_due_to_mismatch_with_any _ =
   (* IncompatibleParameterType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -397,7 +397,7 @@ let test_due_to_mismatch_with_any _ =
       });
   assert_due_to_mismatch_with_any
     (Error.IncompatibleParameterType {
-        name = Some ((Access.create ""));
+        name = Some "";
         position = 1;
         callee = Some (Access.create "callee");
         mismatch = {
@@ -645,7 +645,7 @@ let test_join _ =
   assert_join
     (error
        (Error.IncompatibleParameterType {
-           name = Some (Access.create "");
+           name = Some "";
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {
@@ -656,7 +656,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           name = Some (Access.create "");
+           name = Some "";
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {
@@ -667,7 +667,7 @@ let test_join _ =
          }))
     (error
        (Error.IncompatibleParameterType {
-           name = Some (Access.create "");
+           name = Some "";
            position = 1;
            callee = Some (Access.create "callee");
            mismatch = {

@@ -72,7 +72,7 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
-      name: Access.t option;
+      name: Identifier.t option;
       position: int;
       callee: Access.t option;
       mismatch: mismatch;

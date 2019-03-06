@@ -56,6 +56,14 @@ let sanitized name =
   |> Format.asprintf "%s%s" stars
 
 
+let equal_sanitized left right =
+  equal (sanitized left) (sanitized right)
+
+
+let pp_sanitized format identifier =
+  Format.fprintf format "%a" String.pp (sanitized identifier)
+
+
 let remove_leading_underscores name =
   let renaming_pattern = Str.regexp "\\(\\$.*\\$\\)_+" in
   Str.global_replace renaming_pattern "\\1" name

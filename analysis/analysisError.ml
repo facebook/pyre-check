@@ -81,7 +81,7 @@ type kind =
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
   | IncompatibleParameterType of {
-      name: Access.t option;
+      name: Identifier.t option;
       position: int;
       callee: Access.t option;
       mismatch: mismatch;
@@ -245,6 +245,7 @@ let messages ~concise ~define location kind =
     in
     Access.pp_sanitized format access
   in
+  let pp_identifier = Identifier.pp_sanitized in
   match kind with
   | AnalysisFailure annotation when concise ->
       [
@@ -655,7 +656,7 @@ let messages ~concise ~define location kind =
       let target =
         let parameter =
           match name with
-          | Some name -> Format.asprintf "parameter `%a`" pp_access name
+          | Some name -> Format.asprintf "parameter `%a`" pp_identifier name
           | _ -> "anonymous parameter"
         in
         let callee =
@@ -1379,7 +1380,7 @@ let less_or_equal ~resolution left right =
         Expression.equal left.expression right.expression &&
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Access.equal_sanitized left.name right.name ->
+      when Option.equal Identifier.equal_sanitized left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         Resolution.less_or_equal resolution ~left ~right
@@ -1578,7 +1579,7 @@ let join ~resolution left right =
           annotation = Resolution.join resolution left.annotation right.annotation;
         }
     | IncompatibleParameterType left, IncompatibleParameterType right
-      when Option.equal Access.equal_sanitized left.name right.name &&
+      when Option.equal Identifier.equal_sanitized left.name right.name &&
            left.position = right.position &&
            Option.equal Access.equal_sanitized left.callee right.callee ->
         IncompatibleParameterType {

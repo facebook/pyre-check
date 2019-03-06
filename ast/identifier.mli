@@ -13,5 +13,9 @@ module SerializableMap: SerializableMap.S with type key = t
 module Set: Set.S with type Elt.t = t
 
 val sanitized: t -> t
+val equal_sanitized: t -> t -> bool
+
+val pp: Format.formatter -> t -> unit
+val pp_sanitized: Format.formatter -> t -> unit
 
 val remove_leading_underscores: t -> t

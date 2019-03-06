@@ -1885,10 +1885,7 @@ module State = struct
                       ~location
                       ~kind:
                         (Error.IncompatibleParameterType {
-                            name =
-                              (name
-                               >>| fun name ->
-                               Expression.Access.create_from_identifiers [name]);
+                            name;
                             position;
                             callee;
                             mismatch;
