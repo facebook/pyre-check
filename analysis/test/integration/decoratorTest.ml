@@ -129,10 +129,20 @@ let test_check_click_command _ =
 
       @test.command()
       @click.pass_context
-      def run(ctx: Context) -> None:
+      def run(ctx: Context, x: int) -> None:
           pass
 
+      @test.command()
+      @click.pass_obj
+      def run2(ctx: Context) -> None:
+          pass
+
+      # Pyre should not raise any errors on the arguments with the presence of the click decorators
+      main()
       main(obj={})
+      run(1)
+      run(x=1)
+      run2()
     |}
     [];
 
