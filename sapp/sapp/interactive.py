@@ -30,21 +30,19 @@ class Interactive:
     help_message = """
 Commands =======================================================================
 
-runs()          list all completed runs
-issues()        list all for the selected run
-
-set_run(ID)     select a specific run
-set_issue(ID)   select a specific issue
-
-show()          show info about selected issue
-trace()         trace of the selected issue
-prev()[p()]     move backward within the trace
-next()[n()]     move forward within the trace
-expand()        show and select trace branches
-branch(INDEX)   select a trace branch
-
 commands()      show this message
 help(COMAMND)   more info about a command
+
+runs()          list all completed static analysis runs
+set_run(ID)     select a specific run for browsing issues
+issues()        list all issues for the selected run
+set_issue(ID)   select a specific issue for browsing a trace
+show()          show info about selected issue
+trace()         show a trace of the selected issue
+prev()/p()      move backward within the trace
+next()/n()      move forward within the trace
+expand()        show alternative trace branches
+branch(INDEX)   select a trace branch
     """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 

@@ -58,3 +58,5 @@ will launch a custom IPython interface that's connected to the sqlite file.
 `prev()`/`p()`: move backward within the trace
 
 `next()`/`n()`: move forward within the trace
+
+`expand()`: show alternative trace branches
