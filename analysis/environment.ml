@@ -854,7 +854,6 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
           let names =
             Class.methods protocol_definition ~resolution
             |> List.map ~f:Class.Method.name
-            |> List.map ~f:(fun access -> [List.last_exn access])
           in
           if List.is_empty names then
             let annotations = Handler.TypeOrderHandler.annotations () in
@@ -949,11 +948,10 @@ let infer_protocol_edges
           >>| Annotated.Class.create
           >>| Annotated.Class.methods ~resolution
           >>| List.map ~f:Annotated.Class.Method.name
-          >>| List.map ~f:(fun name -> [List.last_exn name])
           |> Option.value ~default:[]
         in
         List.concat_map ~f:names_of_methods protocols
-        |> Access.Set.of_list
+        |> Identifier.Set.of_list
       in
       let annotations = Handler.TypeOrderHandler.annotations () in
       let add_type_methods methods_to_implementing_classes index =
@@ -968,8 +966,8 @@ let infer_protocol_edges
             (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
-              | Define { Define.name;  _ } ->
-                  let method_name = [List.last_exn name] in
+              | Define define ->
+                  let method_name = Define.unqualified_name define in
                   if Set.mem protocol_methods method_name then
                     let classes =
                       match Map.find methods_to_implementing_classes method_name with
@@ -984,7 +982,7 @@ let infer_protocol_edges
             in
             List.fold body ~f:add_method ~init:methods_to_implementing_classes
       in
-      List.fold classes_to_infer ~f:add_type_methods ~init:Access.Map.empty
+      List.fold classes_to_infer ~f:add_type_methods ~init:Identifier.Map.empty
     in
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in

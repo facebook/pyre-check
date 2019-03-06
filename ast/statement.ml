@@ -758,6 +758,7 @@ module Class = struct
     in
     List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
 
+
   let implicit_attributes ?(in_test = false) ({ Record.Class.name; body; _ } as definition) =
     (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
     let merge _ left right =

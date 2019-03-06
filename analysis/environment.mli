@@ -111,7 +111,7 @@ val register_functions
 val infer_implementations
   :  (module Handler)
   -> Resolution.t
-  -> implementing_classes: (method_name: Access.t -> (Ast.Statement.Access.t list) option)
+  -> implementing_classes: (method_name: Identifier.t -> (Ast.Statement.Access.t list) option)
   -> protocol: Type.t
   -> TypeOrder.Edge.Set.t
 (* Exposed for testing. *)

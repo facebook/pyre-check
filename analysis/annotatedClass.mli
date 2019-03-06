@@ -39,7 +39,7 @@ module Method : sig
 
   val create: define: Define.t -> parent: Type.t -> t
 
-  val name: t -> Access.t
+  val name: t -> Identifier.t
 
   val define: t -> Define.t
   val parent: t -> Type.t

@@ -95,8 +95,8 @@ module Method = struct
     { define; parent }
 
 
-  let name { define = { Define.name; _ }; _ } =
-    name
+  let name { define; _ } =
+    Define.unqualified_name define
 
 
   let define { define; _ } =

@@ -949,12 +949,9 @@ let test_infer_protocols_edges _ =
 
     let methods_to_implementing_classes =
       let add key values map =
-        Map.set
-          map
-          ~key:(Access.create key)
-          ~data:(List.map values ~f:Access.create)
+        Map.set map ~key ~data:(List.map values ~f:Access.create)
       in
-      Access.Map.empty
+      Identifier.Map.empty
       |> add "__hash__" ["object"; "SuperObject"]
       |> add "len" ["Sized"; "Supersized"; "Set"; "AlmostSet"]
       |> add "empty" ["Sized"; "Supersized"; "List"; "Set"; "AlmostSet"]

@@ -456,12 +456,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.Methods annotation ->
         let to_method annotated_method =
           let open Annotated.Class.Method in
-          let name =
-            name annotated_method
-            |> List.last
-            >>| (fun name -> Expression.Access.show [name])
-            |> Option.value ~default:""
-          in
           let annotations = parameter_annotations_positional ~resolution annotated_method in
           let parameters =
             Map.keys annotations
@@ -471,7 +465,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             |> fun parameters -> (Type.Primitive "self") :: parameters
           in
           let return_annotation = return_annotation ~resolution annotated_method in
-          { TypeQuery.name; parameters; return_annotation }
+          { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
         parse_and_validate annotation
         |> Handler.class_definition
