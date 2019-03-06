@@ -27,6 +27,10 @@ server_integration_test: all
 analysis_integration_test: all
 	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_analysis_integration_test.py
 
+.PHONY: facebook_integration_tests
+facebook_integration_tests: all
+	if [ -d "$(shell pwd)/facebook" ]; then make -C facebook; fi
+
 .PHONY: release
 release: hack_parallel
 	@./scripts/generate-version-number.sh
