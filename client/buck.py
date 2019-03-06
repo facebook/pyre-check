@@ -32,7 +32,7 @@ def presumed_target_root(target):
 
 
 def _find_source_directories(targets_map) -> BuckOut:
-    targets = list(targets_map.keys())
+    targets = sorted(list(targets_map.keys()))
     targets_not_found = []
     source_directories = []
     buck_root = find_root(os.getcwd(), ".buckconfig")

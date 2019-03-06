@@ -63,10 +63,10 @@ class BuckTest(unittest.TestCase):
             found_trees = buck._find_source_directories(
                 OrderedDict(
                     [
+                        ("//path/...", None),
+                        ("//path/targets:another", "buck-out/path/another"),
                         ("//path/targets:name", None),
                         ("//path/targets:namelibrary", None),
-                        ("//path/targets:another", "buck-out/path/another"),
-                        ("//path/...", None),
                     ]
                 )
             )
@@ -76,6 +76,29 @@ class BuckTest(unittest.TestCase):
             )
 
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
+            found_trees = buck._find_source_directories(
+                OrderedDict(
+                    [
+                        ("//path/...", None),
+                        ("//path/targets:another", "buck-out/path/another"),
+                        ("//path/targets:name", None),
+                        ("//path/targets:namelibrary", None),
+                    ]
+                )
+            )
+            self.assertEqual(
+                found_trees,
+                BuckOut(
+                    [],
+                    [
+                        "//path/...",
+                        "//path/targets:another",
+                        "//path/targets:name",
+                        "//path/targets:namelibrary",
+                    ],
+                ),
+            )
+            # Order doesn't matter.
             found_trees = buck._find_source_directories(
                 OrderedDict(
                     [
@@ -91,10 +114,10 @@ class BuckTest(unittest.TestCase):
                 BuckOut(
                     [],
                     [
+                        "//path/...",
+                        "//path/targets:another",
                         "//path/targets:name",
                         "//path/targets:namelibrary",
-                        "//path/targets:another",
-                        "//path/...",
                     ],
                 ),
             )
@@ -111,7 +134,7 @@ class BuckTest(unittest.TestCase):
                 )
             )
             self.assertEqual(
-                found_trees, BuckOut([], ["//path/targets:name", "//path/..."])
+                found_trees, BuckOut([], ["//path/...", "//path/targets:name"])
             )
 
     @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")
