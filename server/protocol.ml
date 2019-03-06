@@ -9,6 +9,8 @@ open Ast
 open Analysis
 open Expression
 
+open Pyre
+
 
 module DefinitionRequest = struct
   type t = {
@@ -50,7 +52,7 @@ module TypeQuery = struct
     | Methods of Access.t
     | NormalizeType of Access.t
     | PathOfModule of Access.t
-    | SaveServerState of Pyre.Path.t
+    | SaveServerState of Path.t
     | Signature of Access.t
     | Superclasses of Access.t
     | Type of Expression.t
@@ -99,6 +101,7 @@ module TypeQuery = struct
     | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list
+    | Path of Path.t
     | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
@@ -109,6 +112,8 @@ module TypeQuery = struct
   let base_response_to_yojson = function
     | Boolean boolean ->
         `Assoc ["boolean", `Bool boolean]
+    | Path path ->
+        `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
     | FoundMethods methods ->

@@ -433,7 +433,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> ignore;
         let { Memory.used_slots; _ } = Memory.hash_stats () in
         Log.info "Dumped %d slots in %.2f seconds to %s" used_slots (Timer.stop timer) path;
-        TypeQuery.Response (TypeQuery.Success ())
+        TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
 
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in

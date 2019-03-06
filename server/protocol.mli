@@ -84,6 +84,7 @@ module TypeQuery: sig
     | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list
+    | Path of Pyre.Path.t
     | Success of unit
     | Superclasses of Type.t list
     | Type of Type.t
