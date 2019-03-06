@@ -160,10 +160,21 @@ module Starred : sig
 end
 
 module StringLiteral : sig
+  module Substring : sig
+    type kind =
+      | Literal
+      | Format
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type t = { value: string; kind: kind }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   type 'expression kind =
     | String
     | Bytes
     | Format of 'expression list
+    | Mixed of Substring.t list
 
   and 'expression t = {
     value: string;
@@ -172,6 +183,8 @@ module StringLiteral : sig
   [@@deriving compare, eq, sexp, show, hash]
 
   val create: ?bytes: bool -> ?expressions: 'expression list -> string -> 'expression t
+
+  val create_mixed: Substring.t list -> 'expression t
 end
 
 type expression =

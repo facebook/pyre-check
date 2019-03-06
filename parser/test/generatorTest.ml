@@ -2511,6 +2511,9 @@ let test_call_arguments_location _ =
 
 
 let test_string _ =
+  let create_literal value = { StringLiteral.Substring.kind = Literal; value } in
+  let create_format value = { StringLiteral.Substring.kind = Format; value } in
+
   assert_parsed_equal "'foo'" [+Expression (+String (StringLiteral.create "foo"))];
   assert_parsed_equal "\"foo\"" [+Expression (+String (StringLiteral.create "foo"))];
   assert_parsed_equal "'''foo'''" [+Expression (+String (StringLiteral.create "foo"))];
@@ -2530,19 +2533,25 @@ let test_string _ =
 
   assert_parsed_equal
     "f'foo'"
-    [+Expression (+String (StringLiteral.create ~expressions:[] "foo"))];
+    [+Expression (+String (StringLiteral.create_mixed [create_format "foo"]))];
   assert_parsed_equal
     "F'foo'"
-    [+Expression (+String (StringLiteral.create ~expressions:[] "foo"))];
+    [+Expression (+String (StringLiteral.create_mixed [create_format "foo"]))];
   assert_parsed_equal
     "f'foo' f'bar'"
-    [+Expression (+String (StringLiteral.create ~expressions:[] "foobar"))];
+    [+Expression
+      (+String (StringLiteral.create_mixed [create_format "foo"; create_format "bar"]))
+    ];
   assert_parsed_equal
     "f'foo' 'bar'"
-    [+Expression (+String (StringLiteral.create ~expressions:[] "foobar"))];
-
-  (* TODO(T29598455): Should return a FormatString intead of a String *)
-  assert_parsed_equal "'foo' f'bar'" [+Expression (+String (StringLiteral.create "foobar"))];
+    [+Expression
+      (+String (StringLiteral.create_mixed [create_format "foo"; create_literal "bar"]))
+    ];
+  assert_parsed_equal
+    "'foo' f'bar'"
+    [+Expression
+      (+String (StringLiteral.create_mixed [create_literal "foo"; create_format "bar"]))
+    ];
 
   assert_parsed_equal "\"'\"" [+Expression (+String (StringLiteral.create "'"))];
   assert_parsed_equal "'\"'" [+Expression (+String (StringLiteral.create "\""))];

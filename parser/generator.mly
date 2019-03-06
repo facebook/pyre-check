@@ -171,6 +171,9 @@
       { value with Parameter.annotation }
     in
     { parameter with Node.value }
+
+  let create_substring kind (position, value) =
+    position, { StringLiteral.Substring.kind; value }
 %}
 
 (* The syntactic junkyard. *)
@@ -1126,16 +1129,14 @@ atom:
     }
 
   | format = FORMAT; mixed_string = mixed_string {
-      let all_strings = format::mixed_string in
+      let all_strings = create_substring StringLiteral.Substring.Format format :: mixed_string in
+      let all_pieces = List.map all_strings ~f:snd in
       let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
       let (start, _) = head in
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String
-          (StringLiteral.create
-            ~expressions:[]
-            ((snd format) ^ String.concat (List.map mixed_string ~f:snd)));
+        value = String (StringLiteral.create_mixed all_pieces);
       }
     }
 
@@ -1265,15 +1266,14 @@ atom:
     }
 
   | string = STRING; mixed_string = mixed_string {
-      let all_strings = string::mixed_string in
+      let all_strings = create_substring StringLiteral.Substring.Literal string :: mixed_string in
+      let all_pieces = List.map all_strings ~f:snd in
       let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
       let (start, _) = head in
       let (_, stop) = last in
       {
         Node.location = Location.create ~start ~stop;
-        value = String
-          (StringLiteral.create
-            ((snd string) ^ String.concat ~sep:"" (List.map mixed_string ~f:snd)));
+        value = String (StringLiteral.create_mixed all_pieces);
       }
     }
 
@@ -1352,10 +1352,10 @@ expression_list:
 mixed_string:
   | { [] }
   | first_string = FORMAT; rest = mixed_string {
-      first_string :: rest
+      create_substring StringLiteral.Substring.Format first_string :: rest
     }
   | first_string = STRING; rest = mixed_string {
-      first_string :: rest
+      create_substring StringLiteral.Substring.Literal first_string :: rest
     }
   ;
 

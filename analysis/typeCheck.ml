@@ -2397,6 +2397,11 @@ module State = struct
     | String { StringLiteral.kind = StringLiteral.String; _ } ->
         { state; resolved = Type.string }
 
+    | String { StringLiteral.kind = StringLiteral.Mixed _; _ } ->
+        (* NOTE: We may run into this case with nested f-strings. Treat them
+           as literal strings until the parser gets full support of them. *)
+        { state; resolved = Type.string }
+
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
         let target =

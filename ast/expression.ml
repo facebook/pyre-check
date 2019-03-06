@@ -241,10 +241,24 @@ end
 
 
 module StringLiteral = struct
+  module Substring = struct
+    type kind =
+      | Literal
+      | Format
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type t = { value: string; kind: kind }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    let is_all_literal = List.for_all
+        ~f:(fun { kind; _ } -> equal_kind kind Literal)
+  end
+
   type 'expression kind =
     | String
     | Bytes
     | Format of 'expression list
+    | Mixed of Substring.t list
 
 
   and 'expression t = {
@@ -264,6 +278,24 @@ module StringLiteral = struct
         | _ -> String
     in
     { value; kind }
+
+  let create_mixed pieces =
+    (* Default to literal string so subsequent pre-processing logic can be simplier. *)
+    match pieces with
+    | [] ->
+        { value = ""; kind = String }
+    | [{ Substring.kind = Literal; value }] ->
+        { value; kind = String }
+    | _ ->
+        let value =
+          pieces
+          |> List.map ~f:(fun { Substring.value; _ } -> value)
+          |> String.concat ~sep:""
+        in
+        if Substring.is_all_literal pieces then
+          { value; kind = String }
+        else
+          { value; kind = Mixed pieces }
 end
 
 
