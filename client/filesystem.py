@@ -52,6 +52,12 @@ def find_root(original_directory: str, target_file: str) -> Optional[str]:
     return None
 
 
+def exists(path: str) -> str:
+    if not os.path.isfile(path):
+        raise ValueError("%s is not a valid file" % path)
+    return path
+
+
 class AnalysisDirectory:
     def __init__(self, path: str, filter_paths: Optional[List[str]] = None) -> None:
         self._path = path
