@@ -194,8 +194,7 @@ module Define : sig
   val create_toplevel: qualifier: Access.t -> statements: statement_t list -> t
   val create_class_toplevel: qualifier: Access.t -> statements: statement_t list -> t
 
-  val unqualified_name: t -> Access.t
-  val unqualified_name_as_identifier: t -> Identifier.t
+  val unqualified_name: t -> Identifier.t
   val self_identifier: t -> Identifier.t
 
   val is_method: t -> bool

@@ -279,24 +279,10 @@ module Define = struct
     }
 
 
-  let unqualified_name { name; parent; _ } =
-    match parent with
-    | Some parent ->
-        let is_qualified =
-          List.is_prefix
-            name
-            ~prefix:parent
-            ~equal:(Access.equal_access Expression.equal)
-        in
-        if is_qualified then List.drop name (List.length parent) else name
-    | _ ->
-        name
-
-
-  let unqualified_name_as_identifier { name; _ } =
+  let unqualified_name { name; _ } =
     match List.last_exn name with
     | Access.Identifier identifier -> identifier
-    | _ -> failwith "Not a valid Define name"
+    | _ -> failwith "Define does not have a valid name."
 
 
   let self_identifier { parameters; _ } =
@@ -337,14 +323,10 @@ module Define = struct
     has_decorator define "staticmethod"
 
 
-  let is_dunder_method { name; _ } =
-    match List.last name with
-    | Some dunder ->
-        let name = Access.show [dunder] in
-        String.is_prefix ~prefix:"__" name &&
-        String.is_suffix ~suffix:"__" name
-    | _ ->
-        false
+  let is_dunder_method define =
+    let name = unqualified_name define in
+    String.is_prefix ~prefix:"__" name &&
+    String.is_suffix ~suffix:"__" name
 
 
   let is_class_method ({ parent; _ } as define) =
@@ -352,7 +334,7 @@ module Define = struct
     (Set.exists Recognized.classmethod_decorators ~f:(has_decorator define) ||
      List.mem
        ["__init_subclass__"; "__new__"; "__class_getitem__"]
-       (Access.show (unqualified_name define))
+       (unqualified_name define)
        ~equal:String.equal)
 
 
@@ -361,12 +343,8 @@ module Define = struct
     Set.exists Recognized.classproperty_decorators ~f:(has_decorator define)
 
 
-  let is_constructor ?(in_test = false) { name; parent; _ } =
-    let name =
-      match List.last name with
-      | Some (Access.Identifier name) -> name
-      | _ -> "$unknown"
-    in
+  let is_constructor ?(in_test = false) ({ parent; _ } as define) =
+    let name = unqualified_name define in
     if Option.is_none parent then
       false
     else
@@ -378,13 +356,8 @@ module Define = struct
          name)
 
 
-  let is_property_setter ({ name; _ } as define) =
-    let last =
-      List.last name
-      >>| (fun last -> [last])
-      |> Option.value ~default:[]
-    in
-    has_decorator define ((Access.show last) ^ ".setter")
+  let is_property_setter define =
+    has_decorator define ((unqualified_name define) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -395,16 +368,12 @@ module Define = struct
     async
 
 
-  let is_toplevel { name; _ } =
-    match List.last name with
-    | Some (Access.Identifier toplevel) when toplevel = "$toplevel" -> true
-    | _ -> false
+  let is_toplevel define =
+    Identifier.equal (unqualified_name define) "$toplevel"
 
 
-  let is_class_toplevel { name; _ } =
-    match List.last name with
-    | Some (Access.Identifier toplevel) when toplevel = "$class_toplevel" -> true
-    | _ -> false
+  let is_class_toplevel define =
+    Identifier.equal (unqualified_name define) "$class_toplevel"
 
 
   let contains_call { body; _ } name =
@@ -707,15 +676,9 @@ module Class = struct
 
   let find_define { Record.Class.body; _ } ~method_name =
     let is_define = function
-      | { Node.value = Define ({ name; _ } as define); location} ->
-          begin
-            match List.last name with
-            | Some (Access.Identifier name)
-              when Identifier.equal name method_name ->
-                Some { Node.value = define; location }
-            | _ ->
-                None
-          end
+      | { Node.value = Define define; location}
+        when Identifier.equal (Define.unqualified_name define) method_name ->
+          Some { Node.value = define; location }
       | _ ->
           None
     in
