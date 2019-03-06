@@ -294,7 +294,6 @@ def main() -> int:
 
     query = parsed_commands.add_parser(commands.Query.NAME)
     query_message = """One of:
-    `help`,
     `attributes(type)`,
     `dump_dependencies(path)`,
     `dump_memory_to_sqlite`,
@@ -303,13 +302,14 @@ def main() -> int:
     `meet(left, right)`,
     `methods(type)`,
     `normalize_type(type)`,
+    `path_of_module(module)`,
     `save_server_state(path)`,
     `signature(name)`,
     `superclasses(type)`,
     `type(name)`,
     `type_at_position(path, row, column)`,
     `types_in_file(path)`
-    `type_check(path, ...)`,
+    `type_check(path, ...)`.
     """
     query.add_argument("query", help=query_message)
     query.set_defaults(command=commands.Query)
