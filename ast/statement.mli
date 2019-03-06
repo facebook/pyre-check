@@ -220,7 +220,7 @@ module Define : sig
   val implicit_attributes
     :  t
     -> definition: statement_t Record.Class.record
-    -> Attribute.t Access.SerializableMap.t
+    -> Attribute.t Identifier.SerializableMap.t
   val property_attribute: location: Location.t -> t -> Attribute.t option
 
   val has_decorator: ?match_prefix:bool -> t -> string -> bool
@@ -237,13 +237,13 @@ module Class : sig
   val defines: t -> Define.t list
   val find_define: t -> method_name:Identifier.t -> Define.t Node.t option
 
-  val implicit_attributes: ?in_test: bool -> t -> Attribute.t Access.SerializableMap.t
-  val explicitly_assigned_attributes: t -> Attribute.t Access.SerializableMap.t
+  val implicit_attributes: ?in_test: bool -> t -> Attribute.t Identifier.SerializableMap.t
+  val explicitly_assigned_attributes: t -> Attribute.t Identifier.SerializableMap.t
   val attributes
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
     -> t
-    -> Attribute.t Access.SerializableMap.t
+    -> Attribute.t Identifier.SerializableMap.t
 
   val update: t -> definition: t -> t
 

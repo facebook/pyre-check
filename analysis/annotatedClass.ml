@@ -664,7 +664,7 @@ let attributes
         in
         Statement.Class.attributes ~include_generated_attributes ~in_test definition
         |> fun attribute_map ->
-        Access.SerializableMap.fold
+        Identifier.SerializableMap.fold
           (fun _ data attributes -> collect_attributes attributes data)
           attribute_map
           attributes

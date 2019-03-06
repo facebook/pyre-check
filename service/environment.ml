@@ -382,8 +382,8 @@ module SharedHandler: Analysis.Environment.Handler = struct
             Resolution.class_definition = definition;
             methods = [];
             successors = [];
-            explicit_attributes = Statement.Access.SerializableMap.empty;
-            implicit_attributes = Statement.Access.SerializableMap.empty;
+            explicit_attributes = Identifier.SerializableMap.empty;
+            implicit_attributes = Identifier.SerializableMap.empty;
             is_test = false;
           }
     in

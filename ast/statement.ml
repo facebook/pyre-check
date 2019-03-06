@@ -447,14 +447,17 @@ module Define = struct
 
   let implicit_attributes
       ({ body; parameters; _ } as define)
-      ~definition:{ Record.Class.body = definition_body; _ }: Attribute.t Access.SerializableMap.t =
+      ~definition:{
+        Record.Class.body = definition_body;
+        _;
+      } : Attribute.t Identifier.SerializableMap.t =
     let open Expression in
     let parameter_annotations =
       let add_parameter map = function
         | { Node.value = { Parameter.name; annotation = Some annotation; _ }; _ } ->
             Access.SerializableMap.set
               map
-              ~key:(Access.create_from_identifiers [name])
+              ~key:[Access.Identifier name]
               ~data:annotation
         | _ ->
             map
@@ -478,7 +481,7 @@ module Define = struct
                   | Some attributes -> Some (attribute :: attributes)
                   | None -> Some [attribute]
                 in
-                Access.SerializableMap.update [Access.Identifier name] update map
+                Identifier.SerializableMap.update name update map
             | _ ->
                 map
           in
@@ -591,11 +594,11 @@ module Define = struct
     in
     let toplevel_attributes =
       body
-      |> List.fold ~init:Access.SerializableMap.empty ~f:(attribute ~toplevel:true)
+      |> List.fold ~init:Identifier.SerializableMap.empty ~f:(attribute ~toplevel:true)
     in
     gather_nested_statements ~toplevel:true body
     |> List.fold ~init:toplevel_attributes ~f:(attribute ~toplevel:false)
-    |> Access.SerializableMap.map merge_attributes
+    |> Identifier.SerializableMap.map merge_attributes
 
 
   let property_attribute ~location ({ name; return_annotation; parameters; parent; _ } as define) =
@@ -734,7 +737,7 @@ module Class = struct
             |> function
             | Some name ->
                 let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
-                Access.SerializableMap.set map ~key:[Access.Identifier name] ~data:attribute
+                Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ ->
                 map
           in
@@ -770,7 +773,7 @@ module Class = struct
                     ~value
                     ()
                 in
-                Access.SerializableMap.set map ~key:[Access.Identifier name] ~data:attribute
+                Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ ->
                 map
           in
@@ -783,17 +786,14 @@ module Class = struct
                 let attribute =
                   Attribute.create ~primitive:true ~location ~name ?annotation ~value ()
                 in
-                Access.SerializableMap.set
-                  map
-                  ~key:[Access.Identifier name]
-                  ~data:attribute
+                Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ ->
                 map
           end
       | _ ->
           map
     in
-    List.fold ~init:Access.SerializableMap.empty ~f:assigned_attributes body
+    List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
 
   let implicit_attributes ?(in_test = false) ({ Record.Class.name; body; _ } as definition) =
     (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
@@ -805,7 +805,9 @@ module Class = struct
     let implicitly_assigned_attributes =
       constructors ~in_test definition
       |> List.map ~f:(Define.implicit_attributes ~definition)
-      |> List.fold ~init:Access.SerializableMap.empty ~f:(Access.SerializableMap.merge merge)
+      |> List.fold
+          ~init:Identifier.SerializableMap.empty
+          ~f:(Identifier.SerializableMap.merge merge)
     in
     let property_attributes =
       let property_attributes map = function
@@ -824,7 +826,7 @@ module Class = struct
                 } as attribute_node) ->
                   let merged_attribute =
                     let existing_attribute =
-                      Access.SerializableMap.find_opt [Access.Identifier name] map
+                      Identifier.SerializableMap.find_opt name map
                     in
                     match existing_attribute, new_setter with
                     | Some { Node.value = { Attribute.setter = true; annotation; _ }; _ },
@@ -848,17 +850,14 @@ module Class = struct
                     | _ ->
                         attribute_node
                   in
-                  Access.SerializableMap.set
-                    map
-                    ~key:[Access.Identifier name]
-                    ~data:merged_attribute
+                  Identifier.SerializableMap.set map ~key:name ~data:merged_attribute
               | _ ->
                   map
             end
         | _ ->
             map
       in
-      List.fold ~init:Access.SerializableMap.empty ~f:property_attributes body
+      List.fold ~init:Identifier.SerializableMap.empty ~f:property_attributes body
     in
     let callable_attributes =
       let callable_attributes map { Node.location; value } =
@@ -869,7 +868,7 @@ module Class = struct
               ~parent:name
             >>| (fun name ->
                   let attribute =
-                    match Access.SerializableMap.find_opt [Access.Identifier name] map with
+                    match Identifier.SerializableMap.find_opt name map with
                     | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
                         Attribute.create
                           ~location
@@ -883,12 +882,12 @@ module Class = struct
                           ~defines:[{ define with Define.body = [] }]
                           ()
                   in
-                  Access.SerializableMap.set map ~key:[Access.Identifier name] ~data:attribute)
+                  Identifier.SerializableMap.set map ~key:name ~data:attribute)
             |> Option.value ~default:map
         | _ ->
             map
       in
-      List.fold ~init:Access.SerializableMap.empty ~f:callable_attributes body
+      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
     in
     let class_attributes =
       let callable_attributes map { Node.location; value } =
@@ -922,9 +921,9 @@ module Class = struct
             begin
               match List.last_exn name with
               | Access.Identifier attribute_name ->
-                  Access.SerializableMap.set
+                  Identifier.SerializableMap.set
                     map
-                    ~key:name
+                    ~key:attribute_name
                     ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
               | _ ->
                   map
@@ -932,7 +931,7 @@ module Class = struct
         | _ ->
             map
       in
-      List.fold ~init:Access.SerializableMap.empty ~f:callable_attributes body
+      List.fold ~init:Identifier.SerializableMap.empty ~f:callable_attributes body
     in
     let slots_attributes =
       let slots_attributes map { Node.value; _ } =
@@ -959,7 +958,7 @@ module Class = struct
                     ~name:value
                     ()
                   |> fun attribute ->
-                    Access.SerializableMap.set map ~key:[Access.Identifier value] ~data:attribute
+                    Identifier.SerializableMap.set map ~key:value ~data:attribute
               | _ ->
                   map
             in
@@ -967,14 +966,14 @@ module Class = struct
         | _ ->
             map
       in
-      List.fold ~init:Access.SerializableMap.empty ~f:slots_attributes body
+      List.fold ~init:Identifier.SerializableMap.empty ~f:slots_attributes body
     in
     (* Merge with decreasing priority. *)
     implicitly_assigned_attributes
-    |> Access.SerializableMap.merge merge property_attributes
-    |> Access.SerializableMap.merge merge callable_attributes
-    |> Access.SerializableMap.merge merge class_attributes
-    |> Access.SerializableMap.merge merge slots_attributes
+    |> Identifier.SerializableMap.merge merge property_attributes
+    |> Identifier.SerializableMap.merge merge callable_attributes
+    |> Identifier.SerializableMap.merge merge class_attributes
+    |> Identifier.SerializableMap.merge merge slots_attributes
 
 
   let attributes
@@ -991,7 +990,7 @@ module Class = struct
         | Some _ -> right
       in
       explicit_attributes
-      |> Access.SerializableMap.merge merge (implicit_attributes ~in_test definition)
+      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test definition)
 
 
   let update

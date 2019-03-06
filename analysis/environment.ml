@@ -190,8 +190,8 @@ let handler
               class_definition = definition;
               methods = [];
               successors = [];
-              explicit_attributes = Access.SerializableMap.empty;
-              implicit_attributes = Access.SerializableMap.empty;
+              explicit_attributes = Identifier.SerializableMap.empty;
+              implicit_attributes = Identifier.SerializableMap.empty;
               is_test = false;
             }
       in
@@ -1132,8 +1132,8 @@ module Builder = struct
           Resolution.class_definition = Node.create_with_default_location definition;
           methods = [];
           successors;
-          explicit_attributes = Access.SerializableMap.empty;
-          implicit_attributes = Access.SerializableMap.empty;
+          explicit_attributes = Identifier.SerializableMap.empty;
+          implicit_attributes = Identifier.SerializableMap.empty;
           is_test = false;
         }
         class_definitions;

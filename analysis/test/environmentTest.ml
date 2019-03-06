@@ -191,7 +191,7 @@ let test_refine_class_definitions _ =
       else
         explicit_attributes
     in
-    let actual = Access.SerializableMap.find_opt (Access.create attribute_name) map in
+    let actual = Identifier.SerializableMap.find_opt attribute_name map in
     match expected, actual with
     | Some expected, Some actual ->
         assert_true (attribute_equal expected actual)

@@ -9,6 +9,7 @@ type t = string
 [@@deriving compare, eq, sexp, show, hash]
 
 module Map : Map.S with type Key.t = t
+module SerializableMap: SerializableMap.S with type key = t
 module Set: Set.S with type Elt.t = t
 
 val sanitized: t -> t

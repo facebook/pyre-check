@@ -13,8 +13,8 @@ type global = Annotation.t Node.t
 type class_representation = {
   class_definition: Class.t Node.t;
   successors: Type.t list;
-  explicit_attributes: Attribute.t Access.SerializableMap.t;
-  implicit_attributes: Attribute.t Access.SerializableMap.t;
+  explicit_attributes: Attribute.t Identifier.SerializableMap.t;
+  implicit_attributes: Attribute.t Identifier.SerializableMap.t;
   is_test: bool;
   methods: Type.t list;
 }
