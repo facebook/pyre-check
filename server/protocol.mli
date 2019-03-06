@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Analysis
+open Pyre
 open Expression
 
 module DefinitionRequest: sig
@@ -29,14 +30,14 @@ module TypeQuery: sig
   type request =
     | Attributes of Access.t
     | DumpDependencies of File.t
-    | DumpMemoryToSqlite
+    | DumpMemoryToSqlite of Path.t
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t
     | Methods of Access.t
     | NormalizeType of Access.t
     | PathOfModule of Access.t
-    | SaveServerState of Pyre.Path.t
+    | SaveServerState of Path.t
     | Signature of Access.t
     | Superclasses of Access.t
     | Type of Expression.t

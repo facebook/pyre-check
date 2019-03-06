@@ -413,13 +413,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         TypeQuery.Response (TypeQuery.Success ())
 
-    | TypeQuery.DumpMemoryToSqlite ->
-        let path =
-          Path.create_relative
-            ~root:(Configuration.Analysis.pyre_root configuration)
-            ~relative:"memory.sqlite"
-          |> Path.absolute
-        in
+    | TypeQuery.DumpMemoryToSqlite path ->
+        let path = Path.absolute path in
         let () =
           try
             Unix.unlink path;

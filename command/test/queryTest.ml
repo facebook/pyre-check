@@ -15,17 +15,19 @@ open Pyre
 open Test
 
 
-let test_parse_query _ =
+let test_parse_query context =
+  let configuration = Configuration.Analysis.create ~local_root:(mock_path "") () in
   let assert_parses serialized query =
     assert_equal
       ~cmp:Request.equal
+      ~printer:Request.show
       (Request.TypeQueryRequest query)
-      (Commands.Query.parse_query ~root:(mock_path "") serialized)
+      (Commands.Query.parse_query ~configuration serialized)
   in
 
   let assert_fails_to_parse serialized =
     try
-      Commands.Query.parse_query ~root:(mock_path "") serialized
+      Commands.Query.parse_query ~configuration serialized
       |> ignore;
       assert_unreached ()
     with Commands.Query.InvalidQuery _ ->
@@ -68,7 +70,7 @@ let test_parse_query _ =
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
-    (Commands.Query.parse_query ~root:(mock_path "") "type_check('derp/fiddle.py')")
+    (Commands.Query.parse_query ~configuration "type_check('derp/fiddle.py')")
     (Request.TypeCheckRequest
        (TypeCheckRequest.create
           ~check:[
@@ -117,7 +119,19 @@ let test_parse_query _ =
        (File.create (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py")));
   assert_fails_to_parse "dump_dependencies(unquoted)";
 
-  assert_parses "dump_memory_to_sqlite()" DumpMemoryToSqlite;
+  assert_parses
+    "dump_memory_to_sqlite()"
+    (DumpMemoryToSqlite (Path.create_relative ~root:(mock_path "") ~relative:".pyre/memory.sqlite"));
+  let memory_file, _ = bracket_tmpfile context in
+  assert_parses
+    (Format.sprintf "dump_memory_to_sqlite('%s')" memory_file)
+    (DumpMemoryToSqlite (Path.create_absolute memory_file));
+  assert_parses
+    (Format.sprintf "dump_memory_to_sqlite('a.sqlite')")
+    (DumpMemoryToSqlite
+       (Path.create_relative
+          ~root:(Path.current_working_directory ())
+          ~relative:"a.sqlite"));
 
   assert_parses "path_of_module(a.b.c)" (PathOfModule (Expression.Access.create "a.b.c"));
   assert_fails_to_parse "path_of_module('a.b.c')";

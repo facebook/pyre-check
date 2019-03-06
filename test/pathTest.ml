@@ -156,7 +156,8 @@ let test_append context =
 
   let open Path.AppendOperator in
   assert_equal (root ^| "durp" |> Path.show) (path ^/ "durp");
-  assert_equal ((root ^| "path") ^| "durp" |> Path.show) (path ^/ "path/durp")
+  assert_equal ((root ^| "path") ^| "durp" |> Path.show) (path ^/ "path/durp");
+  assert_equal ((root ^| "") ^| "durp" |> Path.show) (path ^/ "durp")
 
 
 let test_is_directory context =

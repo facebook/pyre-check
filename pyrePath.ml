@@ -98,7 +98,15 @@ let current_working_directory () =
 let append path ~element =
   match path with
   | Absolute path -> Absolute (path ^/ element)
-  | Relative { root; relative } -> Relative { root; relative = relative ^/ element }
+  | Relative { root; relative } ->
+      let relative =
+        match relative with
+        | "" ->
+            element
+        | _ ->
+            relative ^/ element
+      in
+      Relative { root; relative }
 
 
 module AppendOperator = struct

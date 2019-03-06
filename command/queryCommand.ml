@@ -18,7 +18,9 @@ open TypeQuery
 exception InvalidQuery of string
 
 
-let parse_query ~root query =
+let parse_query
+    ~configuration:({ Configuration.Analysis.local_root = root; _ } as configuration)
+    query =
   match (Parser.parse [query]) with
   | [{
       Node.value = Statement.Expression {
@@ -59,8 +61,24 @@ let parse_query ~root query =
               |> File.create
             in
             Request.TypeQueryRequest (DumpDependencies file)
-        | "dump_memory_to_sqlite", _ ->
-            Request.TypeQueryRequest DumpMemoryToSqlite
+        | "dump_memory_to_sqlite", arguments ->
+            let path =
+              match arguments with
+              | [argument] ->
+                  let path = string argument in
+                  if Filename.is_relative path then
+                    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+                  else
+                    Path.create_absolute path
+              | [] ->
+                  Path.create_relative
+                    ~root:(Configuration.Analysis.pyre_root configuration)
+                    ~relative:"memory.sqlite"
+              | _ ->
+                  raise (InvalidQuery "Too many arguments to `dump_memory_to_sqlite`")
+            in
+            Request.TypeQueryRequest (DumpMemoryToSqlite path)
+
         | "join", [left; right] ->
             Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->
@@ -126,7 +144,7 @@ let run_query serialized local_root () =
   (fun () ->
      let response =
        try
-         let query = parse_query ~root:local_root serialized in
+         let query = parse_query ~configuration serialized in
          let socket = Server.Operations.connect ~retries:3 ~configuration in
          Socket.write socket query;
          match Socket.read socket with

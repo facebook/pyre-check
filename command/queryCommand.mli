@@ -9,6 +9,6 @@ open Server
 
 exception InvalidQuery of string
 
-val parse_query: root: Pyre.Path.t -> string -> Protocol.Request.t
+val parse_query: configuration: Configuration.Analysis.t -> string -> Protocol.Request.t
 
 val command: Command.t
