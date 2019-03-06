@@ -16,8 +16,8 @@
   yojson
   ppx_deriving_yojson
   ppx_deriving
-  pyrelib.analysis
   pyrelib.ast
+  pyrelib.analysis
   pyrelib.interprocedural
   pyrelib.pyreParser
   pyrelib.recognized

@@ -88,7 +88,12 @@ module type ANALYZER = sig
     -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)
-  val init: types:string list -> functions:Callable.t list -> unit
+  val init
+    :  configuration: Yojson.Safe.json
+    -> environment:(module Analysis.Environment.Handler)
+    -> functions:Callable.t list
+    -> call_model Callable.Map.t
+
 end
 
 
@@ -330,6 +335,16 @@ let obscure_model = {
 
 
 let empty_result = Kind.Map.empty
+
+
+let make_model kind analysis_model =
+  let kind = Kind.cast kind in
+  let package = Pkg { kind = ModelPart kind; value = analysis_model }
+  in
+  {
+    empty_model with
+    models = Kind.Map.singleton (Kind.abstract kind) package;
+  }
 
 
 let with_model kind analysis_model overall_model =

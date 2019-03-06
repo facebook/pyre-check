@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+module TypeCheck = Analysis.TypeCheck
+
 open Core
 open OUnit2
 
@@ -220,5 +222,12 @@ let run_with_taint_models tests =
     |> Test.trim_extra_indentation
   in
   let environment = Test.environment ~sources:[Test.parse model_source] () in
-  Service.StaticAnalysis.add_models ~environment [model_source];
+  let () =
+    Model.parse
+      ~resolution:(TypeCheck.resolution environment ())
+      ~source:model_source
+      Callable.Map.empty
+    |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+    |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
+  in
   Test.run tests

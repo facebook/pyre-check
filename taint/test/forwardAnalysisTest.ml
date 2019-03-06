@@ -40,7 +40,13 @@ let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect 
 
   models
   >>| Test.trim_extra_indentation
-  >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment [model_source])
+  >>| (fun model_source ->
+      Model.parse
+        ~resolution:(TypeCheck.resolution environment ())
+        ~source:model_source
+        Callable.Map.empty
+      |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+      |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
 
   TypeCheck.run ~configuration ~environment ~source |> ignore;

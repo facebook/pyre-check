@@ -73,7 +73,8 @@ module ResultA = Interprocedural.Result.Make(struct
 
 
 module AnalysisA = ResultA.Register(struct
-    let init ~types:_ ~functions:_ = ()
+    let init ~configuration:_ ~environment:_ ~functions:_ =
+      Callable.Map.empty
 
     let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ =
       "A", 5
@@ -126,7 +127,8 @@ module ResultB = Interprocedural.Result.Make(struct
 
 
 module AnalysisB = ResultB.Register(struct
-    let init ~types:_ ~functions:_ = ()
+    let init ~configuration:_ ~environment:_ ~functions:_ =
+      Callable.Map.empty
 
     let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ =
       7, "B"

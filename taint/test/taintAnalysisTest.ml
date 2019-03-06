@@ -105,17 +105,18 @@ let initialize ?(qualifier = "test.py") ?models source_content =
     let keys = Fixpoint.KeySet.of_list all_callables in
     Fixpoint.remove_new keys;
     Fixpoint.remove_old keys;
-    let () =
-      models
-      >>| Test.trim_extra_indentation
-      >>| (fun model_source -> Service.StaticAnalysis.add_models ~environment [model_source])
-      |> ignore
+    let initial_models =
+      match models with
+      | None -> Callable.Map.empty
+      | Some source ->
+          Model.parse
+            ~resolution:(TypeCheck.resolution environment ())
+            ~source:(Test.trim_extra_indentation source)
+            Callable.Map.empty
     in
-    let add_initial_model callable =
-      if not (Fixpoint.has_model callable) then
-        Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model
-    in
-    List.iter all_callables ~f:add_initial_model
+    initial_models
+    |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+    |> Interprocedural.Analysis.record_initial_models ~functions:all_callables ~stubs:[]
   in
   { callgraph; overrides; all_callables; environment }
 

@@ -27,6 +27,7 @@
   oUnit
   pyrelib.test
   pyrelib.ast
+  pyrelib.analysis
   pyrelib.interprocedural
   pyrelib.taint
   pyrelib.taintTestHelper

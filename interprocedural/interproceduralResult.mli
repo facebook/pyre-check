@@ -96,7 +96,12 @@ module type ANALYZER = sig
     -> result * call_model
 
   (* Called once on master before analysis of individual callables. *)
-  val init: types:string list -> functions:Callable.t list -> unit
+  val init
+    :  configuration: Yojson.Safe.json
+    -> environment:(module Analysis.Environment.Handler)
+    -> functions:Callable.t list
+    -> call_model Callable.Map.t
+
 end
 
 module type ANALYSIS_RESULT = sig
@@ -165,6 +170,12 @@ val empty_result: result_t
 
 val get: ('part, 'value) partial_kind -> 'part pkg Kind.Map.t -> 'value option
 val get_model: ('result, 'model) analysis_data Kind.kind -> model_t -> 'model option
+
+val make_model:
+  ('result, 'model) analysis_data Kind.kind
+  -> 'model
+  -> model_t
+
 val with_model:
   ('result, 'model) analysis_data Kind.kind
   -> 'model

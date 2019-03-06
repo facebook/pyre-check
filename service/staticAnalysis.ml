@@ -66,41 +66,8 @@ let record_path_of_definitions ~path ~source =
   List.map ~f:record_toplevel_definition defines
 
 
-let add_models ~environment sources =
-  let open Taint in
-  let open Interprocedural in
-  let add_model_to_memory ~key:call_target ~data:model =
-    (*
-    let () =
-      Log.info
-        "Adding taint model %S to shared memory\n%a\n"
-        (Callable.external_target_name call_target)
-        Result.pp_model_t model
-    in
-    *)
-    Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
-  in
-  let models =
-    let make_model Model.{ model; _ } =
-      Result.empty_model |> Result.with_model Taint.Result.kind model
-    in
-    List.concat_map
-      sources
-      ~f:(fun model_source ->
-          Model.create
-            ~resolution:(TypeCheck.resolution environment ())
-            ~model_source
-            ()
-          |> Or_error.ok_exn
-        )
-    |> List.map ~f:(fun model -> (model.Model.call_target, make_model model))
-    |> Callable.Map.of_alist_reduce ~f:Analysis.join_models
-  in
-  Callable.Map.iteri models ~f:add_model_to_memory
-
-
 let analyze
-    ?taint_models_directory
+    ?(taint_models_directory = "")
     ~scheduler
     ~configuration:({
         Configuration.StaticAnalysis.configuration;
@@ -110,40 +77,6 @@ let analyze
     ~environment
     ~handles:paths
     () =
-  (* Add models *)
-  let () =
-    match taint_models_directory with
-    | Some directory ->
-        begin
-          try
-            let directory = Path.create_absolute directory in
-            let check_directory_exists directory =
-              if not (Path.is_directory directory) then
-                raise
-                  (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
-            in
-            check_directory_exists directory;
-            Log.info "Finding taint models in %a" Path.pp directory;
-            let get_source_models path =
-              Path.create_absolute path
-              |> File.create
-              |> File.content
-            in
-            let directory = Path.absolute directory in
-            Sys.readdir directory
-            |> Array.to_list
-            |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
-            |> List.map ~f:((^/) directory)
-            |> List.filter_map ~f:get_source_models
-            |> add_models ~environment
-          with exn ->
-            Log.dump
-              "Error getting taint models: %s" (Exn.to_string exn);
-            raise exn
-        end
-    | None -> ()
-  in
-
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =
@@ -223,39 +156,29 @@ let analyze
     in
     List.fold paths ~f:make_callables ~init:([], [])
   in
-  let real_callables =
-    let model_definitions = ref 0 in
-    let record_initial_inferred_model callable =
-      let open Interprocedural in
-      if Fixpoint.get_meta_data callable <> None then
-        (Int.incr model_definitions; Some callable)
-      else
-        let () = Fixpoint.add_predefined Fixpoint.Epoch.initial callable Result.empty_model in
-        Some callable
-    in
-    let result = List.filter_map callables ~f:record_initial_inferred_model in
-    let () =
-      Log.info
-        "Found %d source definitions with predefined models."
-        !model_definitions
-    in
-    result
-  in
-  let () =
-    let obscure_stubs = ref 0 in
-    let record_obscure_stub_model callable =
-      let open Interprocedural in
-      if Fixpoint.get_meta_data callable = None then begin
-        Int.incr obscure_stubs;
-        Fixpoint.add_predefined Fixpoint.Epoch.predefined callable Result.obscure_model
-      end
-    in
-    List.iter stubs ~f:record_obscure_stub_model;
-    Log.info
-      "Added %d obscure models for stubs without source definition."
-      !obscure_stubs
+  (* TODO(T41380664): generalize this to handle more than taint analysis.
+     The analysis_configuration here should be picked from the command line somehow and it
+     would indicate which analysis to run (taint vs others), and also contain particular
+     analysis options passed the the analysis initialization code.
+  *)
+  let configuration_json = `Assoc [
+      "taint", `Assoc [
+        "model_directory", `String taint_models_directory;
+      ];
+    ]
   in
   let analyses = [Taint.Analysis.abstract_kind] in
+  (* Initialize and add initial models of analyses to shared mem. *)
+  let () =
+    Analysis.initialize
+      analyses
+      ~configuration:configuration_json
+      ~environment
+      ~functions:callables
+    |> Analysis.record_initial_models
+      ~functions:callables
+      ~stubs
+  in
   let override_dependencies = DependencyGraph.from_overrides overrides in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
@@ -269,11 +192,11 @@ let analyze
     in
     List.iter override_targets ~f:add_predefined
   in
-  let all_callables = List.rev_append override_targets real_callables in
+  let all_callables = List.rev_append override_targets callables in
   Log.info
     "Analysis fixpoint started for %d overrides %d functions..."
     (List.length override_targets)
-    (List.length real_callables);
+    (List.length callables);
   let timer = Timer.start () in
   let () =
     try

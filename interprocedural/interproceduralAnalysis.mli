@@ -43,7 +43,16 @@ val save_results:
   -> Callable.t list
   -> unit
 
-val join_models:
-  InterproceduralResult.model_t
-  -> InterproceduralResult.model_t
-  -> InterproceduralResult.model_t
+(* Calls init on all specified analyses to get initial models *)
+val initialize:
+  Kind.abstract list
+  -> configuration: Yojson.Safe.json
+  -> environment: (module Analysis.Environment.Handler)
+  -> functions: Callable.t list
+  -> InterproceduralResult.model_t Callable.Map.t
+
+val record_initial_models:
+  functions: Callable.t list
+  -> stubs: Callable.t list
+  -> InterproceduralResult.model_t Callable.Map.t
+  -> unit

@@ -55,7 +55,6 @@ let get_obscure_models analyses =
   }
 
 
-
 let non_fixpoint_witness
     (type a)
     (kind: <model:a;..> Result.storable_kind)
@@ -206,6 +205,39 @@ let widen_if_necessary step callable ~old_model { Result.models = new_model; is_
       model;
       result;
     }
+
+
+let initialize kinds ~configuration ~environment ~functions =
+  let initialize_each models (Result.Analysis { kind; analysis }) =
+    let module Analysis = (val analysis) in
+    let new_models =
+      Analysis.init ~configuration ~environment ~functions
+    in
+    let add_analysis_model existing model =
+      let open Result in
+      let package = Pkg { kind = ModelPart kind; value = model } in
+      {
+        existing with
+        models = Kind.Map.add (Kind.abstract kind) package existing.models;
+      }
+    in
+    let merge ~key:_ = function
+      | `Both (existing, new_model) ->
+          Some (add_analysis_model existing new_model)
+      | `Left existing ->
+          Some existing
+      | `Right new_model ->
+          Some (add_analysis_model Result.empty_model new_model)
+    in
+    Callable.Map.merge models new_models ~f:merge
+  in
+  let accumulate model kind =
+    initialize_each model (Result.get_abstract_analysis kind)
+  in
+  List.fold
+    kinds
+    ~init:Callable.Map.empty
+    ~f:accumulate
 
 
 let analyze_define
@@ -741,10 +773,33 @@ let save_results ~configuration ~analyses all_callables =
       List.iter analyses ~f:save_metadata
 
 
-let join_models
-    { Result.is_obscure = is_obscure_left; models = models_left }
-    { Result.is_obscure = is_obscure_right; models = models_right } =
-  Result.{
-    is_obscure = is_obscure_left || is_obscure_right;
-    models = join_models ~iteration:0 models_left models_right;
-  }
+let record_initial_models ~functions ~stubs models =
+  let record_models models =
+    let add_model_to_memory ~key:call_target ~data:model =
+      Fixpoint.add_predefined Fixpoint.Epoch.initial call_target model
+    in
+    Callable.Map.iteri models ~f:add_model_to_memory
+  in
+  (* Augment models with initial inferred and obscure models *)
+  let add_missing_initial_models models =
+    List.filter functions ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold
+      ~init:models
+      ~f:(
+        fun models callable ->
+          Callable.Map.set models ~key:callable ~data:Result.empty_model
+      )
+  in
+  let add_missing_obscure_models models =
+    List.filter stubs ~f:(fun callable -> not (Callable.Map.mem models callable))
+    |> List.fold
+      ~init:models
+      ~f:(
+        fun models callable ->
+          Callable.Map.set models ~key:callable ~data:Result.obscure_model
+      )
+  in
+  models
+  |> add_missing_initial_models
+  |> add_missing_obscure_models
+  |> record_models

@@ -473,3 +473,15 @@ let get_callsite_model ~resolution ~call_target ~arguments =
             |> strip_for_call_site
           in
           { is_obscure = model.is_obscure; call_target; model = taint_model }
+
+
+let parse ~resolution ~source models =
+  create ~resolution ~model_source:source ()
+  |> Or_error.ok_exn
+  |> List.map ~f:(fun model -> (model.call_target, model.model))
+  |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
+  |> Callable.Map.merge models
+    ~f:(fun ~key:_ -> function
+        | `Both (a, b) -> Some (join ~iteration:0 a b)
+        | `Left model | `Right model -> Some model
+      )

@@ -5,12 +5,57 @@
 
 module Callable = Interprocedural.Callable
 
+open Core
+open Pyre
+
 
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
 include TaintResult.Register(struct
     include TaintResult
 
-    let init ~types:_ ~functions:_ = ()
+    let init ~configuration ~environment ~functions:_ =
+      (* Parse models *)
+      let create_models sources =
+        List.fold
+          sources
+          ~init:Callable.Map.empty
+          ~f:(fun models source ->
+              Model.parse ~resolution:(Analysis.TypeCheck.resolution environment ()) ~source models)
+      in
+      let taint = Yojson.Safe.Util.member "taint" configuration in
+      let model_directory =
+        Yojson.Safe.Util.member "model_directory" taint
+        |> Yojson.Safe.Util.to_string
+      in
+      match model_directory with
+      | "" ->
+          Callable.Map.empty
+      | directory ->
+          try
+            let directory = Path.create_absolute directory in
+            let check_directory_exists directory =
+              if not (Path.is_directory directory) then
+                raise
+                  (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
+            in
+            check_directory_exists directory;
+            Log.info "Finding taint models in %a" Path.pp directory;
+            let get_source_models path =
+              Path.create_absolute path
+              |> File.create
+              |> File.content
+            in
+            let directory = Path.absolute directory in
+            Sys.readdir directory
+            |> Array.to_list
+            |> List.filter ~f:(String.is_suffix ~suffix:".pysa")
+            |> List.map ~f:((^/) directory)
+            |> List.filter_map ~f:get_source_models
+            |> create_models
+          with exn ->
+            Log.dump
+              "Error getting taint models: %s" (Exn.to_string exn);
+            raise exn
 
     let analyze ~callable:_ ~environment ~define ~mode =
       let forward, result = ForwardAnalysis.run ~environment ~define in

@@ -30,3 +30,9 @@ val get_callsite_model
   -> call_target: [<Callable.t]
   -> arguments: Argument.t list
   -> t
+
+val parse
+  :  resolution: Resolution.t
+  -> source:string
+  -> TaintResult.call_model Callable.Map.t
+  -> TaintResult.call_model Callable.Map.t

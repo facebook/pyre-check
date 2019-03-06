@@ -23,11 +23,6 @@ val record_path_of_definitions
   -> source: Source.t
   -> (Callable.real_target * Define.t Node.t) list
 
-(** Populates shared memory with models from model sources. NOTE: since models
-    can be split across multiple files, it is important to pass all model sources
-    to this function at once as it merges them.  *)
-val add_models: environment: (module Environment.Handler) -> string list -> unit
-
 val analyze
   :  ?taint_models_directory: string
   -> scheduler: Scheduler.t
