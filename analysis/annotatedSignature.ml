@@ -237,8 +237,7 @@ let select
             match to_search with
             | [] ->
                 None, (List.rev searched)
-            | (Parameter.Named { Parameter.name = [Access.Identifier parameter_name]; _ } as head)
-              :: tail
+            | (Parameter.Named { Parameter.name = parameter_name; _ } as head) :: tail
               when Identifier.equal parameter_name name ->
                 Some head, (List.rev searched) @ tail
             | (Parameter.Keywords _ as head) :: tail ->
@@ -396,7 +395,7 @@ let select
           let reasons =
             {
               reasons with
-              arity = (MissingArgument parameter_name) :: arity
+              arity = (MissingArgument (Access.create parameter_name)) :: arity
             }
           in
           { signature_match with reasons }

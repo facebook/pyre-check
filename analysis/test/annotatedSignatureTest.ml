@@ -319,7 +319,7 @@ let test_select _ =
         Type.Callable.create
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "$0";
+                Type.Callable.Parameter.name = "$0";
                 annotation = Type.Any;
                 default = false;
               }])

@@ -1988,7 +1988,7 @@ let test_forward_expression _ =
       let open Type.Callable in
       let to_parameter name =
         Parameter.Named {
-          Parameter.name = Access.create name;
+          Parameter.name;
           annotation = Type.Any;
           default = false;
         }

@@ -96,21 +96,18 @@ let create ~parent ~resolution defines =
   let open Type.Callable in
   let { Define.name; _ } = List.hd_exn defines in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
-    let access =
-      String.lstrip ~drop:(function | '*' -> true | _ -> false) name
-      |> Access.create
-    in
+    let bare_name = String.lstrip ~drop:(function | '*' -> true | _ -> false) name in
     let annotation =
       annotation
       >>| Resolution.parse_annotation resolution
       |> Option.value ~default:Type.Top
     in
     if String.is_prefix ~prefix:"**" name then
-      Parameter.Keywords { Parameter.name = access; annotation; default = false }
+      Parameter.Keywords { Parameter.name = bare_name; annotation; default = false }
     else if String.is_prefix ~prefix:"*" name then
-      Parameter.Variable { Parameter.name = access; annotation; default = false }
+      Parameter.Variable { Parameter.name = bare_name; annotation; default = false }
     else
-      Parameter.Named { Parameter.name = access; annotation; default = Option.is_some value }
+      Parameter.Named { Parameter.name = bare_name; annotation; default = Option.is_some value }
   in
   let implementation, overloads =
     let to_signature (implementation, overloads) ({ Define.parameters; _ } as define) =

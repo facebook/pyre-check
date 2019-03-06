@@ -520,9 +520,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                             match parameter with
                             | Type.Callable.Parameter.Named
                                 { Type.Callable.Parameter.name; annotation; _ } ->
-                                let name = Expression.Access.sanitized name in
+                                let name = Identifier.sanitized name in
                                 Some {
-                                  TypeQuery.parameter_name = Expression.Access.show name;
+                                  TypeQuery.parameter_name = name;
                                   annotation = keep_known_annotation annotation;
                                 }
                             | _ ->

@@ -2344,7 +2344,7 @@ module State = struct
         in
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
           Type.Callable.Parameter.Named {
-            Type.Callable.Parameter.name = Access.create name;
+            Type.Callable.Parameter.name;
             annotation = Type.Any;
             default = false;
           }

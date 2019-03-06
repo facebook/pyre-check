@@ -1192,9 +1192,9 @@ and join_implementations ~parameter_join ~return_join order left right =
               | Some sofar ->
                   let joined =
                     let join_names left right =
-                      if String.is_prefix ~prefix:"$" (Expression.Access.show left) then
+                      if String.is_prefix ~prefix:"$" left then
                         left
-                      else if String.is_prefix ~prefix:"$" (Expression.Access.show right) then
+                      else if String.is_prefix ~prefix:"$" right then
                         right
                       else
                         left

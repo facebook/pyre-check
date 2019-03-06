@@ -853,7 +853,7 @@ let test_populate _ =
           ~name:(Access.create "Class.__init__")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = Access.create "self";
+                Type.Callable.Parameter.name = "self";
                 annotation = Type.Top;
                 default = false;
               };

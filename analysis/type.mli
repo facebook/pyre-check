@@ -13,7 +13,7 @@ module Record : sig
   module Callable : sig
     module RecordParameter : sig
       type 'annotation named = {
-        name: Access.t;
+        name: Identifier.t;
         annotation: 'annotation;
         default: bool;
       }
@@ -126,7 +126,7 @@ val generic: t
 val integer: t
 val iterable: t -> t
 val iterator: t -> t
-val lambda: parameters: (Access.t * t) list -> return_annotation: t -> t
+val lambda: parameters: (Identifier.t * t) list -> return_annotation: t -> t
 val list: t -> t
 val meta: t -> t
 val named_tuple: t

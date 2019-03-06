@@ -15,7 +15,7 @@ module Record = struct
   module Callable = struct
     module RecordParameter = struct
       type 'annotation named = {
-        name: Access.t;
+        name: Identifier.t;
         annotation: 'annotation;
         default: bool;
       }
@@ -24,7 +24,7 @@ module Record = struct
 
       let equal_named equal_annotation left right =
         left.default = right.default &&
-        Access.equal (Access.sanitized left.name) (Access.sanitized right.name) &&
+        Identifier.equal (Identifier.sanitized left.name) (Identifier.sanitized right.name) &&
         equal_annotation left.annotation right.annotation
 
 
@@ -231,7 +231,7 @@ let rec pp format annotation =
           | Defined parameters ->
               let parameter = function
                 | Parameter.Named { Parameter.name; annotation; default } ->
-                    let name = Access.show_sanitized name in
+                    let name = Identifier.sanitized name in
                     if String.is_prefix ~prefix:"$" name then
                       Format.asprintf
                         "%a%s"
@@ -245,13 +245,13 @@ let rec pp format annotation =
                         (if default then ", default" else "")
                 | Parameter.Variable { Parameter.name; annotation; _ } ->
                     Format.asprintf
-                      "Variable(%a, %a)"
-                      Access.pp_sanitized name
+                      "Variable(%s, %a)"
+                      (Identifier.sanitized name)
                       pp annotation
                 | Parameter.Keywords { Parameter.name; annotation; _ } ->
                     Format.asprintf
-                      "Keywords(%a, %a)"
-                      Access.pp_sanitized name
+                      "Keywords(%s, %a)"
+                      (Identifier.sanitized name)
                       pp annotation
               in
               List.map parameters ~f:parameter
@@ -545,21 +545,13 @@ let lambda ~parameters ~return_annotation =
         Defined
           (List.map
              ~f:(fun (name, parameter) ->
-                 let name = Access.show name in
                  if String.is_prefix ~prefix:"**" name then
-                   let name =
-                     String.drop_prefix name 2
-                     |> Access.create
-                   in
+                   let name = String.drop_prefix name 2 in
                    Parameter.Keywords { Parameter.name; annotation = parameter; default = false }
                  else if String.is_prefix ~prefix:"*" name then
-                   let name =
-                     String.drop_prefix name 1
-                     |> Access.create
-                   in
+                   let name = String.drop_prefix name 1 in
                    Parameter.Variable { Parameter.name; annotation = parameter; default = false }
                  else
-                   let name = Access.create name in
                    Parameter.Named { Parameter.name; annotation = parameter; default = false })
              parameters);
     };
@@ -786,7 +778,10 @@ let rec expression annotation =
                         else
                           []
                       in
-                      [{ Argument.name = None; value = Access.expression argument }]
+                      [{
+                        Argument.name = None;
+                        value = Access.expression (Access.create argument);
+                      }]
                       @ annotation @ default
                     in
                     Access.expression
@@ -1047,9 +1042,9 @@ module Callable = struct
       end)
 
     let name = function
-      | Named { name; _ } -> (Access.show name)
-      | Variable { name; _ } -> ("*" ^ (Access.show name))
-      | Keywords { name; _ } -> ("**" ^ (Access.show name))
+      | Named { name; _ } -> name
+      | Variable { name; _ } -> ("*" ^ name)
+      | Keywords { name; _ } -> ("**" ^ name)
 
 
     let annotation = function
@@ -1067,7 +1062,7 @@ module Callable = struct
 
 
     let is_anonymous = function
-      | Named { name; _ } when String.is_prefix ~prefix:"$" (Access.show name) ->
+      | Named { name; _ } when String.is_prefix ~prefix:"$" name ->
           true
       | _ ->
           false
@@ -1078,8 +1073,8 @@ module Callable = struct
       | Named { name = left; _ }, Named { name = right; _ }
       | Variable { name = left; _ }, Variable { name = right; _ }
       | Keywords { name = left; _ }, Keywords { name = right; _ } ->
-          let left = Access.show_sanitized left in
-          let right = Access.show_sanitized right in
+          let left = Identifier.sanitized left in
+          let right = Identifier.sanitized right in
           if String.is_prefix ~prefix:"$" left ||
              String.is_prefix ~prefix:"$" right then
             true
@@ -1429,7 +1424,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                             in
                             match name, arguments with
                             | "Named",
-                              { Node.value = Access (SimpleAccess name); _ }
+                              { Node.value = Access (SimpleAccess [Access.Identifier name]); _ }
                               :: annotation
                               :: tail ->
                                 let default =
@@ -1449,7 +1444,9 @@ let rec create ~aliases { Node.value = expression; _ } =
                                   annotation = create ~aliases annotation;
                                   default;
                                 }
-                            | "Variable", { Node.value = Access (SimpleAccess name); _ } :: tail ->
+                            | "Variable",
+                              { Node.value = Access (SimpleAccess [Access.Identifier name]); _ }
+                              :: tail ->
                                 let annotation =
                                   match tail with
                                   | annotation :: _ -> create ~aliases annotation
@@ -1460,7 +1457,9 @@ let rec create ~aliases { Node.value = expression; _ } =
                                   annotation;
                                   default = false;
                                 }
-                            | "Keywords", { Node.value = Access (SimpleAccess name); _ } :: tail ->
+                            | "Keywords",
+                              { Node.value = Access (SimpleAccess [Access.Identifier name]); _ }
+                              :: tail ->
                                 let annotation =
                                   match tail with
                                   | annotation :: _ -> create ~aliases annotation
@@ -1473,14 +1472,14 @@ let rec create ~aliases { Node.value = expression; _ } =
                                 }
                             | _ ->
                                 Parameter.Named {
-                                  Parameter.name = Access.create ("$" ^ Int.to_string index);
+                                  Parameter.name = "$" ^ Int.to_string index;
                                   annotation = Top;
                                   default = false;
                                 }
                           end
                       | _ ->
                           Parameter.Named {
-                            Parameter.name = Access.create ("$" ^ Int.to_string index);
+                            Parameter.name = "$" ^ Int.to_string index;
                             annotation = create ~aliases parameter;
                             default = false;
                           }
@@ -2265,7 +2264,7 @@ module TypedDictionary = struct
     let parameters =
       let single_star =
         Record.Callable.RecordParameter.Variable {
-          name = Access.create "";
+          name = "";
           annotation = Top;
           default = false;
         };
@@ -2273,7 +2272,7 @@ module TypedDictionary = struct
       let field_arguments =
         let field_to_argument { name; annotation } =
           Record.Callable.RecordParameter.Named {
-            name = Access.create (Format.asprintf "$parameter$%s" name);
+            name = Format.asprintf "$parameter$%s" name;
             annotation;
             default = not total;
           }
@@ -2299,16 +2298,8 @@ module TypedDictionary = struct
       implementation = {
         implementation with
         parameters = Defined [
-            Named {
-              name = Access.create "key";
-              annotation = string;
-              default = false;
-            };
-            Named {
-              name = Access.create "value";
-              annotation;
-              default = false;
-            };
+            Named { name = "key"; annotation = string; default = false };
+            Named { name = "value"; annotation; default = false };
           ];
       };
     }

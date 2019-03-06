@@ -270,12 +270,12 @@ let test_create _ =
           annotation = Type.integer;
           parameters = Defined [
               Parameter.Named {
-                Parameter.name = Access.create "$0";
+                Parameter.name = "$0";
                 annotation = Type.integer;
                 default = false;
               };
               Parameter.Named {
-                Parameter.name = Access.create "$1";
+                Parameter.name = "$1";
                 annotation = Type.string;
                 default = false;
               };
@@ -292,22 +292,22 @@ let test_create _ =
           annotation = Type.integer;
           parameters = Defined [
               Parameter.Named {
-                Parameter.name = Access.create "$0";
+                Parameter.name = "$0";
                 annotation = Type.integer;
                 default = false;
               };
               Parameter.Named {
-                Parameter.name = Access.create "a";
+                Parameter.name = "a";
                 annotation = Type.integer;
                 default = false;
               };
               Parameter.Variable {
-                Parameter.name = Access.create "variable";
+                Parameter.name = "variable";
                 annotation = Type.Top;
                 default = false;
               };
               Parameter.Keywords {
-                Parameter.name = Access.create "keywords";
+                Parameter.name = "keywords";
                 annotation = Type.Top;
                 default = false;
               };
@@ -324,17 +324,17 @@ let test_create _ =
           annotation = Type.integer;
           parameters = Defined [
               Parameter.Named {
-                Parameter.name = Access.create "$0";
+                Parameter.name = "$0";
                 annotation = Type.integer;
                 default = false;
               };
               Parameter.Variable {
-                Parameter.name = Access.create "variable";
+                Parameter.name = "variable";
                 annotation = Type.integer;
                 default = false;
               };
               Parameter.Keywords {
-                Parameter.name = Access.create "keywords";
+                Parameter.name = "keywords";
                 annotation = Type.string;
                 default = false;
               };
@@ -351,7 +351,7 @@ let test_create _ =
           annotation = Type.integer;
           parameters = Defined [
               Parameter.Named {
-                Parameter.name = Access.create "a";
+                Parameter.name = "a";
                 annotation = Type.integer;
                 default = true;
               };
@@ -466,12 +466,12 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
-             Parameter.name = Access.create "$0";
+             Parameter.name = "$0";
              annotation = Type.integer;
              default = false;
            };
            Parameter.Named {
-             Parameter.name = Access.create "$1";
+             Parameter.name = "$1";
              annotation = Type.string;
              default = false;
            };
@@ -483,12 +483,12 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
-             Parameter.name = Access.create "a";
+             Parameter.name = "a";
              annotation = Type.integer;
              default = false;
            };
            Parameter.Named {
-             Parameter.name = Access.create "b";
+             Parameter.name = "b";
              annotation = Type.string;
              default = false;
            };
@@ -500,7 +500,7 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
-             Parameter.name = Access.create "a";
+             Parameter.name = "a";
              annotation = Type.integer;
              default = true;
            };
@@ -512,17 +512,17 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:(Defined [
            Parameter.Named {
-             Parameter.name = Access.create "$0";
+             Parameter.name = "$0";
              annotation = Type.integer;
              default = false;
            };
            Parameter.Variable {
-             Parameter.name = Access.create "variable";
+             Parameter.name = "variable";
              annotation = Type.integer;
              default = false;
            };
            Parameter.Keywords {
-             Parameter.name = Access.create "keywords";
+             Parameter.name = "keywords";
              annotation = Type.string;
              default = false;
            };
@@ -578,12 +578,12 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:(Type.Callable.Defined [
            Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "x";
+             Type.Callable.Parameter.name = "x";
              annotation = Type.Any;
              default = true;
            };
            Type.Callable.Parameter.Named {
-             Type.Callable.Parameter.name = Access.create "y";
+             Type.Callable.Parameter.name = "y";
              annotation = Type.float;
              default = true;
            }
@@ -1323,7 +1323,7 @@ let test_variables _ =
 let test_parameter_name_compatibility _ =
   let parameter name =
     Type.Callable.Parameter.Named {
-      Type.Callable.Parameter.name = Access.create name;
+      Type.Callable.Parameter.name;
       annotation = Type.integer;
       default = false;
     }
@@ -1377,19 +1377,19 @@ let test_lambda _ =
     (Type.equal
        (parse_callable "typing.Callable[[Named(x, str)], int]")
        (Type.lambda
-          ~parameters:[Access.create "x", Type.string]
+          ~parameters:["x", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
        (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
        (Type.lambda
-          ~parameters:[Access.create "**kwargs", Type.string]
+          ~parameters:["**kwargs", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
        (parse_callable "typing.Callable[[Variable(args, str)], int]")
        (Type.lambda
-          ~parameters:[Access.create "*args", Type.string]
+          ~parameters:["*args", Type.string]
           ~return_annotation:Type.integer))
 
 
