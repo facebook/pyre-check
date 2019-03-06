@@ -33,7 +33,7 @@ module AccessState = struct
         callees: Type.Callable.t list;
         arguments: Argument.t list;
       }
-    | Attribute of { attribute: Access.t; origin: origin; defined: bool }
+    | Attribute of { attribute: Identifier.t; origin: origin; defined: bool }
     | NotCallable of Type.t
     | Value
   [@@deriving show]
@@ -1158,7 +1158,7 @@ module State = struct
                   let defined = List.for_all attributes ~f:Annotated.Attribute.defined in
                   let element =
                     AccessState.Attribute {
-                      attribute = [head];
+                      attribute = name;
                       (* TODO(T37504097): pass attributes to client. *)
                       origin = Instance (List.hd_exn attributes);
                       defined;
@@ -1166,7 +1166,7 @@ module State = struct
                   in
                   step state ~resolved ~target ~element ~continue:defined ~lead ()
 
-            | None, _ ->
+            | None, Access.Identifier name ->
                 (* Module or global variable. *)
                 begin
                   let annotation =
@@ -1235,7 +1235,7 @@ module State = struct
                         | None ->
                             let element =
                               AccessState.Attribute {
-                                attribute = [head];
+                                attribute = name;
                                 origin = Module qualifier;
                                 defined = false;
                               }
@@ -1243,6 +1243,8 @@ module State = struct
                             abort state ~element ~lead ()
                       end
                 end
+            | _ ->
+                abort state ~lead ()
           in
           if continue then
             fold ~state ~lead ~tail
@@ -1934,7 +1936,7 @@ module State = struct
                 begin
                   Statistics.event
                     ~name:"undefined attribute without location"
-                    ~normals:["attribute", (Expression.Access.show attribute)]
+                    ~normals:["attribute", attribute]
                     ();
                   None
                 end
@@ -1947,7 +1949,7 @@ module State = struct
                         Error.UndefinedName lead
                       else
                         Error.UndefinedAttribute {
-                          attribute;
+                          attribute = Access.create attribute;
                           origin =
                             Error.Class {
                               annotation;
@@ -1956,11 +1958,11 @@ module State = struct
                         }
                   | Module access when not (List.is_empty access) ->
                       Error.UndefinedAttribute {
-                        attribute;
+                        attribute = Access.create attribute;
                         origin = Error.Module access;
                       }
                   | Module _ ->
-                      Error.UndefinedName attribute
+                      Error.UndefinedName (Access.create attribute)
                 in
                 Some (Error.create ~location ~kind ~define)
           | NotCallable Type.Any ->
@@ -2735,11 +2737,11 @@ module State = struct
                   let kind =
                     let open Annotated in
                     match element with
-                    | Attribute { attribute = access; origin = Instance attribute; _ } ->
+                    | Attribute { attribute = name; origin = Instance attribute; _ } ->
                         Error.IncompatibleAttributeType {
                           parent = Attribute.parent attribute;
                           incompatible_type = {
-                            Error.name = access;
+                            Error.name = (Access.create name);
                             mismatch =
                               (Error.create_mismatch
                                  ~resolution
@@ -2807,12 +2809,12 @@ module State = struct
                   explicit && (not (Type.equal parent_annotation attribute_parent))
                 in
                 match element with
-                | Attribute { attribute = access; origin = Module _; defined }
+                | Attribute { attribute = name; origin = Module _; defined }
                   when defined && insufficiently_annotated ->
                     Error.create
                       ~location
                       ~kind:(Error.MissingGlobalAnnotation {
-                          Error.name = access;
+                          Error.name = Access.create name;
                           annotation = actual_annotation;
                           given_annotation = Some expected;
                           evidence_locations;
@@ -2828,7 +2830,7 @@ module State = struct
                       ~kind:(Error.IllegalAnnotationTarget target)
                       ~define:define_node
                     |> Option.some
-                | Attribute { attribute = access; origin = Instance attribute; defined }
+                | Attribute { attribute = name; origin = Instance attribute; defined }
                   when defined && insufficiently_annotated ->
                     let attribute_location = Annotated.Attribute.location attribute in
                     Error.create
@@ -2836,7 +2838,7 @@ module State = struct
                       ~kind:(Error.MissingAttributeAnnotation {
                           parent = Annotated.Attribute.parent attribute;
                           missing_annotation = {
-                            Error.name = access;
+                            Error.name = Access.create name;
                             annotation = actual_annotation;
                             given_annotation = Some expected;
                             evidence_locations;

@@ -499,7 +499,7 @@ let test_forward_access _ =
             | Attribute { origin = Module []; _ } ->
                 Unknown
             | Attribute { attribute; defined; _ } ->
-                Attribute { name = Access.show attribute; defined }
+                Attribute { name = attribute; defined }
             | Signature {
                 signature = Annotated.Signature.Found { callable; _ };
                 callees;
