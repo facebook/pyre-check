@@ -143,7 +143,7 @@ let create ~parent ~resolution defines =
             let callable =
               let implicit = {
                 implicit_annotation = parent;
-                name = [Access.Identifier (Type.Callable.Parameter.name self_parameter)];
+                name = Type.Callable.Parameter.name self_parameter;
               }
               in
               { callable with implicit = Some implicit }

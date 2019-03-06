@@ -974,7 +974,7 @@ let test_forward_access _ =
               overloads = [];
               implicit = Some {
                   Type.Callable.implicit_annotation = Type.Primitive "Class";
-                  name = Access.create "self";
+                  name = "self";
                 };
             };
             Type.Callable {
@@ -986,7 +986,7 @@ let test_forward_access _ =
               overloads = [];
               implicit = Some {
                   Type.Callable.implicit_annotation = Type.Primitive "Other";
-                  name = Access.create "self";
+                  name = "self";
                 };
             };
           ];

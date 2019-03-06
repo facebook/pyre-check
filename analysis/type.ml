@@ -43,7 +43,7 @@ module Record = struct
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
-      name: Access.t;
+      name: Identifier.t;
     }
 
 

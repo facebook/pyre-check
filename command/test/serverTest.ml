@@ -727,7 +727,7 @@ let test_query context =
                  overloads = [];
                  implicit = Some {
                      implicit_annotation = Type.Primitive "C";
-                     name = Access.create "self";
+                     name = "self";
                    };
                }
            };

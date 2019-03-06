@@ -31,7 +31,7 @@ module Record : sig
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
-      name: Access.t;
+      name: Identifier.t;
     }
 
     and 'annotation parameters =

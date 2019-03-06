@@ -272,7 +272,7 @@ let test_create _ =
     ~parent:"module.Foo"
     ~expected_implicit:{
       implicit_annotation = Type.Primitive "module.Foo";
-      name = Access.create "self";
+      name = "self";
     }
     {|
       def module.Foo.foo(self, a: int) -> int: ...

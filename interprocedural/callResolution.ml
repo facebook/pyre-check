@@ -165,7 +165,7 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
         let access, _ = normalize_global ~resolution access in
         [
           Callable.create_method access,
-          Some { Type.Callable.implicit_annotation = access_type; name = access };
+          Some { Type.Callable.implicit_annotation = access_type; name = "self" };
         ]
     | Type.Union annotations, _ ->
         List.concat_map ~f:resolve_type annotations
