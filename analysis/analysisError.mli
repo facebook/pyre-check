@@ -79,7 +79,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
-  | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
+  | InconsistentOverride of {
+      overridden_method: Identifier.t;
+      parent: Access.t;
+      override: override;
+    }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }

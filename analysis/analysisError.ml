@@ -88,7 +88,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
-  | InconsistentOverride of { overridden_method: Access.t; parent: Access.t; override: override }
+  | InconsistentOverride of {
+      overridden_method: Identifier.t;
+      parent: Access.t;
+      override: override;
+    }
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
@@ -1889,8 +1893,8 @@ let filter ~configuration ~resolution errors =
          typeshed naming *)
       match kind with
       | InconsistentOverride { overridden_method; override; _ }
-        when String.is_prefix ~prefix:"__" (Access.show overridden_method) &&
-             String.is_suffix ~suffix:"__" (Access.show overridden_method) ->
+        when String.is_prefix ~prefix:"__" overridden_method &&
+             String.is_suffix ~suffix:"__" overridden_method ->
           begin
             match override with
             | StrengthenedPrecondition (NotFound _) -> true

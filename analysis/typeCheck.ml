@@ -1550,8 +1550,7 @@ module State = struct
                        Error.create
                          ~location
                          ~kind:(Error.InconsistentOverride {
-                             overridden_method =
-                               Access.create (Statement.Define.unqualified_name define);
+                             overridden_method = Statement.Define.unqualified_name define;
                              parent =
                                Attribute.parent overridden_attribute
                                |> Type.show
@@ -1606,8 +1605,7 @@ module State = struct
                                Error.create
                                  ~location
                                  ~kind:(Error.InconsistentOverride {
-                                     overridden_method =
-                                       Access.create (Statement.Define.unqualified_name define);
+                                     overridden_method = Statement.Define.unqualified_name define;
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
@@ -1660,8 +1658,7 @@ module State = struct
                            Error.create
                              ~location
                              ~kind:(Error.InconsistentOverride {
-                                 overridden_method =
-                                   Access.create (Statement.Define.unqualified_name define);
+                                 overridden_method = Statement.Define.unqualified_name define;
                                  parent =
                                    Attribute.parent overridden_attribute
                                    |> Type.show

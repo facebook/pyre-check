@@ -451,13 +451,13 @@ let test_due_to_mismatch_with_any _ =
   (* InconsistentOverride *)
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-        overridden_method = Access.create "foo";
+        overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
         override = (StrengthenedPrecondition (NotFound (Access.create "x")));
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-        overridden_method = Access.create "foo";
+        overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Top;
@@ -467,7 +467,7 @@ let test_due_to_mismatch_with_any _ =
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
-        overridden_method = Access.create "foo";
+        overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Any;
@@ -477,7 +477,7 @@ let test_due_to_mismatch_with_any _ =
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
-        overridden_method = Access.create "foo";
+        overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
@@ -487,7 +487,7 @@ let test_due_to_mismatch_with_any _ =
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
-        overridden_method = Access.create "foo";
+        overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
@@ -1041,7 +1041,7 @@ let test_filter _ =
 
   let inconsistent_override name override =
     InconsistentOverride {
-      overridden_method = Access.create name;
+      overridden_method = name;
       parent = Access.create (Type.show mock_parent);
       override;
     }
