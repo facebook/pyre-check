@@ -431,6 +431,35 @@ let test_check_typed_dictionaries _ =
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
+        reveal_type(len(movie))
+    |}
+    ["Revealed type [-1]: Revealed type for `len.(...)` is `int`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        for k in movie:
+          reveal_type(k)
+    |}
+    ["Revealed type [-1]: Revealed type for `k` is `str`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        b = "key" in movie
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `bool`."];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
         movie['name'] += 7
     |}
     [

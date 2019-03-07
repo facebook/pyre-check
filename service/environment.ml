@@ -22,7 +22,7 @@ let populate
 
   let all_annotations =
     List.fold
-      ~init:Type.Set.empty
+      ~init:Environment.built_in_annotations
       ~f:(fun annotations source ->
           Set.union annotations (Environment.register_class_definitions (module Handler) source))
       sources

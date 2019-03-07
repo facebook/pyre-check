@@ -130,6 +130,8 @@ val infer_protocols
 
 val propagate_nested_classes: (module Handler) -> Resolution.t -> Type.t -> unit
 
+val built_in_annotations: Type.Set.t
+
 module Builder : sig
   val create: unit -> t
   val copy: t -> t

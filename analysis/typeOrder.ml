@@ -1061,15 +1061,10 @@ and less_or_equal
       in
       (left.total = right.total) && not (List.exists right.fields ~f:field_not_found)
 
-  | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key; value ] }
-    when mapping = "typing.Mapping" &&
-         Type.equal Type.string key &&
-         Type.equal Type.Any value ->
-      true
-
-  | Type.TypedDictionary _, _
+  | Type.TypedDictionary _, _ ->
+      less_or_equal order ~left:(Type.Primitive "TypedDictionary") ~right
   | _, Type.TypedDictionary _ ->
-      false
+      less_or_equal order ~left ~right:(Type.Primitive "TypedDictionary")
 
   | _, Type.Literal _ ->
       false
@@ -1352,9 +1347,6 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
                 | Type.Top, _, _
                 | _, Type.Top, _ ->
                     Type.Top
-                | Type.Any, _, _
-                | _, Type.Any, _ ->
-                    Type.Top
                 | _, _, Type.Variable { variance = Covariant; _ } ->
                     join order left right
                 | _, _, Type.Variable { variance = Contravariant; _ } ->
@@ -1464,19 +1456,15 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
           in
           Type.TypedDictionary.anonymous ~total:left_total join_fields
 
-    | Type.TypedDictionary _, Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }
-    | Type.Parametric { name = mapping; parameters = [ key_annotation; _ ] }, Type.TypedDictionary _
-      when mapping = "typing.Mapping" &&
-           (* Mappings are only covariant in their value annotations. *)
-           Type.equal key_annotation Type.string ->
-        Type.Parametric {
-          name = "typing.Mapping";
-          parameters = [ Type.string; Type.Any ]
-        }
-
-    | Type.TypedDictionary _, _
-    | _, Type.TypedDictionary _ ->
-        union
+    | Type.TypedDictionary _, other
+    | other, Type.TypedDictionary _ ->
+        let class_join = join order (Type.Primitive "TypedDictionary") other in
+        let failed =
+          Type.exists
+            class_join
+            ~predicate:(function | Type.Primitive "TypedDictionary" -> true | _ -> false)
+        in
+        if failed then union else class_join
 
     | Type.Callable left,
       Type.Callable right ->
@@ -2257,6 +2245,22 @@ module Builder = struct
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
     connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
+
+    let typed_dictionary = Type.Primitive "TypedDictionary" in
+    let typing_mapping = Type.Primitive "typing.Mapping" in
+    insert handler typed_dictionary;
+    insert handler typing_mapping;
+    connect handler ~predecessor:Type.Bottom ~successor:typed_dictionary;
+    connect
+      handler
+      ~predecessor:typed_dictionary
+      ~parameters:[Type.string; Type.Any]
+      ~successor:typing_mapping;
+    connect
+      handler
+      ~parameters:[Type.variable "_T"; Type.variable "_T2"]
+      ~predecessor:typing_mapping
+      ~successor:Type.generic;
 
     order
 end

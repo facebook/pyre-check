@@ -1066,6 +1066,11 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
   |> ignore
 
 
+let built_in_annotations =
+  [ Type.Primitive "TypedDictionary" ]
+  |> Type.Set.of_list
+
+
 module Builder = struct
   let create () =
     let class_definitions = Type.Table.create () in
@@ -1174,7 +1179,7 @@ module Builder = struct
           {
             Argument.name = None;
             value =
-              Type.Primitive "typing.Mapping"
+              (Type.parametric "typing.Mapping" [Type.string; Type.Any])
               |> Type.expression
           };
         ],
@@ -1234,9 +1239,6 @@ module Builder = struct
       ~key:(Type.Primitive "PathLike")
       ~data:(Type.Primitive "_PathLike");
 
-    TypeOrder.insert
-      (TypeOrder.handler order)
-      (Type.Primitive "TypedDictionary");
     TypeOrder.insert
       (TypeOrder.handler order)
       (Type.Primitive "typing_extensions.Literal");

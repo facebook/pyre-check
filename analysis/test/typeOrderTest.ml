@@ -848,6 +848,23 @@ let test_less_or_equal _ =
       ~predecessor:!"ParametricCallableToStr"
       ~successor:!"typing.Generic";
 
+    let typed_dictionary = Type.Primitive "TypedDictionary" in
+    let typing_mapping = Type.Primitive "typing.Mapping" in
+    insert order typed_dictionary;
+    insert order typing_mapping;
+    connect order ~predecessor:Type.Bottom ~successor:typed_dictionary;
+    connect
+      order
+      ~predecessor:typed_dictionary
+      ~parameters:[Type.string; Type.Any]
+      ~successor:typing_mapping;
+    connect
+      order
+      ~parameters:[Type.variable "_T"; Type.variable "_T2"]
+      ~predecessor:typing_mapping
+      ~successor:!"typing.Generic";
+    insert order (Type.Primitive "dict");
+
     order
   in
   assert_true
@@ -1812,12 +1829,7 @@ let test_join _ =
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Mapping[int, str]"
-    (
-      "typing.Union[" ^
-      "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))], " ^
-      "typing.Mapping[int, str]" ^
-      "]"
-    );
+    "typing.Mapping[typing.Any, typing.Any]";
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))]"
     "typing.Dict[str, str]"
@@ -1908,13 +1920,13 @@ let test_join _ =
        variance_order
        (Type.parametric "LinkedList" [Type.integer])
        (Type.parametric "LinkedList" [Type.Any]))
-    (Type.parametric "LinkedList" [Type.Top]);
+    (Type.parametric "LinkedList" [Type.Any]);
   assert_type_equal
     (join
        variance_order
        (Type.parametric "LinkedList" [Type.Any])
        (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Top]);
+    (Type.parametric "LinkedList" [Type.Any]);
   let variance_aliases =
     Type.Table.of_alist_exn [
       Type.Primitive "_T", Type.variable "_T";
