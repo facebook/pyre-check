@@ -42,7 +42,8 @@ let test_check_unbounded_variables _ =
         reveal_type(mapping_get("A", 7))
     |}
     [
-      "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `typing.Union[int, str]`.";
+      "Revealed type [-1]: Revealed type for `mapping_get.(...)` is " ^
+      "`typing.Union[typing_extensions.Literal['A'], int]`.";
       "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `int`.";
     ];
   assert_type_errors

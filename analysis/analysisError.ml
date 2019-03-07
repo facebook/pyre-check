@@ -216,6 +216,63 @@ let name = function
   | UnusedIgnore _ -> "Unused ignore"
 
 
+let weaken_literals kind =
+  let weaken_mismatch { actual; expected; due_to_invariance } =
+    let actual =
+      if (Type.contains_literal expected) then
+        actual
+      else
+        Type.weaken_literals actual
+    in
+    { actual; expected; due_to_invariance }
+  in
+  let weaken_missing_annotation = function
+    | { given_annotation = Some given; _ } as missing when Type.contains_literal given ->
+        missing
+    | { annotation = Some annotation; _  } as missing ->
+        { missing with annotation = Some (Type.weaken_literals annotation) }
+    | missing ->
+        missing
+  in
+  match kind with
+  | ImpossibleIsinstance ({ mismatch: mismatch; _ } as isinstance) ->
+      ImpossibleIsinstance { isinstance with mismatch = weaken_mismatch mismatch }
+  | IncompatibleAttributeType
+      ({ incompatible_type = ({ mismatch; _} as incompatible) ; _ } as attribute) ->
+      IncompatibleAttributeType {
+        attribute with
+        incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
+      }
+  | IncompatibleVariableType ({ mismatch; _ } as incompatible) ->
+      IncompatibleVariableType { incompatible with mismatch = weaken_mismatch mismatch }
+  | InconsistentOverride ({ override = WeakenedPostcondition mismatch; _ } as inconsistent) ->
+      InconsistentOverride
+        { inconsistent with override = WeakenedPostcondition (weaken_mismatch mismatch) }
+  | InconsistentOverride
+      ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent) ->
+      InconsistentOverride
+        { inconsistent with override = StrengthenedPrecondition (Found (weaken_mismatch mismatch)) }
+  | IncompatibleParameterType ({ mismatch; _ } as incompatible) ->
+      IncompatibleParameterType { incompatible with mismatch = weaken_mismatch mismatch }
+  | IncompatibleReturnType ({ mismatch; _ } as incompatible) ->
+      IncompatibleReturnType { incompatible with mismatch = weaken_mismatch mismatch }
+  | UninitializedAttribute ({ mismatch; _ } as uninitialized) ->
+      UninitializedAttribute { uninitialized with mismatch = weaken_mismatch mismatch }
+  | MissingAttributeAnnotation { parent; missing_annotation } ->
+      MissingAttributeAnnotation
+        { parent; missing_annotation = weaken_missing_annotation missing_annotation }
+  | MissingGlobalAnnotation missing_annotation ->
+      MissingGlobalAnnotation (weaken_missing_annotation missing_annotation)
+  | MissingParameterAnnotation missing_annotation ->
+      MissingParameterAnnotation (weaken_missing_annotation missing_annotation)
+  | MissingReturnAnnotation missing_annotation ->
+      MissingReturnAnnotation (weaken_missing_annotation missing_annotation)
+  | ProhibitedAny missing_annotation ->
+      ProhibitedAny (weaken_missing_annotation missing_annotation)
+  | _ ->
+      kind
+
+
 let messages ~concise ~define location kind =
   let {
     Location.start = { Location.line = start_line; _ };
@@ -250,6 +307,7 @@ let messages ~concise ~define location kind =
     Access.pp_sanitized format access
   in
   let pp_identifier = Identifier.pp_sanitized in
+  let kind = weaken_literals kind in
   match kind with
   | AnalysisFailure annotation when concise ->
       [

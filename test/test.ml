@@ -503,6 +503,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __str__(self) -> str: ...
           def __getitem__(self, i: Union[int, slice]) -> str: ...
           def __iter__(self) -> Iterator[str]: ...
+          def __eq__(self, x: object) -> bool: ...
 
         class tuple(Sequence[_T], Sized, Generic[_T]):
           def __init__(self, a: List[_T]): ...
@@ -810,6 +811,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         class Thread:
           pass
+      |}
+    |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "typing_extensions")
+      ~handle:"typing_extensions.pyi"
+      {|
+        class _SpecialForm:
+            def __getitem__(self, typeargs: Any) -> Any: ...
+        Literal: _SpecialForm = ...
       |}
     |> Preprocessing.qualify;
     parse

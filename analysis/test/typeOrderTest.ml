@@ -1272,7 +1272,30 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
-       ~right:"dict[str, typing.Any]")
+       ~right:"dict[str, typing.Any]");
+
+  (* Literals *)
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing_extensions.Literal['a']"
+       ~right:"typing_extensions.Literal['a']");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing_extensions.Literal['a']"
+       ~right:"str");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"str"
+       ~right:"typing_extensions.Literal['a']");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing_extensions.Literal['a']"
+       ~right:"typing_extensions.Literal['a', 'b']");
+  ()
 
 
 let test_less_or_equal_variance _ =
@@ -1984,6 +2007,17 @@ let test_join _ =
     "B[float, float]"
     "A[int, int]"
     "A[float, int]";
+
+  (* Literals *)
+  assert_type_equal
+    (join order (Type.literal_string "A") (Type.literal_string "A"))
+    (Type.literal_string "A");
+  assert_type_equal
+    (join order (Type.literal_string "A") (Type.literal_string "B"))
+    Type.string;
+  assert_type_equal
+    (join order (Type.literal_string "A") (Type.integer))
+    (Type.union [Type.string; Type.integer]);
   ()
 
 
@@ -2193,7 +2227,7 @@ let test_least_upper_bound _ =
 
   assert_equal (least_upper_bound order Type.Top Type.Top) [Type.Top];
 
-  assert_equal (least_upper_bound butterfly !"0" !"1") [!"2"; !"3"]
+  assert_equal (least_upper_bound butterfly !"0" !"1") [!"3"; !"2"]
 
 
 let test_greatest_lower_bound _ =
@@ -2388,15 +2422,22 @@ let test_backedges _ =
       let create target = { Target.target = index_of !target; parameters = [] } in
       List.map targets ~f:create
     in
+    let printer targets =
+      targets
+      |> List.map
+        ~f:(fun { Target.target; _ } -> Handler.find_unsafe (Handler.annotations ()) target)
+      |> List.map ~f:Type.show
+      |> String.concat
+    in
     assert_equal
-      ~printer:(List.to_string ~f:Target.show)
+      ~printer
       targets
       (Handler.find_unsafe edges (index_of !from))
   in
   (* After normalization, backedges are ordered by target comparison, not insertion order. *)
   assert_targets (Handler.backedges ()) "0" ["2"; "3"; "4"; "1"];
   TypeOrder.normalize (module Handler);
-  assert_targets (Handler.backedges ()) "0" ["2"; "1"; "3"; "4"]
+  assert_targets (Handler.backedges ()) "0" ["3"; "2"; "4"; "1"]
 
 
 let test_check_integrity _ =
@@ -2468,15 +2509,15 @@ let test_to_dot _ =
     ({|
         digraph {
           129913994[label="undefined"]
-          234594981[label="2"]
-          547049050[label="1"]
-          611166579[label="3"]
+          360125662[label="0"]
+          544641955[label="3"]
           648017920[label="unknown"]
-          847044026[label="0"]
-          234594981 -> 611166579
-          547049050 -> 611166579
-          847044026 -> 234594981
-          847044026 -> 547049050[label="(str)"]
+          874630001[label="2"]
+          1061160138[label="1"]
+          360125662 -> 874630001
+          360125662 -> 1061160138[label="(str)"]
+          874630001 -> 544641955
+          1061160138 -> 544641955
         }
      |}
      |> Test.trim_extra_indentation)

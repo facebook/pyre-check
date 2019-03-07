@@ -1087,6 +1087,41 @@ let test_check_named_arguments _ =
     ]
 
 
+let test_check_literals _ =
+  assert_type_errors
+    {|
+      from typing import overload
+      from typing_extensions import Literal
+      import typing_extensions
+      @overload
+      def foo(x: typing_extensions.Literal["give_me_int", "also_give_me_int"]) -> int: ...
+      @overload
+      def foo(x: Literal["give_me_str"]) -> str: ...
+      def foo(x: str) -> typing.Union[int, str, bool]:
+        if x == "give_me_int":
+          return 7
+        if x == "give_me_str":
+          return "seven"
+        return False
+      def bar() -> None:
+        a = foo("give_me_str")
+        reveal_type(a)
+        b = foo("give_me_int")
+        reveal_type(b)
+        c = foo("something_else")
+        reveal_type(c)
+        d = foo("also_give_me_int")
+        reveal_type(d)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `a` is `str`.";
+      "Revealed type [-1]: Revealed type for `b` is `int`.";
+      "Revealed type [-1]: Revealed type for `c` is `typing.Union[bool, int, str]`.";
+      "Revealed type [-1]: Revealed type for `d` is `int`.";
+    ];
+  ()
+
+
 let () =
   "signatureSelection">:::[
     "check_callables">::test_check_callables;
@@ -1100,5 +1135,6 @@ let () =
     "check_variable_restrictions">::test_check_variable_restrictions;
     "check_keyword_arguments">::test_check_keyword_arguments;
     "check_named_arguments">::test_check_named_arguments;
+    "check_literals">::test_check_literals;
   ]
   |> Test.run

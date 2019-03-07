@@ -82,6 +82,10 @@ open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
 
+type literal =
+  | String of string
+[@@deriving compare, eq, sexp, show, hash]
+
 type variable_state =
   | Free
   | InFunction
@@ -116,6 +120,7 @@ and t =
   | Bottom
   | Callable of t Record.Callable.record
   | Any
+  | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
   | Primitive of Identifier.t
@@ -272,6 +277,8 @@ let rec pp format annotation =
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Any ->
       Format.fprintf format "typing.Any"
+  | Literal String literal ->
+      Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom ->
       Format.fprintf format "None"
   | Optional parameter ->
@@ -394,6 +401,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "Callable[%s]" (signature_to_string implementation)
   | Any ->
       Format.fprintf format "Any"
+  | Literal String literal ->
+      Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom ->
       Format.fprintf format "None"
   | Optional parameter ->
@@ -623,6 +632,10 @@ let string =
   Primitive "str"
 
 
+let literal_string literal =
+  Literal (String literal)
+
+
 let tuple parameters: t =
   match parameters with
   | [] -> Tuple (Bounded [])
@@ -820,6 +833,17 @@ let rec expression annotation =
         in
         (Access.create "typing.Callable") @ (convert implementation) @ overloads
     | Any -> Access.create "typing.Any"
+    | Literal literal ->
+        let literal =
+          match literal with
+          | String literal ->
+              Expression.String { value = literal; kind = StringLiteral.String }
+        in
+        let argument = { Argument.name = None; value = Node.create_with_default_location literal} in
+        (Access.create "typing_extensions.Literal") @ [
+          Access.Identifier "__getitem__";
+          Access.Call (Node.create_with_default_location ([argument]));
+        ]
     | Optional Bottom ->
         split "None"
     | Optional parameter ->
@@ -975,6 +999,7 @@ module Transform = struct
             in
             Variable { variable with constraints }
 
+        | Literal _
         | Bottom
         | Top
         | Any
@@ -1395,7 +1420,7 @@ let rec create ~aliases { Node.value = expression; _ } =
           let kind =
             match modifiers with
             | Some ({
-                Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                Argument.value = { Node.value = Expression.String { StringLiteral.value; _ }; _ };
                 _;
               } :: _) ->
                 Named (Access.create value)
@@ -1673,6 +1698,40 @@ let rec create ~aliases { Node.value = expression; _ } =
             >>| parse_typed_dictionary
             |> Option.value ~default:(parse_access access)
 
+        | Access
+            (SimpleAccess [
+                Access.Identifier "typing_extensions";
+                Access.Identifier "Literal";
+                Access.Identifier "__getitem__";
+                Access.Call ({
+                    Node.value = arguments;
+                    _;
+                  });
+              ]) ->
+            let arguments =
+              match arguments with
+              | [{ Argument.name = None; value = { Node.value = Expression.Tuple arguments; _ } }]
+                ->
+                  List.map arguments ~f:Node.value
+                  |> Option.some
+              | [{ Argument.name = None; value = { Node.value = argument; _ } }] ->
+                  Some [argument]
+              | _ ->
+                  None
+            in
+            let parse = function
+              | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+                  literal_string value
+                  |> Option.some
+              | _ ->
+                  None
+            in
+            arguments
+            >>| List.map ~f:parse
+            >>= Option.all
+            >>| union
+            |> Option.value ~default:Top
+
         | Access (SimpleAccess access) ->
             parse_access access
 
@@ -1854,6 +1913,14 @@ let is_not_instantiated annotation =
   exists annotation ~predicate
 
 
+let contains_literal annotation =
+  let predicate = function
+    | Literal _ -> true
+    | _ -> false
+  in
+  exists annotation ~predicate
+
+
 let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make(struct
       type state = t list
@@ -1892,6 +1959,8 @@ let elements annotation =
           match annotation with
           | Callable _ ->
               Primitive "typing.Callable" :: sofar
+          | Literal _ ->
+              Primitive "typing_extensions.Literal" :: sofar
           | Optional _ ->
               Primitive "typing.Optional" :: sofar
           | Parametric { name; _ } ->
@@ -1964,6 +2033,42 @@ let single_parameter = function
   | _ -> failwith "Type does not have single parameter"
 
 
+let instantiate ?(widen = false) annotation ~constraints =
+  let module InstantiateTransform = Transform.Make(struct
+      type state = unit
+
+      let visit_children_before _ annotation =
+        constraints annotation
+        |>  Option.is_none
+
+      let visit_children_after =
+        false
+
+      let visit _ annotation =
+        let transformed_annotation =
+          match constraints annotation with
+          | Some Bottom when widen ->
+              Top
+          | Some replacement ->
+              replacement
+          | None ->
+              annotation
+        in
+        { Transform.transformed_annotation; new_state = () }
+    end)
+  in
+  snd (InstantiateTransform.visit () annotation)
+
+
+let weaken_literals annotation =
+  let constraints =
+    function
+    | Literal String _ -> Some string
+    | _ -> None
+  in
+  instantiate ~constraints annotation
+
+
 let split = function
   | Optional parameter ->
       Primitive "typing.Optional", [parameter]
@@ -1978,6 +2083,8 @@ let split = function
       Primitive "tuple", parameters
   | (TypedDictionary _) as typed_dictionary ->
       Primitive "TypedDictionary", [typed_dictionary]
+  | (Literal _ as literal) ->
+      weaken_literals literal, []
   | annotation ->
       annotation, []
 
@@ -2009,33 +2116,6 @@ let class_variable_value = function
 let assume_any = function
   | Top -> Any
   | annotation -> annotation
-
-
-let instantiate ?(widen = false) annotation ~constraints =
-  let module InstantiateTransform = Transform.Make(struct
-      type state = unit
-
-      let visit_children_before _ annotation =
-        constraints annotation
-        |>  Option.is_none
-
-      let visit_children_after =
-        false
-
-      let visit _ annotation =
-        let transformed_annotation =
-          match constraints annotation with
-          | Some Bottom when widen ->
-              Top
-          | Some replacement ->
-              replacement
-          | None ->
-              annotation
-        in
-        { Transform.transformed_annotation; new_state = () }
-    end)
-  in
-  snd (InstantiateTransform.visit () annotation)
 
 
 let mark_variables_as_bound ?(simulated = false) annotation =

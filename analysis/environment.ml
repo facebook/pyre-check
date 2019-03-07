@@ -1221,6 +1221,9 @@ module Builder = struct
     TypeOrder.insert
       (TypeOrder.handler order)
       (Type.Primitive "TypedDictionary");
+    TypeOrder.insert
+      (TypeOrder.handler order)
+      (Type.Primitive "typing_extensions.Literal");
 
 
     {

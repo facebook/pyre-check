@@ -1375,14 +1375,14 @@ let test_protocols _ =
     ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
     (Handler.protocols ())
     ([
-      "typing._Collection";
-      "typing.Awaitable";
       "typing.Sized";
-      "typing.Collection";
-      "typing.AsyncIterable";
-      "typing.Iterable";
       "typing.AsyncIterator";
-      "typing.Iterator"
+      "typing.AsyncIterable";
+      "typing.Iterator";
+      "typing._Collection";
+      "typing.Iterable";
+      "typing.Collection";
+      "typing.Awaitable";
     ]
       |> List.map ~f:(fun primitive -> Type.Primitive primitive));
   ()

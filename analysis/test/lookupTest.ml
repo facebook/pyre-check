@@ -98,10 +98,10 @@ let test_lookup_call_arguments _ =
     ~lookup
     [
       "2:4-2:6/int";
-      "3:12-3:20/str";
-      "3:4-3:20/str";
-      "4:4-5:14/str";
-      "5:4-5:14/str";
+      "3:12-3:20/typing_extensions.Literal['argval']";
+      "3:4-3:20/typing_extensions.Literal['argval']";
+      "4:4-5:14/typing_extensions.Literal['nextline']";
+      "5:4-5:14/typing_extensions.Literal['nextline']";
     ];
   assert_annotation
     ~position:{ Location.line = 2; column = 4 }
@@ -114,13 +114,13 @@ let test_lookup_call_arguments _ =
     ~annotation:None;
   assert_annotation
     ~position:{ Location.line = 3; column = 4 }
-    ~annotation:(Some "3:4-3:20/str");
+    ~annotation:(Some "3:4-3:20/typing_extensions.Literal['argval']");
   assert_annotation
     ~position:{ Location.line = 3; column = 11 }
-    ~annotation:(Some "3:4-3:20/str");
+    ~annotation:(Some "3:4-3:20/typing_extensions.Literal['argval']");
   assert_annotation
     ~position:{ Location.line = 3; column = 19 }
-    ~annotation:(Some "3:12-3:20/str");
+    ~annotation:(Some "3:12-3:20/typing_extensions.Literal['argval']");
   assert_annotation
     ~position:{ Location.line = 3; column = 20 }
     ~annotation:None;
@@ -129,19 +129,19 @@ let test_lookup_call_arguments _ =
     ~annotation:None;
   assert_annotation
     ~position:{ Location.line = 4; column = 4 }
-    ~annotation:(Some "4:4-5:14/str");
+    ~annotation:(Some "4:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 4; column = 13 }
-    ~annotation:(Some "4:4-5:14/str");
+    ~annotation:(Some "4:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 4; column = 14 }
-    ~annotation:(Some "4:4-5:14/str");
+    ~annotation:(Some "4:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 5; column = 3 }
-    ~annotation:(Some "4:4-5:14/str");
+    ~annotation:(Some "4:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 5; column = 13 }
-    ~annotation:(Some "5:4-5:14/str");
+    ~annotation:(Some "5:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 5; column = 14 }
     ~annotation:None
@@ -308,7 +308,7 @@ let test_lookup_unknown_accesses _ =
     ~lookup
     [
       "2:13-2:17/None";
-      "3:14-3:19/str";
+      "3:14-3:19/typing_extensions.Literal['key']";
     ];
   assert_annotation
     ~position:{ Location.line = 3; column = 4 }
@@ -654,7 +654,7 @@ let test_lookup_definitions _ =
       "test.py:2:16-2:19 -> builtins.pyi:65:0-79:34";
       "test.py:5:14-5:17 -> builtins.pyi:65:0-79:34";
       "test.py:8:10-8:13 -> builtins.pyi:65:0-79:34";
-      "test.py:8:17-8:20 -> builtins.pyi:84:0-100:42";
+      "test.py:8:17-8:20 -> builtins.pyi:84:0-101:42";
     ];
   assert_definition
     ~position:{ Location.line = 12; column = 0 }

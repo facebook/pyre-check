@@ -697,7 +697,11 @@ let determine signature ~resolution ~annotation =
                 let parameters = List.map2_exn ~f:uninstantiated generics parameters in
                 Type.Parametric { name; parameters }
               in
-              Type.instantiate ~constraints:(Map.find constraints) uninstantiated
+              let constraints annotation =
+                Map.find constraints annotation
+                >>| Type.weaken_literals
+              in
+              Type.instantiate ~constraints  uninstantiated
               |> Type.instantiate_free_variables ~replacement:Type.Bottom
             in
             Some instantiated

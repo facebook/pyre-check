@@ -53,6 +53,7 @@ module Record : sig
   end
 end
 
+type literal
 type variable_state
 
 type tuple =
@@ -78,6 +79,7 @@ and t =
   | Bottom
   | Callable of t Record.Callable.record
   | Any
+  | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
   | Primitive of Identifier.t
@@ -136,6 +138,7 @@ val optional: t -> t
 val sequence: t -> t
 val set: t -> t
 val string: t
+val literal_string: string -> t
 val tuple: t list -> t
 val undeclared: t
 val union: t list -> t
@@ -246,6 +249,8 @@ val is_type_alias: t -> bool
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool
 
+val contains_literal: t -> bool
+
 val primitives: t -> t list
 val elements: t -> t list
 
@@ -261,6 +266,8 @@ val coroutine_value: t -> t
 
 val parameters: t -> t list
 val single_parameter: t -> t
+val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
+val weaken_literals: t -> t
 val split: t -> t * (t list)
 val class_name: t -> Access.t
 
@@ -268,7 +275,6 @@ val class_variable: t -> t
 val class_variable_value: t -> t option
 
 val assume_any: t -> t
-val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 val mark_variables_as_bound: ?simulated: bool -> t -> t
 val free_variables: t -> t list
 val free_simulated_bound_variables: t -> t

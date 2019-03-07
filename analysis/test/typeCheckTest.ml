@@ -659,7 +659,7 @@ let test_forward_access _ =
         annotation = Type.integer;
         element =
           {
-            Annotated.Signature.actual = Type.string;
+            Annotated.Signature.actual = Type.literal_string "string";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1358,7 +1358,7 @@ let test_forward_access _ =
         annotation = Type.parametric "Class" [Type.integer];
         element =
           {
-            Annotated.Signature.actual = Type.string;
+            Annotated.Signature.actual = Type.literal_string "seven";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1580,7 +1580,7 @@ let test_forward_access _ =
         annotation = parse_annotation ~resolution:resolution_with_movie "Movie";
         element =
           {
-            Annotated.Signature.actual = parse_annotation ~resolution:resolution_with_movie "str";
+            Annotated.Signature.actual = Type.literal_string "Blade Runner";
             expected = parse_annotation ~resolution:resolution_with_movie "int";
             name = (Some "$parameter$year");
             position = 1;
@@ -1657,7 +1657,7 @@ let test_forward_access _ =
         annotation = Type.none;
         element =
           +{
-            Annotated.Signature.actual = Type.string;
+            Annotated.Signature.actual = Type.literal_string "string";
             expected = Type.integer;
             name = None;
             position = 2;
@@ -2017,7 +2017,7 @@ let test_forward_expression _ =
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" Type.integer;
-  assert_forward "\"\"" Type.string;
+  assert_forward "\"\"" (Type.literal_string "");
   assert_forward "b\"\"" Type.bytes;
 
   (* Dictionaries. *)
@@ -2164,7 +2164,7 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "*undefined" Type.Top;
 
   (* String literals. *)
-  assert_forward "'string'" Type.string;
+  assert_forward "'string'" (Type.literal_string "string");
   assert_forward "f'string'" Type.string;
   assert_forward "f'string{1}'" Type.string;
   assert_forward ~errors:(`Undefined 1) "f'string{undefined}'" Type.string;
@@ -2188,7 +2188,7 @@ let test_forward_expression _ =
 
   (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.integer]);
-  assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.string]);
+  assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.literal_string "string"]);
   assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
   assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 

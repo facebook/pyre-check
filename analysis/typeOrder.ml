@@ -1071,6 +1071,11 @@ and less_or_equal
   | _, Type.TypedDictionary _ ->
       false
 
+  | _, Type.Literal _ ->
+      false
+  | Type.Literal _, _ ->
+      less_or_equal order ~left:(Type.weaken_literals left) ~right
+
   | _ ->
       raise_if_untracked handler left;
       raise_if_untracked handler right;
@@ -1509,6 +1514,11 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
         >>= constructor
         >>| join order (Type.Callable callable)
         |> Option.value ~default
+
+    | (Type.Literal  _ as literal), other
+    | other, (Type.Literal _ as literal) ->
+        join order other (Type.weaken_literals literal)
+
     | _ ->
         match List.hd (least_upper_bound handler left right) with
         | Some joined ->
@@ -1705,6 +1715,10 @@ and meet ({ handler= ((module Handler: Handler) as handler); constructor } as or
     | _, Type.TypedDictionary _ ->
         Type.Bottom
 
+    | Type.Literal _, _
+    | _, Type.Literal _ ->
+        Type.Bottom
+
     | _ ->
         match List.hd (greatest_lower_bound handler left right) with
         | Some bound -> bound
@@ -1796,6 +1810,7 @@ and instantiate_successors_parameters
     if primitive = Type.Primitive "tuple" then
       (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
       [List.fold ~init:Type.Bottom ~f:(join order) parameters]
+      |> List.map ~f:Type.weaken_literals
     else
       parameters
   in

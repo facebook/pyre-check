@@ -60,7 +60,11 @@ let parse_annotation annotation =
 let test_select _ =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
-      Format.asprintf "typing.Callable%s" callable
+      callable
+      |> String.substr_replace_all
+        ~pattern:"literal_string"
+        ~with_:"typing_extensions.Literal[\"string\"]"
+      |> Format.asprintf "typing.Callable%s"
       |> parse_annotation
       |> function
       | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
@@ -185,7 +189,7 @@ let test_select _ =
   assert_select
     "[[int], int]"
     "('string')"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
   assert_select "[[int], int]" "(name='string')" (`NotFoundUnexpectedKeyword "name");
 
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
@@ -354,7 +358,7 @@ let test_select _ =
     "(lambda: 1)"
     (`Found "[[typing.Callable[[], int]], int]");
 
-  assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, str], int]");
+  assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, literal_string], int]");
   assert_select
     "[[_T, _T], int]"
     "(1, 'string')"
@@ -405,7 +409,7 @@ let test_select _ =
     "[[_R], _R]"
     "('string')"
     (`NotFoundMismatchWithClosest
-       ("[[$bottom], $bottom]", Type.string,
+       ("[[$bottom], $bottom]", Type.literal_string "string",
         Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
@@ -569,7 +573,7 @@ let test_select _ =
   assert_select
     "[[int], None]"
     "('string')"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
 
   assert_select
     "[[typing.Callable[[_T], bool]], _T]"

@@ -570,7 +570,7 @@ let test_query context =
             (2, 40, 2, 44, Type.none);
             (2, 17, 2, 19, Type.integer);
             (3, 2, 3, 3, Type.integer);
-            (2, 30, 2, 35, Type.string);
+            (2, 30, 2, 35, Type.literal_string "bar");
             (2, 11, 2, 14, Type.meta Type.integer);
             (2, 8, 2, 9, Type.integer);
           ] |> create_types_at_locations)

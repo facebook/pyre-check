@@ -1774,7 +1774,7 @@ module State = struct
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
       let { state; resolved = key_resolved } = forward_expression ~state ~expression:key in
       let { state; resolved = value_resolved } = forward_expression ~state ~expression:value in
-      key_resolved, value_resolved, state
+      (Type.weaken_literals key_resolved), (Type.weaken_literals value_resolved), state
     in
     let forward_generator
         ~state
@@ -1841,7 +1841,7 @@ module State = struct
         |> fun state -> forward_expression ~state ~expression:element
       in
       (* Discard generator-local variables. *)
-      { state = { state with resolution }; resolved }
+      { state = { state with resolution }; resolved = Type.weaken_literals resolved }
     in
     let forward_elements ~state ~elements =
       let forward_element { state = ({ resolution; _ } as state); resolved } expression =
@@ -1861,6 +1861,7 @@ module State = struct
             { state; resolved = Resolution.join resolution resolved new_resolved }
       in
       List.fold elements ~init:{ state; resolved = Type.Bottom } ~f:forward_element
+      |> (fun { state; resolved } -> { state; resolved = Type.weaken_literals resolved })
     in
     let join_resolved ~resolution left right =
       {
@@ -2390,6 +2391,10 @@ module State = struct
             ~state:{ state with resolution = resolution_with_parameters }
             ~expression:body
         in
+        (* Judgement call, many more people want to pass in `lambda: 0` to `defaultdict` than want
+           to write a function that take in callables with literal return types.  If you really want
+           that behavior you can always write a real inner function with a literal return type *)
+        let resolved = Type.weaken_literals resolved in
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
           Type.Callable.Parameter.Named {
             Type.Callable.Parameter.name;
@@ -2445,8 +2450,8 @@ module State = struct
     | String { StringLiteral.kind = StringLiteral.Bytes; _ } ->
         { state; resolved = Type.bytes }
 
-    | String { StringLiteral.kind = StringLiteral.String; _ } ->
-        { state; resolved = Type.string }
+    | String { StringLiteral.kind = StringLiteral.String; value } ->
+        { state; resolved = Type.literal_string value}
 
     | String { StringLiteral.kind = StringLiteral.Mixed _; _ } ->
         (* NOTE: We may run into this case with nested f-strings. Treat them
@@ -2769,6 +2774,7 @@ module State = struct
                     >>| Resolution.parse_annotation resolution
                     |> (fun annotation -> Option.value annotation ~default:Type.Top)
                   in
+                  let resolved = Type.weaken_literals resolved in
                   Resolution.less_or_equal
                     resolution
                     ~left:parent_annotation

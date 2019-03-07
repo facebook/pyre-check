@@ -66,7 +66,28 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
             in
             match value with
             | Access (SimpleAccess access) ->
-                Access (SimpleAccess (List.map access ~f:transform_element))
+                (* This will hit any generic type named Literal, but otherwise from ... import
+                   Literal woudln't work as this has to be before qualification. *)
+                let transform_everything_but_literal (reversed_access, in_literal) element =
+                  let element, in_literal =
+                    match element, in_literal with
+                    | Access.Identifier "Literal", _ ->
+                        transform_element element, true
+                    | Access.Identifier "__getitem__", _ ->
+                        transform_element element, in_literal
+                    | Access.Call _, true ->
+                        element, false
+                    | _, _ ->
+                        transform_element element, false
+                  in
+                  element :: reversed_access, in_literal
+                in
+                let access =
+                  List.fold access ~f:transform_everything_but_literal ~init:([], false)
+                  |> fst
+                  |> List.rev
+                in
+                Access (SimpleAccess (access))
             | Access (ExpressionAccess { expression; access }) ->
                 Access
                   (ExpressionAccess {
