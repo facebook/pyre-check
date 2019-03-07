@@ -569,6 +569,27 @@ let test_infer_constructor_attributes _ =
       " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`."]
 
+let test_newtype _ =
+  assert_type_errors
+    {|
+      class C():
+        def __init__(self, a: int, b: str) -> None: pass
+      T = typing.NewType('T', C)
+      def foo() -> T:
+        return T(C(7, "A"))
+    |}
+    [];
+  assert_type_errors
+    {|
+      class C():
+        def __init__(self, a: int, b: str) -> None: pass
+      T = typing.NewType('T', C)
+      def foo() -> T:
+        return T(7, "A")
+    |}
+    ["Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided."];
+  ()
+
 
 let () =
   "constructor">:::[
@@ -576,5 +597,6 @@ let () =
     "check_init">::test_check_init;
     "check_constructors">::test_check_constructors;
     "check_infer_constructor_attributes">::test_infer_constructor_attributes;
+    "newtype">::test_newtype;
   ]
   |> Test.run

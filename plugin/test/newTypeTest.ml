@@ -28,7 +28,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(int):
-        def __init__(self, input: int):
+        def qualifier.T.__init__(self, input: int):
           pass
     |};
 
