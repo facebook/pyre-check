@@ -97,7 +97,7 @@ let test_lookup_call_arguments _ =
   assert_annotation_list
     ~lookup
     [
-      "2:4-2:6/int";
+      "2:4-2:6/typing_extensions.Literal[12]";
       "3:12-3:20/typing_extensions.Literal['argval']";
       "3:4-3:20/typing_extensions.Literal['argval']";
       "4:4-5:14/typing_extensions.Literal['nextline']";
@@ -105,7 +105,7 @@ let test_lookup_call_arguments _ =
     ];
   assert_annotation
     ~position:{ Location.line = 2; column = 4 }
-    ~annotation:(Some "2:4-2:6/int");
+    ~annotation:(Some "2:4-2:6/typing_extensions.Literal[12]");
   assert_annotation
     ~position:{ Location.line = 2; column = 6 }
     ~annotation:None;
@@ -249,7 +249,7 @@ let test_lookup_identifier_accesses _ =
   assert_annotation_list
     ~lookup
     [
-      "3:13-3:15/int";
+      "3:13-3:15/typing_extensions.Literal[12]";
       "3:4-3:5/int";
       (* `x` at 3:4-3:5 expands to `test.A.x`. This is the annotation
          for the `test.A` prefix. *)
@@ -263,7 +263,7 @@ let test_lookup_identifier_accesses _ =
       "5:8-5:14/int";
       "5:8-5:14/test.A";
       "7:13-7:16/typing.Type[int]";
-      "8:10-8:13/int";
+      "8:10-8:13/typing_extensions.Literal[100]";
       "8:4-8:5/test.A";
       "8:8-8:9/test.A";
       (* This is the annotation for `A()` (the function call). *)
@@ -359,7 +359,7 @@ let test_lookup_multiline_accesses _ =
       "17:12-19:13/typing.Type[test.A]";
       "2:13-2:17/None";
       "3:7-5:14/bool";
-      "9:13-9:15/int";
+      "9:13-9:15/typing_extensions.Literal[12]";
       "9:4-9:5/int";
       "9:4-9:5/typing.Type[test.A]";
       "9:7-9:10/typing.Type[int]";
@@ -543,11 +543,11 @@ let test_lookup_unbound _ =
       "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown]\
        [[[Named(s, slice)], typing.List[Variable[_T]]][[Named(i, int)], Variable[_T]]]";
       "4:22-4:23/typing.List[]";
-      "4:24-4:25/int";
+      "4:24-4:25/typing_extensions.Literal[1]";
       "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(s, slice)], \
        typing.List[Variable[_T]]][[Named(i, int)], Variable[_T]]]";
       "4:7-4:8/typing.List[]";
-      "4:9-4:10/int";
+      "4:9-4:10/typing_extensions.Literal[0]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "6:2-6:3/typing.List[Variable[_T]]";

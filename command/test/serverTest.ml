@@ -534,7 +534,7 @@ let test_query context =
        (Protocol.TypeQuery.TypeAtLocation
           {
             Protocol.TypeQuery.location = create_location ~path:"test.py" 1 4 1 5;
-            annotation = Type.integer;
+            annotation = Type.literal_integer 2;
           }));
   assert_type_query_response
     ~source:"a = 2"
@@ -552,7 +552,7 @@ let test_query context =
        (Protocol.TypeQuery.TypeAtLocation
           {
             Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
-            annotation = Type.integer;
+            annotation = Type.literal_integer 2;
           }));
 
   assert_type_query_response
@@ -564,12 +564,12 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (3, 6, 3, 8, Type.integer);
+            (3, 6, 3, 8, Type.literal_integer 42);
             (2, 24, 2, 27, Type.meta Type.string);
             (2, 21, 2, 22, Type.string);
             (2, 40, 2, 44, Type.none);
-            (2, 17, 2, 19, Type.integer);
-            (3, 2, 3, 3, Type.integer);
+            (2, 17, 2, 19, Type.literal_integer 10);
+            (3, 2, 3, 3, Type.literal_integer 42);
             (2, 30, 2, 35, Type.literal_string "bar");
             (2, 11, 2, 14, Type.meta Type.integer);
             (2, 8, 2, 9, Type.integer);
@@ -588,13 +588,13 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (2, 19, 2, 22, Type.meta Type.string);
-            (5, 8, 5, 9, Type.integer);
+            (5, 8, 5, 9, Type.literal_integer 4);
             (2, 27, 2, 30, Type.meta Type.string);
             (4, 1, 4, 2, Type.string);
-            (4, 5, 4, 6, Type.integer);
-            (3, 1, 3, 2, Type.integer);
+            (4, 5, 4, 6, Type.literal_integer 5);
+            (3, 1, 3, 2, Type.literal_integer 4);
             (2, 11, 2, 14, Type.meta Type.integer);
-            (3, 5, 3, 6, Type.integer);
+            (3, 5, 3, 6, Type.literal_integer 4);
             (2, 8, 2, 9, Type.integer);
             (2, 16, 2, 17, Type.string);
           ] |> create_types_at_locations)
@@ -609,10 +609,10 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (2, 4, 2, 5, Type.integer);
-            (2, 0, 2, 1, Type.integer);
-            (3, 0, 3, 1, Type.integer);
-            (3, 4, 3, 5, Type.integer);
+            (2, 4, 2, 5, Type.literal_integer 4);
+            (2, 0, 2, 1, Type.literal_integer 4);
+            (3, 0, 3, 1, Type.literal_integer 3);
+            (3, 4, 3, 5, Type.literal_integer 3);
           ] |> create_types_at_locations)
        ));
 
@@ -627,8 +627,8 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (3, 5, 3, 9, Type.bool);
-            (4, 3, 4, 4, Type.integer);
-            (4, 7, 4, 8, Type.integer);
+            (4, 3, 4, 4, Type.literal_integer 1);
+            (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
        ));
 
@@ -642,11 +642,11 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (3, 12, 3, 13, Type.integer);
-            (3, 15, 3, 16, Type.integer);
+            (3, 12, 3, 13, Type.literal_integer 1);
+            (3, 15, 3, 16, Type.literal_integer 2);
             (3, 6, 3, 7, Type.list Type.integer);
-            (4, 3, 4, 4, Type.integer);
-            (4, 7, 4, 8, Type.integer);
+            (4, 3, 4, 4, Type.literal_integer 1);
+            (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
        ));
 
@@ -662,10 +662,10 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"]);
-            (5, 2, 5, 3, Type.integer);
-            (3, 2, 3, 3, Type.integer);
-            (3, 6, 3, 7, Type.integer);
-            (5, 6, 5, 7, Type.integer);
+            (5, 2, 5, 3, Type.literal_integer 2);
+            (3, 2, 3, 3, Type.literal_integer 1);
+            (3, 6, 3, 7, Type.literal_integer 1);
+            (5, 6, 5, 7, Type.literal_integer 2);
           ] |> create_types_at_locations)
        ));
 
@@ -678,8 +678,8 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (3, 1, 3, 2, Type.integer);
-            (3, 5, 3, 6, Type.integer);
+            (3, 1, 3, 2, Type.literal_integer 2);
+            (3, 5, 3, 6, Type.literal_integer 2);
           ] |> create_types_at_locations)
        ));
 
@@ -694,8 +694,8 @@ let test_query context =
           ([
             (2, 11, 2, 15, Type.bool);
             (2, 6, 2, 7, Type.bool);
-            (3, 2, 3, 3, Type.integer);
-            (3, 6, 3, 7, Type.integer);
+            (3, 2, 3, 3, Type.literal_integer 1);
+            (3, 6, 3, 7, Type.literal_integer 1);
           ] |> create_types_at_locations)
        ));
 
@@ -760,7 +760,7 @@ let test_query context =
             };
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
-              annotation = Type.integer
+              annotation = Type.literal_integer 1
             };
           ]
        ));
@@ -776,8 +776,8 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (2, 4, 2, 5, Type.list Type.integer);
-            (2, 13, 2, 14, Type.integer);
-            (2, 10, 2, 11, Type.integer);
+            (2, 13, 2, 14, Type.literal_integer 2);
+            (2, 10, 2, 11, Type.literal_integer 1);
           ] |> create_types_at_locations)
        ));
 
@@ -914,13 +914,13 @@ let test_query context =
       foo = 7
     |}
     ~query:"type(foo)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.integer)));
 
   assert_type_query_response
     ~source:{|
     |}
     ~query:"type(8)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.literal_integer 8)));
 
   assert_type_query_response
     ~source:{|
@@ -1365,14 +1365,14 @@ let test_incremental_lookups _ =
     ~printer:(String.concat ~sep:", ")
     [
       ":2:8-2:9/typing.Any";
-      ":3:11-3:12/int";
+      ":3:11-3:12/typing_extensions.Literal[1]";
       ":4:8-4:9/typing.Any";
       Format.sprintf
         ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
         (Source.qualifier ~handle
          |> Access.show);
       ":5:8-5:9/typing.Any";
-      ":6:11-6:12/int";
+      ":6:11-6:12/typing_extensions.Literal[2]";
     ]
     annotations
 

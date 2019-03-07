@@ -2016,7 +2016,7 @@ let test_forward_expression _ =
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
-  assert_forward "1" Type.integer;
+  assert_forward "1" (Type.literal_integer 1);
   assert_forward "\"\"" (Type.literal_string "");
   assert_forward "b\"\"" Type.bytes;
 
@@ -2096,7 +2096,7 @@ let test_forward_expression _ =
     in
     Type.Callable.create ~parameters ~annotation ()
   in
-  assert_forward "lambda: 1" (callable ~parameters:[] ~annotation:Type.integer);
+  assert_forward "lambda: 1" (callable ~parameters:[] ~annotation:(Type.integer));
   assert_forward
     "lambda parameter: parameter"
     (callable
@@ -2114,6 +2114,7 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
   assert_forward ~errors:(`Undefined 2) "[undefined, undefined]" (Type.list Type.Top);
   assert_forward "[element for element in [1]]" (Type.list Type.integer);
+  assert_forward "[1 for _ in [1]]" (Type.list Type.integer);
   assert_forward
     ~precondition:["x", Type.list Type.integer]
     ~postcondition:["x", Type.list Type.integer]
@@ -2174,7 +2175,7 @@ let test_forward_expression _ =
   assert_forward "1.0 if True else 1" Type.float;
   assert_forward "1 if True else 1.0" Type.float;
   assert_forward ~errors:(`Undefined 1) "undefined if True else 1" Type.Top;
-  assert_forward ~errors:(`Undefined 1) "1 if undefined else 1" Type.integer;
+  assert_forward ~errors:(`Undefined 1) "1 if undefined else 1" (Type.literal_integer 1);
   assert_forward ~errors:(`Undefined 1) "1 if True else undefined" Type.Top;
   assert_forward ~errors:(`Undefined 3) "undefined if undefined else undefined" Type.Top;
   assert_forward
@@ -2187,8 +2188,8 @@ let test_forward_expression _ =
   assert_forward "True" Type.bool;
 
   (* Tuples. *)
-  assert_forward "1," (Type.tuple [Type.integer]);
-  assert_forward "1, 'string'" (Type.tuple [Type.integer; Type.literal_string "string"]);
+  assert_forward "1," (Type.tuple [Type.literal_integer 1]);
+  assert_forward "1, 'string'" (Type.tuple [Type.literal_integer 1; Type.literal_string "string"]);
   assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
   assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
 
@@ -2201,7 +2202,7 @@ let test_forward_expression _ =
   assert_forward ~errors:(`Undefined 1) "-undefined" Type.Top;
 
   (* Yield. *)
-  assert_forward "yield 1" (Type.generator Type.integer);
+  assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
   assert_forward "yield" (Type.generator Type.none)
 
@@ -2228,9 +2229,6 @@ let test_forward_statement _ =
         ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
         parsed
     in
-    assert_state_equal
-      (create ~bottom ~immutables:postcondition_immutables postcondition)
-      forwarded;
     let errors =
       match errors with
       | `Specific errors ->
@@ -2244,11 +2242,14 @@ let test_forward_statement _ =
           in
           errors [] count
     in
+    assert_state_equal
+      (create ~bottom ~immutables:postcondition_immutables postcondition)
+      forwarded;
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
-      errors
       (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
+      errors
   in
 
   (* Assignments. *)
@@ -2314,7 +2315,7 @@ let test_forward_statement _ =
     ~postcondition_immutables:["x", (false, Type.union [Type.string; Type.integer])]
     []
     "x: typing.Union[int, str] = 1"
-    ["x", Type.integer];
+    ["x", Type.literal_integer 1];
 
   (* Assignments with tuples. *)
   assert_forward
@@ -2347,7 +2348,7 @@ let test_forward_statement _ =
           "given explicit type cannot contain `Any`."])
     []
     "x: typing.Tuple[typing.Any, typing.Any] = 1, 2"
-    ["x", Type.tuple [Type.integer; Type.integer]];
+    ["x", Type.tuple [Type.literal_integer 1; Type.literal_integer 2]];
   assert_forward
     ["z", Type.tuple [Type.integer; Type.string]]
     "x, y = z"
@@ -2677,7 +2678,7 @@ let test_forward _ =
     assert_state_equal (create ~bottom:postcondition_bottom postcondition) forwarded;
   in
 
-  assert_forward [] "x = 1" ["x", Type.integer];
+  assert_forward [] "x = 1" ["x", Type.literal_integer 1];
   assert_forward ~precondition_bottom:true ~postcondition_bottom:true [] "x = 1" [];
 
   assert_forward ~postcondition_bottom:true [] "sys.exit(1)" []

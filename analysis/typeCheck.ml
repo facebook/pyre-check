@@ -2246,6 +2246,10 @@ module State = struct
           match resolved_left, resolved_right, operator with
           | Optional resolved_left, resolved_right, BooleanOperator.Or ->
               Resolution.join resolution resolved_left resolved_right
+          (* Zero is also falsy. *)
+          | Optional integer, resolved_right, BooleanOperator.And
+            when Type.equal integer Type.integer ->
+              Type.optional (Resolution.join resolution (Type.literal_integer 0) resolved_right)
           | Optional _, resolved_right, BooleanOperator.And ->
               Type.optional resolved_right
           | resolved_left, resolved_right, _ ->
@@ -2369,8 +2373,8 @@ module State = struct
         let { state; resolved } = forward_comprehension ~element ~generators in
         { state; resolved = Type.generator resolved }
 
-    | Integer _ ->
-        { state; resolved = Type.integer }
+    | Integer literal ->
+        { state; resolved = Type.literal_integer literal}
 
     | Lambda { Lambda.body; parameters } ->
         let resolution_with_parameters =

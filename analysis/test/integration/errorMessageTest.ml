@@ -235,11 +235,11 @@ let test_concise _ =
     ["Incompatible awaitable type [12]: Expected an awaitable but got `int`."];
 
   assert_type_errors ~concise:true
-  {|
+    {|
     def foo(x: int) -> None: ...
     await foo
   |}
-  ["Incompatible awaitable type [12]: Expected an awaitable but got `Callable[[int], None]`."];
+    ["Incompatible awaitable type [12]: Expected an awaitable but got `Callable[[int], None]`."];
 
   (* Prohibited Any *)
   assert_type_errors ~concise:true
@@ -415,7 +415,7 @@ let test_concise _ =
   (* Redundant Cast *)
   assert_type_errors ~concise:true
     {|
-      x = 1
+      x: int
       y: int = typing.cast(int, x)
     |}
     ["Redundant cast [22]: The cast is redundant."];

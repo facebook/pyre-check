@@ -126,6 +126,7 @@ val float: t
 val generator: ?async: bool -> t -> t
 val generic: t
 val integer: t
+val literal_integer: int -> t
 val iterable: t -> t
 val iterator: t -> t
 val lambda: parameters: (Identifier.t * t) list -> return_annotation: t -> t

@@ -269,6 +269,12 @@ let weaken_literals kind =
       MissingReturnAnnotation (weaken_missing_annotation missing_annotation)
   | ProhibitedAny missing_annotation ->
       ProhibitedAny (weaken_missing_annotation missing_annotation)
+  | Unpack { expected_count; unpack_problem = UnacceptableType annotation } ->
+      Unpack { expected_count; unpack_problem = UnacceptableType (Type.weaken_literals annotation) }
+  | IncompatibleAwaitableType annotation ->
+      IncompatibleAwaitableType (Type.weaken_literals annotation)
+  | NotCallable annotation ->
+      NotCallable (Type.weaken_literals annotation)
   | _ ->
       kind
 

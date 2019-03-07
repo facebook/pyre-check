@@ -61,8 +61,9 @@ let test_select _ =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
       callable
+      |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
       |> String.substr_replace_all
-        ~pattern:"literal_string"
+        ~pattern:"$literal_string"
         ~with_:"typing_extensions.Literal[\"string\"]"
       |> Format.asprintf "typing.Callable%s"
       |> parse_annotation
@@ -213,11 +214,11 @@ let test_select _ =
   assert_select
     "[[Variable(variable, str)], int]"
     "(1, 2)"
-    (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+    (`NotFoundMismatch (Type.literal_integer 1, Type.string, None, 1));
   assert_select
     "[[Variable(variable, str)], int]"
     "('string', 2)"
-    (`NotFoundMismatch (Type.integer, Type.string, None, 2));
+    (`NotFoundMismatch (Type.literal_integer 2, Type.string, None, 2));
   assert_select
     "[[Variable(variable, int)], int]"
     "(*[1, 2], 3)"
@@ -285,7 +286,7 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundMismatch (Type.integer, Type.string, Some "j", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "j", 2));
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 1, 'i': 2})"
@@ -345,20 +346,22 @@ let test_select _ =
   assert_select
     "[[Keywords(keywords, str)], int]"
     "(a=1, b=2)"
-    (`NotFoundMismatch (Type.integer, Type.string, Some "a", 1));
+    (`NotFoundMismatch (Type.literal_integer 1, Type.string, Some "a", 1));
   assert_select
     "[[Keywords(keywords, str)], int]"
     "(a='string', b=2)"
-    (`NotFoundMismatch (Type.integer, Type.string, Some "b", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "b", 2));
 
   (* Constraint resolution. *)
-  assert_select "[[_T], _T]" "(1)" (`Found "[[int], int]");
+  assert_select "[[_T], _T]" "(1)" (`Found "[[$literal_one], $literal_one]");
   assert_select
     "[[typing.Callable[[], _T]], _T]"
     "(lambda: 1)"
     (`Found "[[typing.Callable[[], int]], int]");
 
-  assert_select "[[_T, _S], _T]" "(1, 'string')" (`Found "[[int, literal_string], int]");
+  assert_select
+    "[[_T, _S], _T]" "(1, 'string')"
+    (`Found "[[$literal_one, $literal_string], $literal_one]");
   assert_select
     "[[_T, _T], int]"
     "(1, 'string')"
@@ -366,12 +369,12 @@ let test_select _ =
   assert_select
     "[[_T], typing.Union[str, _T]]"
     "(1)"
-    (`Found "[[int], typing.Union[str, int]]");
+    (`Found "[[$literal_one], typing.Union[str, $literal_one]]");
   assert_select
     "[[typing.Union[int, typing.List[_T]]], _T]"
     "([1])"
     (`Found "[[typing.Union[int, typing.List[int]]], int]");
-  assert_select "[[_T], _S]" "(1)" (`Found "[[int], $bottom]");
+  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], $bottom]");
 
   assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
@@ -402,7 +405,7 @@ let test_select _ =
     "(1)"
     (`NotFoundMismatchWithClosest
        ("[[typing.Sequence[$bottom]], int]",
-        Type.integer, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
+        Type.literal_integer 1, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
 
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
   assert_select
@@ -501,28 +504,28 @@ let test_select _ =
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
     (`NotFoundMismatchWithClosest
-       ("[[str], str]", Type.integer, Type.string, None, 1));
+       ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, Keywords(keywords)], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest
-       ("[[int, str], int]", Type.integer, Type.string, None, 2));
+       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str], str][[], str]]"
     "(1)"
     (`NotFoundMismatchWithClosest
-       ("[[str], str]", Type.integer, Type.string, None, 1));
+       ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str, Keywords(keywords)], int][[Keywords(keywords)], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest
-       ("[[str, Keywords(keywords)], int]", Type.integer, Type.string, None, 1));
+       ("[[str, Keywords(keywords)], int]", Type.literal_integer 1, Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
@@ -590,7 +593,7 @@ let test_select _ =
     ~name:"dict.__init__"
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords(kwargs, int)], dict[str, int]]");
+    (`Found "[[Keywords(kwargs, $literal_one)], dict[str, $literal_one]]");
   assert_select
     ~name:"dict.__init__"
     "[[Named(map, typing.Mapping[_T, _S]), Keywords(kwargs, _S)], dict[_T, _S]]"
@@ -607,7 +610,7 @@ let test_select _ =
   assert_select
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords(kwargs, int)], dict[$bottom, int]]");
+    (`Found "[[Keywords(kwargs, $literal_one)], dict[$bottom, $literal_one]]");
 
   ()
 

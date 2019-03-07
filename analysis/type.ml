@@ -84,6 +84,7 @@ module Parameter = Record.Callable.RecordParameter
 
 type literal =
   | String of string
+  | Integer of int
 [@@deriving compare, eq, sexp, show, hash]
 
 type variable_state =
@@ -277,6 +278,8 @@ let rec pp format annotation =
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Any ->
       Format.fprintf format "typing.Any"
+  | Literal Integer literal ->
+      Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom ->
@@ -401,6 +404,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "Callable[%s]" (signature_to_string implementation)
   | Any ->
       Format.fprintf format "Any"
+  | Literal Integer literal ->
+      Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom ->
@@ -529,6 +534,10 @@ let generic =
 
 let integer =
   Primitive "int"
+
+
+let literal_integer literal =
+  Literal (Integer literal)
 
 
 let iterable parameter =
@@ -836,6 +845,8 @@ let rec expression annotation =
     | Literal literal ->
         let literal =
           match literal with
+          | Integer literal ->
+              Expression.Integer literal
           | String literal ->
               Expression.String { value = literal; kind = StringLiteral.String }
         in
@@ -1720,6 +1731,9 @@ let rec create ~aliases { Node.value = expression; _ } =
                   None
             in
             let parse = function
+              | Expression.Integer literal ->
+                  literal_integer literal
+                  |> Option.some
               | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
                   literal_string value
                   |> Option.some
@@ -2063,6 +2077,7 @@ let instantiate ?(widen = false) annotation ~constraints =
 let weaken_literals annotation =
   let constraints =
     function
+    | Literal Integer _ -> Some integer
     | Literal String _ -> Some string
     | _ -> None
   in

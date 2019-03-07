@@ -314,8 +314,8 @@ let test_check_missing_return _ =
         return optional and int_to_bool(optional)
     |}
     [
-      "Missing return annotation [3]: Returning `typing.Optional[bool]` but " ^
-      "type `Any` is specified.";
+      "Missing return annotation [3]: Returning `typing.Optional[typing.Union[bool, int]]` " ^
+      "but type `Any` is specified.";
     ];
 
   assert_type_errors

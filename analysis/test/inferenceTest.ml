@@ -656,7 +656,7 @@ let test_recursive_infer _ =
       def bar():
         return foo()
     |}
-    [{|"int"|}];
+    [{|"typing_extensions.Literal[1]"|}];
 
   assert_infer ~recursive_infer:true ~fields:["inference.annotation";"inference.parameters"]
     {|
@@ -667,7 +667,7 @@ let test_recursive_infer _ =
         return a
     |}
     [
-      {|"int"|};{|[]|};
+      {|"typing_extensions.Literal[1]"|};{|[]|};
     ];
 
   assert_infer ~recursive_infer:true ~fields:["inference.annotation";"inference.parameters"]
