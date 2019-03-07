@@ -534,11 +534,6 @@ let test_language_server_protocol_read_message context =
       actual
   in
 
-  let message =
-    "Content-Length: 32\r\n\
-     \r\n\
-     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
-  in
   let expected =
     Some (
       `Assoc
@@ -548,26 +543,27 @@ let test_language_server_protocol_read_message context =
         ]
     )
   in
-  test_read message expected;
+  test_read
+    "Content-Length: 32\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+    expected;
 
-  let message_extra_header =
+  test_read
     "Content-Length: 32\r\n\
      Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\
      \r\n\
      {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
-  in
-  test_read message_extra_header expected;
+    expected;
 
-  let message_arbitrary_header =
+  test_read
     "Content-Length: 32\r\n\
      Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\
      Another-Header: yes\r\n\
      One-More-Header: sure\r\n\
      \r\n\
      {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
-  in
-  test_read message_arbitrary_header expected;
-
+    expected;
 
   test_read
     "Content-Longness: 32\r\n\
