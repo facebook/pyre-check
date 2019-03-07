@@ -1424,9 +1424,33 @@ let test_forward_access _ =
 
   let get_item = {
     annotation =
-      parse_annotation ~resolution (
-        "typing.Callable('typing.Mapping.__getitem__')" ^
-        "[[Named(k, typing._KT)], typing._VT_co]");
+      Type.Callable {
+        kind = Named (Access.create "TypedDictionary.__getitem__");
+        implementation = { annotation = Type.Top; parameters = Undefined };
+        overloads = [
+          {
+            annotation = Type.integer;
+            parameters = Defined [
+                Named {
+                  name = "k";
+                  annotation = Type.literal_string "year";
+                  default = false;
+                };
+              ];
+          };
+          {
+            annotation = Type.string;
+            parameters = Defined [
+                Named {
+                  name = "k";
+                  annotation = Type.literal_string "title";
+                  default = false;
+                };
+              ];
+          };
+        ];
+        implicit = None;
+      };
     element = Attribute "__getitem__";
   } in
 
@@ -1451,9 +1475,9 @@ let test_forward_access _ =
         annotation = parse_annotation ~resolution:resolution_with_movie "str";
         element = SignatureFound {
             callable =
-              "typing.Callable(typing.Mapping.__getitem__)" ^
-              "[[Named(k, Variable[typing._KT])], str]";
-            callees = ["typing.Mapping.__getitem__"];
+              "typing.Callable(TypedDictionary.__getitem__)" ^
+              "[[Named(k, typing_extensions.Literal['title'])], str]";
+            callees = ["TypedDictionary.__getitem__"];
           };
       };
     ];
@@ -1471,9 +1495,9 @@ let test_forward_access _ =
         annotation = parse_annotation ~resolution:resolution_with_movie "int";
         element = SignatureFound {
             callable =
-              "typing.Callable(typing.Mapping.__getitem__)" ^
-              "[[Named(k, Variable[typing._KT])], int]";
-            callees = ["typing.Mapping.__getitem__"];
+              "typing.Callable(TypedDictionary.__getitem__)" ^
+              "[[Named(k, typing_extensions.Literal['year'])], int]";
+            callees = ["TypedDictionary.__getitem__"];
           };
       };
     ];
@@ -1489,12 +1513,16 @@ let test_forward_access _ =
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation ~resolution:resolution_with_movie "$unknown";
+        annotation = Type.integer;
         element =
-          Annotated.Signature.TypedDictionaryMissingKey {
-            typed_dictionary_name = "Movie";
-            missing_key = "missing";
+          {
+            Annotated.Signature.actual = Type.literal_string "missing";
+            expected = Type.literal_string "year";
+            name = None;
+            position = 1;
           }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
           |> Option.some
           |> signature_not_found;
       };
@@ -1504,15 +1532,23 @@ let test_forward_access _ =
       {|
         Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
         movie: Movie
+        s: str
       |}
-    "movie[string]"
+    "movie[s]"
     [
       movie_typed_dictionary;
       get_item;
       {
-        annotation = parse_annotation ~resolution:resolution_with_movie "$unknown";
+        annotation = Type.integer;
         element =
-          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          {
+            Annotated.Signature.actual = Type.string;
+            expected = Type.literal_string "year";
+            name = None;
+            position = 1;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
           |> Option.some
           |> signature_not_found;
       };
@@ -1612,15 +1648,39 @@ let test_forward_access _ =
       };
     ];
 
-  let set_item =
-    {
-      annotation =
-        parse_annotation ~resolution:resolution_with_movie (
-          "typing.Callable('TypedDictionary.__setitem__')" ^
-          "[[Named(key, $unknown), Named(value, $unknown)], None]");
-      element = Attribute "__setitem__";
-    }
-  in
+  let set_item = {
+    annotation =
+      Type.Callable {
+        kind = Named (Access.create "TypedDictionary.__setitem__");
+        implementation = { annotation = Type.Top; parameters = Undefined };
+        overloads = [
+          {
+            annotation = Type.none;
+            parameters = Defined [
+                Named {
+                  name = "k";
+                  annotation = Type.literal_string "year";
+                  default = false;
+                };
+                Named { name = "v"; annotation = Type.integer; default = false};
+              ]
+          };
+          {
+            annotation = Type.none;
+            parameters = Defined [
+                Named {
+                  name = "k";
+                  annotation = Type.literal_string "title";
+                  default = false;
+                };
+                Named { name = "v"; annotation = Type.string; default = false};
+              ]
+          };
+        ];
+        implicit = None;
+      };
+    element = Attribute "__setitem__";
+  } in
 
   assert_fold
     ~source:
@@ -1637,7 +1697,7 @@ let test_forward_access _ =
         element = SignatureFound {
             callable =
               "typing.Callable(TypedDictionary.__setitem__)" ^
-              "[[Named(key, str), Named(value, int)], None]";
+              "[[Named(k, typing_extensions.Literal['year']), Named(v, int)], None]";
             callees = ["TypedDictionary.__setitem__"];
           };
       };
@@ -1681,10 +1741,14 @@ let test_forward_access _ =
       {
         annotation = Type.none;
         element =
-          Annotated.Signature.TypedDictionaryMissingKey {
-            typed_dictionary_name = "Movie";
-            missing_key = "missing";
+          {
+            Annotated.Signature.actual = Type.literal_string "missing";
+            expected = Type.literal_string "year";
+            name = None;
+            position = 1;
           }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
           |> Option.some
           |> signature_not_found;
       };
@@ -1695,19 +1759,28 @@ let test_forward_access _ =
       {|
         Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})
         movie: Movie
+        s: str
       |}
-    "movie[string] = 7"
+    "movie[s] = 7"
     [
       movie_typed_dictionary;
       set_item;
       {
         annotation = Type.none;
         element =
-          Annotated.Signature.TypedDictionaryAccessWithNonLiteral [ "year"; "title" ]
+          {
+            Annotated.Signature.actual = Type.string;
+            expected = Type.literal_string "year";
+            name = None;
+            position = 1;
+          }
+          |> Node.create_with_default_location
+          |> (fun node -> Annotated.Signature.Mismatch node)
           |> Option.some
           |> signature_not_found;
       };
-    ]
+    ];
+  ()
 
 
 let assert_resolved sources access expected =

@@ -1180,6 +1180,22 @@ module Builder = struct
         ],
         [
           Define {
+            Define.name = Access.create "TypedDictionary.__getitem__";
+            parameters = [
+              { Parameter.name = "self"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+              { Parameter.name = "key"; value = None; annotation = None}
+              |> Node.create_with_default_location;
+            ];
+            body = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = None;
+            async = false;
+            parent = Some (Access.create "TypedDictionary");
+          }
+          |> Node.create_with_default_location;
+          Define {
             Define.name = Access.create "TypedDictionary.__setitem__";
             parameters = [
               { Parameter.name = "self"; value = None; annotation = None}
@@ -1199,7 +1215,7 @@ module Builder = struct
             async = false;
             parent = Some (Access.create "TypedDictionary");
           }
-          |> Node.create_with_default_location
+          |> Node.create_with_default_location;
         ]
       ];
     (* Register hardcoded aliases. *)

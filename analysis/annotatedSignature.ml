@@ -36,8 +36,6 @@ type reason =
   | MissingArgument of Identifier.t
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
-  | TypedDictionaryAccessWithNonLiteral of string list
-  | TypedDictionaryMissingKey of { typed_dictionary_name: Identifier.t; missing_key: string }
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 
@@ -641,8 +639,6 @@ let select
             | MissingArgument _ -> 1
             | MutuallyRecursiveTypeVariables -> 1
             | TooManyArguments _ -> 1
-            | TypedDictionaryAccessWithNonLiteral _ -> 0
-            | TypedDictionaryMissingKey _ -> 0
             | UnexpectedKeyword _ -> 1
           in
           let get_most_important best_reason reason =

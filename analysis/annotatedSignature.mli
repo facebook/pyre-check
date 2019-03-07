@@ -28,8 +28,6 @@ type reason =
   | MissingArgument of Identifier.t
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
-  | TypedDictionaryAccessWithNonLiteral of string list
-  | TypedDictionaryMissingKey of { typed_dictionary_name: Identifier.t; missing_key: string }
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]
 

@@ -101,7 +101,7 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `foo` but got `unknown`.";
+      "to call `foo` but got `str`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `yar`."
     ];
 
@@ -115,11 +115,21 @@ let test_check_typed_dictionaries _ =
         key = "year"
         a = foo(movie[key])
     |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: int) -> str:
+        return ""
+      def f(key: str) -> None:
+        movie: Movie
+        a = foo(movie[key])
+    |}
     [
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `foo` but got `unknown`.";
+      "to call `foo` but got `str`.";
       "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal. " ^
-      "Expected one of ('name', 'year')."
+      "Expected one of ('name', 'year').";
     ];
 
   assert_test_typed_dictionary
@@ -180,7 +190,7 @@ let test_check_typed_dictionaries _ =
           return q["year"]
     |}
     [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
       "TypedDict accessed with a missing key [27]: TypedDict has no key `year`.";
     ];
 
@@ -249,7 +259,6 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `fou`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 
   assert_test_typed_dictionary
@@ -263,11 +272,7 @@ let test_check_typed_dictionaries _ =
             q = a["bar"]
         return q
     |}
-    [
-      "TypedDict accessed with a non-literal [26]: " ^
-      "TypedDict key must be a string literal. Expected one of ('foo', 'bar').";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    [];
   assert_test_typed_dictionary
     {|
       Baz = mypy_extensions.TypedDict(
@@ -287,10 +292,7 @@ let test_check_typed_dictionaries _ =
             q = a["first_very_long_field"]
         return q
     |}
-    [
-      "TypedDict accessed with a non-literal [26]: TypedDict key must be a string literal.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `foo`."];
 
 
   assert_test_typed_dictionary

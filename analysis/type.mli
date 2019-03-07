@@ -53,7 +53,10 @@ module Record : sig
   end
 end
 
-type literal
+type literal =
+  | String of string
+  | Integer of int
+
 type variable_state
 
 type tuple =

@@ -481,6 +481,63 @@ module Attribute = struct
       else
         annotation
     in
+    let target = Access ( SimpleAccess(Access.create attribute_name)) in
+
+    (* Special case typeddicts *)
+    let annotation =
+      let open Expression in
+      let open Record.Access in
+      match instantiated, target, annotation with
+      | Some (Type.TypedDictionary { fields; _ }),
+        Access (SimpleAccess [Identifier name]),
+        { annotation = Type.Callable callable; _ } ->
+          let overrider =
+            match name with
+            | "__getitem__" ->
+                Some (fun { Type.name; annotation } -> {
+                      Type.Record.Callable.annotation;
+                      parameters = Defined [
+                          Named {
+                            name= "k";
+                            annotation= Type.literal_string name;
+                            default=false;
+                          };
+                        ];
+                    })
+            | "__setitem__" ->
+                Some (fun { Type.name; annotation } -> {
+                      Type.Record.Callable.annotation = Type.none;
+                      parameters = Defined [
+                          Named {
+                            name= "k";
+                            annotation= Type.literal_string name;
+                            default=false;
+                          };
+                          Named {
+                            name= "v";
+                            annotation;
+                            default=false;
+                          };
+                        ];
+                    })
+            | _ ->
+                None
+          in
+          overrider
+          >>| (fun overrider ->
+              {
+                annotation with
+                annotation =
+                  Type.Callable {
+                    callable with
+                    implementation = { annotation = Type.Top; parameters = Undefined };
+                    overloads = List.map ~f:overrider fields;
+                  };
+              })
+          |> Option.value ~default:annotation
+      | _ ->
+          annotation
+    in
 
     let value = Option.value value ~default:(Node.create Ellipsis ~location) in
 

@@ -746,11 +746,9 @@ module State = struct
         | _ ->
             None
       in
-      let resolve_callables
-          callables_and_implicit_parameter_annotations
-          ~arguments:{ Node.location; value = arguments } =
+      let resolve_callables callables ~arguments:{ Node.location; value = arguments } =
         let signatures =
-          let signature (callable, implicit_parameter_annotation) =
+          let signature callable =
             let resolve_independent_callable () =
               let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
               let backup () =
@@ -826,95 +824,9 @@ module State = struct
               | _ ->
                   signature
             in
-            let resolve_typed_dictionary_get_item_callable ~fields ~name =
-              match arguments with
-              | {
-                Argument.value = {
-                  Node.value = Expression.String { value = key; _ };
-                  _;
-                };
-                _;
-              } :: [] ->
-                  begin
-                    match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-                    | Some { annotation; _ } ->
-                        Annotated.Signature.Found {
-                          callable = Type.Callable.with_return_annotation callable ~annotation;
-                          constraints = Type.Map.empty;
-                        }
-                    | None ->
-                        Annotated.Signature.NotFound {
-                          callable =
-                            Type.Callable.with_return_annotation
-                              callable
-                              ~annotation:Type.Top;
-                          reason =
-                            Some (Annotated.Signature.TypedDictionaryMissingKey {
-                                typed_dictionary_name = name;
-                                missing_key = key;
-                              });
-                        }
-                  end
-              | _ ->
-                  let keys = List.map fields ~f:(fun { name; _ } -> name) in
-                  Annotated.Signature.NotFound {
-                    callable = Type.Callable.with_return_annotation callable ~annotation:Type.Top;
-                    reason = Some (Annotated.Signature.TypedDictionaryAccessWithNonLiteral keys);
-                  }
-            in
-            let resolve_typed_dictionary_set_item_callable ~fields ~name =
-              match arguments with
-              | { Argument.value = { Node.value = Expression.String { value = key; _ }; _ }; _ }
-                :: _value :: [] ->
-                  begin
-                    let annotation =
-                      match List.find fields ~f:(fun { Type.name; _ } -> name = key) with
-                      | Some { annotation; _ } -> Some annotation
-                      | _ -> None
-                    in
-                    match annotation with
-                    | Some annotation ->
-                        Type.TypedDictionary.setter ~callable ~annotation
-                        |> fun callable ->
-                        Annotated.Signature.select
-                          ~arguments
-                          ~resolution
-                          ~callable
-                    | None ->
-                        Annotated.Signature.NotFound {
-                          callable;
-                          reason =
-                            Some (Annotated.Signature.TypedDictionaryMissingKey {
-                                typed_dictionary_name = name;
-                                missing_key = key;
-                              });
-                        }
-                  end
-              | _ ->
-                  let keys = List.map fields ~f:(fun { name; _ } -> name) in
-                  Annotated.Signature.NotFound {
-                    callable;
-                    reason = Some (Annotated.Signature.TypedDictionaryAccessWithNonLiteral keys);
-                  }
-            in
-            let tail_is access name =
-              match List.last access with
-              | Some (Access.Identifier get_item) -> get_item = name
-              | _ -> false
-            in
-            match implicit_parameter_annotation, callable with
-            | Some (Type.TypedDictionary { fields; name; _ }),
-              { Type.Record.Callable.kind = Named access; _ }
-              when tail_is access "__getitem__" ->
-                resolve_typed_dictionary_get_item_callable ~fields ~name
-            | Some (Type.TypedDictionary { fields; name; _ }),
-              { Type.Record.Callable.kind = Named access; _ }
-              when tail_is access "__setitem__" ->
-                resolve_typed_dictionary_set_item_callable ~fields ~name
-            | _ ->
-                resolve_independent_callable ()
+            resolve_independent_callable ()
           in
-          List.map callables_and_implicit_parameter_annotations ~f:signature
+          List.map callables ~f:signature
         in
 
         (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
@@ -1019,14 +931,8 @@ module State = struct
             | Some resolved, Access.Call arguments ->
                 (* Callable invocation. *)
                 let resolved = Annotation.annotation resolved in
-                let target =
-                  if Type.is_meta resolved then
-                    Some { AccessState.access = lead; annotation = Type.single_parameter resolved }
-                  else
-                    target
-                in
-                let callables_and_implicit_parameter_annotations =
-                  let callable_and_implicit_parameter =  function
+                let callables =
+                  let callable =  function
                     | meta when Type.is_meta meta ->
                         let callable =
                           let backup = find_method ~parent:meta ~name:"__call__" in
@@ -1057,23 +963,20 @@ module State = struct
                               >>= function | Type.Callable callable -> Some callable | _ -> None
                         in
                         callable
-                        >>| (fun callable -> callable, target >>| AccessState.annotation)
                     | Type.Callable callable ->
-                        (callable, target >>| AccessState.annotation)
-                        |> Option.some
+                        Some callable
                     | resolved ->
                         find_method ~parent:resolved ~name:"__call__"
-                        >>| (fun callable -> callable, Some resolved)
                   in
                   match resolved with
                   | Type.Union annotations ->
-                      List.map annotations ~f:callable_and_implicit_parameter
+                      List.map annotations ~f:callable
                       |> Option.all
                   | annotation ->
-                      callable_and_implicit_parameter annotation
-                      >>| (fun callable_and_implicit_parameter -> [callable_and_implicit_parameter])
+                      callable annotation
+                      >>| (fun callable -> [callable])
                 in
-                callables_and_implicit_parameter_annotations
+                callables
                 >>| resolve_callables  ~arguments
                 |> (function
                     | Some state ->
@@ -1885,9 +1788,8 @@ module State = struct
           | AccessState.Signature {
               signature =
                 (Annotated.Signature.NotFound {
-                    callable = { Type.Callable.kind; _ };
+                    callable = { Type.Callable.kind; implicit; _ };
                     reason = Some reason;
-                    _;
                   });
               _;
             } ->
@@ -1918,24 +1820,51 @@ module State = struct
                     in
                     Error.create ~location ~kind ~define
                 | Mismatch mismatch ->
+                    let { Annotated.Signature.actual; expected; name; position } =
+                      Node.value mismatch
+                    in
                     let mismatch, name, position, location =
-                      let { Annotated.Signature.actual; expected; name; position } =
-                        Node.value mismatch
-                      in
                       Error.create_mismatch ~resolution ~actual ~expected ~covariant:true,
                       name,
                       position,
                       (Node.location mismatch)
                     in
-                    Error.create
-                      ~location
-                      ~kind:
+                    let kind =
+                      let normal =
                         (Error.IncompatibleParameterType {
                             name;
                             position;
                             callee;
                             mismatch;
                           })
+                      in
+                      begin
+                        match callee, position, implicit with
+                        | Some [Identifier "TypedDictionary"; Identifier "__getitem__"],
+                          1,
+                          Some { implicit_annotation = Type.TypedDictionary { fields; name; _ }; _ }
+                        | Some [Identifier "TypedDictionary"; Identifier "__setitem__"],
+                          1,
+                          Some { implicit_annotation = Type.TypedDictionary { fields; name; _ }; _ }
+                          ->
+                            begin
+                              match actual with
+                              | Type.Literal (Type.String missing_key) ->
+                                  Error.TypedDictionaryKeyNotFound
+                                    { typed_dictionary_name = name; missing_key }
+                              | Type.Primitive "str" ->
+                                  Error.TypedDictionaryAccessWithNonLiteral
+                                    (List.map fields ~f:(fun { name; _ } -> name))
+                              | _ ->
+                                  normal
+                            end
+                        | _ ->
+                            normal
+                      end
+                    in
+                    Error.create
+                      ~location
+                      ~kind
                       ~define
                 | MissingArgument name ->
                     Error.create
@@ -1951,19 +1880,6 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.TooManyArguments { callee; expected; provided })
-                      ~define
-                | TypedDictionaryAccessWithNonLiteral expression ->
-                    Error.create
-                      ~location
-                      ~kind:(Error.TypedDictionaryAccessWithNonLiteral expression)
-                      ~define
-                | TypedDictionaryMissingKey { typed_dictionary_name; missing_key } ->
-                    Error.create
-                      ~location
-                      ~kind:(Error.TypedDictionaryKeyNotFound {
-                          typed_dictionary_name;
-                          missing_key;
-                        })
                       ~define
                 | UnexpectedKeyword name ->
                     Error.create
