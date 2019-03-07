@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import Dict, List  # noqa
+from typing import Dict, Iterable, List, cast  # noqa
 
 from . import log
 from .filesystem import find_root
@@ -31,29 +31,25 @@ def presumed_target_root(target):
     return target
 
 
-def _find_source_directories(targets_map) -> BuckOut:
-    targets = sorted(list(targets_map.keys()))
+# Expects the targets to be already normalized.
+def _find_built_source_directories(targets: Iterable[str]) -> BuckOut:
     targets_not_found = []
     source_directories = []
     buck_root = find_root(os.getcwd(), ".buckconfig")
     if buck_root is None:
         raise Exception("No .buckconfig found in ancestors of the current directory.")
 
+    targets = sorted(targets)
     for target in targets:
         target_path = target
         target_prefix_index = target_path.find("//")
         if target_prefix_index != -1:
             target_path = target_path[target_prefix_index + 2 :]
         target_path = target_path.replace(":", "/")
-
         discovered_source_directories = glob.glob(
             os.path.join(buck_root, "buck-out/gen/", target_path + "#*link-tree")
         )
-        target_destination = targets_map[target]
-        built = target_destination is not None and (
-            target_destination == "" or len(glob.glob(target_destination)) > 0
-        )
-        if not built and len(discovered_source_directories) == 0:
+        if len(discovered_source_directories) == 0:
             targets_not_found.append(target)
         source_directories.extend(
             [
@@ -89,7 +85,13 @@ def _normalize(targets: List[str]) -> List[str]:
             .strip()
             .split("\n")
         )
-        targets_to_destinations = list(filter(bool, targets_to_destinations))
+        targets_to_destinations = cast(
+            List[str], list(filter(bool, targets_to_destinations))
+        )
+        # The output is of the form //target //corresponding.par
+        targets_to_destinations = [
+            target.split(" ")[0] for target in targets_to_destinations
+        ]
         if not targets_to_destinations:
             LOG.warning(
                 "Provided targets do not contain any binary or unittest targets."
@@ -101,7 +103,6 @@ def _normalize(targets: List[str]) -> List[str]:
                 len(targets_to_destinations),
                 "s" if len(targets_to_destinations) > 1 else "",
             )
-        # pyre-fixme: inferred type is List[object] instead of List[str]
         return targets_to_destinations
     except subprocess.TimeoutExpired as error:
         LOG.error("Buck output so far: %s", error.stderr.decode().strip())
@@ -119,9 +120,11 @@ def _normalize(targets: List[str]) -> List[str]:
         )
 
 
-def _build_targets(targets: List[str]) -> None:
+def _build_targets(targets: List[str], original_targets: List[str]) -> None:
     LOG.info(
-        "Building target%s `%s`", "s:" if len(targets) > 1 else "", "`, `".join(targets)
+        "Building target%s `%s`",
+        "s:" if len(original_targets) > 1 else "",
+        "`, `".join(original_targets),
     )
     command = ["buck", "build"] + targets
     try:
@@ -136,60 +139,27 @@ def _build_targets(targets: List[str]) -> None:
         )
 
 
-def generate_source_directories(original_targets, build, prompt: bool = True):
-    buck_out = _find_source_directories({target: None for target in original_targets})
+def generate_source_directories(
+    original_targets: Iterable[str], build: bool, prompt: bool = True
+):
+    original_targets = list(original_targets)
+    targets = _normalize(original_targets)
+    buck_out = _find_built_source_directories(targets)
     source_directories = buck_out.source_directories
 
-    full_targets_map = {}
     if buck_out.targets_not_found:
-        targets_to_destinations = _normalize(buck_out.targets_not_found)
+        if build or not prompt or log.get_yes_no_input("Build target?"):
+            # Build all targets to ensure buck doesn't remove some link trees as we go.
+            _build_targets(targets, original_targets)
+            buck_out = _find_built_source_directories(targets)
+            source_directories = buck_out.source_directories
 
-        for original_target in buck_out.targets_not_found:
-            normalized_targets_map = {}
-            for target_destination_pair in targets_to_destinations:
-                pair = target_destination_pair.split(" ")
-                if presumed_target_root(pair[0]).startswith(
-                    presumed_target_root(original_target)
-                ):
-                    if len(pair) > 1:
-                        normalized_targets_map[pair[0]] = pair[1]
-                    else:
-                        normalized_targets_map[pair[0]] = ""
-            full_targets_map[original_target] = normalized_targets_map
-
-    if build and full_targets_map:
-        _build_targets(list(full_targets_map.keys()))
-
-    unbuilt_targets = []
-    for target_name, normalized_targets_map in full_targets_map.items():
-        buck_out = _find_source_directories(normalized_targets_map)
-        # Add anything that is unbuilt or only partially built
-        if len(buck_out.targets_not_found) > 0:
-            unbuilt_targets.append(target_name)
-        source_directories.extend(buck_out.source_directories)
-
-    if len(unbuilt_targets) > 0:
-        if build:
-            raise BuckException(
-                "Could not find link trees for:\n    `{}`.\n   "
-                "See `{} --help` for more information.".format(
-                    "    \n".join(unbuilt_targets), sys.argv[0]
-                )
+    if buck_out.targets_not_found:
+        raise BuckException(
+            "Could not find link trees for:\n    `{}`.\n   "
+            "See `{} --help` for more information.".format(
+                "    \n".join(buck_out.targets_not_found), sys.argv[0]
             )
-        else:
-            LOG.error(
-                "Could not find link trees for:\n    `%s`.\n   "
-                "These targets might be unbuilt or only partially built.",
-                "    \n".join(unbuilt_targets),
-            )
-            if not prompt or log.get_yes_no_input("Build target?"):
-                return generate_source_directories(
-                    original_targets, build=True, prompt=False
-                )
-            raise BuckException(
-                "Could not find link trees for:\n    `{}`.\n   "
-                "See `{} --help` for more information.".format(
-                    "    \n".join(unbuilt_targets), sys.argv[0]
-                )
-            )
+        )
+
     return source_directories
