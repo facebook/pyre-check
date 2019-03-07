@@ -51,35 +51,43 @@ class InteractiveTest(TestCase):
         for row in data:
             session.add(row)
 
+    def _generic_issue(
+        self,
+        id: int = 1,
+        callable: str = "module.function1",
+        filename: str = "module.py",
+    ) -> Issue:
+        return Issue(  # pyre-ignore: T41318465
+            id=id,
+            handle=str(id),
+            first_seen=datetime.now(),
+            code=1000 + id - 1,
+            callable=callable,
+            filename=filename,
+        )
+
+    def _generic_issue_instance(
+        self, id: int = 1, run_id: int = 1, issue_id: int = 1
+    ) -> IssueInstance:
+        return IssueInstance(  # pyre-ignore: T41318465
+            id=id,
+            run_id=run_id,
+            message_id=1,
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+            issue_id=issue_id,
+        )
+
     def testListIssuesBasic(self):
         issues = [
-            Issue(
-                id=1,
-                handle="1",
-                first_seen=datetime.now(),
-                code=1000,
-                callable="module.function1",
-            ),
-            Issue(
-                id=2,
-                handle="2",
-                first_seen=datetime.now(),
-                code=1001,
-                callable="module.function2",
-            ),
+            self._generic_issue(id=1, callable="module.function1"),
+            self._generic_issue(id=2, callable="module.function2"),
         ]
 
         message = SharedText(id=1, contents="message1")
         run = Run(id=1, date=datetime.now())
 
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue_instance = self._generic_issue_instance()
 
         with self.db.make_session() as session:
             self._add_to_session(session, issues)
@@ -100,13 +108,7 @@ class InteractiveTest(TestCase):
         self.assertNotIn("module.function2", output)
 
     def testListIssuesFromLatestRun(self):
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
+        issue = self._generic_issue()
 
         message = SharedText(id=1, contents="message1")
         runs = [
@@ -115,22 +117,8 @@ class InteractiveTest(TestCase):
         ]
 
         issue_instances = [
-            IssueInstance(
-                id=1,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
-            IssueInstance(
-                id=2,
-                run_id=2,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
+            self._generic_issue_instance(id=1, run_id=1),
+            self._generic_issue_instance(id=2, run_id=2),
         ]
 
         with self.db.make_session() as session:
@@ -150,56 +138,20 @@ class InteractiveTest(TestCase):
     def _list_issues_filter_setup(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issues = [
-            Issue(
-                id=1,
-                handle="1",
-                first_seen=datetime.now(),
-                code=1000,
-                callable="module.sub.function1",
-                filename="module/sub.py",
+            self._generic_issue(
+                id=1, callable="module.sub.function1", filename="module/sub.py"
             ),
-            Issue(
-                id=2,
-                handle="2",
-                first_seen=datetime.now(),
-                code=1001,
-                callable="module.sub.function2",
-                filename="module/sub.py",
+            self._generic_issue(
+                id=2, callable="module.sub.function2", filename="module/sub.py"
             ),
-            Issue(
-                id=3,
-                handle="3",
-                first_seen=datetime.now(),
-                code=1002,
-                callable="module.function3",
-                filename="module/__init__.py",
+            self._generic_issue(
+                id=3, callable="module.function3", filename="module/__init__.py"
             ),
         ]
         issue_instances = [
-            IssueInstance(
-                id=1,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
-            IssueInstance(
-                id=2,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=2,
-            ),
-            IssueInstance(
-                id=3,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=3,
-            ),
+            self._generic_issue_instance(id=1, issue_id=1),
+            self._generic_issue_instance(id=2, issue_id=2),
+            self._generic_issue_instance(id=3, issue_id=3),
         ]
 
         with self.db.make_session() as session:
@@ -300,30 +252,10 @@ class InteractiveTest(TestCase):
             Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
             Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
         ]
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
+        issue = self._generic_issue()
         issue_instances = [
-            IssueInstance(
-                id=1,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
-            IssueInstance(
-                id=2,
-                run_id=2,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
+            self._generic_issue_instance(id=1, run_id=1),
+            self._generic_issue_instance(id=2, run_id=2),
         ]
 
         with self.db.make_session() as session:
@@ -360,38 +292,11 @@ class InteractiveTest(TestCase):
 
     def testSetIssue(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
+        issue = self._generic_issue()
         issue_instances = [
-            IssueInstance(
-                id=1,
-                run_id=1,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
-            IssueInstance(
-                id=2,
-                run_id=2,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
-            IssueInstance(
-                id=3,
-                run_id=3,
-                message_id=1,
-                filename="module.py",
-                location=SourceLocation(1, 2, 3),
-                issue_id=1,
-            ),
+            self._generic_issue_instance(id=1, run_id=1),
+            self._generic_issue_instance(id=2, run_id=2),
+            self._generic_issue_instance(id=3, run_id=3),
         ]
 
         with self.db.make_session() as session:
@@ -429,14 +334,7 @@ class InteractiveTest(TestCase):
         self.assertIn("Issue 1 doesn't exist", stderr)
 
     def testGetSources(self):
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue_instance = self._generic_issue_instance()
         sources = [
             SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
             SharedText(id=2, contents="source2", kind=SharedTextKind.SOURCE),
@@ -463,14 +361,7 @@ class InteractiveTest(TestCase):
 
     def testGetSinks(self):
         return
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue_instance = self._generic_issue_instance()
         sinks = [
             SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK),
             SharedText(id=2, contents="sink2", kind=SharedTextKind.SINK),
@@ -702,17 +593,8 @@ class InteractiveTest(TestCase):
 
     def testTrace(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1, handle="1", first_seen=datetime.now(), code=1000, callable="call1"
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="file.py",
-            location=SourceLocation(1, 1, 1),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -766,17 +648,8 @@ class InteractiveTest(TestCase):
 
     def testTraceMissingFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1, handle="1", first_seen=datetime.now(), code=1000, callable="call1"
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="file.py",
-            location=SourceLocation(1, 1, 1),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -824,21 +697,8 @@ class InteractiveTest(TestCase):
 
     def testTraceCursorLocation(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -893,21 +753,8 @@ class InteractiveTest(TestCase):
 
     def _set_up_branched_trace(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
         messages = [
             SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
             SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
@@ -1096,21 +943,8 @@ class InteractiveTest(TestCase):
 
     def testBranchPrefixLengthChanges(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
         messages = [
             SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
             SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
@@ -1353,21 +1187,8 @@ else:
 
     def testPager(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = Issue(
-            id=1,
-            handle="1",
-            first_seen=datetime.now(),
-            code=1000,
-            callable="module.function1",
-        )
-        issue_instance = IssueInstance(
-            id=1,
-            run_id=1,
-            message_id=1,
-            filename="module.py",
-            location=SourceLocation(1, 2, 3),
-            issue_id=1,
-        )
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
 
         with self.db.make_session() as session:
             session.add(run)
