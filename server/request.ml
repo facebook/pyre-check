@@ -177,6 +177,35 @@ let parse_lsp ~configuration ~request =
               None
         end
 
+    | "updateFiles" ->
+        begin
+          match UpdateFiles.of_yojson request with
+          | Ok {
+              UpdateFiles.parameters = Some {
+                  files;
+                  _
+                };
+              _
+            } ->
+              let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
+              let files =
+                files
+                |> List.map ~f:(Path.create_absolute ~follow_symbolic_links:false)
+                |> List.map ~f:File.create
+              in
+              Some (
+                TypeCheckRequest
+                  (TypeCheckRequest.create
+                     ~update_environment_with:files
+                     ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ())
+              )
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
+        end
+
     | "shutdown" ->
         begin
           match ShutdownRequest.of_yojson request with

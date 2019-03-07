@@ -278,6 +278,14 @@ module HandshakeClientParameters = struct
 end
 
 
+module UpdateFilesParameters = struct
+  type t = {
+    files: string list
+  }
+  [@@deriving yojson]
+end
+
+
 module SaveOptions = struct
   type t = {
     include_text: bool option
@@ -912,7 +920,7 @@ module DidCloseTextDocument = NotificationMessage.Make(DidCloseTextDocumentParam
 module DidSaveTextDocument = NotificationMessage.Make(DidSaveTextDocumentParams)
 
 
-module DidOpenTextDocument =NotificationMessage.Make(DidOpenTextDocumentParams)
+module DidOpenTextDocument = NotificationMessage.Make(DidOpenTextDocumentParams)
 
 
 module DidChangeTextDocument = NotificationMessage.Make(DidChangeTextDocumentParams)
@@ -926,6 +934,8 @@ module HandshakeServer = NotificationMessage.Make(HandshakeServerParameters)
 
 module HandshakeClient = NotificationMessage.Make(HandshakeClientParameters)
 
+
+module UpdateFiles = NotificationMessage.Make(UpdateFilesParameters)
 
 (** Responses *)
 

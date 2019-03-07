@@ -907,6 +907,7 @@ let test_language_server_hover_response _ =
 
 let test_request_parser context =
   let { root; relative; absolute; symlink_source; symlink_target } = files context in
+  let stub = Filename.temp_file ~in_dir:(Path.absolute root) "stub" ".pyi" in
   let configuration = Configuration.Analysis.create ~local_root:root () in
   let open_message absolute =
     {
@@ -956,6 +957,16 @@ let test_request_parser context =
     }
     |> DidChangeTextDocument.to_yojson
   in
+  let update_message =
+    {
+      UpdateFiles.jsonrpc = "2.0";
+      method_ = "updateFiles";
+      parameters = Some {
+          UpdateFilesParameters.files = [absolute; symlink_source; stub]
+        }
+    }
+    |> UpdateFiles.to_yojson
+  in
 
   let assert_parsed_request_equals message request =
     assert_equal
@@ -992,7 +1003,29 @@ let test_request_parser context =
           (Path.create_absolute absolute |> File.create)));
   assert_parsed_request_equals
     change_message
-    None
+    None;
+  assert_parsed_request_equals
+    update_message
+    (
+      let absolute_file =
+        Path.create_absolute absolute
+        |> File.create
+      in
+      let linked_file =
+        Path.create_absolute ~follow_symbolic_links:false symlink_source
+        |> File.create
+      in
+      let stub_file =
+        Path.create_absolute stub
+        |> File.create
+      in
+      Some
+        (Protocol.Request.TypeCheckRequest {
+            Protocol.TypeCheckRequest.update_environment_with =
+              [absolute_file; linked_file; stub_file];
+            check = [absolute_file; linked_file]
+          })
+    )
 
 
 let () =
