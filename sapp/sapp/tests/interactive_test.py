@@ -1246,6 +1246,30 @@ class InteractiveTest(TestCase):
         self.interactive.current_trace_frame_index = 1
         self.assertTrue(self.interactive._verify_multiple_branches())
 
+    def testCreateIssueOutputStringNoSourcesNoSinks(self):
+        issue = Issue(code=1000, callable="module.function1")
+        issue_instance = IssueInstance(
+            id=1,
+            message=SharedText(contents="leaf"),
+            filename="module.py",
+            location=SourceLocation(1, 2, 3),
+        )
+        sources = []
+        sinks = ["sink1", "sink2"]
+        result = self.interactive._create_issue_output_string(
+            issue_instance, issue, sources, sinks
+        )
+        self.assertIn("Sources: No sources", result)
+        self.assertIn("Sinks: sink1", result)
+
+        sources = ["source1", "source2"]
+        sinks = []
+        result = self.interactive._create_issue_output_string(
+            issue_instance, issue, sources, sinks
+        )
+        self.assertIn("Sources: source1", result)
+        self.assertIn("Sinks: No sinks", result)
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 

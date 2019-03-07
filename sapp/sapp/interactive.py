@@ -620,8 +620,8 @@ branch(INDEX)   select a trace branch
                 f"    Code: {issue.code}",
                 f" Message: {issue_instance.message.contents}",
                 f"Callable: {issue.callable}",
-                f" Sources: {sources_output}",
-                f"   Sinks: {sinks_output}",
+                f" Sources: {sources_output if sources_output else 'No sources'}",
+                f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
                 (
                     f"Location: {issue_instance.filename}"
                     f":{SourceLocation.to_string(issue_instance.location)}"
