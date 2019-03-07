@@ -179,6 +179,20 @@ let test_check_protocol _ =
         return foo(x)
     |}
     ["Revealed type [-1]: Revealed type for `foo.(...)` is `int`."];
+  assert_type_errors
+    {|
+      class A:
+        def __hash__(self) -> int:
+          return 9
+
+      def foo(p: typing.Hashable) -> int:
+        return p.__hash__()
+
+      def bar(a: A) -> None:
+        foo(a)
+
+    |}
+    [];
   ()
 
 

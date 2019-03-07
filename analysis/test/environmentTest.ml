@@ -1377,6 +1377,7 @@ let test_protocols _ =
     ([
       "typing.Sized";
       "typing.AsyncIterator";
+      "typing.Hashable";
       "typing.AsyncIterable";
       "typing.Iterator";
       "typing._Collection";

@@ -671,6 +671,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             @abstractmethod
             def __len__(self) -> int: ...
 
+        @runtime
+        class Hashable(Protocol, metaclass=ABCMeta):
+            @abstractmethod
+            def __hash__(self) -> int: ...
+
         _T = TypeVar('_T')
         _S = TypeVar('_S')
         _KT = TypeVar('_KT')
