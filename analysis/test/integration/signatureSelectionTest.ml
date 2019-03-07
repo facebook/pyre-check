@@ -37,7 +37,7 @@ let test_check_callables _ =
 
   assert_type_errors
     {|
-      def foo(f: typing.Callable[..., int]) -> None:
+      def foo(f: typing.Callable[[int], int]) -> None:
         ...
       def i2i(x: int) -> int:
         return x
@@ -46,7 +46,7 @@ let test_check_callables _ =
     [];
   assert_type_errors
     {|
-      def foo(f: typing.Callable[..., int]) -> None:
+      def foo(f: typing.Callable[[int], int]) -> None:
         ...
       def i2s(x: int) -> str:
         return ""
@@ -54,7 +54,7 @@ let test_check_callables _ =
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `typing.Callable[..., int]` for 1st anonymous parameter to call `foo` but got " ^
+      "Expected `typing.Callable[[int], int]` for 1st anonymous parameter to call `foo` but got " ^
       "`typing.Callable(i2s)[[Named(x, int)], str]`.";
     ];
 
@@ -117,13 +117,13 @@ let test_check_callables _ =
     {|
       def i2i(x: int) -> int:
         return 0
-      def hof(c: typing.Callable) -> None:
+      def hof(c: typing.Callable[[int], int]) -> None:
         return
       hof(i2i)
       hof(1)
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Callable[..., unknown]` for 1st anonymous parameter to call `hof` but got " ^
+     "Expected `typing.Callable[[int], int]` for 1st anonymous parameter to call `hof` but got " ^
      "`int`."];
 
   assert_type_errors

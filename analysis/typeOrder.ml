@@ -527,94 +527,103 @@ let rec simulate_signature_select
       |> Type.free_variables
       |> List.fold ~f:to_bottom ~init:Type.Map.empty
     in
-    match implementation.parameters, called_as.parameters with
-    | Undefined, Undefined ->
-        Some initial_constraints
-    | Defined implementation_parameters, Defined right ->
-        begin
-          try
-            let rec solve_parameters left right constraints =
-              match left, right with
-              | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters
-              | Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters
-              | Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters ->
-                  if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
-                    solve_constraints
-                      order
-                      ~constraints
-                      ~source:right_annotation
-                      ~target:left_annotation
-                    >>= solve_parameters left_parameters right_parameters
-                  else
-                    None
+    let parameters = function
+      | { parameters = Defined parameters; _ } ->
+          parameters
+      | { parameters = Undefined; _ } ->
+          [
+            Variable {name= "args"; annotation= Type.object_primitive; default= false};
+            Keywords {name= "kwargs"; annotation= Type.object_primitive; default= false};
+          ]
+    in
+    try
+      let rec solve_parameters left right constraints =
+        match left, right with
+        | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
+          :: left_parameters,
+          Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
+          :: right_parameters
+        | Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
+          :: left_parameters,
+          Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
+          :: right_parameters
+        | Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
+          :: left_parameters,
+          Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
+          :: right_parameters ->
+            if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
+              solve_constraints
+                order
+                ~constraints
+                ~source:right_annotation
+                ~target:left_annotation
+              >>= solve_parameters left_parameters right_parameters
+            else
+              None
 
-              | Parameter.Variable { Parameter.annotation = left_annotation; _ }
-                :: _,
-                (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters
-                when Parameter.is_anonymous right ->
-                  solve_constraints
-                    order
-                    ~constraints
-                    ~source:right_annotation
-                    ~target:left_annotation
-                  >>= solve_parameters left right_parameters
-              | Parameter.Variable _ :: left_parameters, []
-              | Parameter.Keywords _ :: left_parameters, [] ->
-                  solve_parameters left_parameters [] constraints
+        | Parameter.Variable { Parameter.annotation = left_annotation; _ }
+          :: _,
+          (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
+          :: right_parameters
+          when Parameter.is_anonymous right ->
+            solve_constraints
+              order
+              ~constraints
+              ~source:right_annotation
+              ~target:left_annotation
+            >>= solve_parameters left right_parameters
+        | Parameter.Variable _ :: left_parameters, []
+        | Parameter.Keywords _ :: left_parameters, [] ->
+            solve_parameters left_parameters [] constraints
 
-              | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
-                (Parameter.Named _ as named) :: right ->
-                  (* SOLVE *)
-                  let is_compatible =
-                    Type.equal
-                      (Parameter.annotation variable)
-                      (Parameter.annotation keywords) &&
-                    less_or_equal
-                      order
-                      ~left:(Parameter.annotation named)
-                      ~right:(Parameter.annotation keywords)
-                  in
-                  if is_compatible then
-                    solve_parameters left right constraints
-                  else
-                    None
-
-              | left :: left_parameters, [] ->
-                  if Parameter.default left then
-                    solve_parameters left_parameters [] constraints
-                  else
-                    None
-
-              | [], [] ->
-                  Some constraints
-
-              | _ ->
-                  None
+        | (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
+          (Parameter.Named _ as named) :: right ->
+            (* SOLVE *)
+            let is_compatible =
+              Type.equal
+                (Parameter.annotation variable)
+                (Parameter.annotation keywords) &&
+              less_or_equal
+                order
+                ~left:(Parameter.annotation named)
+                ~right:(Parameter.annotation keywords)
             in
-            solve_parameters implementation_parameters right initial_constraints
-          with _ ->
+            if is_compatible then
+              solve_parameters left right constraints
+            else
+              None
+
+        | left :: left_parameters, [] ->
+            if Parameter.default left then
+              solve_parameters left_parameters [] constraints
+            else
+              None
+
+        | [], [] ->
+            Some constraints
+
+        | _ ->
             None
-        end
-    | Defined _, Undefined ->
-        Some initial_constraints
-    | Undefined, Defined _ ->
-        None
+      in
+      solve_parameters (parameters implementation) (parameters called_as) initial_constraints
+    with _ ->
+      None
   in
   let overload_to_overload_and_constraints overload =
     constraints overload
     >>| (fun constraints -> overload, constraints)
   in
-  List.filter_map (overloads @ [implementation]) ~f:overload_to_overload_and_constraints
+  let overloads =
+    if List.is_empty overloads then
+      [implementation]
+    else if Type.Callable.Overload.is_undefined implementation then
+      overloads
+    else
+      (* TODO(T41195241) always ignore implementation when has overloads.  Currently put
+         implementation as last resort *)
+      overloads @ [implementation]
+  in
+  List.filter_map overloads ~f:overload_to_overload_and_constraints
   |> List.hd
   >>| (fun (overload, constraints) ->
       map_implementation overload ~f:(Type.instantiate ~constraints:(Map.find constraints))
