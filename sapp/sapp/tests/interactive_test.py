@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 from datetime import datetime
 from io import StringIO
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 from sapp.db import DB
 from sapp.interactive import Interactive, TraceTuple
@@ -1269,6 +1270,76 @@ class InteractiveTest(TestCase):
         )
         self.assertIn("Sources: source1", result)
         self.assertIn("Sinks: No sinks", result)
+
+    def testListSourceCode(self):
+        mock_data = """if this_is_true:
+    print("This was true")
+else:
+    print("This was false")
+        """
+        self.interactive.setup()
+        self.interactive.current_issue_id = 1
+        self.interactive.trace_tuples_id = 1
+
+        self.interactive.current_trace_frame_index = 0
+        self.interactive.trace_tuples = [
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    filename="file.py", callee_location=SourceLocation(2, 1, 1)
+                )
+            )
+        ]
+        with patch("builtins.open", mock_open(read_data=mock_data)) as mock_file:
+            self._clear_stdout()
+            self.interactive.list_source_code(2)
+            mock_file.assert_called_once_with(f"{os.getcwd()}/file.py", "r")
+            output = self.stdout.getvalue()
+            self.assertEqual(
+                output.split("\n"),
+                [
+                    "file.py:2|1|1",
+                    "     1  if this_is_true:",
+                    ' --> 2      print("This was true")',
+                    "     3  else:",
+                    '     4      print("This was false")',
+                    "",
+                ],
+            )
+
+            mock_file.reset_mock()
+            self._clear_stdout()
+            self.interactive.list_source_code(1)
+            mock_file.assert_called_once_with(f"{os.getcwd()}/file.py", "r")
+            output = self.stdout.getvalue()
+            self.assertEqual(
+                output.split("\n"),
+                [
+                    "file.py:2|1|1",
+                    "     1  if this_is_true:",
+                    ' --> 2      print("This was true")',
+                    "     3  else:",
+                    "",
+                ],
+            )
+
+    def testListSourceCodeFileNotFound(self):
+        self.interactive.setup()
+        self.interactive.current_issue_id = 1
+        self.interactive.trace_tuples_id = 1
+
+        self.interactive.current_trace_frame_index = 0
+        self.interactive.trace_tuples = [
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    filename="file.py", callee_location=SourceLocation(2, 1, 1)
+                )
+            )
+        ]
+        with patch("builtins.open", mock_open(read_data="not read")) as mock_file:
+            mock_file.side_effect = FileNotFoundError()
+            self.interactive.list_source_code()
+            self.assertIn("Couldn't open", self.stderr.getvalue())
+            self.assertNotIn("file.py", self.stdout.getvalue())
 
     def mock_pager(self, output_string):
         self.pager_calls += 1

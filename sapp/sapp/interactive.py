@@ -5,6 +5,9 @@ import sys
 from typing import Callable, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from IPython.core import page
+from pygments import highlight
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import get_lexer_for_filename
 from sapp.db import DB
 from sapp.models import (
     Issue,
@@ -27,7 +30,9 @@ from sqlalchemy.sql.expression import or_
 
 
 class Interactive:
-    help_message = """
+    # @lint-ignore FBPYTHON2
+    list_string = "list()"
+    help_message = f"""
 Commands =======================================================================
 
 commands()      show this message
@@ -43,7 +48,8 @@ prev()/p()      move backward within the trace
 next()/n()      move forward within the trace
 expand()        show alternative trace branches
 branch(INDEX)   select a trace branch
-    """
+{list_string}          show source code at the current trace frame
+"""
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
     LEAF_NAMES = {"source", "sink", "leaf"}
@@ -64,6 +70,7 @@ branch(INDEX)   select a trace branch
             "p": self.prev_cursor_location,
             "expand": self.expand,
             "branch": self.branch,
+            "list": self.list_source_code,
         }
 
         self.current_issue_id: int = None
@@ -444,6 +451,37 @@ branch(INDEX)   select a trace branch
 
         self.trace()
 
+    def list_source_code(self, context: int = 5) -> None:
+        """Show source code around the current trace frame location.
+
+        Parameters:
+            context: int    number of lines to show above and below trace location
+                            (default: 5)
+        """
+        if not self._verify_issue_selected():
+            return
+
+        self._generate_trace()
+
+        base_directory = os.getcwd()
+        current_trace_frame = self.trace_tuples[
+            self.current_trace_frame_index
+        ].trace_frame
+
+        filename = os.path.join(base_directory, current_trace_frame.filename)
+        file_lines: List[str] = []
+
+        try:
+            # Use readlines instead of enumerate(file) because mock_open
+            # doesn't support __iter__ until python 3.7.1.
+            with open(filename, "r") as file:
+                file_lines = file.readlines()
+        except FileNotFoundError:
+            self.warning(f"Couldn't open {filename}.")
+            return
+
+        self._output_file_lines(current_trace_frame, file_lines, context)
+
     def warning(self, message: str) -> None:
         print(message, file=sys.stderr)
 
@@ -473,6 +511,29 @@ branch(INDEX)   select a trace branch
             if selected_branch_id == int(branch.id):
                 return i
         return -1
+
+    def _output_file_lines(
+        self, trace_frame: TraceFrame, file_lines: List[str], context: int
+    ) -> None:
+        print(f"{trace_frame.filename}:{trace_frame.callee_location}")
+        center_line_number = trace_frame.callee_location.line_no
+        line_number_width = len(str(center_line_number + context))
+
+        for i in range(
+            max(center_line_number - context, 1),
+            min(center_line_number + context, len(file_lines)) + 1,
+        ):
+            line = file_lines[i - 1]
+
+            prefix = " --> " if i == center_line_number else " " * 5
+            prefix += f"{i:<{line_number_width}} "
+            if sys.stdout.isatty():
+                line = highlight(
+                    line,
+                    get_lexer_for_filename(trace_frame.filename),
+                    TerminalFormatter(),
+                )
+            print(f"{prefix} {line}", end="")
 
     def _output_trace_expansion(
         self, trace_frames: List[TraceFrame], leaves_strings: List[str]
