@@ -162,6 +162,83 @@ let test_stop_handles_unix_errors context =
   |> ignore
 
 
+let test_json_socket context =
+  (* The server does not respond on the json socket, so this test is just to sanity check the
+     handshake and verify that a client can send LSP to the server without crashing it. *)
+  let local_root =
+    bracket_tmpdir context
+    |> Pyre.Path.create_absolute
+  in
+  let start_server _ =
+    Pid.of_int (CommandTest.start_server ~local_root ~expected_version:"1234" ())
+  in
+  let stop_server pid _ = (
+    Commands.Stop.stop ~local_root:(Path.absolute local_root)
+    |> ignore;
+    CommandTest.with_timeout
+      ~seconds:1
+      (fun () -> (match Unix.waitpid pid with
+           | Ok _ -> assert true
+           | Error _ -> assert false))
+      ()
+  )
+  in
+  let pid = bracket start_server stop_server context in
+
+  let socket_path =
+    (CommandTest.mock_analysis_configuration ~local_root ~expected_version:"1234" ())
+    |> Service.Constants.Server.root
+    |> (fun root -> Path.create_relative ~root ~relative:"json_server.sock")
+    |> Path.real_path
+    |> Path.absolute
+  in
+  let in_channel, out_channel = Unix.open_connection (Unix.ADDR_UNIX socket_path) in
+  begin
+    (* first, read and validate server handshake message *)
+    in_channel
+    |> LanguageServer.Protocol.read_message
+    >>| LanguageServer.Types.HandshakeServer.of_yojson
+    |> (function
+        | Some (Ok {
+            jsonrpc = "2.0";
+            method_ = "handshake/server";
+            parameters = Some {
+                version = "1234"
+              }
+          }) -> ()
+        | _ -> assert_bool "Handshake received from server is malformed" false);
+
+    (* then, write client handshake message back *)
+    {
+      LanguageServer.Types.HandshakeClient.jsonrpc = "2.0";
+      method_ = "handshake/client";
+      parameters = Some ()
+    }
+    |> LanguageServer.Types.HandshakeClient.to_yojson
+    |> LanguageServer.Protocol.write_message out_channel;
+    Out_channel.flush out_channel;
+
+    (* send valid and invalid LSP over the json socket *)
+    `Assoc [
+      "jsonrpc", `String "2.0";
+      "id", `Int 42;
+      "method", `String "telemetry/rage";
+    ]
+    |> LanguageServer.Protocol.write_message out_channel;
+    Out_channel.flush out_channel;
+
+    `Assoc []
+    |> LanguageServer.Protocol.write_message out_channel;
+    Out_channel.flush out_channel;
+
+    (* verify that the server is still alive at this point *)
+    Unix.sleep 1;
+    (match Unix.wait_nohang (`Pid pid) with
+     | Some _ -> assert false
+     | None -> assert true);
+  end
+
+
 let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer:true ()
 
 
@@ -404,9 +481,9 @@ let test_query context =
     ~source:"class C(int): ..."
     ~query:"superclasses(C)"
     (Protocol.TypeQuery.Response
-      (Protocol.TypeQuery.Superclasses
-        [Type.integer; Type.float; Type.complex; Type.object_primitive]
-      )
+       (Protocol.TypeQuery.Superclasses
+          [Type.integer; Type.float; Type.complex; Type.object_primitive]
+       )
     );
 
   assert_type_query_response
@@ -886,7 +963,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundPath
           (Path.create_relative ~root:local_root ~relative:"a.py"
-            |> Path.absolute)))
+           |> Path.absolute)))
 
 
 let test_connect context =
@@ -1543,6 +1620,7 @@ let () =
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
+      "json_socket", test_json_socket;
       "protocol_type_check", test_protocol_type_check;
       "protocol_language_server_protocol", test_protocol_language_server_protocol;
       "protocol_persistent", test_protocol_persistent;

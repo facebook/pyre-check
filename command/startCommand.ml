@@ -34,6 +34,16 @@ let spawn_watchman_client
     ~project_root:(Some (Path.absolute project_root))
 
 
+let handshake_message version =
+  let open LanguageServer.Types in
+  {
+    HandshakeServer.jsonrpc = "2.0";
+    method_ = "handshake/server";
+    parameters = Some {
+        HandshakeServerParameters.version = version
+      }
+  }
+
 let computation_thread request_queue configuration state =
   let failure_threshold = 5 in
   let rec loop
@@ -295,14 +305,32 @@ let request_handler_thread
   let handle_readable_file_notifier last_watchman_created socket =
     try
       Log.log ~section:`Server "A file notifier is readable.";
-      let request = Socket.read socket in
-      queue_request ~origin:Protocol.Request.FileNotifier request
+      let { file_notifiers; _ } = Mutex.critical_section lock ~f:(fun () -> !connections) in
+      match Hashtbl.find file_notifiers socket with
+      | Some OCaml ->
+          let request = Socket.read socket in
+          queue_request ~origin:Protocol.Request.FileNotifier request
+      | Some JSON -> (
+          socket
+          |> Unix.in_channel_of_descr
+          |> LanguageServer.Protocol.read_message
+          >>| Yojson.Safe.to_string
+          >>| (fun request ->
+              Protocol.Request.LanguageServerProtocolRequest request)
+          |> function
+          | Some request -> queue_request ~origin:Protocol.Request.FileNotifier request
+          | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."
+        )
+      | None -> Log.error "The encoding of the file notifier is unknown."
     with
     | End_of_file
+    | Yojson.Json_error _
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "File notifier disconnected";
         Mutex.critical_section lock
           ~f:(fun () ->
+              let { file_notifiers; _ } = !connections in
+              let disconnected_socket_type = Hashtbl.find file_notifiers socket in
               let file_notifiers =
                 Hashtbl.filter_keys
                   ~f:(fun file_notifier_socket ->
@@ -314,7 +342,7 @@ let request_handler_thread
                         end
                       else
                         true)
-                  !(connections).file_notifiers
+                  file_notifiers
               in
               let old_watchman_pid = !(connections).watchman_pid in
               let wait_on_watchman pid =
@@ -333,10 +361,12 @@ let request_handler_thread
               in
               let watchman_pid =
                 if Hashtbl.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
-                  begin
-                    last_watchman_created := Unix.time ();
-                    Some (spawn_watchman_client server_configuration)
-                  end
+                  match disconnected_socket_type with
+                  | Some OCaml ->
+                      last_watchman_created := Unix.time ();
+                      Some (spawn_watchman_client server_configuration)
+                  | _ ->
+                      None
                 else
                   None
               in
@@ -344,7 +374,7 @@ let request_handler_thread
   in
   let last_watchman_created = ref 0.0 in
   let rec loop () =
-    let { socket = server_socket; persistent_clients; file_notifiers; _ } =
+    let { socket = server_socket; json_socket; persistent_clients; file_notifiers; _ } =
       Mutex.critical_section lock ~f:(fun () -> !connections)
     in
     if not (PyrePath.is_directory local_root) then
@@ -359,7 +389,10 @@ let request_handler_thread
       Unix.select
         ~restart:true
         ~read:(
-          server_socket :: (Hashtbl.keys persistent_clients) @ (Hashtbl.keys file_notifiers)
+          server_socket
+          :: json_socket
+          :: (Hashtbl.keys persistent_clients)
+          @ (Hashtbl.keys file_notifiers)
         )
         ~write:[]
         ~except:[]
@@ -390,6 +423,34 @@ let request_handler_thread
           | End_of_file ->
               Log.warning "New client socket unreadable"
         end
+      else if socket = json_socket then
+        try
+          let new_socket, _ =
+            Log.log ~section:`Server "New json client connection";
+            Unix.accept json_socket
+          in
+          let out_channel = Unix.out_channel_of_descr new_socket in
+          handshake_message (Option.value ~default:"-1" expected_version)
+          |> LanguageServer.Types.HandshakeServer.to_yojson
+          |> LanguageServer.Protocol.write_message out_channel;
+          Out_channel.flush out_channel;
+
+          new_socket
+          |> Unix.in_channel_of_descr
+          |> LanguageServer.Protocol.read_message
+          >>| LanguageServer.Types.HandshakeClient.of_yojson
+          |> (function
+              | Some (Ok _) ->
+                  Mutex.critical_section lock
+                    ~f:(fun () -> Hashtbl.set file_notifiers ~key:new_socket ~data:JSON)
+              | Some (Error error) ->
+                  Log.warning "Failed to parse handshake: %s" error
+              | None -> Log.warning "Failed to parse handshake as LSP."
+            )
+        with
+        | Sys_error error
+        | Yojson.Json_error error ->
+            Log.warning "Failed to complete handshake: %s" error
       else if Mutex.critical_section lock ~f:(fun () -> Hashtbl.mem persistent_clients socket) then
         handle_readable_persistent socket
       else

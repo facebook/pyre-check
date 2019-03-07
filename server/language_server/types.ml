@@ -264,6 +264,20 @@ module ShowMessageParams = struct
 end
 
 
+module HandshakeServerParameters = struct
+  type t = {
+    version: string
+  }
+  [@@deriving yojson]
+end
+
+
+module HandshakeClientParameters = struct
+  type t = unit
+  [@@deriving yojson]
+end
+
+
 module SaveOptions = struct
   type t = {
     include_text: bool option
@@ -905,6 +919,12 @@ module DidChangeTextDocument = NotificationMessage.Make(DidChangeTextDocumentPar
 
 
 module ShowMessage = NotificationMessage.Make(ShowMessageParams)
+
+
+module HandshakeServer = NotificationMessage.Make(HandshakeServerParameters)
+
+
+module HandshakeClient = NotificationMessage.Make(HandshakeClientParameters)
 
 
 (** Responses *)
