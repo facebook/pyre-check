@@ -17,10 +17,22 @@ module AccessState: sig
     annotation: Type.t;
   }
 
-  type origin =
+  type found_origin =
     | Instance of Annotated.Attribute.t
     | Module of Access.t
   [@@deriving show]
+
+  type undefined_origin =
+    | Instance of Annotated.Attribute.t
+    | Module of Access.t
+    | TypeWithoutClass of Type.t
+  [@@deriving show]
+
+  type definition =
+    | Defined of found_origin
+    | Undefined of undefined_origin
+  [@@deriving show]
+
 
   type element =
     | Signature of {
@@ -28,7 +40,7 @@ module AccessState: sig
         callees: Type.Callable.t list;
         arguments: Argument.t list;
       }
-    | Attribute of { attribute: Identifier.t; origin: origin; defined: bool }
+    | Attribute of { attribute: Identifier.t; definition: definition }
     | NotCallable of Type.t
     | Value
   [@@deriving show]

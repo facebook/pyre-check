@@ -45,6 +45,13 @@ let test_check_unbounded_variables _ =
       "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `typing.Union[int, str]`.";
       "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `int`.";
     ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(input: T) -> None:
+        input.impossible()
+    |}
+    ["Undefined attribute [16]: `Variable[T]` has no attribute `impossible`."];
   ()
 
 

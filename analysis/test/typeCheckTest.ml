@@ -300,14 +300,15 @@ let test_check_annotation _ =
     ["Undefined type [11]: Type `x` is not defined."]
 
 
-type attribute = {
-  name: string;
-  defined: bool;
-}
+type definer =
+  | Module of Access.t
+  | Type of Type.t
+[@@deriving compare, eq, show]
 
 
 and stripped =
-  | Attribute of attribute
+  | Attribute of string
+  | MissingAttribute of { name: string; missing_definer: definer }
   | Unknown
   | SignatureFound of { callable: string; callees: string list }
   | SignatureNotFound of Annotated.Signature.reason option
@@ -496,10 +497,21 @@ let test_forward_access _ =
           let stripped element: stripped =
             let open TypeCheck.AccessState in
             match element with
-            | Attribute { origin = Module []; _ } ->
+            | Attribute { definition = Undefined (Module []); _ } ->
                 Unknown
-            | Attribute { attribute; defined; _ } ->
-                Attribute { name = attribute; defined }
+            | Attribute { attribute; definition = Defined _ } ->
+                Attribute attribute
+            | Attribute { attribute; definition = Undefined origin } ->
+                let missing_definer =
+                  match origin with
+                  | Instance instance ->
+                      Type (Annotated.Attribute.parent instance)
+                  | TypeWithoutClass missing_definer ->
+                      Type missing_definer
+                  | Module missing_definer ->
+                      Module missing_definer
+                in
+                MissingAttribute { name = attribute; missing_definer }
             | Signature {
                 signature = Annotated.Signature.Found { callable; _ };
                 callees;
@@ -563,7 +575,7 @@ let test_forward_access _ =
     "union.__doc__"
     [
       { annotation = Type.union [Type.string; Type.integer]; element = Value };
-      { annotation = Type.string; element = Attribute { name = "__doc__"; defined = true } };
+      { annotation = Type.string; element = Attribute "__doc__" };
     ];
   assert_fold
     ~source:"union: typing.Union[str, int] = 1"
@@ -585,7 +597,7 @@ let test_forward_access _ =
             ]
           |}
           |> parse_annotation ~resolution;
-        element = Attribute { name = "__lt__"; defined = true };
+        element = Attribute "__lt__";
       };
     ];
   assert_fold
@@ -608,7 +620,7 @@ let test_forward_access _ =
             ]
           |}
           |> parse_annotation ~resolution;
-        element = Attribute { name = "__lt__"; defined = true };
+        element = Attribute "__lt__";
       };
       {
         annotation = Type.union [Type.bool; Type.float];
@@ -641,7 +653,7 @@ let test_forward_access _ =
             ]
           |}
           |> parse_annotation ~resolution;
-        element = Attribute { name = "__add__"; defined = true };
+        element = Attribute "__add__";
       };
       {
         annotation = Type.integer;
@@ -679,7 +691,7 @@ let test_forward_access _ =
             ]
           |}
           |> parse_annotation ~resolution;
-        element = Attribute { name = "__ne__"; defined = true };
+        element = Attribute "__ne__";
       };
       {
         annotation = Type.bool;
@@ -706,7 +718,7 @@ let test_forward_access _ =
             ]
           |}
           |> parse_annotation ~resolution;
-        element = Attribute { name = "__lt__"; defined = true };
+        element = Attribute "__lt__";
       };
     ];
   assert_fold
@@ -737,6 +749,48 @@ let test_forward_access _ =
           };
       };
     ];
+  assert_fold
+    ~source:{|
+      class Base:
+        def method(self) -> None: pass
+      class A(Base): pass
+      class B(Base): pass
+      class C(Base): pass
+      class D(Base): pass
+      class Bad(): pass
+      union: typing.Union[A, B, C, Bad, D] = ...
+    |}
+    "union.method"
+    [
+      { annotation =
+          Type.union [
+            Type.Primitive "A";
+            Type.Primitive "B";
+            Type.Primitive "C";
+            Type.Primitive "Bad";
+            Type.Primitive "D";
+          ];
+        element = Value;
+      };
+      {
+        annotation = Type.Top;
+        element =
+          MissingAttribute { name = "method"; missing_definer = Type (Type.Primitive "Bad") };
+      };
+    ];
+  assert_fold
+    ~source:{|
+      T = typing.TypeVar("T")
+      t: T = ...
+    |}
+    "t.prop"
+    [
+      { annotation = Type.variable "T"; element = Value };
+      {
+        annotation = Type.Top;
+        element = MissingAttribute { name = "prop"; missing_definer = Type (Type.variable "T") };
+      };
+    ];
 
   (* Classes. *)
   assert_fold
@@ -764,7 +818,7 @@ let test_forward_access _ =
     "instance.attribute"
     [
       { annotation = Type.Primitive "Class"; element = Value };
-      { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
+      { annotation = Type.integer; element = Attribute "attribute" };
     ];
   assert_fold
     ~source:
@@ -776,7 +830,11 @@ let test_forward_access _ =
     "instance.undefined.undefined"
     [
       { annotation = Type.Primitive "Class"; element = Value };
-      { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
+      {
+        annotation = Type.Top;
+        element =
+          MissingAttribute { name = "undefined"; missing_definer= Type (Type.Primitive "Class")}
+      };
     ];
   assert_fold
     ~source:
@@ -791,7 +849,7 @@ let test_forward_access _ =
       {
         annotation =
           parse_annotation ~resolution "typing.Callable('Class.method')[[], int]";
-        element = Attribute { name = "method"; defined = true };
+        element = Attribute "method";
       };
       {
         annotation = Type.integer;
@@ -837,7 +895,7 @@ let test_forward_access _ =
     "v_instance.attribute"
     [
       { annotation = bound_type_variable; element = Value };
-      { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
+      { annotation = Type.integer; element = Attribute "attribute" };
     ];
   assert_fold
     ~source:
@@ -850,7 +908,11 @@ let test_forward_access _ =
     "v_instance.undefined.undefined"
     [
       { annotation = bound_type_variable; element = Value };
-      { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
+      {
+        annotation = Type.Top;
+        element =
+          MissingAttribute { name = "undefined"; missing_definer = Type (Type.Primitive "Class")}
+      };
     ];
   assert_fold
     ~source:
@@ -866,7 +928,7 @@ let test_forward_access _ =
       {
         annotation =
           parse_annotation ~resolution "typing.Callable('Class.method')[[], int]";
-        element = Attribute { name = "method"; defined = true };
+        element = Attribute "method";
       };
       {
         annotation = Type.integer;
@@ -927,7 +989,7 @@ let test_forward_access _ =
       { annotation = explicit_type_variable; element = Value };
       {
         annotation = Type.Union [Type.integer; Type.string];
-        element = Attribute { name = "attribute"; defined = true };
+        element = Attribute "attribute";
       };
     ];
   assert_fold
@@ -945,7 +1007,11 @@ let test_forward_access _ =
     "v_explicit_instance.undefined.undefined"
     [
       { annotation = explicit_type_variable; element = Value };
-      { annotation = Type.Top; element = Attribute { name = "undefined"; defined = false } };
+      {
+        annotation = Type.Top;
+        element =
+          MissingAttribute { name = "undefined"; missing_definer = Type (Type.Primitive "Class")};
+      };
     ];
   assert_fold
     ~source:
@@ -990,7 +1056,7 @@ let test_forward_access _ =
                 };
             };
           ];
-        element = Attribute { name = "method"; defined = true };
+        element = Attribute "method";
       };
       {
         annotation = Type.Union [Type.integer; Type.string];
@@ -1018,6 +1084,32 @@ let test_forward_access _ =
       { annotation = Type.Top; element = NotCallable explicit_type_variable };
     ];
 
+  assert_fold
+    ~source:
+      {|
+        class Class:
+          attribute: int = 1
+          def method(self) -> int: ...
+        class Other:
+          attribute: str = "A"
+          def method(self) -> str: ...
+        class OtherOther:
+          attribute: bool = True
+        TV_Explicit = typing.TypeVar("TV_Explicit", Class, Other)
+        v_explicit_instance: typing.Union[TV_Explicit, OtherOther]
+      |}
+    "v_explicit_instance.attribute"
+    [
+      {
+        annotation = Type.union [Type.Primitive "OtherOther"; explicit_type_variable];
+        element = Value;
+      };
+      {
+        annotation = Type.union [Type.integer; Type.string; Type.bool];
+        element = Attribute "attribute";
+      };
+    ];
+
 
   assert_fold
     ~source:
@@ -1035,7 +1127,7 @@ let test_forward_access _ =
       {
         annotation =
           parse_annotation ~resolution "typing.Callable('object.__init__')[[], None]";
-        element = Attribute { name = "__init__"; defined = true };
+        element = Attribute "__init__";
       };
       {
         annotation = Type.none;
@@ -1137,7 +1229,7 @@ let test_forward_access _ =
           parse_annotation
             ~resolution:resolution_with_generics
             "typing.Callable('C.verbose')[[Named(x, int)], G[int]]";
-        element = Attribute { name = "verbose"; defined = true };
+        element = Attribute "verbose";
       };
     ];
 
@@ -1217,10 +1309,10 @@ let test_forward_access _ =
     "instance.attribute + 1.0"
     [
       { annotation = Type.Primitive "Class"; element = Value };
-      { annotation = Type.integer; element = Attribute { name = "attribute"; defined = true } };
+      { annotation = Type.integer; element = Attribute "attribute" };
       {
         annotation = parse_annotation ~resolution "typing.Callable('int.__add__')[[Named(other, int)], int]";
-        element = Attribute { name = "__add__"; defined = true };
+        element = Attribute "__add__";
       };
       {
         annotation = Type.float;
@@ -1320,7 +1412,14 @@ let test_forward_access _ =
     "movie.title"
     [
       movie_typed_dictionary;
-      { annotation = Type.Top; element = Attribute { name = "title"; defined = false } };
+      {
+        annotation = Type.Top;
+        element =
+          MissingAttribute {
+            name = "title";
+            missing_definer = Type (Type.Primitive "TypedDictionary")
+          }
+      };
     ];
 
   let get_item = {
@@ -1328,7 +1427,7 @@ let test_forward_access _ =
       parse_annotation ~resolution (
         "typing.Callable('typing.Mapping.__getitem__')" ^
         "[[Named(k, typing._KT)], typing._VT_co]");
-    element = Attribute { name = "__getitem__"; defined = true } ;
+    element = Attribute "__getitem__";
   } in
 
   let resolution_with_movie =
@@ -1519,7 +1618,7 @@ let test_forward_access _ =
         parse_annotation ~resolution:resolution_with_movie (
           "typing.Callable('TypedDictionary.__setitem__')" ^
           "[[Named(key, $unknown), Named(value, $unknown)], None]");
-      element = Attribute { name = "__setitem__"; defined = true } ;
+      element = Attribute "__setitem__";
     }
   in
 
