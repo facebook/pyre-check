@@ -55,7 +55,7 @@ module PublishDiagnostics = struct
             jsonrpc = "2.0";
             method_ = "textDocument/publishDiagnostics";
             parameters = Some {
-                PublishDiagnosticsParams.uri =
+                PublishDiagnosticsParameters.uri =
                   path
                   |> Path.real_path
                   |> Path.uri;
@@ -80,7 +80,7 @@ module DidSaveTextDocument = struct
         jsonrpc = "2.0";
         method_ = "textDocument/didSave";
         parameters = Some {
-            DidSaveTextDocumentParams.textDocument = {
+            DidSaveTextDocumentParameters.textDocument = {
               TextDocumentIdentifier.uri =
                 Path.create_relative ~root ~relative:path
                 |> Path.real_path
@@ -105,7 +105,7 @@ module ShowMessage = struct
       jsonrpc = "2.0";
       method_ = "window/showMessage";
       parameters = Some {
-          ShowMessageParams.messageType = ShowMessageParams.messageTypeNumber messageType;
+          ShowMessageParameters.messageType = ShowMessageParameters.messageTypeNumber messageType;
           message = content;
         };
     }

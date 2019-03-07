@@ -19,7 +19,7 @@ exception ClientExit of reason * exit_code
 
 let communicate server_socket =
   let display_nuclide_message message =
-    ShowMessage.create LanguageServer.Types.ShowMessageParams.InfoMessage message
+    ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
     |> ShowMessage.to_yojson
     |> write_message Out_channel.stdout
   in

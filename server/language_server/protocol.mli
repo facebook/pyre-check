@@ -41,7 +41,7 @@ module ShowMessage : sig
   type t
   [@@deriving to_yojson]
 
-  val create: Types.ShowMessageParams.messageType -> string -> t
+  val create: Types.ShowMessageParameters.messageType -> string -> t
 end
 
 module InitializeResponse : sig

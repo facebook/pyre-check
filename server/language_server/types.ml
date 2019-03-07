@@ -148,7 +148,7 @@ module Diagnostic = struct
 end
 
 
-module PublishDiagnosticsParams = struct
+module PublishDiagnosticsParameters = struct
   type t = {
     uri: DocumentUri.t
         [@key "uri"];
@@ -187,7 +187,7 @@ module VersionedTextDocumentIdentifier = struct
 end
 
 
-module TextDocumentPositionParams = struct
+module TextDocumentPositionParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
     position: Position.t;
@@ -196,7 +196,7 @@ module TextDocumentPositionParams = struct
 end
 
 
-module DidCloseTextDocumentParams = struct
+module DidCloseTextDocumentParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
   }
@@ -204,7 +204,7 @@ module DidCloseTextDocumentParams = struct
 end
 
 
-module DidSaveTextDocumentParams = struct
+module DidSaveTextDocumentParameters = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;
     text: string option [@default None];
@@ -213,7 +213,7 @@ module DidSaveTextDocumentParams = struct
 end
 
 
-module DidOpenTextDocumentParams = struct
+module DidOpenTextDocumentParameters = struct
   type t = {
     textDocument: TextDocumentItem.t;
   }
@@ -221,7 +221,7 @@ module DidOpenTextDocumentParams = struct
 end
 
 
-module DidChangeTextDocumentParams = struct
+module DidChangeTextDocumentParameters = struct
   module TextDocumentContentChangeEvent = struct
     type t = {
       range: Range.t;
@@ -241,7 +241,7 @@ module DidChangeTextDocumentParams = struct
 end
 
 
-module ShowMessageParams = struct
+module ShowMessageParameters = struct
   type messageType =
     | ErrorMessage
     | WarningMessage
@@ -844,7 +844,7 @@ end
     cf. https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#initialize-request *)
 module InitializeRequest = struct
 
-  module InitializeParams = struct
+  module InitializeParameters = struct
     (* A None type module is used for the experimental Any type possible in
        ClientCapabilities *)
     module ClientCapabilities = ClientCapabilities.Make(None)
@@ -892,17 +892,17 @@ module InitializeRequest = struct
     [@@deriving of_yojson]
   end
 
-  include RequestMessage.Make(InitializeParams)
+  include RequestMessage.Make(InitializeParameters)
 end
 
 
 module ShutdownRequest = struct
-  module ShutdownParams = None
-  include RequestMessage.Make(ShutdownParams)
+  module ShutdownParameters = None
+  include RequestMessage.Make(ShutdownParameters)
 end
 
 
-module TextDocumentDefinitionRequest = RequestMessage.Make(TextDocumentPositionParams)
+module TextDocumentDefinitionRequest = RequestMessage.Make(TextDocumentPositionParameters)
 
 
 module RageRequest = struct
@@ -911,22 +911,22 @@ module RageRequest = struct
 end
 
 
-module HoverRequest = RequestMessage.Make(TextDocumentPositionParams)
+module HoverRequest = RequestMessage.Make(TextDocumentPositionParameters)
 
 
-module DidCloseTextDocument = NotificationMessage.Make(DidCloseTextDocumentParams)
+module DidCloseTextDocument = NotificationMessage.Make(DidCloseTextDocumentParameters)
 
 
-module DidSaveTextDocument = NotificationMessage.Make(DidSaveTextDocumentParams)
+module DidSaveTextDocument = NotificationMessage.Make(DidSaveTextDocumentParameters)
 
 
-module DidOpenTextDocument = NotificationMessage.Make(DidOpenTextDocumentParams)
+module DidOpenTextDocument = NotificationMessage.Make(DidOpenTextDocumentParameters)
 
 
-module DidChangeTextDocument = NotificationMessage.Make(DidChangeTextDocumentParams)
+module DidChangeTextDocument = NotificationMessage.Make(DidChangeTextDocumentParameters)
 
 
-module ShowMessage = NotificationMessage.Make(ShowMessageParams)
+module ShowMessage = NotificationMessage.Make(ShowMessageParameters)
 
 
 module HandshakeServer = NotificationMessage.Make(HandshakeServerParameters)
@@ -1021,7 +1021,7 @@ end
 
 
 (** A PublishDiagnostics Notification *)
-module PublishDiagnostics = NotificationMessage.Make(PublishDiagnosticsParams)
+module PublishDiagnostics = NotificationMessage.Make(PublishDiagnosticsParameters)
 
 
 (** Namespaces *)

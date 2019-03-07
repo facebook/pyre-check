@@ -664,7 +664,7 @@ let test_language_server_protocol_deserialize_request _ =
 
 let test_show_message_notification _ =
   let message =
-    ShowMessage.create ShowMessageParams.ErrorMessage "error"
+    ShowMessage.create ShowMessageParameters.ErrorMessage "error"
     |> ShowMessage.to_yojson
     |> Yojson.Safe.sort
     |> Yojson.Safe.pretty_to_string
@@ -842,7 +842,7 @@ let test_language_server_hover_request _ =
 
   let expected: HoverRequest.t =
     let open HoverRequest in
-    let open TextDocumentPositionParams in
+    let open TextDocumentPositionParameters in
     let open TextDocumentIdentifier in
     let open Position in
     {
@@ -914,7 +914,7 @@ let test_request_parser context =
       DidOpenTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didOpen";
       parameters = Some {
-          DidOpenTextDocumentParams.textDocument = {
+          DidOpenTextDocumentParameters.textDocument = {
             TextDocumentItem.uri = "file://" ^ absolute;
             languageId = "python";
             version = 2;
@@ -929,7 +929,7 @@ let test_request_parser context =
       DidCloseTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didClose";
       parameters = Some {
-          DidCloseTextDocumentParams.textDocument = {
+          DidCloseTextDocumentParameters.textDocument = {
             TextDocumentIdentifier.uri = "file://" ^ absolute;
             version = None;
           };
@@ -948,7 +948,7 @@ let test_request_parser context =
       DidChangeTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didChange";
       parameters = Some {
-          DidChangeTextDocumentParams.textDocument = {
+          DidChangeTextDocumentParameters.textDocument = {
             VersionedTextDocumentIdentifier.uri = "file://" ^ absolute;
             version = 1;
           };

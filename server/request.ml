@@ -44,7 +44,7 @@ let parse_lsp ~configuration ~request =
           match TextDocumentDefinitionRequest.of_yojson request with
           | Ok {
               TextDocumentDefinitionRequest.parameters = Some {
-                  TextDocumentPositionParams.textDocument = {
+                  TextDocumentPositionParameters.textDocument = {
                     TextDocumentIdentifier.uri;
                     _;
                   };
@@ -74,7 +74,7 @@ let parse_lsp ~configuration ~request =
           match DidCloseTextDocument.of_yojson request with
           | Ok {
               DidCloseTextDocument.parameters = Some {
-                  DidCloseTextDocumentParams.textDocument = {
+                  DidCloseTextDocumentParameters.textDocument = {
                     TextDocumentIdentifier.uri;
                     _;
                   };
@@ -100,7 +100,7 @@ let parse_lsp ~configuration ~request =
           match DidOpenTextDocument.of_yojson request with
           | Ok {
               DidOpenTextDocument.parameters = Some {
-                  DidOpenTextDocumentParams.textDocument = {
+                  DidOpenTextDocumentParameters.textDocument = {
                     TextDocumentItem.uri;
                     _;
                   };
@@ -126,7 +126,7 @@ let parse_lsp ~configuration ~request =
           match DidSaveTextDocument.of_yojson request with
           | Ok {
               DidSaveTextDocument.parameters = Some {
-                  DidSaveTextDocumentParams.textDocument = {
+                  DidSaveTextDocumentParameters.textDocument = {
                     TextDocumentIdentifier.uri;
                     _;
                   };
@@ -151,7 +151,7 @@ let parse_lsp ~configuration ~request =
           match HoverRequest.of_yojson request with
           | Ok {
               HoverRequest.parameters = Some {
-                  TextDocumentPositionParams.textDocument = {
+                  TextDocumentPositionParameters.textDocument = {
                     TextDocumentIdentifier.uri;
                     _;
                   };
