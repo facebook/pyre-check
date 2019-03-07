@@ -43,7 +43,7 @@ type invalid_argument =
 
 type precondition_mismatch =
   | Found of mismatch
-  | NotFound of Access.t
+  | NotFound of Identifier.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type override =
@@ -87,7 +87,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
-  | MissingArgument of { callee: Access.t option; name: Access.t }
+  | MissingArgument of { callee: Access.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
@@ -102,12 +102,12 @@ type kind =
   | Top
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
-  | UndefinedAttribute of { attribute: Access.t; origin: origin }
+  | UndefinedAttribute of { attribute: Identifier.t; origin: origin }
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
-  | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
+  | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 

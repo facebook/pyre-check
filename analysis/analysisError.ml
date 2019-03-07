@@ -50,7 +50,7 @@ type invalid_argument =
 
 type precondition_mismatch =
   | Found of mismatch
-  | NotFound of Access.t
+  | NotFound of Identifier.t
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -96,7 +96,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
-  | MissingArgument of { callee: Access.t option; name: Access.t }
+  | MissingArgument of { callee: Access.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
@@ -111,12 +111,12 @@ type kind =
   | Top
   | TypedDictionaryAccessWithNonLiteral of string list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
-  | UndefinedAttribute of { attribute: Access.t; origin: origin }
+  | UndefinedAttribute of { attribute: Identifier.t; origin: origin }
   | UndefinedImport of Access.t
   | UndefinedName of Access.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
-  | UninitializedAttribute of { name: Access.t; parent: Type.t; mismatch: mismatch }
+  | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
@@ -862,7 +862,7 @@ let messages ~concise ~define location kind =
         | StrengthenedPrecondition (NotFound name) ->
             Format.asprintf
               "Could not find parameter `%a` in overriding signature."
-              pp_access name
+              pp_identifier name
       in
       [
         Format.asprintf
@@ -926,7 +926,7 @@ let messages ~concise ~define location kind =
       [Format.asprintf format pp_type annotation]
 
   | MissingArgument { name; _ } when concise ->
-      [Format.asprintf "Argument `%a` expected." pp_access name]
+      [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
       let callee =
         match callee with
@@ -935,7 +935,7 @@ let messages ~concise ~define location kind =
         | _ ->
             "Anonymous call"
       in
-      [Format.asprintf "%s expects argument `%a`." callee pp_access name]
+      [Format.asprintf "%s expects argument `%a`." callee pp_identifier name]
   | NotCallable annotation ->
       [ Format.asprintf "`%a` is not a function." pp_type annotation ]
   | TooManyArguments { expected; _ } when concise ->
@@ -1044,7 +1044,7 @@ let messages ~concise ~define location kind =
         | _ ->
             []
       in
-      [Format.asprintf "%s has no attribute `%a`." target pp_access attribute]
+      [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
       @ trace
   | UndefinedName access ->
       [Format.asprintf "Global name `%a` is undefined." pp_access access]
@@ -1083,12 +1083,12 @@ let messages ~concise ~define location kind =
   | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ } } ->
       let message =
         if concise then
-          Format.asprintf "Attribute `%a` is never initialized." pp_access name
+          Format.asprintf "Attribute `%a` is never initialized." pp_identifier name
         else
           Format.asprintf
             "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
              initialized."
-            pp_access name
+            pp_identifier name
             pp_type parent
             pp_type expected
       in
@@ -1096,7 +1096,7 @@ let messages ~concise ~define location kind =
         message;
         (Format.asprintf
            "Attribute `%a` is declared on line %d, never initialized and therefore must be `%a`."
-           pp_access name
+           pp_identifier name
            start_line
            pp_type actual)
       ]
@@ -1423,7 +1423,7 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | MissingArgument left, MissingArgument right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
-        Access.equal_sanitized left.name right.name
+        Identifier.equal_sanitized left.name right.name
     | ProhibitedAny left, ProhibitedAny right
     | MissingParameterAnnotation left, MissingParameterAnnotation right
     | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -1465,7 +1465,7 @@ let less_or_equal ~resolution left right =
           match left.override, right.override with
           | StrengthenedPrecondition (NotFound left_access),
             StrengthenedPrecondition (NotFound right_access) ->
-              Access.equal_sanitized left_access right_access
+              Identifier.equal_sanitized left_access right_access
           | StrengthenedPrecondition (Found left_mismatch),
             StrengthenedPrecondition (Found right_mismatch)
           | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->
@@ -1493,7 +1493,7 @@ let less_or_equal ~resolution left right =
     | UnawaitedAwaitable left, UnawaitedAwaitable right ->
         Access.equal_sanitized left right
     | UndefinedAttribute left, UndefinedAttribute right
-      when Access.equal_sanitized left.attribute right.attribute ->
+      when Identifier.equal_sanitized left.attribute right.attribute ->
         begin
           match left.origin, right.origin with
           | Class left, Class right when left.class_attribute = right.class_attribute ->
@@ -1607,7 +1607,7 @@ let join ~resolution left right =
         IncompatibleAwaitableType (Resolution.join resolution left right)
     | MissingArgument left, MissingArgument right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
-           Access.equal_sanitized left.name right.name ->
+           Identifier.equal_sanitized left.name right.name ->
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when Access.equal_sanitized left.name right.name ->
@@ -1725,13 +1725,13 @@ let join ~resolution left right =
         UnawaitedAwaitable left
     | UndefinedAttribute { origin = Class left; attribute = left_attribute },
       UndefinedAttribute { origin = Class right; attribute = right_attribute }
-      when Access.equal_sanitized left_attribute right_attribute ->
+      when Identifier.equal_sanitized left_attribute right_attribute ->
         let annotation = Resolution.join resolution left.annotation right.annotation in
         UndefinedAttribute { origin = Class { left with annotation }; attribute = left_attribute }
 
     | UndefinedAttribute { origin = Module left; attribute = left_attribute },
       UndefinedAttribute { origin = Module right; attribute = right_attribute }
-      when Access.equal_sanitized left_attribute right_attribute &&
+      when Identifier.equal_sanitized left_attribute right_attribute &&
            Access.equal_sanitized left right ->
         UndefinedAttribute { origin = Module left; attribute = left_attribute  }
 

@@ -71,7 +71,7 @@ let incompatible_return_type ?(due_to_invariance = false) actual expected =
 
 let undefined_attribute actual =
   Error.UndefinedAttribute {
-    attribute = Access.create "foo";
+    attribute = "foo";
     origin = Error.Class {
         annotation = actual;
         class_attribute = false;
@@ -140,7 +140,7 @@ let test_due_to_analysis_limitations _ =
   (* Initialization *)
   assert_due_to_analysis_limitations
     (Error.UninitializedAttribute {
-        name = [Access.Identifier ""];
+        name = "";
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.Top;
@@ -151,7 +151,7 @@ let test_due_to_analysis_limitations _ =
 
   assert_not_due_to_analysis_limitations
     (Error.UninitializedAttribute {
-        name = [Access.Identifier ""];
+        name = "";
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.string;
@@ -453,7 +453,7 @@ let test_due_to_mismatch_with_any _ =
     (InconsistentOverride {
         overridden_method = "foo";
         parent = Access.create (Type.show mock_parent);
-        override = (StrengthenedPrecondition (NotFound (Access.create "x")));
+        override = (StrengthenedPrecondition (NotFound "x"));
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
@@ -533,7 +533,7 @@ let test_due_to_mismatch_with_any _ =
   (* UndefinedAttribute *)
   assert_due_to_mismatch_with_any
     (Error.UndefinedAttribute {
-        attribute = Access.create "foo";
+        attribute = "foo";
         origin = Error.Class {
             annotation = Type.Any;
             class_attribute = false;
@@ -542,14 +542,14 @@ let test_due_to_mismatch_with_any _ =
 
   assert_not_due_to_mismatch_with_any
     (Error.UndefinedAttribute {
-        attribute = Access.create "foo";
+        attribute = "foo";
         origin = Error.Module (Access.create "module");
       });
 
   (* Uninitialized Attribute *)
   assert_due_to_mismatch_with_any
     (Error.UninitializedAttribute {
-        name = [Access.Identifier ""];
+        name = "";
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.Any;
@@ -560,7 +560,7 @@ let test_due_to_mismatch_with_any _ =
 
   assert_not_due_to_mismatch_with_any
     (Error.UninitializedAttribute {
-        name = [Access.Identifier ""];
+        name = "";
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.string;
@@ -1050,7 +1050,7 @@ let test_filter _ =
   assert_unfiltered
     (inconsistent_override
        "foo"
-       (StrengthenedPrecondition (NotFound (Access.create "x"))));
+       (StrengthenedPrecondition (NotFound "x")));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
@@ -1070,7 +1070,7 @@ let test_filter _ =
   assert_filtered
     (inconsistent_override
        "__foo__"
-       (StrengthenedPrecondition (NotFound (Access.create "x"))))
+       (StrengthenedPrecondition (NotFound "x")))
 
 
 let test_suppress _ =

@@ -481,7 +481,7 @@ module State = struct
                      ~location:(Attribute.location attribute)
                      ~kind:(
                        Error.UninitializedAttribute {
-                         name = [Expression.Access.Identifier name];
+                         name;
                          parent = Annotated.Class.annotation definition ~resolution;
                          mismatch = {
                            Error.expected;
@@ -1601,10 +1601,6 @@ module State = struct
                        if has_keyword_and_anonymous_starred_parameters then
                          errors
                        else
-                         let parameter_name =
-                           Identifier.sanitized name
-                           |> fun name -> [Expression.Access.Identifier name]
-                         in
                          let error =
                            Error.create
                              ~location
@@ -1615,7 +1611,9 @@ module State = struct
                                    |> Type.show
                                    |> Expression.Access.create;
                                  override =
-                                   Error.StrengthenedPrecondition (Error.NotFound parameter_name);
+                                   Error.StrengthenedPrecondition (
+                                     Error.NotFound (Identifier.sanitized name)
+                                   );
                                })
                              ~define:define_node
                          in
@@ -1869,7 +1867,7 @@ module State = struct
                 | MissingArgument name ->
                     Error.create
                       ~location
-                      ~kind:(Error.MissingArgument { callee; name = (Access.create name) })
+                      ~kind:(Error.MissingArgument { callee; name })
                       ~define
                 | MutuallyRecursiveTypeVariables ->
                     Error.create
@@ -1899,7 +1897,6 @@ module State = struct
                   None
                 end
               else
-                let attribute = Access.create attribute in
                 let kind =
                   match origin with
                   | Instance class_attribute ->
@@ -1918,7 +1915,7 @@ module State = struct
                         }
 
                   | Module access when List.is_empty access ->
-                      Error.UndefinedName attribute
+                      Error.UndefinedName (Access.create attribute)
                   | Module access ->
                       Error.UndefinedAttribute { attribute; origin = Error.Module access }
                   | TypeWithoutClass annotation ->
