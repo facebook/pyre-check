@@ -139,6 +139,29 @@ def _build_targets(targets: List[str], original_targets: List[str]) -> None:
         )
 
 
+def _map_normalized_targets_to_original(
+    unbuilt_targets: Iterable[str], original_targets: Iterable[str]
+) -> List[str]:
+    mapped_targets = set()
+    for target in unbuilt_targets:
+        # Each original target is either a `/...` glob or a proper target.
+        # If it's a glob, we're looking for the glob to be a prefix of the unbuilt
+        # target. Otherwise, we care about exact matches.
+        name = None
+        for original in original_targets:
+            if original.endswith("/..."):
+                if target.startswith(original[:-4]):
+                    name = original
+            else:
+                if target == original:
+                    name = original
+        # No original target matched, fallback to normalized.
+        if name is None:
+            name = target
+        mapped_targets.add(name)
+    return list(mapped_targets)
+
+
 def generate_source_directories(
     original_targets: Iterable[str], build: bool, prompt: bool = True
 ):
@@ -155,10 +178,14 @@ def generate_source_directories(
             source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
+        message_targets = _map_normalized_targets_to_original(
+            buck_out.targets_not_found, original_targets
+        )
+
         raise BuckException(
             "Could not find link trees for:\n    `{}`.\n   "
             "See `{} --help` for more information.".format(
-                "    \n".join(buck_out.targets_not_found), sys.argv[0]
+                "    \n".join(message_targets), sys.argv[0]
             )
         )
 

@@ -157,6 +157,17 @@ class BuckTest(unittest.TestCase):
                 stderr=subprocess.PIPE,
             )
 
+    def test_map_normalized_targets_to_original(self) -> None:
+        self.assertEqual(
+            sorted(
+                buck._map_normalized_targets_to_original(
+                    ["//t/target1", "//t/target2", "//s:exact_target", "//unknown"],
+                    ["//t/...", "//s:exact_target"],
+                )
+            ),
+            ["//s:exact_target", "//t/...", "//unknown"],
+        )
+
     @patch.object(log, "get_yes_no_input", return_value=False)
     @patch.object(buck, "_normalize")
     @patch.object(buck, "_find_built_source_directories")
