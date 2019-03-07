@@ -8,6 +8,7 @@ open Environment
 
 module NamedTuples = NamedTuples
 module Filter = Filter
+module NewType = NewType
 
 
 let apply_to_ast source =
