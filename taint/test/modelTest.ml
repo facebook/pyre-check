@@ -21,7 +21,6 @@ let assert_model ~model_source ~expect =
   let models =
     Test.trim_extra_indentation model_source
     |> (fun model_source -> Model.create ~resolution ~model_source ())
-    |> Or_error.ok_exn
   in
   let is_model callable { call_target; _ } =
     callable = call_target
@@ -308,7 +307,7 @@ let test_invalid_models _ =
     in
     let error_message =
       match Model.create ~resolution ~model_source () with
-      | Error error -> Base.Error.to_string_hum error
+      | exception (InvalidModel message) -> message
       | _ -> failwith "Invalid model should result in error"
     in
     assert_equal ~printer:ident expect error_message
@@ -324,11 +323,11 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: SkipAnalysis): ..."
-    ~expect:{|"SkipAnalysis annotation must be in return position"|};
+    ~expect:"SkipAnalysis annotation must be in return position";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[LocalReturn]): ..."
-    ~expect:{|"Invalid TaintSink annotation `LocalReturn`"|};
+    ~expect:"Invalid TaintSink annotation `LocalReturn`";
 
   assert_invalid_model
     ~model_source:"def source() -> TaintSource[Invalid]: ..."
@@ -336,19 +335,19 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def source() -> TaintInTaintOut: ..."
-    ~expect:{|"Invalid return annotation: TaintInTaintOut"|};
+    ~expect:"Invalid return annotation: TaintInTaintOut";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintInTaintOut[Test]): ..."
-    ~expect:{|"Invalid TaintInTaintOut annotation `Test`"|};
+    ~expect:"Invalid TaintInTaintOut annotation `Test`";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|"Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`"|};
+    ~expect:"Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`";
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:{|Modeled entity `not_in_the_environment` is not part of the environment!|};
+    ~expect:"Modeled entity `not_in_the_environment` is not part of the environment!";
 
   assert_invalid_model
     ~model_source:"def sink(): ..."
@@ -358,7 +357,7 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
-    ~expect:{|"Unrecognized taint annotation `Any`"|}
+    ~expect:"Unrecognized taint annotation `Any`"
 
 
 let () =

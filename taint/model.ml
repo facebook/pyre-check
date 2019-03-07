@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Or_error
 
 open Ast
 open Analysis
@@ -37,6 +36,13 @@ type taint_annotation =
 [@@deriving show, sexp]
 
 
+exception InvalidModel of string
+
+
+let raise_invalid_model message =
+  raise (InvalidModel message)
+
+
 let add_breadcrumbs breadcrumbs init =
   List.fold
     breadcrumbs
@@ -60,7 +66,7 @@ let introduce_sink_taint
     in
     match taint_sink_kind with
     | Sinks.LocalReturn ->
-        Or_error.errorf "Invalid TaintSink annotation `LocalReturn`"
+        raise_invalid_model "Invalid TaintSink annotation `LocalReturn`"
     | _ ->
         let leaf_taint =
           BackwardTaint.singleton taint_sink_kind
@@ -71,10 +77,8 @@ let introduce_sink_taint
         in
         let sink_taint = assign_backward_taint sink_taint leaf_taint in
         { taint.backward with sink_taint }
-        |> Or_error.return
   in
-  backward
-  |> Or_error.map ~f:(fun backward -> { taint with backward })
+  { taint with backward }
 
 
 let introduce_taint_in_taint_out
@@ -101,12 +105,11 @@ let introduce_taint_in_taint_out
           |> BackwardState.Tree.create_leaf in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         { taint.backward with taint_in_taint_out }
-        |> Or_error.return
     | _ ->
-        Or_error.errorf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
+        Format.asprintf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
+        |> raise_invalid_model
   in
-  backward
-  |> Or_error.map ~f:(fun backward -> { taint with backward })
+  { taint with backward }
 
 
 let introduce_source_taint
@@ -177,12 +180,18 @@ let extract_leafs expression =
 
 let get_source_kinds expression =
   let kinds, breadcrumbs = extract_leafs expression in
-  List.map kinds ~f:(fun kind -> Source { source = Sources.create kind; breadcrumbs })
+  try
+    List.map kinds ~f:(fun kind -> Source { source = Sources.create kind; breadcrumbs })
+  with Failure message ->
+    raise_invalid_model message
 
 
 let get_sink_kinds expression =
   let kinds, breadcrumbs = extract_leafs expression in
-  List.map kinds ~f:(fun kind -> Sink { sink = Sinks.create kind; breadcrumbs })
+  try
+    List.map kinds ~f:(fun kind -> Sink { sink = Sinks.create kind; breadcrumbs })
+  with Failure message ->
+    raise_invalid_model message
 
 
 let get_taint_in_taint_out expression =
@@ -195,10 +204,7 @@ let get_taint_in_taint_out expression =
 
 
 let rec parse_annotations = function
-  | Some {
-      Node.value =
-        Expression.Access
-          (SimpleAccess access); _ } ->
+  | Some { Node.value = Expression.Access (SimpleAccess access); _ } ->
       begin
         match access with
         | (Identifier "Union"
@@ -206,91 +212,77 @@ let rec parse_annotations = function
            :: Call {
              value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
            :: _) ->
-            List.map ~f:(fun expression -> parse_annotations (Some expression)) expressions
-            |> Or_error.combine_errors
-            |> Or_error.map ~f:List.concat
+            List.concat_map ~f:(fun expression -> parse_annotations (Some expression)) expressions
         | (Identifier "TaintSink"
            :: _
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
             get_sink_kinds expression
-            |> Or_error.return
         | (Identifier "TaintSource"
            :: _
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
             get_source_kinds expression
-            |> Or_error.return
         | [Identifier "TaintInTaintOut"] ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
-            |> Or_error.return
         | (Identifier "TaintInTaintOut"
            :: _
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
             get_taint_in_taint_out expression
-            |> Or_error.return
         | [Identifier "SkipAnalysis"] ->
             [SkipAnalysis]
-            |> Or_error.return
         | [Identifier "Sanitize"] ->
             [Sanitize]
-            |> Or_error.return
         | _ ->
-            Or_error.errorf "Unrecognized taint annotation `%s`" (Expression.Access.show access)
+            Format.asprintf "Unrecognized taint annotation `%s`" (Expression.Access.show access)
+            |> raise_invalid_model
       end
   | None ->
-      Or_error.return []
+      []
   | Some value ->
-      Or_error.errorf "Unrecognized taint annotation `%s`" (Expression.show value)
+      Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show value)
+      |> raise_invalid_model
 
 
 let taint_parameter model (root, _name, annotation) =
   let add_to_model model annotation =
-    model >>= fun model ->
     match annotation with
     | Sink { sink; breadcrumbs } ->
         introduce_sink_taint ~root model sink breadcrumbs
     | Source { source; breadcrumbs } ->
         introduce_source_taint ~root model source breadcrumbs
-        |> Or_error.return
     | Tito { tito; breadcrumbs } ->
         introduce_taint_in_taint_out ~root model tito breadcrumbs
     | SkipAnalysis ->
-        Or_error.error_string "SkipAnalysis annotation must be in return position"
+        raise_invalid_model "SkipAnalysis annotation must be in return position"
     | Sanitize ->
-        Or_error.error_string "Sanitize annotation must be in return position"
+        raise_invalid_model "Sanitize annotation must be in return position"
   in
   parse_annotations annotation
-  |> Or_error.map ~f:(List.fold ~init:model ~f:add_to_model)
-  |> Or_error.join
+  |> List.fold ~init:model ~f:add_to_model
 
 
 let taint_return model expression =
   let add_to_model model annotation =
-    model >>= fun model ->
     let root = AccessPath.Root.LocalResult in
     match annotation with
     | Sink { sink;  breadcrumbs } ->
         introduce_sink_taint ~root model sink breadcrumbs
     | Source { source; breadcrumbs } ->
         introduce_source_taint ~root model source breadcrumbs
-        |> Or_error.return
     | Tito _ ->
-        Or_error.error_string "Invalid return annotation: TaintInTaintOut"
+        raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis ->
         { model with mode = TaintResult.SkipAnalysis; }
-        |> Or_error.return
     | Sanitize ->
         { model with mode = TaintResult.Sanitize; }
-        |> Or_error.return
   in
   parse_annotations expression
-  |> Or_error.map ~f:(List.fold ~init:model ~f:add_to_model)
-  |> Or_error.join
+  |> List.fold ~init:model ~f:add_to_model
 
 
 let create ~resolution ?(verify = true) ~model_source () =
@@ -344,7 +336,7 @@ let create ~resolution ?(verify = true) ~model_source () =
     let annotation = Resolution.resolve resolution (Access.expression name) in
     if Type.equal annotation Type.Top then
       Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
-      |> failwith;
+      |> raise_invalid_model;
 
     (* Check model matches callables primary signature. *)
     begin
@@ -367,19 +359,16 @@ let create ~resolution ?(verify = true) ~model_source () =
                 Type.pp callable
             in
             Log.error "%s" message;
-            failwith message
+            raise_invalid_model message
       | _ ->
           ()
     end;
-    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-    List.fold ~init:(Ok TaintResult.empty_model) ~f:taint_parameter normalized_parameters
-    |> Fn.flip taint_return return_annotation
-    >>= (fun model -> Ok { model; call_target; is_obscure = false })
+    AccessPath.Root.normalize_parameters parameters
+    |> List.fold ~init:TaintResult.empty_model ~f:taint_parameter
+    |> (fun model -> taint_return model return_annotation)
+    |> (fun model -> { model; call_target; is_obscure = false })
   in
-  match List.map defines ~f:create_model with
-  | models -> Or_error.combine_errors models
-  | exception Parser.Error message -> Or_error.errorf "Could not parse taint model: %s." message
-  | exception Failure message -> Or_error.error_string message
+  List.map defines ~f:create_model
 
 
 let subprocess_calls =
@@ -441,7 +430,6 @@ let get_callsite_model ~resolution ~call_target ~arguments =
                 target
             in
             create ~verify:false ~resolution ~model_source ()
-            |> Or_error.ok_exn
             |> List.hd_exn
           in
           let result = {
@@ -477,7 +465,6 @@ let get_callsite_model ~resolution ~call_target ~arguments =
 
 let parse ~resolution ~source models =
   create ~resolution ~model_source:source ()
-  |> Or_error.ok_exn
   |> List.map ~f:(fun model -> (model.call_target, model.model))
   |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
   |> Callable.Map.merge models

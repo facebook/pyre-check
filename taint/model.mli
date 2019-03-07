@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Analysis
 open Expression
@@ -18,12 +16,14 @@ type t = {
 }
 [@@deriving show, sexp]
 
+exception InvalidModel of string
+
 val create
   : resolution: Resolution.t
   -> ?verify: bool
   -> model_source: string
   -> unit
-  -> t list Or_error.t
+  -> t list
 
 val get_callsite_model
   :  resolution: Resolution.t
