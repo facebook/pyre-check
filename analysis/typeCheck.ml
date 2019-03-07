@@ -2153,11 +2153,6 @@ module State = struct
             ~state:(forward_statement ~state ~statement:assume)
             ~expression:right
         in
-        let state =
-          match operator with
-          | BooleanOperator.And -> meet state_left state_right;
-          | BooleanOperator.Or -> join state_left state_right;
-        in
         let resolved =
           match resolved_left, resolved_right, operator with
           | Optional resolved_left, resolved_right, BooleanOperator.Or ->
@@ -2171,7 +2166,7 @@ module State = struct
           | resolved_left, resolved_right, _ ->
               Resolution.join resolution resolved_left resolved_right
         in
-        { state; resolved }
+        { state = join state_left state_right; resolved }
 
     | Call _ ->
         (* TODO: T37313693 *)

@@ -2056,9 +2056,9 @@ let test_forward_expression _ =
   assert_optional_forward "1 or x" (Type.optional Type.integer);
   assert_optional_forward "x or x" (Type.optional Type.integer);
 
-  assert_optional_forward ~postcondition:["x", Type.integer] "x and 1" (Type.optional Type.integer);
+  assert_optional_forward "x and 1" (Type.optional Type.integer);
   assert_optional_forward "1 and x" (Type.optional Type.integer);
-  assert_optional_forward ~postcondition:["x", Type.integer] "x and x" (Type.optional Type.integer);
+  assert_optional_forward "x and x" (Type.optional Type.integer);
 
   (* Comparison operator. *)
   assert_forward "1 < 2" Type.bool;

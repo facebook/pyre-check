@@ -194,7 +194,18 @@ let test_check_return _ =
       def foo() -> typing.Callable[[], C]:
         return C
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      class C:
+        pass
+      def foo(x: typing.Optional[C]) -> C:
+        irrelevant = x and 16
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `C` but got `typing.Optional[C]`."];
+  ()
 
 
 let test_check_return_control_flow _ =
