@@ -23,10 +23,6 @@ python_tests:
 server_integration_test: all
 	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_integration_test.py command/test/integration/fake_repository/
 
-.PHONY: analysis_integration_test
-analysis_integration_test: all
-	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ./scripts/run_analysis_integration_test.py
-
 .PHONY: facebook_integration_tests
 facebook_integration_tests: all
 	if [ -d "$(shell pwd)/facebook" ]; then make -C facebook; fi
