@@ -54,9 +54,9 @@ branch(INDEX)   select a trace branch
 
     LEAF_NAMES = {"source", "sink", "leaf"}
 
-    def __init__(self, database, database_name):
+    def __init__(self, database, database_name, repository_directory: str = ""):
         self.db = DB(database, database_name, assertions=True)
-        self.scope_vars = {
+        self.scope_vars: Dict[str, Callable] = {
             "commands": self.help,
             "runs": self.runs,
             "issues": self.issues,
@@ -72,17 +72,18 @@ branch(INDEX)   select a trace branch
             "branch": self.branch,
             "list": self.list_source_code,
         }
+        self.repository_directory = repository_directory or os.getcwd()
 
-        self.current_issue_id: int = None
+        self.current_issue_id: int = -1
         self.sources: Set[str] = set()
         self.sinks: Set[str] = set()
         # Tuples representing the trace of the current issue
         self.trace_tuples: List[TraceTuple] = []
         # Active trace frame of the current trace
-        self.current_trace_frame_index: int = None
-        self.root_trace_frame_index: int = None
+        self.current_trace_frame_index: int = -1
+        self.root_trace_frame_index: int = -1
         # The current issue id when 'trace' was last run
-        self.trace_tuples_id: int = None
+        self.trace_tuples_id: int = -1
 
     def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
@@ -463,12 +464,11 @@ branch(INDEX)   select a trace branch
 
         self._generate_trace()
 
-        base_directory = os.getcwd()
         current_trace_frame = self.trace_tuples[
             self.current_trace_frame_index
         ].trace_frame
 
-        filename = os.path.join(base_directory, current_trace_frame.filename)
+        filename = os.path.join(self.repository_directory, current_trace_frame.filename)
         file_lines: List[str] = []
 
         try:
@@ -716,7 +716,7 @@ branch(INDEX)   select a trace branch
         ]
 
     def _verify_issue_selected(self) -> bool:
-        if self.current_issue_id is None:
+        if self.current_issue_id == -1:
             self.warning("Use 'set_issue(ID)' to select an issue first.")
             return False
         return True

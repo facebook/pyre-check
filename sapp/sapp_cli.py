@@ -26,8 +26,9 @@ def cli():
     help="database engine to use",
 )
 @option("--database-name", "--dbname", type=str)
-def explore(database, database_name):
-    scope_vars = Interactive(database, database_name).setup()
+@option("--repository-directory", "--repo-dir", type=Path(exists=True))
+def explore(database, database_name, repository_directory):
+    scope_vars = Interactive(database, database_name, repository_directory).setup()
     IPython.start_ipython(argv=[], user_ns=scope_vars)
 
 

@@ -1232,6 +1232,13 @@ class InteractiveTest(TestCase):
         self.interactive.trace_tuples[0].trace_frame.id = 4
         self.assertEqual(-1, self.interactive._current_branch_index(trace_frames))
 
+    def testVerifyIssueSelected(self):
+        self.interactive.current_issue_id = -1
+        self.assertFalse(self.interactive._verify_issue_selected())
+
+        self.interactive.current_issue_id = 1
+        self.assertTrue(self.interactive._verify_issue_selected())
+
     def testVerifyMultipleBranches(self):
         # Leads to no-op on _generate_trace
         self.interactive.trace_tuples_id = 1

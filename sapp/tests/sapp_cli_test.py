@@ -18,6 +18,21 @@ class TestSappCli(TestCase):
     def setUp(self) -> None:
         self.runner = CliRunner()
 
+    def test_explore_options(self, mock_analysis_output):
+        result = self.runner.invoke(
+            cli,
+            [
+                "explore",
+                "--database",
+                "memory",
+                "--database-name",
+                "mydatabase",
+                "--repository-directory",
+                "/tmp",
+            ],
+        )
+        self.assertEqual(result.exit_code, 0)
+
     def verify_input_file(self, input_files, summary_blob):
         inputfile, previous_input = input_files
         self.assertEqual(inputfile, "fake_analysis_output")
