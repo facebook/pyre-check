@@ -331,42 +331,49 @@ let create ~resolution ?(verify = true) ~model_source () =
     |> List.filter_map ~f:filter_define
   in
   let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
-    (* Make sure we know about what we model. *)
-    let call_target = (call_target :> Callable.t) in
-    let annotation = Resolution.resolve resolution (Access.expression name) in
-    if Type.equal annotation Type.Top then
-      Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
-      |> raise_invalid_model;
+    try
+      begin
+        (* Make sure we know about what we model. *)
+        let call_target = (call_target :> Callable.t) in
+        let annotation = Resolution.resolve resolution (Access.expression name) in
+        if Type.equal annotation Type.Top then
+          Format.asprintf "Modeled entity `%a` is not part of the environment!" Access.pp name
+          |> raise_invalid_model;
 
-    (* Check model matches callables primary signature. *)
-    begin
-      match verify, annotation with
-      | true,
-        (Type.Callable {
-            Type.Callable.implementation = {
-              Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
-              _;
-            };
-            implicit;
-            _;
-          } as callable) ->
-          let self_length = if Option.is_some implicit then 1 else 0 in
-          if List.length parameters <> self_length + List.length implementation_parameters then
-            let message =
-              Format.asprintf
-                "Model signature parameters for `%a` do not match implementation `%a`"
-                Access.pp name
-                Type.pp callable
-            in
-            Log.error "%s" message;
-            raise_invalid_model message
-      | _ ->
-          ()
-    end;
-    AccessPath.Root.normalize_parameters parameters
-    |> List.fold ~init:TaintResult.empty_model ~f:taint_parameter
-    |> (fun model -> taint_return model return_annotation)
-    |> (fun model -> { model; call_target; is_obscure = false })
+        (* Check model matches callables primary signature. *)
+        begin
+          match verify, annotation with
+          | true,
+            (Type.Callable {
+                Type.Callable.implementation = {
+                  Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
+                  _;
+                };
+                implicit;
+                _;
+              } as callable) ->
+              let self_length = if Option.is_some implicit then 1 else 0 in
+              if List.length parameters <> self_length + List.length implementation_parameters then
+                let message =
+                  Format.asprintf
+                    "Model signature parameters for `%a` do not match implementation `%a`"
+                    Access.pp name
+                    Type.pp callable
+                in
+                Log.error "%s" message;
+                raise_invalid_model message
+          | _ ->
+              ()
+        end;
+
+        AccessPath.Root.normalize_parameters parameters
+        |> List.fold ~init:TaintResult.empty_model ~f:taint_parameter
+        |> (fun model -> taint_return model return_annotation)
+        |> (fun model -> { model; call_target; is_obscure = false })
+      end
+    with InvalidModel message ->
+      Format.asprintf "Invalid model for `%a`: %s" Access.pp name message
+      |> raise_invalid_model
   in
   List.map defines ~f:create_model
 

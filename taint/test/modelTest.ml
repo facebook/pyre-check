@@ -307,7 +307,8 @@ let test_invalid_models _ =
     in
     let error_message =
       match Model.create ~resolution ~model_source () with
-      | exception (InvalidModel message) -> message
+      | exception (InvalidModel message) ->
+          String.drop_prefix message ((String.index_exn message ':') + 2)
       | _ -> failwith "Invalid model should result in error"
     in
     assert_equal ~printer:ident expect error_message
