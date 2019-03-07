@@ -526,7 +526,6 @@ let test_language_server_protocol_read_message context =
     in
     let expected =
       expected_output
-      |> Option.some
       >>| Yojson.Safe.to_string
     in
     assert_equal
@@ -541,11 +540,13 @@ let test_language_server_protocol_read_message context =
      {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
   in
   let expected =
-    `Assoc
-      [
-        ("jsonrpc", `String "2.0");
-        ("method", `String "foo");
-      ]
+    Some (
+      `Assoc
+        [
+          ("jsonrpc", `String "2.0");
+          ("method", `String "foo");
+        ]
+    )
   in
   test_read message expected;
 
@@ -565,7 +566,70 @@ let test_language_server_protocol_read_message context =
      \r\n\
      {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
   in
-  test_read message_arbitrary_header expected
+  test_read message_arbitrary_header expected;
+
+
+  test_read
+    "Content-Longness: 32\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+    None;
+
+  test_read
+    "Content-Length: 123abc456\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+    None
+
+
+let test_language_server_protocol_read_message_eof context =
+  let set_up _ =
+    Unix.pipe ()
+    |> fun (in_, out_) ->
+    let in_ = Unix.in_channel_of_descr in_ in
+    let out_ = Unix.out_channel_of_descr out_ in
+    in_, out_
+  in
+
+  let tear_down (in_,out_) _ =
+    In_channel.close in_;
+    Out_channel.close out_
+  in
+
+  let test_eof_raised message =
+    let in_channel, out_channel = bracket set_up tear_down context in
+    Out_channel.output_string out_channel message;
+    Out_channel.flush out_channel;
+    Out_channel.close out_channel; (* EOF *)
+    assert_raises End_of_file (fun _ -> read_message in_channel)
+  in
+
+  test_eof_raised "";
+
+  test_eof_raised "Content-Length: 32\r\n";
+
+  test_eof_raised
+    "Content-Length: 32\r\n\
+     \r\n";
+
+  test_eof_raised
+    "Content-Length: 32\r\n\
+     \r\n\
+     {\"jsonrpc\":\"2.0\",\"method\"";
+
+  let _ = (* full message should not raise error *)
+    let in_channel, out_channel = bracket set_up tear_down context in
+    let message =
+      "Content-Length: 32\r\n\
+       \r\n\
+       {\"jsonrpc\":\"2.0\",\"method\":\"foo\"}"
+    in
+    Out_channel.output_string out_channel message;
+    Out_channel.flush out_channel;
+    Out_channel.close out_channel; (* EOF *)
+    read_message in_channel
+  in ()
+
 
 let test_language_server_protocol_deserialize_request _ =
   let module Request = RequestMessage.Make(struct
@@ -940,6 +1004,7 @@ let () =
   [
     "language_server_protocol_message_format">::test_language_server_protocol_message_format;
     "language_server_protocol_read_message">::test_language_server_protocol_read_message;
+    "language_server_protocol_read_message_eof">::test_language_server_protocol_read_message_eof;
     "language_server_definition_response">::test_language_server_definition_response;
     "language_server_hover_request">::test_language_server_hover_request;
     "language_server_hover_response">::test_language_server_hover_response;

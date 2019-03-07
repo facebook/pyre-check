@@ -242,7 +242,7 @@ let to_message json =
 
 let write_message channel json =
   Log.info
-    "Persistent client sends:@.%s@."
+    "LSP message sent:@.%s@."
     (Yojson.Safe.prettify (Yojson.Safe.to_string json));
   Out_channel.output_string channel (to_message json);
   Out_channel.flush channel
@@ -252,7 +252,7 @@ let read_message channel =
   let parse_content_length line =
     String.chop_prefix ~prefix:"Content-Length:" line
     >>| String.lstrip
-    >>| Int.of_string
+    >>= fun length -> try Some (Int.of_string length) with Failure _ -> None
   in
 
   let read_content length =
@@ -266,9 +266,19 @@ let read_message channel =
     >>| fun _ -> Buffer.contents content_buffer
   in
 
+  let check_end_of_file = function
+    | None -> raise End_of_file
+    | input -> input
+  in
+
   In_channel.input_line channel
+  |> check_end_of_file
   >>= parse_content_length
-  >>= read_content
-  >>| fun json_string ->
-  Log.info "Persistent client received:@.%s@." (Yojson.Safe.prettify json_string);
-  Yojson.Safe.from_string json_string
+  |> function
+  | None -> None (* if we can't parse header, but it wasn't because of EOF, return None *)
+  | Some content_length ->
+      read_content content_length
+      |> check_end_of_file
+      >>| (fun json_string ->
+          Log.info "LSP message received:@.%s@." (Yojson.Safe.prettify json_string);
+          Yojson.Safe.from_string json_string)
