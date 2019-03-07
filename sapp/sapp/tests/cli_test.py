@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from ..sapp_cli import cli  # noqa
+from ..cli import cli  # noqa
 
 
 PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
