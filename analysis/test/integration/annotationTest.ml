@@ -1179,7 +1179,6 @@ let test_check_refinement _ =
 let test_check_invalid_type_variables _ =
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       def f(x: T) -> T:
         return x
@@ -1187,7 +1186,6 @@ let test_check_invalid_type_variables _ =
     [];
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       def f() -> T:
         return T
@@ -1198,7 +1196,6 @@ let test_check_invalid_type_variables _ =
     ];
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       class C:
         x: T = 1
@@ -1209,7 +1206,6 @@ let test_check_invalid_type_variables _ =
     ];
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       x: T = ...
     |}
@@ -1220,13 +1216,12 @@ let test_check_invalid_type_variables _ =
   (* We don't error for inferred generics. *)
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       class C(typing.Generic[T]):
         pass
       class D(C[T]):
         pass
-  |}
+    |}
     [];
 
   (* This is fact valid, but not for the reason it looks like here, as the Ts are in different
@@ -1234,14 +1229,67 @@ let test_check_invalid_type_variables _ =
      should work because of behavioral subtyping. *)
   assert_type_errors
     {|
-      import typing
       T = typing.TypeVar("T")
       def f() -> typing.Callable[[T], T]:
         def g(x: T) -> T:
           return x
         return g
-  |}
-    []
+    |}
+    [];
+
+  (* Check invalid type variables in parameters and returns. *)
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", covariant=True)
+      class Foo(typing.Generic[T]):
+        def foo(self, x: T) -> T:
+          return x
+    |}
+    [
+      "Invalid type variance [35]: The type variable `Variable[T](covariant)` is covariant " ^
+      "and cannot be a parameter type.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", covariant=True)
+      class Foo(typing.Generic[T]):
+        def foo(self, x: typing.List[T]) -> T:
+          return x[0]
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", contravariant=True)
+      class Foo(typing.Generic[T]):
+        def foo(self, x: T) -> T:
+          return x
+    |}
+    [
+      "Invalid type variance [35]: The type variable `Variable[T](contravariant)` is " ^
+      "contravariant and cannot be a return type.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", contravariant=True)
+      class Foo(typing.Generic[T]):
+        def foo(self, x: T) -> typing.List[T]:
+          return [x]
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", covariant=True)
+      def foo(x: T) -> T:
+        return x
+    |}
+    [
+      "Invalid type variance [35]: The type variable `Variable[T](covariant)` is covariant " ^
+      "and cannot be a parameter type.";
+    ]
 
 
 let test_check_aliases _ =

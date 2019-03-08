@@ -230,6 +230,8 @@ val contains_callable: t -> bool
 
 val is_callable: t -> bool
 val is_concrete: t -> bool
+val is_contravariant: t -> bool
+val is_covariant: t -> bool
 val is_dictionary: ?with_key: t option -> t -> bool
 val is_ellipsis: t -> bool
 val is_generator: t -> bool

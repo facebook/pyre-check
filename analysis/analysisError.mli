@@ -56,11 +56,15 @@ type unpack_problem =
   | CountMismatch of int
 [@@deriving compare, eq, sexp, show, hash]
 
-
 type type_variable_origin =
   | ClassToplevel
   | Define
   | Toplevel
+[@@deriving compare, eq, sexp, show, hash]
+
+type type_variance_origin =
+  | Parameter
+  | Return
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -87,6 +91,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
+  | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | MissingArgument of { callee: Access.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation

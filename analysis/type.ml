@@ -1805,6 +1805,18 @@ let is_concrete annotation =
       not (exists annotation ~predicate)
 
 
+let is_contravariant annotation =
+  match annotation with
+  | Variable { variance = Contravariant; _ } -> true
+  | _ -> false
+
+
+let is_covariant annotation =
+  match annotation with
+  | Variable { variance = Covariant; _ } -> true
+  | _ -> false
+
+
 let is_dictionary ?(with_key = None) = function
   | Parametric { name; parameters } when name = "dict" ->
       begin

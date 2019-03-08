@@ -73,6 +73,12 @@ type type_variable_origin =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type type_variance_origin =
+  | Parameter
+  | Return
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -96,6 +102,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
+  | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | MissingArgument of { callee: Access.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -169,6 +176,7 @@ let code = function
   | InvalidTypeVariable _ -> 34
   | IllegalAnnotationTarget _ -> 35
   | MutuallyRecursiveTypeVariables _ -> 36
+  | InvalidTypeVariance _ -> 35
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -190,6 +198,7 @@ let name = function
   | InvalidArgument _ -> "Invalid argument"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeVariable _ -> "Invalid type variable"
+  | InvalidTypeVariance _ -> "Invalid type variance"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -924,7 +933,19 @@ let messages ~concise ~define location kind =
             "The type variable `%a` can only be used to annotate generic classes or functions."
       in
       [Format.asprintf format pp_type annotation]
-
+  | InvalidTypeVariance { origin; _ } when concise ->
+      begin
+        match origin with
+        | Parameter -> ["Parameter type cannot be covariant."]
+        | Return -> ["Return type cannot be contravariant."]
+      end
+  | InvalidTypeVariance { annotation; origin } ->
+      let format: ('a, Format.formatter, unit, string) format4 =
+        match origin with
+        | Parameter -> "The type variable `%a` is covariant and cannot be a parameter type."
+        | Return -> "The type variable `%a` is contravariant and cannot be a return type."
+      in
+      [Format.asprintf format pp_type annotation]
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
@@ -1306,6 +1327,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidTypeVariable _
+  | InvalidTypeVariance _
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
@@ -1373,6 +1395,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | InconsistentOverride _
   | InvalidType _
   | InvalidTypeVariable _
+  | InvalidTypeVariance _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1484,6 +1507,9 @@ let less_or_equal ~resolution left right =
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
         Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+    | InvalidTypeVariance { annotation = left; origin = left_origin },
+      InvalidTypeVariance { annotation = right; origin = right_origin } ->
+        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
     | TooManyArguments left, TooManyArguments right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
@@ -1541,6 +1567,7 @@ let less_or_equal ~resolution left right =
     | InvalidArgument _, _
     | InvalidType _, _
     | InvalidTypeVariable _, _
+    | InvalidTypeVariance _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -1713,6 +1740,10 @@ let join ~resolution left right =
       InvalidTypeVariable { annotation = right; origin = right_origin }
       when Type.equal left right && left_origin = right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
+    | InvalidTypeVariance { annotation = left; origin = left_origin },
+      InvalidTypeVariance { annotation = right; origin = right_origin }
+      when Type.equal left right && left_origin = right_origin ->
+        InvalidTypeVariance { annotation = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
            left.expected = right.expected &&
@@ -1793,6 +1824,7 @@ let join ~resolution left right =
     | InvalidArgument _, _
     | InvalidType _, _
     | InvalidTypeVariable _, _
+    | InvalidTypeVariance _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2102,6 +2134,8 @@ let dequalify
         InvalidType (dequalify annotation)
     | InvalidTypeVariable { annotation; origin } ->
         InvalidTypeVariable { annotation = dequalify annotation; origin }
+    | InvalidTypeVariance { annotation; origin } ->
+        InvalidTypeVariance { annotation = dequalify annotation; origin }
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

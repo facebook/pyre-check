@@ -1231,6 +1231,19 @@ module State = struct
         value = ({ Define.name; parent; parameters; return_annotation; _ } as define);
       } as define_node) =
     let check_return_annotation state =
+      let add_variance_error (state, annotation) =
+        let state =
+          if Type.is_contravariant annotation then
+            emit_error
+              ~state
+              ~location
+              ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
+              ~define:define_node
+          else
+            state
+        in
+        state, annotation
+      in
       let update_define (state, annotation) =
         let updated_define =
           if Type.is_unknown annotation then
@@ -1242,6 +1255,7 @@ module State = struct
       in
       return_annotation
       >>| parse_and_check_annotation ~state
+      >>| add_variance_error
       >>| update_define
       |> Option.value ~default:state
     in
@@ -1304,6 +1318,19 @@ module State = struct
                   })
                 ~define:define_node
           in
+          let add_variance_error (state, annotation) =
+            let state =
+              if Type.is_covariant annotation then
+                emit_error
+                  ~state
+                  ~location
+                  ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
+                  ~define:define_node
+              else
+                state
+            in
+            state, annotation
+          in
           let state, { Annotation.annotation; mutability } =
             match index, parent with
             | 0, Some parent
@@ -1355,6 +1382,7 @@ module State = struct
                 let annotation_and_state =
                   annotation
                   >>| parse_and_check_annotation ~state ~bind_variables:false
+                  >>| add_variance_error
                 in
                 let contains_prohibited_any parsed_annotation =
                   let contains_literal_any =
@@ -1427,7 +1455,6 @@ module State = struct
             | _ ->
                 mutability
           in
-
           state, Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability }
         in
         List.foldi ~init:(state, (Resolution.annotations resolution)) ~f:check_parameter parameters
