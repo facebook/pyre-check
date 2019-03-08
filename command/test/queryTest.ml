@@ -132,7 +132,14 @@ let test_parse_query context =
        (Path.create_relative
           ~root:(Path.current_working_directory ())
           ~relative:"a.sqlite"));
-
+  assert_parses
+    (Format.sprintf "dump_memory_to_sqlite('%s/%s')"
+       (Path.absolute (Path.current_working_directory ()))
+       "absolute.sqlite")
+    (DumpMemoryToSqlite
+       (Path.create_relative
+          ~root:(Path.current_working_directory ())
+          ~relative:"absolute.sqlite"));
   assert_parses "path_of_module(a.b.c)" (PathOfModule (Expression.Access.create "a.b.c"));
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)"

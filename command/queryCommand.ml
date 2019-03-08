@@ -69,7 +69,7 @@ let parse_query
                   if Filename.is_relative path then
                     Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
                   else
-                    Path.create_absolute path
+                    Path.create_absolute ~follow_symbolic_links:false path
               | [] ->
                   Path.create_relative
                     ~root:(Configuration.Analysis.pyre_root configuration)
