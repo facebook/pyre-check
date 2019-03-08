@@ -841,6 +841,61 @@ let test_qualify _ =
           return alias
         def qualifier.C.g($parameter$x: qualifier.C.alias):
           pass
+    |};
+
+  (* Decorator qualification tests *)
+  assert_qualify
+    {|
+      def mydecorator(decorated):
+        return decorated
+      @mydecorator
+      def f():
+        pass
+    |}
+    {|
+      def qualifier.mydecorator($parameter$decorated):
+        return $parameter$decorated
+      @qualifier.mydecorator
+      def qualifier.f():
+        pass
+    |};
+  assert_qualify
+    {|
+      def mydecorator(decorated):
+        return decorated
+      class C:
+        @mydecorator
+        def f(self):
+            pass
+    |}
+    {|
+      def qualifier.mydecorator($parameter$decorated):
+        return $parameter$decorated
+      class qualifier.C:
+        @qualifier.mydecorator
+        def qualifier.C.f($parameter$self):
+          pass
+    |};
+  assert_qualify
+    {|
+      class D:
+        @staticmethod
+        def mydecorator(decorated):
+          return decorated
+      class C:
+        @D.mydecorator
+        def f(self):
+          pass
+    |}
+    {|
+      class qualifier.D:
+        @staticmethod
+        def qualifier.D.mydecorator($parameter$decorated):
+          return $parameter$decorated
+      class qualifier.C:
+        @qualifier.D.mydecorator
+        def qualifier.C.f($parameter$self):
+          pass
     |}
 
 

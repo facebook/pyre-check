@@ -582,7 +582,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             decorators
             ~f:(qualify_expression
                   ~qualify_strings:false
-                  ~scope:{ scope with use_forward_references = Option.is_none parent })
+                  ~scope:{ scope with use_forward_references = true })
         in
         let scope, parameters = qualify_parameters ~scope parameters in
         let _, body = qualify_statements ~scope:{ scope with qualifier = qualifier @ name } body in
