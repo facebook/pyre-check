@@ -512,6 +512,50 @@ let test_check_typed_dictionaries _ =
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
+        v = movie.setdefault('name', 'newname')
+        reveal_type(v)
+        v = movie.setdefault('name', 7)
+        v = movie.setdefault('nme', 'newname')
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter to " ^
+      "call `TypedDictionary.setdefault` but got `int`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nme`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie.update()
+        movie.update(name = "newName")
+        movie.update(year = 15)
+        movie.update(name = "newName", year = 15)
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie.update(name = 15, year = "backwards")
+        movie.update(yar = "missing")
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `str` for 1st parameter `name` to call " ^
+      "`TypedDictionary.update` but got `int`.";
+      "Unexpected keyword [28]: Unexpected keyword argument `yar` to call " ^
+      "`TypedDictionary.update`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
         movie['name'] += 7
     |}
     [

@@ -2355,7 +2355,7 @@ module TypedDictionary = struct
     List.exists right_fields ~f:found_collision
 
 
-  let constructor ~name ~fields ~total =
+  let field_named_parameters ~default fields =
     let parameters =
       let single_star =
         Record.Callable.RecordParameter.Variable {
@@ -2369,18 +2369,22 @@ module TypedDictionary = struct
           Record.Callable.RecordParameter.Named {
             name = Format.asprintf "$parameter$%s" name;
             annotation;
-            default = not total;
+            default;
           }
         in
         List.map ~f:field_to_argument fields
       in
       single_star :: field_arguments
     in
+    Defined parameters
+
+
+  let constructor ~name ~fields ~total =
     {
       Callable.kind = Named (Access.create "__init__");
       implementation = {
         annotation = TypedDictionary { name; fields; total };
-        parameters = Defined parameters;
+        parameters = field_named_parameters ~default:(not total) fields
       };
       overloads = [];
       implicit = None;
@@ -2429,14 +2433,31 @@ module TypedDictionary = struct
                 };
               ];
           };
-        ];
+        ]
       in
       List.concat_map ~f:overloads
+    in
+    let setdefault_overloads =
+      let overload { name; annotation } =
+        {
+          annotation = annotation;
+          parameters = Defined [
+              key_parameter name;
+              Named { name = "default"; annotation; default = false };
+            ];
+        }
+      in
+      List.map ~f:overload
+    in
+    let update_overloads fields =
+      [{ annotation = none; parameters = field_named_parameters fields ~default:true }]
     in
     [
       { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
       { name = "__setitem__"; special_index = Some 1; overloads = setitem_overloads };
       { name = "get"; special_index = Some 1; overloads = get_overloads };
+      { name = "setdefault"; special_index = Some 1; overloads = setdefault_overloads};
+      { name = "update"; special_index = None; overloads = update_overloads};
     ]
 
   let special_overloads ~fields ~method_name =
