@@ -242,7 +242,7 @@ let check_expectation
   assert_equal
     ~cmp:String.Set.equal
     ~printer:(fun set ->
-        Format.sprintf "%s: %s"
+        Format.sprintf "Returned sources %s: %s"
           define_name
           (Sexp.to_string [%message (set: String.Set.t)]))
     expected_sources

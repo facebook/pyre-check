@@ -42,54 +42,34 @@ let test_source_models _ =
   assert_model
     ~model_source:"def taint() -> TaintSource[TestTest]: ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "taint";
-        returns = [Sources.NamedSource "TestTest"];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = [];
-        errors = [];
-      };
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.NamedSource "TestTest"]
+        "taint";
     ];
   assert_model
     ~model_source:"os.environ: TaintSource[TestTest] = ..."
     ~expect:[
-      {
-        kind = `Object;
-        define_name = "os.environ";
-        returns = [Sources.NamedSource "TestTest"];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = [];
-        errors = [];
-      };
+      outcome
+        ~kind:`Object
+        ~returns:[Sources.NamedSource "TestTest"]
+        "os.environ";
     ];
   assert_model
     ~model_source:"django.http.Request.GET: TaintSource[TestTest] = ..."
     ~expect:[
-      {
-        kind = `Object;
-        define_name = "django.http.Request.GET";
-        returns = [Sources.NamedSource "TestTest"];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = [];
-        errors = [];
-      };
+      outcome
+        ~kind:`Object
+        ~returns:[Sources.NamedSource "TestTest"]
+        "django.http.Request.GET";
     ];
   assert_model
     ~model_source:"def taint() -> TaintSource[Test, UserControlled]: ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "taint";
-        returns = [Sources.Test; Sources.UserControlled];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = [];
-        errors = [];
-      };
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test; Sources.UserControlled]
+        "taint";
     ]
 
 
@@ -101,115 +81,81 @@ let test_sink_models _ =
           ...
       |}
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "sink";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }
-        ];
-        tito_parameters = []
-      }
+        ]
+        "sink";
     ];
 
   assert_model
     ~model_source:"def sink(parameter0, parameter1: TaintSink[Test]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "sink";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter1"; sinks = [Sinks.Test] }
-        ];
-        tito_parameters = []
-      };
+        ]
+        "sink";
     ];
 
   assert_model
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "sink";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter0"; sinks = [Sinks.Test] };
           { name = "parameter1"; sinks = [Sinks.Test] }
-        ];
-        tito_parameters = []
-      };
+        ]
+        "sink";
     ];
 
   assert_model
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "sink";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter0"; sinks = [Sinks.Test] };
           { name = "parameter1"; sinks = [Sinks.Test] }
-        ];
-        tito_parameters = []
-      };
+        ]
+        "sink";
     ];
 
   assert_model
     ~model_source:"def thrift(parameter0: TaintSink[Thrift]) -> TaintSource[Thrift]: ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "thrift";
-        returns = [Taint.Sources.Thrift];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Thrift]
+        ~sink_parameters:[
           { name = "parameter0"; sinks = [Sinks.Thrift] };
-        ];
-        tito_parameters = [];
-        errors = [];
-      };
+        ]
+        "thrift";
     ];
 
   assert_model
     ~model_source:"def xss(parameter: TaintSink[XSS]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "xss";
-        returns = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter"; sinks = [Sinks.XSS] };
-        ];
-        tito_parameters = [];
-        errors = [];
-      };
+        ]
+        "xss";
     ];
 
   assert_model
     ~model_source:"def multiple(parameter: TaintSink[XSS, Thrift]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "multiple";
-        returns = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter"; sinks = [Sinks.Thrift; Sinks.XSS] };
-        ];
-        tito_parameters = [];
-        errors = [];
-      };
+        ]
+        "multiple";
     ]
 
 
@@ -217,15 +163,10 @@ let test_taint_in_taint_out_models _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "tito";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = ["parameter"]
-      };
+      outcome
+        ~kind:`Function
+        ~tito_parameters:["parameter"]
+        "tito";
     ]
 
 
@@ -233,15 +174,10 @@ let test_taint_in_taint_out_models_alternate _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "tito";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = ["parameter"]
-      };
+      outcome
+        ~kind:`Function
+        ~tito_parameters:["parameter"]
+        "tito";
     ]
 
 
@@ -249,18 +185,13 @@ let test_union_models _ =
   assert_model
     ~model_source:"def both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "both";
-        returns = [];
-        errors = [];
-        source_parameters = [
-        ];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter"; sinks = [Sinks.XSS] };
-        ];
-        tito_parameters = ["parameter"]
-      };
+        ]
+        ~tito_parameters:["parameter"]
+        "both";
     ]
 
 
@@ -268,15 +199,10 @@ let test_source_breadcrumbs _ =
   assert_model
     ~model_source:"def source() -> TaintSource[Test, Via[special]]: ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "source";
-        returns = [Sources.Test];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = [];
-      };
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "source";
     ]
 
 
@@ -284,17 +210,12 @@ let test_sink_breadcrumbs _ =
   assert_model
     ~model_source:"def sink(parameter: TaintSink[Test, Via[special]]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "sink";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[
           { name = "parameter"; sinks = [Sinks.Test] };
-        ];
-        tito_parameters = [];
-      };
+        ]
+        "sink";
     ]
 
 
@@ -302,15 +223,10 @@ let test_tito_breadcrumbs _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut[Via[special]]): ..."
     ~expect:[
-      {
-        kind = `Function;
-        define_name = "tito";
-        returns = [];
-        errors = [];
-        source_parameters = [];
-        sink_parameters = [];
-        tito_parameters = ["parameter"];
-      };
+      outcome
+        ~kind:`Function
+        ~tito_parameters:["parameter"]
+        "tito";
     ]
 
 
