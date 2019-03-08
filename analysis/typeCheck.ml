@@ -2950,6 +2950,14 @@ module State = struct
               let propagate state element =
                 match Node.value element with
                 | Starred (Starred.Once target) ->
+                    let guide =
+                      uniform_sequence_parameter guide
+                      |> Type.list
+                    in
+                    let resolved =
+                      uniform_sequence_parameter resolved
+                      |> Type.list
+                    in
                     forward_assign ~state ~target ~guide ~resolved ~expression:None
                 | _ ->
                     let guide = uniform_sequence_parameter guide in

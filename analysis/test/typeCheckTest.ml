@@ -2472,6 +2472,10 @@ let test_forward_statement _ =
     ["c", Type.Tuple (Type.Unbounded Type.integer)]
     "a, b = c"
     ["a", Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
+  assert_forward
+    ["c", Type.Tuple (Type.Unbounded Type.integer)]
+    "*a, b = c"
+    ["a", Type.list Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
 
   (* Assignments with non-uniform sequences. *)
   assert_forward
