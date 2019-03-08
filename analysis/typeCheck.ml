@@ -3472,8 +3472,9 @@ module State = struct
         >>| (fun assertion -> forward_statement ~state ~statement:(Statement.assume assertion))
         |> Option.value ~default:state
 
-    | Delete _ ->
-        (* TODO(T26146217): add coverage. *)
+    | Delete expression ->
+        (* TODO(T41338881): Actually remove bindings from resolution. *)
+        let { state; _ } = forward_expression ~state ~expression in
         state
 
     | Expression expression ->

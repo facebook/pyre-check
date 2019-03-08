@@ -2534,6 +2534,15 @@ let test_forward_statement _ =
     "y: int"
     ["y", Type.integer];
 
+  (* Delete. *)
+  assert_forward
+    ~errors:(`Specific [
+        "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter to call \
+         `dict.__getitem__` but got `int`."
+      ])
+    ["d", Type.dictionary ~key:Type.string ~value:Type.integer]
+    "del d[0]"
+    ["d", Type.dictionary ~key:Type.string ~value:Type.integer];
   (* Assert. *)
   assert_forward
     ["x", Type.optional Type.integer]
