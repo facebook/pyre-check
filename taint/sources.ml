@@ -9,6 +9,7 @@ open Core
 type t =
   | Cookies
   | Demo
+  | NamedSource of string
   | PII
   | Secrets  (* Such as passwords, tokens *)
   | Test
@@ -20,6 +21,7 @@ type t =
 let show = function
   | Cookies -> "Cookies"
   | Demo -> "Demo"
+  | NamedSource name -> name
   | PII -> "PII"
   | Secrets -> "Secrets"
   | Test -> "Test"
@@ -36,3 +38,10 @@ let create = function
   | "Thrift" -> Thrift
   | "UserControlled" -> UserControlled
   | name -> failwith (Format.sprintf "Unsupported taint source `%s`" name)
+
+
+let parse ~allowed name =
+  if List.mem allowed name ~equal:String.equal then
+    NamedSource name
+  else
+    create name

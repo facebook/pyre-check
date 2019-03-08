@@ -6,6 +6,7 @@
 module AccessPath = AccessPath
 module Analysis = TaintAnalysis
 module BackwardAnalysis = BackwardAnalysis
+module TaintConfiguration = Configuration
 module Domains = Domains
 module Flow = Flow
 module ForwardAnalysis = ForwardAnalysis

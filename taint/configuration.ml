@@ -6,6 +6,7 @@
 open Core
 
 module SharedMemory = Memory
+module Json = Yojson.Safe
 
 
 type rule = {
@@ -18,8 +19,8 @@ type rule = {
 
 
 type t = {
-  sinks: string list;
   sources: string list;
+  sinks: string list;
   features: string list;
   rules: rule list;
 }
@@ -36,6 +37,80 @@ module SharedConfig = SharedMemory.WithCache
       let prefix = Prefix.make ()
       let description = "Taint configuration"
     end)
+
+
+let parse source =
+  let parse_sources json =
+    let parse_source json =
+      Json.Util.member "name" json
+      |> Json.Util.to_string
+    in
+    Json.Util.to_list json
+    |> List.map ~f:parse_source
+  in
+  let parse_sinks json =
+    let parse_sink json =
+      Json.Util.member "name" json
+      |> Json.Util.to_string
+    in
+    Json.Util.to_list json
+    |> List.map ~f:parse_sink
+  in
+  let parse_features json =
+    let parse_feature json =
+      Json.Util.member "name" json
+      |> Json.Util.to_string
+    in
+    Json.Util.to_list json
+    |> List.map ~f:parse_feature
+  in
+  let parse_rules ~allowed_sources ~allowed_sinks json =
+    let parse_string_list json =
+      Json.Util.to_list json |> List.map ~f:Json.Util.to_string
+    in
+    let parse_rule json =
+      let sources =
+        Json.Util.member "sources" json
+        |> parse_string_list
+        |> List.map ~f:(Sources.parse ~allowed:allowed_sources)
+      in
+      let sinks =
+        Json.Util.member "sinks" json
+        |> parse_string_list
+        |> List.map ~f:(Sinks.parse ~allowed:allowed_sinks)
+      in
+      let name = Json.Util.member "name" json |> Json.Util.to_string in
+      let message_format =
+        Json.Util.member "message_format" json
+        |> Json.Util.to_string
+      in
+      let code = Json.Util.member "code" json |> Json.Util.to_int in
+      {
+        sources;
+        sinks;
+        name;
+        code;
+        message_format;
+      }
+    in
+    Json.Util.to_list json
+    |> List.map ~f:parse_rule
+  in
+  let json = Json.from_string source in
+  let sources = parse_sources (Json.Util.member "sources" json) in
+  let sinks = parse_sinks (Json.Util.member "sinks" json) in
+  let features = parse_features (Json.Util.member "features" json) in
+  let rules =
+    parse_rules
+      ~allowed_sources:sources
+      ~allowed_sinks:sinks
+      (Json.Util.member "rules" json)
+  in
+  { sources; sinks; features; rules; }
+
+
+let register configuration =
+  SharedConfig.add key configuration
 
 
 let get () =

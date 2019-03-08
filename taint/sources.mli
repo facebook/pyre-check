@@ -7,6 +7,7 @@
 type t =
   | Cookies
   | Demo
+  | NamedSource of string
   | PII
   | Secrets  (* Such as passwords, tokens *)
   | Test
@@ -15,3 +16,8 @@ type t =
 [@@deriving compare, sexp, show, hash]
 
 val create: string -> t
+
+val parse:
+  allowed: string list
+  -> string
+  -> t

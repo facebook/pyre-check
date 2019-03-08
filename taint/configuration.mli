@@ -13,11 +13,15 @@ type rule = {
 }
 
 type t = {
-  sinks: string list;
   sources: string list;
+  sinks: string list;
   features: string list;
   rules: rule list;
 }
 
 
 val get: unit -> t
+
+val parse: string -> t
+
+val register: t -> unit

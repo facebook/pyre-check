@@ -36,8 +36,23 @@ include TaintResult.Register(struct
             if not (Path.is_directory directory) then
               raise
                 (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+            let load_configuration () =
+              let configuration_file = Path.append directory ~element:"taint.config" in
+              if Path.file_exists configuration_file then
+                try
+                  let config =
+                    File.create configuration_file |> File.content |> Option.value ~default:""
+                  in
+                  Configuration.parse config |> Configuration.register
+                with exn ->
+                  Log.error
+                    "Error reading taint config from %s: %s"
+                    (Path.show configuration_file)
+                    (Exn.to_string exn);
+                  raise exn
+            in
+            load_configuration ();
             Log.info "Finding taint models in %a" Path.pp directory;
-
             Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root:directory ()
             |> List.map ~f:File.create
             |> List.filter_map ~f:File.content

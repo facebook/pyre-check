@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 
 type t =
   | Demo
@@ -11,6 +13,7 @@ type t =
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
+  | NamedSink of string
   | ODS
   | RemoteCodeExecution
   | RequestSend
@@ -29,6 +32,7 @@ let show = function
   | IdentityCreation -> "IdentityCreation"
   | LocalReturn -> "LocalReturn"
   | Logging -> "Logging"
+  | NamedSink name -> name
   | ODS -> "ODS"
   | RemoteCodeExecution -> "RemoteCodeExecution"
   | RequestSend -> "RequestSend"
@@ -55,3 +59,10 @@ let create = function
   | "XMLParser" -> XMLParser
   | "XSS" -> XSS
   | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
+
+
+let parse ~allowed name =
+  if List.mem allowed name ~equal:String.equal then
+    NamedSink name
+  else
+    create name

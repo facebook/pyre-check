@@ -11,6 +11,7 @@ type t =
   | IdentityCreation
   | LocalReturn  (* Special marker to infer function in-out behavior *)
   | Logging
+  | NamedSink of string
   | ODS
   | RemoteCodeExecution
   | RequestSend
@@ -22,3 +23,8 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 val create: string -> t
+
+val parse
+  :  allowed: string list
+  -> string
+  -> t
