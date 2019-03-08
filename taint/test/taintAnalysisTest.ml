@@ -287,214 +287,145 @@ let test_fixpoint _ =
     ~expect:{
       iterations = 4;
       expect = [
-        {
-          kind = `Function;
-          define_name = "qualifier.rce_problem";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5001;
               pattern = ".*Possible shell injection.*Data from \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
             };
           ]
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.match_flows";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          "qualifier.rce_problem";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5002;
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             }
-          ];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.match_flows_multiple";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          ]
+          "qualifier.match_flows";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5002;
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             }
-          ];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.match_via_methods";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          ]
+          "qualifier.match_flows_multiple";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5002;
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             };
           ]
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.no_match_via_methods";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.match_via_receiver";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          "qualifier.match_via_methods";
+
+        outcome
+          ~kind:`Function
+          ~errors:[]
+          "qualifier.no_match_via_methods";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5002;
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             };
           ]
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.qux";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [
+          "qualifier.match_via_receiver";
+
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[
             { name = "arg"; sinks = [Taint.Sinks.Test] }
-          ];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.bad";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [
+          ]
+          ~errors:[]
+          "qualifier.qux";
+
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[
             { name = "arg"; sinks = [Taint.Sinks.Test] }
-          ];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.bar";
-          returns = [Sources.Test];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.some_source";
-          returns = [Sources.Test];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.list_sink";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [
+          ]
+          "qualifier.bad";
+
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.Test]
+          ~errors:[]
+          "qualifier.bar";
+
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.Test]
+          "qualifier.some_source";
+
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[
             { name = "list"; sinks = [Taint.Sinks.Test] }
-          ];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.no_list_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.list_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          ]
+          "qualifier.list_sink";
+
+        outcome
+          ~kind:`Function
+          ~errors:[]
+          "qualifier.no_list_match";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5002;
               pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
             };
           ]
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.test_getattr_obj_no_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.test_getattr_field_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = ["some_obj"];
-          errors = [
+          "qualifier.list_match";
+
+        outcome
+          ~kind:`Function
+          ~errors:[]
+          "qualifier.test_getattr_obj_no_match";
+
+        outcome
+          ~kind:`Function
+          ~tito_parameters:["some_obj"]
+          ~errors:[
             {
               code = 5010;
               pattern = ".*Attacker may control at least one argument to getattr(,)";
             };
           ]
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.deep_tito";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = ["tito"];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.test_deep_tito_no_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [];
-        };
-        {
-          kind = `Function;
-          define_name = "qualifier.test_deep_tito_match";
-          returns = [];
-          source_parameters = [];
-          sink_parameters = [];
-          tito_parameters = [];
-          errors = [
+          "qualifier.test_getattr_field_match";
+
+        outcome
+          ~kind:`Function
+          ~tito_parameters:["tito"]
+          ~errors:[]
+          "qualifier.deep_tito";
+
+        outcome
+          ~kind:`Function
+          ~errors:[]
+          "qualifier.test_deep_tito_no_match";
+
+        outcome
+          ~kind:`Function
+          ~errors:[
             {
               code = 5010;
               pattern = ".*Attacker may control at least one argument to getattr(,)";
             };
           ]
-        };
+          "qualifier.test_deep_tito_match";
       ]
     }
 
@@ -639,18 +570,15 @@ let test_combined_analysis _ =
     |}
     ~expect:{
       expect = [
-        {
-          kind = `Function;
-          define_name = "qualifier.combined_model";
-          returns = [Sources.UserControlled];
-          errors = [];
-          source_parameters = [];
-          sink_parameters = [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.UserControlled]
+          ~sink_parameters:[
             { name = "x"; sinks = [Taint.Sinks.Test] };
             { name = "y"; sinks = [Taint.Sinks.Demo] };
-          ];
-          tito_parameters = ["x"; "z"];
-        };
+          ]
+          ~tito_parameters:["x"; "z"]
+          "qualifier.combined_model";
       ];
       iterations = 2;
     }
@@ -668,17 +596,13 @@ let test_skipped_analysis _ =
     |}
     ~expect:{
       expect = [
-        {
-          kind = `Function;
-          define_name = "qualifier.skipped_model";
-          returns = [];
-          errors = [];
-          source_parameters = [];
-          sink_parameters = [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[
             { name = "y"; sinks = [Taint.Sinks.Demo] };
-          ];
-          tito_parameters = ["z"];
-        };
+          ]
+          ~tito_parameters:["z"]
+          "qualifier.skipped_model";
       ];
       iterations = 1;
     }
@@ -697,22 +621,19 @@ let test_sanitized_analysis _ =
     |}
     ~expect:{
       expect = [
-        {
-          kind = `Function;
-          define_name = "qualifier.sanitized_model";
-          returns = [];
-          errors = [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[
+            { name = "y"; sinks = [Taint.Sinks.Demo] };
+          ]
+          ~tito_parameters:["z"]
+          ~errors:[
             {
               code = 5001;
               pattern = ".*";
             };
-          ];
-          source_parameters = [];
-          sink_parameters = [
-            { name = "y"; sinks = [Taint.Sinks.Demo] };
-          ];
-          tito_parameters = ["z"];
-        };
+          ]
+          "qualifier.sanitized_model";
       ];
       iterations = 1;
     }
@@ -729,24 +650,21 @@ let test_primed_source_analysis _ =
     |}
     ~expect:{
       expect = [
-        {
-          kind = `Function;
-          define_name = "qualifier.primed_model";
-          returns = [];
-          errors = [
+        outcome
+          ~kind:`Function
+          ~source_parameters:[
+            { name = "y"; sources = [Taint.Sources.UserControlled] }
+          ]
+          ~sink_parameters:[
+            { name = "y"; sinks = [Taint.Sinks.RemoteCodeExecution] };
+          ]
+          ~errors:[
             {
               code = 5001;
               pattern = ".*Possible shell injection.*";
             };
-          ];
-          source_parameters = [
-            { name = "y"; sources = [Taint.Sources.UserControlled] }
-          ];
-          sink_parameters = [
-            { name = "y"; sinks = [Taint.Sinks.RemoteCodeExecution] };
-          ];
-          tito_parameters = [];
-        };
+          ]
+          "qualifier.primed_model";
       ];
       iterations = 2;
     }
