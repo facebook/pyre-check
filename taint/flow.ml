@@ -6,6 +6,7 @@
 open Core
 
 open Ast
+open Configuration
 open Domains
 
 
@@ -126,117 +127,6 @@ let partition_flows ?sources ?sinks flows =
   List.fold flows ~init:{ matched = []; rest = []; } ~f:accumulate_matches
 
 
-type rule = {
-  sources: Sources.t list;
-  sinks: Sinks.t list;
-  code: int;
-  name: string;
-  message_format: string;  (* format *)
-}
-
-
-let rules = [
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.RemoteCodeExecution ];
-    code = 5001;
-    name = "Possible shell injection.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.Test; Sources.UserControlled ];
-    sinks = [ Sinks.Test ];
-    code = 5002;
-    name = "Test flow.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.Thrift ];
-    code = 5003;
-    name = "User controlled data to thrift.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.Thrift ];
-    sinks = [ Sinks.RemoteCodeExecution ];
-    code = 5004;
-    name = "Thrift return data to remote code execution.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.SQL ];
-    code = 5005;
-    name = "User controlled data to SQL execution.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.Cookies; Sources.PII; Sources.Secrets ];
-    sinks = [ Sinks.Logging ];
-    code = 5006;
-    name = "Restricted data being logged.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.XMLParser ];
-    code = 5007;
-    name = "User data to XML Parser.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.XSS ];
-    code = 5008;
-    name = "XSS";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.Demo ];
-    sinks = [ Sinks.Demo ];
-    code = 5009;
-    name = "Demo flow.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.GetAttr ];
-    code = 5010;
-    name = "User data to getattr.";
-    message_format = "Attacker may control at least one argument to getattr(,)."
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.FileSystem ];
-    code = 5011;
-    name = "User data to filesystem operation.";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.RequestSend ];
-    code = 5012;
-    name = "Potential Server-side request forgery (SSRF)";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.IdentityCreation ];
-    code = 5013;
-    name = "User-controlled identity creation (experimental)";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-  {
-    sources = [ Sources.UserControlled ];
-    sinks = [ Sinks.ODS ];
-    code = 5014;
-    name = "User-controlled ODS key";
-    message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-  };
-]
-
-
 let generate_issues ~define { location; flows; } =
   let apply_rule (issues, remaining_flows) { sources; sinks; code; _ } =
     let any_sources source_list source =
@@ -279,7 +169,8 @@ let generate_issues ~define { location; flows; } =
         in
         issue :: issues, rest
   in
-  let issues, _ = List.fold ~f:apply_rule ~init:([], flows) rules in
+  let configuration = Configuration.get () in
+  let issues, _ = List.fold ~f:apply_rule ~init:([], flows) configuration.rules in
   issues
 
 
@@ -288,7 +179,8 @@ let sources_regexp = Str.regexp_string "{$sources}"
 
 
 let get_name_and_detailed_message { code; flow; _ } =
-  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
+  let configuration = Configuration.get () in
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some { name; message_format; _ } ->
       let sources =
@@ -309,7 +201,8 @@ let get_name_and_detailed_message { code; flow; _ } =
 
 
 let generate_error ({ code; issue_location; define; _  } as issue) =
-  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
+  let configuration = Configuration.get () in
+  match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
       let name, detail = get_name_and_detailed_message issue in
@@ -360,4 +253,5 @@ let to_json callable issue =
 
 
 let code_metadata () =
-  `Assoc (List.map rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
+  let configuration = Configuration.get () in
+  `Assoc (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
