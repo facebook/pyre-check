@@ -3910,8 +3910,8 @@ let run
             let location =
               {
                 Location.path = File.Handle.show handle;
-                start = { Location.line = 0; column = 0 };
-                stop = { Location.line = 0; column = 0 };
+                start = { Location.line = 1; column = 1 };
+                stop = { Location.line = 1; column = 1 };
               }
               |> Location.reference
             in
