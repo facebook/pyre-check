@@ -22,7 +22,7 @@ let assert_model ~model_source ~expect =
     TaintConfiguration.{
       sources = ["TestTest"];
       sinks = ["TestSink"];
-      features = [];
+      features = ["special"];
       rules = [];
     }
   in
@@ -362,11 +362,16 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`";
+    ~expect:(
+      "Invalid model for `sink`: Unrecognized taint annotation " ^
+      "`InvalidTaintDirection.__getitem__.(...)`"
+    );
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!";
+    ~expect:(
+      "Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!"
+    );
 
   assert_invalid_model
     ~model_source:"def sink(): ..."
@@ -376,7 +381,11 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`"
+    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`";
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
+    ~expect:"Invalid model for `sink`: Unrecognized Via annotation `bad_feature`"
 
 
 let () =

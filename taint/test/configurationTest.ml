@@ -9,7 +9,7 @@ open Taint
 
 
 let test_simple _ =
-  let config = TaintConfiguration.parse {|
+  let configuration = TaintConfiguration.parse {|
     { sources: [
         { name: "A" },
         { name: "B" }
@@ -34,11 +34,11 @@ let test_simple _ =
     }
   |}
   in
-  assert_equal config.sources ["A"; "B"];
-  assert_equal config.sinks ["C"; "D"];
-  assert_equal config.features ["E"; "F"];
-  assert_equal (List.length config.rules) 1;
-  assert_equal (List.hd_exn config.rules).code 2001
+  assert_equal configuration.sources ["A"; "B"];
+  assert_equal configuration.sinks ["C"; "D"];
+  assert_equal configuration.features ["E"; "F"];
+  assert_equal (List.length configuration.rules) 1;
+  assert_equal (List.hd_exn configuration.rules).code 2001
 
 
 let test_invalid_source _ =

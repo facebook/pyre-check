@@ -202,8 +202,12 @@ module Breadcrumb = struct
     | Tito ->
         `Assoc ["via", `String "tito" ]
 
-  let simple_via name =
-    SimpleVia name
+  let simple_via ~allowed name =
+    if List.mem allowed name ~equal:String.equal then
+      SimpleVia name
+    else
+      Format.sprintf "Unrecognized Via annotation `%s`" name
+      |> failwith
 
 end
 

@@ -143,76 +143,72 @@ type leaf_kind =
   | Breadcrumbs of breadcrumbs
 
 
-let rec extract_breadcrumbs expression =
-  match expression.Node.value with
-  | Access (SimpleAccess [Identifier breadcrumb]) ->
-      [Breadcrumb.simple_via breadcrumb]
-  | Tuple expressions ->
-      List.concat_map ~f:extract_breadcrumbs expressions
-  | _ ->
-      []
-
-
-let rec extract_kinds expression =
-  match expression.Node.value with
-  | Access (SimpleAccess [Identifier taint_kind]) ->
-      [Leaf taint_kind]
-  | Access (SimpleAccess (
-      (Identifier "Via"
-       :: _
-       :: Call {
-         value = { Argument.value = expression; _; } :: _; _ }
-       :: _))) ->
-      [Breadcrumbs (extract_breadcrumbs expression)]
-  | Tuple expressions ->
-      List.concat_map ~f:extract_kinds expressions
-  | _ ->
-      []
-
-
-let extract_leafs expression =
-  let kinds, breadcrumbs =
-    extract_kinds expression
-    |> List.partition_map ~f:(function Leaf l -> `Fst l | Breadcrumbs b -> `Snd b)
+let rec parse_annotations ~configuration annotation =
+  let rec extract_breadcrumbs expression =
+    let open Configuration in
+    match expression.Node.value with
+    | Access (SimpleAccess [Identifier breadcrumb]) ->
+        [Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
+    | Tuple expressions ->
+        List.concat_map ~f:extract_breadcrumbs expressions
+    | _ ->
+        []
   in
-  kinds, List.concat breadcrumbs
-
-
-let get_source_kinds ~configuration expression =
-  let open Configuration in
-  let kinds, breadcrumbs = extract_leafs expression in
-  try
+  let rec extract_kinds expression =
+    match expression.Node.value with
+    | Access (SimpleAccess [Identifier taint_kind]) ->
+        [Leaf taint_kind]
+    | Access (SimpleAccess (
+        (Identifier "Via"
+         :: _
+         :: Call {
+           value = { Argument.value = expression; _; } :: _; _ }
+         :: _))) ->
+        [Breadcrumbs (extract_breadcrumbs expression)]
+    | Tuple expressions ->
+        List.concat_map ~f:extract_kinds expressions
+    | _ ->
+        []
+  in
+  let extract_leafs expression =
+    let kinds, breadcrumbs =
+      extract_kinds expression
+      |> List.partition_map ~f:(function Leaf l -> `Fst l | Breadcrumbs b -> `Snd b)
+    in
+    kinds, List.concat breadcrumbs
+  in
+  let get_source_kinds expression =
+    let open Configuration in
+    let kinds, breadcrumbs = extract_leafs expression in
     List.map
       kinds
-      ~f:(fun kind -> Source { source = Sources.parse ~allowed:configuration.sources kind; breadcrumbs })
-  with Failure message ->
-    raise_invalid_model message
-
-
-let get_sink_kinds ~configuration expression =
-  let open Configuration in
-  let kinds, breadcrumbs = extract_leafs expression in
-  try
+      ~f:(
+        fun kind ->
+          Source { source = Sources.parse ~allowed:configuration.sources kind; breadcrumbs }
+      )
+  in
+  let get_sink_kinds expression =
+    let open Configuration in
+    let kinds, breadcrumbs = extract_leafs expression in
     List.map
       kinds
       ~f:(fun kind -> Sink { sink = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
-  with Failure message ->
-    raise_invalid_model message
-
-
-let get_taint_in_taint_out ~configuration expression =
-  let open Configuration in
-  let kinds, breadcrumbs = extract_leafs expression in
-  match kinds with
-  | [] ->
-      [Tito { tito = Sinks.LocalReturn; breadcrumbs }]
-  | _ ->
-      List.map
-        kinds
-        ~f:(fun kind -> Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
-
-
-let rec parse_annotations ~configuration = function
+  in
+  let get_taint_in_taint_out expression =
+    let open Configuration in
+    let kinds, breadcrumbs = extract_leafs expression
+    in
+    match kinds with
+    | [] ->
+        [Tito { tito = Sinks.LocalReturn; breadcrumbs }]
+    | _ ->
+        List.map
+          kinds
+          ~f:(
+            fun kind -> Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs }
+          )
+  in
+  match annotation with
   | Some {
       Node.value =
         Expression.Access
@@ -224,19 +220,21 @@ let rec parse_annotations ~configuration = function
            :: Call {
              value = { Argument.value = { value = Tuple expressions; _ }; _; } :: _; _ }
            :: _) ->
-            List.concat_map ~f:(fun expression -> parse_annotations ~configuration (Some expression)) expressions
+            List.concat_map
+              expressions
+              ~f:(fun expression -> parse_annotations ~configuration (Some expression))
         | (Identifier "TaintSink"
            :: _
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
-            get_sink_kinds ~configuration expression
+            get_sink_kinds expression
         | (Identifier "TaintSource"
            :: _
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
-            get_source_kinds ~configuration expression
+            get_source_kinds expression
         | [Identifier "TaintInTaintOut"] ->
             [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
         | (Identifier "TaintInTaintOut"
@@ -244,7 +242,7 @@ let rec parse_annotations ~configuration = function
            :: Call {
              value = { Argument.value = expression; _; } :: _; _ }
            :: _) ->
-            get_taint_in_taint_out ~configuration expression
+            get_taint_in_taint_out expression
         | [Identifier "SkipAnalysis"] ->
             [SkipAnalysis]
         | [Identifier "Sanitize"] ->

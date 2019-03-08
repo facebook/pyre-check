@@ -120,6 +120,11 @@ let default =
     sinks = [
     ];
     features = [
+      "copy";
+      "default";
+      "object";
+      "special_source";
+      "special_sink";
     ];
     rules = [
       {

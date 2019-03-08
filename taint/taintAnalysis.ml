@@ -50,7 +50,7 @@ include TaintResult.Register(struct
                   Configuration.parse configuration
                 with exn ->
                   Log.error
-                    "Error reading taint config from %s: %s"
+                    "Error reading taint configuration from %s: %s"
                     (Path.show configuration_file)
                     (Exn.to_string exn);
                   raise exn
