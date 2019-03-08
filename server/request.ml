@@ -439,10 +439,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                   |> (fun key -> Memory.unsafe_little_endian_representation ~key)
                   |> Int64.to_string
                 in
+                let data =
+                  Prefix.make_key OrderAnnotationValue.prefix (IntKey.to_string key)
+                  |> Base64.encode_exn
+                in
                 Map.add_exn
                   map
                   ~key:hash
-                  ~data:(Prefix.make_key OrderAnnotationValue.prefix (IntKey.to_string key))
+                  ~data
               in
               List.fold keys ~init:String.Map.empty ~f:add_key_mappings
           | None ->

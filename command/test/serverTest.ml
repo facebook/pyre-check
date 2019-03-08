@@ -993,6 +993,7 @@ let test_compute_hashes_to_keys context =
       (Prefix.make_key
          Service.EnvironmentSharedMemory.OrderAnnotationValue.prefix
          (Int.to_string key))
+      |> Base64.encode_exn
     in
     { TypeQuery.hash; key }
   in

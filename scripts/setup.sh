@@ -158,6 +158,7 @@ test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
 
 opam install --yes \
+  base64.3.1.0 \
   core.v0.11.3 \
   dune.1.6.2 \
   yojson.1.5.0 \
