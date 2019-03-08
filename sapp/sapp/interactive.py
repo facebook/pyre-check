@@ -652,6 +652,7 @@ branch(INDEX)   select a trace branch
     def _next_trace_frames(self, session, trace_frame):
         results = (
             session.query(TraceFrame)
+            .filter(TraceFrame.run_id == self.current_run_id)
             .filter(
                 TraceFrame.caller != TraceFrame.callee
             )  # skip recursive calls for now

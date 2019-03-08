@@ -390,11 +390,11 @@ class InteractiveTest(TestCase):
         return [
             TraceFrame(
                 id=1,
-                kind=TraceKind.POSTCONDITION,
+                kind=TraceKind.PRECONDITION,
                 caller="call1",
-                caller_port="result",
+                caller_port="root",
                 callee="call2",
-                callee_port="formal",
+                callee_port="param0",
                 callee_location=SourceLocation(1, 1),
                 filename="file.py",
                 run_id=1,
@@ -403,7 +403,7 @@ class InteractiveTest(TestCase):
                 id=2,
                 kind=TraceKind.PRECONDITION,
                 caller="call2",
-                caller_port="formal",
+                caller_port="param0",
                 callee="leaf",
                 callee_port="sink",
                 callee_location=SourceLocation(1, 2),
@@ -412,7 +412,7 @@ class InteractiveTest(TestCase):
             ),
         ]
 
-    def testNextTraceFrame(self):
+    def testNextTraceFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         trace_frames = self._basic_trace_frames()
         sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
@@ -425,10 +425,43 @@ class InteractiveTest(TestCase):
             session.commit()
 
             self.interactive.setup()
-            self.interactive.sources = {"sink1"}
+            self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_trace_frames(session, trace_frames[0])
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[1].id))
+
+    def testNextTraceFramesMultipleRuns(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        trace_frames_run1 = self._basic_trace_frames()
+        trace_frames_run2 = self._basic_trace_frames()
+        trace_frames_run2[0].id = 3
+        trace_frames_run2[0].run_id = 2
+        trace_frames_run2[1].id = 4
+        trace_frames_run2[1].run_id = 2
+
+        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=1, trace_length=0),
+        ]
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames_run1)
+            self._add_to_session(session, trace_frames_run2)
+            self._add_to_session(session, runs)
+            self._add_to_session(session, assocs)
+            session.add(sink)
+            session.commit()
+
+            self.interactive.setup()
+            self.interactive.sinks = {"sink1"}
+            next_frames = self.interactive._next_trace_frames(
+                session, trace_frames_run2[0]
+            )
+            self.assertEqual(len(next_frames), 1)
+            self.assertEqual(int(next_frames[0].id), int(trace_frames_run2[1].id))
 
     def testNavigateTraceFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -443,7 +476,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
             self.interactive.setup()
-            self.interactive.sources = {"sink1"}
+            self.interactive.sinks = {"sink1"}
             result = self.interactive._navigate_trace_frames(session, [trace_frames[0]])
             self.assertEqual(len(result), 2)
             self.assertEqual(int(result[0][0].id), 1)
