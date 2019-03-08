@@ -365,356 +365,6 @@ let messages ~concise ~define location kind =
            pp_type actual
         );
       ]
-  | Top ->
-      [ "Problem with analysis." ]
-  | ProhibitedAny { given_annotation; _ } when concise ->
-      if given_annotation >>| Type.equal Type.Any |> Option.value ~default:false then
-        ["Given annotation cannot be `Any`."]
-      else
-        ["Given annotation cannot contain `Any`."]
-  | ProhibitedAny { name; annotation = Some annotation; given_annotation; _ }
-    when Type.is_concrete annotation ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
-                pp_access name
-                pp_type annotation
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
-                pp_access name
-                pp_type annotation
-            ]
-      end
-  | ProhibitedAny { name; given_annotation; _ } ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Explicit annotation for `%a` cannot be `Any`."
-                pp_access name
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Explicit annotation for `%a` cannot contain `Any`."
-                pp_access name
-            ]
-      end
-  | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
-        ["Attribute annotation cannot be `Any`."]
-      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
-        ["Attribute annotation cannot contain `Any`."]
-      else
-        ["Attribute must be annotated."]
-  | MissingAttributeAnnotation { parent; missing_annotation } ->
-      begin
-        match missing_annotation with
-        | { name; annotation = Some annotation; given_annotation; _ }
-          when not (Type.is_concrete annotation) ->
-            begin
-              match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Any ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` must have a type other than `Any`."
-                      pp_access name
-                      pp_type parent;
-                  ]
-              | Some given_annotation when Type.contains_any given_annotation ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
-                      pp_access name
-                      pp_type parent;
-                  ]
-              | _ ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` has no type specified."
-                      pp_access name
-                      pp_type parent;
-                  ]
-            end
-        | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } ->
-            let trace =
-              let evidence_string =
-                evidence_locations
-                |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-                |> String.concat ~sep:", "
-              in
-              Format.asprintf
-                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
-                start_line
-                pp_type annotation
-                evidence_string
-            in
-            begin
-              match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Any ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                      pp_access name
-                      pp_type parent
-                      pp_type annotation;
-                    trace;
-                  ]
-              | Some given_annotation when Type.contains_any given_annotation ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` is used as type `%a` \
-                       and must have a type that does not contain `Any`."
-                      pp_access name
-                      pp_type parent
-                      pp_type annotation;
-                    trace;
-                  ]
-              | _ ->
-                  [
-                    Format.asprintf
-                      "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                      pp_access name
-                      pp_type parent
-                      pp_type annotation;
-                    trace;
-                  ]
-            end
-        | { name; annotation = None; _ } ->
-            [
-              Format.asprintf "Attribute `%a` of class `%a` has no type specified."
-                pp_access name
-                pp_type parent;
-            ]
-      end
-  | MissingParameterAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
-        ["Parameter annotation cannot be `Any`."]
-      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
-        ["Parameter annotation cannot contain `Any`."]
-      else
-        ["Parameter must be annotated."]
-  | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
-    when Type.is_concrete annotation ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Parameter `%a` has type `%a` but type `Any` is specified."
-                pp_access name
-                pp_type annotation
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              Format.asprintf
-                "Parameter `%a` is used as type `%a` \
-                 and must have a type that does not contain `Any`"
-                pp_access name
-                pp_type annotation
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Parameter `%a` has type `%a` but no type is specified."
-                pp_access name
-                pp_type annotation
-            ]
-      end
-  | MissingParameterAnnotation { name; given_annotation; _ } ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Parameter `%a` must have a type other than `Any`."
-                pp_access name
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              Format.asprintf
-                "Parameter `%a` must have a type that does not contain `Any`."
-                pp_access name
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Parameter `%a` has no type specified."
-                pp_access name
-            ]
-      end
-  | MissingReturnAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
-        ["Return annotation cannot be `Any`."]
-      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
-        ["Return annotation cannot contain `Any`."]
-      else
-        ["Return type must be annotated."]
-  | MissingReturnAnnotation {
-      annotation = Some annotation;
-      evidence_locations;
-      given_annotation;
-      _;
-    }
-    when Type.is_concrete annotation ->
-      let trace =
-        let evidence_string =
-          evidence_locations
-          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_line)
-          |> String.concat ~sep:", "
-        in
-        Format.asprintf
-          "Type `%a` was returned on %s %s, return type should be specified on line %d."
-          pp_type annotation
-          (if (List.length evidence_locations) > 1 then "lines" else "line")
-          evidence_string
-          start_line
-      in
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but type `Any` is specified."
-                 pp_type annotation);
-              trace;
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but return type must be specified as type \
-                  that does not contain `Any`."
-                 pp_type annotation);
-              trace;
-            ]
-        | _ ->
-            [
-              (Format.asprintf
-                 "Returning `%a` but no return type is specified."
-                 pp_type annotation);
-              trace;
-            ]
-      end
-  | MissingReturnAnnotation { given_annotation; _ } ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            ["Return type must be specified as type other than `Any`."]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            ["Return type must be specified as type that does not contain `Any`."]
-        | _ ->
-            ["Return type is not specified."]
-      end
-  | MissingGlobalAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
-        ["Global annotation cannot be `Any`."]
-      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
-        ["Global annotation cannot contain `Any`."]
-      else
-        ["Global expression must be annotated."]
-  | MissingGlobalAnnotation {
-      name;
-      annotation = Some annotation;
-      evidence_locations;
-      given_annotation;
-      _;
-    } when Type.is_concrete annotation ->
-      begin
-        let evidence_string =
-          evidence_locations
-          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
-          |> String.concat ~sep:", "
-        in
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
-                pp_access name
-                pp_type annotation;
-              Format.asprintf
-                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
-                start_line
-                pp_type annotation
-                evidence_string
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` has type `%a` a type must be specified \
-                 that does not contain `Any`."
-                pp_access name
-                pp_type annotation;
-              Format.asprintf
-                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
-                start_line
-                pp_type annotation
-                evidence_string
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` has type `%a` but no type is specified."
-                pp_access name
-                pp_type annotation;
-              Format.asprintf
-                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
-                start_line
-                pp_type annotation
-                evidence_string
-            ]
-      end
-  | MissingGlobalAnnotation { name; given_annotation; _ } ->
-      begin
-        match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` must be specified as type other than `Any`."
-                pp_access name
-            ]
-        | Some given_annotation when Type.contains_any given_annotation ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` must be specified as type that does not contain \
-                 `Any`."
-                pp_access name
-            ]
-        | _ ->
-            [
-              Format.asprintf
-                "Globally accessible variable `%a` has no type specified."
-                pp_access name
-            ]
-      end
-  | MissingTypeParameters { annotation; number_of_parameters } ->
-      [
-        Format.asprintf
-          "Generic type `%a` expects %d type parameter%s."
-          pp_type annotation
-          number_of_parameters
-          (if (number_of_parameters > 1) then "s" else "");
-      ]
-  | MutuallyRecursiveTypeVariables callee ->
-      let callee =
-        match callee with
-        | Some callee ->
-            Format.asprintf "call `%a`" Access.pp callee
-        | _ ->
-            "anoynmous call"
-      in
-      [ Format.asprintf "Solving type variables for %s led to infinite recursion" callee ]
   | IncompatibleParameterType {
       name;
       position;
@@ -957,8 +607,372 @@ let messages ~concise ~define location kind =
             "Anonymous call"
       in
       [Format.asprintf "%s expects argument `%a`." callee pp_identifier name]
+  | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Attribute annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Attribute annotation cannot contain `Any`."]
+      else
+        ["Attribute must be annotated."]
+  | MissingAttributeAnnotation { parent; missing_annotation } ->
+      begin
+        match missing_annotation with
+        | { name; annotation = Some annotation; given_annotation; _ }
+          when not (Type.is_concrete annotation) ->
+            begin
+              match given_annotation with
+              | Some given_annotation when Type.equal given_annotation Type.Any ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` must have a type other than `Any`."
+                      pp_access name
+                      pp_type parent;
+                  ]
+              | Some given_annotation when Type.contains_any given_annotation ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
+                      pp_access name
+                      pp_type parent;
+                  ]
+              | _ ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has no type specified."
+                      pp_access name
+                      pp_type parent;
+                  ]
+            end
+        | { name; annotation = Some annotation; evidence_locations; given_annotation; _ } ->
+            let trace =
+              let evidence_string =
+                evidence_locations
+                |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+                |> String.concat ~sep:", "
+              in
+              Format.asprintf
+                "Attribute `%a` declared on line %d, type `%a` deduced from %s."
+                pp_access name
+                start_line
+                pp_type annotation
+                evidence_string
+            in
+            begin
+              match given_annotation with
+              | Some given_annotation when Type.equal given_annotation Type.Any ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
+                      pp_access name
+                      pp_type parent
+                      pp_type annotation;
+                    trace;
+                  ]
+              | Some given_annotation when Type.contains_any given_annotation ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` is used as type `%a` \
+                       and must have a type that does not contain `Any`."
+                      pp_access name
+                      pp_type parent
+                      pp_type annotation;
+                    trace;
+                  ]
+              | _ ->
+                  [
+                    Format.asprintf
+                      "Attribute `%a` of class `%a` has type `%a` but no type is specified."
+                      pp_access name
+                      pp_type parent
+                      pp_type annotation;
+                    trace;
+                  ]
+            end
+        | { name; annotation = None; _ } ->
+            [
+              Format.asprintf "Attribute `%a` of class `%a` has no type specified."
+                pp_access name
+                pp_type parent;
+            ]
+      end
+  | MissingGlobalAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Global annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Global annotation cannot contain `Any`."]
+      else
+        ["Global expression must be annotated."]
+  | MissingGlobalAnnotation {
+      name;
+      annotation = Some annotation;
+      evidence_locations;
+      given_annotation;
+      _;
+    } when Type.is_concrete annotation ->
+      begin
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_start)
+          |> String.concat ~sep:", "
+        in
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
+                pp_access name
+                pp_type annotation;
+              Format.asprintf
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                pp_access name
+                start_line
+                pp_type annotation
+                evidence_string
+            ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` has type `%a` a type must be specified \
+                 that does not contain `Any`."
+                pp_access name
+                pp_type annotation;
+              Format.asprintf
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                pp_access name
+                start_line
+                pp_type annotation
+                evidence_string
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` has type `%a` but no type is specified."
+                pp_access name
+                pp_type annotation;
+              Format.asprintf
+                "Global variable `%a` declared on line %d, type `%a` deduced from %s."
+                pp_access name
+                start_line
+                pp_type annotation
+                evidence_string
+            ]
+      end
+  | MissingGlobalAnnotation { name; given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` must be specified as type other than `Any`."
+                pp_access name
+            ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` must be specified as type that does not contain \
+                 `Any`."
+                pp_access name
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Globally accessible variable `%a` has no type specified."
+                pp_access name
+            ]
+      end
+  | MissingParameterAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Parameter annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Parameter annotation cannot contain `Any`."]
+      else
+        ["Parameter must be annotated."]
+  | MissingParameterAnnotation { name; annotation = Some annotation; given_annotation; _ }
+    when Type.is_concrete annotation ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Parameter `%a` has type `%a` but type `Any` is specified."
+                pp_access name
+                pp_type annotation
+            ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            [
+              Format.asprintf
+                "Parameter `%a` is used as type `%a` \
+                 and must have a type that does not contain `Any`"
+                pp_access name
+                pp_type annotation
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Parameter `%a` has type `%a` but no type is specified."
+                pp_access name
+                pp_type annotation
+            ]
+      end
+  | MissingParameterAnnotation { name; given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Parameter `%a` must have a type other than `Any`."
+                pp_access name
+            ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            [
+              Format.asprintf
+                "Parameter `%a` must have a type that does not contain `Any`."
+                pp_access name
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Parameter `%a` has no type specified."
+                pp_access name
+            ]
+      end
+  | MissingReturnAnnotation { given_annotation; _ } when concise ->
+      if Option.equal Type.equal given_annotation (Some Type.Any) then
+        ["Return annotation cannot be `Any`."]
+      else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
+        ["Return annotation cannot contain `Any`."]
+      else
+        ["Return type must be annotated."]
+  | MissingReturnAnnotation {
+      annotation = Some annotation;
+      evidence_locations;
+      given_annotation;
+      _;
+    }
+    when Type.is_concrete annotation ->
+      let trace =
+        let evidence_string =
+          evidence_locations
+          |> List.map ~f:(Format.asprintf "%a" Location.Instantiated.pp_line)
+          |> String.concat ~sep:", "
+        in
+        Format.asprintf
+          "Type `%a` was returned on %s %s, return type should be specified on line %d."
+          pp_type annotation
+          (if (List.length evidence_locations) > 1 then "lines" else "line")
+          evidence_string
+          start_line
+      in
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              (Format.asprintf
+                 "Returning `%a` but type `Any` is specified."
+                 pp_type annotation);
+              trace;
+            ]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            [
+              (Format.asprintf
+                 "Returning `%a` but return type must be specified as type \
+                  that does not contain `Any`."
+                 pp_type annotation);
+              trace;
+            ]
+        | _ ->
+            [
+              (Format.asprintf
+                 "Returning `%a` but no return type is specified."
+                 pp_type annotation);
+              trace;
+            ]
+      end
+  | MissingReturnAnnotation { given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            ["Return type must be specified as type other than `Any`."]
+        | Some given_annotation when Type.contains_any given_annotation ->
+            ["Return type must be specified as type that does not contain `Any`."]
+        | _ ->
+            ["Return type is not specified."]
+      end
+  | MissingTypeParameters { annotation; number_of_parameters } ->
+      [
+        Format.asprintf
+          "Generic type `%a` expects %d type parameter%s."
+          pp_type annotation
+          number_of_parameters
+          (if (number_of_parameters > 1) then "s" else "");
+      ]
+  | MutuallyRecursiveTypeVariables callee ->
+      let callee =
+        match callee with
+        | Some callee ->
+            Format.asprintf "call `%a`" Access.pp callee
+        | _ ->
+            "anoynmous call"
+      in
+      [ Format.asprintf "Solving type variables for %s led to infinite recursion" callee ]
   | NotCallable annotation ->
       [ Format.asprintf "`%a` is not a function." pp_type annotation ]
+
+  | ProhibitedAny { given_annotation; _ } when concise ->
+      if given_annotation >>| Type.equal Type.Any |> Option.value ~default:false then
+        ["Given annotation cannot be `Any`."]
+      else
+        ["Given annotation cannot contain `Any`."]
+  | ProhibitedAny { name; annotation = Some annotation; given_annotation; _ }
+    when Type.is_concrete annotation ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
+                pp_access name
+                pp_type annotation
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
+                pp_access name
+                pp_type annotation
+            ]
+      end
+  | ProhibitedAny { name; given_annotation; _ } ->
+      begin
+        match given_annotation with
+        | Some given_annotation when Type.equal given_annotation Type.Any ->
+            [
+              Format.asprintf
+                "Explicit annotation for `%a` cannot be `Any`."
+                pp_access name
+            ]
+        | _ ->
+            [
+              Format.asprintf
+                "Explicit annotation for `%a` cannot contain `Any`."
+                pp_access name
+            ]
+      end
+  | RedundantCast _ when concise ->
+      ["The cast is redundant."]
+  | RedundantCast annotation ->
+      [
+        Format.asprintf
+          "The value being cast is already of type `%a`."
+          pp_type annotation;
+      ]
+  | RevealedType { expression; annotation } ->
+      [
+        Format.asprintf
+          "Revealed type for `%s` is `%a`."
+          (Expression.show_sanitized expression)
+          pp_type annotation;
+      ]
   | TooManyArguments { expected; _ } when concise ->
       [
         Format.asprintf "Expected %d positional argument%s."
@@ -979,6 +993,8 @@ let messages ~concise ~define location kind =
           provided
           (if provided > 1 then "were" else "was");
       ]
+  | Top ->
+      [ "Problem with analysis." ]
   | TypedDictionaryAccessWithNonLiteral acceptable_keys ->
       let explanation =
         let acceptable_keys =
@@ -1024,21 +1040,6 @@ let messages ~concise ~define location kind =
             in
             [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
       end
-  | RedundantCast _ when concise ->
-      ["The cast is redundant."]
-  | RedundantCast annotation ->
-      [
-        Format.asprintf
-          "The value being cast is already of type `%a`."
-          pp_type annotation;
-      ]
-  | RevealedType { expression; annotation } ->
-      [
-        Format.asprintf
-          "Revealed type for `%s` is `%a`."
-          (Expression.show_sanitized expression)
-          pp_type annotation;
-      ]
   | UnawaitedAwaitable name ->
       [Format.asprintf "`%a` is never awaited." pp_access name]
   | UndefinedAttribute { attribute; origin } ->
@@ -1440,36 +1441,6 @@ let less_or_equal ~resolution left right =
         less_or_equal_mismatch left.mismatch right.mismatch
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         Resolution.less_or_equal resolution ~left ~right
-    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
-      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
-      when left_parameters = right_parameters ->
-        Resolution.less_or_equal resolution ~left ~right
-    | MissingArgument left, MissingArgument right ->
-        Option.equal Access.equal_sanitized left.callee right.callee &&
-        Identifier.equal_sanitized left.name right.name
-    | ProhibitedAny left, ProhibitedAny right
-    | MissingParameterAnnotation left, MissingParameterAnnotation right
-    | MissingReturnAnnotation left, MissingReturnAnnotation right
-    | MissingAttributeAnnotation { missing_annotation = left; _ },
-      MissingAttributeAnnotation { missing_annotation = right; _ }
-    | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when (Access.equal_sanitized left.name right.name) ->
-        begin
-          match left.annotation, right.annotation with
-          | Some left, Some right ->
-              Resolution.less_or_equal resolution ~left ~right
-          | None, None ->
-              true
-          | _ ->
-              false
-        end
-    | NotCallable left, NotCallable right ->
-        Resolution.less_or_equal resolution ~left ~right
-    | RedundantCast left, RedundantCast right ->
-        Resolution.less_or_equal resolution ~left ~right
-    | RevealedType left, RevealedType right ->
-        Expression.equal left.expression right.expression &&
-        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Identifier.equal_sanitized left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
@@ -1510,6 +1481,36 @@ let less_or_equal ~resolution left right =
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ->
         Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
+      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
+      when left_parameters = right_parameters ->
+        Resolution.less_or_equal resolution ~left ~right
+    | MissingArgument left, MissingArgument right ->
+        Option.equal Access.equal_sanitized left.callee right.callee &&
+        Identifier.equal_sanitized left.name right.name
+    | ProhibitedAny left, ProhibitedAny right
+    | MissingParameterAnnotation left, MissingParameterAnnotation right
+    | MissingReturnAnnotation left, MissingReturnAnnotation right
+    | MissingAttributeAnnotation { missing_annotation = left; _ },
+      MissingAttributeAnnotation { missing_annotation = right; _ }
+    | MissingGlobalAnnotation left, MissingGlobalAnnotation right
+      when (Access.equal_sanitized left.name right.name) ->
+        begin
+          match left.annotation, right.annotation with
+          | Some left, Some right ->
+              Resolution.less_or_equal resolution ~left ~right
+          | None, None ->
+              true
+          | _ ->
+              false
+        end
+    | NotCallable left, NotCallable right ->
+        Resolution.less_or_equal resolution ~left ~right
+    | RedundantCast left, RedundantCast right ->
+        Resolution.less_or_equal resolution ~left ~right
+    | RevealedType left, RevealedType right ->
+        Expression.equal left.expression right.expression &&
+        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | TooManyArguments left, TooManyArguments right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
