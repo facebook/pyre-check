@@ -310,7 +310,7 @@ module TypedDictionary : sig
 
   val is_special_mismatch: method_name: string -> position: int -> bool
 
-  val defines: Statement.t list
+  val defines: t_self_expression: Expression.t -> Statement.t list
 end
 
 val remove_undeclared: t -> t

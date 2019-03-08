@@ -2414,9 +2414,29 @@ module TypedDictionary = struct
       in
       List.map ~f:overload
     in
+    let get_overloads =
+      let overloads { name; annotation } =
+        [
+          { annotation = Optional annotation; parameters = Defined [ key_parameter name ] };
+          {
+            annotation = Union [annotation; variable "_T"];
+            parameters = Defined [
+                key_parameter name;
+                Named {
+                  name = "default";
+                  annotation = variable "_T";
+                  default = false;
+                };
+              ];
+          };
+        ];
+      in
+      List.concat_map ~f:overloads
+    in
     [
       { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
       { name = "__setitem__"; special_index = Some 1; overloads = setitem_overloads };
+      { name = "get"; special_index = Some 1; overloads = get_overloads };
     ]
 
   let special_overloads ~fields ~method_name =
@@ -2429,7 +2449,7 @@ module TypedDictionary = struct
     >>| ((=) position)
     |> Option.value ~default:false
 
-  let defines =
+  let defines ~t_self_expression =
     let define ?self_parameter ?return_annotation name =
       Statement.Define {
         name = [ Identifier "TypedDictionary"; Identifier name ];
@@ -2446,6 +2466,7 @@ module TypedDictionary = struct
       }
       |> Node.create_with_default_location
     in
+    define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy" ::
     List.map special_methods ~f:(fun { name; _ } -> define name)
 
 end

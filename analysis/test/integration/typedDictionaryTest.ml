@@ -460,6 +460,58 @@ let test_check_typed_dictionaries _ =
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie
+        v = movie['name']
+        reveal_type(v)
+        v = movie.get('name')
+        reveal_type(v)
+        v = movie.get('name', True)
+        reveal_type(v)
+        v = movie.get('nae', True)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+      "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
+      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        v = movie.keys()
+        reveal_type(v)
+        v = movie.values()
+        reveal_type(v)
+        v = movie.items()
+        reveal_type(v)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.AbstractSet[str]`.";
+      "Revealed type [-1]: Revealed type for `v` is `typing.ValuesView[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.AbstractSet[typing.Tuple[str, typing.Any]]`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        v = movie.copy()
+        reveal_type(v)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`TypedDict `Movie` with fields (name: str, year: int)`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
         movie['name'] += 7
     |}
     [

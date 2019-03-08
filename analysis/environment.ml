@@ -1138,6 +1138,10 @@ module Builder = struct
         }
         class_definitions;
     in
+    let t_self_expression =
+      Access (SimpleAccess ([Identifier "TSelf"]))
+      |> Node.create_with_default_location
+    in
     List.iter
       ~f:(fun (name, bases, body) -> add_special_class ~name ~bases ~body)
       [
@@ -1180,7 +1184,7 @@ module Builder = struct
               |> Type.expression
           };
         ],
-        Type.TypedDictionary.defines;
+        Type.TypedDictionary.defines ~t_self_expression;
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set
@@ -1197,6 +1201,10 @@ module Builder = struct
       aliases
       ~key:(Type.Primitive "PathLike")
       ~data:(Type.Primitive "_PathLike");
+    Hashtbl.set
+      aliases
+      ~key:(Type.Primitive "TSelf")
+      ~data:(Type.variable "_PathLike");
 
     TypeOrder.insert
       (TypeOrder.handler order)
