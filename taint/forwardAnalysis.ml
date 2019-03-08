@@ -32,8 +32,14 @@ module type FUNCTION_CONTEXT = sig
   val definition: Define.t Node.t
   val environment: (module Environment.Handler)
 
-  val add_flow_candidate: Flow.candidate -> unit
+  val check_flow
+    :  location: Location.t
+    -> source_tree: ForwardState.Tree.t
+    -> sink_tree: BackwardState.Tree.t
+    -> unit
+
   val generate_issues: unit -> Flow.issue list
+  val return_sink: BackwardState.Tree.t
 end
 
 
@@ -187,19 +193,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 ~init:tito
                 ~f:convert_tito
             in
-            let flow_candidate =
-              let sink_tree =
-                List.fold
-                  sink_matches
-                  ~f:(combine_sink_taint location)
-                  ~init:BackwardState.Tree.empty
-              in
-              Flow.generate_source_sink_matches
-                ~location
-                ~source_tree:argument_taint
-                ~sink_tree
+            let sink_tree =
+              List.fold
+                sink_matches
+                ~f:(combine_sink_taint location)
+                ~init:BackwardState.Tree.empty
             in
-            FunctionContext.add_flow_candidate flow_candidate;
+            FunctionContext.check_flow ~location ~source_tree:argument_taint ~sink_tree;
             tito
           in
           let tito =
@@ -492,7 +492,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           store_taint_option access_path taint state
 
 
-    let rec analyze_statement ~resolution statement state =
+    let rec analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution value state in
@@ -518,6 +518,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Raise _ -> state
       | Return { expression = Some expression; _ } ->
           let taint = analyze_expression ~resolution expression state in
+          FunctionContext.check_flow
+            ~location
+            ~source_tree:taint
+            ~sink_tree:FunctionContext.return_sink;
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
       | Return { expression = None; _ }
       | Try _
@@ -530,12 +534,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
 
 
-    let forward ?key state ~statement:({ Node.value = statement; _ }) =
+    let forward ?key state ~statement =
       Log.log
         ~section:`Taint
         "State: %a\nAnalyzing statement: %a"
         pp state
-        Statement.pp (Node.create_with_default_location statement);
+        Statement.pp statement;
       let resolution =
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
@@ -583,12 +587,27 @@ let run
         ~key:candidate.Flow.location
         ~data:candidate
 
+    let check_flow ~location ~source_tree ~sink_tree =
+      let flow_candidate =
+        Flow.generate_source_sink_matches
+          ~location
+          ~source_tree
+          ~sink_tree
+      in
+      add_flow_candidate flow_candidate
+
     let generate_issues () =
       let accumulate ~key:_ ~data:candidate issues =
         let new_issues = Flow.generate_issues ~define candidate in
         List.rev_append new_issues issues
       in
       Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
+
+    let return_sink =
+      BackwardState.read
+        ~root:AccessPath.Root.LocalResult
+        ~path:[]
+        existing_model.TaintResult.backward.sink_taint
   end
   in
   let module AnalysisInstance = AnalysisInstance(Context) in

@@ -574,8 +574,8 @@ let test_combined_analysis _ =
           ~kind:`Function
           ~returns:[Sources.UserControlled]
           ~sink_parameters:[
-            { name = "x"; sinks = [Taint.Sinks.Test] };
-            { name = "y"; sinks = [Taint.Sinks.Demo] };
+            { name = "x"; sinks = [Sinks.Test] };
+            { name = "y"; sinks = [Sinks.Demo] };
           ]
           ~tito_parameters:["x"; "z"]
           "qualifier.combined_model";
@@ -599,7 +599,7 @@ let test_skipped_analysis _ =
         outcome
           ~kind:`Function
           ~sink_parameters:[
-            { name = "y"; sinks = [Taint.Sinks.Demo] };
+            { name = "y"; sinks = [Sinks.Demo] };
           ]
           ~tito_parameters:["z"]
           "qualifier.skipped_model";
@@ -624,7 +624,7 @@ let test_sanitized_analysis _ =
         outcome
           ~kind:`Function
           ~sink_parameters:[
-            { name = "y"; sinks = [Taint.Sinks.Demo] };
+            { name = "y"; sinks = [Sinks.Demo] };
           ]
           ~tito_parameters:["z"]
           ~errors:[
@@ -653,15 +653,49 @@ let test_primed_source_analysis _ =
         outcome
           ~kind:`Function
           ~source_parameters:[
-            { name = "y"; sources = [Taint.Sources.UserControlled] }
+            { name = "y"; sources = [Sources.UserControlled] }
           ]
           ~sink_parameters:[
-            { name = "y"; sinks = [Taint.Sinks.RemoteCodeExecution] };
+            { name = "y"; sinks = [Sinks.RemoteCodeExecution] };
           ]
           ~errors:[
             {
               code = 5001;
               pattern = ".*Possible shell injection.*";
+            };
+          ]
+          "qualifier.primed_model";
+      ];
+      iterations = 2;
+    }
+
+
+let test_primed_sink_analysis _ =
+  assert_fixpoint
+    ~models:{|
+      def qualifier.primed_model(x, y: TaintSource[Test]) -> TaintSink[Test]: ...
+    |}
+    {|
+      def primed_model(x, y):
+        return y
+
+      def no_flow(x, y):
+        return x
+    |}
+    ~expect:{
+      expect = [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.Test]
+          ~source_parameters:[
+            { name = "y"; sources = [Sources.Test] }
+          ]
+          ~sink_parameters:[]  (* No backward prop on return sinks *)
+          ~tito_parameters:["y"]
+          ~errors:[
+            {
+              code = 5002;
+              pattern = ".*Test.*";
             };
           ]
           "qualifier.primed_model";
@@ -678,5 +712,6 @@ let () =
     "skipped_analysis">::test_skipped_analysis;
     "sanitized_analysis">::test_sanitized_analysis;
     "primed_source_analysis">::test_primed_source_analysis;
+    "primed_sink_analysis">::test_primed_sink_analysis;
   ]
   |> TestHelper.run_with_taint_models
