@@ -45,6 +45,25 @@ type expectation = {
 }
 
 
+let outcome
+    ~kind
+    ?(source_parameters = [])
+    ?(sink_parameters = [])
+    ?(tito_parameters = [])
+    ?(returns = [])
+    ?(errors = [])
+    define_name =
+  {
+    kind;
+    define_name;
+    source_parameters;
+    sink_parameters;
+    tito_parameters;
+    returns;
+    errors;
+  }
+
+
 let get_model callable =
   let error =
     Base.Error.of_exn (
