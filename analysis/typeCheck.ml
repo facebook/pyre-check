@@ -1298,19 +1298,19 @@ module State = struct
                 ~define:define_node
           in
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
-            let sanitized_access =
-              name
-              |> Identifier.sanitized
-              |> fun name -> [Access.Identifier name]
-            in
-            if Access.show sanitized_access = "*" then
+            let name = name |> Identifier.sanitized in
+            if
+              name = "*" ||
+              Option.is_some given_annotation &&
+              (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
+            then
               state
             else
               emit_error
                 ~state
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
-                    name = sanitized_access;
+                    name = Access.create name;
                     annotation;
                     given_annotation;
                     evidence_locations = [];

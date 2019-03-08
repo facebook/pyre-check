@@ -8,6 +8,7 @@ open IntegrationTest
 
 
 let test_check_missing_parameter _ =
+  (* No annotation given *)
   assert_default_type_errors
     {|
       def foo(x):
@@ -26,6 +27,8 @@ let test_check_missing_parameter _ =
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+
+  (* typing.Any given *)
   assert_strict_type_errors
     {|
       def foo(x: typing.Any) -> int:
@@ -66,6 +69,8 @@ let test_check_missing_parameter _ =
       "Missing parameter annotation [2]: Parameter `x` must have a type " ^
       "that does not contain `Any`."
     ];
+
+  (* Special cases *)
   assert_type_errors
     {|
       def foo(x, *, force_named) -> int:
@@ -80,7 +85,13 @@ let test_check_missing_parameter _ =
       def foo(x: UnknownType) -> int:
         return 1
     |}
-    ["Undefined type [11]: Type `UnknownType` is not defined."]
+    ["Undefined type [11]: Type `UnknownType` is not defined."];
+  assert_type_errors
+    {|
+      def foo(x: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> int:
+        return 1
+    |}
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
 
 
 let test_check_missing_return _ =
