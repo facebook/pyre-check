@@ -29,6 +29,7 @@ type client =
 module TypeQuery: sig
   type request =
     | Attributes of Access.t
+    | ComputeHashesToKeys
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
     | Join of Access.t * Access.t
@@ -79,9 +80,16 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type key_mapping = {
+    hash: string;
+    key: string;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type base_response =
     | Boolean of bool
     | FoundAttributes of attribute list
+    | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list

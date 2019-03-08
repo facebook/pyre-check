@@ -966,6 +966,46 @@ let test_query context =
            |> Path.absolute)))
 
 
+let test_compute_hashes_to_keys context =
+  let open Protocol in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let (module Handler: Analysis.Environment.Handler) = (module Service.Environment.SharedHandler) in
+  Handler.TypeOrderHandler.add_key 15;
+  Handler.TypeOrderHandler.add_key 16;
+  Handler.TypeOrderHandler.set
+    (Handler.TypeOrderHandler.annotations ())
+    ~key:15
+    ~data:(Type.Primitive "fifteen");
+  Handler.TypeOrderHandler.set
+    (Handler.TypeOrderHandler.annotations ())
+    ~key:16
+    ~data:(Type.Primitive "sixteen");
+  let expected_binding key =
+    let hash =
+      Service.EnvironmentSharedMemory.OrderAnnotations.string_of_key key
+      |> (fun key -> Memory.unsafe_little_endian_representation ~key)
+      |> Int64.to_string
+    in
+    let key =
+      (Prefix.make_key
+         Service.EnvironmentSharedMemory.OrderAnnotationValue.prefix
+         (Int.to_string key))
+    in
+    { TypeQuery.hash; key }
+  in
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
+    (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping [
+         expected_binding 15;
+         expected_binding 16;
+       ]))))
+
+
 let test_connect context =
   let local_root =
     bracket_tmpdir context
@@ -1618,6 +1658,7 @@ let () =
     [
       "server_stops", test_server_stops;
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
+      "compute_hashes_to_keys", test_compute_hashes_to_keys;
       "connect", test_connect;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
       "json_socket", test_json_socket;

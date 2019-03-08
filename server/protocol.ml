@@ -44,6 +44,7 @@ end
 module TypeQuery = struct
   type request =
     | Attributes of Access.t
+    | ComputeHashesToKeys
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
     | Join of Access.t * Access.t
@@ -95,9 +96,16 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
+  type key_mapping = {
+    hash: string;
+    key: string;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type base_response =
     | Boolean of bool
     | FoundAttributes of attribute list
+    | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
     | FoundPath of string
     | FoundSignature of found_signature list
@@ -116,6 +124,8 @@ module TypeQuery = struct
         `Assoc ["path", `String (Path.absolute path)]
     | FoundAttributes attributes ->
         `Assoc ["attributes", `List (List.map attributes ~f:attribute_to_yojson)]
+    | FoundKeyMapping associative_list ->
+        `Assoc (List.map associative_list ~f:(fun { hash; key } -> (hash, `String key)))
     | FoundMethods methods ->
         `Assoc ["methods", `List (List.map methods ~f:method_representation_to_yojson)]
     | FoundPath path ->

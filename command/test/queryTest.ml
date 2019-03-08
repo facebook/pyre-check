@@ -121,7 +121,8 @@ let test_parse_query context =
 
   assert_parses
     "dump_memory_to_sqlite()"
-    (DumpMemoryToSqlite (Path.create_relative ~root:(mock_path "") ~relative:".pyre/memory.sqlite"));
+    (DumpMemoryToSqlite
+       (Path.create_relative ~root:(mock_path "") ~relative:".pyre/memory.sqlite"));
   let memory_file, _ = bracket_tmpfile context in
   assert_parses
     (Format.sprintf "dump_memory_to_sqlite('%s')" memory_file)
@@ -142,7 +143,10 @@ let test_parse_query context =
           ~relative:"absolute.sqlite"));
   assert_parses "path_of_module(a.b.c)" (PathOfModule (Expression.Access.create "a.b.c"));
   assert_fails_to_parse "path_of_module('a.b.c')";
-  assert_fails_to_parse "path_of_module(a.b, b.c)"
+  assert_fails_to_parse "path_of_module(a.b, b.c)";
+
+  assert_parses "compute_hashes_to_keys()" ComputeHashesToKeys;
+  assert_fails_to_parse "compute_hashes_to_keys(foo)"
 
 
 let () =

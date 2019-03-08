@@ -427,6 +427,32 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 "No class definition found for %s"
                 (Expression.Access.show annotation)))
 
+    | TypeQuery.ComputeHashesToKeys ->
+        let open Service.EnvironmentSharedMemory in
+        (* Type order. *)
+        let map =
+          match OrderKeys.get "Order" with
+          | Some keys ->
+              let add_key_mappings map key =
+                let hash =
+                  OrderAnnotations.string_of_key key
+                  |> (fun key -> Memory.unsafe_little_endian_representation ~key)
+                  |> Int64.to_string
+                in
+                Map.add_exn
+                  map
+                  ~key:hash
+                  ~data:(Prefix.make_key OrderAnnotationValue.prefix (IntKey.to_string key))
+              in
+              List.fold keys ~init:String.Map.empty ~f:add_key_mappings
+          | None ->
+              String.Map.empty
+        in
+        map
+        |> Map.to_alist
+        |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
+        |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
+
     | TypeQuery.DumpDependencies file ->
         let () =
           try

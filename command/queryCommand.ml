@@ -55,6 +55,8 @@ let parse_query
         match String.lowercase name, arguments with
         | "attributes", [name] ->
             Request.TypeQueryRequest (Attributes (access name))
+        | "compute_hashes_to_keys", [] ->
+            Request.TypeQueryRequest ComputeHashesToKeys
         | "dump_dependencies", [path] ->
             let file =
               Path.create_relative ~root ~relative:(string path)
