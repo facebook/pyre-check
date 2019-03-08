@@ -711,13 +711,13 @@ module State = struct
       }
 
 
-  let add_error ~state:({ errors; _ } as state) error =
+  let emit_raw_error ~state:({ errors; _ } as state) error =
     { state with errors = Set.add errors error }
 
 
   let emit_error ~state ~location ~kind ~define =
     Error.create ~location ~kind ~define
-    |> add_error ~state
+    |> emit_raw_error ~state
 
 
   type resolved = {
@@ -1935,7 +1935,7 @@ module State = struct
               None
         in
         Option.is_some error,
-        error >>| add_error ~state |> Option.value ~default:state,
+        error >>| emit_raw_error ~state |> Option.value ~default:state,
         Annotation.annotation resolved
     in
     match value with
@@ -2880,7 +2880,7 @@ module State = struct
                           |> Option.some
                     end
               in
-              let state = error >>| add_error ~state |> Option.value ~default:state in
+              let state = error >>| emit_raw_error ~state |> Option.value ~default:state in
               let is_valid_annotation =
                 error
                 >>| Error.kind
@@ -3217,7 +3217,7 @@ module State = struct
                 in
                 match contradiction_error, value with
                 | Some error, _ ->
-                    add_error ~state:{ state with bottom = true } error
+                    emit_raw_error ~state:{ state with bottom = true } error
                 | _, { Node.value = Access (Access.SimpleAccess access); _ } ->
                     { state with resolution = resolve ~access }
                 | _ ->
@@ -3458,7 +3458,7 @@ module State = struct
           forward_access ~f:add_import_error ~resolution ~initial:[] import
         in
         List.concat_map ~f:to_import_error imports
-        |> List.fold ~init:state ~f:(fun state error -> add_error ~state error)
+        |> List.fold ~init:state ~f:(fun state error -> emit_raw_error ~state error)
 
     | Raise (Some expression) ->
         forward_expression ~state ~expression
