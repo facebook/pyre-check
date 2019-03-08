@@ -3430,6 +3430,30 @@ module State = struct
                     let resolution = Resolution.set_local resolution ~access ~annotation:refined in
                     { state with resolution }
               end
+          | ComparisonOperator {
+              ComparisonOperator.left = { Node.value = Access (SimpleAccess access); _ };
+              operator = ComparisonOperator.In;
+              right;
+            } ->
+              let { resolved; _ } = forward_expression ~state ~expression:right in
+              let iterable = Resolution.join resolution resolved (Type.iterable Type.Bottom) in
+              if Type.is_iterable iterable then
+                let refined = Annotation.create (Type.single_parameter iterable) in
+                match Resolution.get_local ~global_fallback:false resolution ~access with
+                | Some previous ->
+                    if Refinement.less_or_equal ~resolution refined previous then
+                      let resolution =
+                        Resolution.set_local resolution ~access ~annotation:refined
+                      in
+                      { state with resolution }
+                    else
+                      (* Keeping previous state, since it is more refined. *)
+                      state
+                | None ->
+                    let resolution = Resolution.set_local resolution ~access ~annotation:refined in
+                    { state with resolution }
+              else
+                state
           | _ ->
               state
         end

@@ -307,7 +307,7 @@ type definer =
 
 
 and stripped =
-  | Attribute of string
+    | Attribute of string
   | MissingAttribute of { name: string; missing_definer: definer }
   | Unknown
   | SignatureFound of { callable: string; callees: string list }
@@ -317,9 +317,9 @@ and stripped =
 
 
 and step = {
-  annotation: Type.t;
-  element: stripped;
-}
+    annotation: Type.t;
+    element: stripped;
+  }
 [@@deriving compare, eq, show]
 
 
@@ -2585,6 +2585,19 @@ let test_forward_statement _ =
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer]
     "assert all(x)"
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer];
+
+  assert_forward
+    ["x", Type.dictionary ~key:Type.integer ~value:Type.string; "y", Type.float]
+    "assert y in x"
+    ["x", Type.dictionary ~key:Type.integer ~value:Type.string; "y", Type.integer];
+  assert_forward
+    ["x", Type.list Type.string; "y", Type.union [Type.integer; Type.string]]
+    "assert y in x"
+    ["x", Type.list Type.string; "y", Type.string];
+  assert_forward
+    ["x", Type.list Type.Top; "y", Type.integer]
+    "assert y in x"
+    ["x", Type.list Type.Top; "y", Type.integer];
 
   (* Isinstance. *)
   assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
