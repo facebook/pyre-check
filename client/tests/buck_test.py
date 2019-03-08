@@ -193,5 +193,6 @@ class BuckTest(unittest.TestCase):
         )  # noqa
         with patch.object(buck, "_normalize") as mock_normalize:
             with patch.object(buck, "_build_targets") as mock_build:
+                mock_normalize.return_value = ["normalized"]
                 buck.generate_source_directories(["target"], build=True, prompt=True)
-                mock_build.assert_not_called()
+                mock_build.assert_has_calls([call(["normalized"], ["target"])])

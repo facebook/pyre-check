@@ -150,10 +150,7 @@ def resolve_analysis_directory(
     if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(source_directories.pop(), filter_paths)
     else:
-        build = arguments.build or arguments.command in [
-            commands.Restart,
-            commands.Start,
-        ]
+        build = arguments.build or arguments.command in [commands.Restart]
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
             targets=targets,

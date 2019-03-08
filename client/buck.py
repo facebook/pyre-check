@@ -167,11 +167,13 @@ def generate_source_directories(
 ):
     original_targets = list(original_targets)
     targets = _normalize(original_targets)
+    if build:
+        _build_targets(targets, original_targets)
     buck_out = _find_built_source_directories(targets)
     source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
-        if build or not prompt or log.get_yes_no_input("Build target?"):
+        if (not build) and not prompt or log.get_yes_no_input("Build target?"):
             # Build all targets to ensure buck doesn't remove some link trees as we go.
             _build_targets(targets, original_targets)
             buck_out = _find_built_source_directories(targets)
