@@ -46,7 +46,12 @@ let assert_taint source expected =
         Interprocedural.Callable.pp
         call_target
     in
-    let backward = BackwardAnalysis.run ~environment ~define in
+    let backward =
+      BackwardAnalysis.run
+        ~environment
+        ~define
+        ~existing_model:Taint.Result.empty_model
+    in
     let model = { Taint.Result.empty_model with backward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
@@ -67,6 +72,7 @@ let test_plus_taint_in_taint_out _ =
       {
         kind = `Function;
         define_name = "qualifier.test_plus_taint_in_taint_out";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tainted_parameter1"];
         returns = [];
@@ -87,6 +93,7 @@ let test_concatenate_taint_in_taint_out _ =
       {
         kind = `Function;
         define_name = "qualifier.test_concatenate_taint_in_taint_out";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tainted_parameter1"];
         returns = [];
@@ -108,6 +115,7 @@ let test_call_taint_in_taint_out _ =
       {
         kind = `Function;
         define_name = "qualifier.test_base_tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tainted_parameter1"];
         returns = [];
@@ -116,6 +124,7 @@ let test_call_taint_in_taint_out _ =
       {
         kind = `Function;
         define_name = "qualifier.test_called_tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tainted_parameter0"];
         returns = [];
@@ -136,6 +145,7 @@ let test_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_sink";
+        source_parameters = [];
         sink_parameters = [
           {
             name = "tainted_parameter1";
@@ -161,6 +171,7 @@ let test_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_rce_sink";
+        source_parameters = [];
         sink_parameters = [
           {
             name = "tainted_parameter1";
@@ -199,6 +210,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink";
+        source_parameters = [];
         sink_parameters = [{ name = "input"; sinks = [Taint.Sinks.RemoteCodeExecution] }];
         tito_parameters = [];
         returns = [];
@@ -207,6 +219,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink_with_shell_false_explicit";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -215,6 +228,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink_with_shell_false_implicit";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -223,6 +237,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink_with_string_argument";
+        source_parameters = [];
         sink_parameters = [{ name = "input"; sinks = [Taint.Sinks.RemoteCodeExecution] }];
         tito_parameters = [];
         returns = [];
@@ -231,6 +246,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink_with_list_literal";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -239,6 +255,7 @@ let test_hardcoded_rce_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_hardcoded_rce_sink_with_list_argument";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -262,6 +279,7 @@ let test_rce_and_test_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_rce_and_test_sink";
+        source_parameters = [];
         sink_parameters = [
           { name = "test_only"; sinks = [Taint.Sinks.Test]; };
           { name = "rce_only"; sinks = [Taint.Sinks.RemoteCodeExecution]; };
@@ -291,6 +309,7 @@ let test_tito_sink _ =
       {
         kind = `Function;
         define_name = "qualifier.test_tito_sink";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter1"; sinks = [Taint.Sinks.Test]; };
         ];
@@ -321,6 +340,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_methods";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
@@ -349,6 +369,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_methods";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -374,6 +395,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_methods";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
@@ -401,6 +423,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_methods";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -431,6 +454,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_union_receiver_types";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
@@ -469,6 +493,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Method;
         define_name = "qualifier.Foo.qux";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -477,6 +502,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Method;
         define_name = "qualifier.Baz.qux";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
@@ -487,6 +513,7 @@ let test_apply_method_model_at_call_site _ =
       {
         kind = `Function;
         define_name = "qualifier.taint_across_union_receiver_types";
+        source_parameters = [];
         sink_parameters = [
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ];
@@ -513,6 +540,7 @@ let test_tito_via_receiver _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_via_receiver";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["parameter"];
         returns = [];
@@ -521,6 +549,7 @@ let test_tito_via_receiver _ =
       {
         kind = `Function;
         define_name = "qualifier.Foo.tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["self"];
         returns = [];
@@ -542,6 +571,7 @@ let test_sequential_call_path _ =
       {
         kind = `Method;
         define_name = "qualifier.Foo.sink";
+        source_parameters = [];
         sink_parameters = [
           { name = "argument"; sinks = [Taint.Sinks.Test] };
         ];
@@ -566,6 +596,7 @@ let test_sequential_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.sequential_with_single_sink";
+        source_parameters = [];
         sink_parameters = [
           { name = "first"; sinks = [Taint.Sinks.Test] };
         ];
@@ -590,6 +621,7 @@ let test_sequential_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.sequential_with_two_sinks";
+        source_parameters = [];
         sink_parameters = [
           { name = "first"; sinks = [Taint.Sinks.Test] };
           { name = "second"; sinks = [Taint.Sinks.Test] };
@@ -616,6 +648,7 @@ let test_sequential_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.sequential_with_redefine";
+        source_parameters = [];
         sink_parameters = [
           { name = "first"; sinks = [Taint.Sinks.Test] };
           { name = "second"; sinks = [Taint.Sinks.Test] };
@@ -642,6 +675,7 @@ let test_sequential_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.sequential_with_distinct_sinks";
+        source_parameters = [];
         sink_parameters = [
           { name = "first"; sinks = [Taint.Sinks.Test] };
           { name = "second"; sinks = [Taint.Sinks.Test] };
@@ -667,6 +701,7 @@ let test_sequential_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.sequential_with_self_propagation";
+        source_parameters = [];
         sink_parameters = [
           { name = "first"; sinks = [Taint.Sinks.Test] };
           { name = "second"; sinks = [Taint.Sinks.Test] };
@@ -694,6 +729,7 @@ let test_chained_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.chained";
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter0"; sinks = [Taint.Sinks.Test] };
           { name = "parameter2"; sinks = [Taint.Sinks.Test] };
@@ -721,6 +757,7 @@ let test_chained_call_path _ =
       {
         kind = `Function;
         define_name = "qualifier.chained_with_tito";
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter0"; sinks = [Taint.Sinks.Test] };
           { name = "parameter2"; sinks = [Taint.Sinks.Test] };
@@ -773,6 +810,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_sink";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -783,6 +821,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -791,6 +830,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_same_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -799,6 +839,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_different_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -807,6 +848,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_unknown_read_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -815,6 +857,7 @@ let test_dictionary _ =
       {
         kind = `Function;
         define_name = "qualifier.dictionary_unknown_write_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -857,6 +900,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_iterator";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -867,6 +911,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_expression";
+        source_parameters = [];
         sink_parameters = [
           { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
@@ -877,6 +922,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["data"];
         returns = [];
@@ -885,6 +931,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_set_iterator";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -895,6 +942,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_set_expression";
+        source_parameters = [];
         sink_parameters = [
           { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
@@ -905,6 +953,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_set";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["data"];
         returns = [];
@@ -913,6 +962,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_generator_iterator";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -923,6 +973,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_generator_expression";
+        source_parameters = [];
         sink_parameters = [
           { name = "data"; sinks = [Taint.Sinks.Test] };
         ];
@@ -933,6 +984,7 @@ let test_comprehensions _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_generator";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["data"];
         returns = [];
@@ -975,6 +1027,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_list";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -985,6 +1038,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_same_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -993,6 +1047,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_different_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1001,6 +1056,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_unknown_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1009,6 +1065,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_pattern_same_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1017,6 +1074,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_pattern_different_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1025,6 +1083,7 @@ let test_list _ =
       {
         kind = `Function;
         define_name = "qualifier.list_pattern_star_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1063,6 +1122,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_tuple";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1073,6 +1133,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.tuple_same_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1081,6 +1142,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.tuple_different_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1089,6 +1151,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.tuple_unknown_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1097,6 +1160,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.tuple_pattern_same_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1105,6 +1169,7 @@ let test_tuple _ =
       {
         kind = `Function;
         define_name = "qualifier.tuple_pattern_different_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1127,6 +1192,7 @@ let test_lambda _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_lambda";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1137,6 +1203,7 @@ let test_lambda _ =
       {
         kind = `Function;
         define_name = "qualifier.lambda_tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1163,6 +1230,7 @@ let test_set _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_set";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1173,6 +1241,7 @@ let test_set _ =
       {
         kind = `Function;
         define_name = "qualifier.set_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1181,6 +1250,7 @@ let test_set _ =
       {
         kind = `Function;
         define_name = "qualifier.set_unknown_index";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1216,6 +1286,7 @@ let test_starred _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_starred";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1226,6 +1297,7 @@ let test_starred _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_starred_starred";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1236,6 +1308,7 @@ let test_starred _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_in_starred";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1244,6 +1317,7 @@ let test_starred _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_in_starred_starred";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1280,6 +1354,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_then";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1290,6 +1365,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_else";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1300,6 +1376,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_both";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg1"; sinks = [Taint.Sinks.Test] };
           { name = "arg2"; sinks = [Taint.Sinks.Test] };
@@ -1311,6 +1388,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_cond";
+        source_parameters = [];
         sink_parameters = [
           { name = "cond"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1321,6 +1399,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_in_then";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1329,6 +1408,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_in_else";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1337,6 +1417,7 @@ let test_ternary _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_in_both";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg1"; "arg2"];
         returns = [];
@@ -1358,6 +1439,7 @@ let test_unary _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_unary";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1368,6 +1450,7 @@ let test_unary _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_via_unary";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1395,6 +1478,7 @@ let test_yield _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_yield";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1405,6 +1489,7 @@ let test_yield _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_via_yield";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1413,6 +1498,7 @@ let test_yield _ =
       {
         kind = `Function;
         define_name = "qualifier.sink_in_yield_from";
+        source_parameters = [];
         sink_parameters = [
           { name = "arg"; sinks = [Taint.Sinks.Test] };
         ];
@@ -1423,6 +1509,7 @@ let test_yield _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_via_yield_from";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1453,6 +1540,7 @@ let test_named_arguments _ =
       {
         kind = `Function;
         define_name = "qualifier.with_kw";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["**"];
         returns = [];
@@ -1461,6 +1549,7 @@ let test_named_arguments _ =
       {
         kind = `Function;
         define_name = "qualifier.no_kw_tito";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1469,6 +1558,7 @@ let test_named_arguments _ =
       {
         kind = `Function;
         define_name = "qualifier.no_kw_tito_with_named_args";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1477,6 +1567,7 @@ let test_named_arguments _ =
       {
         kind = `Function;
         define_name = "qualifier.kw_tito_with_named_args";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg1"];
         returns = [];
@@ -1485,6 +1576,7 @@ let test_named_arguments _ =
       {
         kind = `Function;
         define_name = "qualifier.kw_tito_with_dict";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["dict"];
         returns = [];
@@ -1661,6 +1753,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.before_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["b"];
         returns = [];
@@ -1669,6 +1762,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.at_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["*"];
         returns = [];
@@ -1677,6 +1771,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.after_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["c"];
         returns = [];
@@ -1685,6 +1780,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.star_star_q";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["**"];
         returns = [];
@@ -1693,6 +1789,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.star_star_all";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["**"];
         returns = [];
@@ -1701,6 +1798,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_positional_before_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1709,6 +1807,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_positional_at_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate"; "arg"];
         returns = [];
@@ -1717,6 +1816,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_positional_at_star_plus_one";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate"; "arg"];
         returns = [];
@@ -1725,6 +1825,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_positional_at_all_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate"; "arg"];
         returns = [];
@@ -1733,6 +1834,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_named_after_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate"; "arg"];
         returns = [];
@@ -1741,6 +1843,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_named_as_positional";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"];
         returns = [];
@@ -1749,6 +1852,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_named_as_star_star_q";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate_one"; "approximate_two"; "arg"];
         returns = [];
@@ -1757,6 +1861,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_named_as_star_star_all";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate_one"; "approximate_two"; "arg"];
         returns = [];
@@ -1765,6 +1870,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_list_before_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["arg"; "listarg"];
         returns = [];
@@ -1773,6 +1879,7 @@ let test_actual_parameter_matching _ =
       {
         kind = `Function;
         define_name = "qualifier.pass_list_at_star";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["approximate"; "listarg_one"; "listarg_two"];
         returns = [];
@@ -1852,6 +1959,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Method;
         define_name = "qualifier.Data.__init__";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["self"; "tito"];
         returns = [];
@@ -1860,6 +1968,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.tito_via_construction";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1868,6 +1977,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.no_tito_via_construction";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1876,6 +1986,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.precise_tito_via_construction";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1884,6 +1995,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.deep_tito_via_assignments";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1892,6 +2004,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.apply_deep_tito_some";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1900,6 +2013,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.apply_deep_tito_none";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1908,6 +2022,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.deep_tito_via_objects";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1916,6 +2031,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.apply_deep_tito_via_objects_some";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         returns = [];
@@ -1924,6 +2040,7 @@ let test_constructor_argument_tito _ =
       {
         kind = `Function;
         define_name = "qualifier.apply_deep_tito_via_objects_none";
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         returns = [];
@@ -1933,6 +2050,7 @@ let test_constructor_argument_tito _ =
         kind = `Function;
         define_name = "qualifier.deep_tito_wrapper";
         returns = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         errors = [];
@@ -1941,6 +2059,7 @@ let test_constructor_argument_tito _ =
         kind = `Function;
         define_name = "qualifier.deep_tito_via_multiple";
         returns = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         errors = [];
@@ -1949,6 +2068,7 @@ let test_constructor_argument_tito _ =
         kind = `Function;
         define_name = "qualifier.test_tito_via_multiple_some";
         returns = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         errors = [];
@@ -1957,6 +2077,7 @@ let test_constructor_argument_tito _ =
         kind = `Function;
         define_name = "qualifier.test_tito_via_multiple_some_more";
         returns = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["tito"];
         errors = [];
@@ -1965,6 +2086,7 @@ let test_constructor_argument_tito _ =
         kind = `Function;
         define_name = "qualifier.test_tito_via_multiple_none";
         returns = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];

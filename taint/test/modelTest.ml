@@ -46,6 +46,7 @@ let test_source_models _ =
         kind = `Function;
         define_name = "taint";
         returns = [Sources.NamedSource "TestTest"];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
@@ -58,6 +59,7 @@ let test_source_models _ =
         kind = `Object;
         define_name = "os.environ";
         returns = [Sources.NamedSource "TestTest"];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
@@ -70,6 +72,7 @@ let test_source_models _ =
         kind = `Object;
         define_name = "django.http.Request.GET";
         returns = [Sources.NamedSource "TestTest"];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
@@ -82,6 +85,7 @@ let test_source_models _ =
         kind = `Function;
         define_name = "taint";
         returns = [Sources.Test; Sources.UserControlled];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
@@ -102,6 +106,7 @@ let test_sink_models _ =
         define_name = "sink";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }
         ];
@@ -117,6 +122,7 @@ let test_sink_models _ =
         define_name = "sink";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter1"; sinks = [Sinks.Test] }
         ];
@@ -132,6 +138,7 @@ let test_sink_models _ =
         define_name = "sink";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter0"; sinks = [Sinks.Test] };
           { name = "parameter1"; sinks = [Sinks.Test] }
@@ -148,6 +155,7 @@ let test_sink_models _ =
         define_name = "sink";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter0"; sinks = [Sinks.Test] };
           { name = "parameter1"; sinks = [Sinks.Test] }
@@ -163,6 +171,7 @@ let test_sink_models _ =
         kind = `Function;
         define_name = "thrift";
         returns = [Taint.Sources.Thrift];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter0"; sinks = [Sinks.Thrift] };
         ];
@@ -178,6 +187,7 @@ let test_sink_models _ =
         kind = `Function;
         define_name = "xss";
         returns = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter"; sinks = [Sinks.XSS] };
         ];
@@ -193,6 +203,7 @@ let test_sink_models _ =
         kind = `Function;
         define_name = "multiple";
         returns = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter"; sinks = [Sinks.Thrift; Sinks.XSS] };
         ];
@@ -211,6 +222,7 @@ let test_taint_in_taint_out_models _ =
         define_name = "tito";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["parameter"]
       };
@@ -226,6 +238,7 @@ let test_taint_in_taint_out_models_alternate _ =
         define_name = "tito";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["parameter"]
       };
@@ -241,6 +254,8 @@ let test_union_models _ =
         define_name = "both";
         returns = [];
         errors = [];
+        source_parameters = [
+        ];
         sink_parameters = [
           { name = "parameter"; sinks = [Sinks.XSS] };
         ];
@@ -258,6 +273,7 @@ let test_source_breadcrumbs _ =
         define_name = "source";
         returns = [Sources.Test];
         errors = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = [];
       };
@@ -273,6 +289,7 @@ let test_sink_breadcrumbs _ =
         define_name = "sink";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [
           { name = "parameter"; sinks = [Sinks.Test] };
         ];
@@ -290,6 +307,7 @@ let test_tito_breadcrumbs _ =
         define_name = "tito";
         returns = [];
         errors = [];
+        source_parameters = [];
         sink_parameters = [];
         tito_parameters = ["parameter"];
       };

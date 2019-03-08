@@ -11,4 +11,5 @@ open Statement
 val run
   :  environment: (module Environment.Handler)
   -> define: Define.t Node.t
+  -> existing_model: TaintResult.call_model
   -> TaintResult.Backward.model

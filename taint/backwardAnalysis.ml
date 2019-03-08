@@ -578,7 +578,10 @@ let extract_tito_and_sink_models parameters entry_taint =
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run ~environment ~define:({ Node.value = { Define.parameters; name; _ }; _ } as define) =
+let run
+    ~environment
+    ~define:({ Node.value = { Define.parameters; name; _ }; _ } as define)
+    ~existing_model:_ =
   let module AnalysisInstance =
     AnalysisInstance(struct
       let definition = define

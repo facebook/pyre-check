@@ -291,6 +291,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.rce_problem";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -304,6 +305,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.match_flows";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -317,6 +319,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.match_flows_multiple";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -330,6 +333,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.match_via_methods";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -343,6 +347,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.no_match_via_methods";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -351,6 +356,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.match_via_receiver";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -364,6 +370,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.qux";
           returns = [];
+          source_parameters = [];
           sink_parameters = [
             { name = "arg"; sinks = [Taint.Sinks.Test] }
           ];
@@ -374,6 +381,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.bad";
           returns = [];
+          source_parameters = [];
           sink_parameters = [
             { name = "arg"; sinks = [Taint.Sinks.Test] }
           ];
@@ -384,6 +392,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.bar";
           returns = [Sources.Test];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -392,6 +401,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.some_source";
           returns = [Sources.Test];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -400,6 +410,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.list_sink";
           returns = [];
+          source_parameters = [];
           sink_parameters = [
             { name = "list"; sinks = [Taint.Sinks.Test] }
           ];
@@ -410,6 +421,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.no_list_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -418,6 +430,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.list_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -431,6 +444,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.test_getattr_obj_no_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -439,6 +453,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.test_getattr_field_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = ["some_obj"];
           errors = [
@@ -452,6 +467,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.deep_tito";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = ["tito"];
           errors = [];
@@ -460,6 +476,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.test_deep_tito_no_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [];
@@ -468,6 +485,7 @@ let test_fixpoint _ =
           kind = `Function;
           define_name = "qualifier.test_deep_tito_match";
           returns = [];
+          source_parameters = [];
           sink_parameters = [];
           tito_parameters = [];
           errors = [
@@ -626,6 +644,7 @@ let test_combined_analysis _ =
           define_name = "qualifier.combined_model";
           returns = [Sources.UserControlled];
           errors = [];
+          source_parameters = [];
           sink_parameters = [
             { name = "x"; sinks = [Taint.Sinks.Test] };
             { name = "y"; sinks = [Taint.Sinks.Demo] };
@@ -654,6 +673,7 @@ let test_skipped_analysis _ =
           define_name = "qualifier.skipped_model";
           returns = [];
           errors = [];
+          source_parameters = [];
           sink_parameters = [
             { name = "y"; sinks = [Taint.Sinks.Demo] };
           ];
@@ -687,6 +707,7 @@ let test_sanitized_analysis _ =
               pattern = ".*";
             };
           ];
+          source_parameters = [];
           sink_parameters = [
             { name = "y"; sinks = [Taint.Sinks.Demo] };
           ];
@@ -697,6 +718,40 @@ let test_sanitized_analysis _ =
     }
 
 
+let test_primed_source_analysis _ =
+  assert_fixpoint
+    ~models:{|
+      def qualifier.primed_model(x, y: TaintSource[UserControlled]): ...
+    |}
+    {|
+      def primed_model(x, y):
+        eval(y)
+    |}
+    ~expect:{
+      expect = [
+        {
+          kind = `Function;
+          define_name = "qualifier.primed_model";
+          returns = [];
+          errors = [
+            {
+              code = 5001;
+              pattern = ".*Possible shell injection.*";
+            };
+          ];
+          source_parameters = [
+            { name = "y"; sources = [Taint.Sources.UserControlled] }
+          ];
+          sink_parameters = [
+            { name = "y"; sinks = [Taint.Sinks.RemoteCodeExecution] };
+          ];
+          tito_parameters = [];
+        };
+      ];
+      iterations = 2;
+    }
+
+
 let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
@@ -704,5 +759,6 @@ let () =
     "combined_analysis">::test_combined_analysis;
     "skipped_analysis">::test_skipped_analysis;
     "sanitized_analysis">::test_sanitized_analysis;
+    "primed_source_analysis">::test_primed_source_analysis;
   ]
   |> TestHelper.run_with_taint_models

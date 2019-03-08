@@ -13,7 +13,7 @@ type t =
   | Test
   | Thrift
   | UserControlled
-[@@deriving compare, sexp, show, hash]
+[@@deriving compare, eq, sexp, show, hash]
 
 val parse:
   allowed: string list

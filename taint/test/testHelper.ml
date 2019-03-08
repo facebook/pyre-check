@@ -22,6 +22,12 @@ type parameter_taint = {
 }
 
 
+type parameter_source_taint = {
+  name: string;
+  sources: Taint.Sources.t list;
+}
+
+
 type error_expectation = {
   code: int;
   pattern: string;
@@ -31,6 +37,7 @@ type error_expectation = {
 type expectation = {
   kind: [`Function | `Method | `Override | `Object];
   define_name: string;
+  source_parameters: parameter_source_taint list;
   sink_parameters: parameter_taint list;
   tito_parameters: string list;
   returns: Taint.Sources.t list;
@@ -61,7 +68,7 @@ let create_callable kind define_name =
 
 let check_expectation
     ?(get_model = get_model)
-    { define_name; sink_parameters; tito_parameters; returns; errors; kind }
+    { define_name; source_parameters; sink_parameters; tito_parameters; returns; errors; kind }
   =
   let callable = create_callable kind define_name in
   let open Taint.Result in
@@ -82,15 +89,39 @@ let check_expectation
     | _ ->
         sink_map
   in
+  let extract_sources_by_parameter_name sink_map (root, source_tree) =
+    match AccessPath.Root.parameter_name root with
+    | Some name ->
+        let sinks =
+          Domains.ForwardState.Tree.collapse source_tree
+          |> Domains.ForwardTaint.leaves
+        in
+        let sinks =
+          String.Map.find sink_map name
+          |> Option.value ~default:[]
+          |> List.rev_append sinks
+          |> List.dedup_and_sort ~compare:Taint.Sources.compare
+        in
+        String.Map.set sink_map ~key:name ~data:sinks
+    | _ ->
+        sink_map
+  in
   let backward, forward =
     let { backward; forward; _ } = get_model callable in
     backward, forward
   in
-  let taint_map =
+  let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue
       backward.sink_taint
       ~f:extract_sinks_by_parameter_name
+      ~init:String.Map.empty
+  in
+  let parameter_source_taint_map =
+    Domains.ForwardState.fold
+      Domains.ForwardState.KeyValue
+      forward.source_taint
+      ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
   in
   let extract_tito_parameter_name positions root =
@@ -125,8 +156,32 @@ let check_expectation
         (* Okay, we may have outcomes we don't care about *)
         ()
   in
+  let check_each_source_parameter ~key:name ~data =
+    match data with
+    | `Both (expected, actual) ->
+        assert_equal
+          ~cmp:(List.equal ~equal:Taint.Sources.equal)
+          ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sources.t list)])
+          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
+          expected
+          actual
+    | `Left expected ->
+        assert_equal
+          ~cmp:(List.equal ~equal:Taint.Sources.equal)
+          ~printer:(fun list -> Sexp.to_string [%message (list: Taint.Sources.t list)])
+          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
+          expected
+          []
+    | `Right _ ->
+        (* Okay, we may have outcomes we don't care about *)
+        ()
+  in
   let expected_sinks =
     List.map ~f:(fun { name; sinks; } -> name, sinks) sink_parameters
+    |> String.Map.of_alist_exn
+  in
+  let expected_parameter_sources =
+    List.map ~f:(fun { name; sources; } -> name, sources) source_parameters
     |> String.Map.of_alist_exn
   in
   (* Check sources. *)
@@ -177,14 +232,29 @@ let check_expectation
   (* Check sinks. *)
   assert_equal
     (Map.length expected_sinks)
-    (Map.length taint_map)
+    (Map.length sink_taint_map)
     ~printer:Int.to_string
     ~msg:(
       Format.sprintf
-        "Define %s: List of tainted parameters differ in length."
+        "Define %s: List of sink tainted parameters differ in length."
         define_name
     );
-  String.Map.iter2 ~f:check_each_sink expected_sinks taint_map;
+  String.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
+
+  (* Check parameter sources. *)
+  assert_equal
+    (Map.length expected_parameter_sources)
+    (Map.length parameter_source_taint_map)
+    ~printer:Int.to_string
+    ~msg:(
+      Format.sprintf
+        "Define %s: List of source tainted parameters differ in length."
+        define_name
+    );
+  String.Map.iter2
+    ~f:check_each_source_parameter
+    expected_parameter_sources
+    parameter_source_taint_map;
 
   let expected_tito = tito_parameters |> String.Set.of_list in
   assert_equal

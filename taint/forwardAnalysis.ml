@@ -20,7 +20,11 @@ module type FixpointState = sig
 
   include Fixpoint.State with type t := t
 
-  val create: unit -> t
+  val create:
+    existing_model:TaintResult.call_model
+    -> (Root.t * Identifier.t * 'a option) list
+    -> t
+
 end
 
 
@@ -42,8 +46,19 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let initial_taint = ForwardState.empty
 
 
-    let create () =
-      { taint = ForwardState.empty }
+    let create ~existing_model parameters =
+      (* Use primed sources to populate initial state of parameters *)
+      let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
+      let prime_parameter state (parameter_root, name, _) =
+        let prime = ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint in
+        let root = AccessPath.Root.Variable name in
+        let taint = ForwardState.assign ~root ~path:[] prime state.taint in
+        { state with taint }
+      in
+      List.fold
+        parameters
+        ~init:{ taint = ForwardState.empty }
+        ~f:prime_parameter
 
 
     let less_or_equal ~left:{ taint = left } ~right:{ taint = right } =
@@ -552,7 +567,10 @@ let extract_source_model _parameters exit_taint =
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
-let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as define) =
+let run
+    ~environment
+    ~define:({ Node.value = { Define.parameters; _ }; _ } as define)
+    ~existing_model =
   let module Context = struct
     let definition = define
     let environment = environment
@@ -580,7 +598,8 @@ let run ~environment ~define:({ Node.value = { Define.parameters; _ }; _ } as de
     "Starting analysis of %a"
     Interprocedural.Callable.pp (Interprocedural.Callable.create define);
   let cfg = Cfg.create define.value in
-  let initial = FixpointState.create () in
+  let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+  let initial = FixpointState.create ~existing_model normalized_parameters in
   let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
     Analyzer.forward ~cfg ~initial
