@@ -15,12 +15,16 @@ include TaintResult.Register(struct
 
     let init ~configuration ~environment ~functions:_ =
       (* Parse models *)
-      let create_models sources =
+      let create_models ~configuration sources =
         List.fold
           sources
           ~init:Callable.Map.empty
           ~f:(fun models source ->
-              Model.parse ~resolution:(Analysis.TypeCheck.resolution environment ()) ~source models)
+              Model.parse
+                ~resolution:(Analysis.TypeCheck.resolution environment ())
+                ~source
+                ~configuration
+                models)
       in
       let taint = Yojson.Safe.Util.member "taint" configuration in
       let model_directory =
@@ -36,27 +40,29 @@ include TaintResult.Register(struct
             if not (Path.is_directory directory) then
               raise
                 (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-            let load_configuration () =
+            let configuration =
               let configuration_file = Path.append directory ~element:"taint.config" in
               if Path.file_exists configuration_file then
                 try
-                  let config =
+                  let configuration =
                     File.create configuration_file |> File.content |> Option.value ~default:""
                   in
-                  Configuration.parse config |> Configuration.register
+                  Configuration.parse configuration
                 with exn ->
                   Log.error
                     "Error reading taint config from %s: %s"
                     (Path.show configuration_file)
                     (Exn.to_string exn);
                   raise exn
+              else
+                Configuration.default
             in
-            load_configuration ();
+            Configuration.register configuration;
             Log.info "Finding taint models in %a" Path.pp directory;
             Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root:directory ()
             |> List.map ~f:File.create
             |> List.filter_map ~f:File.content
-            |> create_models
+            |> create_models ~configuration
           with exn ->
             Log.error
               "Error getting taint models: %s" (Exn.to_string exn);

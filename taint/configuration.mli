@@ -25,3 +25,5 @@ val get: unit -> t
 val parse: string -> t
 
 val register: t -> unit
+
+val default: t

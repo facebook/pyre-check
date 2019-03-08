@@ -15,8 +15,6 @@ type t =
   | UserControlled
 [@@deriving compare, sexp, show, hash]
 
-val create: string -> t
-
 val parse:
   allowed: string list
   -> string

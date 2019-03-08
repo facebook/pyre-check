@@ -18,13 +18,6 @@ type t = {
 
 exception InvalidModel of string
 
-val create
-  : resolution: Resolution.t
-  -> ?verify: bool
-  -> model_source: string
-  -> unit
-  -> t list
-
 val get_callsite_model
   :  resolution: Resolution.t
   -> call_target: [<Callable.t]
@@ -33,6 +26,7 @@ val get_callsite_model
 
 val parse
   :  resolution: Resolution.t
-  -> source:string
+  -> source: string
+  -> configuration: Configuration.t
   -> TaintResult.call_model Callable.Map.t
   -> TaintResult.call_model Callable.Map.t

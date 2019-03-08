@@ -112,6 +112,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
           Model.parse
             ~resolution:(TypeCheck.resolution environment ())
             ~source:(Test.trim_extra_indentation source)
+            ~configuration:TaintConfiguration.default
             Callable.Map.empty
     in
     initial_models

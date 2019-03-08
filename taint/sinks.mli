@@ -22,9 +22,7 @@ type t =
   | XSS
 [@@deriving compare, eq, sexp, show, hash]
 
-val create: string -> t
-
-val parse
-  :  allowed: string list
+val parse:
+  allowed: string list
   -> string
   -> t

@@ -226,6 +226,7 @@ let run_with_taint_models tests =
     Model.parse
       ~resolution:(TypeCheck.resolution environment ())
       ~source:model_source
+      ~configuration:TaintConfiguration.default
       Callable.Map.empty
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
     |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]

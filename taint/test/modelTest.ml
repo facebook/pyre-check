@@ -7,9 +7,9 @@ open Core
 open OUnit2
 
 open Taint
-open Model
 
 open TestHelper
+module Callable = Interprocedural.Callable
 
 
 let assert_model ~model_source ~expect =
@@ -18,54 +18,58 @@ let assert_model ~model_source ~expect =
       ~sources:(Test.typeshed_stubs () @ [Test.parse model_source])
       ()
   in
-  let models =
-    Test.trim_extra_indentation model_source
-    |> (fun model_source -> Model.create ~resolution ~model_source ())
+  let configuration =
+    TaintConfiguration.{
+      sources = ["TestTest"];
+      sinks = ["TestSink"];
+      features = [];
+      rules = [];
+    }
   in
-  let is_model callable { call_target; _ } =
-    callable = call_target
+  let models =
+    let source = Test.trim_extra_indentation model_source in
+    Model.parse ~resolution ~source ~configuration Callable.Map.empty
   in
   let get_model callable =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
-    List.find ~f:(is_model callable) models
+    Callable.Map.find models callable
     |> Option.value_exn ?here:None ?error:None ~message
-    |> (fun { model; _ } -> model)
   in
   List.iter ~f:(check_expectation ~get_model) expect
 
 
 let test_source_models _ =
   assert_model
-    ~model_source:"def taint() -> TaintSource[Test]: ..."
+    ~model_source:"def taint() -> TaintSource[TestTest]: ..."
     ~expect:[
       {
         kind = `Function;
         define_name = "taint";
-        returns = [Sources.Test];
+        returns = [Sources.NamedSource "TestTest"];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
       };
     ];
   assert_model
-    ~model_source:"os.environ: TaintSource[Test] = ..."
+    ~model_source:"os.environ: TaintSource[TestTest] = ..."
     ~expect:[
       {
         kind = `Object;
         define_name = "os.environ";
-        returns = [Sources.Test];
+        returns = [Sources.NamedSource "TestTest"];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
       };
     ];
   assert_model
-    ~model_source:"django.http.Request.GET: TaintSource[Test] = ..."
+    ~model_source:"django.http.Request.GET: TaintSource[TestTest] = ..."
     ~expect:[
       {
         kind = `Object;
         define_name = "django.http.Request.GET";
-        returns = [Sources.Test];
+        returns = [Sources.NamedSource "TestTest"];
         sink_parameters = [];
         tito_parameters = [];
         errors = [];
@@ -89,7 +93,7 @@ let test_sink_models _ =
   assert_model
     ~model_source:
       {|
-        def sink(parameter: TaintSink[Test]):
+        def sink(parameter: TaintSink[TestSink]):
           ...
       |}
     ~expect:[
@@ -99,7 +103,7 @@ let test_sink_models _ =
         returns = [];
         errors = [];
         sink_parameters = [
-          { name = "parameter"; sinks = [Sinks.Test] }
+          { name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }
         ];
         tito_parameters = []
       }
@@ -305,60 +309,74 @@ let test_invalid_models _ =
         ]
         ()
     in
+    let configuration =
+      TaintConfiguration.{
+        sources = ["A"; "B"];
+        sinks = ["X"; "Y"];
+        features = [];
+        rules = [];
+      }
+    in
     let error_message =
-      match Model.create ~resolution ~model_source () with
-      | exception (InvalidModel message) ->
-          String.drop_prefix message ((String.index_exn message ':') + 2)
-      | _ -> failwith "Invalid model should result in error"
+      try
+        Model.parse
+          ~resolution
+          ~configuration
+          ~source:model_source
+          Callable.Map.empty
+        |> ignore;
+        "no failure"
+      with
+        Failure message | Model.InvalidModel message -> message
     in
     assert_equal ~printer:ident expect error_message
   in
 
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[Unsupported]): ..."
-    ~expect:"Unsupported taint sink `Unsupported`";
+    ~model_source:"def sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
+    ~expect:"Invalid model for `sink`: Unsupported taint sink `Unsupported`";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[UserControlled]): ..."
-    ~expect:"Unsupported taint sink `UserControlled`";
+    ~expect:"Invalid model for `sink`: Unsupported taint sink `UserControlled`";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: SkipAnalysis): ..."
-    ~expect:"SkipAnalysis annotation must be in return position";
+    ~expect:"Invalid model for `sink`: SkipAnalysis annotation must be in return position";
 
   assert_invalid_model
-    ~model_source:"def sink(parameter: TaintSink[LocalReturn]): ..."
-    ~expect:"Invalid TaintSink annotation `LocalReturn`";
+    ~model_source:"def sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
+    ~expect:"Invalid model for `sink`: Invalid TaintSink annotation `LocalReturn`";
 
   assert_invalid_model
     ~model_source:"def source() -> TaintSource[Invalid]: ..."
-    ~expect:"Unsupported taint source `Invalid`";
+    ~expect:"Invalid model for `source`: Unsupported taint source `Invalid`";
 
   assert_invalid_model
     ~model_source:"def source() -> TaintInTaintOut: ..."
-    ~expect:"Invalid return annotation: TaintInTaintOut";
+    ~expect:"Invalid model for `source`: Invalid return annotation: TaintInTaintOut";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintInTaintOut[Test]): ..."
-    ~expect:"Invalid TaintInTaintOut annotation `Test`";
+    ~expect:"Invalid model for `sink`: Invalid TaintInTaintOut annotation `Test`";
 
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`";
+    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `InvalidTaintDirection.__getitem__.(...)`";
 
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:"Modeled entity `not_in_the_environment` is not part of the environment!";
+    ~expect:"Invalid model for `not_in_the_environment`: Modeled entity is not part of the environment!";
 
   assert_invalid_model
     ~model_source:"def sink(): ..."
     ~expect:(
-      "Model signature parameters for `sink` do not match implementation " ^
+      "Invalid model for `sink`: Model signature parameters do not match implementation " ^
       "`typing.Callable(sink)[[Named(parameter, unknown)], None]`");
 
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
-    ~expect:"Unrecognized taint annotation `Any`"
+    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`"
 
 
 let () =
