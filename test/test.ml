@@ -467,8 +467,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __neg__(self) -> float: ...
           def __abs__(self) -> float: ...
 
-        class int(float):
-          def __init__(self, value) -> None: ...
+        class int:
+          @overload
+          def __init__(self, x: Union[Text, bytes, SupportsInt] = ...) -> None: ...
+          @overload
+          def __init__(self, x: Union[Text, bytes, bytearray], base: int) -> None: ...
           def __le__(self, other) -> bool: ...
           def __lt__(self, other: int) -> bool: ...
           def __ge__(self, other) -> bool: ...
@@ -785,14 +788,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~qualifier:(Access.create "dataclasses")
       ~handle:"dataclasses.pyi"
       {|
-        _T = TypeVar('_T')
+        _T = typing.TypeVar('_T')
         class InitVar(typing.Generic[_T]): ...
       |};
     parse
       ~qualifier:(Access.create "os")
       ~handle:"os.pyi"
       {|
-        environ: Dict[str, str] = ...
+        environ: typing.Dict[str, str] = ...
       |}
     |> Preprocessing.qualify;
     parse
@@ -806,16 +809,36 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
+      ~qualifier:(Access.create "abc")
+      ~handle:"abc.pyi"
+      {|
+        from typing import Type, TypeVar
+        _T = TypeVar('_T')
+        class ABCMeta(type):
+          def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
+        class ABC(metaclass=ABCMeta): ...
+      |}
+    |> Preprocessing.qualify;
+    parse
       ~qualifier:(Access.create "enum")
       ~handle:"enum.pyi"
       {|
-        _T = TypeVar('_T')
+        from abc import ABCMeta
+        _T = typing.TypeVar('_T')
         class EnumMeta(ABCMeta):
-            def __iter__(self: typing.Type[_T]) -> typing.Iterator[_T]: ...
+          def __iter__(self: typing.Type[_T]) -> typing.Iterator[_T]: ...
         class Enum(metaclass=EnumMeta):
-          pass
+          def __new__(cls: typing.Type[_T], value: object) -> _T: ...
         class IntEnum(int, Enum):
           value = ...  # type: int
+        if sys.version_info >= (3, 6):
+          _auto_null: typing.Any
+          class auto(IntFlag):
+            value: typing.Any
+          class Flag(Enum):
+            pass
+          class IntFlag(int, Flag):  # type: ignore
+            pass
       |}
     |> Preprocessing.qualify;
     parse

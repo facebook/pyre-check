@@ -651,10 +651,10 @@ let test_lookup_definitions _ =
       "test.py:12:4-12:7 -> test.py:8:0-9:8";
       "test.py:13:12-13:18 -> test.py:2:0-3:13";
       "test.py:13:4-13:11 -> test.py:5:0-6:8";
-      "test.py:2:16-2:19 -> builtins.pyi:65:0-79:34";
-      "test.py:5:14-5:17 -> builtins.pyi:65:0-79:34";
-      "test.py:8:10-8:13 -> builtins.pyi:65:0-79:34";
-      "test.py:8:17-8:20 -> builtins.pyi:84:0-101:42";
+      "test.py:2:16-2:19 -> builtins.pyi:65:0-82:34";
+      "test.py:5:14-5:17 -> builtins.pyi:65:0-82:34";
+      "test.py:8:10-8:13 -> builtins.pyi:65:0-82:34";
+      "test.py:8:17-8:20 -> builtins.pyi:87:0-104:42";
     ];
   assert_definition
     ~position:{ Location.line = 12; column = 0 }

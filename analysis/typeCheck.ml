@@ -2715,11 +2715,17 @@ module State = struct
                     |> (fun annotation -> Option.value annotation ~default:Type.Top)
                   in
                   let resolved = Type.weaken_literals resolved in
+                  let compatible =
+                    if explicit then
+                      Resolution.less_or_equal resolution ~left:expected ~right:resolved
+                    else
+                      true
+                  in
                   Resolution.less_or_equal
                     resolution
                     ~left:parent_annotation
                     ~right:Type.enumeration &&
-                  Resolution.less_or_equal resolution ~left:expected ~right:resolved
+                  compatible
                 in
                 if is_immutable &&
                    not (Type.equal resolved Type.ellipsis) &&
