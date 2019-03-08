@@ -553,6 +553,77 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
+      MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
+      def f() -> None:
+        movieNonTotal: MovieNonTotal
+        v = movieNonTotal.pop("name")
+        reveal_type(v)
+        v = movieNonTotal.pop("name", False)
+        reveal_type(v)
+        v = movieNonTotal.pop("nae", False)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+    ];
+
+  (* You can't pop an item from a total typeddict *)
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie.pop("name")
+    |}
+    ["Undefined attribute [16]: `TypedDictionary` has no attribute `pop`."];
+
+  (* TODO(T41338881) the del operator is not currently supported *)
+  assert_test_typed_dictionary
+    {|
+      MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
+      def f() -> None:
+        movieNonTotal: MovieNonTotal
+        movieNonTotal.__delitem__("name")
+        movieNonTotal.__delitem__("nae")
+    |}
+    [
+      "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
+    ];
+
+  (* You can't delete an item from a total typeddict *)
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> None:
+        movie: Movie
+        movie.__delitem__("name")
+    |}
+    ["Undefined attribute [16]: `TypedDictionary` has no attribute `__delitem__`."];
+
+  assert_test_typed_dictionary
+    {|
+      MovieNonTotal = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'}, total=False)
+      MoviePlus = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int', 'director': str})
+      def f() -> None:
+        moviePlus: MoviePlus
+        movieNonTotal: MovieNonTotal
+        v = movieNonTotal.get("name", False)
+        reveal_type(v)
+        v = len(movieNonTotal)
+        reveal_type(v)
+        v = movieNonTotal.setdefault('name', "n")
+        reveal_type(v)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is `int`.";
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+    ];
+
+
+  assert_test_typed_dictionary
+    {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> None:
         movie: Movie

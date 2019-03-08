@@ -1839,11 +1839,13 @@ module State = struct
                       begin
                         match implicit, callee with
                         | Some {
-                            implicit_annotation = Type.TypedDictionary { fields; name; _ };
+                            implicit_annotation = Type.TypedDictionary { fields; name; total};
                             _;
                           },
-                          Some [ Identifier "TypedDictionary"; Identifier method_name ] ->
-                            if Type.TypedDictionary.is_special_mismatch ~method_name ~position then
+                          Some [ _ ; Identifier method_name ] ->
+                            if
+                              Type.TypedDictionary.is_special_mismatch ~method_name ~position ~total
+                            then
                               match actual with
                               | Type.Literal (Type.String missing_key) ->
                                   Error.TypedDictionaryKeyNotFound

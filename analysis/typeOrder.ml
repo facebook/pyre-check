@@ -2256,10 +2256,16 @@ module Builder = struct
     connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
 
     let typed_dictionary = Type.Primitive "TypedDictionary" in
+    let non_total_typed_dictionary = Type.Primitive "NonTotalTypedDictionary" in
     let typing_mapping = Type.Primitive "typing.Mapping" in
+    insert handler non_total_typed_dictionary;
     insert handler typed_dictionary;
     insert handler typing_mapping;
-    connect handler ~predecessor:Type.Bottom ~successor:typed_dictionary;
+    connect handler ~predecessor:Type.Bottom ~successor:non_total_typed_dictionary;
+    connect
+      handler
+      ~predecessor:non_total_typed_dictionary
+      ~successor:typed_dictionary;
     connect
       handler
       ~predecessor:typed_dictionary

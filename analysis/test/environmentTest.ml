@@ -967,7 +967,7 @@ let test_infer_protocols_edges _ =
         ~implementing_classes
         ~protocol:(Type.Primitive "Empty")
     in
-    assert_equal 10 (Set.length empty_edges);
+    assert_equal 11 (Set.length empty_edges);
     Environment.infer_implementations
       environment
       resolution
@@ -988,7 +988,7 @@ let test_infer_protocols_edges _ =
     assert_false (Set.mem edges { TypeOrder.Edge.source; target; parameters })
   in
 
-  assert_equal ~printer:Int.to_string (Set.length edges) 11;
+  assert_equal ~printer:Int.to_string (Set.length edges) 12;
 
   assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized") [];
   assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized") [];

@@ -1064,7 +1064,7 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
 
 
 let built_in_annotations =
-  [ Type.Primitive "TypedDictionary" ]
+  [ Type.Primitive "TypedDictionary"; Type.Primitive "NonTotalTypedDictionary" ]
   |> Type.Set.of_list
 
 
@@ -1184,7 +1184,17 @@ module Builder = struct
               |> Type.expression
           };
         ],
-        Type.TypedDictionary.defines ~t_self_expression;
+        Type.TypedDictionary.defines ~t_self_expression ~total:true;
+        "NonTotalTypedDictionary",
+        [
+          {
+            Argument.name = None;
+            value =
+              (Type.Primitive "TypedDictionary")
+              |> Type.expression
+          };
+        ],
+        Type.TypedDictionary.defines ~t_self_expression ~total:false;
       ];
     (* Register hardcoded aliases. *)
     Hashtbl.set

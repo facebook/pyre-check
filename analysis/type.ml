@@ -2096,8 +2096,10 @@ let split = function
         | Unbounded parameter -> [parameter]
       in
       Primitive "tuple", parameters
-  | (TypedDictionary _) as typed_dictionary ->
-      Primitive "TypedDictionary", [typed_dictionary]
+  | TypedDictionary { total = true; _ } ->
+      Primitive "TypedDictionary", []
+  | TypedDictionary { total = false; _ } ->
+      Primitive "NonTotalTypedDictionary", []
   | (Literal _ as literal) ->
       weaken_literals literal, []
   | annotation ->
@@ -2396,10 +2398,10 @@ module TypedDictionary = struct
     overloads: typed_dictionary_field list -> t Callable.overload list;
   }
 
-  let special_methods =
-    let key_parameter name =
-      Parameter.Named { name = "k"; annotation = literal_string name; default=false };
-    in
+  let key_parameter name =
+    Parameter.Named { name = "k"; annotation = literal_string name; default=false }
+
+  let total_special_methods =
     let getitem_overloads =
       let overload { name; annotation } =
         { annotation; parameters = Defined [ key_parameter name ] }
@@ -2460,20 +2462,58 @@ module TypedDictionary = struct
       { name = "update"; special_index = None; overloads = update_overloads};
     ]
 
-  let special_overloads ~fields ~method_name =
+  let non_total_special_methods =
+    let pop_overloads =
+      let overloads { name; annotation } =
+        [
+          { annotation = annotation; parameters = Defined [ key_parameter name ] };
+          {
+            annotation = Union [annotation; variable "_T"];
+            parameters = Defined [
+                key_parameter name;
+                Named {
+                  name = "default";
+                  annotation = variable "_T";
+                  default = false;
+                };
+              ];
+          };
+        ]
+      in
+      List.concat_map ~f:overloads
+    in
+    let delitem_overloads fields =
+      let overload { name; annotation = _ } =
+        { annotation = none; parameters = Defined [ key_parameter name ] }
+      in
+      List.map ~f:(overload) fields
+    in
+    [
+      { name = "pop"; special_index = Some 1; overloads = pop_overloads };
+      { name = "__delitem__"; special_index = Some 1; overloads = delitem_overloads };
+    ]
+
+  let special_overloads ~fields ~method_name ~total =
+    let special_methods =
+      if total then total_special_methods else non_total_special_methods @ total_special_methods
+    in
     List.find special_methods ~f:(fun { name; _ } -> name = method_name)
     >>| (fun { overloads; _ } -> overloads fields)
 
-  let is_special_mismatch ~method_name ~position =
+  let is_special_mismatch ~method_name ~position ~total =
+    let special_methods =
+      if total then total_special_methods else non_total_special_methods @ total_special_methods
+    in
     List.find special_methods ~f:(fun { name; _ } -> name = method_name)
     >>= (fun { special_index; _ } -> special_index)
     >>| ((=) position)
     |> Option.value ~default:false
 
-  let defines ~t_self_expression =
+  let defines ~t_self_expression ~total =
+    let class_name = if total then "TypedDictionary" else "NonTotalTypedDictionary" in
     let define ?self_parameter ?return_annotation name =
       Statement.Define {
-        name = [ Identifier "TypedDictionary"; Identifier name ];
+        name = [ Identifier class_name; Identifier name ];
         parameters = [
           { Ast.Parameter.name = "self"; value = None; annotation = self_parameter}
           |> Node.create_with_default_location;
@@ -2483,12 +2523,15 @@ module TypedDictionary = struct
         docstring = None;
         return_annotation;
         async = false;
-        parent = Some [ Identifier "TypedDictionary" ];
+        parent = Some [ Identifier class_name ];
       }
       |> Node.create_with_default_location
     in
-    define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy" ::
-    List.map special_methods ~f:(fun { name; _ } -> define name)
+    if total then
+      define ~self_parameter:t_self_expression ~return_annotation:t_self_expression "copy" ::
+      List.map total_special_methods ~f:(fun { name; _ } -> define name)
+    else
+      List.map non_total_special_methods ~f:(fun { name; _ } -> define name)
 
 end
 

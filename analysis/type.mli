@@ -306,11 +306,12 @@ module TypedDictionary : sig
   val special_overloads
     :  fields: typed_dictionary_field list
     -> method_name: string
+    -> total: bool
     -> t Callable.overload list option
 
-  val is_special_mismatch: method_name: string -> position: int -> bool
+  val is_special_mismatch: method_name: string -> position: int -> total: bool -> bool
 
-  val defines: t_self_expression: Expression.t -> Statement.t list
+  val defines: t_self_expression: Expression.t -> total: bool -> Statement.t list
 end
 
 val remove_undeclared: t -> t

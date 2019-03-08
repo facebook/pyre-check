@@ -488,10 +488,10 @@ module Attribute = struct
       let open Expression in
       let open Record.Access in
       match instantiated, target, annotation with
-      | Some (Type.TypedDictionary { fields; _ }),
+      | Some (Type.TypedDictionary { fields; total; _ }),
         Access (SimpleAccess [Identifier method_name]),
         { annotation = Type.Callable callable; _ } ->
-          Type.TypedDictionary.special_overloads ~fields ~method_name
+          Type.TypedDictionary.special_overloads ~fields ~method_name ~total
           >>| (fun overloads ->
               {
                 annotation with
