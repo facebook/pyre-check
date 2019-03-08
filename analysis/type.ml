@@ -2386,18 +2386,68 @@ module TypedDictionary = struct
       implicit = None;
     }
 
+  type special_method = {
+    name: string;
+    special_index: int option;
+    overloads: typed_dictionary_field list -> t Callable.overload list;
+  }
 
-  let setter ~callable:({ implementation; _ } as callable) ~annotation =
-    {
-      callable with
-      implementation = {
-        implementation with
-        parameters = Defined [
-            Named { name = "key"; annotation = string; default = false };
-            Named { name = "value"; annotation; default = false };
-          ];
-      };
-    }
+  let special_methods =
+    let key_parameter name =
+      Parameter.Named { name = "k"; annotation = literal_string name; default=false };
+    in
+    let getitem_overloads =
+      let overload { name; annotation } =
+        { annotation; parameters = Defined [ key_parameter name ] }
+      in
+      List.map ~f:overload
+    in
+    let setitem_overloads =
+      let overload { name; annotation } =
+        {
+          annotation = none;
+          parameters = Defined [
+              key_parameter name;
+              Named { name = "v"; annotation; default = false };
+            ];
+        }
+      in
+      List.map ~f:overload
+    in
+    [
+      { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
+      { name = "__setitem__"; special_index = Some 1; overloads = setitem_overloads };
+    ]
+
+  let special_overloads ~fields ~method_name =
+    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    >>| (fun { overloads; _ } -> overloads fields)
+
+  let is_special_mismatch ~method_name ~position =
+    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    >>= (fun { special_index; _ } -> special_index)
+    >>| ((=) position)
+    |> Option.value ~default:false
+
+  let defines =
+    let define ?self_parameter ?return_annotation name =
+      Statement.Define {
+        name = [ Identifier "TypedDictionary"; Identifier name ];
+        parameters = [
+          { Ast.Parameter.name = "self"; value = None; annotation = self_parameter}
+          |> Node.create_with_default_location;
+        ];
+        body = [];
+        decorators = [];
+        docstring = None;
+        return_annotation;
+        async = false;
+        parent = Some [ Identifier "TypedDictionary" ];
+      }
+      |> Node.create_with_default_location
+    in
+    List.map special_methods ~f:(fun { name; _ } -> define name)
+
 end
 
 

@@ -1837,15 +1837,13 @@ module State = struct
                           })
                       in
                       begin
-                        match callee, position, implicit with
-                        | Some [Identifier "TypedDictionary"; Identifier "__getitem__"],
-                          1,
-                          Some { implicit_annotation = Type.TypedDictionary { fields; name; _ }; _ }
-                        | Some [Identifier "TypedDictionary"; Identifier "__setitem__"],
-                          1,
-                          Some { implicit_annotation = Type.TypedDictionary { fields; name; _ }; _ }
-                          ->
-                            begin
+                        match implicit, callee with
+                        | Some {
+                            implicit_annotation = Type.TypedDictionary { fields; name; _ };
+                            _;
+                          },
+                          Some [ Identifier "TypedDictionary"; Identifier method_name ] ->
+                            if Type.TypedDictionary.is_special_mismatch ~method_name ~position then
                               match actual with
                               | Type.Literal (Type.String missing_key) ->
                                   Error.TypedDictionaryKeyNotFound
@@ -1855,7 +1853,8 @@ module State = struct
                                     (List.map fields ~f:(fun { name; _ } -> name))
                               | _ ->
                                   normal
-                            end
+                            else
+                              normal
                         | _ ->
                             normal
                       end

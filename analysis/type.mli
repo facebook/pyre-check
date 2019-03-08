@@ -293,16 +293,24 @@ module TypedDictionary : sig
   val anonymous: total: bool -> typed_dictionary_field list -> t
 
   val fields_have_colliding_keys
-    : typed_dictionary_field list
+    :  typed_dictionary_field list
     -> typed_dictionary_field list
     -> bool
 
   val constructor
-    : name: Identifier.t
+    :  name: Identifier.t
     -> fields: typed_dictionary_field list
     -> total: bool
     -> Callable.t
-  val setter: callable: Callable.t -> annotation: t -> Callable.t
+
+  val special_overloads
+    :  fields: typed_dictionary_field list
+    -> method_name: string
+    -> t Callable.overload list option
+
+  val is_special_mismatch: method_name: string -> position: int -> bool
+
+  val defines: Statement.t list
 end
 
 val remove_undeclared: t -> t
