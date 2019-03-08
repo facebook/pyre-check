@@ -22,13 +22,13 @@ class TestSappCli(TestCase):
         result = self.runner.invoke(
             cli,
             [
-                "explore",
-                "--database",
+                "--repository",
+                "/tmp",
+                "--database-engine",
                 "memory",
                 "--database-name",
                 "mydatabase",
-                "--repository-directory",
-                "/tmp",
+                "explore",
             ],
         )
         self.assertEqual(result.exit_code, 0)
@@ -44,7 +44,7 @@ class TestSappCli(TestCase):
 
     def verify_base_summary_blob(self, input_files, summary_blob):
         self.assertEqual(summary_blob["run_kind"], "master")
-        self.assertEqual(summary_blob["repository"], "pyre-check")
+        self.assertEqual(summary_blob["repository"], "/tmp")
         self.assertEqual(summary_blob["branch"], "master")
         self.assertEqual(summary_blob["commit_hash"], "abc123")
         self.assertEqual(summary_blob["old_linemap_file"], "/tmp")
@@ -55,11 +55,11 @@ class TestSappCli(TestCase):
             result = self.runner.invoke(
                 cli,
                 [
+                    "--repository",
+                    "/tmp",
                     "analyze",
                     "--run-kind",
                     "master",
-                    "--repository",
-                    "pyre-check",
                     "--branch",
                     "master",
                     "--commit-hash",

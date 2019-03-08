@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
+import os
+from typing import Optional
+
+import click
 import IPython
-from click import Choice, Path, argument, group, option
+from click import Choice, Parameter, Path, argument, group, option
 from sapp.analysis_output import AnalysisOutput
 from sapp.database_saver import DatabaseSaver
-from sapp.db import DB
+from sapp.db import DB, DBType
 from sapp.interactive import Interactive
 from sapp.model_generator import ModelGenerator
 from sapp.models import PrimaryKeyGenerator
@@ -12,36 +16,72 @@ from sapp.pipeline import Pipeline
 from sapp.pysa_taint_parser import Parser
 from sapp.trim_trace_graph import TrimTraceGraph
 
+from .context import Context, pass_context
+from .filesystem import find_root
+
+
+MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]
+
+
+def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
+    """Try to guess a reasonable database name by looking at the repository
+    path and database engine"""
+    if value:
+        return value
+
+    if ctx.params["database_engine"] == DBType.MEMORY:
+        return ":memory:"
+
+    if ctx.params["repository"]:
+        return os.path.join(ctx.params["repository"], DB.DEFAULT_DB_FILE)
+
+    raise click.BadParameter("Could not guess a database location")
+
 
 @group()
-def cli():
-    pass
+@option(
+    "--repository",
+    "-r",
+    default=lambda: find_root(MARKER_DIRECTORIES),
+    type=Path(exists=True, file_okay=False),
+    help="Root of the repository (regardless of the directory analyzed)",
+)
+@option(
+    "--database-engine",
+    "--database",
+    type=Choice([DBType.SQLITE, DBType.MEMORY]),
+    default=DBType.SQLITE,
+    help="database engine to use",
+)
+@option(
+    "--database-name", "--dbname", callback=default_database, type=Path(dir_okay=False)
+)
+@click.pass_context
+def cli(
+    ctx: click.Context,
+    repository: Optional[str],
+    database_engine: DBType,
+    database_name: Optional[str],
+):
+    ctx.obj = Context(
+        repository=repository,
+        database_engine=database_engine,
+        database_name=database_name,
+    )
 
 
 @cli.command(help="interactive exploration of issues")
-@option(
-    "--database",
-    type=Choice(["memory", "sqlite"]),
-    default="sqlite",
-    help="database engine to use",
-)
-@option("--database-name", "--dbname", type=str)
-@option("--repository-directory", "--repo-dir", type=Path(exists=True))
-def explore(database, database_name, repository_directory):
-    scope_vars = Interactive(database, database_name, repository_directory).setup()
+@pass_context
+def explore(ctx: Context):
+    scope_vars = Interactive(
+        ctx.database_engine, ctx.database_name, ctx.repository
+    ).setup()
     IPython.start_ipython(argv=[], user_ns=scope_vars)
 
 
 @cli.command(help="parse static analysis output and save to disk")
-@option(
-    "--database",
-    type=Choice(["memory", "sqlite"]),
-    default="memory",
-    help="database engine to use",
-)
-@option("--database-name", "--dbname", type=str)
+@pass_context
 @option("--run-kind", type=str)
-@option("--repository", type=str)
 @option("--branch", type=str)
 @option("--commit-hash", type=str)
 @option("--job-id", type=str)
@@ -66,10 +106,8 @@ def explore(database, database_name, repository_directory):
 )
 @argument("input_file", type=Path(exists=True))
 def analyze(
-    database,
-    database_name,
+    ctx: Context,
     run_kind,
-    repository,
     branch,
     commit_hash,
     job_id,
@@ -83,7 +121,7 @@ def analyze(
     summary_blob = {
         "run_kind": run_kind,
         "compress": lambda x: x,
-        "repository": repository,
+        "repository": ctx.repository,
         "branch": branch,
         "commit_hash": commit_hash,
         "old_linemap_file": linemap,
@@ -107,7 +145,8 @@ def analyze(
         ModelGenerator(),
         TrimTraceGraph(),
         DatabaseSaver(
-            DB(database, database_name, assertions=True), PrimaryKeyGenerator()
+            DB(ctx.database_engine, ctx.database_name, assertions=True),
+            PrimaryKeyGenerator(),
         ),
     ]
     pipeline = Pipeline(pipeline_steps)
