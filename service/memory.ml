@@ -3,7 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-
 module SharedMemory = Hack_parallel.Std.SharedMem
 
 include SharedMemory
@@ -84,3 +83,24 @@ let save_shared_memory ~path =
 
 let load_shared_memory ~path =
   SharedMem.load_table path
+
+
+let unsafe_little_endian_representation ~key =
+  (* Ensure that key is a well-formed digest. *)
+  Digest.to_hex key
+  |> Digest.from_hex
+  |> fun digest -> assert (Digest.equal digest key);
+  (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference.
+     This code is not portable by any means. *)
+  let rec compute_little_endian accumulator index =
+    let accumulator =
+      Int64.mul accumulator (Int64.of_int 256)
+      |> Int64.add (Int64.of_int (Char.code key.[index]))
+    in
+    if index = 0 then
+      accumulator
+    else
+      compute_little_endian accumulator (index - 1)
+  in
+  (* Take the first 8 bytes in reverse order. *)
+  compute_little_endian Int64.zero 7

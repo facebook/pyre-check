@@ -1,6 +1,7 @@
 (tests
  (names
   ignoreTest
+  memoryTest
   parserTest
   typeCheckTest)
  (preprocess
@@ -9,4 +10,5 @@
   oUnit
   pyrelib.analysis
   pyrelib.test
-  pyrelib.service))
+  pyrelib.service
+  pyrelib.memory))

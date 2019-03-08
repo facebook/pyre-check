@@ -15,3 +15,5 @@ val report_statistics: unit -> unit
 
 val save_shared_memory: path: string -> unit
 val load_shared_memory: path: string -> unit
+
+val unsafe_little_endian_representation: key: Digest.t -> Int64.t
