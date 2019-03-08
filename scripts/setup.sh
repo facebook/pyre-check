@@ -158,14 +158,14 @@ test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
 
 opam install --yes \
-  core \
-  dune \
-  yojson \
-  ppx_deriving \
-  ppx_deriving_yojson \
-  ppx_compare \
-  ppx_hash \
-  ounit \
+  core.v0.11.3 \
+  dune.1.6.2 \
+  yojson.1.5.0 \
+  ppx_deriving.4.2.1 \
+  ppx_deriving_yojson.3.3 \
+  ppx_compare.v0.11.1 \
+  ppx_hash.v0.11.1 \
+  ounit.2.0.8 \
   menhir \
   utop \
   && opam_install_dependencies_succeeded=1
