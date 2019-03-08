@@ -544,6 +544,7 @@ if __name__ == "__main__":
     # Initialize default values.
     arguments = parser.parse_args()
     if not hasattr(arguments, "function"):
+        arguments.run = False
         arguments.function = run_fixme
 
     logging.basicConfig(
