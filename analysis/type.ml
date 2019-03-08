@@ -1257,9 +1257,9 @@ let primitive_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
-let rec create ~aliases { Node.value = expression; _ } =
+let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
   match Cache.find expression with
-  | Some result ->
+  | Some result when use_cache ->
       result
   | _ ->
       let parse_access type_access =
@@ -1361,7 +1361,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | _ -> [argument]
                   in
                   let parametric name =
-                    let parameters = List.map parameters ~f:(create ~aliases) in
+                    let parameters = List.map parameters ~f:(create_logic ~use_cache ~aliases) in
                     Parametric { name; parameters }
                     |> resolve_aliases
                   in
@@ -1477,7 +1477,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                                 in
                                 Parameter.Named {
                                   Parameter.name;
-                                  annotation = create ~aliases annotation;
+                                  annotation = create_logic ~use_cache ~aliases annotation;
                                   default;
                                 }
                             | "Variable",
@@ -1485,7 +1485,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                               :: tail ->
                                 let annotation =
                                   match tail with
-                                  | annotation :: _ -> create ~aliases annotation
+                                  | annotation :: _ -> create_logic ~use_cache ~aliases annotation
                                   | _ -> Top
                                 in
                                 Parameter.Variable {
@@ -1498,7 +1498,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                               :: tail ->
                                 let annotation =
                                   match tail with
-                                  | annotation :: _ -> create ~aliases annotation
+                                  | annotation :: _ -> create_logic ~use_cache ~aliases annotation
                                   | _ -> Top
                                 in
                                 Parameter.Keywords {
@@ -1516,7 +1516,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                       | _ ->
                           Parameter.Named {
                             Parameter.name = "$" ^ Int.to_string index;
-                            annotation = create ~aliases parameter;
+                            annotation = create_logic ~use_cache ~aliases parameter;
                             default = false;
                           }
                     in
@@ -1526,7 +1526,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                     | _ ->
                         Undefined
                   in
-                  { annotation = create ~aliases annotation; parameters }
+                  { annotation = create_logic ~use_cache ~aliases annotation; parameters }
               | _ ->
                   undefined
             in
@@ -1591,7 +1591,7 @@ let rec create ~aliases { Node.value = expression; _ } =
               let explicits =
                 let explicit = function
                   | { Argument.value; Argument.name = None } ->
-                      create value ~aliases
+                      create_logic ~use_cache ~aliases value
                       |> Option.some
                   | _ ->
                       None
@@ -1602,7 +1602,7 @@ let rec create ~aliases { Node.value = expression; _ } =
                 let bound = function
                   | { Argument.value; Argument.name = Some { Node.value = bound; _ }; }
                     when Identifier.sanitized bound = "bound" ->
-                      create value ~aliases
+                      create_logic ~use_cache ~aliases value
                       |> Option.some
                   | _ ->
                       None
@@ -1692,7 +1692,10 @@ let rec create ~aliases { Node.value = expression; _ } =
                       ];
                     _;
                   } ->
-                      Some { name = field_name; annotation = create field_annotation ~aliases }
+                      Some {
+                        name = field_name;
+                        annotation = create_logic ~use_cache ~aliases field_annotation;
+                      }
                   | _ ->
                       None
                 in
@@ -1778,9 +1781,16 @@ let rec create ~aliases { Node.value = expression; _ } =
         | _ ->
             Top
       in
-      Cache.set ~key:expression ~data:result;
+      if use_cache then
+        Cache.set ~key:expression ~data:result;
       result
 
+
+let create ~aliases =
+  create_logic ~use_cache:true ~aliases
+
+let create_without_aliases =
+  create_logic ~use_cache:false ~aliases:(fun _ -> None)
 
 let contains_callable annotation =
   exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
@@ -1923,7 +1933,7 @@ let contains_any annotation =
 
 let expression_contains_any expression =
   (* Check if there is a literal Any provided, not including type aliases to Any. *)
-  create ~aliases:(fun _ -> None) expression
+  create_without_aliases expression
   |> contains_any
 
 

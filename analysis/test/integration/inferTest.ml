@@ -130,6 +130,22 @@ let test_check_missing_return _ =
     ];
 
   assert_type_errors
+    ~update_environment_with:[{
+        qualifier = Ast.Expression.Access.create "export";
+        handle = "export.py";
+        source = "MyType = typing.List[typing.Any]"
+      }]
+    {|
+      from export import MyType
+      MyTypeLocal = typing.List[typing.Any]
+      def foo() -> MyType:
+        return []
+      def bar() -> MyTypeLocal:
+        return []
+    |}
+    ["Prohibited any [33]: Explicit annotation for `MyTypeLocal` cannot contain `Any`."];
+
+  assert_type_errors
     {|
       def foo() -> None:
         return 1
