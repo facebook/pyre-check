@@ -2012,12 +2012,43 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
+    let is_unknown_callable_error { kind; _ } =
+      (* TODO(T41494196): Remove when we have AnyCallable escape hatch. *)
+      match kind with
+      | ImpossibleIsinstance { mismatch = { expected; actual; _ }; _ }
+      | InconsistentOverride {
+          override = StrengthenedPrecondition (Found { expected; actual; _ });
+          _;
+        }
+      | InconsistentOverride { override = WeakenedPostcondition { expected; actual; _ }; _ }
+      | IncompatibleParameterType { mismatch = { expected; actual; _ }; _ }
+      | IncompatibleReturnType { mismatch = { expected; actual; _ }; _ }
+      | IncompatibleAttributeType {
+          incompatible_type = { mismatch = { expected; actual; _ }; _ };
+          _;
+        }
+      | IncompatibleVariableType { mismatch = { expected; actual; _ }; _ } ->
+          begin
+            match actual, expected with
+            | Type.Callable _,
+              Type.Callable {
+                implementation = { parameters = Type.Callable.Undefined; annotation };
+                _;
+              } ->
+                Type.is_unknown annotation
+            | _ ->
+                false
+          end
+      | _ ->
+          false
+    in
     is_stub_error error ||
     is_mock_error error ||
     is_unimplemented_return_error error ||
     is_builtin_import_error error ||
     is_override_on_dunder_method error ||
-    is_unnecessary_missing_annotation_error error
+    is_unnecessary_missing_annotation_error error ||
+    is_unknown_callable_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors
