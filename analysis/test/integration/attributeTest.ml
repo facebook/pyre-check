@@ -73,7 +73,7 @@ let test_check_attributes _ =
   assert_strict_type_errors
     {|
       class Bar:
-        def bar() -> None:
+        def bar(self) -> None:
           pass
       class Foo:
         bar: typing.Optional[Bar] = None

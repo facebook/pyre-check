@@ -59,7 +59,7 @@ let type_check_sources_list_test context =
     let default_content =
       {|
         class object():
-          def __sizeof__() -> int: pass
+          def __sizeof__(self) -> int: pass
         class typing.Sized: ...
         class float():
           pass

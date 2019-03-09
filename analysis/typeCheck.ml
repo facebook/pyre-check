@@ -1334,8 +1334,8 @@ module State = struct
           let state, { Annotation.annotation; mutability } =
             match index, parent with
             | 0, Some parent
-              when Define.is_method define && not (Define.is_static_method define) ->
-                let resolved =
+              when not (Define.is_class_toplevel define || Define.is_static_method define) ->
+                let resolved, is_class_method =
                   let parent_annotation =
                     Access.expression parent
                     |> Resolution.parse_annotation resolution
@@ -1360,10 +1360,10 @@ module State = struct
                   in
                   if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
-                    Type.meta parent_annotation
+                    Type.meta parent_annotation, true
                   else
                     (* First parameter of a method is the callee object. *)
-                    parent_annotation
+                    parent_annotation, false
                 in
                 begin
                   match annotation with
@@ -1371,8 +1371,40 @@ module State = struct
                       let state, annotation =
                         parse_and_check_annotation ~state ~bind_variables:false annotation
                       in
+                      let compatible =
+                        Resolution.less_or_equal resolution ~left:annotation ~right:resolved ||
+                           Resolution.constraints_solution_exists
+                            resolution
+                            ~source:annotation
+                            ~target:resolved
+                      in
                       let state =
-                        add_incompatible_variable_error ~state annotation resolved
+                        let name = Identifier.sanitized name in
+                        let kind =
+                          if compatible then
+                            None
+                          else if
+                            (is_class_method && name = "cls") ||
+                            (not is_class_method && name = "self")
+                          then
+                            (* Assume the user incorrectly tried to type the implicit parameter *)
+                            Some (
+                              Error.InvalidMethodSignature { annotation = Some annotation; name }
+                            )
+                          else
+                            (* Assume the user forgot to specify the implicit parameter *)
+                            Some(
+                              Error.InvalidMethodSignature {
+                                  annotation = None;
+                                  name = if is_class_method then "cls" else "self";
+                                }
+                            )
+                          in
+                          match kind with
+                          | Some kind ->
+                              emit_error ~state ~location ~kind ~define:define_node
+                          | None ->
+                              state
                       in
                       state, Annotation.create annotation
                   | None ->
@@ -1457,7 +1489,28 @@ module State = struct
           in
           state, Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability }
         in
-        List.foldi ~init:(state, (Resolution.annotations resolution)) ~f:check_parameter parameters
+        match parameters, parent with
+        | [], Some _
+          when not (Define.is_class_toplevel define || Define.is_static_method define) ->
+            let state =
+              let name =
+                if Define.is_class_method define || Define.is_class_property define then
+                  "cls"
+                else
+                  "self"
+              in
+              emit_error
+                ~state
+                ~location
+                ~kind:(Error.InvalidMethodSignature { annotation = None; name })
+                ~define:define_node
+            in
+            state, (Resolution.annotations resolution)
+        | _ ->
+            List.foldi
+              ~init:(state, (Resolution.annotations resolution))
+              ~f:check_parameter
+              parameters
       in
       let resolution = Resolution.with_annotations resolution ~annotations in
       let resolution_fixpoint =

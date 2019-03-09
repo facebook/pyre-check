@@ -100,6 +100,7 @@ type kind =
       override: override;
     }
   | InvalidArgument of invalid_argument
+  | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
@@ -177,6 +178,7 @@ let code = function
   | IllegalAnnotationTarget _ -> 35
   | MutuallyRecursiveTypeVariables _ -> 36
   | InvalidTypeVariance _ -> 35
+  | InvalidMethodSignature _ -> 36
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -196,6 +198,7 @@ let name = function
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
   | InvalidArgument _ -> "Invalid argument"
+  | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
@@ -554,6 +557,19 @@ let messages ~concise ~define location kind =
                 pp_type annotation
             ]
       end
+  | InvalidMethodSignature { annotation = Some annotation; name; } ->
+      [
+        Format.asprintf
+          "`%a` cannot be the type of `%a`."
+          pp_type annotation
+          pp_identifier name
+      ]
+  | InvalidMethodSignature { name; _ } ->
+      [
+        Format.asprintf
+          "Non-static method must specify `%a` parameter."
+          pp_identifier name
+      ]
   | InvalidType annotation ->
       [
         Format.asprintf
@@ -1330,6 +1346,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
+  | InvalidMethodSignature _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
   | MissingArgument _
@@ -1397,6 +1414,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | InvalidMethodSignature _
   | InvalidType _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
@@ -1476,6 +1494,16 @@ let less_or_equal ~resolution left right =
     | InvalidArgument (Variable left), InvalidArgument (Variable right)
       when Expression.equal left.expression right.expression ->
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+    | InvalidMethodSignature left, InvalidMethodSignature right ->
+        begin
+          match left.annotation, right.annotation with
+          | Some left, Some right ->
+              Resolution.less_or_equal resolution ~left ~right
+          | None, None ->
+              true
+          | _ ->
+              false
+        end
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
@@ -1570,6 +1598,7 @@ let less_or_equal ~resolution left right =
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidType _, _
+    | InvalidMethodSignature _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
     | MissingArgument _, _
@@ -1738,6 +1767,14 @@ let join ~resolution left right =
           Variable {
             left with annotation = Resolution.join resolution left.annotation right.annotation
           })
+    | InvalidMethodSignature left, InvalidMethodSignature right
+      when Identifier.equal left.name right.name ->
+        InvalidMethodSignature {
+          left with
+          annotation = (
+            Option.merge ~f:(Resolution.join resolution) left.annotation right.annotation
+          )
+        }
     | InvalidType left, InvalidType right when Type.equal left right ->
         InvalidType left
     | InvalidTypeVariable { annotation = left; origin = left_origin },
@@ -1826,6 +1863,7 @@ let join ~resolution left right =
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
+    | InvalidMethodSignature _, _
     | InvalidType _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
@@ -2165,6 +2203,8 @@ let dequalify
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
     | InvalidArgument (Variable { expression; annotation }) ->
         InvalidArgument (Variable { expression; annotation = dequalify annotation })
+    | InvalidMethodSignature ({ annotation; _ } as kind) ->
+        InvalidMethodSignature { kind with annotation = (annotation >>| dequalify) }
     | InvalidType annotation ->
         InvalidType (dequalify annotation)
     | InvalidTypeVariable { annotation; origin } ->

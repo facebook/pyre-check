@@ -196,10 +196,10 @@ let test_check_init _ =
   assert_type_errors
     {|
       class Foo:
-        def __init__(sefl) -> None:
+        def __init__(self) -> None:
           pass
         @property
-        def foo() -> str:
+        def foo(self) -> str:
           return "asdf"
     |}
     [];

@@ -32,13 +32,13 @@ let test_check_method_returns _ =
 
 
 let test_check_method_parameters _ =
+  (* Calls to methods *)
   assert_type_errors
     {|
       def foo(input: str) -> None:
         input.substr(1)
     |}
     [];
-
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -48,7 +48,6 @@ let test_check_method_parameters _ =
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
-
   assert_type_errors
     {|
       def foo(a: str, b: str) -> None:
@@ -60,7 +59,6 @@ let test_check_method_parameters _ =
       "Incompatible parameter type [6]: " ^
       "Expected `str` for 1st anonymous parameter to call `foo` but got `int`.";
     ];
-
   assert_type_errors
     {|
       def foo(input: str) -> str:
@@ -70,7 +68,6 @@ let test_check_method_parameters _ =
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
-
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -80,7 +77,6 @@ let test_check_method_parameters _ =
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
-
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -88,33 +84,12 @@ let test_check_method_parameters _ =
     |}
     ["Incompatible parameter type [6]: " ^
      "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`."];
-
   assert_type_errors
     {|
       def foo(input: str) -> str:
         return input.__sizeof__()
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
-  assert_type_errors
-    {|
-      class Foo:
-        def bar(self) -> None:
-          def baz(x: int) -> int:
-            return x
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Foo:
-        def bar(x: int) -> int:
-          return x
-    |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as type `Foo`.";
-    ];
-
   assert_type_errors
     {|
       def foo(b: str, a: str) -> None: ...
@@ -125,7 +100,70 @@ let test_check_method_parameters _ =
     [
       "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter " ^
       "to call `foo` but got `int`."
-    ]
+    ];
+
+  (* Defining methods *)
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(self) -> None:
+          def baz(x: int) -> int:
+            return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(x: int) -> None:
+          return
+    |}
+    ["Invalid method signature [36]: Non-static method must specify `self` parameter."];
+  assert_type_errors
+    {|
+      class Foo:
+        def bar(x: Foo) -> None:
+          return
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar(x: int) -> None:
+          return
+    |}
+    ["Invalid method signature [36]: Non-static method must specify `cls` parameter."];
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar(x: typing.Type[Foo]) -> None:
+          return
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo:
+        def bar() -> None:
+          return
+    |}
+    ["Invalid method signature [36]: Non-static method must specify `self` parameter."];
+  assert_type_errors
+    {|
+      class Foo:
+        @classmethod
+        def bar() -> None:
+          return
+    |}
+    ["Invalid method signature [36]: Non-static method must specify `cls` parameter."];
+  assert_type_errors
+    {|
+      class Foo:
+        @staticmethod
+        def bar() -> None:
+          return
+    |}
+    []
 
 
 let test_check_abstract_methods _ =
@@ -151,9 +189,9 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo() -> int: ...
+        def foo(self) -> int: ...
       class Bar(Foo):
-        def foo() -> float: return 1.0
+        def foo(self) -> float: return 1.0
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -163,17 +201,17 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo() -> float: ...
+        def foo(self) -> float: ...
       class Bar(Foo):
-        def foo() -> int: return 1
+        def foo(self) -> int: return 1
     |}
     [];
   assert_type_errors
     {|
       class Foo():
-        def foo() -> int: ...
+        def foo(self) -> int: ...
       class Bar(Foo):
-        def foo() -> None: pass
+        def foo(self) -> None: pass
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -183,9 +221,9 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
-        def foo() -> _T: ...
+        def foo(self) -> _T: ...
       class Bar(Foo[float]):
-        def foo() -> str: return ""
+        def foo(self) -> str: return ""
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -195,19 +233,19 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
-        def foo() -> _T: ...
+        def foo(self) -> _T: ...
       class Bar(Foo[float]):
-        def foo() -> int: return 1
+        def foo(self) -> int: return 1
     |}
     [];
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
-        def foo() -> _T: ...
+        def foo(self) -> _T: ...
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[float]):
-        def foo() -> str: return ""
+        def foo(self) -> str: return ""
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -217,10 +255,10 @@ let test_check_behavioral_subtyping _ =
     {|
       _T = typing.TypeVar('_T')
       class Foo(typing.Generic[_T]):
-        def foo() -> _T: ...
+        def foo(self) -> _T: ...
       class Passthrough(Foo[_T]): ...
       class Bar(Passthrough[float]):
-        def foo() -> int: return 1
+        def foo(self) -> int: return 1
     |}
     [];
 
@@ -228,9 +266,9 @@ let test_check_behavioral_subtyping _ =
   assert_default_type_errors
     {|
       class Foo():
-        def foo() -> int: ...
+        def foo(self) -> int: ...
       class Bar(Foo):
-        def foo(): pass
+        def foo(self): pass
     |}
     [
       "Inconsistent override [15]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -919,10 +957,7 @@ let test_check_self _ =
           def two(self: Other) -> None:
               pass
     |}
-    [
-      "Incompatible variable type [9]: self is declared to have type `Other` but is used as type \
-       `Some`.";
-    ];
+    ["Invalid method signature [36]: `Other` cannot be the type of `self`."];
 
   assert_type_errors
     {|
@@ -941,7 +976,7 @@ let test_check_self _ =
         b = a.f
         return b(1)
     |}
-    [];
+    ["Invalid method signature [36]: `Variable[T]` cannot be the type of `self`."];
 
   (* Make sure the SelfType pattern works *)
   assert_type_errors

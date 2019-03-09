@@ -89,6 +89,7 @@ type kind =
       override: override;
     }
   | InvalidArgument of invalid_argument
+  | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }

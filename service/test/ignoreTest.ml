@@ -15,7 +15,7 @@ let create_files ~root content =
   let default_content =
     {|
       class object():
-        def __sizeof__() -> int: pass
+        def __sizeof__(self) -> int: pass
       class typing.Sized: ...
       class float():
         pass

@@ -14,7 +14,7 @@ let test_check_isinstance _ =
         class Stub:
           ...
         class Actual:
-          def f() -> int:
+          def f(self) -> int:
             return 0
         if isinstance(x, Stub):
           return -1
