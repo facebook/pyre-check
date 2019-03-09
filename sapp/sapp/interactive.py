@@ -318,16 +318,15 @@ branch(INDEX)   select a trace branch
                 ),
             )
 
-        root_trace_frame, _ = precondition_navigation[0]
         self.trace_tuples = (
             self._create_trace_tuples(reversed(postcondition_navigation))
             + [
                 TraceTuple(
                     trace_frame=TraceFrame(
-                        callee=root_trace_frame.caller,
-                        callee_port=root_trace_frame.caller_port,
-                        filename=root_trace_frame.filename,
-                        callee_location=root_trace_frame.callee_location,
+                        callee=issue.callable,
+                        callee_port="root",
+                        filename=issue_instance.filename,
+                        callee_location=issue_instance.location,
                     )
                 )
             ]
@@ -622,7 +621,12 @@ branch(INDEX)   select a trace branch
             .all()
         )
 
-    def _navigate_trace_frames(self, session, initial_trace_frames, index=0):
+    def _navigate_trace_frames(
+        self, session: Session, initial_trace_frames: List[TraceFrame], index: int = 0
+    ) -> List[Tuple[TraceFrame, int]]:
+        if not initial_trace_frames:
+            return []
+
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
         while not self._is_leaf(trace_frames[-1]):
             trace_frame, branches = trace_frames[-1]
@@ -632,7 +636,7 @@ branch(INDEX)   select a trace branch
                 # Denote a missing frame by setting caller to None
                 trace_frames.append(
                     (
-                        TraceFrame(
+                        TraceFrame(  # pyre-ignore: T41318465
                             callee=trace_frame.callee,
                             callee_port=trace_frame.callee_port,
                             caller=None,

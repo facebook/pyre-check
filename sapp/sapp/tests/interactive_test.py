@@ -52,10 +52,7 @@ class InteractiveTest(TestCase):
             session.add(row)
 
     def _generic_issue(
-        self,
-        id: int = 1,
-        callable: str = "module.function1",
-        filename: str = "module.py",
+        self, id: int = 1, callable: str = "call1", filename: str = "file.py"
     ) -> Issue:
         return Issue(  # pyre-ignore: T41318465
             id=id,
@@ -73,7 +70,7 @@ class InteractiveTest(TestCase):
             id=id,
             run_id=run_id,
             message_id=1,
-            filename="module.py",
+            filename="file.py",
             location=SourceLocation(1, 2, 3),
             issue_id=issue_id,
         )
@@ -104,7 +101,7 @@ class InteractiveTest(TestCase):
         self.assertIn("Code: 1000", output)
         self.assertIn("Message: message1", output)
         self.assertIn("Callable: module.function1", output)
-        self.assertIn("Location: module.py:1|2|3", output)
+        self.assertIn("Location: file.py:1|2|3", output)
         self.assertNotIn("module.function2", output)
 
     def testListIssuesFromLatestRun(self):
@@ -676,7 +673,7 @@ class InteractiveTest(TestCase):
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("                leaf       source file.py:1|1|1", output)
-        self.assertIn(" -->            call1      root   file.py:1|1|2", output)
+        self.assertIn(" -->            call1      root   file.py:1|2|3", output)
         self.assertIn("                leaf       sink   file.py:1|1|2", output)
 
     def testTraceMissingFrames(self):
@@ -784,6 +781,50 @@ class InteractiveTest(TestCase):
         self.interactive.prev_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
 
+    def testTraceNoSinks(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
+        trace_frame = TraceFrame(
+            id=1,
+            kind=TraceKind.POSTCONDITION,
+            caller="call1",
+            caller_port="root",
+            callee="leaf",
+            callee_port="source",
+            callee_location=SourceLocation(1, 1),
+            filename="file.py",
+            run_id=1,
+        )
+        source = SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE)
+        assocs = [
+            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+        ]
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            session.add(trace_frame)
+            session.add(source)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.setup()
+        self.interactive.sources = {"source1"}
+        self.interactive.set_issue(1)
+        self._clear_stdout()
+        self.interactive.trace()
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     [branches] [callable] [port] [location]",
+                "                leaf       source file.py:1|1|1",
+                " -->            call1      root   file.py:1|2|3",
+                "",
+            ],
+        )
+
     def _set_up_branched_trace(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
@@ -863,7 +904,7 @@ class InteractiveTest(TestCase):
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("     + 2        leaf       source file.py:0|0|0", output)
-        self.assertIn(" -->            call1      root   file.py:2|2|2", output)
+        self.assertIn(" -->            call1      root   file.py:1|2|3", output)
         self.assertIn("     + 2        call2      param2 file.py:2|2|2", output)
         self.assertIn("     + 2        leaf       sink   file.py:4|4|4", output)
 
@@ -1058,7 +1099,7 @@ class InteractiveTest(TestCase):
             [
                 "     [branches] [callable] [port] [location]",
                 " --> + 2        leaf       source file.py:1|1|1",
-                "                call1      root   file.py:1|2|2",
+                "                call1      root   file.py:1|2|3",
                 "                leaf       sink   file.py:1|2|2",
                 "",
             ],
@@ -1072,7 +1113,7 @@ class InteractiveTest(TestCase):
                 "     [branches] [callable] [port] [location]",
                 "                leaf       source file.py:1|1|1",
                 " --> + 2        prev_call  result file.py:1|1|1",
-                "                call1      root   file.py:1|2|2",
+                "                call1      root   file.py:1|2|3",
                 "                leaf       sink   file.py:1|2|2",
                 "",
             ],
