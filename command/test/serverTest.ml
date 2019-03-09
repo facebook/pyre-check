@@ -1172,9 +1172,14 @@ let test_protocol_language_server_protocol context =
 
 let test_did_save_with_content context =
   let root, filename =
-    let root = Path.create_absolute Filename.temp_dir_name in
+    let root =
+      bracket_tmpdir context
+      |> Path.create_absolute
+    in
     let filename =
-      bracket_tmpfile ~suffix:".py" context
+      Filename.open_temp_file
+        ~in_dir:(Path.absolute root)
+        "" ".py"
       |> fst
       |> Path.create_absolute
       |> (fun path -> Path.get_relative_to_root ~root ~path)
@@ -1323,14 +1328,18 @@ let test_incremental_dependencies context =
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
 
-let test_incremental_lookups _ =
+let test_incremental_lookups context =
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
   let path, _ =
     Filename.open_temp_file
-      ~in_dir:(Path.current_working_directory () |> Path.absolute)
+      ~in_dir:(Path.absolute local_root)
       "test" ".py"
   in
   let handle =
-    Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
+    Path.create_relative ~root:local_root ~relative:path
     |> Path.relative
     |> Option.value ~default:path
     |> File.Handle.create
@@ -1352,7 +1361,7 @@ let test_incremental_lookups _ =
     |}
     |> trim_extra_indentation
   in
-  let configuration = configuration ~local_root:(Path.current_working_directory ()) in
+  let configuration = configuration ~local_root in
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler environment in
   let environment_handler = Environment.handler environment in
@@ -1368,16 +1377,16 @@ let test_incremental_lookups _ =
       (Protocol.TypeCheckRequest.create
          ~update_environment_with:[
            file
-             ~local_root:(Path.current_working_directory ())
+             ~local_root
              ~content:source path;
          ]
-         ~check:[file ~local_root:(Path.current_working_directory ()) ~content:source path]
+         ~check:[file ~local_root ~content:source path]
          ())
   in
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
-      ~local_root:(Path.current_working_directory ())
+      ~local_root
       ~initial_environment:environment
       errors
   in
@@ -1387,7 +1396,7 @@ let test_incremental_lookups _ =
       ~state:initial_state
       ~configuration:(
         CommandTest.mock_server_configuration
-          ~local_root:(Path.current_working_directory ())
+          ~local_root
           ())
       ~request
   in
