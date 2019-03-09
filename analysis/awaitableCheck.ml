@@ -20,7 +20,7 @@ end
 
 module State (Context: Context) = struct
   type state =
-    | Unawaited
+    | Unawaited of Location.t
     | Awaited
   [@@deriving show]
 
@@ -48,10 +48,10 @@ module State (Context: Context) = struct
   let errors { unawaited; _ } =
     let error (access, state) =
       match state with
-      | Unawaited ->
+      | Unawaited location ->
           [
             Error.create
-              ~location:(Node.location Context.define)
+              ~location
               ~kind:(Error.UnawaitedAwaitable (Access.delocalize access))
               ~define:Context.define;
           ]
@@ -65,7 +65,7 @@ module State (Context: Context) = struct
   let less_or_equal ~left:{ unawaited = left; _ } ~right:{ unawaited = right; _ } =
     let less_or_equal (access, state) =
       match state, Map.find right access with
-      | Unawaited, Some _ -> true
+      | Unawaited _, Some _ -> true
       | Awaited, Some Awaited -> true
       | _ -> false
     in
@@ -79,7 +79,9 @@ module State (Context: Context) = struct
       | `Right state -> Some state
       | `Both (_, Awaited) -> Some Awaited
       | `Both (Awaited, _) -> Some Awaited
-      | `Both (Unawaited, Unawaited) -> Some Unawaited
+      | `Both ((Unawaited _) as unawaited, Unawaited _) ->
+          (* It does not matter which one we pick as long as we are consistent. *)
+          Some unawaited
     in
     { left with unawaited = Map.merge left.unawaited right.unawaited ~f:merge }
 
@@ -110,9 +112,9 @@ module State (Context: Context) = struct
           false
       in
       match value with
-      | Assign { target = { Node.value = Access (SimpleAccess access); _ }; value; _ }
+      | Assign { target = { Node.value = Access (SimpleAccess access); location }; value; _ }
         when is_awaitable value ->
-          Map.set unawaited ~key:access ~data:Unawaited
+          Map.set unawaited ~key:access ~data:(Unawaited location)
 
       | Assign {
           value = { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ };

@@ -1041,7 +1041,10 @@ let messages ~concise ~define location kind =
             [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count]
       end
   | UnawaitedAwaitable name ->
-      [Format.asprintf "`%a` is never awaited." pp_access name]
+      [
+        Format.asprintf "`%a` is never awaited." pp_access name;
+        Format.asprintf "`%a` is defined on line %d" pp_access name start_line;
+      ]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
