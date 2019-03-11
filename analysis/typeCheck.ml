@@ -1373,10 +1373,10 @@ module State = struct
                       in
                       let compatible =
                         Resolution.less_or_equal resolution ~left:annotation ~right:resolved ||
-                           Resolution.constraints_solution_exists
-                            resolution
-                            ~source:annotation
-                            ~target:resolved
+                        Resolution.constraints_solution_exists
+                          resolution
+                          ~source:annotation
+                          ~target:resolved
                       in
                       let state =
                         let name = Identifier.sanitized name in
@@ -1395,16 +1395,16 @@ module State = struct
                             (* Assume the user forgot to specify the implicit parameter *)
                             Some(
                               Error.InvalidMethodSignature {
-                                  annotation = None;
-                                  name = if is_class_method then "cls" else "self";
-                                }
+                                annotation = None;
+                                name = if is_class_method then "cls" else "self";
+                              }
                             )
-                          in
-                          match kind with
-                          | Some kind ->
-                              emit_error ~state ~location ~kind ~define:define_node
-                          | None ->
-                              state
+                        in
+                        match kind with
+                        | Some kind ->
+                            emit_error ~state ~location ~kind ~define:define_node
+                        | None ->
+                            state
                       in
                       state, Annotation.create annotation
                   | None ->
@@ -3789,6 +3789,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~class_definition:(fun _ -> None)
         ~class_representation:(fun _ -> None)
         ~constructor:(fun ~instantiated:_ ~resolution:_ _ -> Type.Top)
+        ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ()
     in
     {
@@ -3812,6 +3813,25 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     AnnotatedClass.create class_node
     |> AnnotatedClass.constructor ~instantiated ~resolution
   in
+  let implements ~resolution ~protocol annotation =
+    let implements protocol =
+      if AnnotatedClass.is_protocol protocol then
+        match annotation with
+        | Type.Callable callable ->
+            AnnotatedClass.callable_implements ~resolution callable ~protocol
+        | _ ->
+            class_definition annotation
+            >>| AnnotatedClass.create
+            >>| AnnotatedClass.implements ~resolution ~protocol
+            |> Option.value ~default:TypeOrder.DoesNotImplement
+      else
+        TypeOrder.DoesNotImplement
+    in
+    class_definition protocol
+    >>| AnnotatedClass.create
+    >>| implements
+    |> Option.value ~default:TypeOrder.DoesNotImplement
+  in
   Resolution.create
     ~annotations
     ~order
@@ -3822,6 +3842,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ~class_definition
     ~class_representation
     ~constructor
+    ~implements
     ()
 
 

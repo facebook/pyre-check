@@ -21,14 +21,23 @@ let (!) name =
 let connect ?(parameters = []) handler ~predecessor ~successor =
   connect ~parameters handler ~predecessor ~successor
 
-let less_or_equal ?(constructor = fun _ -> None) handler =
-  less_or_equal { handler; constructor }
+let less_or_equal
+    ?(constructor = fun _ -> None)
+    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
+    handler =
+  less_or_equal { handler; constructor; implements }
 
-let join ?(constructor = fun _ -> None) handler =
-  join { handler; constructor }
+let join
+    ?(constructor = fun _ -> None)
+    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
+    handler =
+  join { handler; constructor; implements }
 
-let meet ?(constructor = fun _ -> None) handler =
-  meet  { handler; constructor }
+let meet
+    ?(constructor = fun _ -> None)
+    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
+    handler =
+  meet  { handler; constructor; implements }
 
 (* Butterfly:
     0 - 2
@@ -1012,7 +1021,7 @@ let test_less_or_equal _ =
        ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"));
 
   (* Behavioral subtyping of callables. *)
-  let less_or_equal order ~left ~right =
+  let less_or_equal ?implements order ~left ~right =
     let aliases = function
       | Type.Primitive "T_Unconstrained" ->
           Some (Type.variable "T_Unconstrained")
@@ -1020,7 +1029,11 @@ let test_less_or_equal _ =
           Some (Type.variable "T_int_bool" ~constraints:(Type.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
-    less_or_equal order ~left:(parse_callable ~aliases left) ~right:(parse_callable ~aliases right)
+    less_or_equal
+      order
+      ~left:(parse_callable ~aliases left)
+      ~right:(parse_callable ~aliases right)
+      ?implements
   in
   assert_true
     (less_or_equal
@@ -1322,6 +1335,41 @@ let test_less_or_equal _ =
        order
        ~left:"typing_extensions.Literal['a']"
        ~right:"typing_extensions.Literal['a', 'b']");
+
+  (* Callback protocols *)
+  let implements ~protocol callable =
+    match protocol, callable with
+    | Type.Primitive "MatchesProtocol", Type.Callable _  ->
+        TypeOrder.Implements { parameters = [] }
+    | Type.Parametric { name = "B"; _ }, Type.Callable _  ->
+        TypeOrder.Implements { parameters = [Type.integer] }
+    | _ ->
+        TypeOrder.DoesNotImplement
+  in
+  assert_true
+    (less_or_equal
+       order
+       ~implements
+       ~left:"typing.Callable[[int], str]"
+       ~right:"MatchesProtocol");
+  assert_false
+    (less_or_equal
+       order
+       ~implements
+       ~left:"typing.Callable[[int], str]"
+       ~right:"DoesNotMatchProtocol");
+  assert_true
+    (less_or_equal
+       order
+       ~implements
+       ~left:"typing.Callable[[int], str]"
+       ~right:"B[int]");
+  assert_false
+    (less_or_equal
+       order
+       ~implements
+       ~left:"typing.Callable[[int], str]"
+       ~right:"B[str]");
   ()
 
 
@@ -2278,51 +2326,58 @@ let test_greatest_lower_bound _ =
 
 
 let test_instantiate_parameters _ =
+  let order =
+    {
+      handler = default;
+      constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+    }
+  in
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:(Type.list Type.string)
        ~target:(!"typing.Iterator"))
     (Some [Type.string]);
 
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:(Type.dictionary ~key:Type.integer ~value:Type.string)
        ~target:(!"typing.Iterator"))
     (Some [Type.integer]);
 
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:(Type.string)
        ~target:!"typing.Iterable")
     (Some [Type.string]);
 
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:(Type.tuple [Type.integer; Type.integer])
        ~target:!"typing.Iterable")
     (Some [Type.integer]);
 
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:!"AnyIterable"
        ~target:!"typing.Iterable")
     (Some [Type.Any]);
   (* If you're not completely specified, fill all with anys *)
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:!"PartiallySpecifiedDict"
        ~target:!"dict")
     (Some [Type.Any; Type.Any]);
   (* If you're over-specified, fill all with anys *)
   assert_equal
     (instantiate_successors_parameters
-       { handler = default; constructor = fun _ -> None }
+       order
        ~source:!"OverSpecifiedDict"
        ~target:!"dict")
     (Some [Type.Any; Type.Any]);
@@ -2768,7 +2823,14 @@ let test_solve_constraints _ =
       >>| Class.create
       >>| Class.constructor ~instantiated ~resolution
     in
-    { TypeOrder.handler = Resolution.order resolution; constructor }
+    let implements ~protocol callable =
+      match protocol, callable with
+      | Type.Parametric { name = "G_invariant"; _ }, Type.Callable _  ->
+          TypeOrder.Implements { parameters = [Type.integer] }
+      | _ ->
+          TypeOrder.DoesNotImplement
+    in
+    { handler = Resolution.order resolution; constructor; implements }
   in
   let assert_solve
       ~source
@@ -3002,6 +3064,12 @@ let test_solve_constraints _ =
     ~source:"typing.Callable[[typing.Union[int, str], int], str]"
     ~target:"typing.Callable[[int, T3], T4]"
     (None);
+
+  (* Callback protocols *)
+  assert_solve
+    ~source:"typing.Callable[[int], str]"
+    ~target:"G_invariant[T1]"
+    (Some ["T1", "int"]);
   ()
 
 

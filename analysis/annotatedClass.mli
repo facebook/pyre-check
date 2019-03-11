@@ -88,10 +88,12 @@ val methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
 
-type implements_result =
-  | DoesNotImplement
-  | Implements of { parameters: Type.t list }
-val implements: resolution: Resolution.t -> t -> protocol: t -> implements_result
+val callable_implements
+  :  resolution: Resolution.t
+  -> Type.Callable.t
+  -> protocol: t
+  -> TypeOrder.implements_result
+val implements: resolution: Resolution.t -> t -> protocol: t -> TypeOrder.implements_result
 
 module Attribute : sig
   type attribute = {

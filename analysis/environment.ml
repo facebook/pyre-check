@@ -890,8 +890,8 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
           >>= validate
           >>| Class.implements ~resolution ~protocol:protocol_definition
           >>= function
-          | Class.Implements { parameters } -> Some (annotation, parameters)
-          | Class.DoesNotImplement -> None
+          | TypeOrder.Implements { parameters } -> Some (annotation, parameters)
+          | DoesNotImplement -> None
         in
         List.filter_map ~f:implements classes_to_analyze
       in

@@ -749,11 +749,31 @@ let attributes
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
-type implements_result =
-  | DoesNotImplement
-  | Implements of { parameters: Type.t list }
+let callables_of_attributes =
+  let callables_of_attribute =
+    function
+    | { Node.value =
+          { Attribute.annotation = {
+                Annotation.annotation = Type.Callable {
+                    kind = Type.Record.Callable.Named callable_name;
+                    implementation;
+                    overloads;
+                    _ };
+                _ };
+            parent;
+            _ }; _ } ->
+        (* We have to split the type here due to our built-in aliasing. Namely, the "list" and
+           "dict" classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
+        let parent = fst (Type.split parent) in
+        let local_name =
+          Access.drop_prefix callable_name ~prefix:(Expression.Access.create (Type.show parent))
+        in
+        List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
+    | _ -> []
+  in
+  List.concat_map ~f:callables_of_attribute
 
-let implements ~resolution definition ~protocol =
+let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
   let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
     if Access.equal name protocol_name then
       let source =
@@ -769,33 +789,8 @@ let implements ~resolution definition ~protocol =
     else
       None
   in
-  let callables_of_attributes =
-    let callables_of_attribute =
-      function
-      | { Node.value =
-            { Attribute.annotation = {
-                  Annotation.annotation = Type.Callable {
-                      kind = Type.Record.Callable.Named callable_name;
-                      implementation;
-                      overloads;
-                      _ };
-                  _ };
-              parent;
-              _ }; _ } ->
-          (* We have to split the type here due to our built-in aliasing. Namely, the "list" and
-             "dict" classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
-          let parent = fst (Type.split parent) in
-          let local_name =
-            Access.drop_prefix callable_name ~prefix:(Expression.Access.create (Type.show parent))
-          in
-          List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
-      | _ -> []
-    in
-    List.concat_map ~f:callables_of_attribute
-  in
   (* TODO(T40727281): This needs to be transitive once we're actually checking based on
        transitive *)
-  let all_instance_methods = callables_of_attributes (attributes ~resolution definition) in
   let all_protocol_methods =
     attributes ~resolution ~transitive:true protocol
     |> List.filter ~f:(fun { Node.value = {Attribute.parent; _}; _} ->
@@ -826,8 +821,19 @@ let implements ~resolution definition ~protocol =
       List.map
         (generics ~resolution protocol)
         ~f:(Type.instantiate ~constraints:(Type.Map.find constraints)))
-  >>| (fun parameters -> Implements { parameters })
-  |> Option.value ~default:DoesNotImplement
+  >>| (fun parameters -> TypeOrder.Implements { parameters })
+  |> Option.value ~default:TypeOrder.DoesNotImplement
+
+
+let callable_implements ~resolution { Type.Callable.implementation; overloads; _ } ~protocol =
+  List.map (implementation :: overloads) ~f:(fun overload -> (Access.create "__call__", overload))
+  |> map_of_name_to_annotation_implements ~resolution ~protocol
+
+
+let implements ~resolution definition ~protocol =
+  callables_of_attributes (attributes ~resolution definition)
+  |> map_of_name_to_annotation_implements ~resolution ~protocol
+
 
 let attribute_fold
     ?(transitive = false)

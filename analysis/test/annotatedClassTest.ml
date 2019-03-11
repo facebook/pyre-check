@@ -486,9 +486,9 @@ let test_implements _ =
       { Node.value = Statement.Class protocol; _ } ->
         assert_equal
           ~printer:(function
-              | Class.Implements { parameters } ->
+              | TypeOrder.Implements { parameters } ->
                   List.map parameters ~f:Type.show |> String.concat ~sep:","
-              | Class.DoesNotImplement ->
+              | DoesNotImplement ->
                   "None"
             )
           conforms
@@ -499,7 +499,7 @@ let test_implements _ =
     | _ ->
         assert_unreached ()
   in
-  let no_parameters = Class.Implements { parameters = [] } in
+  let no_parameters = TypeOrder.Implements { parameters = [] } in
 
   assert_conforms "class A: pass" "class Protocol: pass" no_parameters;
   assert_conforms
@@ -758,6 +758,89 @@ let test_implements _ =
       class P(typing.Protocol[T]):
         def foo() -> T:
           pass
+    |}
+    DoesNotImplement;
+  ()
+
+
+let test_callable_implements _ =
+  let assert_conforms callable protocol conforms =
+    let get_last_statement { Source.statements; _ } =
+      List.last_exn statements
+    in
+    let environment = Environment.Builder.create () in
+    let callable =
+      match parse_callable callable with
+      | Type.Callable callable -> callable
+      | _ -> failwith "Failed to parse callable."
+    in
+    let protocol =
+      protocol
+      |> parse
+      |> Preprocessing.preprocess
+    in
+    Service.Environment.populate
+      ~configuration
+      (Environment.handler environment)
+      (protocol :: Test.typeshed_stubs ());
+    let ((module Handler: Environment.Handler) as handler) =
+      Environment.handler environment
+    in
+    let resolution = TypeCheck.resolution handler () in
+    Annotated.Class.Attribute.Cache.clear ();
+    match  get_last_statement protocol with
+    | { Node.value = Statement.Class protocol; _ } ->
+        assert_equal
+          ~printer:(function
+              | TypeOrder.Implements { parameters } ->
+                  List.map parameters ~f:Type.show |> String.concat ~sep:","
+              | DoesNotImplement ->
+                  "None"
+            )
+          conforms
+          (Class.callable_implements
+             ~resolution
+             ~protocol:(Class.create (Node.create_with_default_location protocol))
+             callable)
+    | _ ->
+        assert_unreached ()
+  in
+  let no_parameters = TypeOrder.Implements { parameters = [] } in
+  assert_conforms
+    "typing.Callable[[], str]"
+    {|
+      class P(typing.Protocol):
+        def __call__(self) -> str: ...
+    |}
+    no_parameters;
+  assert_conforms
+    "typing.Callable[[Named(x, int)], str]"
+    {|
+      class P(typing.Protocol):
+        def __call__(self, x: int) -> str: ...
+    |}
+    no_parameters;
+  assert_conforms
+    "typing.Callable[[int], str]"
+    {|
+      class P(typing.Protocol):
+        def __call__(self, x: int) -> str: ...
+    |}
+    DoesNotImplement;
+  assert_conforms
+    "typing.Callable[[], str]"
+    {|
+      class P(typing.Protocol):
+        def other(self) -> str: ...
+        def __call__(self) -> str: ...
+    |}
+    no_parameters;
+  (* TODO(T41448661): support this syntax *)
+  assert_conforms
+    "typing.Callable[[int], str]"
+    {|
+      class P(typing.Protocol):
+        def __call__(self, __x: int) -> str: ...
     |}
     DoesNotImplement;
   ()

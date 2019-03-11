@@ -503,9 +503,15 @@ let get_generic_parameters ~generic_index edges =
   List.find_map ~f:generic_parameters edges
 
 
+type implements_result =
+  | DoesNotImplement
+  | Implements of { parameters: Type.t list }
+
+
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
+  implements: protocol: Type.t -> Type.t -> implements_result
 }
 
 
@@ -630,7 +636,7 @@ let rec simulate_signature_select
     )
 
 
-and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target =
+and solve_constraints ({ constructor; implements; _ } as order) ~constraints ~source ~target =
   let rec solve_constraints_throws order ~constraints ~source ~target =
     let solve_all ?(ignore_length_mismatch = false) constraints ~sources ~targets =
       let folded_constraints =
@@ -692,6 +698,15 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
                       Some joined_source
                 end
                 >>| (fun data -> Map.set constraints ~key:variable ~data)
+          | Type.Callable _, Type.Parametric { name; _ } ->
+              begin
+                match implements ~protocol:target source with
+                | Implements { parameters } ->
+                    let source = Type.parametric name parameters in
+                    solve_constraints_throws order ~constraints ~source ~target
+                | _ ->
+                    None
+              end
           | _, Type.Parametric { name = target_name; parameters = target_parameters } ->
               let enforce_variance constraints =
                 let instantiated_target =
@@ -799,7 +814,7 @@ and solve_constraints ({ constructor; _ } as order) ~constraints ~source ~target
 
 
 and less_or_equal
-    ({ handler = ((module Handler: Handler) as handler); constructor } as order)
+    ({ handler = ((module Handler: Handler) as handler); constructor; implements } as order)
     ~left
     ~right =
   Type.equal left right ||
@@ -1061,6 +1076,23 @@ and less_or_equal
             false
       end
 
+  | Type.Callable _, Type.Parametric { name; _ } ->
+      begin
+        match implements ~protocol:right left with
+        | Implements { parameters } ->
+            less_or_equal order ~left:(Type.parametric name parameters) ~right
+        | _ ->
+            false
+      end
+
+  | Type.Callable _, Type.Primitive _ ->
+      begin
+        match implements ~protocol:right left with
+        | Implements { parameters = [] } ->
+            true
+        | _ ->
+            false
+      end
   | Type.Callable _, _ ->
       false
 
@@ -1268,7 +1300,7 @@ and join_implementations ~parameter_join ~return_join order left right =
   { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
 
-and join ({ handler= ((module Handler: Handler) as handler); constructor } as order) left right =
+and join ({ handler= ((module Handler: Handler) as handler); constructor; _ } as order) left right =
   if Type.equal left right then
     left
   else
@@ -1529,7 +1561,7 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor } as or
             union
 
 
-and meet ({ handler= ((module Handler: Handler) as handler); constructor } as order) left right =
+and meet ({ handler= ((module Handler: Handler) as handler); constructor; _ } as order) left right =
   if Type.equal left right then
     left
   else
@@ -2032,7 +2064,13 @@ let connect_annotations_to_top
   in
   let connect_to_top index =
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
-    let order = { handler; constructor = fun _ -> None } in
+    let order =
+      {
+        handler;
+        constructor = (fun _ -> None);
+        implements = (fun ~protocol:_ _ -> DoesNotImplement)
+      }
+    in
     if not (less_or_equal order ~left:top ~right:annotation) then
       begin
         match Handler.find (Handler.edges ()) index with

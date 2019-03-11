@@ -32,6 +32,7 @@ val create
   -> class_definition: (Type.t -> (Class.t Node.t) option)
   -> class_representation: (Type.t -> class_representation option)
   -> constructor: (instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t)
+  -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
   -> ?parent: Access.t
   -> unit
   -> t

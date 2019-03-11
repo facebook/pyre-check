@@ -407,10 +407,97 @@ let test_check_generic_implementors _ =
     ];
   ()
 
+
+let test_callback_protocols _ =
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def __call__(self, x: int, y:str) -> bool: ...
+      def takesP(f: P) -> bool:
+        return f(x = 1, y = "one")
+      def exactMatch(x: int, y: str) -> bool:
+        return True
+      def doesNotMatch(x: int, y: str) -> str:
+        return "True"
+      def foo() -> None:
+        takesP(exactMatch)
+        takesP(doesNotMatch)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call " ^
+      "`takesP` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      class NotAProtocol():
+        def __call__(self, x: int, y:str) -> bool: ...
+      def exactMatch(x: int, y: str) -> bool:
+        return True
+      def foo() -> NotAProtocol:
+        return exactMatch
+    |}
+    [
+      "Incompatible return type [7]: Expected `NotAProtocol` but got " ^
+      "`typing.Callable(exactMatch)[[Named(x, int), Named(y, str)], bool]`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class P(typing.Protocol[T]):
+        def __call__(self, x: int, y:str) -> T: ...
+      def takesPInt(f: P[int]) -> int:
+        return f(x = 1, y = "one")
+      def exactMatch(x: int, y: str) -> int:
+        return 7
+      def doesNotMatch(x: int, y: str) -> str:
+        return "True"
+      def foo() -> None:
+        takesPInt(exactMatch)
+        takesPInt(doesNotMatch)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `P[int]` for 1st anonymous parameter to call " ^
+      "`takesPInt` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class P(typing.Protocol[T]):
+        def __call__(self, x: int, y:str) -> T: ...
+      T2 = typing.TypeVar("T")
+      def takesPGeneric(f: P[T2]) -> T2:
+        return f(x = 1, y = "one")
+      def intMatch(x: int, y: str) -> int:
+        return 7
+      def strMatch(x: int, y: str) -> str:
+        return "True"
+      def doesNotMatch(x: str, y: int) -> int:
+        return 17
+      def foo() -> None:
+        v = takesPGeneric(intMatch)
+        reveal_type(v)
+        v = takesPGeneric(strMatch)
+        reveal_type(v)
+        takesPGeneric(doesNotMatch)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `v` is `int`.";
+      "Revealed type [-1]: Revealed type for `v` is `str`.";
+      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st anonymous parameter " ^
+      "to call `takesPGeneric` but got " ^
+      "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
+    ];
+  ()
+
+
 let () =
   "protocol">:::[
     "check_protocols">::test_check_protocol;
     "check_generic_implementors">::test_check_generic_implementors;
     "check_generic_protocols">::test_check_generic_protocols;
+    "callback_protocols">::test_callback_protocols;
   ]
   |> Test.run

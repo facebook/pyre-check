@@ -821,6 +821,16 @@ let test_check_callable_protocols _ =
     |}
     [];
 
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class Call(typing.Generic[T]):
+        def __call__(self) -> T: ...
+      def foo(call: Call[int]) -> int:
+        return call()
+    |}
+    [];
+
   (* We handle subclassing. *)
   assert_type_errors
     {|

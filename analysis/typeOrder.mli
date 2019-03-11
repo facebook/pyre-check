@@ -105,9 +105,14 @@ val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 
+type implements_result =
+  | DoesNotImplement
+  | Implements of { parameters: Type.t list }
+
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
+  implements: protocol: Type.t -> Type.t -> implements_result
 }
 
 val solve_constraints

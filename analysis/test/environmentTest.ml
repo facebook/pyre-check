@@ -1010,6 +1010,7 @@ let test_less_or_equal_type_order _ =
     {
       TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
       constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     }
   in
 
@@ -1044,6 +1045,7 @@ let test_less_or_equal_type_order _ =
     {
       TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
       constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     }
   in
 
@@ -1080,6 +1082,7 @@ let test_less_or_equal_type_order _ =
     {
       TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
       constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     }
   in
   assert_true
@@ -1123,6 +1126,7 @@ let test_less_or_equal_type_order _ =
     {
       TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
       constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     }
   in
   assert_true
@@ -1190,6 +1194,7 @@ let test_join_type_order _ =
   let order = {
     TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
     constructor = (fun _ -> None);
+    implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
   } in
   let foo = Type.Primitive "foo" in
   let bar = Type.Primitive "bar" in
@@ -1239,6 +1244,7 @@ let test_meet_type_order _ =
     {
       TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
       constructor = (fun _ -> None);
+      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     }
   in
   let assert_meet left right expected =

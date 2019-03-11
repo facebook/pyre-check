@@ -38,6 +38,7 @@ type t = {
   class_definition: Type.t -> (Class.t Node.t) option;
   class_representation: Type.t -> class_representation option;
   constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
+  implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
 
   parent: Access.t option;
 }
@@ -53,6 +54,7 @@ let create
     ~class_definition
     ~class_representation
     ~constructor
+    ~implements
     ?parent
     () =
   {
@@ -66,6 +68,7 @@ let create
     class_definition;
     class_representation;
     constructor;
+    implements;
     parent;
   }
 
@@ -173,6 +176,10 @@ let constructor ({ constructor; _ } as resolution) =
   constructor ~resolution
 
 
+let implements ({ implements; _ } as resolution) =
+  implements ~resolution
+
+
 let function_definitions resolution access =
   let qualifier =
     let rec qualifier ~lead ~tail =
@@ -198,7 +205,10 @@ let order_and_constructor ({ order; _ } as resolution) =
     class_definition resolution instantiated
     >>| constructor resolution ~instantiated
   in
-  { TypeOrder.handler = order; constructor }
+  let implements =
+    implements resolution
+  in
+  { TypeOrder.handler = order; constructor; implements }
 
 let solve_constraints resolution =
   order_and_constructor resolution
