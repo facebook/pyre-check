@@ -483,7 +483,7 @@ module Attribute = struct
     in
     let target = Access ( SimpleAccess(Access.create attribute_name)) in
 
-    (* Special case typeddicts *)
+    (* Special cases *)
     let annotation =
       let open Expression in
       let open Record.Access in
@@ -503,6 +503,19 @@ module Attribute = struct
                   };
               })
           |> Option.value ~default:annotation
+      | Some (Type.Tuple (Bounded members)),
+        Access (SimpleAccess [Identifier "__getitem__"]),
+        { annotation = Type.Callable ({ overloads; _ } as callable); _ } ->
+          let overload index member =
+            {
+              Type.Callable.annotation = member;
+              parameters = Defined [
+                  Named { name = "x"; annotation = Type.literal_integer index; default = false };
+                ];
+            }
+          in
+          let overloads =  (List.mapi ~f:overload members) @ overloads in
+          { annotation with annotation = Type.Callable { callable with overloads } }
       | _ ->
           annotation
     in

@@ -9,7 +9,7 @@ port.match_star_star_arg_with_star (fun) -> [port.source_field (fun) port.star_s
 port.refer_to_method_as_field (fun) -> [__testSink (fun)]
 port.sink_field (fun) -> [__testSink (fun)]
 port.source_field (fun) -> [__testSource (fun)]
-port.star_arg (fun) -> [port.sink_field (fun) typing.Generic::__getitem__ (method)]
+port.star_arg (fun) -> [port.sink_field (fun) tuple::__getitem__ (method)]
 port.star_arg_wrapper (fun) -> [port.star_arg (fun)]
 port.star_star_arg (fun) -> [dict::__getitem__ (method) port.sink_field (fun)]
 port.star_star_arg_wrapper (fun) -> [port.star_star_arg (fun)]

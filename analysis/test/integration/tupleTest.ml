@@ -269,9 +269,62 @@ let test_check_tuple _ =
   ()
 
 
+let test_tuple_literal_access _ =
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[0]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[1]
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
+  assert_type_errors
+    {|
+      def foo(p: int) -> int:
+        x = (0, "one", 2)
+        return x[p]
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        i = 0
+        x = (0, "one", 2)
+        return x[i]
+    |}
+    [];
+  (* TODO(T41500114): This should trigger a separate error *)
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[3]
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+  (* TODO(T41500251): This would ideally work as well *)
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[int, int]:
+        x = (0, 1, "two")
+        return x[0:2]
+    |}
+    [
+      "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got " ^
+      "`typing.Tuple[typing.Union[int, str], ...]`.";
+    ];
+  ()
+
+
 
 let () =
   "tuple">:::[
     "check_tuple">::test_check_tuple;
+    "literal_access">::test_tuple_literal_access;
   ]
   |> Test.run

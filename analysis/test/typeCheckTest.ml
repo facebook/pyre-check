@@ -307,7 +307,7 @@ type definer =
 
 
 and stripped =
-    | Attribute of string
+  | Attribute of string
   | MissingAttribute of { name: string; missing_definer: definer }
   | Unknown
   | SignatureFound of { callable: string; callees: string list }
@@ -317,9 +317,9 @@ and stripped =
 
 
 and step = {
-    annotation: Type.t;
-    element: stripped;
-  }
+  annotation: Type.t;
+  element: stripped;
+}
 [@@deriving compare, eq, show]
 
 
@@ -1778,6 +1778,130 @@ let test_forward_access _ =
           |> (fun node -> Annotated.Signature.Mismatch node)
           |> Option.some
           |> signature_not_found;
+      };
+    ];
+
+  (* Tuples *)
+  let overload ~return_annotation ~name annotation =
+    {
+      Type.Callable.annotation = return_annotation;
+      parameters = Defined [ Named { name; annotation; default = false } ];
+    };
+  in
+  let get_item = {
+    annotation =
+      Type.Callable {
+        kind = Named (Access.create "tuple.__getitem__");
+        implementation = { annotation = Type.Top; parameters = Undefined };
+        overloads = [
+          overload ~return_annotation:Type.integer ~name:"x" (Type.literal_integer 0);
+          overload ~return_annotation:Type.string ~name:"x" (Type.literal_integer 1);
+          overload
+            ~return_annotation:(Type.Tuple (Unbounded (Type.union [Type.integer; Type.string])))
+            ~name:"x"
+            (Type.Primitive "slice");
+          overload
+            ~return_annotation:(Type.union [Type.integer; Type.string])
+            ~name:"x"
+            (Type.integer);
+        ];
+        implicit = None;
+      };
+    element = Attribute "__getitem__";
+  } in
+
+  assert_fold
+    ~source:"t = (1, 'A')"
+    "t.__getitem__"
+    [
+      {
+        annotation = Type.tuple [Type.integer; Type.string];
+        element = Value;
+      };
+      get_item;
+    ];
+
+  assert_fold
+    ~source:"t = (1, 'A')"
+    "t.__getitem__(0)"
+    [
+      {
+        annotation = Type.tuple [Type.integer; Type.string];
+        element = Value;
+      };
+      get_item;
+      {
+        annotation = Type.integer;
+        element = SignatureFound {
+            callable =
+              "typing.Callable(tuple.__getitem__)" ^
+              "[[Named(x, typing_extensions.Literal[0])], int]";
+            callees = ["tuple.__getitem__"];
+          };
+      };
+    ];
+
+  assert_fold
+    ~source:"t = (1, 'A')"
+    "t.__getitem__(1)"
+    [
+      {
+        annotation = Type.tuple [Type.integer; Type.string];
+        element = Value;
+      };
+      get_item;
+      {
+        annotation = Type.string;
+        element = SignatureFound {
+            callable =
+              "typing.Callable(tuple.__getitem__)" ^
+              "[[Named(x, typing_extensions.Literal[1])], str]";
+            callees = ["tuple.__getitem__"];
+          };
+      };
+    ];
+
+  assert_fold
+    ~source:{|
+      t = (1, 'A')
+      i: int
+    |}
+    "t.__getitem__(i)"
+    [
+      {
+        annotation = Type.tuple [Type.integer; Type.string];
+        element = Value;
+      };
+      get_item;
+      {
+        annotation = Type.union [Type.integer; Type.string];
+        element = SignatureFound {
+            callable =
+              "typing.Callable(tuple.__getitem__)" ^
+              "[[Named(x, int)], typing.Union[int, str]]";
+            callees = ["tuple.__getitem__"];
+          };
+      };
+    ];
+
+  (* TODO(T41500114): This should error somehow *)
+  assert_fold
+    ~source:"t = (1, 'A')"
+    "t.__getitem__(5)"
+    [
+      {
+        annotation = Type.tuple [Type.integer; Type.string];
+        element = Value;
+      };
+      get_item;
+      {
+        annotation = Type.union [Type.integer; Type.string];
+        element = SignatureFound {
+            callable =
+              "typing.Callable(tuple.__getitem__)" ^
+              "[[Named(x, int)], typing.Union[int, str]]";
+            callees = ["tuple.__getitem__"];
+          };
       };
     ];
   ()
