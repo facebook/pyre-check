@@ -9,13 +9,12 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from .. import project_files_monitor
-from ..project_files_monitor import ProjectFilesMonitor
+from ..project_files_monitor import ProjectFilesMonitor, ProjectFilesMonitorException
 
 
 class ProjectFilesMonitorTest(unittest.TestCase):
-    @patch.object(sys, "exit")
     @patch.object(project_files_monitor, "find_root")
-    def test_subscriptions(self, find_root, sys_exit):
+    def test_subscriptions(self, find_root):
         find_root.return_value = "/ROOT"
 
         arguments = MagicMock()
@@ -63,11 +62,15 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             ],
         )
 
-        # no buck root -> terminate
+        # no watchman root -> terminate
         find_root.return_value = None
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
-        monitor._subscriptions
-        sys_exit.assert_called_once_with(0)
+        self.assertRaises(
+            ProjectFilesMonitorException,
+            ProjectFilesMonitor,
+            arguments,
+            configuration,
+            analysis_directory,
+        )
 
     @patch.object(project_files_monitor, "find_paths_with_extensions")
     @patch.object(

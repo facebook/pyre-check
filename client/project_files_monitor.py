@@ -21,6 +21,10 @@ from .watchman_subscriber import Subscription, WatchmanSubscriber
 LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
+class ProjectFilesMonitorException(Exception):
+    pass
+
+
 class ProjectFilesMonitor(WatchmanSubscriber):
     def __init__(
         self,
@@ -36,9 +40,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._extensions = set(
             ["py", "pyi"] + configuration.extensions
         )  # type: Set[str]
-        self._watchman_path = find_root(
-            arguments.current_directory, ".watchmanconfig"
-        )  # type: Optional[str]
+
+        self._watchman_path = self._find_watchman_path(
+            arguments.current_directory
+        )  # type: str
 
         # Mapping from (actual) source files in the project root to symbolic
         # links in the analysis directory
@@ -53,14 +58,6 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     @property
     @functools.lru_cache(1)
     def _subscriptions(self) -> List[Subscription]:
-        if not self._watchman_path:
-            LOG.error(
-                "Could not find a watchman directory from the current directory (%s)",
-                self._arguments.current_directory,
-            )
-            # exit here after daemonized, so we do not terminate the main process
-            sys.exit(0)
-
         subscription = {
             "expression": [
                 "allof",
@@ -101,3 +98,13 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             )
             LOG.warning("Starting with an empty symlink map.")
         return symbolic_links
+
+    @staticmethod
+    def _find_watchman_path(directory: str) -> str:
+        watchman_path = find_root(directory, ".watchmanconfig")
+        if not watchman_path:
+            raise ProjectFilesMonitorException(
+                "Could not find a watchman directory from "
+                "the current directory {}".format(directory)
+            )
+        return watchman_path
