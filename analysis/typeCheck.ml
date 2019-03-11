@@ -1301,6 +1301,7 @@ module State = struct
             let name = name |> Identifier.sanitized in
             if
               name = "*" ||
+              String.is_prefix ~prefix:"_" name ||
               Option.is_some given_annotation &&
               (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
             then

@@ -23,6 +23,12 @@ let test_check_missing_parameter _ =
     ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
   assert_strict_type_errors
     {|
+      def foo(_x) -> int:
+        return 1
+    |}
+    [];
+  assert_strict_type_errors
+    {|
       def foo(x = 1) -> int:
         return 1
     |}
