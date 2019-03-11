@@ -321,6 +321,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             preserves_type_context=preserves_type_context,
             type_interval_lower=lb,
             type_interval_upper=ub,
+            migrated_id=None,
             titos=[],
         )
 
@@ -458,6 +459,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             preserves_type_context=preserves_type_context,
             type_interval_lower=lb,
             type_interval_upper=ub,
+            migrated_id=None,
         )
 
         for (sink, depth) in sinks:

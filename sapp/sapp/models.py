@@ -1269,6 +1269,17 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         Integer, nullable=True, doc="Class interval upper-bound (inclusive)"
     )
 
+    migrated_id = Column(
+        BIGDBIDType,
+        nullable=True,
+        doc=(
+            "ID of the corresponding pre/postcondition. Temporary column used "
+            "for migrating existing pre/postconditions into trace frames. "
+            "Will be removed once migration is completed. Use None if not "
+            "in data migration mode."
+        ),
+    )
+
     preserves_type_context = Column(
         Boolean,
         default=False,
