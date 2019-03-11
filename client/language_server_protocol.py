@@ -78,3 +78,24 @@ def write_message(file: BinaryIO, message: LanguageServerProtocolMessage) -> boo
         return True
     except (ValueError, OSError):
         return False
+
+
+def perform_handshake(
+    input_file: BinaryIO, output_file: BinaryIO, client_version: str
+) -> None:
+    server_handshake = read_message(input_file)
+    if (
+        server_handshake
+        and server_handshake.method == "handshake/server"
+        and server_handshake.parameters
+    ):
+        server_version = server_handshake.parameters.get("version")
+        if server_version != client_version:
+            raise ValueError(
+                "Version mismatch. Server has version `{}`, "
+                "while client has version `{}`.".format(server_version, client_version)
+            )
+        client_handshake = LanguageServerProtocolMessage(method="handshake/client")
+        write_message(output_file, client_handshake)
+    else:
+        raise ValueError("Handshake from server was malformed.")

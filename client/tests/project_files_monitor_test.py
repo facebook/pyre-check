@@ -3,18 +3,27 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os.path
-import sys
+import os
+import socket
+import tempfile
+import threading
 import unittest
 from unittest.mock import MagicMock, patch
 
-from .. import project_files_monitor
+from .. import language_server_protocol, project_files_monitor
+from ..language_server_protocol import (
+    LanguageServerProtocolMessage,
+    read_message,
+    write_message,
+)
 from ..project_files_monitor import ProjectFilesMonitor, ProjectFilesMonitorException
 
 
 class ProjectFilesMonitorTest(unittest.TestCase):
+    @patch.object(language_server_protocol, "perform_handshake")
+    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
     @patch.object(project_files_monitor, "find_root")
-    def test_subscriptions(self, find_root):
+    def test_subscriptions(self, find_root, _connect_to_socket, perform_handshake):
         find_root.return_value = "/ROOT"
 
         arguments = MagicMock()
@@ -99,3 +108,62 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 "LOCAL_ROOT/subY/subZ/g.pyi": "ANALYSIS_ROOT/subY/subZ/g.pyi",
             },
         )
+
+    def test_bad_socket(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad_socket_path = os.path.join(root, "bad.sock")
+            self.assertRaises(
+                ProjectFilesMonitorException,
+                ProjectFilesMonitor._connect_to_socket,
+                bad_socket_path,
+            )
+
+    @patch.object(ProjectFilesMonitor, "_find_watchman_path")
+    def test_socket_communication(self, _find_watchman_path):
+        # Create a "server" thread to complete the handshake
+        server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        errors = []
+
+        with tempfile.TemporaryDirectory() as root:
+            socket_path = os.path.join(root, ".pyre", "server", "json_server.sock")
+            os.makedirs(os.path.dirname(socket_path))
+
+            socket_created_lock = threading.Lock()
+            socket_created_lock.acquire()  # hold lock until server creates socket
+
+            def server():
+                server_socket.bind(socket_path)
+                server_socket.listen(1)
+                socket_created_lock.release()
+                connection, _ = server_socket.accept()
+
+                outfile = connection.makefile(mode="wb")
+                infile = connection.makefile(mode="rb")
+                write_message(
+                    outfile,
+                    LanguageServerProtocolMessage(
+                        method="handshake/server", parameters={"version": "123"}
+                    ),
+                )
+
+                response = read_message(infile)
+                if not response or response.method != "handshake/client":
+                    errors.append("Client handshake malformed")
+
+            server_thread = threading.Thread(target=server)
+            server_thread.start()
+
+            arguments = MagicMock()
+            configuration = MagicMock()
+            configuration.extensions = []
+            configuration.version_hash = "123"
+            analysis_directory = MagicMock()
+            analysis_directory.get_root.return_value = root
+
+            # only create the monitor once the socket is open
+            with socket_created_lock:
+                ProjectFilesMonitor(arguments, configuration, analysis_directory)
+
+            server_thread.join()
+
+        self.assertEqual(errors, [])

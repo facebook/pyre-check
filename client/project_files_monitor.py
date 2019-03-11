@@ -9,10 +9,21 @@ import argparse
 import functools
 import logging
 import os
+import socket
 import subprocess
 import sys
-from typing import Any, Dict, Iterable, List, Optional, Set  # noqa
+from typing import (  # noqa
+    Any,
+    BinaryIO,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+)
 
+from . import language_server_protocol
 from .configuration import Configuration
 from .filesystem import AnalysisDirectory, find_paths_with_extensions, find_root
 from .watchman_subscriber import Subscription, WatchmanSubscriber
@@ -23,6 +34,11 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 class ProjectFilesMonitorException(Exception):
     pass
+
+
+SocketConnection = NamedTuple(
+    "SocketConnection", [("input", BinaryIO), ("output", BinaryIO)]
+)
 
 
 class ProjectFilesMonitor(WatchmanSubscriber):
@@ -50,6 +66,24 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         self._symbolic_links = self._calculate_symbolic_links(
             self._analysis_directory.get_root(), self._extensions
         )  # type: Dict[str, str]
+
+        socket_path = os.path.join(
+            self._analysis_directory.get_root(), ".pyre", "server", "json_server.sock"
+        )
+        self._socket_connection = self._connect_to_socket(
+            socket_path
+        )  # type: SocketConnection
+
+        try:
+            language_server_protocol.perform_handshake(
+                self._socket_connection.input,
+                self._socket_connection.output,
+                self._configuration.version_hash,
+            )
+        except (OSError, ValueError) as error:
+            raise ProjectFilesMonitorException(
+                "Exception encountered during handshake: `{}`".format(error)
+            )
 
     @property
     def _name(self) -> str:
@@ -93,7 +127,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         except subprocess.CalledProcessError as error:
             LOG.warning(
                 "Exception encountered trying to find source files "
-                "in the analysis directory: %s",
+                "in the analysis directory: `%s`",
                 error,
             )
             LOG.warning("Starting with an empty symlink map.")
@@ -105,6 +139,21 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         if not watchman_path:
             raise ProjectFilesMonitorException(
                 "Could not find a watchman directory from "
-                "the current directory {}".format(directory)
+                "the current directory `{}`".format(directory)
             )
         return watchman_path
+
+    @staticmethod
+    def _connect_to_socket(socket_path: str) -> SocketConnection:
+        try:
+            new_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            new_socket.connect(socket_path)
+            in_file = new_socket.makefile(mode="rb")
+            out_file = new_socket.makefile(mode="wb")
+            return SocketConnection(in_file, out_file)
+        except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
+            raise ProjectFilesMonitorException(
+                "Failed to connect to server at `{}`. Reason: `{}`".format(
+                    socket_path, error
+                )
+            )
