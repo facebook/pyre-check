@@ -2067,13 +2067,12 @@ let filter ~configuration ~resolution errors =
         }
       | IncompatibleVariableType { mismatch = { expected; actual; _ }; _ } ->
           begin
-            match actual, expected with
-            | Type.Callable _,
-              Type.Callable {
-                implementation = { parameters = Type.Callable.Undefined; annotation };
-                _;
-              } ->
-                Type.is_unknown annotation
+            match actual with
+            | Type.Callable _ ->
+                Resolution.less_or_equal
+                  resolution
+                  ~left:(Type.Callable.create ~annotation:Type.Top ())
+                  ~right:expected
             | _ ->
                 false
           end
