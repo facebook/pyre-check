@@ -247,7 +247,7 @@ let is_string_to_any_mapping resolution annotation =
   less_or_equal
     resolution
     ~left:annotation
-    ~right:(Type.parametric "typing.Mapping" [Type.string; Type.Any])
+    ~right:(Type.optional (Type.parametric "typing.Mapping" [Type.string; Type.Any]))
 
 
 let parse_annotation
