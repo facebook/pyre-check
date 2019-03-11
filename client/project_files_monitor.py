@@ -104,7 +104,22 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         return [Subscription(self._watchman_path, self._name, subscription)]
 
     def _handle_response(self, response: Dict[str, Any]) -> None:
-        LOG.error("Received response from watchman: %s", response)
+        try:
+            updated_paths = response["files"]
+            root = response["root"]
+            absolute_paths = [os.path.join(root, path) for path in updated_paths]
+            tracked_paths = filter(None, map(self._symbolic_links.get, absolute_paths))
+            LOG.info("Received Watchman update for files %s", absolute_paths)
+            message = language_server_protocol.LanguageServerProtocolMessage(
+                method="updateFiles", parameters={"files": list(tracked_paths)}
+            )
+            if not language_server_protocol.write_message(
+                self._socket_connection.output, message
+            ):
+                LOG.info("Failed to communicate with server. Shutting down.")
+                self._alive = False  # terminate daemon
+        except KeyError:
+            pass
 
     @staticmethod
     def _calculate_symbolic_links(

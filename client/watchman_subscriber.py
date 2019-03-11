@@ -11,7 +11,7 @@ import os
 import sys
 from typing import Any, Dict, List, NamedTuple
 
-from .filesystem import AnalysisDirectory, acquire_lock
+from .filesystem import AnalysisDirectory, acquire_lock, remove_if_exists
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
@@ -27,6 +27,7 @@ class WatchmanSubscriber(object):
         self._base_path = os.path.join(
             analysis_directory.get_root(), ".pyre", self._class_name
         )  # type: str
+        self._alive = True  # type: bool
 
     @property
     def _class_name(self) -> str:
@@ -96,7 +97,7 @@ class WatchmanSubscriber(object):
                 LOG.error("Connection to Watchman for %s not found", self._name)
                 sys.exit(1)
 
-            while True:
+            while self._alive:
                 # This call is blocking, which prevents this loop from burning CPU.
                 response = connection.receive()
                 try:
@@ -108,6 +109,9 @@ class WatchmanSubscriber(object):
                         self._handle_response(response)
                 except KeyError:
                     pass
+
+        remove_if_exists(pid_path)
+        remove_if_exists(lock_path)
 
     def daemonize(self) -> None:
         """We double-fork here to detach the daemon process from the parent.

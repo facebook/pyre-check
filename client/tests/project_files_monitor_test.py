@@ -149,6 +149,17 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 response = read_message(infile)
                 if not response or response.method != "handshake/client":
                     errors.append("Client handshake malformed")
+                    return
+
+                updated_message = read_message(infile)
+                if (
+                    not updated_message
+                    or updated_message.method != "updateFiles"
+                    or not updated_message.parameters
+                    or updated_message.parameters.get("files")
+                    != ["/ANALYSIS/a.py", "/ANALYSIS/subdir/b.py"]
+                ):
+                    errors.append("Update message malformed")
 
             server_thread = threading.Thread(target=server)
             server_thread.start()
@@ -162,8 +173,46 @@ class ProjectFilesMonitorTest(unittest.TestCase):
 
             # only create the monitor once the socket is open
             with socket_created_lock:
-                ProjectFilesMonitor(arguments, configuration, analysis_directory)
+                monitor = ProjectFilesMonitor(
+                    arguments, configuration, analysis_directory
+                )
+                monitor._symbolic_links["/ROOT/a.py"] = "/ANALYSIS/a.py"
+                monitor._symbolic_links["/ROOT/subdir/b.py"] = "/ANALYSIS/subdir/b.py"
+
+                monitor._handle_response(
+                    {"root": "/ROOT", "files": ["a.py", "subdir/b.py", "untracked.py"]}
+                )
 
             server_thread.join()
 
         self.assertEqual(errors, [])
+
+    @patch.object(language_server_protocol, "perform_handshake")
+    @patch.object(ProjectFilesMonitor, "_watchman_client")
+    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
+    @patch.object(ProjectFilesMonitor, "_find_watchman_path")
+    def test_files_cleaned_up(
+        self,
+        _find_watchman_path,
+        _connect_to_socket,
+        _watchman_client,
+        perform_handshake,
+    ):
+        with tempfile.TemporaryDirectory() as root:
+            arguments = MagicMock()
+            configuration = MagicMock()
+            configuration.extensions = []
+            analysis_directory = MagicMock()
+            analysis_directory.get_root.return_value = root
+
+            monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+            monitor._alive = False  # never enter watchman loop
+            monitor._run()
+
+            monitor_folder = os.path.join(root, ".pyre", "projectfilesmonitor")
+            self.assertFalse(
+                os.path.exists(os.path.join(monitor_folder, "projectfilesmonitor.lock"))
+            )
+            self.assertFalse(
+                os.path.exists(os.path.join(monitor_folder, "projectfilesmonitor.pid"))
+            )
