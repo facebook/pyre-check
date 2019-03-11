@@ -1320,7 +1320,7 @@ module State = struct
           in
           let add_variance_error (state, annotation) =
             let state =
-              if Type.is_covariant annotation then
+              if not (Statement.Define.is_constructor define) && Type.is_covariant annotation then
                 emit_error
                   ~state
                   ~location

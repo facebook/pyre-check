@@ -1254,6 +1254,15 @@ let test_check_invalid_type_variables _ =
     {|
       T = typing.TypeVar("T", covariant=True)
       class Foo(typing.Generic[T]):
+        def __init__(self, x: T) -> None:
+          return
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T", covariant=True)
+      class Foo(typing.Generic[T]):
         def foo(self, x: typing.List[T]) -> T:
           return x[0]
     |}
