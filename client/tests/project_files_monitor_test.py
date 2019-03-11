@@ -16,7 +16,11 @@ from ..language_server_protocol import (
     read_message,
     write_message,
 )
-from ..project_files_monitor import ProjectFilesMonitor, ProjectFilesMonitorException
+from ..project_files_monitor import (
+    ProjectFilesMonitor,
+    ProjectFilesMonitorException,
+    SocketConnection,
+)
 
 
 class ProjectFilesMonitorTest(unittest.TestCase):
@@ -216,3 +220,26 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             self.assertFalse(
                 os.path.exists(os.path.join(monitor_folder, "projectfilesmonitor.pid"))
             )
+
+    def test_socket_connection(self):
+        server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        with tempfile.TemporaryDirectory() as root:
+            socket_path = os.path.join(root, ".pyre", "server", "json_server.sock")
+            os.makedirs(os.path.dirname(socket_path))
+
+            socket_created_lock = threading.Lock()
+            socket_created_lock.acquire()  # hold lock until server creates socket
+
+            def server():
+                server_socket.bind(socket_path)
+                server_socket.listen(1)
+                socket_created_lock.release()
+                connection, _ = server_socket.accept()
+
+            server_thread = threading.Thread(target=server)
+            server_thread.start()
+
+            with socket_created_lock:
+                SocketConnection(socket_path)
+            server_thread.join()

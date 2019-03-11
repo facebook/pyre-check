@@ -12,16 +12,7 @@ import os
 import socket
 import subprocess
 import sys
-from typing import (  # noqa
-    Any,
-    BinaryIO,
-    Dict,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-)
+from typing import Any, BinaryIO, Dict, Iterable, List, Optional, Set  # noqa
 
 from . import language_server_protocol
 from .configuration import Configuration
@@ -36,9 +27,29 @@ class ProjectFilesMonitorException(Exception):
     pass
 
 
-SocketConnection = NamedTuple(
-    "SocketConnection", [("input", BinaryIO), ("output", BinaryIO)]
-)
+class SocketConnection(object):
+    def __init__(self, socket_path: str) -> None:
+        self.socket = socket.socket(
+            socket.AF_UNIX, socket.SOCK_STREAM
+        )  # type: socket.socket
+        self.socket.connect(socket_path)
+        self.input = self.socket.makefile(mode="rb")  # type: BinaryIO
+        self.output = self.socket.makefile(mode="wb")  # type: BinaryIO
+
+    def close(self) -> None:
+        try:
+            self.socket.close()
+        except OSError:
+            pass
+
+    def __del__(self) -> None:
+        """
+            ProjectFilesMonitor is created and then runs in a forked process.
+            As a result, in the original process, this object gets garbage
+            collected without the socket being closed.
+            For this reason, we explicitly close the socket on destruction.
+        """
+        self.close()
 
 
 class ProjectFilesMonitor(WatchmanSubscriber):
@@ -118,6 +129,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             ):
                 LOG.info("Failed to communicate with server. Shutting down.")
                 self._alive = False  # terminate daemon
+                self._socket_connection.close()
         except KeyError:
             pass
 
@@ -161,11 +173,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     @staticmethod
     def _connect_to_socket(socket_path: str) -> SocketConnection:
         try:
-            new_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            new_socket.connect(socket_path)
-            in_file = new_socket.makefile(mode="rb")
-            out_file = new_socket.makefile(mode="wb")
-            return SocketConnection(in_file, out_file)
+            return SocketConnection(socket_path)
         except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
             raise ProjectFilesMonitorException(
                 "Failed to connect to server at `{}`. Reason: `{}`".format(
