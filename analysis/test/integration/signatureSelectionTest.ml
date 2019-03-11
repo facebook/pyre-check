@@ -507,6 +507,15 @@ let test_check_function_parameters _ =
 
   assert_type_errors
     {|
+      class Foo:
+        def __init__(self, bar: int, baz: str) -> None:
+          pass
+      Foo(baz="")
+    |}
+    ["Missing argument [20]: Call `Foo.__init__` expects argument `bar`."];
+
+  assert_type_errors
+    {|
       def foo(x: int) -> str:
         return ""
       def f() -> None:

@@ -1377,7 +1377,7 @@ let due_to_unsupported_calls { kind; _ } =
   | TooManyArguments { callee = Some name; _ } ->
       List.last name
       >>| (fun name -> Access.show [name])
-      >>| List.mem ~equal:String.equal ["__init__"; "__str__"]
+      >>| List.mem ~equal:String.equal ["__str__"]
       |> Option.value ~default:false
   | _ ->
       false
@@ -2131,7 +2131,6 @@ let suppress ~mode error =
     | _ ->
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any error ||
-        due_to_unsupported_calls error ||
         (Define.is_untyped define && not (Define.is_toplevel define))
   in
 
