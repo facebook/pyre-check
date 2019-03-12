@@ -209,9 +209,8 @@ def log_statistics(
                 "user": os.getenv("USER", ""),
             },
         }
-        subprocess.run(
-            [logger, category], input=json.dumps(statistics), encoding="ascii"
-        )
+        statistics = json.dumps(statistics).encode("ascii", "strict")
+        subprocess.run([logger, category], input=statistics)
     except Exception:
         LOG.warning("Unable to log using `%s`", logger)
         LOG.info(traceback.format_exc())
