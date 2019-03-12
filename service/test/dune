@@ -1,5 +1,6 @@
 (tests
  (names
+  decodableTest
   ignoreTest
   memoryTest
   parserTest

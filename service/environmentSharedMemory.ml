@@ -16,36 +16,48 @@ module AccessKey = struct
   type t = Access.t
   let to_string = Access.show
   let compare = Access.compare
+  type out = string
+  let from_string x = x
 end
 
 module TypeKey = struct
   type t = Type.t
   let to_string = Type.serialize
   let compare = Type.compare
+  type out = string
+  let from_string x = x
 end
 
 module IntKey = struct
   type t = int
   let to_string = Int.to_string
   let compare = Int.compare
+  type out = int
+  let from_string = Int.of_string
 end
 
 module StringKey = struct
   type t = string
   let to_string = ident
   let compare = String.compare
+  type out = string
+  let from_string x = x
 end
 
 module FileHandleKey = struct
   type t = File.Handle.t
   let to_string = File.Handle.show
   let compare = File.Handle.compare
+  type out = string
+  let from_string x = x
 end
 
 module LocationKey = struct
   type t = Location.t
   let to_string = Location.Reference.show
   let compare = Location.Reference.compare
+  type out = string
+  let from_string x = x
 end
 
 
@@ -153,41 +165,41 @@ module ErrorsValue = struct
 end
 
 (** Shared memory maps *)
-module ClassDefinitions = SharedMemory.WithCache (TypeKey) (ClassValue)
+module ClassDefinitions = Decodable.WithCache (TypeKey) (ClassValue)
 
-module Aliases = SharedMemory.NoCache (TypeKey) (AliasValue)
+module Aliases = Decodable.NoCache (TypeKey) (AliasValue)
 
-module Globals = SharedMemory.WithCache (AccessKey) (GlobalValue)
+module Globals = Decodable.WithCache (AccessKey) (GlobalValue)
 
-module Dependents = SharedMemory.WithCache (AccessKey) (DependentValue)
+module Dependents = Decodable.WithCache (AccessKey) (DependentValue)
 
-module Protocols = SharedMemory.WithCache (StringKey) (ProtocolValue)
+module Protocols = Decodable.WithCache (StringKey) (ProtocolValue)
 
 (** Keys *)
-module FunctionKeys = SharedMemory.WithCache (FileHandleKey) (FunctionKeyValue)
+module FunctionKeys = Decodable.WithCache (FileHandleKey) (FunctionKeyValue)
 
-module ClassKeys = SharedMemory.WithCache (FileHandleKey) (ClassKeyValue)
+module ClassKeys = Decodable.WithCache (FileHandleKey) (ClassKeyValue)
 
-module GlobalKeys = SharedMemory.WithCache (FileHandleKey) (GlobalKeyValue)
+module GlobalKeys = Decodable.WithCache (FileHandleKey) (GlobalKeyValue)
 
-module AliasKeys = SharedMemory.WithCache (FileHandleKey) (AliasKeyValue)
+module AliasKeys = Decodable.WithCache (FileHandleKey) (AliasKeyValue)
 
-module DependentKeys = SharedMemory.WithCache (FileHandleKey) (DependentKeyValue)
+module DependentKeys = Decodable.WithCache (FileHandleKey) (DependentKeyValue)
 
 (** Type order maps *)
-module OrderIndices = SharedMemory.WithCache (TypeKey) (OrderIndexValue)
+module OrderIndices = Decodable.WithCache (TypeKey) (OrderIndexValue)
 
-module OrderAnnotations = SharedMemory.WithCache (IntKey) (OrderAnnotationValue)
+module OrderAnnotations = Decodable.WithCache (IntKey) (OrderAnnotationValue)
 
-module OrderEdges = SharedMemory.WithCache (IntKey) (EdgeValue)
+module OrderEdges = Decodable.WithCache (IntKey) (EdgeValue)
 
-module OrderBackedges = SharedMemory.WithCache (IntKey) (BackedgeValue)
+module OrderBackedges = Decodable.WithCache (IntKey) (BackedgeValue)
 
-module OrderKeys = SharedMemory.WithCache (StringKey) (OrderKeyValue)
+module OrderKeys = Decodable.WithCache (StringKey) (OrderKeyValue)
 
-module StoredConfiguration = SharedMemory.NoCache (StringKey) (ConfigurationValue)
+module StoredConfiguration = Decodable.NoCache (StringKey) (ConfigurationValue)
 
-module ServerErrors = Memory.NoCache (StringKey) (ErrorsValue)
+module ServerErrors = Decodable.NoCache (StringKey) (ErrorsValue)
 
 let heap_size () =
   SharedMemory.heap_size ()
