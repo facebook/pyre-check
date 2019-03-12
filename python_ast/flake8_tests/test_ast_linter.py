@@ -48,10 +48,5 @@ class AstVisitorTestCase(AstVisitorBaseCase):
         errors = self.run_checker()
         self.assert_errors(
             errors,
-            [
-                ExpectedError(line=9, message="Assigning to expression of type `int`."),
-                ExpectedError(
-                    line=11, message="Assigning to expression of type `int`."
-                ),
-            ],
+            [ExpectedError(line=9, message="Assigning to expression of type `int`.")],
         )
