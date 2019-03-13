@@ -65,6 +65,15 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         for entry in input["issues"]:
             self._generate_issue(self.summary["run"], entry, callables)
 
+        if self.summary.get("store_unused_models"):
+            for _key, entries in self.summary["postcondition_entries"].items():
+                for entry in entries:
+                    self._generate_postcondition(self.summary["run"], entry)
+
+            for _key, entries in self.summary["precondition_entries"].items():
+                for entry in entries:
+                    self._generate_precondition(self.summary["run"], entry)
+
         return self.graph, self.summary
 
     def _compute_callables_count(self, iters: Dict[str, Any]):

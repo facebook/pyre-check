@@ -104,6 +104,11 @@ def explore(ctx: Context):
     type=Path(exists=True),
     help="json file mapping new locations to old locations",
 )
+@option(
+    "--store-unused-models",
+    is_flag=True,
+    help="store pre/post conditions unrelated to an issue",
+)
 @argument("input_file", type=Path(exists=True))
 def analyze(
     ctx: Context,
@@ -115,6 +120,7 @@ def analyze(
     previous_issue_handles,
     previous_input,
     linemap,
+    store_unused_models,
     input_file,
 ):
     # Store all options in the right places
@@ -125,6 +131,7 @@ def analyze(
         "branch": branch,
         "commit_hash": commit_hash,
         "old_linemap_file": linemap,
+        "store_unused_models": store_unused_models,
     }
 
     if job_id is None and differential_id is not None:

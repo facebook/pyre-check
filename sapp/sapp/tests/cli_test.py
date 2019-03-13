@@ -48,6 +48,7 @@ class TestSappCli(TestCase):
         self.assertEqual(summary_blob["branch"], "master")
         self.assertEqual(summary_blob["commit_hash"], "abc123")
         self.assertEqual(summary_blob["old_linemap_file"], "/tmp")
+        self.assertEqual(summary_blob["store_unused_models"], True)
         self.assertTrue(callable(summary_blob["compress"]))
 
     def test_base_summary_blob(self, mock_analysis_output):
@@ -66,6 +67,7 @@ class TestSappCli(TestCase):
                     "abc123",
                     "--linemap",
                     "/tmp",
+                    "--store-unused-models",
                     "/tmp",
                 ],
             )
