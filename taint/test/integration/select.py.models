@@ -1,0 +1,146 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.view_entry_field",
+    "sources": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(request)[payload]",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 5,
+              "start": 9,
+              "end": 24
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_field",
+    "callable_line": 4,
+    "code": 5001,
+    "line": 5,
+    "start": 9,
+    "end": 24,
+    "filename": "select.py",
+    "message":
+      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [ { "first-field": "payload" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 5,
+              "start": 9,
+              "end": 24
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.view_entry_index",
+    "sources": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(request)[GET][payload]",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 8,
+              "start": 9,
+              "end": 20
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_index",
+    "callable_line": 7,
+    "code": 5001,
+    "line": 8,
+    "start": 9,
+    "end": 20,
+    "filename": "select.py",
+    "message":
+      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "UserControlled" } ],
+            "features": [
+              { "first-index": "payload" },
+              { "first-field": "GET" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 8,
+              "start": 9,
+              "end": 20
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -73,3 +73,5 @@ end
 val search_for_path: search_path: SearchPath.t list -> path:t -> t option
 
 val build_symlink_map: links: path_t list -> path_t Map.t
+
+val with_suffix: path_t -> suffix: string -> path_t

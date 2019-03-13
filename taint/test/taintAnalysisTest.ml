@@ -445,13 +445,11 @@ let test_integration _ =
   let run_test path =
     let check_expectation ~suffix actual =
       let output_filename ~suffix =
-        Path.show path
-        |> (fun path -> path ^ suffix ^ ".actual")
+        Path.with_suffix path ~suffix:(suffix ^ ".actual")
       in
       let write_output ~suffix content =
         try
           output_filename ~suffix
-          |> Path.create_absolute ~follow_symbolic_links:false
           |> File.create ~content
           |> File.write
         with Unix.Unix_error _ ->
@@ -460,6 +458,7 @@ let test_integration _ =
       let remove_old_output ~suffix =
         try
           output_filename ~suffix
+          |> Path.show
           |> Sys.remove
         with Sys_error _ ->
           (* be silent *)
@@ -467,9 +466,7 @@ let test_integration _ =
       in
       let get_expected ~suffix =
         try
-          Path.show path
-          |> (fun path -> path ^ suffix)
-          |> Path.create_absolute
+          Path.with_suffix path ~suffix
           |> File.create
           |> File.content
           |> (fun content -> Option.value_exn content)
@@ -498,6 +495,14 @@ let test_integration _ =
         |> File.content
         |> (fun content -> Option.value_exn content)
       in
+      let model_source =
+        try
+          let model_path = Path.with_suffix path ~suffix:".pysa" in
+          File.create model_path
+          |> File.content
+        with Unix.Unix_error _ ->
+          None
+      in
       let handle =
         Path.show path
         |> String.split ~on:'/'
@@ -523,7 +528,7 @@ let test_integration _ =
         check_expectation ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
-        initialize ~qualifier:handle source
+        initialize ~qualifier:handle ?models:model_source source
       in
       let dependencies =
         DependencyGraph.from_callgraph callgraph

@@ -187,14 +187,24 @@ module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 
 
 module Breadcrumb = struct
+  type first_kind =
+    | FirstField
+    | FirstIndex
+  [@@deriving show, sexp, compare]
+
   type t =
+    (* Used to determine 'foo' from request.foo and request.GET['foo'] *)
+    | First of { kind: first_kind; name: string }
     | Obscure
     | SimpleVia of string  (* Declared breadcrumbs *)
     | Tito
-
   [@@deriving show, sexp, compare]
 
   let to_json = function
+    | First { name; kind = FirstField } ->
+        `Assoc ["first-field", `String name ]
+    | First { name; kind = FirstIndex } ->
+        `Assoc ["first-index", `String name ]
     | Obscure ->
         `Assoc ["via", `String "obscure" ]
     | SimpleVia name ->

@@ -43,6 +43,11 @@ module type FUNCTION_CONTEXT = sig
 end
 
 
+let number_regexp = Str.regexp "[0-9]+"
+let is_numeric name =
+  Str.string_match number_regexp name 0
+
+
 module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
   module rec FixpointState : FixpointState = struct
     type t = { taint: ForwardState.t }
@@ -300,6 +305,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         in
         List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
       in
+      let add_first kind name set =
+        let already_has_first = function
+          | SimpleFeatures.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
+              has_kind = kind
+          | _ ->
+              false
+        in
+        if List.exists set ~f:already_has_first then
+          set
+        else
+          (SimpleFeatures.Breadcrumb (Breadcrumb.First { kind; name })) :: set
+      in
       match expression with
       | Access { expression; member } ->
           let attribute_taint =
@@ -324,16 +341,30 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
           in
           let inferred_taint =
-            let taint = analyze_normalized_expression ~resolution location state expression in
             let field = AbstractTreeDomain.Label.Field member in
-            ForwardState.Tree.read
-              [field]
-              taint
+            analyze_normalized_expression ~resolution location state expression
+            |> ForwardState.Tree.read [field]
+            |> ForwardState.Tree.transform
+              ForwardTaint.simple_feature_set
+              ~f:(add_first Breadcrumb.FirstField member)
           in
           ForwardState.Tree.join inferred_taint attribute_taint
       | Index { expression; index; _ } ->
-          let taint = analyze_normalized_expression ~resolution location state expression in
-          ForwardState.Tree.read [index] taint
+          let taint =
+            analyze_normalized_expression ~resolution location state expression
+            |> ForwardState.Tree.read [index]
+          in
+          begin
+            match index with
+            | AbstractTreeDomain.Label.Field name when not (is_numeric name) ->
+                ForwardState.Tree.transform
+                  ForwardTaint.simple_feature_set
+                  ~f:(add_first Breadcrumb.FirstIndex name)
+                  taint
+            | _ ->
+                taint
+          end
+
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression ->

@@ -1,0 +1,6 @@
+# @nolint
+
+
+def select.view_entry_field(request: TaintSource[UserControlled]): ...
+
+def select.view_entry_index(request: TaintSource[UserControlled]): ...

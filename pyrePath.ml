@@ -284,3 +284,10 @@ let build_symlink_map ~links =
       map
   in
   List.fold links ~init:Map.empty ~f:add_symlink
+
+let with_suffix path ~suffix =
+  match path with
+  | Absolute prefix ->
+      Absolute (prefix ^ suffix)
+  | Relative { root; relative } ->
+      Relative { root; relative = relative ^ suffix }
