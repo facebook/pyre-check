@@ -514,7 +514,10 @@ branch(INDEX)   select a trace branch
     def _output_file_lines(
         self, trace_frame: TraceFrame, file_lines: List[str], context: int
     ) -> None:
-        print(f"{trace_frame.filename}:{trace_frame.callee_location}")
+        print(
+            f"In {trace_frame.caller or trace_frame.callee} "
+            f"[{trace_frame.filename}:{trace_frame.callee_location}]"
+        )
         center_line_number = trace_frame.callee_location.line_no
         line_number_width = len(str(center_line_number + context))
 

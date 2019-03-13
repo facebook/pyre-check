@@ -1200,7 +1200,9 @@ else:
         self.interactive.trace_tuples = [
             TraceTuple(
                 trace_frame=TraceFrame(
-                    filename="file.py", callee_location=SourceLocation(2, 1, 1)
+                    filename="file.py",
+                    callee="callee",
+                    callee_location=SourceLocation(2, 1, 1),
                 )
             )
         ]
@@ -1212,7 +1214,7 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "file.py:2|1|1",
+                    "In callee [file.py:2|1|1]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
                     "     3  else:",
@@ -1229,7 +1231,7 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "file.py:2|1|1",
+                    "In callee [file.py:2|1|1]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
                     "     3  else:",
