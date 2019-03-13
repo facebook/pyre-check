@@ -102,6 +102,20 @@ let test_check_method_parameters _ =
       "to call `foo` but got `int`."
     ];
 
+  (* Special Methods *)
+  assert_strict_type_errors
+    {|
+      def foo(x: typing.Type[int]) -> str:
+        return str(x)
+    |}
+    [];
+  assert_strict_type_errors
+    {|
+      def foo(x: typing.Type[int], y: object) -> bool:
+        return x == y
+    |}
+    [];
+
   (* Defining methods *)
   assert_type_errors
     {|

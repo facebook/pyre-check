@@ -517,6 +517,13 @@ let test_check_function_parameters _ =
   assert_type_errors
     {|
       def foo(x: int) -> str:
+        return str(x)
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      def foo(x: int) -> str:
         return ""
       def f() -> None:
         a = foo(y=4)
