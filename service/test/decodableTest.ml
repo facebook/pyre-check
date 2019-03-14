@@ -35,8 +35,14 @@ let test_decodable _ =
        ~value:(Marshal.to_string [] [Marshal.Closures]))
 
 
+let test_serialize_key _ =
+  assert_equal (OrderEdges.serialize_key 1234) (Prefix.make_key EdgeValue.prefix "1234");
+  assert_equal (OrderBackedges.serialize_key 1234) (Prefix.make_key BackedgeValue.prefix "1234")
+
+
 let () =
   "decodable">:::[
     "decodable">::test_decodable;
+    "serialize_key">::test_serialize_key;
   ]
   |> Test.run

@@ -49,6 +49,8 @@ end
 
 module Register (Key: KeyType) (Value: Value.Type) (): sig
   type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
 end = struct
   (* Register decoder *)
   type decodable += Decoded of Key.out * Value.t
@@ -57,12 +59,19 @@ end = struct
     register
       Value.prefix
       (fun key value -> Decoded (Key.from_string key, Marshal.from_string value 0))
+
+  let serialize_key key =
+    Key.to_string key
+    |> Prefix.make_key Value.prefix
 end
 
 
 module NoCache (Key: KeyType) (Value: Value.Type):
 sig
   type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
+
   include Memory.NoCache with
     type t = Value.t
     and type key = Key.t
@@ -77,6 +86,9 @@ end
 module WithCache (Key: KeyType) (Value: Value.Type):
 sig
   type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
+
   include Memory.WithCache with
     type t = Value.t
     and type key = Key.t

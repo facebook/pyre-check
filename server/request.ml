@@ -440,7 +440,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                   |> Int64.to_string
                 in
                 let data =
-                  Prefix.make_key OrderAnnotationValue.prefix (IntKey.to_string key)
+                  OrderAnnotations.serialize_key key
                   |> Base64.encode_exn
                 in
                 Map.add_exn
