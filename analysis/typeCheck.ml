@@ -1376,8 +1376,8 @@ module State = struct
                         Resolution.less_or_equal resolution ~left:annotation ~right:resolved ||
                         Resolution.constraints_solution_exists
                           resolution
-                          ~source:annotation
-                          ~target:resolved
+                          ~source:resolved
+                          ~target:annotation
                       in
                       let state =
                         let name = Identifier.sanitized name in

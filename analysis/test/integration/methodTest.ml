@@ -1000,7 +1000,7 @@ let test_check_self _ =
         b = a.f
         return b(1)
     |}
-    ["Invalid method signature [36]: `Variable[T]` cannot be the type of `self`."];
+    [];
 
   (* Make sure the SelfType pattern works *)
   assert_type_errors
