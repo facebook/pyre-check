@@ -1007,6 +1007,71 @@ let test_compute_hashes_to_keys context =
        ]))))
 
 
+let test_decode_serialized_ocaml_values context =
+  let open Protocol in
+  let local_root =
+    bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let (module Handler: Analysis.Environment.Handler) = (module Service.Environment.SharedHandler) in
+  (* Note that we're not adding any values to the shared environment here. *)
+ let query =
+   [
+     {
+       TypeQuery.serialized_key =
+         Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
+         |> Base64.encode_exn;
+       serialized_value =
+         [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
+         |> (fun value -> Marshal.to_string value [Marshal.Closures])
+         |> Base64.encode_exn;
+     };
+     {
+       TypeQuery.serialized_key =
+         Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
+         |> Base64.encode_exn;
+       serialized_value =
+         [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
+         |> (fun value -> Marshal.to_string value [Marshal.Closures])
+         |> Base64.encode_exn;
+     };
+     {
+       TypeQuery.serialized_key = "Can't decode this";
+       serialized_value = "Nope";
+     }
+   ]
+  in
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(Request.TypeQueryRequest (TypeQuery.DecodeOcamlValues query))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
+                        |> Base64.encode_exn;
+                      kind = "Backedges";
+                      actual_value = "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
+                      actual_key = "15";
+                    };
+                    {
+                      TypeQuery.serialized_key =
+                        Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
+                        |> Base64.encode_exn;
+                      kind = "Edges";
+                      actual_value = "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
+                      actual_key = "16";
+                    };
+                  ];
+                  undecodable_keys = ["Can't decode this"];
+                }))))
+
+
 let test_connect context =
   let local_root =
     bracket_tmpdir context
@@ -1670,6 +1735,7 @@ let () =
       "server_exits_on_directory_removal", test_server_exits_on_directory_removal;
       "compute_hashes_to_keys", test_compute_hashes_to_keys;
       "connect", test_connect;
+      "decode_serialized_ocaml_values", test_decode_serialized_ocaml_values;
       "stop_handles_unix_errors", test_stop_handles_unix_errors;
       "json_socket", test_json_socket;
       "protocol_type_check", test_protocol_type_check;

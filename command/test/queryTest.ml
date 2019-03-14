@@ -146,7 +146,27 @@ let test_parse_query context =
   assert_fails_to_parse "path_of_module(a.b, b.c)";
 
   assert_parses "compute_hashes_to_keys()" ComputeHashesToKeys;
-  assert_fails_to_parse "compute_hashes_to_keys(foo)"
+  assert_fails_to_parse "compute_hashes_to_keys(foo)";
+  assert_parses "decode_ocaml_values()" (DecodeOcamlValues []);
+  assert_parses
+    "decode_ocaml_values(('first_key', 'first_value'))"
+    (DecodeOcamlValues [{
+         TypeQuery.serialized_key = "first_key";
+         serialized_value = "first_value";
+       }]);
+  assert_parses
+    "decode_ocaml_values(('first_key', 'first_value'), ('second_key', 'second_value'))"
+    (DecodeOcamlValues [
+        {
+          TypeQuery.serialized_key = "first_key";
+          serialized_value = "first_value";
+        };
+        {
+          TypeQuery.serialized_key = "second_key";
+          serialized_value = "second_value";
+        };
+      ]);
+  assert_fails_to_parse "decode_ocaml_values('a', 'b')"
 
 
 let () =

@@ -39,17 +39,16 @@ let parse_query
         | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } -> access
         | _ -> raise (InvalidQuery "expected access")
       in
-      let string = function
-        | {
-          Argument.value = {
-            Node.value = String { StringLiteral.value; kind = StringLiteral.String };
-            _;
-          };
-          _;
-        } ->
+      let string_of_expression = function
+        | {Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } ->
             value
         | _ ->
             raise (InvalidQuery "expected string")
+      in
+      let string argument =
+        argument
+        |> expression
+        |> string_of_expression
       in
       begin
         match String.lowercase name, arguments with
@@ -57,6 +56,24 @@ let parse_query
             Request.TypeQueryRequest (Attributes (access name))
         | "compute_hashes_to_keys", [] ->
             Request.TypeQueryRequest ComputeHashesToKeys
+        | "decode_ocaml_values", pairs ->
+            let pair_of_strings = function
+              | {
+                Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
+                _;
+              } ->
+                  {
+                    serialized_key = string_of_expression serialized_key;
+                    serialized_value = string_of_expression serialized_value;
+                  }
+              | { Argument.value; _ } ->
+                  raise
+                    (InvalidQuery
+                       (Format.sprintf
+                          "expected pair of strings, got `%s`"
+                          (Expression.show value)))
+            in
+            Request.TypeQueryRequest (DecodeOcamlValues (List.map pairs ~f:pair_of_strings))
         | "dump_dependencies", [path] ->
             let file =
               Path.create_relative ~root ~relative:(string path)

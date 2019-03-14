@@ -448,6 +448,53 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
 
+    | TypeQuery.DecodeOcamlValues values ->
+        let build_response
+            { TypeQuery.decoded; undecodable_keys }
+            { TypeQuery.serialized_key; serialized_value } =
+          let decode_value serialized_key value =
+            let key, value = Base64.decode serialized_key, Base64.decode value in
+            match key, value with
+            | Ok key, Ok value ->
+                let open Service.EnvironmentSharedMemory in
+                begin
+                  match Service.Decodable.decode ~key ~value with
+                  | Ok (OrderEdges.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = EdgeValue.description;
+                        actual_key = Int.to_string key;
+                        actual_value = List.to_string ~f:TypeOrder.Target.show value;
+                      }
+                  | Ok (OrderBackedges.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = BackedgeValue.description;
+                        actual_key = Int.to_string key;
+                        actual_value = List.to_string ~f:TypeOrder.Target.show value;
+                      }
+                  | Ok _ ->
+                      None
+                  | Error _ ->
+                      None
+                end
+            | _ ->
+                None
+          in
+          match decode_value serialized_key serialized_value with
+          | Some decoded_value ->
+              { TypeQuery.decoded = decoded_value :: decoded; undecodable_keys }
+          | None ->
+              { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
+        in
+        let decoded =
+          List.fold
+            values
+            ~init:{ TypeQuery.decoded = []; undecodable_keys = [] }
+            ~f:build_response
+        in
+        TypeQuery.Response (TypeQuery.Decoded decoded)
+
     | TypeQuery.DumpDependencies file ->
         let () =
           try

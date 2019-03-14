@@ -27,9 +27,16 @@ type client =
 
 
 module TypeQuery: sig
+  type serialized_ocaml_value = {
+    serialized_key: string;
+    serialized_value: string;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type request =
     | Attributes of Access.t
     | ComputeHashesToKeys
+    | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
     | Join of Access.t * Access.t
@@ -80,6 +87,20 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type decoded_value = {
+    serialized_key: string;
+    kind: string;
+    actual_key: string;
+    actual_value: string;
+  }
+  [@@deriving eq, show, to_yojson]
+
+  type decoded = {
+    decoded: decoded_value list;
+    undecodable_keys: string list;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type key_mapping = {
     hash: string;
     key: string;
@@ -88,6 +109,7 @@ module TypeQuery: sig
 
   type base_response =
     | Boolean of bool
+    | Decoded of decoded
     | FoundAttributes of attribute list
     | FoundKeyMapping of key_mapping list
     | FoundMethods of method_representation list
