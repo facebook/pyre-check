@@ -2,7 +2,8 @@
 
 import os
 import sys
-from typing import Callable, Dict, List, NamedTuple, Optional, Set, Tuple
+from collections import defaultdict
+from typing import Callable, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from IPython.core import page
 from pygments import highlight
@@ -73,6 +74,7 @@ branch(INDEX)   select a trace branch
             "expand": self.expand,
             "branch": self.branch,
             "list": self.list_source_code,
+            "traces": self.traces,
         }
         self.repository_directory = repository_directory or os.getcwd()
 
@@ -296,6 +298,41 @@ branch(INDEX)   select a trace branch
 
         self._output_trace_tuples(self.trace_tuples)
 
+    def traces(
+        self,
+        *,
+        callers: Optional[List[str]] = None,
+        callees: Optional[List[str]] = None,
+    ):
+        with self.db.make_session() as session:
+            query = session.query(TraceFrame).filter(
+                TraceFrame.run_id == self.current_run_id
+            )
+
+            try:
+                if callers is not None:
+                    self._verify_list_filter(callers, "callers")
+                    query = self._add_list_filter_to_query(
+                        callers, query, TraceFrame.caller
+                    )
+
+                if callees is not None:
+                    self._verify_list_filter(callees, "callees")
+                    query = self._add_list_filter_to_query(
+                        callees, query, TraceFrame.callee
+                    )
+            except ListFilterException as error:
+                self.warning(str(error))
+                return
+
+            trace_frames = (
+                query.group_by(TraceFrame.id)
+                .order_by(TraceFrame.caller, TraceFrame.callee)
+                .all()
+            )
+
+            self._output_trace_frames(self._group_trace_frames(trace_frames))
+
     def _generate_trace(self):
         if self.trace_tuples_id == self.current_issue_id:
             return  # already generated
@@ -509,6 +546,20 @@ branch(INDEX)   select a trace branch
                 return i
         return -1
 
+    def _group_trace_frames(
+        self, trace_frames: List[TraceFrame]
+    ) -> Dict[Tuple[str, str], List[TraceFrame]]:
+        """Buckets together trace frames that have the same caller:caller_port.
+        """
+        caller_buckets: DefaultDict[Tuple[str, str], List[TraceFrame]] = defaultdict(
+            list
+        )
+        for trace_frame in trace_frames:
+            caller_buckets[(trace_frame.caller, trace_frame.caller_port)].append(
+                trace_frame
+            )
+        return caller_buckets
+
     def _verify_list_filter(self, filter: List, argument_name: str) -> None:
         # Check this because filter is user input
         if not isinstance(filter, list):
@@ -558,6 +609,29 @@ branch(INDEX)   select a trace branch
             print(f"{prefix} {frame.callee} : {frame.callee_port}")
             print(f"{' ' * 8}[{frame.leaf_assoc[0].trace_length} hops: {leaves}]")
             print(f"{' ' * 8}[{frame.filename}:{frame.callee_location}]")
+
+    def _output_trace_frames(
+        self, trace_buckets: Dict[Tuple[str, str], List[TraceFrame]]
+    ) -> None:
+        max_len_id = max(
+            max(
+                max(len(str(trace_frame.id)) for trace_frame in value)
+                for key, value in trace_buckets.items()
+            ),
+            len("[id]"),
+        )
+
+        print(f"{'[id]':{max_len_id}} [caller:caller_port -> callee:callee_port]")
+
+        callers = trace_buckets.keys()
+        for caller, caller_port in callers:
+            print(f"{'-' * max_len_id} {caller}:{caller_port} ->")
+            trace_frames = trace_buckets[(caller, caller_port)]
+            for trace_frame in trace_frames:
+                print(
+                    f"{int(trace_frame.id):<{max_len_id}} "
+                    f"    {trace_frame.callee}:{trace_frame.callee_port}"
+                )
 
     def _output_trace_tuples(self, trace_tuples):
         expand = "+ "

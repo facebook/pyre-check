@@ -1302,6 +1302,114 @@ else:
             self.assertIn("Couldn't open", self.stderr.getvalue())
             self.assertNotIn("file.py", self.stdout.getvalue())
 
+    def testGroupTraceFrames(self):
+        trace_frames = [
+            TraceFrame(id=1, caller="caller1", caller_port="port1"),
+            TraceFrame(id=2, caller="caller1", caller_port="port1"),
+            TraceFrame(id=3, caller="caller2", caller_port="port2"),
+            TraceFrame(id=4, caller="caller2", caller_port="port2"),
+            TraceFrame(id=5, caller="caller2", caller_port="port3"),
+        ]
+
+        buckets = self.interactive._group_trace_frames(trace_frames)
+
+        self.assertEqual(3, len(buckets.keys()))
+        self.assertIn(("caller1", "port1"), buckets.keys())
+        self.assertIn(("caller2", "port2"), buckets.keys())
+        self.assertIn(("caller2", "port3"), buckets.keys())
+
+        self.assertEqual(
+            [1, 2], [int(frame.id) for frame in buckets[("caller1", "port1")]]
+        )
+        self.assertEqual(
+            [3, 4], [int(frame.id) for frame in buckets[("caller2", "port2")]]
+        )
+        self.assertEqual(
+            [5], [int(frame.id) for frame in buckets[("caller2", "port3")]]
+        )
+
+    def testListTracesBasic(self):
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                caller="caller1",
+                caller_port="port1",
+                callee="callee1",
+                callee_port="port1",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+                kind=TraceKind.POSTCONDITION,
+            ),
+            TraceFrame(
+                id=2,
+                caller="caller1",
+                caller_port="port1",
+                callee="callee2",
+                callee_port="port2",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+                kind=TraceKind.POSTCONDITION,
+            ),
+            TraceFrame(
+                id=3,
+                caller="caller2",
+                caller_port="port2",
+                callee="callee3",
+                callee_port="port3",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+                kind=TraceKind.POSTCONDITION,
+            ),
+            TraceFrame(
+                id=4,
+                caller="caller2",
+                caller_port="port2",
+                callee="callee4",
+                callee_port="port4",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+                kind=TraceKind.POSTCONDITION,
+            ),
+            TraceFrame(
+                id=5,
+                caller="caller2",
+                caller_port="port3",
+                callee="callee5",
+                callee_port="port5",
+                callee_location=SourceLocation(1, 1, 1),
+                filename="file.py",
+                run_id=1,
+                kind=TraceKind.POSTCONDITION,
+            ),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            session.commit()
+
+        self.interactive.current_run_id = 1
+        self._clear_stdout()
+        self.interactive.traces()
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- caller1:port1 ->",
+                "1        callee1:port1",
+                "2        callee2:port2",
+                "---- caller2:port2 ->",
+                "3        callee3:port3",
+                "4        callee4:port4",
+                "---- caller2:port3 ->",
+                "5        callee5:port5",
+                "",
+            ],
+        )
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 
