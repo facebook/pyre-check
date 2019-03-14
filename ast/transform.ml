@@ -118,9 +118,9 @@ module Make (Transformer : Transformer) = struct
                   expression = transform_expression expression;
                   access = transform_list access ~f:transform_access;
                 })
-        | AttributeAccess expression ->
+        | AccessNew expression ->
             (* TODO: T37313693 *)
-            AttributeAccess expression
+            AccessNew expression
         | Await expression ->
             Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right; } ->

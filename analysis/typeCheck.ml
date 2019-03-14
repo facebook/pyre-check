@@ -2183,7 +2183,7 @@ module State = struct
         in
         { state; resolved }
 
-    | AttributeAccess _ ->
+    | AccessNew _ ->
         (* TODO: T37313693 *)
         { state; resolved = Type.Top }
 

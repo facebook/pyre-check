@@ -153,11 +153,18 @@ module Record = struct
 end
 
 
-module AttributeAccess = struct
-  type 'expression t = {
-    base: 'expression;
-    attribute: Identifier.t;
-  }
+module AccessNew = struct
+  module Attribute = struct
+    type 'expression t = {
+      base: 'expression;
+      attribute: Identifier.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  type 'expression t =
+    | Attribute of 'expression Attribute.t
+    | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
 end
 
@@ -301,7 +308,7 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AttributeAccess of t AttributeAccess.t
+  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -1062,7 +1069,7 @@ module PrettyPrinter = struct
           pp_expression (Node.value expression)
           pp_access_list access_list
 
-    | AttributeAccess _ ->
+    | AccessNew _ ->
         (* TODO: T37313693 *)
         ()
 

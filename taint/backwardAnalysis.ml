@@ -350,7 +350,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (ExpressionAccess { expression; access }) ->
           List.fold access ~init:(Expression expression) ~f:normalize_access_list
           |> analyze_normalized_expression ~resolution state taint
-      | AttributeAccess _ ->
+      | AccessNew _ ->
           (* TODO: T37313693 *)
           state
       | Await expression ->

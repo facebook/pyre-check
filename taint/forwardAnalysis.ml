@@ -427,7 +427,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (SimpleAccess access) ->
           AccessPath.normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution expression.Node.location state
-      | AttributeAccess _ ->
+      | AccessNew _ ->
           (* TODO: T37313693 *)
           ForwardState.Tree.empty
       | Await expression ->

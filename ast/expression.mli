@@ -82,13 +82,21 @@ module Record : sig
   end
 end
 
-module AttributeAccess : sig
-  type 'expression t = {
-    base: 'expression;
-    attribute: Identifier.t;
-  }
+module AccessNew : sig
+  module Attribute : sig
+    type 'expression t = {
+      base: 'expression;
+      attribute: Identifier.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
+  type 'expression t =
+    | Attribute of 'expression Attribute.t
+    | Identifier of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
 end
+
 
 module Call : sig
   module Argument : sig
@@ -98,12 +106,14 @@ module Call : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
+
   type 'expression t = {
     callee: 'expression;
     arguments: (('expression Argument.t) list) Node.t;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
+
 
 module Lambda : sig
   type 'expression t = {
@@ -189,7 +199,7 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AttributeAccess of t AttributeAccess.t
+  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
