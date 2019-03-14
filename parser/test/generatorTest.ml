@@ -3201,6 +3201,17 @@ let test_for _ =
         orelse = [+Expression !"d"];
         async = false;
       };
+    ];
+  assert_parsed_equal
+    "for a in b: # type: int\n\ta"
+    [
+      +For {
+        For.target = !"a";
+        iterator = !"b";
+        body = [+Expression !"a"];
+        orelse = [];
+        async = false;
+      };
     ]
 
 

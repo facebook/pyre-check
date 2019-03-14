@@ -692,7 +692,7 @@ compound_statement:
     }
 
   | start = FOR; target = expression_list; IN; iterator = test_list; COLON;
-    body = block; orelse = named_optional_block(ELSE) {
+    ANNOTATION_COMMENT?; body = block; orelse = named_optional_block(ELSE) {
       let stop = begin match orelse with
       | _, [] -> (fst body).Location.stop
       | location, _ -> location.Location.stop
