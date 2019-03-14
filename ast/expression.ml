@@ -153,7 +153,7 @@ module Record = struct
 end
 
 
-module AccessNew = struct
+module AttributeAccess = struct
   type 'expression t = {
     base: 'expression;
     attribute: Identifier.t;
@@ -301,7 +301,7 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AccessNew of t AccessNew.t
+  | AttributeAccess of t AttributeAccess.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -1062,7 +1062,7 @@ module PrettyPrinter = struct
           pp_expression (Node.value expression)
           pp_access_list access_list
 
-    | AccessNew _ ->
+    | AttributeAccess _ ->
         (* TODO: T37313693 *)
         ()
 

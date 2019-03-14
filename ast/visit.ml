@@ -62,7 +62,7 @@ module Make (Visitor: Visitor) = struct
       | Access (ExpressionAccess { expression; access }) ->
           visit_expression expression;
           List.iter access ~f:visit_access
-      | AccessNew _ ->
+      | AttributeAccess _ ->
           (* TODO: T37313693 *)
           ()
       | Await expression ->

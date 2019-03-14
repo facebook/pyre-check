@@ -932,9 +932,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 expression = qualify_expression ~qualify_strings ~scope expression;
                 access;
               })
-      | AccessNew expression ->
+      | AttributeAccess expression ->
           (* TODO: T37313693 *)
-          AccessNew expression
+          AttributeAccess expression
       | Await expression ->
           Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->

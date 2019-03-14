@@ -82,7 +82,7 @@ module Record : sig
   end
 end
 
-module AccessNew : sig
+module AttributeAccess : sig
   type 'expression t = {
     base: 'expression;
     attribute: Identifier.t;
@@ -189,7 +189,7 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AccessNew of t AccessNew.t
+  | AttributeAccess of t AttributeAccess.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
