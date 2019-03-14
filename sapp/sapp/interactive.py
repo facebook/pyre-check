@@ -25,6 +25,8 @@ from sapp.models import (
 )
 from sqlalchemy import distinct
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
@@ -224,29 +226,25 @@ branch(INDEX)   select a trace branch
                 .join(Issue, IssueInstance.issue_id == Issue.id)
             )
 
-            # Process filters
+            try:
+                if codes is not None:
+                    self._verify_list_filter(codes, "codes")
+                    query = query.filter(Issue.code.in_(codes))
 
-            if codes is not None:
-                if not isinstance(codes, list):
-                    self.warning("'codes' should be a list.")
-                    return
-                query = query.filter(Issue.code.in_(codes))
+                if callables is not None:
+                    self._verify_list_filter(callables, "callables")
+                    query = self._add_list_filter_to_query(
+                        callables, query, Issue.callable
+                    )
 
-            if callables is not None:
-                if not isinstance(callables, list):
-                    self.warning("'callables' should be a list.")
-                    return
-                query = query.filter(
-                    or_(*[Issue.callable.like(callable) for callable in callables])
-                )
-
-            if filenames is not None:
-                if not isinstance(filenames, list):
-                    self.warning("'filenames' should be a list.")
-                    return
-                query = query.filter(
-                    or_(*[Issue.filename.like(filename) for filename in filenames])
-                )
+                if filenames is not None:
+                    self._verify_list_filter(filenames, "filenames")
+                    query = self._add_list_filter_to_query(
+                        filenames, query, Issue.filename
+                    )
+            except ListFilterException as error:
+                self.warning(str(error))
+                return
 
             issues = query.options(joinedload(IssueInstance.message)).all()
             sources_list = [
@@ -511,6 +509,19 @@ branch(INDEX)   select a trace branch
                 return i
         return -1
 
+    def _verify_list_filter(self, filter: List, argument_name: str) -> None:
+        # Check this because filter is user input
+        if not isinstance(filter, list):
+            raise ListFilterException(f"'{argument_name}' should be a list.")
+
+        if not filter:
+            raise ListFilterException(f"'{argument_name}' should be non-empty.")
+
+    def _add_list_filter_to_query(
+        self, filter: List[str], query: Query, column: InstrumentedAttribute
+    ) -> Query:
+        return query.filter(or_(*[column.like(item) for item in filter]))
+
     def _output_file_lines(
         self, trace_frame: TraceFrame, file_lines: List[str], context: int
     ) -> None:
@@ -742,3 +753,7 @@ class TraceTuple(NamedTuple):
     trace_frame: TraceFrame
     branches: int = 1
     missing: bool = False
+
+
+class ListFilterException(Exception):
+    pass

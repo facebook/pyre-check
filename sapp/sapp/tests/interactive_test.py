@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import mock_open, patch
 
 from sapp.db import DB
-from sapp.interactive import Interactive, TraceTuple
+from sapp.interactive import Interactive, ListFilterException, TraceTuple
 from sapp.models import (
     Issue,
     IssueInstance,
@@ -1161,6 +1161,50 @@ class InteractiveTest(TestCase):
 
         self.interactive.current_trace_frame_index = 1
         self.assertTrue(self.interactive._verify_multiple_branches())
+
+    def testVerifyListFilter(self):
+        with self.assertRaises(ListFilterException):
+            self.interactive._verify_list_filter("not a list", "arg0")
+
+        with self.assertRaises(ListFilterException):
+            self.interactive._verify_list_filter([], "arg0")
+
+        try:
+            self.interactive._verify_list_filter(["elem", "elem"], "arg0")
+        except ListFilterException:
+            self.fail("Unexpected ListFilterException")
+
+    def testAddListFilterToQuery(self):
+        shared_texts = [
+            SharedText(id=1, contents="prefix"),
+            SharedText(id=2, contents="suffix"),
+            SharedText(id=3, contents="prefix_suffix"),
+            SharedText(id=4, contents="fix"),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, shared_texts)
+            session.commit()
+
+            query = session.query(SharedText.contents)
+            self.assertEqual(
+                self.interactive._add_list_filter_to_query(
+                    ["prefix", "suffix"], query, SharedText.contents
+                ).all(),
+                [("prefix",), ("suffix",)],
+            )
+            self.assertEqual(
+                self.interactive._add_list_filter_to_query(
+                    ["%prefix%"], query, SharedText.contents
+                ).all(),
+                [("prefix",), ("prefix_suffix",)],
+            )
+            self.assertEqual(
+                self.interactive._add_list_filter_to_query(
+                    ["%fix%"], query, SharedText.contents
+                ).all(),
+                [("prefix",), ("suffix",), ("prefix_suffix",), ("fix",)],
+            )
 
     def testCreateIssueOutputStringNoSourcesNoSinks(self):
         issue = Issue(code=1000, callable="module.function1")
