@@ -432,6 +432,7 @@ class FixmeTest(unittest.TestCase):
         arguments.comment = None
         arguments.max_line_length = 88
         arguments.run = False
+        arguments.truncate = True
 
         stdin_errors.return_value = []
         run_errors.return_value = []
@@ -589,6 +590,45 @@ class FixmeTest(unittest.TestCase):
                 "# pyre-fixme[4]: Description four.\n"
                 "2"
             )
+
+        arguments.max_line_length = 40
+        arguments.truncate = False
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [1]: Description one.",
+                },
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [2]: Very long description two.",
+                },
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [3]: Very long description three.",
+                },
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [4]: Description four.",
+                },
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = "1\n2"
+            upgrade.run_fixme(arguments)
+            path_write_text.assert_called_once_with(
+                "1\n"
+                "# pyre-fixme[1]: Description one.\n"
+                "# pyre-fixme[2]: Very long description two.\n"
+                "# pyre-fixme[3]: Very long description three.\n"
+                "# pyre-fixme[4]: Description four.\n"
+                "2"
+            )
+        arguments.truncate = True
 
         # Test errors in multiple files.
         arguments.max_line_length = 88

@@ -197,9 +197,12 @@ def fix_file(
     errors: Dict[int, List[Dict[str, str]]],
 ) -> None:
     custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
-    max_line_length = (
-        arguments.max_line_length if arguments.max_line_length > 0 else None
-    )
+    if arguments.truncate:
+        max_line_length = (
+            arguments.max_line_length if arguments.max_line_length > 0 else None
+        )
+    else:
+        max_line_length = None
     path = pathlib.Path(filename)
     lines = path.read_text().split("\n")  # type: List[str]
 
@@ -483,11 +486,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
+        "--truncate",
+        action="store_true",
+        help="Truncate error messages to maximum line length.",
+    )
+    parser.add_argument(
         "--max-line-length",
         default=88,
         type=int,
         help="Enforce maximum line length on new comments "
-        + "(default: %(default)s, use 0 to disable)",
+        + "(default: %(default)s, use 0 to set no maximum line length)",
     )
 
     commands = parser.add_subparsers()
