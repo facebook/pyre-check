@@ -434,19 +434,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           match OrderKeys.get "Order" with
           | Some keys ->
               let add_key_mappings map key =
-                let hash =
-                  OrderAnnotations.string_of_key key
-                  |> (fun key -> Memory.unsafe_little_endian_representation ~key)
-                  |> Int64.to_string
-                in
-                let data =
-                  OrderAnnotations.serialize_key key
-                  |> Base64.encode_exn
-                in
                 Map.add_exn
                   map
-                  ~key:hash
-                  ~data
+                  ~key:(OrderAnnotations.hash_of_key key)
+                  ~data:(Base64.encode_exn (OrderAnnotations.serialize_key key))
               in
               List.fold keys ~init:String.Map.empty ~f:add_key_mappings
           | None ->

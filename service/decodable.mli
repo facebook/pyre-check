@@ -37,12 +37,13 @@ module NoCache (Key: KeyType) (Value: Value.Type): sig
   type decodable += Decoded of Key.out * Value.t
 
   val serialize_key: Key.t -> string
+  val hash_of_key: Key.t -> string
 
   include Memory.NoCache with
     type t = Value.t
-    and type key = Key.t
-    and module KeySet = Set.Make (Key)
-    and module KeyMap = MyMap.Make (Key)
+                          and type key = Key.t
+                          and module KeySet = Set.Make (Key)
+                          and module KeyMap = MyMap.Make (Key)
 end
 
 
@@ -50,10 +51,11 @@ module WithCache (Key: KeyType) (Value: Value.Type): sig
   type decodable += Decoded of Key.out * Value.t
 
   val serialize_key: Key.t -> string
+  val hash_of_key: Key.t -> string
 
   include Memory.WithCache with
     type t = Value.t
-    and type key = Key.t
-    and module KeySet = Set.Make (Key)
-    and module KeyMap = MyMap.Make (Key)
+                            and type key = Key.t
+                            and module KeySet = Set.Make (Key)
+                            and module KeyMap = MyMap.Make (Key)
 end

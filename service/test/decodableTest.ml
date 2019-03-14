@@ -40,9 +40,31 @@ let test_serialize_key _ =
   assert_equal (OrderBackedges.serialize_key 1234) (Prefix.make_key BackedgeValue.prefix "1234")
 
 
+let test_hash_of_key _ =
+  assert_equal
+    (OrderEdges.hash_of_key 1234)
+    (OrderEdges.string_of_key 1234
+     |> (fun key -> Memory.unsafe_little_endian_representation ~key)
+     |> Int64.to_string);
+  assert_equal
+    (OrderBackedges.hash_of_key 1234)
+    (OrderBackedges.string_of_key 1234
+     |> (fun key -> Memory.unsafe_little_endian_representation ~key)
+     |> Int64.to_string);
+  (* Make sure different modules have different caches. *)
+  assert_equal
+    false
+    (String.equal
+       (OrderBackedges.hash_of_key 1234)
+       (OrderEdges.string_of_key 1234
+        |> (fun key -> Memory.unsafe_little_endian_representation ~key)
+        |> Int64.to_string))
+
+
 let () =
   "decodable">:::[
     "decodable">::test_decodable;
     "serialize_key">::test_serialize_key;
+    "hash_of_key">::test_hash_of_key;
   ]
   |> Test.run
