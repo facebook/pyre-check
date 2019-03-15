@@ -42,6 +42,16 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
 
+class TraceTuple(NamedTuple):
+    trace_frame: TraceFrame
+    branches: int = 1
+    missing: bool = False
+
+
+class ListFilterException(Exception):
+    pass
+
+
 class Interactive:
     # @lint-ignore FBPYTHON2
     list_string = "list()"
@@ -104,7 +114,6 @@ set_frame(ID)   select a trace frame to explore
         self.trace_tuples: List[TraceTuple] = []
         # Active trace frame of the current trace
         self.current_trace_frame_index: int = -1
-        self.root_trace_frame_index: int = -1
 
     def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
@@ -421,8 +430,7 @@ set_frame(ID)   select a trace frame to explore
             + self._create_trace_tuples(precondition_navigation)
         )
         self.trace_tuples_id = self.current_issue_id
-        self.root_trace_frame_index = len(postcondition_navigation)
-        self.current_trace_frame_index = self.root_trace_frame_index
+        self.current_trace_frame_index = len(postcondition_navigation)
 
     def next_cursor_location(self):
         """Move cursor to the next trace frame.
@@ -535,7 +543,6 @@ set_frame(ID)   select a trace frame to explore
                 len(new_navigation) - self.current_trace_frame_index - 1
             )
             self.current_trace_frame_index += trace_frame_index_delta
-            self.root_trace_frame_index += trace_frame_index_delta
         else:
             self.trace_tuples = (
                 self.trace_tuples[: self.current_trace_frame_index] + new_trace_tuples
@@ -577,8 +584,9 @@ set_frame(ID)   select a trace frame to explore
     def _get_trace_frame_branches(self, session: Session) -> List[TraceFrame]:
         delta_from_parent = 1 if self._is_before_root() else -1
         parent_index = self.current_trace_frame_index + delta_from_parent
+        parent_trace_tuple = self.trace_tuples[parent_index]
 
-        if parent_index == self.root_trace_frame_index:
+        if self._is_root_trace_tuple(parent_trace_tuple):
             kind = (
                 TraceKind.POSTCONDITION
                 if self._is_before_root()
@@ -590,7 +598,11 @@ set_frame(ID)   select a trace frame to explore
         return self._next_trace_frames(session, parent_trace_frame)
 
     def _is_before_root(self) -> bool:
-        return self.current_trace_frame_index < self.root_trace_frame_index
+        trace_tuple = self.trace_tuples[self.current_trace_frame_index]
+        return trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION
+
+    def _is_root_trace_tuple(self, trace_tuple: TraceTuple) -> bool:
+        return trace_tuple.trace_frame.callee_port == "root"
 
     def _current_branch_index(self, branches: List[TraceFrame]) -> int:
         selected_branch_id = int(
@@ -924,13 +936,3 @@ set_frame(ID)   select a trace frame to explore
             self.warning("This trace frame has no alternate branches to take.")
             return False
         return True
-
-
-class TraceTuple(NamedTuple):
-    trace_frame: TraceFrame
-    branches: int = 1
-    missing: bool = False
-
-
-class ListFilterException(Exception):
-    pass

@@ -1449,6 +1449,25 @@ else:
         self.assertNotIn("Trace frame 1", self.stdout.getvalue())
         self.assertIn("Trace frame 2", self.stdout.getvalue())
 
+    def testIsBeforeRoot(self):
+        self.interactive.trace_tuples = [
+            TraceTuple(trace_frame=TraceFrame(kind=TraceKind.POSTCONDITION)),
+            TraceTuple(trace_frame=TraceFrame(kind=TraceKind.PRECONDITION)),
+        ]
+
+        self.interactive.current_trace_frame_index = 0
+        self.assertTrue(self.interactive._is_before_root())
+
+        self.interactive.current_trace_frame_index = 1
+        self.assertFalse(self.interactive._is_before_root())
+
+    def testIsRootTraceTuple(self):
+        trace_tuple = TraceTuple(trace_frame=TraceFrame(callee_port="root"))
+        self.assertTrue(self.interactive._is_root_trace_tuple(trace_tuple))
+
+        trace_tuple = TraceTuple(trace_frame=TraceFrame(callee_port="not_root"))
+        self.assertFalse(self.interactive._is_root_trace_tuple(trace_tuple))
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 
