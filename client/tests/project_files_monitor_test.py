@@ -85,34 +85,6 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             analysis_directory,
         )
 
-    @patch.object(project_files_monitor, "find_paths_with_extensions")
-    @patch.object(
-        os.path,
-        "realpath",
-        side_effect=lambda path: path.replace("ANALYSIS_ROOT", "LOCAL_ROOT"),
-    )
-    def test_compute_tracked_files(self, realpath, find_paths_with_extensions):
-        find_paths_with_extensions.return_value = [
-            "ANALYSIS_ROOT/a.py",
-            "ANALYSIS_ROOT/b.thrift",
-            "ANALYSIS_ROOT/subX/d.pyi",
-            "ANALYSIS_ROOT/subX/e.py",
-            "ANALYSIS_ROOT/subY/subZ/g.pyi",
-        ]
-
-        self.assertDictEqual(
-            ProjectFilesMonitor._compute_tracked_files(
-                "ANALYSIS_ROOT", ["py", "pyi", "thrift"]
-            ),
-            {
-                "LOCAL_ROOT/a.py": "ANALYSIS_ROOT/a.py",
-                "LOCAL_ROOT/b.thrift": "ANALYSIS_ROOT/b.thrift",
-                "LOCAL_ROOT/subX/d.pyi": "ANALYSIS_ROOT/subX/d.pyi",
-                "LOCAL_ROOT/subX/e.py": "ANALYSIS_ROOT/subX/e.py",
-                "LOCAL_ROOT/subY/subZ/g.pyi": "ANALYSIS_ROOT/subY/subZ/g.pyi",
-            },
-        )
-
     def test_bad_socket(self):
         with tempfile.TemporaryDirectory() as root:
             bad_socket_path = os.path.join(root, "bad.sock")
@@ -122,9 +94,8 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 bad_socket_path,
             )
 
-    @patch.object(ProjectFilesMonitor, "_update_tracked_files")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
-    def test_socket_communication(self, _find_watchman_path, _update_tracked_files):
+    def test_socket_communication(self, _find_watchman_path):
         # Create a "server" thread to complete the handshake
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         errors = []
@@ -175,17 +146,20 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             configuration.version_hash = "123"
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
+            analysis_directory.process_updated_files.side_effect = lambda files: [
+                file.replace("ROOT", "ANALYSIS") for file in files
+            ]
 
             # only create the monitor once the socket is open
             with socket_created_lock:
                 monitor = ProjectFilesMonitor(
                     arguments, configuration, analysis_directory
                 )
-                monitor._tracked_files["/ROOT/a.py"] = "/ANALYSIS/a.py"
-                monitor._tracked_files["/ROOT/subdir/b.py"] = "/ANALYSIS/subdir/b.py"
-
                 monitor._handle_response(
-                    {"root": "/ROOT", "files": ["a.py", "subdir/b.py", "untracked.py"]}
+                    {"root": "/ROOT", "files": ["a.py", "subdir/b.py"]}
+                )
+                analysis_directory.process_updated_files.assert_called_once_with(
+                    ["/ROOT/a.py", "/ROOT/subdir/b.py"]
                 )
 
             server_thread.join()
@@ -244,41 +218,3 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             with socket_created_lock:
                 SocketConnection(socket_path)
             server_thread.join()
-
-    @patch.object(os.path, "realpath", side_effect=lambda path: path)
-    @patch.object(language_server_protocol, "perform_handshake")
-    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
-    @patch.object(project_files_monitor, "find_root")
-    def test_update_tracked_files(
-        self, find_root, _connect_to_socket, perform_handshake, realpath
-    ):
-        find_root.return_value = "/ROOT"
-
-        arguments = MagicMock()
-        configuration = MagicMock()
-        configuration.extensions = []
-        configuration.search_path = ["/SEARCH_PATH", "/SECOND_SEARCH_PATH$subdir"]
-        analysis_directory = MagicMock()
-        analysis_directory.get_root.return_value = "/ROOT"
-
-        tracked_files = [
-            "/ROOT/a.py",
-            "/ROOT/subdir/b.py",
-            "/SEARCH_PATH/library.py",
-            "/SECOND_SEARCH_PATH/subdir/library2.py",
-        ]
-        untracked_files = [
-            "/UNRELATED/e.py",
-            "/SECOND_SEARCH_PATH/f.py",
-            "/SECOND_SEARCH_PATH/subdir2/g.py",
-        ]
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
-        monitor._update_tracked_files([*tracked_files, *untracked_files])
-
-        # every tracked file should be added to the mapping
-        for file in tracked_files:
-            self.assertEqual(monitor._tracked_files.get(file), file)
-
-        # untracked files should not be added to the mapping
-        for file in untracked_files:
-            self.assertEqual(monitor._tracked_files.get(file), None)

@@ -80,7 +80,6 @@ class WatchmanSubscriber(object):
             remove_if_exists(pid_path)
             remove_if_exists(lock_path)
 
-        # pyre-ignore: missing annotations on underscored parameters, fixed on master
         def interrupt_handler(_signal_number=None, _frame=None) -> None:
             LOG.info("Interrupt signal received.")
             cleanup()

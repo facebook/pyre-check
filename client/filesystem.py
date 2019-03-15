@@ -59,9 +59,15 @@ def exists(path: str) -> str:
 
 
 class AnalysisDirectory:
-    def __init__(self, path: str, filter_paths: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        path: str,
+        filter_paths: Optional[List[str]] = None,
+        search_path: Optional[List[str]] = None,
+    ) -> None:
         self._path = path
-        self._filter_paths = filter_paths
+        self._filter_paths = filter_paths or []
+        self._search_path = search_path or []
 
     def get_root(self) -> str:
         return self._path
@@ -72,8 +78,38 @@ class AnalysisDirectory:
     def prepare(self) -> None:
         pass
 
+    def process_updated_files(self, paths: List[str]) -> List[str]:
+        """
+            Process a list of paths which were added/removed/updated, making any
+            necessary changes to the directory:
+                - For an AnalysisDirectory, nothing needs to be changed, since
+                  the mapping from source file to analysis file is 1:1.
+                - For a SharedAnalysisDirectory, the symbolic links (as well as
+                  the reverse-mapping we track) need to be updated to account for
+                  new and deleted files.
+
+            Return a list of files (corresponding to the given paths) that Pyre
+            should be tracking.
+        """
+        return [path for path in paths if self._is_tracked(path)]
+
     def cleanup(self) -> None:
         pass
+
+    @property
+    @functools.lru_cache(1)
+    def _tracked_directories(self) -> List[str]:
+        tracked_directories = [
+            self.get_root(),
+            *[os.path.join(*path.split("$")) for path in self._search_path],
+        ]
+        return [os.path.abspath(path) for path in tracked_directories]
+
+    def _is_tracked(self, path: str) -> bool:
+        return any(
+            path.startswith(directory.rstrip(os.sep) + os.sep)
+            for directory in self._tracked_directories
+        )
 
 
 class SharedAnalysisDirectory(AnalysisDirectory):
@@ -84,6 +120,8 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         original_directory: Optional[str] = None,
         filter_paths: Optional[List[str]] = None,
         local_configuration_root: Optional[str] = None,
+        extensions: Optional[List[str]] = None,
+        search_path: Optional[List[str]] = None,
         isolate: bool = False,
         build: bool = False,
         prompt: bool = False,
@@ -91,11 +129,18 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._source_directories = set(source_directories)
         self._targets = set(targets)
         self._original_directory = original_directory
-        self._filter_paths = filter_paths
+        self._filter_paths = filter_paths or []
         self._local_configuration_root = local_configuration_root
+        self._search_path = search_path or []
         self._isolate = isolate
         self._build = build
         self._prompt = prompt
+
+        # Mapping from source files in the project root to symbolic links in the
+        # analysis directory.
+        self._symbolic_links = _compute_symbolic_link_mapping(
+            self.get_root(), extensions or ["py", "pyi"]
+        )  # type: Dict[str, str]
 
     def get_scratch_directory(self) -> str:
         try:
@@ -151,6 +196,23 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
             )
 
+    def process_updated_files(self, paths: List[str]) -> List[str]:
+        """
+            Return the paths to in the analysis directory (symbolic links)
+            corresponding to the given paths.
+            Result also includes any files which are within a tracked directory.
+
+            TODO(T40580762) properly update symbolic links for new/deleted files
+        """
+        tracked_files = []
+        for path in paths:
+            if path in self._symbolic_links:
+                tracked_files.append(self._symbolic_links[path])
+            elif self._is_tracked(path):
+                tracked_files.append(path)
+
+        return tracked_files
+
     def cleanup(self) -> None:
         try:
             if self._isolate:
@@ -175,19 +237,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self._merge_into_paths(source_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
-            directory = os.path.dirname(merged)
-            try:
-                os.makedirs(directory)
-            except OSError:
-                pass
-            try:
-                os.symlink(original, merged)
-            except OSError as error:
-                if error.errno == errno.EEXIST:
-                    os.unlink(merged)
-                    os.symlink(original, merged)
-                else:
-                    LOG.error(str(error))
+            _add_symbolic_link(merged, original)
 
     # Exposed for testing.
     def _merge_into_paths(
@@ -277,6 +327,52 @@ def remove_if_exists(path: str) -> None:
         shutil.rmtree(path)
     except OSError:
         pass  # Not a directory.
+
+
+def _compute_symbolic_link_mapping(
+    directory: str, extensions: Iterable[str]
+) -> Dict[str, str]:
+    """
+        Given a shared analysis directory, produce a mapping from actual source files
+        to files contained within this directory. Only includes files which have
+        one of the provided extensions.
+
+        Watchman watches actual source files, so when a change is detected to a
+        file, this mapping can be used to identify what file changed from Pyre's
+        perspective.
+    """
+    symbolic_links = {}
+    try:
+        for symbolic_link in find_paths_with_extensions(directory, extensions):
+            symbolic_links[os.path.realpath(symbolic_link)] = symbolic_link
+    except subprocess.CalledProcessError as error:
+        LOG.warning(
+            "Exception encountered trying to find source files "
+            "in the analysis directory: `%s`",
+            error,
+        )
+        LOG.warning("Starting with an empty set of tracked files.")
+    return symbolic_links
+
+
+def _delete_symbolic_link(link_path: str) -> None:
+    os.unlink(link_path)
+
+
+def _add_symbolic_link(link_path: str, actual_path: str) -> None:
+    directory = os.path.dirname(link_path)
+    try:
+        os.makedirs(directory)
+    except OSError:
+        pass
+    try:
+        os.symlink(actual_path, link_path)
+    except OSError as error:
+        if error.errno == errno.EEXIST:
+            os.unlink(link_path)
+            os.symlink(actual_path, link_path)
+        else:
+            LOG.error(str(error))
 
 
 @contextmanager

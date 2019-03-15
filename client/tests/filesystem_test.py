@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import errno
 import fcntl
 import os
 import subprocess
@@ -12,13 +13,17 @@ from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, resolve_analysis_directory
+from .. import buck, commands, filesystem, resolve_analysis_directory
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
+    AnalysisDirectory,
     Filesystem,
     MercurialBackedFilesystem,
     SharedAnalysisDirectory,
     __name__ as filesystem_name,
+    _add_symbolic_link,
+    _compute_symbolic_link_mapping,
+    _delete_symbolic_link,
     _find_python_paths,
     acquire_lock,
     find_root,
@@ -295,9 +300,10 @@ class FilesystemTest(unittest.TestCase):
             ]
         )
 
+    @patch.object(filesystem, "_compute_symbolic_link_mapping")
     @patch("os.getcwd")
     @patch.object(subprocess, "check_output")
-    def test_get_scratch_directory(self, check_output, getcwd):
+    def test_get_scratch_directory(self, check_output, getcwd, compute_symbolic_links):
         # No scratch, no local configuration
         check_output.side_effect = FileNotFoundError
         getcwd.return_value = "default"
@@ -395,8 +401,8 @@ class FilesystemTest(unittest.TestCase):
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
-                "/root",
-                [],
+                original_directory="/root",
+                filter_paths=[],
                 build=False,
                 prompt=True,
             )
@@ -504,3 +510,120 @@ class FilesystemTest(unittest.TestCase):
         self.assertEqual(find_root("/a", "configuration"), "/a")
         os_mock_isfile.side_effect = [False, False]
         self.assertEqual(find_root("/a/b", "configuration"), None)
+
+    @patch("os.unlink")
+    def test_delete_symbolic_link(self, unlink):
+        # delete succeeds
+        unlink.return_value = None
+        _delete_symbolic_link("exists")
+        unlink.assert_called_once_with("exists")
+
+        # delete fails
+        unlink.reset_mock()
+        unlink.side_effect = OSError
+        self.assertRaises(OSError, _delete_symbolic_link, "exception_occurs")
+        unlink.assert_called_once_with("exception_occurs")
+
+    @patch("os.unlink")
+    @patch("os.symlink")
+    @patch("os.makedirs")
+    def test_add_symbolic_link(self, makedirs, symlink, unlink):
+        _add_symbolic_link("/a/link", "file.py")
+        # standard use-cases
+        makedirs.assert_called_once_with("/a")
+        symlink.assert_called_once_with("file.py", "/a/link")
+
+        symlink.reset_mock()
+        makedirs.reset_mock()
+        _add_symbolic_link("/a/b/c/d/link", "file.py")
+        makedirs.assert_called_once_with("/a/b/c/d")
+        symlink.assert_called_once_with("file.py", "/a/b/c/d/link")
+
+        # symlink exists
+        symlink.reset_mock()
+        makedirs.reset_mock()
+        error = OSError()
+        error.errno = errno.EEXIST
+        symlink.side_effect = [error, None]
+        _add_symbolic_link("/a/b/link", "file.py")
+        makedirs.assert_called_once_with("/a/b")
+        symlink.assert_called_with("file.py", "/a/b/link")
+        unlink.assert_called_once_with("/a/b/link")
+
+        # symlink fails
+        symlink.reset_mock()
+        makedirs.reset_mock()
+        unlink.reset_mock()
+        symlink.side_effect = OSError()
+        _add_symbolic_link("/a/link", "file.py")
+        makedirs.assert_called_once_with("/a")
+        symlink.assert_called_once_with("file.py", "/a/link")
+        unlink.assert_not_called()
+
+    @patch.object(filesystem, "find_paths_with_extensions")
+    @patch.object(
+        os.path,
+        "realpath",
+        side_effect=lambda path: path.replace("ANALYSIS_ROOT", "LOCAL_ROOT"),
+    )
+    def test_compute_symbolic_link_mapping(self, realpath, find_paths_with_extensions):
+        find_paths_with_extensions.return_value = [
+            "ANALYSIS_ROOT/a.py",
+            "ANALYSIS_ROOT/b.thrift",
+            "ANALYSIS_ROOT/subX/d.pyi",
+            "ANALYSIS_ROOT/subX/e.py",
+            "ANALYSIS_ROOT/subY/subZ/g.pyi",
+        ]
+
+        self.assertDictEqual(
+            filesystem._compute_symbolic_link_mapping(
+                "ANALYSIS_ROOT", ["py", "pyi", "thrift"]
+            ),
+            {
+                "LOCAL_ROOT/a.py": "ANALYSIS_ROOT/a.py",
+                "LOCAL_ROOT/b.thrift": "ANALYSIS_ROOT/b.thrift",
+                "LOCAL_ROOT/subX/d.pyi": "ANALYSIS_ROOT/subX/d.pyi",
+                "LOCAL_ROOT/subX/e.py": "ANALYSIS_ROOT/subX/e.py",
+                "LOCAL_ROOT/subY/subZ/g.pyi": "ANALYSIS_ROOT/subY/subZ/g.pyi",
+            },
+        )
+
+    @patch.object(filesystem, "_compute_symbolic_link_mapping", return_value={})
+    @patch.object(os.path, "realpath", side_effect=lambda path: path)
+    def test_process_updated_files(self, realpath, compute_symbolic_links):
+        search_path = ["/SEARCH_PATH", "/SECOND_SEARCH_PATH$subdir"]
+        tracked_files = [
+            "/ROOT/a.py",
+            "/ROOT/subdir/b.py",
+            "/SEARCH_PATH/library.py",
+            "/SECOND_SEARCH_PATH/subdir/library2.py",
+        ]
+        untracked_files = [
+            "/UNRELATED/e.py",
+            "/SECOND_SEARCH_PATH/f.py",
+            "/SECOND_SEARCH_PATH/subdir2/g.py",
+        ]
+
+        analysis_directory = AnalysisDirectory("/ROOT", search_path=search_path)
+        updated_files = analysis_directory.process_updated_files(
+            [*tracked_files, *untracked_files]
+        )
+        self.assertListEqual(sorted(updated_files), sorted(tracked_files))
+
+        compute_symbolic_links.return_value = {
+            "/ROOT/a.py": "/ANALYSIS/a.py",
+            "/ROOT/subdir/b.py": "/ANALYSIS/subdir/b.py",
+        }
+        shared_tracked_files = [
+            "/ANALYSIS/a.py",
+            "/ANALYSIS/subdir/b.py",
+            "/SEARCH_PATH/library.py",
+            "/SECOND_SEARCH_PATH/subdir/library2.py",
+        ]
+        analysis_directory = SharedAnalysisDirectory(
+            ["/ROOT"], [], search_path=search_path
+        )
+        updated_files = analysis_directory.process_updated_files(
+            [*tracked_files, *untracked_files]
+        )
+        self.assertListEqual(sorted(updated_files), sorted(shared_tracked_files))

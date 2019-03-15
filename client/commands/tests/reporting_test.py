@@ -160,6 +160,6 @@ class ReportingTest(unittest.TestCase):
         configuration.local_configuration = "a/b/.pyre_configuration.local"
         arguments.source_directories = None
         handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("base", ["a/b"])
+            arguments, configuration, AnalysisDirectory("base", filter_paths=["a/b"])
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})

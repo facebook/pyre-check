@@ -118,7 +118,7 @@ class InitTest(unittest.TestCase):
         arguments.targets = []
         arguments.filter_directory = "/real/directory"
         expected_analysis_directory = AnalysisDirectory(
-            "/symlinked/directory", ["/real/directory"]
+            "/symlinked/directory", filter_paths=["/real/directory"]
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -129,7 +129,10 @@ class InitTest(unittest.TestCase):
         arguments.targets = ["//x:y"]
         arguments.filter_directory = "/real/directory"
         expected_analysis_directory = SharedAnalysisDirectory(
-            [], ["//x:y"], "/project", ["/real/directory"]
+            [],
+            ["//x:y"],
+            original_directory="/project",
+            filter_paths=["/real/directory"],
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -141,7 +144,10 @@ class InitTest(unittest.TestCase):
         arguments.filter_directory = "/filter"
         configuration.targets = ["//overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
-            ["a/b"], ["//x:y", "//y:/..."], "/project", ["/filter"]
+            ["a/b"],
+            ["//x:y", "//y:/..."],
+            original_directory="/project",
+            filter_paths=["/filter"],
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
@@ -154,7 +160,10 @@ class InitTest(unittest.TestCase):
         configuration.source_directories = []
         configuration.targets = ["//not:overridden/..."]
         expected_analysis_directory = SharedAnalysisDirectory(
-            [], ["//not:overridden/..."], "/project", ["/filter"]
+            [],
+            ["//not:overridden/..."],
+            original_directory="/project",
+            filter_paths=["/filter"],
         )
         analysis_directory = resolve_analysis_directory(
             arguments, commands, configuration
