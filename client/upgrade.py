@@ -529,8 +529,8 @@ if __name__ == "__main__":
 
     # Subcommands: Codemods
     missing_overridden_return_annotations = commands.add_parser(
-        "missing-overridden-return-annotations"
-        help="Add annotations according to errors inputted through stdin."
+        "missing-overridden-return-annotations",
+        help="Add annotations according to errors inputted through stdin.",
     )
     missing_overridden_return_annotations.set_defaults(
         function=run_missing_overridden_return_annotations
@@ -538,7 +538,7 @@ if __name__ == "__main__":
 
     missing_global_annotations = commands.add_parser(
         "missing-global-annotations",
-        help="Add annotations according to errors inputted through stdin."
+        help="Add annotations according to errors inputted through stdin.",
     )
     missing_global_annotations.set_defaults(function=run_missing_global_annotations)
 
