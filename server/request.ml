@@ -430,6 +430,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.ComputeHashesToKeys ->
         let open Service.EnvironmentSharedMemory in
         (* Type order. *)
+        let extend_map map ~new_map =
+          Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
+        in
         let map =
           let map =
             Map.add_exn
@@ -440,14 +443,34 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           match OrderKeys.get "Order" with
           | Some indices ->
               let annotations = List.filter_map indices ~f:OrderAnnotations.get in
-              Map.merge_skewed
-                (Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
+              extend_map
                 map
-                ~combine:(fun ~key:_ value _ -> value)
+                ~new_map:(Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
           | None ->
               map
         in
-
+        (* AST shared memory. *)
+        let map =
+          let handles =
+            Ast.SharedMemory.HandleKeys.get ()
+            |> File.Handle.Set.Tree.to_list
+          in
+          map
+          |> extend_map ~new_map:(Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ())
+          |> extend_map
+            ~new_map:(
+              Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys
+                ~links:(List.map handles ~f:File.Handle.show))
+          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~handles)
+          |> extend_map
+            ~new_map:(
+              Ast.SharedMemory.Modules.compute_hashes_to_keys
+                ~qualifiers:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
+          |> extend_map
+            ~new_map:(
+              Ast.SharedMemory.Handles.compute_hashes_to_keys
+                ~handles:(List.map ~f:File.Handle.show handles))
+        in
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)

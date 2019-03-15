@@ -3,11 +3,13 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 module HandleKey: Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
 
 module AccessKey: Memory.KeyType with
   type t = Expression.Access.t and
-  type out = Expression.Access.t
+type out = Expression.Access.t
 
 module IntKey: Memory.KeyType with type t = int and type out = int
 
@@ -17,6 +19,12 @@ module SymlinksToPaths: sig
   val add: string -> PyrePath.t -> unit
 
   val remove: targets: string list -> unit
+
+  (* Exposed for testing. *)
+  val hash_of_key: string -> string
+  val serialize_key: string -> string
+
+  val compute_hashes_to_keys: links: string list -> string String.Map.t
 end
 
 module Sources: sig
@@ -27,6 +35,14 @@ module Sources: sig
   val add: File.Handle.t -> Source.t -> unit
 
   val remove: handles: File.Handle.t list -> unit
+
+  (* Exposed for testing. *)
+  val hash_of_handle: File.Handle.t -> string
+  val serialize_handle: File.Handle.t -> string
+  val hash_of_qualifier: Expression.Access.t -> string
+  val serialize_qualifier: Expression.Access.t -> string
+
+  val compute_hashes_to_keys: handles: File.Handle.t list -> string String.Map.t
 end
 
 module HandleKeys: sig
@@ -38,6 +54,13 @@ module HandleKeys: sig
   val clear: unit -> unit
 
   val normalize: unit -> unit
+
+  (* Exposed for testing. *)
+  val hash_of_key: int -> string
+  val serialize_key: int -> string
+
+
+  val compute_hashes_to_keys: unit -> string String.Map.t
 end
 
 module Modules: sig
@@ -50,10 +73,22 @@ module Modules: sig
   val remove: qualifiers: Expression.Access.t list -> unit
 
   val exists: qualifier: Expression.Access.t -> bool
+
+  (* Exposed for testing. *)
+  val hash_of_key: Expression.Access.t -> string
+  val serialize_key: Expression.Access.t -> string
+
+  val compute_hashes_to_keys: qualifiers: Expression.Access.t list -> string String.Map.t
 end
 
 module Handles: sig
   val get: hash: int -> string option
 
   val add_handle_hash: handle: string -> unit
+
+  (* Exposed for testing. *)
+  val hash_of_key: int -> string
+  val serialize_key: int -> string
+
+  val compute_hashes_to_keys: handles: string list -> string String.Map.t
 end

@@ -978,28 +978,28 @@ let test_compute_hashes_to_keys context =
     Handler.TypeOrderHandler.add_key 16;
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.annotations ())
-    ~key:15
-    ~data:(Type.Primitive "fifteen");
+      ~key:15
+      ~data:(Type.Primitive "fifteen");
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.indices ())
       ~key:(Type.Primitive "fifteen")
       ~data:15;
-  Handler.TypeOrderHandler.set
-    (Handler.TypeOrderHandler.annotations ())
-    ~key:16
-    ~data:(Type.Primitive "sixteen");
-  Handler.TypeOrderHandler.set
-    (Handler.TypeOrderHandler.indices ())
-    ~key:(Type.Primitive "sixteen")
-    ~data:16;
-  Handler.TypeOrderHandler.set
-    (Handler.TypeOrderHandler.edges ())
-    ~key:15
-    ~data:[{ TypeOrder.Target.target = 16; parameters = [] }];
-  Handler.TypeOrderHandler.set
-    (Handler.TypeOrderHandler.backedges ())
-    ~key:16
-    ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.annotations ())
+      ~key:16
+      ~data:(Type.Primitive "sixteen");
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.indices ())
+      ~key:(Type.Primitive "sixteen")
+      ~data:16;
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.edges ())
+      ~key:15
+      ~data:[{ TypeOrder.Target.target = 16; parameters = [] }];
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.backedges ())
+      ~key:16
+      ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
   in
   let tear_down_shared_memory () _ =
     let open Service.EnvironmentSharedMemory in
@@ -1018,6 +1018,10 @@ let test_compute_hashes_to_keys context =
       String.compare left right
     in
     let to_binding hash key = { TypeQuery.hash; key = Base64.encode_exn key } in
+    (Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ()
+     |> String.Map.to_alist
+     |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key }))
+    @
     [
       to_binding
         (OrderIndices.hash_of_key (Type.Primitive "sixteen"))

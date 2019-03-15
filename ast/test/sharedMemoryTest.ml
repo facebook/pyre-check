@@ -34,8 +34,63 @@ let test_normalize_handle_keys context =
   assert_normalized ["h"; "g"; "f"; "e"; "d"; "c"; "b"; "a"]
 
 
+let test_compute_hashes_to_keys _ =
+  let open Ast.SharedMemory in
+  let assert_mapping_equal expected actual =
+    assert_equal
+      ~printer:(fun map -> Sexp.to_string (String.Map.sexp_of_t String.sexp_of_t map))
+      ~cmp:(String.Map.equal String.equal)
+      (String.Map.of_alist_exn expected)
+      actual
+  in
+  let open Ast.Expression in
+  assert_mapping_equal
+    [
+      SymlinksToPaths.hash_of_key "first", SymlinksToPaths.serialize_key "first";
+      SymlinksToPaths.hash_of_key "second", SymlinksToPaths.serialize_key "second";
+    ]
+    (SymlinksToPaths.compute_hashes_to_keys ~links:["first"; "second"]);
+  assert_mapping_equal
+    [
+      Sources.hash_of_handle (File.Handle.create "first.py"),
+      Sources.serialize_handle (File.Handle.create "first.py");
+      Sources.hash_of_qualifier (Access.create "first"),
+      Sources.serialize_qualifier (Access.create "first");
+      Sources.hash_of_handle (File.Handle.create "second/__init__.py"),
+      Sources.serialize_handle (File.Handle.create "second/__init__.py");
+      Sources.hash_of_qualifier (Access.create "second"),
+      Sources.serialize_qualifier (Access.create "second");
+
+    ]
+    (Sources.compute_hashes_to_keys
+       ~handles:[File.Handle.create "first.py"; File.Handle.create "second/__init__.py"]
+    );
+  assert_mapping_equal
+    [HandleKeys.hash_of_key 0, HandleKeys.serialize_key 0]
+    (HandleKeys.compute_hashes_to_keys ());
+  assert_mapping_equal
+    [
+      Modules.hash_of_key (Access.create "foo"), Modules.serialize_key (Access.create "foo");
+      Modules.hash_of_key (Access.create "bar"), Modules.serialize_key (Access.create "bar");
+      Modules.hash_of_key (Access.create "foo.b"), Modules.serialize_key (Access.create "foo.b");
+    ]
+    (Modules.compute_hashes_to_keys
+       ~qualifiers:[
+         Access.create "foo";
+         Access.create "bar";
+         Access.create "foo.b";
+       ]);
+  assert_mapping_equal
+    [
+      Handles.hash_of_key (String.hash "a.py"), Handles.serialize_key (String.hash "a.py");
+      Handles.hash_of_key (String.hash "b/c.py"), Handles.serialize_key (String.hash "b/c.py");
+    ]
+    (Handles.compute_hashes_to_keys ~handles:["a.py"; "b/c.py"])
+
+
 let () =
   "ast_shared_memory">:::[
     "normalize_handle_keys">::test_normalize_handle_keys;
+    "compute_hashes_to_keys">::test_compute_hashes_to_keys;
   ]
   |> Test.run
