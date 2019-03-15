@@ -1259,21 +1259,21 @@ atom:
       }
     }
 
-  | position = ASTERIKS; test = test {
-      let start, _ = position in
-      let location = location_create_with_stop ~start ~stop:(Node.stop test) in
-      match test with
-      | {
-          Node.value = Starred (Starred.Once test);
-          _;
-        } -> {
-          Node.location;
-          value = Starred (Starred.Twice test);
-        }
-      | _ -> {
-          Node.location;
-          value = Starred (Starred.Once test);
-        }
+  | position = ASTERIKS; test = test_without_comparison {
+    let start, _ = position in
+    let location = location_create_with_stop ~start ~stop:(Node.stop test) in
+    match test with
+    | {
+        Node.value = Starred (Starred.Once test);
+        _;
+      } -> {
+        Node.location;
+        value = Starred (Starred.Twice test);
+      }
+    | _ -> {
+        Node.location;
+        value = Starred (Starred.Once test);
+      }
     }
 
   | string = STRING; mixed_string = mixed_string {
@@ -1371,12 +1371,7 @@ mixed_string:
   ;
 
 test_without_ternary:
-  | left = test_without_ternary; operator = boolean_operator; right = test_without_ternary {
-    {
-      Node.location = left.Node.location;
-      value = BooleanOperator { BooleanOperator.left; operator; right };
-    }
-  }
+  | test_without_comparison = test_without_comparison { test_without_comparison }
 
   | left = expression; comparisons = nonempty_list(comparison) {
       let rec comparison ({ Node.location; _ } as left) comparisons =
@@ -1401,7 +1396,15 @@ test_without_ternary:
       in
       comparison left comparisons
     }
+  | left = test_without_ternary; operator = boolean_operator; right = test_without_ternary {
+      {
+        Node.location = left.Node.location;
+        value = BooleanOperator { BooleanOperator.left; operator; right };
+      }
+    };
 
+
+test_without_comparison:
   | start = LAMBDA;
     parameters = separated_list(COMMA, lambda_parameter);
     COLON;

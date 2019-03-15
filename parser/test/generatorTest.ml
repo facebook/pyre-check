@@ -3212,6 +3212,17 @@ let test_for _ =
         orelse = [];
         async = false;
       };
+    ];
+  assert_parsed_equal
+    "for a, *b in c: \n\ta"
+    [
+      +For {
+        For.target = +Tuple [!"a"; (+Starred (Starred.Once !"b"))];
+        iterator = !"c";
+        body = [+Expression !"a"];
+        orelse = [];
+        async = false;
+      };
     ]
 
 
