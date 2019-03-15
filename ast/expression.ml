@@ -402,6 +402,47 @@ module Access = struct
     List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
+  let create_from_expression nested_access =
+    let rec flatten nested_access =
+      match Node.value nested_access with
+      | AccessNew (AccessNew.Identifier identifier) ->
+          None, [Identifier identifier]
+      | AccessNew (
+          AccessNew.Attribute {
+            base = { Node.value = AccessNew (AccessNew.Identifier base); _ };
+            attribute;
+          }
+        ) ->
+          None, [Identifier attribute; Identifier base]
+      | AccessNew (AccessNew.Attribute { base; attribute }) ->
+          let base_expression, access = flatten base in
+          base_expression, (Identifier attribute) :: access
+      | Call { callee = { Node.value = AccessNew (AccessNew.Identifier callee); _ }; arguments } ->
+          let arguments =
+            let convert { Call.Argument.name; value } =
+              { Argument.name; value }
+            in
+            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
+          in
+          None, [Call arguments; Identifier callee]
+      | Call { callee; arguments } ->
+          let base_expression, access = flatten callee in
+          let arguments =
+            let convert { Call.Argument.name; value } =
+              { Argument.name; value }
+            in
+            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
+          in
+          base_expression, (Call arguments) :: access
+      | _ ->
+          Some nested_access, []
+    in
+    let base_expression, flattened = flatten nested_access in
+    match base_expression with
+    | Some expression -> ExpressionAccess { expression; access = List.rev flattened }
+    | None -> SimpleAccess (List.rev flattened)
+
+
   let create name =
     let identifier_names name =
       if String.equal name "..." then

@@ -437,6 +437,7 @@ let test_is_assert_function _ =
   assert_false (is_assert "pyretestassert()");
   assert_false (is_assert "notAssert")
 
+
 let test_exists_in_list _ =
   let make_expression target_string =
     let make_access = function
@@ -493,6 +494,61 @@ let test_exists_in_list _ =
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:false;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true
 
+
+let test_convert_accesses _ =
+  let assert_convert new_access expected =
+    let converted =
+      new_access
+      |> Node.create_with_default_location
+      |> Access.create_from_expression
+      |> (fun access -> Access access)
+      |> Node.create_with_default_location
+    in
+    assert_equal
+      ~printer:(Expression.show)
+      ~+expected
+      converted
+  in
+  assert_convert
+    (AccessNew (AccessNew.Identifier "a"))
+    (Access (SimpleAccess [Identifier "a"]));
+  assert_convert
+    (AccessNew (
+      AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+    ))
+    (Access (SimpleAccess [Identifier "a"; Identifier "b"]));
+  assert_convert
+    (AccessNew (AccessNew.Attribute {
+      base = ~+(AccessNew (
+        AccessNew.Attribute {
+          base = ~+(AccessNew (AccessNew.Identifier "a"));
+          attribute = "b";
+      }));
+      attribute = "c";
+    }))
+    (Access (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"]));
+  assert_convert
+    (Call {
+      callee = ~+(AccessNew (AccessNew.Identifier "a"));
+      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
+    })
+    (Access (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]]));
+  assert_convert
+    (Call {
+      callee = ~+(AccessNew (
+        AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+      ));
+      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
+    })
+    (Access
+      (SimpleAccess [
+        Identifier "a";
+        Identifier "b";
+        Call ~+[{ Argument.name = None; value = !"x" }];
+      ])
+    )
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -505,5 +561,6 @@ let () =
     "name_and_arguments">::test_name_and_arguments;
     "is_assert_function">::test_is_assert_function;
     "exists_in_list">::test_exists_in_list;
+    "convert_accesses">::test_convert_accesses;
   ]
   |> Test.run

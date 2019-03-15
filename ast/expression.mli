@@ -254,6 +254,7 @@ module Access : sig
 
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
+  val create_from_expression: expression_t -> general_access
 
   val combine: expression_t -> t -> general_access
   val expression: ?location: Location.t -> t -> expression_t
