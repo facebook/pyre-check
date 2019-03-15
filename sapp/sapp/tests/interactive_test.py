@@ -1148,10 +1148,6 @@ class InteractiveTest(TestCase):
         self.assertTrue(self.interactive._verify_issue_selected())
 
     def testVerifyMultipleBranches(self):
-        # Leads to no-op on _generate_trace
-        self.interactive.trace_tuples_id = 1
-        self.interactive.current_issue_id = 1
-
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
             TraceTuple(trace_frame=TraceFrame(id=1), branches=1),
@@ -1238,7 +1234,6 @@ else:
         """
         self.interactive.setup()
         self.interactive.current_issue_id = 1
-        self.interactive.trace_tuples_id = 1
 
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
@@ -1286,7 +1281,6 @@ else:
     def testListSourceCodeFileNotFound(self):
         self.interactive.setup()
         self.interactive.current_issue_id = 1
-        self.interactive.trace_tuples_id = 1
 
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [

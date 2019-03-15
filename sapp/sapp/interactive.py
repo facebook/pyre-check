@@ -100,8 +100,6 @@ frames()        show trace frames independently of an issue
         # Active trace frame of the current trace
         self.current_trace_frame_index: int = -1
         self.root_trace_frame_index: int = -1
-        # The current issue id when 'trace' was last run
-        self.trace_tuples_id: int = -1
 
     def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
@@ -187,6 +185,9 @@ frames()        show trace frames independently of an issue
 
         self.current_issue_id = selected_issue.id
         self.current_trace_frame_index = 1  # first one after the source
+
+        self._generate_trace()
+
         print(f"Set issue to {issue_id}.")
         self.show()
 
@@ -308,8 +309,6 @@ frames()        show trace frames independently of an issue
         if not self._verify_issue_selected():
             return
 
-        self._generate_trace()
-
         self._output_trace_tuples(self.trace_tuples)
 
     def frames(
@@ -361,9 +360,6 @@ frames()        show trace frames independently of an issue
             self._output_trace_frames(self._group_trace_frames(trace_frames))
 
     def _generate_trace(self):
-        if self.trace_tuples_id == self.current_issue_id:
-            return  # already generated
-
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
 
@@ -404,7 +400,6 @@ frames()        show trace frames independently of an issue
         if not self._verify_issue_selected():
             return
 
-        self._generate_trace()  # make sure self.trace_tuples exists
         self.current_trace_frame_index = min(
             self.current_trace_frame_index + 1, len(self.trace_tuples) - 1
         )
@@ -416,7 +411,6 @@ frames()        show trace frames independently of an issue
         if not self._verify_issue_selected():
             return
 
-        self._generate_trace()  # make sure self.trace_tuples exists
         self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 0)
         self.trace()
 
@@ -522,8 +516,6 @@ frames()        show trace frames independently of an issue
         """
         if not self._verify_issue_selected():
             return
-
-        self._generate_trace()
 
         current_trace_frame = self.trace_tuples[
             self.current_trace_frame_index
@@ -847,7 +839,6 @@ frames()        show trace frames independently of an issue
         return True
 
     def _verify_multiple_branches(self) -> bool:
-        self._generate_trace()  # make sure self.trace_tuples exists
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
         if current_trace_tuple.branches < 2:
             self.warning("This trace frame has no alternate branches to take.")
