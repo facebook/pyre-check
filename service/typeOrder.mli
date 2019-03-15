@@ -7,3 +7,5 @@ open Core
 open Analysis
 
 val compute_hashes_to_keys: indices: int list -> annotations: Type.t list -> string String.Map.t
+
+module Handler: TypeOrder.Handler
