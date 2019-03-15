@@ -258,6 +258,7 @@ module Access : sig
 
   val combine: expression_t -> t -> general_access
   val expression: ?location: Location.t -> t -> expression_t
+  val new_expression: ?location: Location.t -> general_access -> expression_t
 
   val sanitized: t -> t
   val equal_sanitized: t -> t -> bool

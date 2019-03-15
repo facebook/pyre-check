@@ -358,6 +358,9 @@ end
 
 
 module Access = struct
+  let create_call_expression callee arguments =
+    Call { callee; arguments }
+
   include Record.Access
 
   type t = expression_t Record.Access.record
@@ -471,10 +474,61 @@ module Access = struct
     Format.asprintf "%a" pp access
 
 
-  let expression ?location access =
-    let location = Option.value location ~default:Location.Reference.any in
+  let expression ?(location = Location.Reference.any) access =
     Access (SimpleAccess access)
     |> Node.create ~location
+
+
+  let new_expression ?(location = Location.Reference.any) access =
+    let convert_arguments { Node.value = arguments; location } =
+      let convert { Argument.name; value } = { Call.Argument.name; value } in
+      List.map ~f:convert arguments
+      |> Node.create ~location
+    in
+    let rec create_nested_access expression access =
+      match expression, access with
+      | Some expression, Identifier identifier :: [] ->
+          AccessNew (AccessNew.Attribute {
+            base = expression;
+            attribute = identifier;
+          })
+          |> Node.create ~location
+      | Some expression, Call arguments :: [] ->
+          create_call_expression expression (convert_arguments arguments)
+          |> Node.create ~location
+      | None, Identifier identifier :: [] ->
+          AccessNew (AccessNew.Identifier identifier)
+          |> Node.create ~location
+      | None, Identifier identifier :: [Identifier base] ->
+          AccessNew (AccessNew.Attribute {
+            base = (AccessNew (AccessNew.Identifier base)) |> Node.create ~location;
+            attribute = identifier;
+          })
+          |> Node.create ~location
+      | None, Call arguments :: [Identifier base] ->
+          create_call_expression
+            ((AccessNew (AccessNew.Identifier base)) |> Node.create ~location)
+            (convert_arguments arguments)
+          |> Node.create ~location
+      | _, Identifier identifier :: access ->
+          AccessNew (AccessNew.Attribute {
+            base = create_nested_access expression access;
+            attribute = identifier;
+          })
+          |> Node.create ~location
+      | _, Call arguments :: access ->
+          create_call_expression
+            (create_nested_access expression access)
+            (convert_arguments arguments)
+          |> Node.create ~location
+      | _ ->
+          failwith "Invalid access chain."
+    in
+    match access with
+    | SimpleAccess access ->
+        create_nested_access None (List.rev access)
+    | ExpressionAccess { expression; access } ->
+        create_nested_access (Some expression) (List.rev access)
 
 
   let sanitized access =
