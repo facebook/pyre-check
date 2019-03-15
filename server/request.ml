@@ -438,24 +438,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               ~data:(Base64.encode_exn (OrderKeys.serialize_key "Order"))
           in
           match OrderKeys.get "Order" with
-          | Some keys ->
-              let add_key_mappings map key =
-                let annotation = OrderAnnotations.find_unsafe key in
-                Map.add_exn
-                  map
-                  ~key:(OrderAnnotations.hash_of_key key)
-                  ~data:(Base64.encode_exn (OrderAnnotations.serialize_key key))
-                |> Map.add_exn
-                  ~key:(OrderEdges.hash_of_key key)
-                  ~data:(Base64.encode_exn (OrderEdges.serialize_key key))
-                |> Map.add_exn
-                  ~key:(OrderBackedges.hash_of_key key)
-                  ~data:(Base64.encode_exn (OrderBackedges.serialize_key key))
-                |> Map.add_exn
-                  ~key:(OrderIndices.hash_of_key annotation)
-                  ~data:(Base64.encode_exn (OrderIndices.serialize_key annotation))
-              in
-              List.fold keys ~init:map ~f:add_key_mappings
+          | Some indices ->
+              let annotations = List.filter_map indices ~f:OrderAnnotations.get in
+              Map.merge_skewed
+                (Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
+                map
+                ~combine:(fun ~key:_ value _ -> value)
           | None ->
               map
         in

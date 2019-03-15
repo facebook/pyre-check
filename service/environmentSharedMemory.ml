@@ -135,13 +135,13 @@ module OrderAnnotationValue = struct
 end
 
 module EdgeValue = struct
-  type t = TypeOrder.Target.t list
+  type t = Analysis.TypeOrder.Target.t list
   let prefix = Prefix.make ()
   let description = "Edges"
 end
 
 module BackedgeValue = struct
-  type t = TypeOrder.Target.t list
+  type t = Analysis.TypeOrder.Target.t list
   let prefix = Prefix.make ()
   let description = "Backedges"
 end
