@@ -973,38 +973,74 @@ let test_compute_hashes_to_keys context =
     |> Path.create_absolute
   in
   let (module Handler: Analysis.Environment.Handler) = (module Service.Environment.SharedHandler) in
-  Handler.TypeOrderHandler.add_key 15;
-  Handler.TypeOrderHandler.add_key 16;
-  Handler.TypeOrderHandler.set
-    (Handler.TypeOrderHandler.annotations ())
+  let set_up_shared_memory _ =
+    Handler.TypeOrderHandler.add_key 15;
+    Handler.TypeOrderHandler.add_key 16;
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.annotations ())
     ~key:15
     ~data:(Type.Primitive "fifteen");
+    Handler.TypeOrderHandler.set
+      (Handler.TypeOrderHandler.indices ())
+      ~key:(Type.Primitive "fifteen")
+      ~data:15;
   Handler.TypeOrderHandler.set
     (Handler.TypeOrderHandler.annotations ())
     ~key:16
     ~data:(Type.Primitive "sixteen");
-  let expected_binding key =
-    let hash =
-      Service.EnvironmentSharedMemory.OrderAnnotations.string_of_key key
-      |> (fun key -> Memory.unsafe_little_endian_representation ~key)
-      |> Int64.to_string
+  Handler.TypeOrderHandler.set
+    (Handler.TypeOrderHandler.indices ())
+    ~key:(Type.Primitive "sixteen")
+    ~data:16;
+  Handler.TypeOrderHandler.set
+    (Handler.TypeOrderHandler.edges ())
+    ~key:15
+    ~data:[{ TypeOrder.Target.target = 16; parameters = [] }];
+  Handler.TypeOrderHandler.set
+    (Handler.TypeOrderHandler.backedges ())
+    ~key:16
+    ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
+  in
+  let tear_down_shared_memory () _ =
+    let open Service.EnvironmentSharedMemory in
+    OrderEdges.remove_batch (OrderEdges.KeySet.of_list [15; 16]);
+    OrderBackedges.remove_batch (OrderBackedges.KeySet.of_list [15; 16]);
+    OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
+    OrderIndices.remove_batch
+      (OrderIndices.KeySet.of_list
+         [Type.Primitive "fifteen"; Type.Primitive "sixteen"])
+  in
+  OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
+
+  let expected =
+    let open Service.EnvironmentSharedMemory in
+    let compare { TypeQuery.hash = left; _ } { TypeQuery.hash = right; _ } =
+      String.compare left right
     in
-    let key =
-      (Prefix.make_key
-         Service.EnvironmentSharedMemory.OrderAnnotationValue.prefix
-         (Int.to_string key))
-      |> Base64.encode_exn
-    in
-    { TypeQuery.hash; key }
+    let to_binding hash key = { TypeQuery.hash; key = Base64.encode_exn key } in
+    [
+      to_binding
+        (OrderIndices.hash_of_key (Type.Primitive "sixteen"))
+        (OrderIndices.serialize_key (Type.Primitive "sixteen"));
+      to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
+      to_binding (OrderEdges.hash_of_key 16) (OrderEdges.serialize_key 16);
+      to_binding (OrderEdges.hash_of_key 15) (OrderEdges.serialize_key 15);
+      to_binding
+        (OrderIndices.hash_of_key (Type.Primitive "fifteen"))
+        (OrderIndices.serialize_key (Type.Primitive "fifteen"));
+      to_binding (OrderBackedges.hash_of_key 15) (OrderBackedges.serialize_key 15);
+
+      to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
+      to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
+      to_binding (OrderKeys.hash_of_key "Order") (OrderKeys.serialize_key "Order");
+    ]
+    |> List.sort ~compare
   in
   assert_response
     ~local_root
     ~source:""
     ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
-    (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping [
-         expected_binding 15;
-         expected_binding 16;
-       ]))))
+    (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping expected))))
 
 
 let test_decode_serialized_ocaml_values context =
@@ -1015,31 +1051,31 @@ let test_decode_serialized_ocaml_values context =
   in
   let (module Handler: Analysis.Environment.Handler) = (module Service.Environment.SharedHandler) in
   (* Note that we're not adding any values to the shared environment here. *)
- let query =
-   [
-     {
-       TypeQuery.serialized_key =
-         Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
-         |> Base64.encode_exn;
-       serialized_value =
-         [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
-         |> (fun value -> Marshal.to_string value [Marshal.Closures])
-         |> Base64.encode_exn;
-     };
-     {
-       TypeQuery.serialized_key =
-         Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
-         |> Base64.encode_exn;
-       serialized_value =
-         [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
-         |> (fun value -> Marshal.to_string value [Marshal.Closures])
-         |> Base64.encode_exn;
-     };
-     {
-       TypeQuery.serialized_key = "Can't decode this";
-       serialized_value = "Nope";
-     }
-   ]
+  let query =
+    [
+      {
+        TypeQuery.serialized_key =
+          Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
+          |> Base64.encode_exn;
+        serialized_value =
+          [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
+          |> (fun value -> Marshal.to_string value [Marshal.Closures])
+          |> Base64.encode_exn;
+      };
+      {
+        TypeQuery.serialized_key =
+          Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
+          |> Base64.encode_exn;
+        serialized_value =
+          [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
+          |> (fun value -> Marshal.to_string value [Marshal.Closures])
+          |> Base64.encode_exn;
+      };
+      {
+        TypeQuery.serialized_key = "Can't decode this";
+        serialized_value = "Nope";
+      }
+    ]
   in
   assert_response
     ~local_root

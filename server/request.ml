@@ -431,20 +431,38 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let open Service.EnvironmentSharedMemory in
         (* Type order. *)
         let map =
+          let map =
+            Map.add_exn
+              String.Map.empty
+              ~key:(OrderKeys.hash_of_key "Order")
+              ~data:(Base64.encode_exn (OrderKeys.serialize_key "Order"))
+          in
           match OrderKeys.get "Order" with
           | Some keys ->
               let add_key_mappings map key =
+                let annotation = OrderAnnotations.find_unsafe key in
                 Map.add_exn
                   map
                   ~key:(OrderAnnotations.hash_of_key key)
                   ~data:(Base64.encode_exn (OrderAnnotations.serialize_key key))
+                |> Map.add_exn
+                  ~key:(OrderEdges.hash_of_key key)
+                  ~data:(Base64.encode_exn (OrderEdges.serialize_key key))
+                |> Map.add_exn
+                  ~key:(OrderBackedges.hash_of_key key)
+                  ~data:(Base64.encode_exn (OrderBackedges.serialize_key key))
+                |> Map.add_exn
+                  ~key:(OrderIndices.hash_of_key annotation)
+                  ~data:(Base64.encode_exn (OrderIndices.serialize_key annotation))
               in
-              List.fold keys ~init:String.Map.empty ~f:add_key_mappings
+              List.fold keys ~init:map ~f:add_key_mappings
           | None ->
-              String.Map.empty
+              map
         in
+
         map
         |> Map.to_alist
+        |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
 
