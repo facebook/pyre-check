@@ -76,14 +76,8 @@ module SymlinksToPaths = struct
 
   let serialize_key = SymlinksToPaths.serialize_key
 
-  let compute_hashes_to_keys ~links =
-    let add map link =
-      Map.add_exn
-        map
-        ~key:(hash_of_key link)
-        ~data:(serialize_key link)
-    in
-    List.fold links ~init:String.Map.empty ~f:add
+  let compute_hashes_to_keys =
+    SymlinksToPaths.compute_hashes_to_keys
 end
 
 
@@ -128,7 +122,7 @@ module Sources = struct
   let serialize_qualifier =
     QualifiersToHandles.serialize_key
 
-  let compute_hashes_to_keys ~handles =
+  let compute_hashes_to_keys ~keys =
     let add map handle =
       let map =
         Map.add_exn
@@ -144,7 +138,7 @@ module Sources = struct
         ~key:(hash_of_qualifier qualifier)
         ~data:(serialize_qualifier qualifier)
     in
-    List.fold handles ~init:String.Map.empty ~f:add
+    List.fold keys ~init:String.Map.empty ~f:add
 end
 
 
@@ -170,15 +164,9 @@ module Handles = struct
   let serialize_key =
     Paths.serialize_key
 
-  let compute_hashes_to_keys ~handles =
-    let add map handle =
-      let key = String.hash handle in
-      Map.add_exn
-        map
-        ~key:(hash_of_key key)
-        ~data:(serialize_key key)
-    in
-    List.fold handles ~init:String.Map.empty ~f:add
+  let compute_hashes_to_keys ~keys =
+    List.map keys ~f:String.hash
+    |> fun keys -> Paths.compute_hashes_to_keys ~keys
 end
 
 
@@ -220,7 +208,7 @@ module HandleKeys = struct
     HandleKeys.serialize_key
 
   let compute_hashes_to_keys () =
-    String.Map.singleton (hash_of_key 0) (serialize_key 0)
+    HandleKeys.compute_hashes_to_keys ~keys:[0]
 end
 
 
@@ -253,12 +241,6 @@ module Modules = struct
   let hash_of_key = Modules.hash_of_key
   let serialize_key = Modules.serialize_key
 
-  let compute_hashes_to_keys ~qualifiers =
-    let add map qualifier =
-      Map.add_exn
-        map
-        ~key:(hash_of_key qualifier)
-        ~data:(serialize_key qualifier)
-    in
-    List.fold qualifiers ~init:String.Map.empty ~f:add
+  let compute_hashes_to_keys =
+    Modules.compute_hashes_to_keys
 end

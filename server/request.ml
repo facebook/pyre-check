@@ -460,16 +460,16 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys
-                ~links:(List.map handles ~f:File.Handle.show))
-          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~handles)
+                ~keys:(List.map handles ~f:File.Handle.show))
+          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:handles)
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Modules.compute_hashes_to_keys
-                ~qualifiers:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
+                ~keys:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Handles.compute_hashes_to_keys
-                ~handles:(List.map ~f:File.Handle.show handles))
+                ~keys:(List.map ~f:File.Handle.show handles))
         in
         map
         |> Map.to_alist

@@ -77,6 +77,8 @@ module Register (Key: KeyType) (Value: Value.Type) (): sig
   val serialize_key: Key.t -> string
 
   val hash_of_key: Key.t -> string
+
+  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 end = struct
   (* Register decoder *)
   type decodable += Decoded of Key.out * Value.t
@@ -99,6 +101,16 @@ end = struct
     |> Digest.string
     |> (fun key -> unsafe_little_endian_representation ~key)
     |> Int64.to_string
+
+
+  let compute_hashes_to_keys ~keys =
+    let add map key =
+      Core.Map.add_exn
+        map
+        ~key:(hash_of_key key)
+        ~data:(serialize_key key)
+    in
+    Core.List.fold keys ~init:Core.String.Map.empty ~f:add
 end
 
 
@@ -108,6 +120,7 @@ sig
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
+  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 
   include SharedMemory.NoCache with
     type t = Value.t
@@ -126,6 +139,7 @@ sig
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
+  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 
   include SharedMemory.WithCache with
     type t = Value.t

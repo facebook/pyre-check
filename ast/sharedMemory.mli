@@ -24,7 +24,7 @@ module SymlinksToPaths: sig
   val hash_of_key: string -> string
   val serialize_key: string -> string
 
-  val compute_hashes_to_keys: links: string list -> string String.Map.t
+  val compute_hashes_to_keys: keys: string list -> string String.Map.t
 end
 
 module Sources: sig
@@ -42,7 +42,7 @@ module Sources: sig
   val hash_of_qualifier: Expression.Access.t -> string
   val serialize_qualifier: Expression.Access.t -> string
 
-  val compute_hashes_to_keys: handles: File.Handle.t list -> string String.Map.t
+  val compute_hashes_to_keys: keys: File.Handle.t list -> string String.Map.t
 end
 
 module HandleKeys: sig
@@ -78,7 +78,7 @@ module Modules: sig
   val hash_of_key: Expression.Access.t -> string
   val serialize_key: Expression.Access.t -> string
 
-  val compute_hashes_to_keys: qualifiers: Expression.Access.t list -> string String.Map.t
+  val compute_hashes_to_keys: keys: Expression.Access.t list -> string String.Map.t
 end
 
 module Handles: sig
@@ -90,5 +90,5 @@ module Handles: sig
   val hash_of_key: int -> string
   val serialize_key: int -> string
 
-  val compute_hashes_to_keys: handles: string list -> string String.Map.t
+  val compute_hashes_to_keys: keys: string list -> string String.Map.t
 end

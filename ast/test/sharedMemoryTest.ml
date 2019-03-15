@@ -49,7 +49,7 @@ let test_compute_hashes_to_keys _ =
       SymlinksToPaths.hash_of_key "first", SymlinksToPaths.serialize_key "first";
       SymlinksToPaths.hash_of_key "second", SymlinksToPaths.serialize_key "second";
     ]
-    (SymlinksToPaths.compute_hashes_to_keys ~links:["first"; "second"]);
+    (SymlinksToPaths.compute_hashes_to_keys ~keys:["first"; "second"]);
   assert_mapping_equal
     [
       Sources.hash_of_handle (File.Handle.create "first.py"),
@@ -63,7 +63,7 @@ let test_compute_hashes_to_keys _ =
 
     ]
     (Sources.compute_hashes_to_keys
-       ~handles:[File.Handle.create "first.py"; File.Handle.create "second/__init__.py"]
+       ~keys:[File.Handle.create "first.py"; File.Handle.create "second/__init__.py"]
     );
   assert_mapping_equal
     [HandleKeys.hash_of_key 0, HandleKeys.serialize_key 0]
@@ -75,7 +75,7 @@ let test_compute_hashes_to_keys _ =
       Modules.hash_of_key (Access.create "foo.b"), Modules.serialize_key (Access.create "foo.b");
     ]
     (Modules.compute_hashes_to_keys
-       ~qualifiers:[
+       ~keys:[
          Access.create "foo";
          Access.create "bar";
          Access.create "foo.b";
@@ -85,7 +85,7 @@ let test_compute_hashes_to_keys _ =
       Handles.hash_of_key (String.hash "a.py"), Handles.serialize_key (String.hash "a.py");
       Handles.hash_of_key (String.hash "b/c.py"), Handles.serialize_key (String.hash "b/c.py");
     ]
-    (Handles.compute_hashes_to_keys ~handles:["a.py"; "b/c.py"])
+    (Handles.compute_hashes_to_keys ~keys:["a.py"; "b/c.py"])
 
 
 let () =

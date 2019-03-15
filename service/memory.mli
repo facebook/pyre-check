@@ -39,6 +39,7 @@ module NoCache (Key: KeyType) (Value: Value.Type): sig
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
+  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 
   include SharedMemory.NoCache with
     type t = Value.t
@@ -53,6 +54,7 @@ module WithCache (Key: KeyType) (Value: Value.Type): sig
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
+  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 
   include SharedMemory.WithCache with
     type t = Value.t
