@@ -110,7 +110,8 @@ end = struct
         ~key:(hash_of_key key)
         ~data:(serialize_key key)
     in
-    Core.List.fold keys ~init:Core.String.Map.empty ~f:add
+    Core.List.dedup_and_sort ~compare:Key.compare keys
+    |> Core.List.fold ~init:Core.String.Map.empty ~f:add
 end
 
 

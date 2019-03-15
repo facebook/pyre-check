@@ -449,12 +449,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | None ->
               map
         in
+        let handles =
+          Ast.SharedMemory.HandleKeys.get ()
+          |> File.Handle.Set.Tree.to_list
+        in
         (* AST shared memory. *)
         let map =
-          let handles =
-            Ast.SharedMemory.HandleKeys.get ()
-            |> File.Handle.Set.Tree.to_list
-          in
           map
           |> extend_map ~new_map:(Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ())
           |> extend_map
@@ -470,6 +470,47 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             ~new_map:(
               Ast.SharedMemory.Handles.compute_hashes_to_keys
                 ~keys:(List.map ~f:File.Handle.show handles))
+        in
+        (* Handle-based keys. *)
+        let map =
+          map
+          |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:handles)
+        in
+        (* Class definitions. *)
+        let map =
+          let keys =
+            List.filter_map handles ~f:ClassKeys.get
+            |> List.concat
+          in
+          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
+        in
+        (* Aliases. *)
+        let map =
+          let keys =
+            List.filter_map handles ~f:AliasKeys.get
+            |> List.concat
+          in
+          extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
+        in
+        (* Globals. *)
+        let map =
+          let keys =
+            List.filter_map handles ~f:GlobalKeys.get
+            |> List.concat
+          in
+          extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
+        in
+        (* Dependents. *)
+        let map =
+          let keys =
+            List.filter_map handles ~f:DependentKeys.get
+            |> List.concat
+          in
+          extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
         in
         map
         |> Map.to_alist
