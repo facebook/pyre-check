@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 from typing import Optional
 
 import click
+import click_log
 import IPython
 from click import Choice, Parameter, Path, argument, group, option
 from sapp.analysis_output import AnalysisOutput
@@ -22,6 +24,9 @@ from .filesystem import find_root
 
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]
 
+logger = logging.getLogger(__name__)
+click_log.basic_config(logger)
+
 
 def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
     """Try to guess a reasonable database name by looking at the repository
@@ -38,7 +43,8 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
     raise click.BadParameter("Could not guess a database location")
 
 
-@group()
+@group(context_settings={"help_option_names": ["--help", "-h"]})
+@click_log.simple_verbosity_option(logger)
 @option(
     "--repository",
     "-r",
@@ -68,6 +74,7 @@ def cli(
         database_engine=database_engine,
         database_name=database_name,
     )
+    logger.debug(f"Context: {ctx.obj}")
 
 
 @cli.command(help="interactive exploration of issues")

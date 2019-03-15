@@ -1,4 +1,5 @@
 click
+click-log
 ipython
 munch
 pygments
