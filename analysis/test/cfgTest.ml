@@ -644,6 +644,34 @@ let test_try _ =
       node 9 (Node.Block [error]) [10] [2]; (* normal *)
       node 10 (Node.Block [!!"body"]) [5] [9];
     ];
+
+  let bool_handler = +BooleanOperator {
+    BooleanOperator.left = !"a";
+    operator = BooleanOperator.Or;
+    right = !"b";
+  } in
+  let block = {
+    Try.body = [!!"body"];
+    handlers = [handler ~kind:bool_handler "handler"];
+    orelse = [];
+    finally = [];
+  } in
+  assert_cfg
+    [+Try block]
+    [
+      node 0 Node.Entry [] [5];
+      node 1 Node.Normal [8; 9] [3];
+      node 2 Node.Error [7] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 Node.Yield [] [];
+      node 5 (Node.Try block) [0] [6; 10];
+      node 6 Node.Dispatch [5] [7; 11];
+      node 7 (Node.Block []) [6] [2];
+      node 8 (Node.Block []) [] [1];
+      node 9 (Node.Block []) [10; 11] [1];
+      node 10 (Node.Block [!!"body"]) [5] [9];
+      node 11 (Node.Block [+Expression (bool_handler); !!"handler"]) [6] [9];
+    ];
   ()
 
 
