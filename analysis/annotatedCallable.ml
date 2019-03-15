@@ -75,6 +75,26 @@ let apply_decorators ~define ~resolution =
       }
     else
       define
+  else if Define.has_decorator define "contextlib.asynccontextmanager" then
+    let joined =
+      try
+        Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
+      with
+        TypeOrder.Untracked _ ->
+          (* Apply_decorators gets called when building the environment,
+             which is unsound and can raise. *)
+          Type.Any
+    in
+    if Type.is_async_iterator joined then
+      {
+        define with
+        Define.return_annotation =
+          Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
+          |> Type.expression
+          |> Option.some
+      }
+    else
+      define
   else if Define.has_decorator ~match_prefix:true define "click.command" ||
           Define.has_decorator ~match_prefix:true define "click.group" ||
           Define.has_decorator define "click.pass_context" ||

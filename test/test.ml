@@ -706,6 +706,17 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class AsyncIterator(AsyncIterable[_T_co], Protocol[_T_co]):
           def __anext__(self) -> Awaitable[_T_co]: ...
           def __aiter__(self) -> AsyncIterator[_T_co]: ...
+        class AsyncContextManager(Protocol[_T_co]):
+            def __aenter__(self) -> Awaitable[_T_co]:
+                ...
+
+            def __aexit__(
+                self,
+                exc_type: Optional[Type[BaseException]],
+                exc_value: Optional[BaseException],
+                traceback: Optional[TracebackType],
+            ) -> Awaitable[Optional[bool]]:
+                ...
 
         if sys.version_info >= (3, 6):
           class Collection(Iterable[_T_co], Protocol[_T_co]):
@@ -764,8 +775,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Coroutine(Awaitable[_V_co], Generic[_T_co, _T_contra, _V_co]): pass
 
         class AsyncGenerator(AsyncIterator[_T_co], Generic[_T_co, _T_contra]):
-          def __aiter__(self) -> AsyncGenerator[_T_co, _T_contra]: ...
-          def __anext__(self) -> Awaitable[_T_co]: ...
+            @abstractmethod
+            def __anext__(self) -> Awaitable[_T_co]:
+                ...
+            @abstractmethod
+            def __aiter__(self) -> AsyncGenerator[_T_co, _T_contra]:
+                ...
 
         @overload
         def cast(tp: Type[_T], obj: Any) -> _T: ...

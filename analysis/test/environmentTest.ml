@@ -1388,6 +1388,7 @@ let test_protocols _ =
       "typing.Iterator";
       "typing._Collection";
       "typing.Iterable";
+      "typing.AsyncContextManager";
       "typing.Collection";
       "typing.Awaitable";
     ]

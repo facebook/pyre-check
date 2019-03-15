@@ -132,6 +132,7 @@ val integer: t
 val literal_integer: int -> t
 val iterable: t -> t
 val iterator: t -> t
+val async_iterator: t -> t
 val lambda: parameters: (Identifier.t * t) list -> return_annotation: t -> t
 val list: t -> t
 val meta: t -> t
@@ -238,6 +239,7 @@ val is_generator: t -> bool
 val is_generic: t -> bool
 val is_iterable: t -> bool
 val is_iterator: t -> bool
+val is_async_iterator: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool
 val is_noreturn: t -> bool

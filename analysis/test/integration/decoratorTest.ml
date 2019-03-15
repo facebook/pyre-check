@@ -74,6 +74,74 @@ let test_check_contextmanager _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
+let test_check_asynccontextmanager _ =
+
+  assert_type_errors
+    {|
+      @contextlib.asynccontextmanager
+      async def f() -> typing.AsyncIterator[int]:
+        yield 1
+
+      async def g() -> int:
+        async with f() as number:
+          return number
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @contextlib.asynccontextmanager
+      async def f() -> typing.AsyncIterator[int]:
+        yield 1
+
+      async def g() -> str:
+        async with f() as number:
+          return number
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
+
+  assert_type_errors
+    {|
+      @contextlib.asynccontextmanager
+      async def f() -> typing.AsyncIterable[int]:
+        yield 1
+
+      async def g() -> int:
+        async with f() as number:
+          return number
+    |}
+    [
+      (* TODO(T41786660): AsyncIterable should have attribute `__aenter__` ? *)
+      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+      "Undefined attribute [16]: `typing.AsyncIterable` has no attribute `__aenter__`.";
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+    ];
+
+  assert_type_errors
+    {|
+      @contextlib.asynccontextmanager
+      async def f() -> typing.AsyncGenerator[int, None]:
+        yield 1
+
+      async def g() -> int:
+        async with f() as number:
+          return number
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      class C:
+        @contextlib.asynccontextmanager
+        async def f(self) -> typing.AsyncIterator[int]:
+          yield 1
+      async def foo(c: C) -> str:
+        async with c.f() as value:
+          return value
+        return ""
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+
 let test_check_click_command _ =
   assert_type_errors
     {|
@@ -191,6 +259,7 @@ let test_decorators _ =
 let () =
   "decorator">:::[
     "check_contextmanager">::test_check_contextmanager;
+    "check_asynccontextmanager">::test_check_asynccontextmanager;
     "check_click_command">::test_check_click_command;
     "decorators">::test_decorators;
   ]

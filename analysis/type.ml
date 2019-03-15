@@ -554,6 +554,13 @@ let iterator parameter =
   }
 
 
+let async_iterator parameter =
+  Parametric {
+    name = "typing.AsyncIterator";
+    parameters = [parameter];
+  }
+
+
 let lambda ~parameters ~return_annotation =
   Callable {
     kind = Anonymous;
@@ -1222,6 +1229,7 @@ let primitive_substitution_map =
     "list", list Any;
     "type", parametric_anys "type" 1;
     "typing.Any", Any;
+    "typing.AsyncContextManager", parametric_anys "typing.AsyncContextManager" 1;
     "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
     "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
     "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
@@ -1863,6 +1871,13 @@ let is_iterable = function
 let is_iterator = function
   | Parametric { name; _ } ->
       String.equal name "typing.Iterator"
+  | _ ->
+      false
+
+
+let is_async_iterator = function
+  | Parametric { name; _ } ->
+      String.equal name "typing.AsyncIterator"
   | _ ->
       false
 
