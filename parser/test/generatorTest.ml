@@ -3573,6 +3573,46 @@ let test_try _ =
       };
     ];
   assert_parsed_equal
+    "try:\n\ta\nexcept a or b:\n\tc"
+    [
+      +Try {
+        Try.body = [+Expression !"a"];
+        handlers = [
+          {
+            Try.kind = Some (+BooleanOperator {
+               BooleanOperator.left = !"a";
+               operator = BooleanOperator.Or;
+               right = !"b";
+             });
+            name = None;
+            handler_body = [+Expression !"c"];
+          };
+        ];
+        orelse = [];
+        finally = [];
+      };
+    ];
+  assert_parsed_equal
+    "try:\n\ta\nexcept a or b as e:\n\tc"
+    [
+      +Try {
+        Try.body = [+Expression !"a"];
+        handlers = [
+          {
+            Try.kind = Some (+BooleanOperator {
+               BooleanOperator.left = !"a";
+               operator = BooleanOperator.Or;
+               right = !"b";
+             });
+            name = Some "e";
+            handler_body = [+Expression !"c"];
+          };
+        ];
+        orelse = [];
+        finally = [];
+      };
+    ];
+  assert_parsed_equal
     "try:\n\ta\nexcept a, b:\n\tb"
     [
       +Try {

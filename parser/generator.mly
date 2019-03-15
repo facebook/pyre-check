@@ -1004,6 +1004,17 @@ handler:
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
       { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
     }
+  | start = EXCEPT;
+    kind = test_without_ternary; COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.kind = Some kind; name = None; handler_body = snd handler_body }
+    }
+  | start = EXCEPT;
+    kind = test_without_ternary; AS; name = identifier;
+    COLON; handler_body = block {
+      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
+      { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
+    }
   ;
 
 from:
