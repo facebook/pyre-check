@@ -1065,6 +1065,7 @@ let messages ~concise ~define location kind =
       let target =
         match origin with
         | Class { annotation; _ } ->
+            let annotation, _ = Type.split annotation in
             let name =
               if Type.is_optional_primitive annotation then
                 "Optional type"

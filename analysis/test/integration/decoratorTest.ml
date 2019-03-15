@@ -45,7 +45,7 @@ let test_check_contextmanager _ =
     |}
     [
       (* TODO(T27138096): Iterable should have attribute `__enter__`. *)
-      "Undefined attribute [16]: `typing.Iterable[typing.Any]` has no attribute `__enter__`.";
+      "Undefined attribute [16]: `typing.Iterable` has no attribute `__enter__`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 

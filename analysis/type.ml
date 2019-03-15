@@ -586,16 +586,9 @@ let list parameter =
 
 
 let meta annotation =
-  let parameter =
-    match annotation with
-    | Variable _ ->
-        Primitive "object"
-    | annotation ->
-        annotation
-  in
   Parametric {
     name = "type";
-    parameters = [parameter];
+    parameters = [annotation];
   }
 
 

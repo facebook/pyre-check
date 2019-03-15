@@ -28,7 +28,7 @@ module AccessState = struct
   [@@deriving show]
 
   type undefined_origin =
-    | Instance of Annotated.Attribute.t
+    | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
     | Module of Access.t
     | TypeWithoutClass of Type.t
   [@@deriving show]
@@ -62,6 +62,14 @@ module AccessState = struct
     target: target option;
     continue: bool;
   }
+
+  type attribute_access_data = {
+    instantiated: Type.t;
+    class_attributes: bool;
+    class_definition: Annotated.Class.t;
+  }
+
+  exception TypeWithoutClass of Type.t
 
 
   let create ~resolution ~accumulator ~f ?resolved ?target ?(continue = true) () =
@@ -993,37 +1001,41 @@ module State = struct
 
             | Some resolved, Access.Identifier name ->
                 (* Attribute access. *)
-                let parent_annotation = Annotation.annotation resolved in
-                let access_data, types_without_classes =
-                  let rec extract_target_annotations annotation ~class_attributes =
-                    match annotation with
-                    | Type.Variable { constraints = Explicit annotations; _ }
-                    | Type.Union annotations ->
-                        List.map annotations ~f:(extract_target_annotations ~class_attributes)
-                        |> List.concat
-                    | Type.Variable { constraints = Bound annotation; _ } ->
-                        extract_target_annotations annotation ~class_attributes
-                    | annotation when Type.is_meta annotation ->
-                        Type.single_parameter annotation
-                        |> extract_target_annotations ~class_attributes:true
-                    | _ ->
-                        [annotation, class_attributes]
-                  in
-                  let is_not_ignored (instantiated, _) =
-                    match instantiated with
-                    | Type.Top | Type.Bottom | Type.Any -> false
-                    | _ -> not (Type.equal instantiated Type.ellipsis)
-                  in
-                  let add_class_definition_if_possible (instantiated, class_attributes) =
-                    Resolution.class_definition resolution instantiated
-                    >>| (fun class_definition ->
-                        `Fst (instantiated, class_attributes, class_definition))
-                    |> Option.value ~default:(`Snd instantiated)
-                  in
-                  extract_target_annotations parent_annotation ~class_attributes:false
-                  |> List.filter ~f:is_not_ignored
-                  |> List.partition_map ~f:add_class_definition_if_possible
+                let rec extract_access_data annotation ~inside_meta =
+                  let reset_instantiated data = { data with instantiated = annotation } in
+                  match annotation with
+                  | Type.Top | Type.Bottom | Type.Any ->
+                      []
+                  | annotation when Type.equal annotation Type.ellipsis ->
+                      []
+                  | Type.Union annotations ->
+                      List.concat_map annotations ~f:(extract_access_data ~inside_meta)
+                  | Type.Variable { constraints = Unconstrained; _ } ->
+                      extract_access_data Type.object_primitive ~inside_meta
+                      |> List.map ~f:reset_instantiated
+                  | Type.Variable { constraints = Explicit annotations; _ } ->
+                      List.concat_map annotations ~f:(extract_access_data ~inside_meta)
+                      |> List.map ~f:reset_instantiated
+                  | Type.Variable { constraints = Bound bound; _ } ->
+                      extract_access_data bound ~inside_meta
+                      |> List.map ~f:reset_instantiated
+                  | annotation when Type.is_meta annotation ->
+                      Type.single_parameter annotation
+                      |> extract_access_data ~inside_meta:true
+                  | _ ->
+                      begin
+                        match Resolution.class_definition resolution annotation with
+                        | Some class_definition ->
+                            [{
+                              instantiated = annotation;
+                              class_attributes = inside_meta;
+                              class_definition = Annotated.Class.create class_definition;
+                            }]
+                        | None ->
+                            raise (TypeWithoutClass annotation)
+                      end
                 in
+                let parent_annotation = Annotation.annotation resolved in
                 let attribute_step ~definition ~resolved =
                   let continue =
                     match definition with
@@ -1037,11 +1049,10 @@ module State = struct
                   step state ~resolved ~target ~element ~continue ~lead ()
                 in
                 let find_attributes ~head_data ~tail_data =
-                  let find_attribute (instantiated, class_attributes, class_definition) =
-                    let definition = Annotated.Class.create class_definition in
+                  let find_attribute { instantiated; class_attributes; class_definition } =
                     let attribute =
                       Annotated.Class.attribute
-                        definition
+                        class_definition
                         ~transitive:true
                         ~class_attributes
                         ~resolution
@@ -1050,7 +1061,7 @@ module State = struct
                     in
                     let attribute =
                       if not (Annotated.Attribute.defined attribute) then
-                        Annotated.Class.fallback_attribute definition ~resolution ~name
+                        Annotated.Class.fallback_attribute class_definition ~resolution ~name
                         |> Option.value ~default:attribute
                       else
                         attribute
@@ -1059,7 +1070,7 @@ module State = struct
                       if Annotated.Attribute.defined attribute then
                         Defined (Instance attribute)
                       else
-                        Undefined (Instance attribute)
+                        Undefined (Instance { attribute; instantiated_target = instantiated })
                     in
                     definition, Annotated.Attribute.annotation attribute
                   in
@@ -1108,15 +1119,16 @@ module State = struct
                     ~resolved:(join_resolveds ~head_resolved ~tail_resolveds)
                 in
                 begin
-                  match access_data, types_without_classes with
-                  | _, type_without_class:: _ ->
-                      attribute_step
-                        ~definition:(Undefined (TypeWithoutClass type_without_class))
-                        ~resolved:(Annotation.create Type.Top)
-                  | [], _ ->
-                      abort ~lead state ()
-                  | head_data :: tail_data, [] ->
-                      find_attributes ~head_data ~tail_data
+                  try
+                    match extract_access_data parent_annotation ~inside_meta:false with
+                    | [] ->
+                        abort ~lead state ()
+                    | head_data :: tail_data ->
+                        find_attributes ~head_data ~tail_data
+                  with TypeWithoutClass type_without_class ->
+                    attribute_step
+                      ~definition:(Undefined (TypeWithoutClass type_without_class))
+                      ~resolved:(Annotation.create Type.Top)
                 end
             | None, Access.Identifier name ->
                 (* Module or global variable. *)
@@ -1981,17 +1993,16 @@ module State = struct
               else
                 let kind =
                   match origin with
-                  | Instance class_attribute ->
+                  | Instance { attribute = class_attribute; instantiated_target } ->
                       let open Annotated in
-                      let annotation = Attribute.parent class_attribute in
-                      if Type.equal annotation Type.undeclared then
+                      if Type.equal instantiated_target Type.undeclared then
                         Error.UndefinedName lead
                       else
                         Error.UndefinedAttribute {
                           attribute;
                           origin =
                             Error.Class {
-                              annotation;
+                              annotation = instantiated_target;
                               class_attribute = Attribute.class_attribute class_attribute;
                             };
                         }
@@ -2790,7 +2801,11 @@ module State = struct
                     let open Annotated in
                     match element with
                     | Attribute
-                        { attribute = access; definition = Undefined (Instance attribute); _ }
+                        {
+                          attribute = access;
+                          definition = Undefined (Instance { attribute; _ });
+                          _;
+                        }
                     | Attribute
                         { attribute = access; definition = Defined (Instance attribute); _ } ->
                         Error.IncompatibleAttributeType {
@@ -2882,7 +2897,7 @@ module State = struct
                         })
                       ~define:define_node
                     |> Option.some
-                | Attribute { definition = Undefined (Instance attribute); _ }
+                | Attribute { definition = Undefined (Instance { attribute; _ }); _ }
                 | Attribute { definition = Defined (Instance attribute); _ }
                   when is_illegal_attribute_annotation attribute ->
                     (* Non-self attributes may not be annotated. *)

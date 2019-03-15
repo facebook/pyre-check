@@ -163,7 +163,37 @@ let test_check_variable_bindings _ =
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Parameter of type `int` is not a supertype of the overridden parameter " ^
       "`Variable[_T (bound to float)]`."
-    ]
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar
+
+      _SelfT = TypeVar("SelfT", bound=C)
+      class C():
+          def clone(self: _SelfT) -> _SelfT: ...
+          def foo(self: _SelfT) -> _SelfT:
+              x = self.clone()
+              reveal_type(x)
+              return x
+
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Variable[_SelfT (bound to C)]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Type
+
+      _SelfT = TypeVar("SelfT", bound=C)
+      class C():
+          @classmethod
+          def clone(cls: Type[_SelfT]) -> _SelfT: ...
+          @classmethod
+          def foop(cls: Type[_SelfT]) -> _SelfT:
+              x = cls.clone()
+              reveal_type(x)
+              return x
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `Variable[_SelfT (bound to C)]`."];
+  ()
 
 
 let test_bottom_unbound_variables _ =

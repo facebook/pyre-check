@@ -23,7 +23,7 @@ module AccessState: sig
   [@@deriving show]
 
   type undefined_origin =
-    | Instance of Annotated.Attribute.t
+    | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
     | Module of Access.t
     | TypeWithoutClass of Type.t
   [@@deriving show]

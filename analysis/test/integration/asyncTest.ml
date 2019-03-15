@@ -96,8 +96,7 @@ let test_check_async _ =
       "Revealed type [-1]: Revealed type for `foo.(...)` is " ^
       "`typing.Coroutine[typing.Any, typing.Any, typing.AsyncGenerator[bool, None]]`.";
       "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-      "Undefined attribute [16]: `typing.Coroutine[typing.Any, typing.Any, typing.Any]` " ^
-      "has no attribute `__aiter__`.";
+      "Undefined attribute [16]: `typing.Coroutine` has no attribute `__aiter__`.";
     ];
 
   assert_type_errors

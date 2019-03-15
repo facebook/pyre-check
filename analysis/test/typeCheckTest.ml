@@ -504,8 +504,8 @@ let test_forward_access _ =
             | Attribute { attribute; definition = Undefined origin } ->
                 let missing_definer =
                   match origin with
-                  | Instance instance ->
-                      Type (Annotated.Attribute.parent instance)
+                  | Instance { instantiated_target; _ } ->
+                      Type instantiated_target
                   | TypeWithoutClass missing_definer ->
                       Type missing_definer
                   | Module missing_definer ->
@@ -911,7 +911,11 @@ let test_forward_access _ =
       {
         annotation = Type.Top;
         element =
-          MissingAttribute { name = "undefined"; missing_definer = Type (Type.Primitive "Class")}
+          MissingAttribute {
+            name = "undefined";
+            missing_definer =
+              Type (Type.variable ~constraints:(Type.Bound (Type.Primitive "Class")) "TV_Bound");
+          };
       };
     ];
   assert_fold
@@ -1010,7 +1014,14 @@ let test_forward_access _ =
       {
         annotation = Type.Top;
         element =
-          MissingAttribute { name = "undefined"; missing_definer = Type (Type.Primitive "Class")};
+          MissingAttribute {
+            name = "undefined";
+            missing_definer =
+              Type
+                (Type.variable
+                   ~constraints:(Type.Explicit [Type.Primitive "Class"; Type.Primitive "Other"])
+                   "TV_Explicit");
+          };
       };
     ];
   assert_fold
@@ -1391,17 +1402,16 @@ let test_forward_access _ =
     ];
 
   (* Typed dictionaries. *)
-  let movie_typed_dictionary = {
-    annotation = Type.TypedDictionary {
-        name = "Movie";
-        fields = [
-          { name = "year"; annotation = Type.integer };
-          { name = "title"; annotation = Type.string };
-        ];
-        total = true;
-      };
-    element = Value;
-  } in
+  let movie_typed_dictionary =
+    Type.TypedDictionary {
+      name = "Movie";
+      fields = [
+        { name = "year"; annotation = Type.integer };
+        { name = "title"; annotation = Type.string };
+      ];
+      total = true;
+    };
+  in
 
   assert_fold
     ~source:
@@ -1411,14 +1421,11 @@ let test_forward_access _ =
       |}
     "movie.title"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       {
         annotation = Type.Top;
         element =
-          MissingAttribute {
-            name = "title";
-            missing_definer = Type (Type.Primitive "TypedDictionary")
-          }
+          MissingAttribute { name = "title"; missing_definer = Type movie_typed_dictionary }
       };
     ];
 
@@ -1469,7 +1476,7 @@ let test_forward_access _ =
       |}
     "movie['title']"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       get_item;
       {
         annotation = parse_annotation ~resolution:resolution_with_movie "str";
@@ -1489,7 +1496,7 @@ let test_forward_access _ =
       |}
     "movie['year']"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       get_item;
       {
         annotation = parse_annotation ~resolution:resolution_with_movie "int";
@@ -1510,7 +1517,7 @@ let test_forward_access _ =
       |}
     "movie['missing']"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       get_item;
       {
         annotation = Type.integer;
@@ -1536,7 +1543,7 @@ let test_forward_access _ =
       |}
     "movie[s]"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       get_item;
       {
         annotation = Type.integer;
@@ -1690,7 +1697,7 @@ let test_forward_access _ =
       |}
     "movie['year'] = 7"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       set_item;
       {
         annotation = Type.none;
@@ -1711,7 +1718,7 @@ let test_forward_access _ =
       |}
     "movie['year'] = 'string'"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       set_item;
       {
         annotation = Type.none;
@@ -1736,7 +1743,7 @@ let test_forward_access _ =
       |}
     "movie['missing'] = 7"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       set_item;
       {
         annotation = Type.none;
@@ -1763,7 +1770,7 @@ let test_forward_access _ =
       |}
     "movie[s] = 7"
     [
-      movie_typed_dictionary;
+      { annotation = movie_typed_dictionary; element = Value };
       set_item;
       {
         annotation = Type.none;
