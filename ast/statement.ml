@@ -842,13 +842,13 @@ module Class = struct
                         Attribute.create
                           ~location
                           ~name
-                          ~defines:({ define with Define.body = [] } :: defines)
+                          ~defines:(define :: defines)
                           ()
                     | _ ->
                         Attribute.create
                           ~location
                           ~name
-                          ~defines:[{ define with Define.body = [] }]
+                          ~defines:[define]
                           ()
                   in
                   Identifier.SerializableMap.set map ~key:name ~data:attribute)
