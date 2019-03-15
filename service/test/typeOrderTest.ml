@@ -13,16 +13,16 @@ let test_compute_hashes_to_keys _ =
   assert_equal
     ~cmp:(String.Map.equal String.equal)
     (String.Map.of_alist_exn [
-        OrderEdges.hash_of_key 15, Base64.encode_exn (OrderEdges.serialize_key 15 );
-        OrderBackedges.hash_of_key 15, Base64.encode_exn (OrderBackedges.serialize_key 15);
-        OrderAnnotations.hash_of_key 15, Base64.encode_exn (OrderAnnotations.serialize_key 15);
+        OrderEdges.hash_of_key 15, OrderEdges.serialize_key 15;
+        OrderBackedges.hash_of_key 15, OrderBackedges.serialize_key 15;
+        OrderAnnotations.hash_of_key 15, OrderAnnotations.serialize_key 15;
       ])
     (Service.TypeOrder.compute_hashes_to_keys ~indices:[15] ~annotations:[]);
   assert_equal
     ~cmp:(String.Map.equal String.equal)
     (String.Map.of_alist_exn [
         OrderIndices.hash_of_key (Type.Primitive "fifteen"),
-        Base64.encode_exn (OrderIndices.serialize_key (Type.Primitive "fifteen"));
+        OrderIndices.serialize_key (Type.Primitive "fifteen");
       ])
     (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:[Type.Primitive "fifteen"])
 

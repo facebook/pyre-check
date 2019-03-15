@@ -1017,7 +1017,7 @@ let test_compute_hashes_to_keys context =
     let compare { TypeQuery.hash = left; _ } { TypeQuery.hash = right; _ } =
       String.compare left right
     in
-    let to_binding hash key = { TypeQuery.hash; key = Base64.encode_exn key } in
+    let to_binding hash key = { TypeQuery.hash; key } in
     (Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ()
      |> String.Map.to_alist
      |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key }))
@@ -1059,8 +1059,7 @@ let test_decode_serialized_ocaml_values context =
     [
       {
         TypeQuery.serialized_key =
-          Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
-          |> Base64.encode_exn;
+          Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16;
         serialized_value =
           [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
           |> (fun value -> Marshal.to_string value [Marshal.Closures])
@@ -1068,8 +1067,7 @@ let test_decode_serialized_ocaml_values context =
       };
       {
         TypeQuery.serialized_key =
-          Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
-          |> Base64.encode_exn;
+          Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15;
         serialized_value =
           [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
           |> (fun value -> Marshal.to_string value [Marshal.Closures])
@@ -1093,16 +1091,14 @@ let test_decode_serialized_ocaml_values context =
                   TypeQuery.decoded = [
                     {
                       TypeQuery.serialized_key =
-                        Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15
-                        |> Base64.encode_exn;
+                        Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15;
                       kind = "Backedges";
                       actual_value = "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
                       actual_key = "15";
                     };
                     {
                       TypeQuery.serialized_key =
-                        Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16
-                        |> Base64.encode_exn;
+                        Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16;
                       kind = "Edges";
                       actual_value = "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
                       actual_key = "16";

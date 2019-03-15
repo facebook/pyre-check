@@ -59,6 +59,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
+  base64
   core
   sexplib
   ppxlib

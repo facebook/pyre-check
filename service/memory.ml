@@ -89,6 +89,7 @@ end = struct
   let serialize_key key =
     Key.to_string key
     |> Prefix.make_key Value.prefix
+    |> Base64.encode_exn
 
 
   let hash_of_key key =

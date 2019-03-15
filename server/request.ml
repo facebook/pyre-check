@@ -438,7 +438,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             Map.add_exn
               String.Map.empty
               ~key:(OrderKeys.hash_of_key "Order")
-              ~data:(Base64.encode_exn (OrderKeys.serialize_key "Order"))
+              ~data:(OrderKeys.serialize_key "Order")
           in
           match OrderKeys.get "Order" with
           | Some indices ->

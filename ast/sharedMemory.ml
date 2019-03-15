@@ -74,9 +74,7 @@ module SymlinksToPaths = struct
   let hash_of_key =
     SymlinksToPaths.hash_of_key
 
-  let serialize_key key =
-    SymlinksToPaths.serialize_key key
-    |> Base64.encode_exn
+  let serialize_key = SymlinksToPaths.serialize_key
 
   let compute_hashes_to_keys ~links =
     let add map link =
@@ -121,16 +119,14 @@ module Sources = struct
   let hash_of_handle =
     Sources.hash_of_key
 
-  let serialize_handle handle =
-    Sources.serialize_key handle
-    |> Base64.encode_exn
+  let serialize_handle =
+    Sources.serialize_key
 
   let hash_of_qualifier =
     QualifiersToHandles.hash_of_key
 
-  let serialize_qualifier qualifier =
-    QualifiersToHandles.serialize_key qualifier
-    |> Base64.encode_exn
+  let serialize_qualifier =
+    QualifiersToHandles.serialize_key
 
   let compute_hashes_to_keys ~handles =
     let add map handle =
@@ -171,9 +167,8 @@ module Handles = struct
   let hash_of_key =
     Paths.hash_of_key
 
-  let serialize_key key =
-    Paths.serialize_key key
-    |> Base64.encode_exn
+  let serialize_key =
+    Paths.serialize_key
 
   let compute_hashes_to_keys ~handles =
     let add map handle =
@@ -221,9 +216,8 @@ module HandleKeys = struct
   let hash_of_key =
     HandleKeys.hash_of_key
 
-  let serialize_key key =
-    HandleKeys.serialize_key key
-    |> Base64.encode_exn
+  let serialize_key =
+    HandleKeys.serialize_key
 
   let compute_hashes_to_keys () =
     String.Map.singleton (hash_of_key 0) (serialize_key 0)
@@ -257,9 +251,7 @@ module Modules = struct
     Modules.mem qualifier
 
   let hash_of_key = Modules.hash_of_key
-  let serialize_key key =
-    Modules.serialize_key key
-    |> Base64.encode_exn
+  let serialize_key = Modules.serialize_key
 
   let compute_hashes_to_keys ~qualifiers =
     let add map qualifier =

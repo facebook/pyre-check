@@ -57,8 +57,14 @@ let test_decodable _ =
 
 
 let test_serialize_key _ =
-  assert_equal (OrderEdges.serialize_key 1234) (Prefix.make_key EdgeValue.prefix "1234");
-  assert_equal (OrderBackedges.serialize_key 1234) (Prefix.make_key BackedgeValue.prefix "1234")
+  assert_equal
+    (OrderEdges.serialize_key 1234)
+    (Prefix.make_key EdgeValue.prefix "1234"
+     |> Base64.encode_exn);
+  assert_equal
+    (OrderBackedges.serialize_key 1234)
+    (Prefix.make_key BackedgeValue.prefix "1234"
+     |> Base64.encode_exn)
 
 
 let test_hash_of_key _ =
