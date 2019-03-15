@@ -667,7 +667,7 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("Use 'set_issue(ID)' to select an issue first.", stderr)
+        self.assertIn("Use 'set_issue(ID)' or 'set_frame(ID)'", stderr)
 
         self.interactive.set_issue(1)
         self.interactive.trace()
@@ -1140,12 +1140,24 @@ class InteractiveTest(TestCase):
         self.interactive.trace_tuples[0].trace_frame.id = 4
         self.assertEqual(-1, self.interactive._current_branch_index(trace_frames))
 
-    def testVerifyIssueSelected(self):
+    def testVerifyEntrypointSelected(self):
         self.interactive.current_issue_id = -1
-        self.assertFalse(self.interactive._verify_issue_selected())
+        self.interactive.current_frame_id = -1
+        self.assertFalse(self.interactive._verify_entrypoint_selected())
 
         self.interactive.current_issue_id = 1
-        self.assertTrue(self.interactive._verify_issue_selected())
+        self.assertTrue(self.interactive._verify_entrypoint_selected())
+
+        self.interactive.current_issue_id = -1
+        self.interactive.current_frame_id = 1
+        self.assertTrue(self.interactive._verify_entrypoint_selected())
+
+        self.interactive.current_issue_id = 1
+        try:
+            self.interactive._verify_entrypoint_selected()
+            self.fail("Expected assertion to fail")
+        except AssertionError:
+            pass
 
     def testVerifyMultipleBranches(self):
         self.interactive.current_trace_frame_index = 0
@@ -1407,6 +1419,35 @@ else:
         self._clear_stdout()
         self.interactive.frames()
         self.assertEqual(self.stdout.getvalue().strip(), "No trace frames found.")
+
+    def testSetFrame(self):
+        trace_frames = self._basic_trace_frames()
+        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(shared_text)
+            session.commit()
+
+        self.interactive.setup()
+
+        self.interactive.set_frame(0)
+        self.assertIn("Trace frame 0 doesn't exist.", self.stderr.getvalue())
+
+        self._clear_stdout()
+        self.interactive.set_frame(1)
+        self.assertIn("Trace frame 1", self.stdout.getvalue())
+        self.assertNotIn("Trace frame 2", self.stdout.getvalue())
+
+        self._clear_stdout()
+        self.interactive.set_frame(2)
+        self.assertNotIn("Trace frame 1", self.stdout.getvalue())
+        self.assertIn("Trace frame 2", self.stdout.getvalue())
 
     def mock_pager(self, output_string):
         self.pager_calls += 1

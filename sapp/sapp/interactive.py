@@ -55,7 +55,7 @@ runs()          list all completed static analysis runs
 set_run(ID)     select a specific run for browsing issues
 issues()        list all issues for the selected run
 set_issue(ID)   select a specific issue for browsing a trace
-show()          show info about selected issue
+show()          show info about selected issue or trace frame
 trace()         show a trace of the selected issue
 prev()/p()      move backward within the trace
 next()/n()      move forward within the trace
@@ -64,6 +64,7 @@ branch(INDEX)   select a trace branch
 {list_string}          show source code at the current trace frame
 
 frames()        show trace frames independently of an issue
+set_frame(ID)   select a trace frame to explore
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -89,10 +90,14 @@ frames()        show trace frames independently of an issue
             "branch": self.branch,
             "list": self.list_source_code,
             "frames": self.frames,
+            "set_frame": self.set_frame,
         }
         self.repository_directory = repository_directory or os.getcwd()
 
+        # Trace exploration relies on either of these
         self.current_issue_id: int = -1
+        self.current_frame_id: int = -1
+
         self.sources: Set[str] = set()
         self.sinks: Set[str] = set()
         # Tuples representing the trace of the current issue
@@ -184,6 +189,7 @@ frames()        show trace frames independently of an issue
             )
 
         self.current_issue_id = selected_issue.id
+        self.current_frame_id = -1
         self.current_trace_frame_index = 1  # first one after the source
 
         self._generate_trace()
@@ -192,19 +198,16 @@ frames()        show trace frames independently of an issue
         self.show()
 
     def show(self):
-        """ More details about the selected issue.
+        """ More details about the selected issue or trace frame.
         """
-        if not self._verify_issue_selected():
+        if not self._verify_entrypoint_selected():
             return
 
-        with self.db.make_session() as session:
-            issue_instance, issue = self._get_current_issue(session)
-            sources = self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
-            sinks = self._get_leaves(session, issue_instance, SharedTextKind.SINK)
+        if self.current_issue_id != -1:
+            self._show_current_issue_instance()
+            return
 
-        page.display_page(
-            self._create_issue_output_string(issue_instance, issue, sources, sinks)
-        )
+        self._show_current_trace_frame()
 
     def issues(
         self,
@@ -306,7 +309,7 @@ frames()        show trace frames independently of an issue
                         module.helper.process root      module/helper.py:76|5|10
              + 3        leaf                  sink      module/main.py:74|1|9
         """
-        if not self._verify_issue_selected():
+        if not self._verify_entrypoint_selected():
             return
 
         self._output_trace_tuples(self.trace_tuples)
@@ -359,6 +362,33 @@ frames()        show trace frames independently of an issue
 
             self._output_trace_frames(self._group_trace_frames(trace_frames))
 
+    def set_frame(self, frame_id: int) -> None:
+        with self.db.make_session() as session:
+            selected_frame = (
+                session.query(TraceFrame).filter(TraceFrame.id == frame_id).scalar()
+            )
+
+            if selected_frame is None:
+                self.warning(
+                    f"Trace frame {frame_id} doesn't exist. "
+                    "Type 'frames()' for available trace frames."
+                )
+                return
+
+            leaves = {leaf.contents for leaf in selected_frame.leaves}
+            if selected_frame.kind == TraceKind.POSTCONDITION:
+                self.sinks = set()
+                self.sources = leaves
+            else:
+                self.sinks = leaves
+                self.sources = set()
+
+        self.current_frame_id = selected_frame.id
+        self.current_issue_id = -1
+
+        print(f"Set trace frame to {frame_id}.")
+        self.show()
+
     def _generate_trace(self):
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
@@ -397,7 +427,7 @@ frames()        show trace frames independently of an issue
     def next_cursor_location(self):
         """Move cursor to the next trace frame.
         """
-        if not self._verify_issue_selected():
+        if not self._verify_entrypoint_selected():
             return
 
         self.current_trace_frame_index = min(
@@ -408,7 +438,7 @@ frames()        show trace frames independently of an issue
     def prev_cursor_location(self):
         """Move cursor to the previous trace frame.
         """
-        if not self._verify_issue_selected():
+        if not self._verify_entrypoint_selected():
             return
 
         self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 0)
@@ -435,7 +465,10 @@ frames()        show trace frames independently of an issue
                 [1 hops: source]
                 [module/main.py:21|4|8]
         """
-        if not self._verify_issue_selected() or not self._verify_multiple_branches():
+        if (
+            not self._verify_entrypoint_selected()
+            or not self._verify_multiple_branches()
+        ):
             return
 
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
@@ -468,7 +501,10 @@ frames()        show trace frames independently of an issue
         Parameters:
             selected_index: int    branch index from expand() output
         """
-        if not self._verify_issue_selected() or not self._verify_multiple_branches():
+        if (
+            not self._verify_entrypoint_selected()
+            or not self._verify_multiple_branches()
+        ):
             return
 
         with self.db.make_session() as session:
@@ -514,7 +550,7 @@ frames()        show trace frames independently of an issue
             context: int    number of lines to show above and below trace location
                             (default: 5)
         """
-        if not self._verify_issue_selected():
+        if not self._verify_entrypoint_selected():
             return
 
         current_trace_frame = self.trace_tuples[
@@ -787,6 +823,7 @@ frames()        show trace frames independently of an issue
             for frame in results
             if filter_leaves.intersection({leaf.contents for leaf in frame.leaves})
         ]
+
         return filtered_results
 
     def _create_issue_output_string(self, issue_instance, issue, sources, sinks):
@@ -800,15 +837,33 @@ frames()        show trace frames independently of an issue
                 f"Callable: {issue.callable}",
                 f" Sources: {sources_output if sources_output else 'No sources'}",
                 f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
+                (f"Location: {issue_instance.filename}" f":{issue_instance.location}"),
+            ]
+        )
+
+    def _create_trace_frame_output_string(self, trace_frame):
+        leaves_label = (
+            "Sinks" if trace_frame.kind == TraceKind.PRECONDITION else "Sources"
+        )
+        leaves_output = f"\n{' ' * 13}".join(
+            [leaf.contents for leaf in trace_frame.leaves]
+        )
+        return "\n".join(
+            [
+                f"Trace frame {trace_frame.id}",
+                f"     Caller: {trace_frame.caller} : {trace_frame.caller_port}",
+                f"     Callee: {trace_frame.callee} : {trace_frame.callee_port}",
+                f"       Kind: {trace_frame.kind}",
+                f"{leaves_label:>{11}}: {leaves_output}",
                 (
-                    f"Location: {issue_instance.filename}"
-                    f":{SourceLocation.to_string(issue_instance.location)}"
+                    f"   Location: {trace_frame.filename}"
+                    f":{trace_frame.callee_location}"
                 ),
             ]
         )
 
     def _resolve_pager(self, use_pager):
-        use_pager = sys.stdout.isatty() if use_pager is None else use_pager
+        use_pager = sys.stdin.isatty() if use_pager is None else use_pager
         return page.page if use_pager else page.display_page
 
     def _get_current_issue(self, session):
@@ -832,9 +887,34 @@ frames()        show trace frames independently of an issue
             .all()
         ]
 
-    def _verify_issue_selected(self) -> bool:
-        if self.current_issue_id == -1:
-            self.warning("Use 'set_issue(ID)' to select an issue first.")
+    def _show_current_issue_instance(self):
+        with self.db.make_session() as session:
+            issue_instance, issue = self._get_current_issue(session)
+            sources = self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
+            sinks = self._get_leaves(session, issue_instance, SharedTextKind.SINK)
+
+        page.display_page(
+            self._create_issue_output_string(issue_instance, issue, sources, sinks)
+        )
+
+    def _show_current_trace_frame(self):
+        with self.db.make_session() as session:
+            trace_frame = (
+                session.query(TraceFrame)
+                .filter(TraceFrame.id == self.current_frame_id)
+                .scalar()
+            )
+
+            page.display_page(self._create_trace_frame_output_string(trace_frame))
+
+    def _verify_entrypoint_selected(self) -> bool:
+        assert self.current_issue_id == -1 or self.current_frame_id == -1
+
+        if self.current_issue_id == -1 and self.current_frame_id == -1:
+            self.warning(
+                "Use 'set_issue(ID)' or 'set_frame(ID)' to select an"
+                " entrypoint first."
+            )
             return False
         return True
 
