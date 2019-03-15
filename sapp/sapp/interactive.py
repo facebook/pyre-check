@@ -3,7 +3,17 @@
 import os
 import sys
 from collections import defaultdict
-from typing import Callable, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import (
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from IPython.core import page
 from pygments import highlight
@@ -52,6 +62,8 @@ next()/n()      move forward within the trace
 expand()        show alternative trace branches
 branch(INDEX)   select a trace branch
 {list_string}          show source code at the current trace frame
+
+frames()        show trace frames independently of an issue
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -59,7 +71,9 @@ branch(INDEX)   select a trace branch
 
     def __init__(self, database, database_name, repository_directory: str = ""):
         self.db = DB(database, database_name, assertions=True)
-        self.scope_vars: Dict[str, Callable] = {
+        self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
+            "precondition": TraceKind.PRECONDITION,
+            "postcondition": TraceKind.POSTCONDITION,
             "commands": self.help,
             "runs": self.runs,
             "issues": self.issues,
@@ -74,7 +88,7 @@ branch(INDEX)   select a trace branch
             "expand": self.expand,
             "branch": self.branch,
             "list": self.list_source_code,
-            "traces": self.traces,
+            "frames": self.frames,
         }
         self.repository_directory = repository_directory or os.getcwd()
 
@@ -298,15 +312,34 @@ branch(INDEX)   select a trace branch
 
         self._output_trace_tuples(self.trace_tuples)
 
-    def traces(
+    def frames(
         self,
         *,
         callers: Optional[List[str]] = None,
-        callees: Optional[List[str]] = None,
+        kind: TraceKind = TraceKind.PRECONDITION,
     ):
+        """Display trace frames independent of the current issue.
+
+        Parameters (all optional):
+            callers: list[str]                  filter traces by this caller name
+            kind: precondition|postcondition    the type of trace frames to show
+
+        Sample usage:
+            frames(callers=["module.function"], kind=postcondition)
+
+        String filters support LIKE wildcards (%, _) from SQL:
+            % matches anything (like .* in regex)
+            _ matches 1 character (like . in regex)
+        """
+        if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION}:
+            self.warning("'kind' should be precondition or postcondition")
+            return
+
         with self.db.make_session() as session:
-            query = session.query(TraceFrame).filter(
-                TraceFrame.run_id == self.current_run_id
+            query = (
+                session.query(TraceFrame)
+                .filter(TraceFrame.run_id == self.current_run_id)
+                .filter(TraceFrame.kind == kind)
             )
 
             try:
@@ -314,12 +347,6 @@ branch(INDEX)   select a trace branch
                     self._verify_list_filter(callers, "callers")
                     query = self._add_list_filter_to_query(
                         callers, query, TraceFrame.caller
-                    )
-
-                if callees is not None:
-                    self._verify_list_filter(callees, "callees")
-                    query = self._add_list_filter_to_query(
-                        callees, query, TraceFrame.callee
                     )
             except ListFilterException as error:
                 self.warning(str(error))
@@ -614,6 +641,10 @@ branch(INDEX)   select a trace branch
     def _output_trace_frames(
         self, trace_buckets: Dict[Tuple[str, str], List[TraceFrame]]
     ) -> None:
+        if not trace_buckets:
+            print("No trace frames found.")
+            return
+
         max_len_id = max(
             max(
                 max(len(str(trace_frame.id)) for trace_frame in value)

@@ -1393,7 +1393,7 @@ else:
 
         self.interactive.current_run_id = 1
         self._clear_stdout()
-        self.interactive.traces()
+        self.interactive.frames(kind=TraceKind.POSTCONDITION)
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
@@ -1409,6 +1409,10 @@ else:
                 "",
             ],
         )
+
+        self._clear_stdout()
+        self.interactive.frames()
+        self.assertEqual(self.stdout.getvalue().strip(), "No trace frames found.")
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
