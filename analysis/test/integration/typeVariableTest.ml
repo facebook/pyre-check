@@ -53,6 +53,38 @@ let test_check_unbounded_variables _ =
         input.impossible()
     |}
     ["Undefined attribute [16]: `Variable[T]` has no attribute `impossible`."];
+  assert_type_errors
+    {|
+      X = typing.TypeVar("X")
+      class Foo(typing.Generic[X]): pass
+
+      reveal_type(Foo[float])
+      reveal_type(Foo[float]())
+      reveal_type(Foo[str]())
+      Foo["str"]()
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is `typing.Type[Foo[float]]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[float]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[str]`.";
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st anonymous " ^
+      "parameter to call `typing.Generic.__getitem__` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      X = typing.TypeVar("X")
+      class Foo(typing.Generic[X]):
+        def __init__(self, x: X) -> None: ...
+
+      def one() -> Foo[int]:
+        return Foo[int](1)
+      def two() -> Foo[int]:
+        return Foo[int](1.2)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call " ^
+      "`Foo.__init__` but got `float`.";
+    ];
   ()
 
 
@@ -193,6 +225,49 @@ let test_check_variable_bindings _ =
               return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `Variable[_SelfT (bound to C)]`."];
+  assert_type_errors
+    {|
+      X = typing.TypeVar("X", bound=C)
+      class Foo(typing.Generic[X]): pass
+      class C(): pass
+      class D(C): pass
+
+      reveal_type(Foo[C])
+      reveal_type(Foo[C]())
+      reveal_type(Foo[D]())
+      Foo[int]()
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is `typing.Type[Foo[C]]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[C]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[D]`.";
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for " ^
+      "1st anonymous parameter to call `typing.Generic.__getitem__` but got `typing.Type[int]`.";
+    ];
+  assert_type_errors
+    {|
+      X = typing.TypeVar("X", Mineral, Animal)
+      class Foo(typing.Generic[X]): pass
+      class Mineral(): pass
+      class Animal(): pass
+      class Fish(Animal): pass
+
+      reveal_type(Foo[Animal])
+      reveal_type(Foo[Animal]())
+      reveal_type(Foo[Mineral]())
+      reveal_type(Foo[Fish]())
+      Foo[int]()
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is " ^
+      "`typing.Type[Foo[Animal]]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Animal]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Mineral]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Animal]`.";
+      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` " ^
+      "for 1st anonymous parameter to call `typing.Generic.__getitem__` but got " ^
+      "`typing.Type[int]`.";
+    ];
   ()
 
 

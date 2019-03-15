@@ -516,6 +516,46 @@ module Attribute = struct
           in
           let overloads =  (List.mapi ~f:overload members) @ overloads in
           { annotation with annotation = Type.Callable { callable with overloads } }
+      | Some (Type.Primitive name),
+        Access (SimpleAccess [Identifier "__getitem__"]),
+        {
+          annotation = Type.Callable ({
+              kind = Named [
+                  Access.Identifier "typing";
+                  Access.Identifier "Generic";
+                  Access.Identifier "__getitem__";
+                ];
+              _
+            } as callable);
+          _;
+        } ->
+          let implementation =
+            let generics =
+              Resolution.class_definition resolution (Type.Primitive name)
+              >>| create
+              >>| generics ~resolution
+              |> Option.value ~default:[]
+            in
+            let parameters =
+              let parameter generic =
+                Type.Callable.Parameter.Named {
+                  name = "$";
+                  annotation = Type.meta generic;
+                  default = false;
+                }
+              in
+              List.map generics ~f:parameter
+            in
+            {
+              Type.Callable.annotation =
+                Type.meta (Type.Parametric { name; parameters = generics });
+              parameters = Defined parameters;
+            }
+          in
+          {
+            annotation with
+            annotation = Type.Callable { callable with implementation; overloads = [] }
+          }
       | _ ->
           annotation
     in
