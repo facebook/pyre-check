@@ -8,6 +8,7 @@
 import functools
 import logging
 import os
+import signal
 import sys
 from typing import Any, Dict, List, NamedTuple
 
@@ -71,7 +72,22 @@ class WatchmanSubscriber(object):
             os.makedirs(self._base_path)
         except OSError:
             pass
-        lock_path = os.path.join(self._base_path, "%s.lock" % self._name)
+        lock_path = os.path.join(self._base_path, "{}.lock".format(self._name))
+        pid_path = os.path.join(self._base_path, "{}.pid".format(self._name))
+
+        def cleanup() -> None:
+            LOG.info("Cleaning up lock and pid files before exiting.")
+            remove_if_exists(pid_path)
+            remove_if_exists(lock_path)
+
+        # pyre-ignore: missing annotations on underscored parameters, fixed on master
+        def interrupt_handler(_signal_number=None, _frame=None) -> None:
+            LOG.info("Interrupt signal received.")
+            cleanup()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, interrupt_handler)
+
         # Die silently if unable to acquire the lock.
         with acquire_lock(lock_path, blocking=False):
             file_handler = logging.FileHandler(
@@ -82,7 +98,6 @@ class WatchmanSubscriber(object):
             )
             LOG.addHandler(file_handler)
 
-            pid_path = os.path.join(self._base_path, "%s.pid" % self._name)
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
 
@@ -107,8 +122,7 @@ class WatchmanSubscriber(object):
                 except KeyError:
                     pass
 
-        remove_if_exists(pid_path)
-        remove_if_exists(lock_path)
+            cleanup()
 
     def daemonize(self) -> None:
         """We double-fork here to detach the daemon process from the parent.
