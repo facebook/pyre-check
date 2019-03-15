@@ -2834,13 +2834,18 @@ module State = struct
                       |> not
                       |> (fun insufficient -> insufficient, true)
                   | None when is_immutable ->
+                      let is_toplevel =
+                        Define.is_toplevel define ||
+                        Define.is_class_toplevel define ||
+                        Define.is_constructor define
+                      in
                       let contains_any annotation =
                         if Resolution.is_string_to_any_mapping resolution annotation then
                           false
                         else
                           Type.contains_any annotation
                       in
-                      Type.equal expected Type.Top || contains_any expected, false
+                      Type.equal expected Type.Top || contains_any expected, is_toplevel
                   | _ ->
                       false, false
                 in
@@ -2871,7 +2876,7 @@ module State = struct
                       ~kind:(Error.MissingGlobalAnnotation {
                           Error.name = Access.create access;
                           annotation = actual_annotation;
-                          given_annotation = Some expected;
+                          given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
                           thrown_at_source = true;
                         })
@@ -2896,7 +2901,7 @@ module State = struct
                           missing_annotation = {
                             Error.name = Access.create access;
                             annotation = actual_annotation;
-                            given_annotation = Some expected;
+                            given_annotation = Option.some_if is_immutable expected;
                             evidence_locations;
                             thrown_at_source;
                           };
@@ -2909,7 +2914,7 @@ module State = struct
                       ~kind:(Error.ProhibitedAny {
                           Error.name = access;
                           annotation = actual_annotation;
-                          given_annotation = Some expected;
+                          given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
                           thrown_at_source = true;
                         })
@@ -2931,7 +2936,7 @@ module State = struct
                       ~kind:(Error.MissingGlobalAnnotation {
                           Error.name = access;
                           annotation = actual_annotation;
-                          given_annotation = Some expected;
+                          given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
                           thrown_at_source;
                         })

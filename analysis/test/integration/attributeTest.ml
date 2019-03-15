@@ -101,6 +101,30 @@ let test_check_attributes _ =
       "`typing.Optional[int]` but no type is specified.";
     ];
 
+  assert_strict_type_errors
+    {|
+      class Foo:
+        a = None
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type " ^
+      "`typing.Optional[int]` but no type is specified.";
+    ];
+
+  assert_strict_type_errors
+    {|
+      class Foo:
+        a = "string"
+        def __init__(self) -> None:
+          self.a = 1
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` " ^
+      "but is used as type `int`."
+    ];
+
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -828,8 +852,8 @@ let test_check_missing_attribute _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` " ^
-      "must have a type other than `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other " ^
+      "than `Any`.";
     ];
 
   assert_type_errors

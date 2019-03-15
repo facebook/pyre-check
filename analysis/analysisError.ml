@@ -1325,10 +1325,6 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType actual
-  | MissingAttributeAnnotation { missing_annotation = { given_annotation = Some actual; _ }; _ }
-  | MissingGlobalAnnotation { given_annotation = Some actual; _ }
-  | MissingParameterAnnotation { given_annotation = Some actual; _ }
-  | MissingReturnAnnotation { given_annotation = Some actual; _ }
   | MissingTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | ProhibitedAny { given_annotation = Some actual; _ }

@@ -169,7 +169,7 @@ let test_due_to_analysis_limitations _ =
         evidence_locations = [];
         thrown_at_source = true;
       });
-  assert_due_to_analysis_limitations
+  assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation {
         name = (Access.create "");
         annotation = None;
@@ -195,7 +195,7 @@ let test_due_to_analysis_limitations _ =
         evidence_locations = [];
         thrown_at_source = true;
       });
-  assert_due_to_analysis_limitations
+  assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation {
         name = (Access.create "$return_annotation");
         annotation = None;
@@ -224,7 +224,7 @@ let test_due_to_analysis_limitations _ =
           thrown_at_source = true;
         };
       });
-  assert_due_to_analysis_limitations
+  assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation {
         parent = mock_parent;
         missing_annotation = {
