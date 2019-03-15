@@ -135,11 +135,17 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             absolute_paths = [
                 os.path.join(response["root"], path) for path in response["files"]
             ]
-            LOG.info("Received Watchman update for files %s", absolute_paths)
+            LOG.info("Received Watchman update for files %s.", absolute_paths)
 
             updated_paths = self._analysis_directory.process_updated_files(
                 absolute_paths
             )
+
+            if not updated_paths:
+                LOG.info("Skipping update: Pyre doesn't track any of these files.")
+                return
+
+            LOG.info("Notifying server of update to files %s.", updated_paths)
             message = language_server_protocol.LanguageServerProtocolMessage(
                 method="updateFiles", parameters={"files": updated_paths}
             )
