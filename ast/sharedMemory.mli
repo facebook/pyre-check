@@ -3,6 +3,10 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+module HandleKey: Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
+
+module AccessKey: Memory.KeyType with
+  type t = Expression.Access.t and type out = Expression.Access.t
 
 module SymlinksToPaths: sig
   val get: string -> PyrePath.t option

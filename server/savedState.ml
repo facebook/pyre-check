@@ -134,7 +134,7 @@ let load
 
 let save ~configuration ~errors ~saved_state_path =
   Log.info "Saving server state to %s" saved_state_path;
-  Memory.collect `aggressive;
+  Memory.SharedMemory.collect `aggressive;
   EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
   EnvironmentSharedMemory.ServerErrors.add "errors" (Hashtbl.to_alist errors);
   Memory.save_shared_memory ~path:saved_state_path

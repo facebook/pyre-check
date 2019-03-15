@@ -16,15 +16,8 @@ module OverrideTypes = struct
 end
 
 
-module AccessKey = struct
-  type t = Access.t
-  let compare = Access.compare
-  let to_string = Access.show
-end
-
-
 (* Maps the method access to the next subtypes that override that method *)
-module Overrides = SharedMemory.WithCache(AccessKey)(OverrideTypes)
+module Overrides = SharedMemory.WithCache(Ast.SharedMemory.AccessKey)(OverrideTypes)
 
 
 let add_overriding_types ~member ~subtypes =

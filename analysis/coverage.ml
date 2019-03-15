@@ -87,13 +87,6 @@ let log { full; partial; untyped; ignore; crashes } ~total_errors ~path =
     ();
 
 
-module HandleKey = struct
-  type t = File.Handle.t
-  let to_string = File.Handle.show
-  let compare = File.Handle.compare
-end
-
-
 module CoverageValue = struct
   type nonrec t = t
   let prefix = Prefix.make ()
@@ -101,7 +94,7 @@ module CoverageValue = struct
 end
 
 
-module SharedMemory = Memory.WithCache(HandleKey)(CoverageValue)
+module SharedMemory = Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
 
 
 let put coverage ~handle =

@@ -114,6 +114,9 @@ module Key = struct
   let hash_fold_t = hash_fold_t
   let to_string = show
   let compare = compare
+
+  type out = string
+  let from_string = ident
 end
 
 
@@ -122,6 +125,9 @@ module RealKey = struct
   [@@deriving sexp, hash]
   let to_string = show_real_target
   let compare = compare_real_target
+
+  type out = string
+  let from_string = ident
 end
 
 
@@ -130,12 +136,20 @@ module OverrideKey = struct
   [@@deriving sexp, hash]
   let to_string = show_override_target
   let compare = compare_override_target
+
+  type out = string
+  let from_string = ident
 end
 
 
 (* Maps global function names and class names to their defining file.
    Note, global functions and class names cannot clash. *)
-module FileOfDefinition = SharedMemory.WithCache (String)
+module FileOfDefinition = SharedMemory.WithCache (
+  struct
+    include String
+    type out = string
+    let from_string = ident
+  end)
     (struct
       type t = File.Handle.t
       let prefix = Prefix.make ()

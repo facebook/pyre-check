@@ -165,44 +165,44 @@ module ErrorsValue = struct
 end
 
 (** Shared memory maps *)
-module ClassDefinitions = Decodable.WithCache (TypeKey) (ClassValue)
+module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
 
-module Aliases = Decodable.NoCache (TypeKey) (AliasValue)
+module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 
-module Globals = Decodable.WithCache (AccessKey) (GlobalValue)
+module Globals = Memory.WithCache (AccessKey) (GlobalValue)
 
-module Dependents = Decodable.WithCache (AccessKey) (DependentValue)
+module Dependents = Memory.WithCache (AccessKey) (DependentValue)
 
-module Protocols = Decodable.WithCache (StringKey) (ProtocolValue)
+module Protocols = Memory.WithCache (StringKey) (ProtocolValue)
 
 (** Keys *)
-module FunctionKeys = Decodable.WithCache (FileHandleKey) (FunctionKeyValue)
+module FunctionKeys = Memory.WithCache (FileHandleKey) (FunctionKeyValue)
 
-module ClassKeys = Decodable.WithCache (FileHandleKey) (ClassKeyValue)
+module ClassKeys = Memory.WithCache (FileHandleKey) (ClassKeyValue)
 
-module GlobalKeys = Decodable.WithCache (FileHandleKey) (GlobalKeyValue)
+module GlobalKeys = Memory.WithCache (FileHandleKey) (GlobalKeyValue)
 
-module AliasKeys = Decodable.WithCache (FileHandleKey) (AliasKeyValue)
+module AliasKeys = Memory.WithCache (FileHandleKey) (AliasKeyValue)
 
-module DependentKeys = Decodable.WithCache (FileHandleKey) (DependentKeyValue)
+module DependentKeys = Memory.WithCache (FileHandleKey) (DependentKeyValue)
 
 (** Type order maps *)
-module OrderIndices = Decodable.WithCache (TypeKey) (OrderIndexValue)
+module OrderIndices = Memory.WithCache (TypeKey) (OrderIndexValue)
 
-module OrderAnnotations = Decodable.WithCache (IntKey) (OrderAnnotationValue)
+module OrderAnnotations = Memory.WithCache (IntKey) (OrderAnnotationValue)
 
-module OrderEdges = Decodable.WithCache (IntKey) (EdgeValue)
+module OrderEdges = Memory.WithCache (IntKey) (EdgeValue)
 
-module OrderBackedges = Decodable.WithCache (IntKey) (BackedgeValue)
+module OrderBackedges = Memory.WithCache (IntKey) (BackedgeValue)
 
-module OrderKeys = Decodable.WithCache (StringKey) (OrderKeyValue)
+module OrderKeys = Memory.WithCache (StringKey) (OrderKeyValue)
 
-module StoredConfiguration = Decodable.NoCache (StringKey) (ConfigurationValue)
+module StoredConfiguration = Memory.NoCache (StringKey) (ConfigurationValue)
 
-module ServerErrors = Decodable.NoCache (StringKey) (ErrorsValue)
+module ServerErrors = Memory.NoCache (StringKey) (ErrorsValue)
 
 let heap_size () =
-  SharedMemory.heap_size ()
+  Memory.SharedMemory.heap_size ()
   |> Float.of_int
   |> (fun size -> size /. 1.0e6)
   |> Int.of_float

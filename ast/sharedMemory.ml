@@ -13,6 +13,9 @@ module HandleKey = struct
   type t = File.Handle.t
   let to_string = File.Handle.show
   let compare = File.Handle.compare
+
+  type out = File.Handle.t
+  let from_string = File.Handle.create
 end
 
 module HandleValue = struct
@@ -25,6 +28,9 @@ module IntKey = struct
   type t = int
   let to_string = Int.to_string
   let compare = Int.compare
+
+  type out = int
+  let from_string = Int.of_string
 end
 
 
@@ -32,6 +38,9 @@ module AccessKey = struct
   type t = Expression.Access.t
   let to_string = Expression.Access.show
   let compare = Expression.Access.compare
+
+  type out = t
+  let from_string = Expression.Access.create
 end
 
 
@@ -40,6 +49,9 @@ module SymlinksToPaths = struct
     type t = string
     let to_string = ident
     let compare = String.compare
+
+    type out = string
+    let from_string = ident
   end
   module SymlinkSource = struct
     type t = PyrePath.t
@@ -66,6 +78,9 @@ module Sources = struct
     type t = Source.t
     let prefix = Prefix.make ()
     let description = "AST"
+
+    type out = string
+    let from_string = ident
   end
 
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)

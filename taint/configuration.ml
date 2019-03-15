@@ -31,7 +31,11 @@ let key = "root"
 
 
 module SharedConfig = SharedMemory.WithCache
-    (String)
+    (struct
+      include String
+      type out = string
+      let from_string = ident
+    end)
     (struct
       type nonrec t = t
       let prefix = Prefix.make ()

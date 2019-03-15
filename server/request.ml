@@ -464,7 +464,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             | Ok key, Ok value ->
                 let open Service.EnvironmentSharedMemory in
                 begin
-                  match Service.Decodable.decode ~key ~value with
+                  match Memory.decode ~key ~value with
                   | Ok (OrderEdges.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
@@ -527,9 +527,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
         Service.Environment.normalize_shared_memory ();
-        Memory.save_table_sqlite path
+        Memory.SharedMemory.save_table_sqlite path
         |> ignore;
-        let { Memory.used_slots; _ } = Memory.hash_stats () in
+        let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
         Log.info "Dumped %d slots in %.2f seconds to %s" used_slots (Timer.stop timer) path;
         TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
 

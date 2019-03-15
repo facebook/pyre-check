@@ -5,7 +5,136 @@
 
 module SharedMemory = Hack_parallel.Std.SharedMem
 
-include SharedMemory
+
+let unsafe_little_endian_representation ~key =
+  (* Ensure that key is a well-formed digest. *)
+  Digest.to_hex key
+  |> Digest.from_hex
+  |> fun digest -> assert (Digest.equal digest key);
+  (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference.
+     This code is not portable by any means. *)
+  let rec compute_little_endian accumulator index =
+    let accumulator =
+      Int64.mul accumulator (Int64.of_int 256)
+      |> Int64.add (Int64.of_int (Char.code key.[index]))
+    in
+    if index = 0 then
+      accumulator
+    else
+      compute_little_endian accumulator (index - 1)
+  in
+  (* Take the first 8 bytes in reverse order. *)
+  compute_little_endian Int64.zero 7
+
+
+type decodable = ..
+
+
+type decoding_error = [
+  | `Malformed_key
+  | `Unknown_type
+  | `Decoder_failure of exn
+]
+
+
+let registry = Hashtbl.create 13
+
+
+let register prefix decoder =
+  let prefix = Prefix.make_key prefix "" in
+  assert (not (Hashtbl.mem registry prefix));
+  Hashtbl.add registry prefix decoder
+
+
+let decode ~key ~value =
+  match String.index key '$' with
+  | exception Not_found ->
+      Result.Error `Malformed_key
+  | dollar ->
+      let prefix_size = dollar + 1 in
+      let prefix = String.sub key 0 prefix_size in
+      match Hashtbl.find registry prefix with
+      | exception Not_found -> Result.Error `Unknown_type
+      | decoder ->
+          let key =
+            String.sub key prefix_size (String.length key - prefix_size)
+          in
+          match decoder key value with
+          | result -> Result.Ok result
+          | exception exn -> Result.Error (`Decoder_failure exn)
+
+
+module type KeyType = sig
+  include SharedMem.UserKeyType
+  type out
+  val from_string: string -> out
+end
+
+
+module Register (Key: KeyType) (Value: Value.Type) (): sig
+  type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
+
+  val hash_of_key: Key.t -> string
+end = struct
+  (* Register decoder *)
+  type decodable += Decoded of Key.out * Value.t
+
+  let () =
+    register
+      Value.prefix
+      (fun key value -> Decoded (Key.from_string key, Marshal.from_string value 0))
+
+  let serialize_key key =
+    Key.to_string key
+    |> Prefix.make_key Value.prefix
+
+
+  let hash_of_key key =
+    key
+    |> Key.to_string
+    |> Prefix.make_key Value.prefix
+    |> Digest.string
+    |> (fun key -> unsafe_little_endian_representation ~key)
+    |> Int64.to_string
+end
+
+
+module NoCache (Key: KeyType) (Value: Value.Type):
+sig
+  type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
+  val hash_of_key: Key.t -> string
+
+  include SharedMemory.NoCache with
+    type t = Value.t
+                          and type key = Key.t
+                          and module KeySet = Set.Make (Key)
+                          and module KeyMap = MyMap.Make (Key)
+end = struct
+  include Register (Key) (Value) ()
+  include SharedMemory.NoCache (Key) (Value)
+end
+
+
+module WithCache (Key: KeyType) (Value: Value.Type):
+sig
+  type decodable += Decoded of Key.out * Value.t
+
+  val serialize_key: Key.t -> string
+  val hash_of_key: Key.t -> string
+
+  include SharedMemory.WithCache with
+    type t = Value.t
+                            and type key = Key.t
+                            and module KeySet = Set.Make (Key)
+                            and module KeyMap = MyMap.Make (Key)
+end = struct
+  include Register (Key) (Value) ()
+  include SharedMemory.WithCache (Key) (Value)
+end
 
 
 type bytes = int
@@ -43,9 +172,8 @@ let initialize log_level =
         space_overhead;
       };
       let shared_mem_config =
-        let open SharedMemory in
         {
-          global_size = initial_heap_size;
+          SharedMemory.global_size = initial_heap_size;
           heap_size = initial_heap_size;
           dep_table_pow = 19;
           hash_table_pow = 22;
@@ -77,30 +205,9 @@ let report_statistics () =
 
 
 let save_shared_memory ~path =
-  collect `aggressive;
+  SharedMemory.collect `aggressive;
   SharedMem.save_table path
 
 
 let load_shared_memory ~path =
   SharedMem.load_table path
-
-
-let unsafe_little_endian_representation ~key =
-  (* Ensure that key is a well-formed digest. *)
-  Digest.to_hex key
-  |> Digest.from_hex
-  |> fun digest -> assert (Digest.equal digest key);
-  (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference.
-     This code is not portable by any means. *)
-  let rec compute_little_endian accumulator index =
-    let accumulator =
-      Int64.mul accumulator (Int64.of_int 256)
-      |> Int64.add (Int64.of_int (Char.code key.[index]))
-    in
-    if index = 0 then
-      accumulator
-    else
-      compute_little_endian accumulator (index - 1)
-  in
-  (* Take the first 8 bytes in reverse order. *)
-  compute_little_endian Int64.zero 7

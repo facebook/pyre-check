@@ -105,7 +105,7 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
     ~normals:["initialization method", "cold start"]
     ();
   Log.log ~section:`Server "Server initialized";
-  Memory.init_done ();
+  Memory.SharedMemory.init_done ();
 
   let errors =
     let table = File.Handle.Table.create () in

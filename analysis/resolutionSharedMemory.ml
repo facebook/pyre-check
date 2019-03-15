@@ -15,6 +15,9 @@ module AccessKey = struct
   type t = Access.t
   let to_string = Access.show
   let compare = Access.compare
+
+  type out = Access.t
+  let from_string = Access.create
 end
 
 type annotation_map = {
