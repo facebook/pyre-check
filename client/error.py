@@ -20,7 +20,7 @@ class Error:
         self,
         ignore_error: bool = False,
         external_to_global_root: bool = False,
-        **error: Any  # pyre-ignore
+        **error: Any
         # note: adding a comma after `Any` above creates a SyntaxError
     ) -> None:
         self.line = error["line"]  # type: int
