@@ -158,7 +158,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-workers",
                 "5",
                 "-typeshed",
@@ -249,7 +248,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-save-initial-state-to",
                 "/tmp",
                 "-workers",
@@ -274,7 +272,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-load-state-from",
                 "/tmp/pyre_shared_memory",
                 "-changed-files-path",
@@ -297,7 +294,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-workers",
                 "5",
                 "-typeshed",
@@ -316,7 +312,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-workers",
                 "5",
                 "-typeshed",
@@ -335,7 +330,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-saved-state-project",
                 "pyre/saved_state",
                 "-workers",
@@ -358,7 +352,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-workers",
                 "5",
                 "-typeshed",
@@ -380,7 +373,6 @@ class StartTest(unittest.TestCase):
             [
                 "-project-root",
                 ".",
-                "-use-watchman",
                 "-workers",
                 "5",
                 "-typeshed",

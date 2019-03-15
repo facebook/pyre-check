@@ -43,7 +43,7 @@ def translate_paths(paths: Set[str], original_directory: str) -> Set[str]:
 
 
 def find_root(original_directory: str, target_file: str) -> Optional[str]:
-    current_directory = original_directory
+    current_directory = os.path.abspath(original_directory)
     while current_directory != "/":
         absolute = os.path.join(current_directory, target_file)
         if os.path.isfile(absolute):
