@@ -72,9 +72,10 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             arguments.current_directory
         )  # type: str
 
-        # Mapping from (actual) source files in the project root to symbolic
-        # links in the analysis directory
-        self._symbolic_links = self._calculate_symbolic_links(
+        # Mapping from source files in the project root to files in the analysis
+        # directory. In some cases the mapping is 1:1, but there are other cases
+        # where the analysis directory contains symbolic links to the actual files.
+        self._tracked_files = self._compute_tracked_files(
             self._analysis_directory.get_root(), self._extensions
         )  # type: Dict[str, str]
 
@@ -129,10 +130,9 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             )
         ]
 
-    def _update_symbolic_links(self, paths: Iterable[str]) -> None:
+    def _update_tracked_files(self, paths: Iterable[str]) -> None:
         """
-            For new/deleted files, attempt to keep the symbolic link mapping
-            consistent.
+            For new/deleted files, attempt to keep the set of tracked files consistent.
         """
         # If any paths are within the directories Pyre understands (not a separate
         # buck directory), we can add them to the set of tracked files.
@@ -143,7 +143,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             ):
                 try:
                     real_path = os.path.realpath(path)
-                    self._symbolic_links[real_path] = path
+                    self._tracked_files[real_path] = path
                 except OSError:
                     pass
 
@@ -152,8 +152,8 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             updated_paths = response["files"]
             root = response["root"]
             absolute_paths = [os.path.join(root, path) for path in updated_paths]
-            self._update_symbolic_links(absolute_paths)
-            tracked_paths = filter(None, map(self._symbolic_links.get, absolute_paths))
+            self._update_tracked_files(absolute_paths)
+            tracked_paths = filter(None, map(self._tracked_files.get, absolute_paths))
             LOG.info("Received Watchman update for files %s", absolute_paths)
             message = language_server_protocol.LanguageServerProtocolMessage(
                 method="updateFiles", parameters={"files": list(tracked_paths)}
@@ -168,7 +168,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             pass
 
     @staticmethod
-    def _calculate_symbolic_links(
+    def _compute_tracked_files(
         directory: str, extensions: Iterable[str]
     ) -> Dict[str, str]:
         """
@@ -181,18 +181,18 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             file, this mapping can be used to identify what file changed from Pyre's
             perspective.
         """
-        symbolic_links = {}
+        tracked_files = {}
         try:
-            for symbolic_link in find_paths_with_extensions(directory, extensions):
-                symbolic_links[os.path.realpath(symbolic_link)] = symbolic_link
+            for tracked_file in find_paths_with_extensions(directory, extensions):
+                tracked_files[os.path.realpath(tracked_file)] = tracked_file
         except subprocess.CalledProcessError as error:
             LOG.warning(
                 "Exception encountered trying to find source files "
                 "in the analysis directory: `%s`",
                 error,
             )
-            LOG.warning("Starting with an empty symlink map.")
-        return symbolic_links
+            LOG.warning("Starting with an empty set of tracked files.")
+        return tracked_files
 
     @staticmethod
     def _find_watchman_path(directory: str) -> str:

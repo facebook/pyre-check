@@ -91,7 +91,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
         "realpath",
         side_effect=lambda path: path.replace("ANALYSIS_ROOT", "LOCAL_ROOT"),
     )
-    def test_calculate_symbolic_links(self, realpath, find_paths_with_extensions):
+    def test_compute_tracked_files(self, realpath, find_paths_with_extensions):
         find_paths_with_extensions.return_value = [
             "ANALYSIS_ROOT/a.py",
             "ANALYSIS_ROOT/b.thrift",
@@ -101,7 +101,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
         ]
 
         self.assertDictEqual(
-            ProjectFilesMonitor._calculate_symbolic_links(
+            ProjectFilesMonitor._compute_tracked_files(
                 "ANALYSIS_ROOT", ["py", "pyi", "thrift"]
             ),
             {
@@ -122,9 +122,9 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 bad_socket_path,
             )
 
-    @patch.object(ProjectFilesMonitor, "_update_symbolic_links")
+    @patch.object(ProjectFilesMonitor, "_update_tracked_files")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
-    def test_socket_communication(self, _find_watchman_path, _update_symbolic_links):
+    def test_socket_communication(self, _find_watchman_path, _update_tracked_files):
         # Create a "server" thread to complete the handshake
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         errors = []
@@ -181,8 +181,8 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 monitor = ProjectFilesMonitor(
                     arguments, configuration, analysis_directory
                 )
-                monitor._symbolic_links["/ROOT/a.py"] = "/ANALYSIS/a.py"
-                monitor._symbolic_links["/ROOT/subdir/b.py"] = "/ANALYSIS/subdir/b.py"
+                monitor._tracked_files["/ROOT/a.py"] = "/ANALYSIS/a.py"
+                monitor._tracked_files["/ROOT/subdir/b.py"] = "/ANALYSIS/subdir/b.py"
 
                 monitor._handle_response(
                     {"root": "/ROOT", "files": ["a.py", "subdir/b.py", "untracked.py"]}
@@ -249,7 +249,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
     @patch.object(language_server_protocol, "perform_handshake")
     @patch.object(ProjectFilesMonitor, "_connect_to_socket")
     @patch.object(project_files_monitor, "find_root")
-    def test_update_symbolic_links(
+    def test_update_tracked_files(
         self, find_root, _connect_to_socket, perform_handshake, realpath
     ):
         find_root.return_value = "/ROOT"
@@ -273,12 +273,12 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             "/SECOND_SEARCH_PATH/subdir2/g.py",
         ]
         monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
-        monitor._update_symbolic_links([*tracked_files, *untracked_files])
+        monitor._update_tracked_files([*tracked_files, *untracked_files])
 
         # every tracked file should be added to the mapping
         for file in tracked_files:
-            self.assertEqual(monitor._symbolic_links.get(file), file)
+            self.assertEqual(monitor._tracked_files.get(file), file)
 
         # untracked files should not be added to the mapping
         for file in untracked_files:
-            self.assertEqual(monitor._symbolic_links.get(file), None)
+            self.assertEqual(monitor._tracked_files.get(file), None)
