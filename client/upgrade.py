@@ -422,6 +422,33 @@ def run_missing_overridden_return_annotations(arguments: argparse.Namespace) -> 
         path.write_text("\n".join(lines))
 
 
+def run_missing_global_annotations(arguments: argparse.Namespace) -> None:
+    errors = sort_errors(errors_from_stdin(arguments))
+    for path, errors in errors:
+        LOG.info("Patching errors in `%s`", path)
+        errors = reversed(sorted(errors, key=lambda error: error["line"]))
+
+        path = pathlib.Path(path)
+        lines = path.read_text().split("\n")
+
+        for error in errors:
+            if error["code"] != 5:
+                continue
+            line = error["line"] - 1
+
+            match = re.match(r".*`.*`.*`(.*)`.*", error["description"])
+            if not match:
+                continue
+            annotation = match.groups()[0]
+
+            LOG.info("Looking at %d: %s", line, lines[line])
+            if " =" in lines[line]:
+                lines[line] = lines[line].replace(" =", ": %s =" % annotation)
+                LOG.info("%d: %s", line, lines[line])
+
+        path.write_text("\n".join(lines))
+
+
 def run_fixme(arguments: argparse.Namespace) -> None:
     if arguments.run:
         errors = errors_from_run(arguments)
@@ -500,13 +527,20 @@ if __name__ == "__main__":
 
     commands = parser.add_subparsers()
 
-    # Subcommand: Add annotations according to errors inputted through stdin.
+    # Subcommands: Codemods
     missing_overridden_return_annotations = commands.add_parser(
         "missing-overridden-return-annotations"
+        help="Add annotations according to errors inputted through stdin."
     )
     missing_overridden_return_annotations.set_defaults(
         function=run_missing_overridden_return_annotations
     )
+
+    missing_global_annotations = commands.add_parser(
+        "missing-global-annotations",
+        help="Add annotations according to errors inputted through stdin."
+    )
+    missing_global_annotations.set_defaults(function=run_missing_global_annotations)
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
