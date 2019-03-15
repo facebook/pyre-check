@@ -10,6 +10,7 @@ import subprocess
 import sys
 from typing import IO, List, cast
 
+from ..project_files_monitor import ProjectFilesMonitor, ProjectFilesMonitorException
 from .command import ClientException, ExitCode, State
 from .reporting import Reporting
 from .start import Start
@@ -32,6 +33,8 @@ class Incremental(Reporting):
             arguments.terminal = False
             arguments.no_watchman = False
             Start(arguments, self._configuration, self._analysis_directory).run()
+        else:
+            self._refresh_file_monitor()
 
         if self._state() != State.DEAD:
             LOG.info("Waiting for server...")
@@ -89,3 +92,14 @@ class Incremental(Reporting):
         ) as stderr_tail:
             atexit.register(stderr_tail.terminate)
             super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
+
+    def _refresh_file_monitor(self) -> None:
+        if not ProjectFilesMonitor._is_alive(self._analysis_directory.get_root()):
+            LOG.info("File monitor is not running.")
+            try:
+                ProjectFilesMonitor(
+                    self._arguments, self._configuration, self._analysis_directory
+                ).daemonize()
+                LOG.info("Restarted file monitor.")
+            except ProjectFilesMonitorException as exception:
+                LOG.warning("Failed to restart file monitor: %s", exception)

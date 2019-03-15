@@ -53,6 +53,8 @@ class SocketConnection(object):
 
 
 class ProjectFilesMonitor(WatchmanSubscriber):
+    NAME = "file_monitor"
+
     def __init__(
         self,
         arguments: argparse.Namespace,
@@ -110,7 +112,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
 
     @property
     def _name(self) -> str:
-        return "file_monitor"
+        return self.NAME
 
     @property
     @functools.lru_cache(1)
@@ -129,6 +131,22 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 self._watchman_path, "pyre_file_change_subscription", subscription
             )
         ]
+
+    @staticmethod
+    def _is_alive(analysis_directory_root: str) -> bool:
+        pid_path = os.path.join(
+            analysis_directory_root,
+            ".pyre",
+            ProjectFilesMonitor.NAME,
+            "{}.pid".format(ProjectFilesMonitor.NAME),
+        )
+        try:
+            with open(pid_path) as file:
+                pid = int(file.read())
+                os.kill(pid, 0)  # throws if process is not running
+            return True
+        except Exception:
+            return False
 
     def _update_tracked_files(self, paths: Iterable[str]) -> None:
         """
