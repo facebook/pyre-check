@@ -77,6 +77,7 @@ class TraceGraph(object):
         self._trace_frames: Dict[int, TraceFrame] = {}
 
         self._shared_texts: Dict[int, SharedText] = {}
+        # pyre-fixme[8]: Attribute has type `DefaultDict[SharedTextKind, Dict[str, in...
         self._shared_text_lookup: (
             DefaultDict[SharedTextKind, Dict[str, int]]
         ) = defaultdict(dict)

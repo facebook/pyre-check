@@ -551,6 +551,7 @@ branch(INDEX)   select a trace branch
     ) -> Dict[Tuple[str, str], List[TraceFrame]]:
         """Buckets together trace frames that have the same caller:caller_port.
         """
+        # pyre-fixme[9]: caller_buckets has type `DefaultDict[Tuple[str, str], List[T...
         caller_buckets: DefaultDict[Tuple[str, str], List[TraceFrame]] = defaultdict(
             list
         )
@@ -724,7 +725,7 @@ branch(INDEX)   select a trace branch
                 # Denote a missing frame by setting caller to None
                 trace_frames.append(
                     (
-                        TraceFrame(  # pyre-ignore: T41318465
+                        TraceFrame(
                             callee=trace_frame.callee,
                             callee_port=trace_frame.callee_port,
                             caller=None,

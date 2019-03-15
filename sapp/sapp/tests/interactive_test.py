@@ -54,7 +54,7 @@ class InteractiveTest(TestCase):
     def _generic_issue(
         self, id: int = 1, callable: str = "call1", filename: str = "file.py"
     ) -> Issue:
-        return Issue(  # pyre-ignore: T41318465
+        return Issue(
             id=id,
             handle=str(id),
             first_seen=datetime.now(),
@@ -66,7 +66,7 @@ class InteractiveTest(TestCase):
     def _generic_issue_instance(
         self, id: int = 1, run_id: int = 1, issue_id: int = 1
     ) -> IssueInstance:
-        return IssueInstance(  # pyre-ignore: T41318465
+        return IssueInstance(
             id=id,
             run_id=run_id,
             message_id=1,

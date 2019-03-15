@@ -130,6 +130,7 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
 
         issues = []
         previous_handles: Set[str] = set()
+        # pyre-fixme[9]: conditions has type `Dict[ParseType, Dict[str, List[Dict[str...
         conditions: Dict[ParseType, Dict[str, List[Dict[str, Any]]]] = {
             ParseType.PRECONDITION: defaultdict(list),
             ParseType.POSTCONDITION: defaultdict(list),
