@@ -61,6 +61,7 @@ Commands =======================================================================
 
 commands()      show this message
 help(COMAMND)   more info about a command
+state()         show the internal state of the tool for debugging
 
 runs()          list all completed static analysis runs
 set_run(ID)     select a specific run for browsing issues
@@ -87,6 +88,7 @@ set_frame(ID)   select a trace frame to explore
             "precondition": TraceKind.PRECONDITION,
             "postcondition": TraceKind.POSTCONDITION,
             "commands": self.help,
+            "state": self.state,
             "runs": self.runs,
             "issues": self.issues,
             "set_run": self.set_run,
@@ -104,6 +106,8 @@ set_frame(ID)   select a trace frame to explore
             "set_frame": self.set_frame,
         }
         self.repository_directory = repository_directory or os.getcwd()
+
+        self.current_run_id: int = -1
 
         # Trace exploration relies on either of these
         self.current_issue_id: int = -1
@@ -138,10 +142,15 @@ set_frame(ID)   select a trace frame to explore
 
     def help(self):
         print(self.help_message)
-        print(f"State {'=' * 74}\n")
-        print(f"     Database: {self.db.dbtype}:{self.db.dbname}")
-        print(f"  Current run: {self.current_run_id}")
-        print(f"Current issue: {self.current_issue_id}")
+
+    def state(self):
+        print(f"            Database: {self.db.dbtype}:{self.db.dbname}")
+        print(f"Repository directory: {self.repository_directory}")
+        print(f"         Current run: {self.current_run_id}")
+        print(f"       Current issue: {self.current_issue_id}")
+        print(f" Current trace frame: {self.current_frame_id}")
+        print(f"      Sources filter: {self.sources}")
+        print(f"        Sinks filter: {self.sinks}")
 
     def runs(self, use_pager=None):
         pager = self._resolve_pager(use_pager)

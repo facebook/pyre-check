@@ -75,6 +75,23 @@ class InteractiveTest(TestCase):
             issue_id=issue_id,
         )
 
+    def testState(self):
+        self.interactive.current_run_id = 1
+        self.interactive.current_issue_id = 2
+        self.interactive.current_frame_id = 3
+        self.interactive.sources = {1}
+        self.interactive.sinks = {2}
+
+        self.interactive.state()
+        output = self.stdout.getvalue()
+        self.assertIn("Database: memory:sapp.db", output)
+        self.assertIn("Repository directory: ", output)
+        self.assertIn("Current run: 1", output)
+        self.assertIn("Current issue: 2", output)
+        self.assertIn("Current trace frame: 3", output)
+        self.assertIn("Sources filter: {1}", output)
+        self.assertIn("Sinks filter: {2}", output)
+
     def testListIssuesBasic(self):
         issues = [
             self._generic_issue(id=1, callable="module.function1"),
