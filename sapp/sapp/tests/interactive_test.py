@@ -621,7 +621,7 @@ class InteractiveTest(TestCase):
             ],
         )
 
-    def testTrace(self):
+    def testTraceFromIssue(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
         issue_instance = self._generic_issue_instance()
@@ -675,6 +675,38 @@ class InteractiveTest(TestCase):
         self.assertIn("                leaf       source file.py:1|1|1", output)
         self.assertIn(" -->            call1      root   file.py:1|2|3", output)
         self.assertIn("                leaf       sink   file.py:1|1|2", output)
+
+    def testTraceFromFrame(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        trace_frames = self._basic_trace_frames()
+        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(shared_text)
+            session.add(run)
+            session.commit()
+
+        self.interactive.setup()
+        self.interactive.set_frame(1)
+
+        self._clear_stdout()
+        self.interactive.trace()
+        self.assertEqual(self.interactive.sinks, {"sink"})
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     [branches] [callable] [port] [location]",
+                " -->            call2      param0 file.py:1|1|1",
+                "                leaf       sink   file.py:1|2|2",
+                "",
+            ],
+        )
 
     def testTraceMissingFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)

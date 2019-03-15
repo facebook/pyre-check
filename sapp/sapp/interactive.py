@@ -7,6 +7,7 @@ from typing import (
     Callable,
     DefaultDict,
     Dict,
+    Iterable,
     List,
     NamedTuple,
     Optional,
@@ -66,7 +67,7 @@ set_run(ID)     select a specific run for browsing issues
 issues()        list all issues for the selected run
 set_issue(ID)   select a specific issue for browsing a trace
 show()          show info about selected issue or trace frame
-trace()         show a trace of the selected issue
+trace()         show a trace of the selected issue or trace frame
 prev()/p()      move backward within the trace
 next()/n()      move forward within the trace
 expand()        show alternative trace branches
@@ -201,7 +202,7 @@ set_frame(ID)   select a trace frame to explore
         self.current_frame_id = -1
         self.current_trace_frame_index = 1  # first one after the source
 
-        self._generate_trace()
+        self._generate_trace_from_issue()
 
         print(f"Set issue to {issue_id}.")
         self.show()
@@ -296,7 +297,7 @@ set_frame(ID)   select a trace frame to explore
         print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
 
     def trace(self):
-        """Show a trace for the selected issue.
+        """Show a trace for the selected issue or trace frame.
 
         The '-->' token points to the currently active trace frame within the
         trace.
@@ -395,10 +396,12 @@ set_frame(ID)   select a trace frame to explore
         self.current_frame_id = selected_frame.id
         self.current_issue_id = -1
 
+        self._generate_trace_from_frame()
+
         print(f"Set trace frame to {frame_id}.")
         self.show()
 
-    def _generate_trace(self):
+    def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
 
@@ -431,6 +434,23 @@ set_frame(ID)   select a trace frame to explore
         )
         self.trace_tuples_id = self.current_issue_id
         self.current_trace_frame_index = len(postcondition_navigation)
+
+    def _generate_trace_from_frame(self):
+        with self.db.make_session() as session:
+            trace_frame = (
+                session.query(TraceFrame)
+                .filter(TraceFrame.id == self.current_frame_id)
+                .scalar()
+            )
+
+            navigation = self._navigate_trace_frames(session, [trace_frame])
+
+        self.current_trace_frame_index = 0
+        if trace_frame.kind == TraceKind.POSTCONDITION:
+            self.current_trace_frame_index = len(navigation) - 1
+            navigation = reversed(navigation)
+
+        self.trace_tuples = self._create_trace_tuples(navigation)
 
     def next_cursor_location(self):
         """Move cursor to the next trace frame.
@@ -760,7 +780,9 @@ set_frame(ID)   select a trace frame to explore
 
             print(output_string)
 
-    def _create_trace_tuples(self, navigation):
+    def _create_trace_tuples(
+        self, navigation: Iterable[Tuple[TraceFrame, int]]
+    ) -> List[TraceTuple]:
         return [
             TraceTuple(
                 trace_frame=trace_frame,
