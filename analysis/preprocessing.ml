@@ -612,19 +612,38 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
               match value with
-              | Define ({ Define.name; parameters; return_annotation; _ } as define) ->
+              | Define ({ Define.name; parameters; return_annotation; decorators; _ } as define) ->
                   let define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
                     return_annotation
                     >>| qualify_expression ~scope ~qualify_strings:true
                   in
+                  let qualify_decorator ({ Node.value; _ } as decorator) =
+                    let is_reserved = function
+                      | [] -> false
+                      | [Access.Identifier ("staticmethod" | "classmethod" | "property")] -> true
+                      | accesses ->
+                          match List.last_exn accesses with
+                          | Access.Identifier ("getter" | "setter" | "deleter") -> true
+                          | _ -> false
+                    in
+                    match value with
+                    | Access (Access.SimpleAccess accesses) when is_reserved accesses ->
+                        decorator
+                    | _ ->
+                        (* TODO (T41755857): Decorator qualification logic
+                           should be slightly more involved than this. *)
+                        qualify_expression ~qualify_strings:false ~scope decorator
+                  in
+                  let decorators = List.map decorators ~f:qualify_decorator in
                   scope, {
                     Node.location;
                     value = Define {
                         define with
                         Define.name = qualify_access name ~scope ~qualify_strings:false;
                         parameters;
+                        decorators;
                         return_annotation;
                       };
                   }

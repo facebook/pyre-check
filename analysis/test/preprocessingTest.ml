@@ -896,6 +896,107 @@ let test_qualify _ =
         @qualifier.D.mydecorator
         def qualifier.C.f($parameter$self):
           pass
+    |};
+  assert_qualify
+    {|
+      def mydecoratorwrapper(x):
+        def mydecorator(decorated):
+          return decorated
+        return mydecorator
+      x = 42
+      @mydecoratorwrapper(x)
+      def f():
+        pass
+    |}
+    {|
+      def qualifier.mydecoratorwrapper($parameter$x):
+        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+          return $parameter$decorated
+        return qualifier.mydecoratorwrapper.mydecorator
+      $local_qualifier$x = 42
+      @(qualifier.mydecoratorwrapper($local_qualifier$x))
+      def qualifier.f():
+        pass
+    |};
+  assert_qualify
+    {|
+      def mydecoratorwrapper(x):
+        def mydecorator(decorated):
+          return decorated
+        return mydecorator
+      class A:
+        x = 42
+        @mydecoratorwrapper(x)
+        def f(self):
+            pass
+    |}
+    {|
+      def qualifier.mydecoratorwrapper($parameter$x):
+        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+          return $parameter$decorated
+        return qualifier.mydecoratorwrapper.mydecorator
+      class qualifier.A:
+        qualifier.A.x = 42
+        @(qualifier.mydecoratorwrapper(qualifier.A.x))
+        def qualifier.A.f($parameter$self):
+            pass
+    |};
+  assert_qualify
+    {|
+      def mydecoratorwrapper(x):
+        def mydecorator(decorated):
+          return decorated
+        return mydecorator
+      x = 42
+      class A:
+        y = 42
+        @mydecoratorwrapper(x + y)
+        def f(self):
+            pass
+    |}
+    {|
+      def qualifier.mydecoratorwrapper($parameter$x):
+        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+          return $parameter$decorated
+        return qualifier.mydecoratorwrapper.mydecorator
+      $local_qualifier$x = 42
+      class qualifier.A:
+        qualifier.A.y = 42
+        @(qualifier.mydecoratorwrapper($local_qualifier$x + qualifier.A.y))
+        def qualifier.A.f($parameter$self):
+            pass
+    |};
+  assert_qualify
+    {|
+      class A:
+        @property
+        def f(self):
+            return 42
+    |}
+    {|
+      class qualifier.A:
+        @property
+        def qualifier.A.f($parameter$self):
+            return 42
+    |};
+  assert_qualify
+    {|
+      class A:
+        @property
+        def f(self):
+            return 42
+        @f.setter
+        def f(self, f):
+            pass
+    |}
+    {|
+      class qualifier.A:
+        @property
+        def qualifier.A.f($parameter$self):
+            return 42
+        @f.setter
+        def qualifier.A.f($parameter$self, $parameter$f):
+            pass
     |}
 
 
