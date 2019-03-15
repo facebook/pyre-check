@@ -213,12 +213,12 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             monitor._alive = False  # never enter watchman loop
             monitor._run()
 
-            monitor_folder = os.path.join(root, ".pyre", "projectfilesmonitor")
+            monitor_folder = os.path.join(root, ".pyre", "file_monitor")
             self.assertFalse(
-                os.path.exists(os.path.join(monitor_folder, "projectfilesmonitor.lock"))
+                os.path.exists(os.path.join(monitor_folder, "file_monitor.lock"))
             )
             self.assertFalse(
-                os.path.exists(os.path.join(monitor_folder, "projectfilesmonitor.pid"))
+                os.path.exists(os.path.join(monitor_folder, "file_monitor.pid"))
             )
 
     def test_socket_connection(self):

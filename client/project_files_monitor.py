@@ -98,7 +98,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
 
     @property
     def _name(self) -> str:
-        return "pyre_file_change_subscription"
+        return "file_monitor"
 
     @property
     @functools.lru_cache(1)
@@ -112,7 +112,11 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             ],
             "fields": ["name"],
         }
-        return [Subscription(self._watchman_path, self._name, subscription)]
+        return [
+            Subscription(
+                self._watchman_path, "pyre_file_change_subscription", subscription
+            )
+        ]
 
     def _handle_response(self, response: Dict[str, Any]) -> None:
         try:

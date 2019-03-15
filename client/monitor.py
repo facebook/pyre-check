@@ -27,7 +27,7 @@ class Monitor(WatchmanSubscriber):
 
     @property
     def _name(self) -> str:
-        return "pyre-monitor"
+        return "monitor"
 
     @property
     def _subscriptions(self) -> List[Subscription]:

@@ -25,18 +25,15 @@ Subscription = NamedTuple(
 class WatchmanSubscriber(object):
     def __init__(self, analysis_directory: AnalysisDirectory) -> None:
         self._base_path = os.path.join(
-            analysis_directory.get_root(), ".pyre", self._class_name
+            analysis_directory.get_root(), ".pyre", self._name
         )  # type: str
         self._alive = True  # type: bool
 
     @property
-    def _class_name(self) -> str:
-        return self.__class__.__name__.lower()
-
-    @property
     def _name(self) -> str:
         """
-            A name to identify the subscriber
+            A name to identify the subscriber. Used as the directory and file names
+            for the log, lock, and pid files.
         """
         raise NotImplementedError
 
@@ -74,18 +71,18 @@ class WatchmanSubscriber(object):
             os.makedirs(self._base_path)
         except OSError:
             pass
-        lock_path = os.path.join(self._base_path, "%s.lock" % self._class_name)
+        lock_path = os.path.join(self._base_path, "%s.lock" % self._name)
         # Die silently if unable to acquire the lock.
         with acquire_lock(lock_path, blocking=False):
             file_handler = logging.FileHandler(
-                os.path.join(self._base_path, "%s.log" % self._class_name)
+                os.path.join(self._base_path, "%s.log" % self._name)
             )
             file_handler.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             )
             LOG.addHandler(file_handler)
 
-            pid_path = os.path.join(self._base_path, "%s.pid" % self._class_name)
+            pid_path = os.path.join(self._base_path, "%s.pid" % self._name)
             with open(pid_path, "w+") as pid_file:
                 pid_file.write(str(os.getpid()))
 
