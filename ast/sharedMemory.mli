@@ -6,7 +6,10 @@
 module HandleKey: Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
 
 module AccessKey: Memory.KeyType with
-  type t = Expression.Access.t and type out = Expression.Access.t
+  type t = Expression.Access.t and
+  type out = Expression.Access.t
+
+module IntKey: Memory.KeyType with type t = int and type out = int
 
 module SymlinksToPaths: sig
   val get: string -> PyrePath.t option

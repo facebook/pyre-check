@@ -11,15 +11,6 @@ open Expression
 module SharedMemory = Memory
 
 
-module AccessKey = struct
-  type t = Access.t
-  let to_string = Access.show
-  let compare = Access.compare
-
-  type out = Access.t
-  let from_string = Access.create
-end
-
 type annotation_map = {
   precondition: Annotation.t Access.Map.Tree.t;
   postcondition: Annotation.t Access.Map.Tree.t;
@@ -36,7 +27,7 @@ end
 
 (** A map of function definitions (indexed by Access.t key) to
     to annotations for each statement *)
-include SharedMemory.WithCache (AccessKey) (TypeAnnotationsValue)
+include SharedMemory.WithCache (Ast.SharedMemory.AccessKey) (TypeAnnotationsValue)
 
 
 let remove accesses =

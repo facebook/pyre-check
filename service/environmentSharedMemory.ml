@@ -12,14 +12,6 @@ module SharedMemory = Memory
 
 
 (** Keys *)
-module AccessKey = struct
-  type t = Access.t
-  let to_string = Access.show
-  let compare = Access.compare
-  type out = string
-  let from_string x = x
-end
-
 module TypeKey = struct
   type t = Type.t
   let to_string = Type.serialize
@@ -28,26 +20,10 @@ module TypeKey = struct
   let from_string x = x
 end
 
-module IntKey = struct
-  type t = int
-  let to_string = Int.to_string
-  let compare = Int.compare
-  type out = int
-  let from_string = Int.of_string
-end
-
 module StringKey = struct
   type t = string
   let to_string = ident
   let compare = String.compare
-  type out = string
-  let from_string x = x
-end
-
-module FileHandleKey = struct
-  type t = File.Handle.t
-  let to_string = File.Handle.show
-  let compare = File.Handle.compare
   type out = string
   let from_string x = x
 end
@@ -169,31 +145,31 @@ module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
 
 module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 
-module Globals = Memory.WithCache (AccessKey) (GlobalValue)
+module Globals = Memory.WithCache (Ast.SharedMemory.AccessKey) (GlobalValue)
 
-module Dependents = Memory.WithCache (AccessKey) (DependentValue)
+module Dependents = Memory.WithCache (Ast.SharedMemory.AccessKey) (DependentValue)
 
 module Protocols = Memory.WithCache (StringKey) (ProtocolValue)
 
 (** Keys *)
-module FunctionKeys = Memory.WithCache (FileHandleKey) (FunctionKeyValue)
+module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)
 
-module ClassKeys = Memory.WithCache (FileHandleKey) (ClassKeyValue)
+module ClassKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (ClassKeyValue)
 
-module GlobalKeys = Memory.WithCache (FileHandleKey) (GlobalKeyValue)
+module GlobalKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (GlobalKeyValue)
 
-module AliasKeys = Memory.WithCache (FileHandleKey) (AliasKeyValue)
+module AliasKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (AliasKeyValue)
 
-module DependentKeys = Memory.WithCache (FileHandleKey) (DependentKeyValue)
+module DependentKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (DependentKeyValue)
 
 (** Type order maps *)
 module OrderIndices = Memory.WithCache (TypeKey) (OrderIndexValue)
 
-module OrderAnnotations = Memory.WithCache (IntKey) (OrderAnnotationValue)
+module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)
 
-module OrderEdges = Memory.WithCache (IntKey) (EdgeValue)
+module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
 
-module OrderBackedges = Memory.WithCache (IntKey) (BackedgeValue)
+module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
 
 module OrderKeys = Memory.WithCache (StringKey) (OrderKeyValue)
 

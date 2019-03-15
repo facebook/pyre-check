@@ -39,11 +39,11 @@ let test_decodable _ =
   in
   assert_decode
     EdgeValue.prefix
-    (IntKey.to_string 1234)
+    (Ast.SharedMemory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures]) (OrderEdges.Decoded (1234, []));
   assert_decode
     BackedgeValue.prefix
-    (IntKey.to_string 1234)
+    (Ast.SharedMemory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures]) (OrderBackedges.Decoded (1234, []));
   assert_equal
     (Error `Malformed_key)
