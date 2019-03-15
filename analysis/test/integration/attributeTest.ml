@@ -820,7 +820,14 @@ let test_check_missing_attribute _ =
       "Missing parameter annotation [2]: Parameter `a` has no type specified.";
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
     ];
-
+  assert_type_errors
+    {|
+      class Foo:
+        def __init__(self, a: int, b: int) -> None:
+          self.a = a
+          self._b = b
+    |}
+    [];
   assert_type_errors
     {|
       class Foo:

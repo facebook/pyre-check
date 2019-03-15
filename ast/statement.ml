@@ -458,12 +458,17 @@ module Define = struct
             match target with
             | { Node.value = Access _; _ } as target ->
                 let annotation =
+                  let is_reassignment target value =
+                    let target = Access.show_sanitized target in
+                    let value = Access.show_sanitized value in
+                    target = value || target = "_" ^ value
+                  in
                   match toplevel, annotation, target, value with
                   | true,
                     None,
                     { Node.value = Access (SimpleAccess (_ :: ([_] as target_access))); _ },
                     { Node.value = Access (SimpleAccess value_access); _ }
-                    when Access.show_sanitized target_access = Access.show_sanitized value_access ->
+                    when is_reassignment target_access value_access ->
                       Access.SerializableMap.find_opt value_access parameter_annotations
                   | _ ->
                       annotation
