@@ -122,8 +122,9 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 bad_socket_path,
             )
 
+    @patch.object(ProjectFilesMonitor, "_update_symbolic_links")
     @patch.object(ProjectFilesMonitor, "_find_watchman_path")
-    def test_socket_communication(self, _find_watchman_path):
+    def test_socket_communication(self, _find_watchman_path, _update_symbolic_links):
         # Create a "server" thread to complete the handshake
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         errors = []
@@ -243,3 +244,41 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             with socket_created_lock:
                 SocketConnection(socket_path)
             server_thread.join()
+
+    @patch.object(os.path, "realpath", side_effect=lambda path: path)
+    @patch.object(language_server_protocol, "perform_handshake")
+    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
+    @patch.object(project_files_monitor, "find_root")
+    def test_update_symbolic_links(
+        self, find_root, _connect_to_socket, perform_handshake, realpath
+    ):
+        find_root.return_value = "/ROOT"
+
+        arguments = MagicMock()
+        configuration = MagicMock()
+        configuration.extensions = []
+        configuration.search_path = ["/SEARCH_PATH", "/SECOND_SEARCH_PATH$subdir"]
+        analysis_directory = MagicMock()
+        analysis_directory.get_root.return_value = "/ROOT"
+
+        tracked_files = [
+            "/ROOT/a.py",
+            "/ROOT/subdir/b.py",
+            "/SEARCH_PATH/library.py",
+            "/SECOND_SEARCH_PATH/subdir/library2.py",
+        ]
+        untracked_files = [
+            "/UNRELATED/e.py",
+            "/SECOND_SEARCH_PATH/f.py",
+            "/SECOND_SEARCH_PATH/subdir2/g.py",
+        ]
+        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+        monitor._update_symbolic_links([*tracked_files, *untracked_files])
+
+        # every tracked file should be added to the mapping
+        for file in tracked_files:
+            self.assertEqual(monitor._symbolic_links.get(file), file)
+
+        # untracked files should not be added to the mapping
+        for file in untracked_files:
+            self.assertEqual(monitor._symbolic_links.get(file), None)

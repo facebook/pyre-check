@@ -78,6 +78,17 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             self._analysis_directory.get_root(), self._extensions
         )  # type: Dict[str, str]
 
+        tracked_directories = [
+            self._analysis_directory.get_root(),
+            *[
+                os.path.join(*path.split("$"))
+                for path in self._configuration.search_path
+            ],
+        ]
+        self._tracked_directories = [
+            os.path.abspath(path) for path in tracked_directories
+        ]  # type: List[str]
+
         socket_path = os.path.join(
             self._analysis_directory.get_root(), ".pyre", "server", "json_server.sock"
         )
@@ -118,11 +129,30 @@ class ProjectFilesMonitor(WatchmanSubscriber):
             )
         ]
 
+    def _update_symbolic_links(self, paths: Iterable[str]) -> None:
+        """
+            For new/deleted files, attempt to keep the symbolic link mapping
+            consistent.
+        """
+        # If any paths are within the directories Pyre understands (not a separate
+        # buck directory), we can add them to the set of tracked files.
+        for path in paths:
+            if any(
+                path.startswith(directory + os.sep)
+                for directory in self._tracked_directories
+            ):
+                try:
+                    real_path = os.path.realpath(path)
+                    self._symbolic_links[real_path] = path
+                except OSError:
+                    pass
+
     def _handle_response(self, response: Dict[str, Any]) -> None:
         try:
             updated_paths = response["files"]
             root = response["root"]
             absolute_paths = [os.path.join(root, path) for path in updated_paths]
+            self._update_symbolic_links(absolute_paths)
             tracked_paths = filter(None, map(self._symbolic_links.get, absolute_paths))
             LOG.info("Received Watchman update for files %s", absolute_paths)
             message = language_server_protocol.LanguageServerProtocolMessage(
