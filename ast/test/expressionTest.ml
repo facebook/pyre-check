@@ -602,6 +602,29 @@ let test_convert_accesses _ =
     }))
 
 
+let test_create_name_from_identifiers _ =
+  let assert_create identifiers expected =
+    let identifier_nodes = List.map ~f:Node.create_with_default_location identifiers in
+    assert_equal
+      ~printer:Expression.show
+      expected
+      (create_name_from_identifiers identifier_nodes)
+  in
+  assert_create
+    ["a"]
+    ~+(AccessNew (AccessNew.Identifier "a"));
+  assert_create
+    ["a"; "b"; "c"]
+    ~+(AccessNew (AccessNew.Attribute {
+      base = ~+(AccessNew (
+        AccessNew.Attribute {
+          base = ~+(AccessNew (AccessNew.Identifier "a"));
+          attribute = "b";
+      }));
+      attribute = "c";
+    }))
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -615,5 +638,6 @@ let () =
     "is_assert_function">::test_is_assert_function;
     "exists_in_list">::test_exists_in_list;
     "convert_accesses">::test_convert_accesses;
+    "create_name_from_identifiers">::test_create_name_from_identifiers;
   ]
   |> Test.run

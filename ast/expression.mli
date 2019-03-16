@@ -301,6 +301,8 @@ module Access : sig
   val is_assert_function: t -> bool
 end
 
+val create_name_from_identifiers: (Identifier.t Node.t) list -> t
+
 val delocalize: t -> t
 val delocalize_qualified: t -> t
 

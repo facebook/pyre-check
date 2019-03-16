@@ -726,6 +726,24 @@ module Access = struct
 end
 
 
+let create_name_from_identifiers identifiers =
+  let rec create = function
+    | [] ->
+        failwith "Access must have non-zero identifiers."
+    | [{ Node.location; value = identifier }] ->
+        AccessNew (AccessNew.Identifier identifier)
+        |> Node.create ~location
+    | { Node.location; value = identifier } :: rest ->
+        AccessNew (
+          AccessNew.Attribute {
+            base = create rest;
+            attribute = identifier;
+          })
+        |> Node.create ~location
+  in
+  create (List.rev identifiers)
+
+
 let rec delocalize ({ Node.value; _ } as expression) =
   let value =
     let delocalize_element = function
