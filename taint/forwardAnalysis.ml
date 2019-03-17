@@ -427,9 +427,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (SimpleAccess access) ->
           AccessPath.normalize_access access ~resolution
           |> analyze_normalized_expression ~resolution expression.Node.location state
-      | AccessNew _ ->
-          (* TODO: T37313693 *)
-          ForwardState.Tree.empty
       | Await expression ->
           analyze_expression ~resolution expression state
       | BooleanOperator { left; operator = _; right }
@@ -465,6 +462,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           List.foldi ~f:(analyze_list_element ~resolution state) list ~init:ForwardState.Tree.empty
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution comprehension state
+      | Name _ ->
+          (* TODO: T37313693 *)
+          ForwardState.Tree.empty
       | Set set ->
           List.fold ~f:(analyze_set_element ~resolution state) set ~init:ForwardState.Tree.empty
       | SetComprehension comprehension ->

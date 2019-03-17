@@ -62,9 +62,6 @@ module Make (Visitor: Visitor) = struct
       | Access (ExpressionAccess { expression; access }) ->
           visit_expression expression;
           List.iter access ~f:visit_access
-      | AccessNew _ ->
-          (* TODO: T37313693 *)
-          ()
       | Await expression ->
           visit_expression expression
       | BooleanOperator { BooleanOperator.left; right; _ }
@@ -91,6 +88,9 @@ module Make (Visitor: Visitor) = struct
       | ListComprehension { Comprehension.element; generators } ->
           visit_expression element;
           List.iter generators ~f:(visit_generator ~visit_expression);
+      | Name _ ->
+          (* TODO: T37313693 *)
+          ()
       | Set elements ->
           List.iter elements ~f:visit_expression
       | SetComprehension { Comprehension.element; generators } ->

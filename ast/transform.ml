@@ -118,9 +118,6 @@ module Make (Transformer : Transformer) = struct
                   expression = transform_expression expression;
                   access = transform_list access ~f:transform_access;
                 })
-        | AccessNew expression ->
-            (* TODO: T37313693 *)
-            AccessNew expression
         | Await expression ->
             Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right; } ->
@@ -187,6 +184,9 @@ module Make (Transformer : Transformer) = struct
                   generators
                   ~f:(transform_generator ~transform_expression);
             }
+        | Name expression ->
+            (* TODO: T37313693 *)
+            Name expression
         | Set elements ->
             Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->

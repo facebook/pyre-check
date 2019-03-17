@@ -951,9 +951,6 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 expression = qualify_expression ~qualify_strings ~scope expression;
                 access;
               })
-      | AccessNew expression ->
-          (* TODO: T37313693 *)
-          AccessNew expression
       | Await expression ->
           Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->
@@ -1002,6 +999,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             Comprehension.element = qualify_expression ~qualify_strings ~scope element;
             generators;
           }
+      | Name expression ->
+          (* TODO: T37313693 *)
+          Name expression
       | Set elements ->
           Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | SetComprehension { Comprehension.element; generators } ->

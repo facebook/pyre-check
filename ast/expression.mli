@@ -82,7 +82,7 @@ module Record : sig
   end
 end
 
-module AccessNew : sig
+module Name : sig
   module Attribute : sig
     type 'expression t = {
       base: 'expression;
@@ -199,7 +199,6 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -215,6 +214,7 @@ type expression =
   | Lambda of t Lambda.t
   | List of t list
   | ListComprehension of (t, t) Comprehension.t
+  | Name of t Name.t
   | Set of t list
   | SetComprehension of (t, t) Comprehension.t
   | Starred of t Starred.t

@@ -2194,10 +2194,6 @@ module State = struct
         in
         { state; resolved }
 
-    | AccessNew _ ->
-        (* TODO: T37313693 *)
-        { state; resolved = Type.Top }
-
     | Await expression ->
         let { state; resolved } = forward_expression ~state ~expression in
         let state =
@@ -2423,6 +2419,10 @@ module State = struct
     | ListComprehension { Comprehension.element; generators } ->
         let { state; resolved } = forward_comprehension ~element ~generators in
         { state; resolved = Type.list resolved }
+
+    | Name _ ->
+        (* TODO: T37313693 *)
+        { state; resolved = Type.Top }
 
     | Set elements ->
         let { state; resolved } = forward_elements ~state ~elements in

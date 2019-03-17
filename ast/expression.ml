@@ -153,7 +153,7 @@ module Record = struct
 end
 
 
-module AccessNew = struct
+module Name = struct
   module Attribute = struct
     type 'expression t = {
       base: 'expression;
@@ -308,7 +308,6 @@ end
 
 type expression =
   | Access of t Record.Access.general_access_record
-  | AccessNew of t AccessNew.t
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -324,6 +323,7 @@ type expression =
   | Lambda of t Lambda.t
   | List of t list
   | ListComprehension of (t, t) Comprehension.t
+  | Name of t Name.t
   | Set of t list
   | SetComprehension of (t, t) Comprehension.t
   | Starred of t Starred.t
@@ -408,19 +408,19 @@ module Access = struct
   let create_from_expression nested_access =
     let rec flatten nested_access =
       match Node.value nested_access with
-      | AccessNew (AccessNew.Identifier identifier) ->
+      | Name (Name.Identifier identifier) ->
           None, [Identifier identifier]
-      | AccessNew (
-          AccessNew.Attribute {
-            base = { Node.value = AccessNew (AccessNew.Identifier base); _ };
+      | Name (
+          Name.Attribute {
+            base = { Node.value = Name (Name.Identifier base); _ };
             attribute;
           }
         ) ->
           None, [Identifier attribute; Identifier base]
-      | AccessNew (AccessNew.Attribute { base; attribute }) ->
+      | Name (Name.Attribute { base; attribute }) ->
           let base_expression, access = flatten base in
           base_expression, (Identifier attribute) :: access
-      | Call { callee = { Node.value = AccessNew (AccessNew.Identifier callee); _ }; arguments } ->
+      | Call { callee = { Node.value = Name (Name.Identifier callee); _ }; arguments } ->
           let arguments =
             let convert { Call.Argument.name; value } =
               { Argument.name; value }
@@ -488,7 +488,7 @@ module Access = struct
     let rec create_nested_access expression access =
       match expression, access with
       | Some expression, Identifier identifier :: [] ->
-          AccessNew (AccessNew.Attribute {
+          Name (Name.Attribute {
             base = expression;
             attribute = identifier;
           })
@@ -497,21 +497,21 @@ module Access = struct
           create_call_expression expression (convert_arguments arguments)
           |> Node.create ~location
       | None, Identifier identifier :: [] ->
-          AccessNew (AccessNew.Identifier identifier)
+          Name (Name.Identifier identifier)
           |> Node.create ~location
       | None, Identifier identifier :: [Identifier base] ->
-          AccessNew (AccessNew.Attribute {
-            base = (AccessNew (AccessNew.Identifier base)) |> Node.create ~location;
+          Name (Name.Attribute {
+            base = (Name (Name.Identifier base)) |> Node.create ~location;
             attribute = identifier;
           })
           |> Node.create ~location
       | None, Call arguments :: [Identifier base] ->
           create_call_expression
-            ((AccessNew (AccessNew.Identifier base)) |> Node.create ~location)
+            ((Name (Name.Identifier base)) |> Node.create ~location)
             (convert_arguments arguments)
           |> Node.create ~location
       | _, Identifier identifier :: access ->
-          AccessNew (AccessNew.Attribute {
+          Name (Name.Attribute {
             base = create_nested_access expression access;
             attribute = identifier;
           })
@@ -731,11 +731,11 @@ let create_name_from_identifiers identifiers =
     | [] ->
         failwith "Access must have non-zero identifiers."
     | [{ Node.location; value = identifier }] ->
-        AccessNew (AccessNew.Identifier identifier)
+        Name (Name.Identifier identifier)
         |> Node.create ~location
     | { Node.location; value = identifier } :: rest ->
-        AccessNew (
-          AccessNew.Attribute {
+        Name (
+          Name.Attribute {
             base = create rest;
             attribute = identifier;
           })
@@ -1182,10 +1182,6 @@ module PrettyPrinter = struct
           pp_expression (Node.value expression)
           pp_access_list access_list
 
-    | AccessNew _ ->
-        (* TODO: T37313693 *)
-        ()
-
     | Await expression ->
         Format.fprintf
           formatter
@@ -1265,6 +1261,10 @@ module PrettyPrinter = struct
 
     | ListComprehension list_comprehension ->
         Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
+
+    | Name _ ->
+        (* TODO: T37313693 *)
+        ()
 
     | Set set ->
         Format.fprintf formatter "set(%a)" pp_expression_list set

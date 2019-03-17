@@ -510,18 +510,18 @@ let test_convert_accesses _ =
       converted
   in
   assert_convert_new_to_old
-    (AccessNew (AccessNew.Identifier "a"))
+    (Name (Name.Identifier "a"))
     (Access (SimpleAccess [Identifier "a"]));
   assert_convert_new_to_old
-    (AccessNew (
-      AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+    (Name (
+      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
     ))
     (Access (SimpleAccess [Identifier "a"; Identifier "b"]));
   assert_convert_new_to_old
-    (AccessNew (AccessNew.Attribute {
-      base = ~+(AccessNew (
-        AccessNew.Attribute {
-          base = ~+(AccessNew (AccessNew.Identifier "a"));
+    (Name (Name.Attribute {
+      base = ~+(Name (
+        Name.Attribute {
+          base = ~+(Name (Name.Identifier "a"));
           attribute = "b";
       }));
       attribute = "c";
@@ -529,14 +529,14 @@ let test_convert_accesses _ =
     (Access (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"]));
   assert_convert_new_to_old
     (Call {
-      callee = ~+(AccessNew (AccessNew.Identifier "a"));
+      callee = ~+(Name (Name.Identifier "a"));
       arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
     })
     (Access (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]]));
   assert_convert_new_to_old
     (Call {
-      callee = ~+(AccessNew (
-        AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+      callee = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
       ));
       arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
     })
@@ -560,18 +560,18 @@ let test_convert_accesses _ =
   in
   assert_convert_old_to_new
     (SimpleAccess [Identifier "a"])
-    (AccessNew (AccessNew.Identifier "a"));
+    (Name (Name.Identifier "a"));
   assert_convert_old_to_new
     (SimpleAccess [Identifier "a"; Identifier "b"])
-    (AccessNew (
-      AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+    (Name (
+      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
     ));
   assert_convert_old_to_new
     (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"])
-    (AccessNew (AccessNew.Attribute {
-      base = ~+(AccessNew (
-        AccessNew.Attribute {
-          base = ~+(AccessNew (AccessNew.Identifier "a"));
+    (Name (Name.Attribute {
+      base = ~+(Name (
+        Name.Attribute {
+          base = ~+(Name (Name.Identifier "a"));
           attribute = "b";
       }));
       attribute = "c";
@@ -579,7 +579,7 @@ let test_convert_accesses _ =
   assert_convert_old_to_new
     (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]])
     (Call {
-      callee = ~+(AccessNew (AccessNew.Identifier "a"));
+      callee = ~+(Name (Name.Identifier "a"));
       arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
     });
   assert_convert_old_to_new
@@ -589,15 +589,15 @@ let test_convert_accesses _ =
       Call ~+[{ Argument.name = None; value = !"x" }];
     ])
     (Call {
-      callee = ~+(AccessNew (
-        AccessNew.Attribute { base = ~+(AccessNew (AccessNew.Identifier "a")); attribute = "b" }
+      callee = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
       ));
       arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
     });
   assert_convert_old_to_new
     (ExpressionAccess { expression = ~+(List []); access = [Identifier "a"; Identifier "b"]})
-    (AccessNew (AccessNew.Attribute {
-      base = ~+(AccessNew (AccessNew.Attribute { base = ~+(List []); attribute = "a" }));
+    (Name (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a" }));
       attribute = "b";
     }))
 
@@ -612,15 +612,11 @@ let test_create_name_from_identifiers _ =
   in
   assert_create
     ["a"]
-    ~+(AccessNew (AccessNew.Identifier "a"));
+    ~+(Name (Name.Identifier "a"));
   assert_create
     ["a"; "b"; "c"]
-    ~+(AccessNew (AccessNew.Attribute {
-      base = ~+(AccessNew (
-        AccessNew.Attribute {
-          base = ~+(AccessNew (AccessNew.Identifier "a"));
-          attribute = "b";
-      }));
+    ~+(Name (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
       attribute = "c";
     }))
 

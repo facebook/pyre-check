@@ -350,9 +350,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Access (ExpressionAccess { expression; access }) ->
           List.fold access ~init:(Expression expression) ~f:normalize_access_list
           |> analyze_normalized_expression ~resolution state taint
-      | AccessNew _ ->
-          (* TODO: T37313693 *)
-          state
       | Await expression ->
           analyze_expression ~resolution taint expression state
       | BooleanOperator { left; operator = _; right }
@@ -386,6 +383,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~init:state
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
+      | Name _ ->
+          (* TODO: T37313693 *)
+          state
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold
