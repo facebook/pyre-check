@@ -1,4 +1,7 @@
 @generated
 Call dependencies
+select.first_index (fun) -> [__testSource (fun)]
+select.first_index_numeric (fun) -> [__testSource (fun)]
+select.first_index_unknown (fun) -> [__testSource (fun)]
 select.view_entry_field (fun) -> [eval (fun)]
 select.view_entry_index (fun) -> [eval (fun)]

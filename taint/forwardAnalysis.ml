@@ -315,7 +315,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         if List.exists set ~f:already_has_first then
           set
         else
+          (SimpleFeatures.Breadcrumb (Breadcrumb.HasFirst kind)) ::
           (SimpleFeatures.Breadcrumb (Breadcrumb.First { kind; name })) :: set
+      in
+      let add_first_index index =
+        match index with
+        | AbstractTreeDomain.Label.Field name when is_numeric name ->
+            add_first Breadcrumb.FirstIndex "<numeric>"
+        | AbstractTreeDomain.Label.Field name ->
+            add_first Breadcrumb.FirstIndex name
+        | AbstractTreeDomain.Label.Any ->
+            add_first Breadcrumb.FirstIndex "<unknown>"
       in
       match expression with
       | Access { expression; member } ->
@@ -354,16 +364,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             analyze_normalized_expression ~resolution location state expression
             |> ForwardState.Tree.read [index]
           in
-          begin
-            match index with
-            | AbstractTreeDomain.Label.Field name when not (is_numeric name) ->
-                ForwardState.Tree.transform
-                  ForwardTaint.simple_feature_set
-                  ~f:(add_first Breadcrumb.FirstIndex name)
-                  taint
-            | _ ->
-                taint
-          end
+          ForwardState.Tree.transform
+            ForwardTaint.simple_feature_set
+            ~f:(add_first_index index)
+            taint
 
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state

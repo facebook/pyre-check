@@ -2,6 +2,93 @@
 {
   "kind": "model",
   "data": {
+    "callable": "select.first_index",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 13,
+              "start": 20,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "access_token" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.first_index_numeric",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 18,
+              "start": 20,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.first_index_unknown",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 23,
+              "start": 20,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "select.view_entry_field",
     "sources": [
       {
@@ -49,7 +136,10 @@
           {
             "decl": null,
             "leaves": [ { "kind": "UserControlled" } ],
-            "features": [ { "first-field": "payload" } ]
+            "features": [
+              { "has": "first-field" },
+              { "first-field": "payload" }
+            ]
           }
         ]
       },
@@ -89,7 +179,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 8,
+              "line": 9,
               "start": 9,
               "end": 20
             },
@@ -105,9 +195,9 @@
   "kind": "issue",
   "data": {
     "callable": "select.view_entry_index",
-    "callable_line": 7,
+    "callable_line": 8,
     "code": 5001,
-    "line": 8,
+    "line": 9,
     "start": 9,
     "end": 20,
     "filename": "select.py",
@@ -121,6 +211,8 @@
             "decl": null,
             "leaves": [ { "kind": "UserControlled" } ],
             "features": [
+              { "has": "first-index" },
+              { "has": "first-field" },
               { "first-index": "payload" },
               { "first-field": "GET" }
             ]
@@ -133,7 +225,7 @@
           {
             "root": {
               "filename": "select.py",
-              "line": 8,
+              "line": 9,
               "start": 9,
               "end": 20
             },
