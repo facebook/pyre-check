@@ -3,7 +3,7 @@
 import gc
 from unittest import TestCase, mock
 
-from sapp.decorators import disable_gc, log_time, retryable
+from sapp.decorators import UserError, catch_user_error, disable_gc, log_time, retryable
 
 
 class RetryableTest(TestCase):
@@ -85,3 +85,23 @@ class DisableGCTest(TestCase):
         self.gcShouldBeDisabled()
         self.assertFalse(gc.isenabled())
         gc.enable()
+
+
+class CatchUserErrorTest(TestCase):
+    @catch_user_error()
+    def throwsUserError(self):
+        raise UserError
+
+    def testCatchesUserError(self):
+        try:
+            self.throwsUserError()
+        except UserError:
+            self.fail("Unexpected UserError")
+
+    @catch_user_error()
+    def throwsException(self):
+        raise Exception
+
+    def testDoesNotCatchOtherExceptions(self):
+        with self.assertRaises(Exception):
+            self.throwsException()

@@ -8,7 +8,8 @@ from unittest import TestCase
 from unittest.mock import mock_open, patch
 
 from sapp.db import DB
-from sapp.interactive import Interactive, ListFilterException, TraceTuple
+from sapp.decorators import UserError
+from sapp.interactive import Interactive, TraceTuple
 from sapp.models import (
     Issue,
     IssueInstance,
@@ -1220,16 +1221,16 @@ class InteractiveTest(TestCase):
         self.assertTrue(self.interactive._verify_multiple_branches())
 
     def testVerifyListFilter(self):
-        with self.assertRaises(ListFilterException):
+        with self.assertRaises(UserError):
             self.interactive._verify_list_filter("not a list", "arg0")
 
-        with self.assertRaises(ListFilterException):
+        with self.assertRaises(UserError):
             self.interactive._verify_list_filter([], "arg0")
 
         try:
             self.interactive._verify_list_filter(["elem", "elem"], "arg0")
-        except ListFilterException:
-            self.fail("Unexpected ListFilterException")
+        except UserError:
+            self.fail("Unexpected UserError")
 
     def testAddListFilterToQuery(self):
         shared_texts = [

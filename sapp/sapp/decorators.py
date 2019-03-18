@@ -3,7 +3,9 @@
 import datetime
 import gc
 import logging
+import sys
 import time
+from contextlib import contextmanager
 from functools import wraps
 from typing import Any, Callable, List, Optional
 
@@ -66,3 +68,15 @@ def disable_gc(func: Callable[..., Any]) -> Callable[..., Any]:
                 gc.enable()
 
     return wrapper
+
+
+class UserError(Exception):
+    pass
+
+
+@contextmanager
+def catch_user_error():
+    try:
+        yield
+    except UserError as error:
+        print(str(error), file=sys.stderr)

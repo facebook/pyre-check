@@ -21,6 +21,7 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
 from sapp.db import DB
+from sapp.decorators import UserError, catch_user_error
 from sapp.models import (
     Issue,
     IssueInstance,
@@ -228,6 +229,7 @@ set_frame(ID)   select a trace frame to explore
 
         self._show_current_trace_frame()
 
+    @catch_user_error()
     def issues(
         self,
         use_pager: bool = None,
@@ -265,25 +267,17 @@ set_frame(ID)   select a trace frame to explore
                 .join(Issue, IssueInstance.issue_id == Issue.id)
             )
 
-            try:
-                if codes is not None:
-                    self._verify_list_filter(codes, "codes")
-                    query = query.filter(Issue.code.in_(codes))
+            if codes is not None:
+                self._verify_list_filter(codes, "codes")
+                query = query.filter(Issue.code.in_(codes))
 
-                if callables is not None:
-                    self._verify_list_filter(callables, "callables")
-                    query = self._add_list_filter_to_query(
-                        callables, query, Issue.callable
-                    )
+            if callables is not None:
+                self._verify_list_filter(callables, "callables")
+                query = self._add_list_filter_to_query(callables, query, Issue.callable)
 
-                if filenames is not None:
-                    self._verify_list_filter(filenames, "filenames")
-                    query = self._add_list_filter_to_query(
-                        filenames, query, Issue.filename
-                    )
-            except ListFilterException as error:
-                self.warning(str(error))
-                return
+            if filenames is not None:
+                self._verify_list_filter(filenames, "filenames")
+                query = self._add_list_filter_to_query(filenames, query, Issue.filename)
 
             issues = query.options(joinedload(IssueInstance.message)).all()
             sources_list = [
@@ -333,6 +327,7 @@ set_frame(ID)   select a trace frame to explore
 
         self._output_trace_tuples(self.trace_tuples)
 
+    @catch_user_error()
     def frames(
         self,
         *,
@@ -363,15 +358,11 @@ set_frame(ID)   select a trace frame to explore
                 .filter(TraceFrame.kind == kind)
             )
 
-            try:
-                if callers is not None:
-                    self._verify_list_filter(callers, "callers")
-                    query = self._add_list_filter_to_query(
-                        callers, query, TraceFrame.caller
-                    )
-            except ListFilterException as error:
-                self.warning(str(error))
-                return
+            if callers is not None:
+                self._verify_list_filter(callers, "callers")
+                query = self._add_list_filter_to_query(
+                    callers, query, TraceFrame.caller
+                )
 
             trace_frames = (
                 query.group_by(TraceFrame.id)
@@ -660,10 +651,10 @@ set_frame(ID)   select a trace frame to explore
     def _verify_list_filter(self, filter: List, argument_name: str) -> None:
         # Check this because filter is user input
         if not isinstance(filter, list):
-            raise ListFilterException(f"'{argument_name}' should be a list.")
+            raise UserError(f"'{argument_name}' should be a list.")
 
         if not filter:
-            raise ListFilterException(f"'{argument_name}' should be non-empty.")
+            raise UserError(f"'{argument_name}' should be non-empty.")
 
     def _add_list_filter_to_query(
         self, filter: List[str], query: Query, column: InstrumentedAttribute
