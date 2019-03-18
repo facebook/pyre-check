@@ -317,7 +317,7 @@ let test_equality _ =
       "Element should appear in the set"
       (Access.Set.mem set access_right);
 
-    let map = Access.Map.add_exn Access.Map.empty ~key:access_left ~data:1 in
+    let map = Access.Map.set Access.Map.empty ~key:access_left ~data:1 in
     assert_bool
       "Element should appear in the map"
       (Access.Map.mem map access_right);

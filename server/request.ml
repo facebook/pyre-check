@@ -435,7 +435,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         let map =
           let map =
-            Map.add_exn
+            Map.set
               String.Map.empty
               ~key:(OrderKeys.hash_of_key "Order")
               ~data:(OrderKeys.serialize_key "Order")

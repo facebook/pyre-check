@@ -11,19 +11,19 @@ open Pyre
 
 let compute_hashes_to_keys ~indices ~annotations =
   let add_index_mappings map key =
-    Map.add_exn
+    Map.set
       map
       ~key:(OrderAnnotations.hash_of_key key)
       ~data:(OrderAnnotations.serialize_key key)
-    |> Map.add_exn
+    |> Map.set
       ~key:(OrderEdges.hash_of_key key)
       ~data:(OrderEdges.serialize_key key)
-    |> Map.add_exn
+    |> Map.set
       ~key:(OrderBackedges.hash_of_key key)
       ~data:(OrderBackedges.serialize_key key)
   in
   let add_annotation_mappings map annotation =
-    Map.add_exn
+    Map.set
       map
       ~key:(OrderIndices.hash_of_key annotation)
       ~data:(OrderIndices.serialize_key annotation)

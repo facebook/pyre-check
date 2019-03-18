@@ -125,7 +125,7 @@ module Sources = struct
   let compute_hashes_to_keys ~keys =
     let add map handle =
       let map =
-        Map.add_exn
+        Map.set
           map
           ~key:(hash_of_handle handle)
           ~data:(serialize_handle handle)
@@ -133,7 +133,7 @@ module Sources = struct
       (* This is an approximation that assumes Source.qualifier = Source.qualifier handle for all
          cases. *)
       let qualifier = Source.qualifier ~handle in
-      Map.add_exn
+      Map.set
         map
         ~key:(hash_of_qualifier qualifier)
         ~data:(serialize_qualifier qualifier)

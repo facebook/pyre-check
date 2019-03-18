@@ -105,13 +105,12 @@ end = struct
 
   let compute_hashes_to_keys ~keys =
     let add map key =
-      Core.Map.add_exn
+      Core.Map.set
         map
         ~key:(hash_of_key key)
         ~data:(serialize_key key)
     in
-    Core.List.dedup_and_sort ~compare:Key.compare keys
-    |> Core.List.fold ~init:Core.String.Map.empty ~f:add
+    Core.List.fold keys ~init:Core.String.Map.empty ~f:add
 end
 
 
