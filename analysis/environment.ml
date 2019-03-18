@@ -806,14 +806,8 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
           in
           Map.change callables name ~f:(change callable)
         in
-        let is_property define =
-          String.Set.exists
-            ~f:(Statement.Define.has_decorator define)
-            Recognized.property_decorators
-        in
         match statement with
-        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) }
-          when not (is_property define) ->
+        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> collect_callable ~parent ~location callables
 

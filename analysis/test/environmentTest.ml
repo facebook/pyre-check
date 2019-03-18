@@ -861,6 +861,32 @@ let test_populate _ =
           ~annotation:Type.Top
           ()));
 
+  (* Properties. *)
+  let assert_global =
+    {|
+      class Class:
+        @property
+        def Class.property(self) -> int: ...
+    |}
+    |> populate
+    |> assert_global_with_environment
+  in
+  assert_global
+    "Class.property"
+    (Annotation.create_immutable
+       ~global:true
+       (Type.Callable.create
+          ~name:(Access.create "Class.property")
+          ~parameters:(Type.Callable.Defined [
+              Type.Callable.Parameter.Named {
+                Type.Callable.Parameter.name = "self";
+                annotation = Type.Top;
+                default = false;
+              };
+            ])
+          ~annotation:Type.integer
+          ()));
+
   (* Loops. *)
   begin
     try
