@@ -75,7 +75,9 @@ let apply_decorators ~define ~resolution =
       }
     else
       define
-  else if Define.has_decorator define "contextlib.asynccontextmanager" then
+  else if
+    Set.exists Recognized.asyncio_contextmanager_decorators ~f:(Define.has_decorator define)
+  then
     let joined =
       try
         Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)

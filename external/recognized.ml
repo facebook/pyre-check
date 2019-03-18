@@ -5,6 +5,11 @@
 
 open Core
 
+let asyncio_contextmanager_decorators =
+  String.Set.of_list [
+    "contextlib.asynccontextmanager";
+  ]
+
 
 let classmethod_decorators =
   String.Set.of_list [

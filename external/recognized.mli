@@ -6,6 +6,8 @@
 open Core
 
 
+val asyncio_contextmanager_decorators: String.Set.t
+
 val classmethod_decorators: String.Set.t
 
 val property_decorators: String.Set.t
