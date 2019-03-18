@@ -1193,21 +1193,25 @@ class InteractiveTest(TestCase):
     def testVerifyEntrypointSelected(self):
         self.interactive.current_issue_id = -1
         self.interactive.current_frame_id = -1
-        self.assertFalse(self.interactive._verify_entrypoint_selected())
-
-        self.interactive.current_issue_id = 1
-        self.assertTrue(self.interactive._verify_entrypoint_selected())
-
-        self.interactive.current_issue_id = -1
-        self.interactive.current_frame_id = 1
-        self.assertTrue(self.interactive._verify_entrypoint_selected())
+        with self.assertRaises(UserError):
+            self.interactive._verify_entrypoint_selected()
 
         self.interactive.current_issue_id = 1
         try:
             self.interactive._verify_entrypoint_selected()
-            self.fail("Expected assertion to fail")
-        except AssertionError:
-            pass
+        except UserError:
+            self.fail("Unexpected UserError")
+
+        self.interactive.current_issue_id = -1
+        self.interactive.current_frame_id = 1
+        try:
+            self.interactive._verify_entrypoint_selected()
+        except UserError:
+            self.fail("Unexpected UserError")
+
+        self.interactive.current_issue_id = 1
+        with self.assertRaises(AssertionError):
+            self.interactive._verify_entrypoint_selected()
 
     def testVerifyMultipleBranches(self):
         self.interactive.current_trace_frame_index = 0
@@ -1215,10 +1219,14 @@ class InteractiveTest(TestCase):
             TraceTuple(trace_frame=TraceFrame(id=1), branches=1),
             TraceTuple(trace_frame=TraceFrame(id=2), branches=2),
         ]
-        self.assertFalse(self.interactive._verify_multiple_branches())
+        with self.assertRaises(UserError):
+            self.interactive._verify_multiple_branches()
 
         self.interactive.current_trace_frame_index = 1
-        self.assertTrue(self.interactive._verify_multiple_branches())
+        try:
+            self.interactive._verify_multiple_branches()
+        except UserError:
+            self.fail("Unexpected UserError")
 
     def testVerifyListFilter(self):
         with self.assertRaises(UserError):

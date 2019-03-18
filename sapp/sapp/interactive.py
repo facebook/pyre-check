@@ -217,11 +217,11 @@ set_frame(ID)   select a trace frame to explore
         print(f"Set issue to {issue_id}.")
         self.show()
 
+    @catch_user_error()
     def show(self):
         """ More details about the selected issue or trace frame.
         """
-        if not self._verify_entrypoint_selected():
-            return
+        self._verify_entrypoint_selected()
 
         if self.current_issue_id != -1:
             self._show_current_issue_instance()
@@ -299,6 +299,7 @@ set_frame(ID)   select a trace frame to explore
         pager(issue_output)
         print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
 
+    @catch_user_error()
     def trace(self):
         """Show a trace for the selected issue or trace frame.
 
@@ -322,9 +323,7 @@ set_frame(ID)   select a trace frame to explore
                         module.helper.process root      module/helper.py:76|5|10
              + 3        leaf                  sink      module/main.py:74|1|9
         """
-        if not self._verify_entrypoint_selected():
-            return
-
+        self._verify_entrypoint_selected()
         self._output_trace_tuples(self.trace_tuples)
 
     @catch_user_error()
@@ -452,26 +451,25 @@ set_frame(ID)   select a trace frame to explore
 
         self.trace_tuples = self._create_trace_tuples(navigation)
 
+    @catch_user_error()
     def next_cursor_location(self):
         """Move cursor to the next trace frame.
         """
-        if not self._verify_entrypoint_selected():
-            return
-
+        self._verify_entrypoint_selected()
         self.current_trace_frame_index = min(
             self.current_trace_frame_index + 1, len(self.trace_tuples) - 1
         )
         self.trace()
 
+    @catch_user_error()
     def prev_cursor_location(self):
         """Move cursor to the previous trace frame.
         """
-        if not self._verify_entrypoint_selected():
-            return
-
+        self._verify_entrypoint_selected()
         self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 0)
         self.trace()
 
+    @catch_user_error()
     def expand(self):
         """Show and select branches for a branched trace.
         - [*] signifies the current branch that is selected
@@ -493,11 +491,8 @@ set_frame(ID)   select a trace frame to explore
                 [1 hops: source]
                 [module/main.py:21|4|8]
         """
-        if (
-            not self._verify_entrypoint_selected()
-            or not self._verify_multiple_branches()
-        ):
-            return
+        self._verify_entrypoint_selected()
+        self._verify_multiple_branches()
 
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
         filter_leaves = (
@@ -520,6 +515,7 @@ set_frame(ID)   select a trace frame to explore
             ]
             self._output_trace_expansion(branches, leaves_strings)
 
+    @catch_user_error()
     def branch(self, selected_index: int) -> None:
         """Selects a branch when there are multiple possible traces to follow.
 
@@ -529,11 +525,8 @@ set_frame(ID)   select a trace frame to explore
         Parameters:
             selected_index: int    branch index from expand() output
         """
-        if (
-            not self._verify_entrypoint_selected()
-            or not self._verify_multiple_branches()
-        ):
-            return
+        self._verify_entrypoint_selected()
+        self._verify_multiple_branches()
 
         with self.db.make_session() as session:
             branches = self._get_trace_frame_branches(session)
@@ -570,6 +563,7 @@ set_frame(ID)   select a trace frame to explore
 
         self.trace()
 
+    @catch_user_error()
     def list_source_code(self, context: int = 5) -> None:
         """Show source code around the current trace frame location.
 
@@ -577,8 +571,7 @@ set_frame(ID)   select a trace frame to explore
             context: int    number of lines to show above and below trace location
                             (default: 5)
         """
-        if not self._verify_entrypoint_selected():
-            return
+        self._verify_entrypoint_selected()
 
         current_trace_frame = self.trace_tuples[
             self.current_trace_frame_index
@@ -941,20 +934,16 @@ set_frame(ID)   select a trace frame to explore
 
             page.display_page(self._create_trace_frame_output_string(trace_frame))
 
-    def _verify_entrypoint_selected(self) -> bool:
+    def _verify_entrypoint_selected(self) -> None:
         assert self.current_issue_id == -1 or self.current_frame_id == -1
 
         if self.current_issue_id == -1 and self.current_frame_id == -1:
-            self.warning(
+            raise UserError(
                 "Use 'set_issue(ID)' or 'set_frame(ID)' to select an"
                 " entrypoint first."
             )
-            return False
-        return True
 
-    def _verify_multiple_branches(self) -> bool:
+    def _verify_multiple_branches(self) -> None:
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
         if current_trace_tuple.branches < 2:
-            self.warning("This trace frame has no alternate branches to take.")
-            return False
-        return True
+            raise UserError("This trace frame has no alternate branches to take.")
