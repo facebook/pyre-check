@@ -328,10 +328,7 @@ set_frame(ID)   select a trace frame to explore
 
     @catch_user_error()
     def frames(
-        self,
-        *,
-        callers: Optional[List[str]] = None,
-        kind: TraceKind = TraceKind.PRECONDITION,
+        self, *, callers: Optional[List[str]] = None, kind: Optional[TraceKind] = None
     ):
         """Display trace frames independent of the current issue.
 
@@ -346,15 +343,9 @@ set_frame(ID)   select a trace frame to explore
             % matches anything (like .* in regex)
             _ matches 1 character (like . in regex)
         """
-        if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION}:
-            self.warning("'kind' should be precondition or postcondition")
-            return
-
         with self.db.make_session() as session:
-            query = (
-                session.query(TraceFrame)
-                .filter(TraceFrame.run_id == self.current_run_id)
-                .filter(TraceFrame.kind == kind)
+            query = session.query(TraceFrame).filter(
+                TraceFrame.run_id == self.current_run_id
             )
 
             if callers is not None:
@@ -362,6 +353,14 @@ set_frame(ID)   select a trace frame to explore
                 query = self._add_list_filter_to_query(
                     callers, query, TraceFrame.caller
                 )
+
+            if kind is not None:
+                if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION}:
+                    raise UserError(
+                        "Try 'frames(kind=postcondition)'"
+                        " or 'frames(kind=precondition)'."
+                    )
+                query = query.filter(TraceFrame.kind == kind)
 
             trace_frames = (
                 query.group_by(TraceFrame.id)

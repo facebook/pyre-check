@@ -1475,7 +1475,7 @@ else:
         )
 
         self._clear_stdout()
-        self.interactive.frames()
+        self.interactive.frames(kind=TraceKind.PRECONDITION)
         self.assertEqual(self.stdout.getvalue().strip(), "No trace frames found.")
 
     def testSetFrame(self):
