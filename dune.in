@@ -185,14 +185,17 @@
 
 (tests
  (names
+  decoratorsTest
   fetchSavedStateTest
   projectSpecificPreprocessingTest)
  (modules
+  decoratorsTest
   fetchSavedStateTest
   projectSpecificPreprocessingTest
   )
  (libraries
   pyrelib
+  pyrelib.integrationTest
   pyrelib.fetchSavedState
   pyrelib.projectSpecificPreprocessing
   oUnit
