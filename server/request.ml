@@ -529,6 +529,97 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 let open Service.EnvironmentSharedMemory in
                 begin
                   match Memory.decode ~key ~value with
+                  | Ok
+                      (ClassDefinitions.Decoded
+                         (key, {
+                             Resolution.class_definition = { Node.value = definition; _ };
+                             _;
+                           })) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ClassValue.description;
+                        actual_key = key;
+                        actual_value = Ast.Statement.Class.show definition;
+                      }
+                  | Ok (Aliases.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = AliasValue.description;
+                        actual_key = key;
+                        actual_value = Type.show value;
+                      }
+                  | Ok (Globals.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = GlobalValue.description;
+                        actual_key = Expression.Access.show key;
+                        actual_value = Annotation.show (Node.value value);
+                      }
+                  | Ok (Dependents.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = DependentValue.description;
+                        actual_key = Expression.Access.show key;
+                        actual_value =
+                          File.Handle.Set.Tree.to_list value
+                          |> List.to_string ~f:File.Handle.show;
+                      }
+                  | Ok (Protocols.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ProtocolValue.description;
+                        actual_key = key;
+                        actual_value = List.to_string ~f:Type.show value;
+                      }
+                  | Ok (FunctionKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = FunctionKeyValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value = List.to_string ~f:Expression.Access.show value;
+                      }
+                  | Ok (ClassKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ClassKeyValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value = List.to_string ~f:Type.show value;
+                      }
+                  | Ok (GlobalKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = GlobalKeyValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value = List.to_string ~f:Expression.Access.show value;
+                      }
+                  | Ok (AliasKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = AliasKeyValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value = List.to_string ~f:Type.show value;
+                      }
+                  | Ok (DependentKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = DependentKeyValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value = List.to_string ~f:Expression.Access.show value;
+                      }
+                  | Ok (OrderIndices.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = OrderIndexValue.description;
+                        actual_key = key;
+                        actual_value = Int.to_string value;
+                      }
+                  | Ok (OrderAnnotations.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = OrderAnnotationValue.description;
+                        actual_key = Int.to_string key;
+                        actual_value = Type.show value;
+                      }
                   | Ok (OrderEdges.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
@@ -542,6 +633,13 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         kind = BackedgeValue.description;
                         actual_key = Int.to_string key;
                         actual_value = List.to_string ~f:TypeOrder.Target.show value;
+                      }
+                  | Ok (OrderKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = OrderKeyValue.description;
+                        actual_key = key;
+                        actual_value = List.to_string ~f:Int.to_string value;
                       }
                   | Ok _ ->
                       None

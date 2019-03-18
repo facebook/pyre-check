@@ -1048,6 +1048,7 @@ let test_compute_hashes_to_keys context =
 
 
 let test_decode_serialized_ocaml_values context =
+  let open Service.EnvironmentSharedMemory in
   let open Protocol in
   let local_root =
     bracket_tmpdir context
@@ -1055,34 +1056,106 @@ let test_decode_serialized_ocaml_values context =
   in
   let (module Handler: Analysis.Environment.Handler) = (module Service.Environment.SharedHandler) in
   (* Note that we're not adding any values to the shared environment here. *)
-  let query =
-    [
-      {
-        TypeQuery.serialized_key =
-          Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16;
-        serialized_value =
-          [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
-          |> (fun value -> Marshal.to_string value [Marshal.Closures])
-          |> Base64.encode_exn;
-      };
-      {
-        TypeQuery.serialized_key =
-          Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15;
-        serialized_value =
-          [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
-          |> (fun value -> Marshal.to_string value [Marshal.Closures])
-          |> Base64.encode_exn;
-      };
-      {
-        TypeQuery.serialized_key = "Can't decode this";
-        serialized_value = "Nope";
-      }
-    ]
-  in
   assert_response
     ~local_root
     ~source:""
-    ~request:(Request.TypeQueryRequest (TypeQuery.DecodeOcamlValues query))
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key = OrderEdges.serialize_key 16;
+              serialized_value =
+                [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+            {
+              TypeQuery.serialized_key = OrderBackedges.serialize_key 15;
+              serialized_value =
+                [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+            {
+              TypeQuery.serialized_key = "Can't decode this";
+              serialized_value = "Nope";
+            }
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key = OrderBackedges.serialize_key 15;
+                      kind = "Backedges";
+                      actual_key = "15";
+                      actual_value = "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
+                    };
+                    {
+                      TypeQuery.serialized_key = OrderEdges.serialize_key 16;
+                      kind = "Edges";
+                      actual_key = "16";
+                      actual_value = "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
+                    };
+                  ];
+                  undecodable_keys = ["Can't decode this"];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
+              serialized_value =
+                {
+                  Resolution.class_definition =
+                    Node.create_with_default_location
+                      (Test.parse_single_class "class C: pass");
+                  successors = [];
+                  explicit_attributes = Identifier.SerializableMap.empty;
+                  implicit_attributes = Identifier.SerializableMap.empty;
+                  is_test = false;
+                  methods = [];
+                }
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
+                      kind = "Class";
+                      actual_key = "int";
+                      actual_value = "{ Statement.Record.Class.name = C; bases = []; body = \
+                                      [Statement.Pass];\n  decorators = []; docstring = None }";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key =
+                Aliases.serialize_key (Type.Primitive "my_integer");
+              serialized_value =
+                Type.integer
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
     (Some
        (Protocol.TypeQueryResponse
           (TypeQuery.Response
@@ -1091,20 +1164,75 @@ let test_decode_serialized_ocaml_values context =
                   TypeQuery.decoded = [
                     {
                       TypeQuery.serialized_key =
-                        Service.EnvironmentSharedMemory.OrderBackedges.serialize_key 15;
-                      kind = "Backedges";
-                      actual_value = "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
-                      actual_key = "15";
-                    };
-                    {
-                      TypeQuery.serialized_key =
-                        Service.EnvironmentSharedMemory.OrderEdges.serialize_key 16;
-                      kind = "Edges";
-                      actual_value = "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
-                      actual_key = "16";
+                        Aliases.serialize_key (Type.Primitive "my_integer");
+                      kind = "Alias";
+                      actual_key = "my_integer";
+                      actual_value = "int";
                     };
                   ];
-                  undecodable_keys = ["Can't decode this"];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key = Globals.serialize_key (Access.create "string_global");
+              serialized_value =
+                Annotation.create Type.string
+                |> Node.create_with_default_location
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Globals.serialize_key (Access.create "string_global");
+                      kind = "Global";
+                      actual_key = "string_global";
+                      actual_value = "(str: m)";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
+              serialized_value =
+                ["dependentA.py"; "dependentB.py"]
+                |> List.map ~f:File.Handle.create
+                |> File.Handle.Set.Tree.of_list
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                       TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
+                      kind = "Dependent";
+                      actual_key = "module";
+                      actual_value = "(dependentA.py dependentB.py)";
+                    };
+                  ];
+                  undecodable_keys = [];
                 }))))
 
 
