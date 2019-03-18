@@ -194,6 +194,7 @@ let test_number _ =
   assert_parsed_equal "1e1_0j" [+Expression (+Complex 1e10)];
   assert_parsed_equal "2j" [+Expression (+Complex 2.0)];
   assert_parsed_equal "2J" [+Expression (+Complex 2.0)];
+  assert_parsed_equal "1L" [+Expression (+Integer 1)];
 
   assert_raises
     (Failure "Could not parse test")

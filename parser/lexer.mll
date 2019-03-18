@@ -152,6 +152,7 @@ let exponent = ['e''E'] ['-''+']? digipart
 let pointfloat = (digipart '.') | (digipart? '.' digipart)
 let float = (pointfloat exponent?) | (digipart exponent)
 let complex = (float | digipart) ('j' | 'J')
+let long = (['0' - '9']+ ('L'))
 
 let kind = 'b' | 'B' | 'f' | 'F'
 let encoding = 'u' | 'U' | 'r' | 'R'
@@ -266,6 +267,14 @@ and read_without_indent state = parse
       in
       COMPLEX ((lexbuf.lex_start_p, lexbuf.lex_curr_p), value)
     }
+  | long {
+    let value =
+      let value = lexeme lexbuf in
+      String.slice value 0 (String.length value - 1)
+      |> parse_integer
+    in
+    INTEGER ((lexbuf.lex_start_p, lexbuf.lex_curr_p), value)
+  }
 
   | whitespace* '#' whitespace* "type" whitespace* ':' whitespace* "ignore" [^ '\n' '\r']* {
       read_without_indent state lexbuf
