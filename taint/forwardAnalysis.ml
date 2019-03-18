@@ -329,36 +329,55 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       in
       match expression with
       | Access { expression; member } ->
-          let attribute_taint =
-            let annotations =
-              let annotation =
-                AccessPath.as_access expression
-                |> (fun access -> Node.create (Expression.Access access) ~location)
-                |> Resolution.resolve resolution
-              in
-              let successors =
-                Resolution.class_representation resolution annotation
-                >>| (fun { Resolution.successors; _ } -> successors)
-                |> Option.value ~default:[]
-              in
-              annotation :: successors
-            in
-            let attribute_taint sofar annotation =
-              (Type.class_name annotation) @ [Access.Identifier member]
-              |> global_model
-              |> ForwardState.Tree.join sofar
-            in
-            List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
+          let access = AccessPath.as_access expression in
+          let annotation =
+            Node.create (Expression.Access access) ~location
+            |> Resolution.resolve resolution
           in
-          let inferred_taint =
-            let field = AbstractTreeDomain.Label.Field member in
-            analyze_normalized_expression ~resolution location state expression
-            |> ForwardState.Tree.read [field]
-            |> ForwardState.Tree.transform
-              ForwardTaint.simple_feature_set
-              ~f:(add_first Breadcrumb.FirstField member)
+          let is_property =
+            let is_property define =
+              String.Set.exists
+                ~f:(Statement.Define.has_decorator define)
+                Recognized.property_decorators
+            in
+            (Type.access annotation) @ [Identifier member]
+            |> Resolution.function_definitions resolution
+            >>| (function
+                | [{ Node.value = define; _ }] -> is_property define
+                | _ -> false)
+            |> Option.value ~default:false
           in
-          ForwardState.Tree.join inferred_taint attribute_taint
+          if is_property then
+            let property_call =
+              Call { callee = expression; arguments = { Node.location; value = [] } }
+            in
+            analyze_normalized_expression ~resolution location state property_call
+          else
+            let attribute_taint =
+              let annotations =
+                let successors =
+                  Resolution.class_representation resolution annotation
+                  >>| (fun { Resolution.successors; _ } -> successors)
+                  |> Option.value ~default:[]
+                in
+                annotation :: successors
+              in
+              let attribute_taint sofar annotation =
+                (Type.class_name annotation) @ [Access.Identifier member]
+                |> global_model
+                |> ForwardState.Tree.join sofar
+              in
+              List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
+            in
+            let inferred_taint =
+              let field = AbstractTreeDomain.Label.Field member in
+              analyze_normalized_expression ~resolution location state expression
+              |> ForwardState.Tree.read [field]
+              |> ForwardState.Tree.transform
+                ForwardTaint.simple_feature_set
+                ~f:(add_first Breadcrumb.FirstField member)
+            in
+            ForwardState.Tree.join inferred_taint attribute_taint
       | Index { expression; index; _ } ->
           let taint =
             analyze_normalized_expression ~resolution location state expression

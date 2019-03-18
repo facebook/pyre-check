@@ -7,22 +7,34 @@ open Core
 open OUnit2
 
 open Analysis
-open Ast
 open Pyre
-open Statement
 open Taint
 
-open Test
 open Interprocedural
 open TestHelper
 
 
-let assert_taint ?(qualifier = Access.create "qualifier") ?models source expect =
-  let configuration = Test.mock_configuration in
+let assert_taint ?(qualifier = "qualifier") ?models source expect =
+  let configuration =
+    Configuration.Analysis.create
+      ~project_root:(Path.current_working_directory ())
+      ()
+  in
 
   let source =
-    parse ~qualifier source
-    |> Preprocessing.preprocess
+    let path = Test.mock_path (qualifier ^ ".py") in
+    let file = File.create ~content:(Test.trim_extra_indentation source) path in
+    let handle = File.handle file ~configuration in
+    Ast.SharedMemory.Sources.remove ~handles:[handle];
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler:(Scheduler.mock ())
+      ~preprocessing_state:None
+      ~files:[file]
+    |> ignore;
+    match Ast.SharedMemory.Sources.get handle with
+    | Some source -> source
+    | None -> failwith "Unable to parse source."
   in
 
   let environment =
@@ -274,6 +286,28 @@ let test_class_model _ =
         ~kind:`Method
         ~returns:[Sources.Test]
         "qualifier.Foo.bar";
+    ];
+  assert_taint
+    {|
+      class Class:
+        self.tainted = ...
+        @property
+        def property(self):
+          return self.tainted
+
+      def uses_property(c: Class):
+        c.tainted = __testSource()
+        return c.property
+    |}
+    [
+      outcome
+        ~kind:`Method
+        ~returns:[]
+        "qualifier.Class.property";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.uses_property";
     ]
 
 
