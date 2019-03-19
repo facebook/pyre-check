@@ -1431,6 +1431,32 @@ let test_define _ =
         async = false;
         parent = None;
       };
+    ];
+  assert_parsed_equal
+    (trim_extra_indentation {|
+        def foo(a): # type: (A_b.C) -> str
+          return "hi"
+    |})
+    [
+      +Define {
+        Define.name = Access.create "foo";
+        parameters = [
+          +{
+            Parameter.name = "a";
+            value = None;
+            annotation = Some (+String (StringLiteral.create "A_b.C"));
+          }];
+        body = [
+          +Return {
+            Return.expression = Some (+String (StringLiteral.create "hi"));
+            is_implicit = false;
+          }];
+        decorators = [];
+        docstring = None;
+        return_annotation = Some (+String (StringLiteral.create "str"));
+        async = false;
+        parent = None;
+      };
     ]
 
 
@@ -3592,10 +3618,10 @@ let test_try _ =
         handlers = [
           {
             Try.kind = Some (+BooleanOperator {
-               BooleanOperator.left = !"a";
-               operator = BooleanOperator.Or;
-               right = !"b";
-             });
+                BooleanOperator.left = !"a";
+                operator = BooleanOperator.Or;
+                right = !"b";
+              });
             name = None;
             handler_body = [+Expression !"c"];
           };
@@ -3612,10 +3638,10 @@ let test_try _ =
         handlers = [
           {
             Try.kind = Some (+BooleanOperator {
-               BooleanOperator.left = !"a";
-               operator = BooleanOperator.Or;
-               right = !"b";
-             });
+                BooleanOperator.left = !"a";
+                operator = BooleanOperator.Or;
+                right = !"b";
+              });
             name = Some "e";
             handler_body = [+Expression !"c"];
           };
