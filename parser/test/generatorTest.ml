@@ -113,6 +113,10 @@ let test_lexer _ =
     [+Expression !"a"];
 
   assert_parsed_equal
+    "print >> a, b"
+    [+Expression (+Tuple [!"a"; !"b"])];
+
+  assert_parsed_equal
     "1 +\\\n 2"
     [
       +Expression

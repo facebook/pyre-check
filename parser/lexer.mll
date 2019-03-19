@@ -211,6 +211,7 @@ and read_without_indent state = parse
 
   (* Don't even try to do anything with Python 2 print statements. *)
   | "print " { read_without_indent state lexbuf }
+  | "print" whitespace+ ">>" { read_without_indent state lexbuf }
 
   | "is" whitespace+ "not" { ISNOT }
 
