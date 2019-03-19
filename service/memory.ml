@@ -72,7 +72,7 @@ end
 
 
 module Register (Key: KeyType) (Value: Value.Type) (): sig
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key: Key.t -> string
 
@@ -81,12 +81,17 @@ module Register (Key: KeyType) (Value: Value.Type) (): sig
   val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
 end = struct
   (* Register decoder *)
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   let () =
-    register
-      Value.prefix
-      (fun key value -> Decoded (Key.from_string key, Marshal.from_string value 0))
+    let decode key value =
+      let value =
+        try Some (Marshal.from_string value 0)
+        with _ -> None
+      in
+      Decoded (Key.from_string key, value)
+    in
+    register Value.prefix decode
 
   let serialize_key key =
     Key.to_string key
@@ -116,7 +121,7 @@ end
 
 module NoCache (Key: KeyType) (Value: Value.Type):
 sig
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
@@ -124,9 +129,9 @@ sig
 
   include SharedMemory.NoCache with
     type t = Value.t
-                          and type key = Key.t
-                          and module KeySet = Set.Make (Key)
-                          and module KeyMap = MyMap.Make (Key)
+                                and type key = Key.t
+                                and module KeySet = Set.Make (Key)
+                                and module KeyMap = MyMap.Make (Key)
 end = struct
   include Register (Key) (Value) ()
   include SharedMemory.NoCache (Key) (Value)
@@ -135,7 +140,7 @@ end
 
 module WithCache (Key: KeyType) (Value: Value.Type):
 sig
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
@@ -143,9 +148,9 @@ sig
 
   include SharedMemory.WithCache with
     type t = Value.t
-                            and type key = Key.t
-                            and module KeySet = Set.Make (Key)
-                            and module KeyMap = MyMap.Make (Key)
+                                  and type key = Key.t
+                                  and module KeySet = Set.Make (Key)
+                                  and module KeyMap = MyMap.Make (Key)
 end = struct
   include Register (Key) (Value) ()
   include SharedMemory.WithCache (Key) (Value)

@@ -1109,13 +1109,15 @@ let test_decode_serialized_ocaml_values context =
                       TypeQuery.serialized_key = OrderBackedges.serialize_key 15;
                       kind = "Backedges";
                       actual_key = "15";
-                      actual_value = "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
+                      actual_value =
+                        Some "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
                     };
                     {
                       TypeQuery.serialized_key = OrderEdges.serialize_key 16;
                       kind = "Edges";
                       actual_key = "16";
-                      actual_value = "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
+                      actual_value =
+                        Some "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
                     };
                   ];
                   undecodable_keys = ["Can't decode this"];
@@ -1153,8 +1155,10 @@ let test_decode_serialized_ocaml_values context =
                       TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
                       kind = "Class";
                       actual_key = "int";
-                      actual_value = "{ Statement.Record.Class.name = C; bases = []; body = \
-                                      [Statement.Pass];\n  decorators = []; docstring = None }";
+                      actual_value =
+                        Some
+                          "{ Statement.Record.Class.name = C; bases = []; body = \
+                           [Statement.Pass];\n  decorators = []; docstring = None }";
                     };
                   ];
                   undecodable_keys = [];
@@ -1185,7 +1189,7 @@ let test_decode_serialized_ocaml_values context =
                         Aliases.serialize_key (Type.Primitive "my_integer");
                       kind = "Alias";
                       actual_key = "my_integer";
-                      actual_value = "int";
+                      actual_value = Some "int";
                     };
                   ];
                   undecodable_keys = [];
@@ -1216,7 +1220,7 @@ let test_decode_serialized_ocaml_values context =
                         Globals.serialize_key (Access.create "string_global");
                       kind = "Global";
                       actual_key = "string_global";
-                      actual_value = "(str: m)";
+                      actual_value = Some "(str: m)";
                     };
                   ];
                   undecodable_keys = [];
@@ -1244,10 +1248,10 @@ let test_decode_serialized_ocaml_values context =
                 {
                   TypeQuery.decoded = [
                     {
-                       TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
+                      TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
                       kind = "Dependent";
                       actual_key = "module";
-                      actual_value = "(dependentA.py dependentB.py)";
+                      actual_value = Some "(dependentA.py dependentB.py)";
                     };
                   ];
                   undecodable_keys = [];

@@ -40,11 +40,15 @@ let test_decodable _ =
   assert_decode
     EdgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
-    (Marshal.to_string [] [Marshal.Closures]) (OrderEdges.Decoded (1234, []));
+    (Marshal.to_string [] [Marshal.Closures]) (OrderEdges.Decoded (1234, Some []));
   assert_decode
     BackedgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
-    (Marshal.to_string [] [Marshal.Closures]) (OrderBackedges.Decoded (1234, []));
+    (Marshal.to_string [] [Marshal.Closures]) (OrderBackedges.Decoded (1234, Some []));
+  assert_decode
+    EdgeValue.prefix
+    (Ast.SharedMemory.IntKey.to_string 1234)
+    "can't decode this" (OrderEdges.Decoded (1234, None));
   assert_equal
     (Error `Malformed_key)
     (Memory.decode ~key:"" ~value:(Marshal.to_string [] [Marshal.Closures]));

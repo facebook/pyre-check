@@ -92,7 +92,7 @@ module TypeQuery: sig
     serialized_key: string;
     kind: string;
     actual_key: string;
-    actual_value: string;
+    actual_value: string option;
   }
   [@@deriving eq, show, to_yojson]
 

@@ -114,7 +114,7 @@ module TypeQuery = struct
     serialized_key: string;
     kind: string;
     actual_key: string;
-    actual_value: string;
+    actual_value: string option;
   }
   [@@deriving eq, show, to_yojson]
 
@@ -145,7 +145,14 @@ module TypeQuery = struct
         `Assoc ["boolean", `Bool boolean]
     | Decoded { decoded; undecodable_keys } ->
         let to_json { serialized_key; kind; actual_key; actual_value } =
-          serialized_key, `List [`String kind; `String actual_key; `String actual_value]
+          let value =
+            match actual_value with
+            | Some actual_value ->
+                [`String actual_value]
+            | None ->
+                []
+          in
+          serialized_key, `List (`String kind :: `String actual_key :: value)
         in
         `Assoc [
           "decoded", `Assoc (List.map decoded ~f:to_json);

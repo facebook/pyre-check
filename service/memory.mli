@@ -35,7 +35,7 @@ end
 
 
 module NoCache (Key: KeyType) (Value: Value.Type): sig
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
@@ -50,7 +50,7 @@ end
 
 
 module WithCache (Key: KeyType) (Value: Value.Type): sig
-  type decodable += Decoded of Key.out * Value.t
+  type decodable += Decoded of Key.out * Value.t option
 
   val serialize_key: Key.t -> string
   val hash_of_key: Key.t -> string
