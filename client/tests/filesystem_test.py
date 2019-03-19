@@ -588,13 +588,18 @@ class FilesystemTest(unittest.TestCase):
             },
         )
 
+    @patch.object(filesystem, "_delete_symbolic_link")
     @patch.object(filesystem, "_compute_symbolic_link_mapping", return_value={})
+    @patch.object(os.path, "isfile")
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
-    def test_process_updated_files(self, realpath, compute_symbolic_links):
+    def test_process_updated_files(
+        self, realpath, isfile, compute_symbolic_links, delete_symbolic_link
+    ):
         search_path = ["/SEARCH_PATH", "/SECOND_SEARCH_PATH$subdir"]
         tracked_files = [
             "/ROOT/a.py",
             "/ROOT/subdir/b.py",
+            "/ROOT/deleted_file.py",
             "/SEARCH_PATH/library.py",
             "/SECOND_SEARCH_PATH/subdir/library2.py",
         ]
@@ -604,19 +609,24 @@ class FilesystemTest(unittest.TestCase):
             "/SECOND_SEARCH_PATH/subdir2/g.py",
         ]
 
+        # AnalysisDirectory
         analysis_directory = AnalysisDirectory("/ROOT", search_path=search_path)
         updated_files = analysis_directory.process_updated_files(
             [*tracked_files, *untracked_files]
         )
         self.assertListEqual(sorted(updated_files), sorted(tracked_files))
 
+        # SharedAnalysisDirectory
         compute_symbolic_links.return_value = {
             "/ROOT/a.py": "/ANALYSIS/a.py",
             "/ROOT/subdir/b.py": "/ANALYSIS/subdir/b.py",
+            "/ROOT/deleted_file.py": "/ANALYSIS/deleted_file.py",
         }
+        isfile.side_effect = lambda path: "deleted" not in path
         shared_tracked_files = [
             "/ANALYSIS/a.py",
             "/ANALYSIS/subdir/b.py",
+            "/ANALYSIS/deleted_file.py",
             "/SEARCH_PATH/library.py",
             "/SECOND_SEARCH_PATH/subdir/library2.py",
         ]
@@ -627,3 +637,7 @@ class FilesystemTest(unittest.TestCase):
             [*tracked_files, *untracked_files]
         )
         self.assertListEqual(sorted(updated_files), sorted(shared_tracked_files))
+        delete_symbolic_link.assert_called_once_with("/ANALYSIS/deleted_file.py")
+        self.assertTrue(
+            "/ROOT/deleted_files.py" not in analysis_directory._symbolic_links
+        )

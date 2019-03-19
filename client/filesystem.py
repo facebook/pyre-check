@@ -202,9 +202,24 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             corresponding to the given paths.
             Result also includes any files which are within a tracked directory.
 
-            TODO(T40580762) properly update symbolic links for new/deleted files
+            This method will remove symbolic links for deleted files.
+
+            TODO(T40580762) use buck to support new files
         """
         tracked_files = []
+
+        deleted_paths = [path for path in paths if not os.path.isfile(path)]
+        if deleted_paths:
+            LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
+        for path in deleted_paths:
+            link = self._symbolic_links.pop(path, None)
+            if link:
+                try:
+                    _delete_symbolic_link(link)
+                    tracked_files.append(link)
+                except OSError:
+                    LOG.warning("Failed to delete link at `%s`.", link)
+
         for path in paths:
             if path in self._symbolic_links:
                 tracked_files.append(self._symbolic_links[path])
