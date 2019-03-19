@@ -317,11 +317,11 @@ set_frame(ID)   select a trace frame to explore
         - location: the relative location of the trace frame's source code
 
         Example output:
-             [branches] [callable]            [port]    [location]
-             + 2        leaf                  source    module/main.py:26|4|8
-         -->            module.main           root      module/helper.py:76|5|10
-                        module.helper.process root      module/helper.py:76|5|10
-             + 3        leaf                  sink      module/main.py:74|1|9
+             ⎇  [callable]            [port]    [location]
+             +2 leaf                  source    module/main.py:26|4|8
+         -->    module.main           root      module/helper.py:76|5|10
+                module.helper.process root      module/helper.py:76|5|10
+             +3 leaf                  sink      module/main.py:74|1|9
         """
         self._verify_entrypoint_selected()
         self._output_trace_tuples(self.trace_tuples)
@@ -476,11 +476,11 @@ set_frame(ID)   select a trace frame to explore
         Example output:
 
         Suppose we have the trace output:
-             [branches] [callable]            [port]    [location]
-         --> + 2        leaf                  source    module/main.py:26|4|8
-                        module.main           root      module/helper.py:76|5|10
-                        module.helper.process root      module/helper.py:76|5|10
-             + 3        leaf                  sink      module/main.py:74|1|9
+             ⎇  [callable]            [port]    [location]
+         --> +2 leaf                  source    module/main.py:26|4|8
+                module.main           root      module/helper.py:76|5|10
+                module.helper.process root      module/helper.py:76|5|10
+             +3 leaf                  sink      module/main.py:74|1|9
 
         Calling expand will result in the output:
         [*] leaf
@@ -718,7 +718,14 @@ set_frame(ID)   select a trace frame to explore
                 )
 
     def _output_trace_tuples(self, trace_tuples):
-        expand = "+ "
+        expand = "+"
+        max_length_split = max(
+            max(
+                len(str(trace_tuple.branches)) + len(expand)
+                for trace_tuple in trace_tuples
+            ),
+            len("⎇"),
+        )
         max_length_callable = max(
             max(len(trace_tuple.trace_frame.callee) for trace_tuple in trace_tuples),
             len("[callable]"),
@@ -729,17 +736,10 @@ set_frame(ID)   select a trace frame to explore
             ),
             len("[port]"),
         )
-        max_length_branches = max(
-            max(
-                len(str(trace_tuple.branches)) + len(expand)
-                for trace_tuple in trace_tuples
-            ),
-            len("[branches]"),
-        )
 
         print(  # table header
             f"{' ' * 5}"
-            f"{'[branches]':{max_length_branches}}"
+            f"{'⎇':{max_length_split}}"
             f" {'[callable]':{max_length_callable}}"
             f" {'[port]':{max_length_condition}}"
             f" [location]"
@@ -757,9 +757,9 @@ set_frame(ID)   select a trace frame to explore
             else:
                 branches_string = (
                     f"{expand}"
-                    f"{str(trace_tuple.branches):{max_length_branches - len(expand)}}"
+                    f"{str(trace_tuple.branches):{max_length_split - len(expand)}}"
                     if trace_tuple.branches > 1
-                    else " " * max_length_branches
+                    else " " * max_length_split
                 )
                 output_string = (
                     f" {prefix}"
