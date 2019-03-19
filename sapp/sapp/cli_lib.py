@@ -16,7 +16,6 @@ from sapp.interactive import Interactive
 from sapp.model_generator import ModelGenerator
 from sapp.models import PrimaryKeyGenerator
 from sapp.pipeline import Pipeline
-from sapp.pysa_taint_parser import Parser
 from sapp.trim_trace_graph import TrimTraceGraph
 
 from .context import Context, pass_context
@@ -150,7 +149,7 @@ def analyze(
     # Construct pipeline
     input_files = (AnalysisOutput.from_file(input_file), previous_input)
     pipeline_steps = [
-        Parser(),
+        ctx.parser_class(),
         ModelGenerator(),
         TrimTraceGraph(),
         DatabaseSaver(ctx.database, PrimaryKeyGenerator()),

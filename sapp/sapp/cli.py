@@ -5,6 +5,7 @@ from sapp.cli_lib import commands, common_options
 from sapp.context import Context
 from sapp.db import DB, DBType
 from sapp.diagnostics.cli import diagnostics
+from sapp.pysa_taint_parser import Parser
 
 
 logger = logging.getLogger("sapp")
@@ -18,6 +19,7 @@ def cli(
     ctx.obj = Context(
         repository=repository,
         database=DB(database_engine, database_name, assertions=True),
+        parser_class=Parser,
     )
     logger.debug(f"Context: {ctx.obj}")
 
