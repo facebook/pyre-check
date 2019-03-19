@@ -1376,7 +1376,7 @@ let due_to_builtin_import { kind; _ } =
       false
 
 
-let due_to_mismatch_with_any { kind; _ } =
+let due_to_mismatch_with_any resolution { kind; _ } =
   match kind with
   | IncompatibleAwaitableType actual
   | InvalidArgument (Keyword { annotation = actual; _ })
@@ -1393,7 +1393,7 @@ let due_to_mismatch_with_any { kind; _ } =
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
   | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
-      Type.mismatch_with_any actual expected
+      Resolution.mismatch_with_any resolution actual expected
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _
@@ -2131,7 +2131,7 @@ let filter ~configuration ~resolution errors =
   | _ -> List.filter ~f:(fun error -> not (should_filter error)) errors
 
 
-let suppress ~mode error =
+let suppress ~mode ~resolution error =
   let suppress_in_strict ({ kind; _ } as error) =
     if due_to_analysis_limitations error then
       true
@@ -2140,10 +2140,10 @@ let suppress ~mode error =
       | UndefinedImport _ ->
           due_to_builtin_import error
       | _ ->
-          due_to_mismatch_with_any error
+          due_to_mismatch_with_any resolution error
   in
 
-  let suppress_in_default ({ kind; define = { Node.value = define; _ }; _ } as error) =
+  let suppress_in_default ~resolution ({ kind; define = { Node.value = define; _ }; _ } as error) =
     match kind with
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
@@ -2169,7 +2169,7 @@ let suppress ~mode error =
         false
     | _ ->
         due_to_analysis_limitations error ||
-        due_to_mismatch_with_any error ||
+        due_to_mismatch_with_any resolution error ||
         (Define.is_untyped define && not (Define.is_toplevel define))
   in
 
@@ -2200,7 +2200,7 @@ let suppress ~mode error =
       when List.exists suppressed_codes ~f:((=) (code error)) ->
         true
     | _ ->
-        suppress_in_default error
+        suppress_in_default ~resolution error
 
 
 let dequalify

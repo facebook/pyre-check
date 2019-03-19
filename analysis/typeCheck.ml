@@ -4081,7 +4081,7 @@ let run
                  |> File.Handle.create)
               |> (fun local_mode -> Ast.Source.mode ~configuration ~local_mode)
             in
-            not (Error.suppress ~mode error)
+            not (Error.suppress ~mode ~resolution error)
         in
         List.filter ~f:keep_error errors
     in

@@ -200,7 +200,7 @@ let function_definitions resolution access =
   >>| List.filter ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.equal access name)
 
 
-let order_and_constructor ({ order; _ } as resolution) =
+let full_order ({ order; _ } as resolution) =
   let constructor instantiated =
     class_definition resolution instantiated
     >>| constructor resolution ~instantiated
@@ -211,7 +211,7 @@ let order_and_constructor ({ order; _ } as resolution) =
   { TypeOrder.handler = order; constructor; implements }
 
 let solve_constraints resolution =
-  order_and_constructor resolution
+  full_order resolution
   |> TypeOrder.solve_constraints
 
 let constraints_solution_exists ~source ~target resolution =
@@ -219,24 +219,27 @@ let constraints_solution_exists ~source ~target resolution =
   |> Option.is_some
 
 let less_or_equal resolution =
-  order_and_constructor resolution
+  full_order resolution
   |> TypeOrder.less_or_equal
 
 
 let join resolution =
-  order_and_constructor resolution
+  full_order resolution
   |> TypeOrder.join
 
 
 let meet resolution =
-  order_and_constructor resolution
+  full_order resolution
   |> TypeOrder.meet
 
 
 let widen resolution =
-  order_and_constructor resolution
+  full_order resolution
   |> TypeOrder.widen
 
+let mismatch_with_any resolution =
+  full_order resolution
+  |> TypeOrder.mismatch_with_any
 
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order

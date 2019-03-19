@@ -126,7 +126,7 @@ include BaseError.Error with type kind := kind
 module Set: Set.S with type Elt.t = t
 
 val due_to_analysis_limitations: t -> bool
-val due_to_mismatch_with_any: t -> bool
+val due_to_mismatch_with_any: Resolution.t -> t -> bool
 
 val less_or_equal: resolution: Resolution.t -> t -> t -> bool
 val join: resolution: Resolution.t -> t -> t -> t
@@ -141,7 +141,7 @@ val join_at_define
 val join_at_source: resolution: Resolution.t -> t list -> t list
 
 val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t -> t list -> t list
-val suppress: mode: Source.mode -> t -> bool
+val suppress: mode: Source.mode -> resolution: Resolution.t -> t -> bool
 
 val dequalify: Access.t Access.Map.t -> resolution: Resolution.t -> t -> t
 

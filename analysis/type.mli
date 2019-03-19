@@ -265,8 +265,6 @@ val elements: t -> t list
 val is_partially_typed: t -> bool
 val is_untyped: t -> bool
 
-val mismatch_with_any: t -> t -> bool
-
 val optional_value: t -> t
 val async_generator_value: t -> t
 val awaitable_value: t -> t

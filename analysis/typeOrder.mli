@@ -142,6 +142,8 @@ val instantiate_successors_parameters
   -> target: Type.t
   -> Type.t List.t Option.t
 
+val mismatch_with_any: order -> Type.t -> Type.t -> bool
+
 val deduplicate: (module Handler) -> annotations: Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
 val connect_annotations_to_top

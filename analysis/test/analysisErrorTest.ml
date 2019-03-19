@@ -348,11 +348,12 @@ let test_due_to_analysis_limitations _ =
 
 
 let test_due_to_mismatch_with_any _ =
+  let resolution = Test.resolution () in
   let assert_due_to_mismatch_with_any kind =
-    assert_true (Error.due_to_mismatch_with_any (error kind))
+    assert_true (Error.due_to_mismatch_with_any resolution (error kind))
   in
   let assert_not_due_to_mismatch_with_any kind =
-    assert_false (Error.due_to_mismatch_with_any (error kind))
+    assert_false (Error.due_to_mismatch_with_any resolution (error kind))
   in
   (* ImpossibleIsinstance *)
   assert_due_to_mismatch_with_any
@@ -758,31 +759,31 @@ let test_join _ =
            evidence_locations = [create_mock_location "derp.py"];
            thrown_at_source = false;
          }));
-   assert_join
-     (error
-        (Error.MissingGlobalAnnotation {
-            Error.name = [Access.Identifier ""];
-            annotation = Some Type.float;
-            given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = true;
-          }))
-     (error
-        (Error.MissingGlobalAnnotation {
-            Error.name = [Access.Identifier ""];
-            annotation = Some Type.integer;
-            given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = false;
-          }))
-     (error
-        (Error.MissingGlobalAnnotation {
-            Error.name = [Access.Identifier ""];
-            annotation = Some Type.float;
-            given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
-            thrown_at_source = true;
-          }));
+  assert_join
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier ""];
+           annotation = Some Type.float;
+           given_annotation = Some Type.Any;
+           evidence_locations = [create_mock_location "derp.py"];
+           thrown_at_source = true;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier ""];
+           annotation = Some Type.integer;
+           given_annotation = Some Type.Any;
+           evidence_locations = [create_mock_location "derp.py"];
+           thrown_at_source = false;
+         }))
+    (error
+       (Error.MissingGlobalAnnotation {
+           Error.name = [Access.Identifier ""];
+           annotation = Some Type.float;
+           given_annotation = Some Type.Any;
+           evidence_locations = [create_mock_location "derp.py"];
+           thrown_at_source = true;
+         }));
 
   assert_join
     (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 3 }))
@@ -1074,15 +1075,16 @@ let test_filter _ =
 
 
 let test_suppress _ =
+  let resolution = Test.resolution () in
   let assert_suppressed mode ?(define = mock_define) ?location kind =
     assert_equal
       true
-      (Error.suppress ~mode (error ~define ?location kind))
+      (Error.suppress ~mode ~resolution (error ~define ?location kind))
   in
   let assert_not_suppressed mode ?(define = mock_define) kind =
     assert_equal
       false
-      (Error.suppress ~mode (error ~define kind))
+      (Error.suppress ~mode ~resolution (error ~define kind))
   in
 
   (* Test different modes. *)

@@ -401,6 +401,8 @@ let default =
   insert order variable_covariant;
   connect order ~predecessor:Type.Bottom ~successor:variable_covariant;
   connect order ~predecessor:variable_covariant ~successor:Type.Top;
+  insert order !"typing.Sequence";
+  connect order ~predecessor:!"typing.Sequence" ~successor:!"typing.Generic" ~parameters:[variable];
 
   insert order !"list";
   insert order !"typing.Sized";
@@ -408,11 +410,19 @@ let default =
   connect order ~predecessor:!"list" ~successor:!"typing.Sized";
   connect order ~predecessor:!"list" ~successor:!"typing.Generic" ~parameters:[variable];
   connect order ~predecessor:!"typing.Sized" ~successor:Type.Any;
+  connect order ~predecessor:!"list" ~successor:!"typing.Sequence" ~parameters:[variable];
 
+  insert order !"typing.AbstractSet";
   insert order !"set";
   connect order ~predecessor:Type.Bottom ~successor:!"set";
   connect order ~predecessor:!"set" ~successor:!"typing.Sized";
   connect order ~predecessor:!"set" ~successor:!"typing.Generic" ~parameters:[variable];
+  connect
+    order
+    ~predecessor:!"typing.AbstractSet"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable];
+  connect order ~predecessor:!"set" ~successor:!"typing.AbstractSet" ~parameters:[variable];
 
   insert order !"typing.Iterator";
   connect order ~predecessor:Type.Bottom ~successor:!"typing.Iterator";
@@ -434,11 +444,25 @@ let default =
     ~successor:!"typing.Generic"
     ~parameters:[variable_covariant];
   connect order ~predecessor:!"typing.Iterable" ~successor:Type.Top;
+  connect order ~predecessor:!"list" ~successor:!"typing.Iterable" ~parameters:[variable];
 
   insert order !"tuple";
   connect order ~predecessor:Type.Bottom ~successor:!"tuple";
   connect order ~predecessor:!"tuple" ~successor:!"typing.Iterator" ~parameters:[variable];
   connect order ~predecessor:!"tuple" ~successor:!"typing.Generic" ~parameters:[variable];
+
+  insert order !"typing.Generator";
+  connect order ~predecessor:Type.Bottom ~successor:!"typing.Generator";
+  connect
+    order
+    ~predecessor:!"typing.Generator"
+    ~successor:!"typing.Iterator"
+    ~parameters:[variable];
+  connect
+    order
+    ~predecessor:!"typing.Generator"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable];
 
   insert order !"str";
   connect order ~predecessor:Type.Bottom ~successor:!"str";
@@ -448,15 +472,39 @@ let default =
   connect order ~predecessor:Type.Bottom ~successor:!"AnyIterable";
   connect order ~predecessor:!"AnyIterable" ~successor:!"typing.Iterable";
 
+  insert order !"typing.Mapping";
+  connect
+    order
+    ~predecessor:!"typing.Mapping"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable; other_variable];
+
   insert order !"dict";
-  connect order ~predecessor:Type.Bottom ~successor:!"dict";
   connect order ~predecessor:!"dict" ~successor:Type.Any ~parameters:[variable; other_variable];
   connect
     order
     ~predecessor:!"dict"
     ~successor:!"typing.Generic"
     ~parameters:[variable; other_variable];
+  connect
+    order
+    ~predecessor:!"dict"
+    ~successor:!"typing.Mapping"
+    ~parameters:[variable; other_variable];
   connect order ~predecessor:!"dict" ~successor:!"typing.Iterator" ~parameters:[variable];
+
+  insert order !"collections.OrderedDict";
+  connect order ~predecessor:Type.Bottom ~successor:!"collections.OrderedDict";
+  connect
+    order
+    ~predecessor:!"collections.OrderedDict"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable; other_variable];
+  connect
+    order
+    ~predecessor:!"collections.OrderedDict"
+    ~successor:!"dict"
+    ~parameters:[variable; other_variable];
 
   insert order !"PartiallySpecifiedDict";
   connect order ~predecessor:Type.Bottom ~successor:!"PartiallySpecifiedDict";
@@ -3073,6 +3121,211 @@ let test_solve_constraints _ =
   ()
 
 
+let test_mismatch_with_any _ =
+  let mismatch_with_any =
+    let order =
+      {
+        handler = default;
+        constructor = (fun _ -> None);
+        implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+      }
+    in
+    mismatch_with_any order
+  in
+  assert_false (mismatch_with_any Type.Bottom Type.Top);
+  assert_false (mismatch_with_any Type.integer Type.string);
+
+  assert_true (mismatch_with_any Type.Any Type.string);
+  assert_true (mismatch_with_any Type.integer Type.Any);
+
+  assert_false (mismatch_with_any (Type.Optional Type.integer) (Type.Optional Type.string));
+  assert_true (mismatch_with_any (Type.Optional Type.Any) (Type.Optional Type.string));
+
+  assert_false (mismatch_with_any (Type.list Type.integer) (Type.list Type.string));
+  assert_true (mismatch_with_any (Type.list Type.Any) (Type.list Type.string));
+  assert_false
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.string ~value:Type.integer)
+       (Type.dictionary ~key:Type.string ~value:Type.string));
+  assert_true
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.string ~value:Type.Any)
+       (Type.dictionary ~key:Type.string ~value:Type.string));
+  assert_true
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
+       (Type.dictionary ~key:Type.string ~value:(Type.list Type.integer)));
+  assert_true
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
+       (Type.dictionary
+          ~key:Type.string
+          ~value:(Type.dictionary ~key:Type.string ~value:Type.integer)));
+  assert_true
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.Any ~value:Type.Any)
+       (Type.Optional
+          (Type.dictionary
+             ~key:Type.string
+             ~value:Type.string)));
+  assert_true
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.Any ~value:Type.bool)
+       (Type.parametric "typing.Mapping" [Type.integer; Type.bool]));
+
+  assert_false
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.Any ~value:Type.bool)
+       (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool]));
+
+  assert_false
+    (mismatch_with_any
+       (Type.dictionary ~key:Type.integer ~value:Type.bool)
+       (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool]));
+
+  assert_true
+    (mismatch_with_any
+       (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool])
+       (Type.dictionary ~key:Type.Any ~value:Type.bool));
+
+  assert_true
+    (mismatch_with_any
+       (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool])
+       (Type.dictionary ~key:Type.integer ~value:Type.bool));
+
+  assert_true
+    (mismatch_with_any
+       (Type.list Type.Any)
+       (Type.iterable Type.string));
+
+  assert_true
+    (mismatch_with_any
+       (Type.list Type.integer)
+       (Type.sequence Type.Any));
+
+  assert_true
+    (mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.parametric "typing.Optional" [Type.Any]));
+
+  assert_false
+    (mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.parametric "typing.Optional" [Type.string]));
+
+  assert_false
+    (mismatch_with_any
+       (Type.iterable Type.string)
+       (Type.list Type.Any));
+  assert_false
+    (mismatch_with_any
+       (Type.iterable Type.Any)
+       (Type.list Type.string));
+  assert_false
+    (mismatch_with_any
+       (Type.iterable Type.integer)
+       (Type.set Type.Any));
+  assert_false
+    (mismatch_with_any
+       (Type.parametric "typing.AbstractSet" [Type.object_primitive])
+       (Type.set Type.Any));
+  assert_true
+    (mismatch_with_any
+       (Type.set Type.Any)
+       (Type.parametric "typing.AbstractSet" [Type.object_primitive]));
+
+  assert_false
+    (mismatch_with_any
+       (Type.tuple [Type.string; Type.string])
+       (Type.tuple [Type.string; Type.integer]));
+  assert_true
+    (mismatch_with_any
+       (Type.tuple [Type.string; Type.string])
+       (Type.tuple [Type.string; Type.Any]));
+  assert_false
+    (mismatch_with_any
+       (Type.Tuple (Type.Unbounded Type.integer))
+       (Type.Tuple (Type.Unbounded Type.string)));
+  assert_true
+    (mismatch_with_any
+       (Type.Tuple (Type.Unbounded Type.integer))
+       (Type.Tuple (Type.Unbounded Type.Any)));
+  assert_true
+    (mismatch_with_any
+       (Type.Tuple (Type.Bounded [Type.integer; Type.Any]))
+       (Type.Tuple (Type.Unbounded Type.integer)));
+  assert_true
+    (mismatch_with_any
+       (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
+       (Type.Tuple (Type.Unbounded Type.Any)));
+  assert_false
+    (mismatch_with_any
+       (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
+       (Type.Tuple (Type.Unbounded Type.string)));
+
+  assert_false
+    (mismatch_with_any
+       (Type.union [Type.integer; Type.string])
+       (Type.union [Type.integer; Type.float]));
+  assert_true
+    (mismatch_with_any
+       (Type.union [Type.integer; Type.string])
+       (Type.union [Type.integer; Type.Any]));
+
+  assert_true
+    (mismatch_with_any
+       (Type.union [Type.integer; Type.Any])
+       Type.integer);
+
+
+  assert_false (mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Any));
+  assert_true (mismatch_with_any (Type.generator Type.Any) (Type.iterator Type.integer));
+  assert_false
+    (mismatch_with_any
+       (Type.iterator (Type.list Type.integer))
+       (Type.generator (Type.list Type.Any)));
+  assert_true
+    (mismatch_with_any
+       (Type.generator (Type.list Type.Any))
+       (Type.iterator (Type.list Type.integer)));
+  assert_false (mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float));
+
+  assert_true
+    (mismatch_with_any
+       (Type.Union [Type.list Type.integer; Type.string])
+       (Type.list Type.Any));
+
+  assert_true
+    (mismatch_with_any
+       (Type.Callable.create ~annotation:Type.integer ())
+       Type.Any);
+  assert_true
+    (mismatch_with_any
+       Type.Any
+       (Type.Callable.create ~annotation:Type.integer ()));
+  assert_true
+    (mismatch_with_any
+       Type.Any
+       (Type.union [Type.integer; Type.Callable.create ~annotation:Type.integer ()]));
+
+  assert_true
+    (mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any], int]")
+       (parse_callable "typing.Callable[[str], int]"));
+  assert_true
+    (mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[int], int]"));
+  assert_true
+    (mismatch_with_any
+       (parse_callable "typing.Callable[[int], typing.Any]")
+       (parse_callable "typing.Callable[[str], int]"));
+  assert_false
+    (mismatch_with_any
+       (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
+       (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
+
+
 let () =
   "order">:::[
     "backedges">::test_backedges;
@@ -3097,5 +3350,6 @@ let () =
     "normalize">::test_normalize;
     "variables">::test_variables;
     "solve_constraints">::test_solve_constraints;
+    "mismatch_with_any">::test_mismatch_with_any;
   ]
   |> Test.run
