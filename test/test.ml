@@ -638,6 +638,17 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             *iterables: Iterable[Any],
         ) -> Iterator[_S]:
             ...
+
+        class property:
+           def getter(self, fget: Any) -> Any: ...
+           def setter(self, fset: Any) -> Any: ...
+           def deletler(self, fdel: Any) -> Any: ...
+
+        class staticmethod:
+           def __init__(self, f: Callable[..., Any]): ...
+
+        class classmethod:
+           def __init__(self, f: Callable[..., Any]): ...
       |}
     in
     if include_helper_builtins then
@@ -731,6 +742,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
           pass
+
+        def overload(func: Callable[..., Any]) -> Callable[..., Any]: ...
 
         class AbstractSet(_Collection[_T_co], Generic[_T_co]):
             @abstractmethod
@@ -958,6 +971,18 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
             def copy(self: _DefaultDictT) -> _DefaultDictT:
                 ...
+      |}
+    |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Access.create "contextlib")
+      ~handle:"contextlib.pyi"
+      (* TODO (T41494196): Change the parameter and return type to AnyCallable *)
+      {|
+        from typing import Any
+        def contextmanager(func: Any) -> Any:
+            ...
+        def asynccontextmanager(func: Any) -> Any:
+            ...
       |}
     |> Preprocessing.qualify;
   ]

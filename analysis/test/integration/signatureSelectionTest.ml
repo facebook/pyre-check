@@ -660,6 +660,8 @@ let test_check_function_parameter_errors _ =
 let test_check_function_overloads _ =
   assert_type_errors
     {|
+      from typing import overload
+
       class Foo:
         @overload
         def derp(self, x: int) -> int:
@@ -681,6 +683,8 @@ let test_check_function_overloads _ =
   (* Technically invalid; all @overload stubs must be followed by implementation *)
   assert_type_errors
     {|
+      from typing import overload
+
       class Foo:
         @overload
         def derp(self, x: int) -> int:
@@ -696,6 +700,8 @@ let test_check_function_overloads _ =
 
   assert_type_errors
     {|
+      from typing import overload
+
       class Foo:
         @overload
         def derp(self, x: int, y: int) -> int:
@@ -724,6 +730,8 @@ let test_check_function_overloads _ =
   (* Technically invalid; @overload stubs must comprehensively cover implementation *)
   assert_type_errors
     {|
+      from typing import overload
+
       class Foo:
         @overload
         def derp(self, x: int) -> int:
@@ -757,6 +765,8 @@ let test_check_function_overloads _ =
 
   assert_type_errors
     {|
+      from typing import overload
+
       @overload
       def derp(x: int) -> int: ...
       @overload
@@ -772,6 +782,8 @@ let test_check_function_overloads _ =
   (* The overloaded stub will override the implementation *)
   assert_type_errors
     {|
+      from typing import overload
+
       @overload
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
@@ -803,6 +815,8 @@ let test_check_function_overloads _ =
 let test_check_constructor_overloads _ =
   assert_type_errors
     {|
+      from typing import overload
+
       class Class:
         @overload
         def __init__(self, i: int) -> None: ...

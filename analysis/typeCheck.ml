@@ -1240,8 +1240,53 @@ module State = struct
       ~resolution
       ({
         Node.location;
-        value = ({ Define.name; parent; parameters; return_annotation; _ } as define);
+        value = ({ Define.name; parent; parameters; return_annotation; decorators; _ } as define);
       } as define_node) =
+    let check_decorators state =
+      let check_decorator state decorator =
+        let is_whitelisted decorator =
+          let has_suffix { Node.value; _ } suffix =
+            match value with
+            | Expression.Access (Access.SimpleAccess access_list) ->
+                let last_identifier =
+                  let is_identifier = function
+                    | Access.Identifier _ -> true
+                    | _ -> false
+                  in
+                  List.find (List.rev access_list) ~f:is_identifier
+                in
+                begin
+                  match last_identifier with
+                  | Some (Access.Identifier identifier)
+                    when String.equal identifier suffix ->
+                      true
+                  | _ ->
+                      false
+                end
+            | _ -> false
+          in
+          let is_property_derivative decorator =
+            has_suffix decorator "setter" ||
+            has_suffix decorator "getter" ||
+            has_suffix decorator "deleter"
+          in
+          let is_click_derivative decorator =
+            has_suffix decorator "command"
+          in
+          (* TODO (T41383196): Properly deal with @property and @click *)
+          is_property_derivative decorator ||
+          is_click_derivative decorator ||
+          Set.exists Recognized.whitelisted_decorators
+            ~f:(Expression.exists_in_list ~match_prefix:true ~expression_list:[decorator])
+        in
+        if is_whitelisted decorator then
+          state
+        else
+          let { state; _ } = forward_expression ~state ~expression:decorator in
+          state
+      in
+      List.fold decorators ~init:state ~f:check_decorator
+    in
     let check_return_annotation state =
       let add_variance_error (state, annotation) =
         let state =
@@ -1747,6 +1792,7 @@ module State = struct
       ~resolution:(Resolution.with_parent resolution ~parent)
       ~define:define_node
       ()
+    |> check_decorators
     |> check_return_annotation
     |> check_parameter_annotations
     |> check_base_annotations

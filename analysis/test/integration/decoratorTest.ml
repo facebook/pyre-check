@@ -75,7 +75,6 @@ let test_check_contextmanager _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 let test_check_asynccontextmanager _ =
-
   assert_type_errors
     {|
       @contextlib.asynccontextmanager
@@ -143,6 +142,29 @@ let test_check_asynccontextmanager _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 let test_check_click_command _ =
+  let assert_type_errors =
+    let update_environment_with =
+      [{
+        Test.qualifier = Ast.Expression.Access.create "click";
+        handle = "click.pyi";
+        (* This is just a mock stub of click and is not meant to be accurate or complete *)
+        source =
+          {|
+            from typing import Any
+
+            def command() -> Any: ...
+            def group() -> Any: ...
+            def pass_context(f: Any) -> Any: ...
+            def pass_obj(f: Any) -> Any: ...
+            def option( *param_decls, **attrs) -> Any: ...
+            def argument( *param_decls, **attrs) -> Any: ...
+            class Context: ...
+        |}
+      }]
+    in
+    assert_type_errors ~update_environment_with
+  in
+
   assert_type_errors
     {|
       @click.command()
@@ -188,21 +210,19 @@ let test_check_click_command _ =
 
   assert_type_errors
     {|
-      class Context: ...  # Emulate click.Context
-
       @click.group()
       @click.pass_context
-      def main(ctx: Context) -> None:
+      def main(ctx: click.Context) -> None:
           pass
 
       @test.command()
       @click.pass_context
-      def run(ctx: Context, x: int) -> None:
+      def run(ctx: click.Context, x: int) -> None:
           pass
 
       @test.command()
       @click.pass_obj
-      def run2(ctx: Context) -> None:
+      def run2(ctx: click.Context) -> None:
           pass
 
       # Pyre should not raise any errors on the arguments with the presence of the click decorators
@@ -227,8 +247,16 @@ let test_check_click_command _ =
 let test_decorators _ =
   assert_type_errors
     {|
+      from typing import Optional
+      def overloaded() -> Optional[int]:
+        pass
+    |}
+    [];
+
+  assert_type_errors
+    {|
       @typing.overload
-      def overloaded()->int:
+      def overloaded() -> int:
         pass
     |}
     [];
@@ -237,7 +265,7 @@ let test_decorators _ =
     {|
       from typing import overload
       @overload
-      def overloaded()->int:
+      def overloaded() -> int:
         pass
     |}
     [];
@@ -253,7 +281,49 @@ let test_decorators _ =
           x = await self.get_int
           return x
     |}
-    []
+    [];
+
+  assert_type_errors
+    {|
+      from typing import Callable
+      def my_decorator(f: Callable[[int], int]) -> Callable[[int], int]:
+        return f
+      @my_decorator
+      def f(x: int) -> int:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      @my_decorator
+      def f(x: int) -> int:
+        return x
+    |}
+    ["Undefined name [18]: Global name `my_decorator` is undefined."];
+
+  assert_type_errors
+    {|
+      from typing import Any
+      def my_decorator(x: int) -> Any: ...
+      @my_decorator(1)
+      def f(x: int) -> int:
+        return x
+    |}
+    [];
+
+  assert_type_errors
+    {|
+      from typing import Any
+      def my_decorator(x: int) -> Any: ...
+      @my_decorator(1 + "foo")
+      def f(x: int) -> int:
+        return x
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous " ^
+      "parameter to call `int.__add__` but got `str`."
+    ]
 
 
 let () =

@@ -181,15 +181,30 @@ let test_check_method_parameters _ =
 
 
 let test_check_abstract_methods _ =
+  let update_environment_with =
+    [{
+      Test.qualifier = Ast.Expression.Access.create "abc";
+      handle = "abc.pyi";
+      (* This is just a mock stub of abc and is not meant to be accurate or complete *)
+      source =
+        {|
+          from typing import Any
+          def abstractmethod(funcobj: Any) -> Any: ...
+          def abstractproperty(property: Any) -> Any: ...
+        |}
+    }]
+  in
   assert_type_errors
+    ~update_environment_with
     {|
-      @abstractmethod
+      @abc.abstractmethod
       def abstract()->int:
         pass
     |}
     [];
 
   assert_type_errors
+    ~update_environment_with
     {|
       @abc.abstractproperty
       def abstract()->int:
