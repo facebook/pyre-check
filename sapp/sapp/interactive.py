@@ -84,8 +84,8 @@ set_frame(ID)   select a trace frame to explore
 
     LEAF_NAMES = {"source", "sink", "leaf"}
 
-    def __init__(self, database, database_name, repository_directory: str = ""):
-        self.db = DB(database, database_name, assertions=True)
+    def __init__(self, database: DB, repository_directory: str = ""):
+        self.db = database
         self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
             "precondition": TraceKind.PRECONDITION,
             "postcondition": TraceKind.POSTCONDITION,

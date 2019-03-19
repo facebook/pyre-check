@@ -3,7 +3,7 @@ import logging
 import click
 from sapp.cli_lib import commands, common_options
 from sapp.context import Context
-from sapp.db import DBType
+from sapp.db import DB, DBType
 from sapp.diagnostics.cli import diagnostics
 
 
@@ -17,8 +17,7 @@ def cli(
 ):
     ctx.obj = Context(
         repository=repository,
-        database_engine=database_engine,
-        database_name=database_name,
+        database=DB(database_engine, database_name, assertions=True),
     )
     logger.debug(f"Context: {ctx.obj}")
 

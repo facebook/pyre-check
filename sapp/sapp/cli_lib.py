@@ -77,9 +77,7 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 @click.command(help="interactive exploration of issues")
 @pass_context
 def explore(ctx: Context):
-    scope_vars = Interactive(
-        ctx.database_engine, ctx.database_name, ctx.repository
-    ).setup()
+    scope_vars = Interactive(ctx.database, ctx.repository).setup()
     IPython.start_ipython(argv=[], user_ns=scope_vars)
 
 
@@ -155,10 +153,7 @@ def analyze(
         Parser(),
         ModelGenerator(),
         TrimTraceGraph(),
-        DatabaseSaver(
-            DB(ctx.database_engine, ctx.database_name, assertions=True),
-            PrimaryKeyGenerator(),
-        ),
+        DatabaseSaver(ctx.database, PrimaryKeyGenerator()),
     ]
     pipeline = Pipeline(pipeline_steps)
     pipeline.run(input_files, summary_blob)

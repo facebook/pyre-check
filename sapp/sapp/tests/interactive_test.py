@@ -29,7 +29,7 @@ from sapp.models import (
 class InteractiveTest(TestCase):
     def setUp(self) -> None:
         self.db = DB("memory")
-        self.interactive = Interactive("memory", "")
+        self.interactive = Interactive(self.db, "")
         self.interactive.db = self.db  # we need the tool to refer to the same db
         self.stdout = StringIO()
         self.stderr = StringIO()
