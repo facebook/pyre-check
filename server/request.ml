@@ -695,6 +695,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         Log.info "Dumped %d slots in %.2f seconds to %s" used_slots (Timer.stop timer) path;
         TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
 
+    | TypeQuery.IsCompatibleWith (left, right) ->
+        let left = parse_and_validate left in
+        let right = parse_and_validate right in
+        Resolution.less_or_equal resolution ~left ~right
+        |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
+
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

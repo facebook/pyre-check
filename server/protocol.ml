@@ -54,6 +54,7 @@ module TypeQuery = struct
     | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
+    | IsCompatibleWith of Access.t * Access.t
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t

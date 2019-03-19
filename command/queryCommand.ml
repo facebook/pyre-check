@@ -97,7 +97,8 @@ let parse_query
                   raise (InvalidQuery "Too many arguments to `dump_memory_to_sqlite`")
             in
             Request.TypeQueryRequest (DumpMemoryToSqlite path)
-
+        | "is_compatible_with", [left; right] ->
+            Request.TypeQueryRequest (IsCompatibleWith (access left, access right))
         | "join", [left; right] ->
             Request.TypeQueryRequest (Join (access left, access right))
         | "less_or_equal", [left; right] ->

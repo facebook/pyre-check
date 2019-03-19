@@ -488,6 +488,24 @@ let test_query context =
 
   assert_type_query_response
     ~source:""
+    ~query:"is_compatible_with(int, str)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+
+  assert_type_query_response
+    ~source:
+      {|
+        A = int
+      |}
+    ~query:"is_compatible_with(int, A)"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+
+  assert_type_query_response
+    ~source:""
+    ~query:"is_compatible_with(int, Unknown)"
+    (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
+
+  assert_type_query_response
+    ~source:""
     ~query:"superclasses(Unknown)"
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 

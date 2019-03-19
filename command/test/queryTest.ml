@@ -48,6 +48,19 @@ let test_parse_query context =
     (LessOrEqual (Access.create "int", Access.create "int"));
 
   assert_parses
+    "is_compatible_with(int, bool)"
+    (IsCompatibleWith (Access.create "int", Access.create "bool"));
+  assert_parses
+    "is_compatible_with (int, bool)"
+    (IsCompatibleWith (Access.create "int", Access.create "bool"));
+  assert_parses
+    "is_compatible_with(  int, int)"
+    (IsCompatibleWith (Access.create "int", Access.create "int"));
+  assert_parses
+    "Is_Compatible_With(  int, int)"
+    (IsCompatibleWith (Access.create "int", Access.create "int"));
+
+  assert_parses
     "meet(int, bool)"
     (Meet (Access.create "int", Access.create "bool"));
   assert_parses
@@ -57,6 +70,11 @@ let test_parse_query context =
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";
   assert_fails_to_parse "less_or_eq(int, bool)";
+
+  assert_fails_to_parse "is_compatible_with()";
+  assert_fails_to_parse "is_compatible_with(int, int, int)";
+  assert_fails_to_parse "iscompatible(int, bool)";
+  assert_fails_to_parse "IsCompatibleWith(int, bool)";
 
   assert_fails_to_parse "meet(int, int, int)";
   assert_fails_to_parse "meet(int)";
