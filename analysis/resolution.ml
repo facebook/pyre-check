@@ -449,9 +449,9 @@ let rec resolve_literal resolution expression =
       Type.Any
 
 let resolve_mutable_literals resolution ~expression ~resolved ~expected =
-  match expression with
-  | Some { Node.value = Expression.List _; _ }
-  | Some { Node.value = Expression.ListComprehension _; _ } ->
+  match expression, expected with
+  | Some { Node.value = Expression.List _; _ }, _
+  | Some { Node.value = Expression.ListComprehension _; _ }, _ ->
       begin
         match resolved, expected with
         | Type.Parametric { name = actual_name; parameters = [actual] },
@@ -464,8 +464,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
             resolved
       end
 
-  | Some { Node.value = Expression.Set _; _ }
-  | Some { Node.value = Expression.SetComprehension _; _ } ->
+  | Some { Node.value = Expression.Set _; _ }, _
+  | Some { Node.value = Expression.SetComprehension _; _ }, _ ->
       begin
         match resolved, expected with
         | Type.Parametric { name = actual_name; parameters = [actual] },
@@ -478,8 +478,36 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
             resolved
       end
 
-  | Some { Node.value = Expression.Dictionary _; _ }
-  | Some { Node.value = Expression.DictionaryComprehension _; _ } ->
+  | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _},
+    Type.TypedDictionary { total; fields; _ } ->
+      let resolve_entry { Expression.Dictionary.key; value } =
+        let key = resolve resolution key in
+        match key with
+        | Type.Literal (Type.String name) ->
+            let annotation =
+              let resolved = resolve resolution value in
+              let matching_name { Type.name = expected_name; _ } = name = expected_name in
+              let relax { Type.annotation; _ } =
+                if less_or_equal resolution ~left:resolved ~right:annotation then
+                  annotation
+                else
+                  resolved
+              in
+              List.find fields ~f:matching_name
+              >>| relax
+              |> Option.value ~default:resolved
+            in
+            Some { Type.name; annotation }
+        | _ ->
+            None
+      in
+      List.map entries ~f:resolve_entry
+      |> Option.all
+      >>| Type.TypedDictionary.anonymous ~total
+      |> Option.value ~default:resolved
+
+  | Some { Node.value = Expression.Dictionary _; _ }, _
+  | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ ->
       begin
         match resolved, expected with
         | Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },

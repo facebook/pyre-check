@@ -661,6 +661,7 @@ let test_check_typed_dictionaries _ =
         return baz['alpha']
     |}
     [];
+
   assert_test_typed_dictionary
     {|
       from foo.bar.baz import ClassBasedTypedDictGreekLetters
@@ -669,6 +670,7 @@ let test_check_typed_dictionaries _ =
         return baz['alpha']
     |}
     ["Missing argument [20]: Call `__init__` expects argument `beta`."];
+
   assert_test_typed_dictionary
     {|
       from foo.bar.baz import ClassBasedNonTotalTypedDictGreekLetters
@@ -677,6 +679,7 @@ let test_check_typed_dictionaries _ =
         return baz['alpha']
     |}
     [];
+
   assert_test_typed_dictionary
     {|
       from foo.bar.baz import DecoratedClassBasedTypedDictGreekLetters
@@ -703,7 +706,118 @@ let test_check_typed_dictionaries _ =
       "Invalid type [31]: Expression `NamelessTypedDict` is not a valid type.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
       "but got `unknown`.";
-    ]
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: Movie) -> str:
+        return x["name"]
+      def f(x: str, y: int) -> None:
+        foo({'name' : x, 'year': y})
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: Movie) -> str:
+        return x["name"]
+      def f() -> None:
+        foo({'name' : "Blade Runner", 'year' : 1982})
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: Movie) -> str:
+        return x["name"]
+      def f() -> None:
+        foo({'name' : 'Blade Runner', 'year' : '1982'})
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields " ^
+      "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got " ^
+      "`TypedDict with fields (name: str, year: str)`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: Movie) -> str:
+        return x["name"]
+      def f(x: str, y: int) -> None:
+        foo({'name' : 'Blade Runner', x: y})
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields " ^
+      "(name: str, year: int)` for 1st anonymous parameter to call `foo` but got " ^
+      "`typing.Dict[str, typing.Union[int, str]]`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def foo(x: Movie) -> str:
+        return x["name"]
+      def f() -> None:
+        foo({'name' : "Blade Runner", 'year' : 1982, 'extra_key': 1})
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> str:
+        movie: Movie = {'name' : "Blade Runner", 'year' : 1982}
+        return movie['name']
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> str:
+        movie: Movie = {'name' : "Blade Runner", 'year' : '1982'}
+        return movie['name']
+    |}
+    [
+      "Incompatible variable type [9]: movie is declared to have type " ^
+      "`TypedDict `Movie` with fields (name: str, year: int)` but is used as type " ^
+      "`TypedDict with fields (name: str, year: str)`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> Movie:
+        return {'name' : "Blade Runner", 'year' : 1982}
+    |}
+    [];
+
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f() -> Movie:
+        return {'name' : "Blade Runner", 'year' : '1982'}
+    |}
+    [
+      "Incompatible return type [7]: Expected " ^
+      "`TypedDict `Movie` with fields (name: str, year: int)` but got " ^
+      "`TypedDict with fields (name: str, year: str)`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
+      class Base(): pass
+      class Child(Base): pass
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'something' : Base})
+      def f() -> Movie:
+        return {'name' : "Blade Runner", 'something': Child()}
+    |}
+    [];
+  ()
 
 
 let () =
