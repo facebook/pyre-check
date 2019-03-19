@@ -590,6 +590,32 @@ class FixmeTest(unittest.TestCase):
                 "# pyre-fixme[4]: Description four.\n"
                 "2"
             )
+        arguments.max_line_length = 36
+        arguments.truncate = False
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "concise_description": "Error [2]: Maximum characters.",
+                },
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [2]: Too many characters.",
+                },
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = "1\n2"
+            upgrade.run_fixme(arguments)
+            path_write_text.assert_called_once_with(
+                "# pyre-fixme[2]: Maximum characters.\n"
+                "1\n"
+                "# pyre-fixme[2]: Too many\n"
+                "#  characters.\n"
+                "2"
+            )
 
         arguments.max_line_length = 40
         arguments.truncate = False
@@ -623,8 +649,10 @@ class FixmeTest(unittest.TestCase):
             path_write_text.assert_called_once_with(
                 "1\n"
                 "# pyre-fixme[1]: Description one.\n"
-                "# pyre-fixme[2]: Very long description two.\n"
-                "# pyre-fixme[3]: Very long description three.\n"
+                "# pyre-fixme[2]: Very long\n"
+                "#  description two.\n"
+                "# pyre-fixme[3]: Very long\n"
+                "#  description three.\n"
                 "# pyre-fixme[4]: Description four.\n"
                 "2"
             )
@@ -671,6 +699,67 @@ class FixmeTest(unittest.TestCase):
             upgrade.run_fixme(arguments)
             arguments.comment = None
             path_write_text.assert_called_once_with("2")
+
+        # Test removal of extraneous ignore.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            arguments.max_line_length = 30
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "concise_description": "Error [0]: extraneous",
+                }
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = (
+                "  # pyre-ignore[0]: [1, 2, 3]\n#  continuation comment\n2"
+            )
+            upgrade.run_fixme(arguments)
+            arguments.comment = None
+            arguments.truncate = True
+            path_write_text.assert_called_once_with("2")
+
+        # We don't remove legitimate comments.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            arguments.max_line_length = 30
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "concise_description": "Error [0]: extraneous",
+                }
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = (
+                "  # pyre-ignore[0]: [1, 2, 3]\n# user comment\n2"
+            )
+            upgrade.run_fixme(arguments)
+            arguments.comment = None
+            arguments.truncate = True
+            path_write_text.assert_called_once_with("# user comment\n2")
+
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            arguments.max_line_length = 30
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 1,
+                    "concise_description": "Error [0]: extraneous ignore that's "
+                    "quite long",
+                }
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = (
+                "  # pyre-ignore[0]:\n#  comment that doesn't fit on one line\n"
+                "# pyre-ignore[1]:\n2"
+            )
+            upgrade.run_fixme(arguments)
+            arguments.comment = None
+            arguments.truncate = True
+            path_write_text.assert_called_once_with("# pyre-ignore[1]:\n2")
 
         with patch.object(pathlib.Path, "write_text") as path_write_text:
             errors = [

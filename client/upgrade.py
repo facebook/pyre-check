@@ -191,30 +191,66 @@ def remove_comment_preamble(lines: List[str]) -> None:
             return
 
 
+def _split_across_lines(
+    comment: str, indent: int, max_line_length: Optional[int]
+) -> List[str]:
+    if not max_line_length or len(comment) <= max_line_length:
+        return [comment]
+
+    comment = comment.lstrip()
+    available_columns = max_line_length - indent - len("#  ")
+
+    buffered_line = ""
+    result = []
+    prefix = " " * indent
+    for token in comment.split():
+        if buffered_line and (
+            len(buffered_line) + len(token) + len(" ") > available_columns
+        ):
+            # This new token would make the line exceed the limit,
+            # hence terminate what we have accumulated.
+            result.append(("{}{}".format(prefix, buffered_line)).rstrip())
+            # The first line already has a comment token on it, so don't prefix #. For
+            # the rest, we need to add the comment symbol manually.
+            prefix = "{}#  ".format(" " * indent)
+            buffered_line = ""
+
+        buffered_line = buffered_line + token + " "
+
+    result.append(("{}{}".format(prefix, buffered_line)).rstrip())
+    return result
+
+
 def fix_file(
     arguments: argparse.Namespace,
     filename: str,
     errors: Dict[int, List[Dict[str, str]]],
 ) -> None:
     custom_comment = arguments.comment if hasattr(arguments, "comment") else ""
-    if arguments.truncate:
-        max_line_length = (
-            arguments.max_line_length if arguments.max_line_length > 0 else None
-        )
-    else:
-        max_line_length = None
+    max_line_length = (
+        arguments.max_line_length if arguments.max_line_length > 0 else None
+    )
     path = pathlib.Path(filename)
     lines = path.read_text().split("\n")  # type: List[str]
 
     # Replace lines in file.
     new_lines = []
+    removing_pyre_comments = False
     for index, line in enumerate(lines):
+        if removing_pyre_comments:
+            # Only delete continuation comments of the form
+            # "# pyre-fixme[2]:\n#  expected type `T`."
+            if line.lstrip().startswith("#  "):
+                continue
+            else:
+                removing_pyre_comments = False
         number = index + 1
         if number not in errors:
             new_lines.append(line)
             continue
         if errors[number][0]["code"] == "0":
             # Handle unused ignores.
+            removing_pyre_comments = True
             replacement = re.sub(r"# pyre-(ignore|fixme).*$", "", line).rstrip()
             if replacement == "":
                 remove_comment_preamble(new_lines)
@@ -224,14 +260,21 @@ def fix_file(
 
         comments = []
         for error in errors[number]:
-            indent = line[: -len(line.lstrip(" "))]
-            prefix = "{}# pyre-fixme[{}]".format(indent, error["code"])
+            indent = len(line) - len(line.lstrip(" "))
             description = custom_comment if custom_comment else error["description"]
-            comment = prefix + ": " + description
+            comment = "{}# pyre-fixme[{}]: {}".format(
+                " " * indent, error["code"], description
+            )
+
             if not max_line_length or len(comment) <= max_line_length:
                 comments.append(comment)
             else:
-                comments.append(comment[: (max_line_length - 3)] + "...")
+                if arguments.truncate:
+                    comments.append(comment[: (max_line_length - 3)] + "...")
+                else:
+                    comments.extend(
+                        _split_across_lines(comment, indent, max_line_length)
+                    )
 
         LOG.info(
             "Adding comment%s on line %d: %s",
