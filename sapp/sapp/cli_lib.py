@@ -2,6 +2,7 @@
 
 import logging
 import os
+from functools import wraps
 from typing import Optional
 
 import click
@@ -28,6 +29,36 @@ logger = logging.getLogger("sapp")
 click_log.basic_config(logger)
 
 
+def common_options(func):
+    @click.group(context_settings={"help_option_names": ["--help", "-h"]})
+    @click_log.simple_verbosity_option(logger)
+    @option(
+        "--repository",
+        "-r",
+        default=lambda: find_root(MARKER_DIRECTORIES),
+        type=Path(exists=True, file_okay=False),
+        help="Root of the repository (regardless of the directory analyzed)",
+    )
+    @option(
+        "--database-engine",
+        "--database",
+        type=Choice([DBType.SQLITE, DBType.MEMORY]),
+        default=DBType.SQLITE,
+        help="database engine to use",
+    )
+    @option(
+        "--database-name",
+        "--dbname",
+        callback=default_database,
+        type=Path(dir_okay=False),
+    )
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
     """Try to guess a reasonable database name by looking at the repository
     path and database engine"""
@@ -43,41 +74,7 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
     raise click.BadParameter("Could not guess a database location")
 
 
-@group(context_settings={"help_option_names": ["--help", "-h"]})
-@click_log.simple_verbosity_option(logger)
-@option(
-    "--repository",
-    "-r",
-    default=lambda: find_root(MARKER_DIRECTORIES),
-    type=Path(exists=True, file_okay=False),
-    help="Root of the repository (regardless of the directory analyzed)",
-)
-@option(
-    "--database-engine",
-    "--database",
-    type=Choice([DBType.SQLITE, DBType.MEMORY]),
-    default=DBType.SQLITE,
-    help="database engine to use",
-)
-@option(
-    "--database-name", "--dbname", callback=default_database, type=Path(dir_okay=False)
-)
-@click.pass_context
-def cli(
-    ctx: click.Context,
-    repository: Optional[str],
-    database_engine: DBType,
-    database_name: Optional[str],
-):
-    ctx.obj = Context(
-        repository=repository,
-        database_engine=database_engine,
-        database_name=database_name,
-    )
-    logger.debug(f"Context: {ctx.obj}")
-
-
-@cli.command(help="interactive exploration of issues")
+@click.command(help="interactive exploration of issues")
 @pass_context
 def explore(ctx: Context):
     scope_vars = Interactive(
@@ -86,7 +83,7 @@ def explore(ctx: Context):
     IPython.start_ipython(argv=[], user_ns=scope_vars)
 
 
-@cli.command(help="parse static analysis output and save to disk")
+@click.command(help="parse static analysis output and save to disk")
 @pass_context
 @option("--run-kind", type=str)
 @option("--branch", type=str)
@@ -165,3 +162,6 @@ def analyze(
     ]
     pipeline = Pipeline(pipeline_steps)
     pipeline.run(input_files, summary_blob)
+
+
+commands = [analyze, explore]

@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from sapp.cli_lib import cli
+from tools.sapp.sapp.cli import cli
 
 
 PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
