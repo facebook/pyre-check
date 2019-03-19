@@ -602,23 +602,33 @@ let test_convert_accesses _ =
     }))
 
 
-let test_create_name_from_identifiers _ =
-  let assert_create identifiers expected =
+let test_create_name _ =
+  let assert_create_from_identifiers identifiers expected =
     let identifier_nodes = List.map ~f:Node.create_with_default_location identifiers in
     assert_equal
-      ~printer:Expression.show
       expected
       (create_name_from_identifiers identifier_nodes)
   in
-  assert_create
+  assert_create_from_identifiers
     ["a"]
-    ~+(Name (Name.Identifier "a"));
-  assert_create
+    (Name.Identifier "a");
+  assert_create_from_identifiers
     ["a"; "b"; "c"]
-    ~+(Name (Name.Attribute {
+    (Name.Attribute {
       base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
       attribute = "c";
-    }))
+    });
+
+  let assert_create raw_string expected =
+    assert_equal expected (create_name ~location:Location.Reference.any raw_string)
+  in
+  assert_create "a" (Name.Identifier "a");
+  assert_create
+    "a.b.c"
+    (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
+      attribute = "c";
+    })
 
 
 let () =
@@ -634,6 +644,6 @@ let () =
     "is_assert_function">::test_is_assert_function;
     "exists_in_list">::test_exists_in_list;
     "convert_accesses">::test_convert_accesses;
-    "create_name_from_identifiers">::test_create_name_from_identifiers;
+    "create_name">::test_create_name;
   ]
   |> Test.run

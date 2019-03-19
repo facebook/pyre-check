@@ -741,7 +741,21 @@ let create_name_from_identifiers identifiers =
           })
         |> Node.create ~location
   in
-  create (List.rev identifiers)
+  match create (List.rev identifiers) with
+  | { Node.value = Name name; _ } -> name
+  | _ -> failwith "Impossible."
+
+
+let create_name ~location name =
+  let identifier_names name =
+    if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  identifier_names name
+  |> List.map ~f:(Node.create ~location)
+  |> create_name_from_identifiers
 
 
 let rec delocalize ({ Node.value; _ } as expression) =
