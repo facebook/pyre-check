@@ -196,12 +196,22 @@ class ProjectFilesMonitorTest(unittest.TestCase):
                 os.path.exists(os.path.join(monitor_folder, "file_monitor.pid"))
             )
 
-    def test_socket_connection(self):
+    @patch.object(os.path, "realpath")
+    def test_socket_connection(self, realpath):
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
         with tempfile.TemporaryDirectory() as root:
-            socket_path = os.path.join(root, ".pyre", "server", "json_server.sock")
-            os.makedirs(os.path.dirname(socket_path))
+            realpath.side_effect = lambda path: path.replace(
+                os.path.dirname(path), root  # replace parent directories with tempdir
+            )
+
+            # Unix sockets have a limited length of ~100 characters, so the server uses
+            # symbolic links as a workaround. We need to properly translate these.
+            socket_link = os.path.join(
+                "long_name" * 15, ".pyre", "server", "json_server.sock"
+            )
+
+            socket_path = os.path.join(root, "json_server.sock")
 
             socket_created_lock = threading.Lock()
             socket_created_lock.acquire()  # hold lock until server creates socket
@@ -216,5 +226,5 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             server_thread.start()
 
             with socket_created_lock:
-                SocketConnection(socket_path)
+                ProjectFilesMonitor._connect_to_socket(socket_link)
             server_thread.join()

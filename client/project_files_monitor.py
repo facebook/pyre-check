@@ -175,7 +175,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     @staticmethod
     def _connect_to_socket(socket_path: str) -> SocketConnection:
         try:
-            return SocketConnection(socket_path)
+            return SocketConnection(os.path.realpath(socket_path))
         except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
             raise ProjectFilesMonitorException(
                 "Failed to connect to server at `{}`. Reason: `{}`".format(
