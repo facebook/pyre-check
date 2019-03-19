@@ -115,13 +115,17 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         ]
 
     @staticmethod
-    def is_alive(analysis_directory_root: str) -> bool:
-        pid_path = os.path.join(
+    def pid_path(analysis_directory_root: str) -> str:
+        return os.path.join(
             analysis_directory_root,
             ".pyre",
             ProjectFilesMonitor.NAME,
             "{}.pid".format(ProjectFilesMonitor.NAME),
         )
+
+    @staticmethod
+    def is_alive(analysis_directory_root: str) -> bool:
+        pid_path = ProjectFilesMonitor.pid_path(analysis_directory_root)
         try:
             with open(pid_path) as file:
                 pid = int(file.read())

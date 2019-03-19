@@ -4,8 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+import os
 from typing import List
 
+from ..project_files_monitor import ProjectFilesMonitor
 from .command import ClientException, Command, State
 from .kill import Kill
 
@@ -38,3 +40,11 @@ class Stop(Command):
             except ClientException:
                 LOG.warning("Could not stop server, attempting to kill.")
                 _kill()
+
+        try:
+            pid_path = ProjectFilesMonitor.pid_path(self._analysis_directory.get_root())
+            with open(pid_path) as file:
+                pid = int(file.read())
+                os.kill(pid, 2)  # sigint
+        except (FileNotFoundError, OSError, ValueError):
+            pass
