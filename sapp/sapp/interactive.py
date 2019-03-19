@@ -515,14 +515,14 @@ set_frame(ID)   select a trace frame to explore
             self._output_trace_expansion(branches, leaves_strings)
 
     @catch_user_error()
-    def branch(self, selected_index: int) -> None:
+    def branch(self, selected_number: int) -> None:
         """Selects a branch when there are multiple possible traces to follow.
 
         The trace output that follows includes the new branch and its children
         frames.
 
         Parameters:
-            selected_index: int    branch index from expand() output
+            selected_number: int    branch number from expand() output
         """
         self._verify_entrypoint_selected()
         self._verify_multiple_branches()
@@ -530,15 +530,14 @@ set_frame(ID)   select a trace frame to explore
         with self.db.make_session() as session:
             branches = self._get_trace_frame_branches(session)
 
-            if selected_index < 0 or selected_index >= len(branches):
-                self.warning(
-                    "Branch index out of bounds "
-                    f"(expected 0-{len(branches) - 1} but got {selected_index})."
+            if selected_number < 1 or selected_number > len(branches):
+                raise UserError(
+                    "Branch number out of bounds "
+                    f"(expected 1-{len(branches)} but got {selected_number})."
                 )
-                return
 
             new_navigation = self._navigate_trace_frames(
-                session, branches, selected_index
+                session, branches, selected_number - 1
             )
 
         new_trace_tuples = self._create_trace_tuples(new_navigation)
@@ -684,7 +683,7 @@ set_frame(ID)   select a trace frame to explore
     ) -> None:
         for i, (frame, leaves) in enumerate(zip(trace_frames, leaves_strings)):
             prefix = (
-                "[*]" if i == self._current_branch_index(trace_frames) else f"[{i}]"
+                "[*]" if i == self._current_branch_index(trace_frames) else f"[{i + 1}]"
             )
             print(f"{prefix} {frame.callee} : {frame.callee_port}")
             print(f"{' ' * 8}[{frame.leaf_assoc[0].trace_length} hops: {leaves}]")
@@ -719,6 +718,7 @@ set_frame(ID)   select a trace frame to explore
 
     def _output_trace_tuples(self, trace_tuples):
         expand = "+"
+        max_length_index = len(str(len(trace_tuples) - 1)) + 1
         max_length_split = max(
             max(
                 len(str(trace_tuple.branches)) + len(expand)
@@ -739,6 +739,7 @@ set_frame(ID)   select a trace frame to explore
 
         print(  # table header
             f"{' ' * 5}"
+            f"{'#':{max_length_index}}"
             f"{'⎇':{max_length_split}}"
             f" {'[callable]':{max_length_callable}}"
             f" {'[port]':{max_length_condition}}"
@@ -747,6 +748,7 @@ set_frame(ID)   select a trace frame to explore
 
         for i, trace_tuple in enumerate(trace_tuples):
             prefix = "-->" if i == self.current_trace_frame_index else " " * 3
+            prefix += f" {(i + 1):<{max_length_index}}"
 
             if trace_tuple.missing:
                 output_string = (
@@ -763,7 +765,7 @@ set_frame(ID)   select a trace frame to explore
                 )
                 output_string = (
                     f" {prefix}"
-                    f" {branches_string}"
+                    f"{branches_string}"
                     f" {trace_tuple.trace_frame.callee:{max_length_callable}}"
                     f" {trace_tuple.trace_frame.callee_port:{max_length_condition}}"
                     f" {trace_tuple.trace_frame.filename}"

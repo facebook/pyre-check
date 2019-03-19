@@ -608,14 +608,14 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             output.split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                "        leaf       source file1.py:1|1|1",
-                " -->    call2      result file2.py:1|1|2",
-                "        call3      result file3.py:1|1|3",
-                "        main       root   file4.py:1|1|4",
-                "        call4      param0 file4.py:1|1|4",
-                "        call5      param1 file5.py:1|1|5",
-                "        leaf       sink   file6.py:1|1|6",
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file1.py:1|1|1",
+                " --> 2    call2      result file2.py:1|1|2",
+                "     3    call3      result file3.py:1|1|3",
+                "     4    main       root   file4.py:1|1|4",
+                "     5    call4      param0 file4.py:1|1|4",
+                "     6    call5      param1 file5.py:1|1|5",
+                "     7    leaf       sink   file6.py:1|1|6",
                 "",
             ],
         )
@@ -627,14 +627,14 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             output.split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                "        leaf       source file1.py:1|1|1",
-                "        call2      result file2.py:1|1|2",
-                "        call3      result file3.py:1|1|3",
-                "        main       root   file4.py:1|1|4",
-                " -->    call4      param0 file4.py:1|1|4",
-                "        call5      param1 file5.py:1|1|5",
-                "        leaf       sink   file6.py:1|1|6",
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file1.py:1|1|1",
+                "     2    call2      result file2.py:1|1|2",
+                "     3    call3      result file3.py:1|1|3",
+                "     4    main       root   file4.py:1|1|4",
+                " --> 5    call4      param0 file4.py:1|1|4",
+                "     6    call5      param1 file5.py:1|1|5",
+                "     7    leaf       sink   file6.py:1|1|6",
                 "",
             ],
         )
@@ -690,9 +690,9 @@ class InteractiveTest(TestCase):
         self.interactive.set_issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
-        self.assertIn("        leaf       source file.py:1|1|1", output)
-        self.assertIn(" -->    call1      root   file.py:1|2|3", output)
-        self.assertIn("        leaf       sink   file.py:1|1|2", output)
+        self.assertIn("     1    leaf       source file.py:1|1|1", output)
+        self.assertIn(" --> 2    call1      root   file.py:1|2|3", output)
+        self.assertIn("     3    leaf       sink   file.py:1|1|2", output)
 
     def testTraceFromFrame(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -719,9 +719,9 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                " -->    call2      param0 file.py:1|1|1",
-                "        leaf       sink   file.py:1|2|2",
+                "     # ⎇  [callable] [port] [location]",
+                " --> 1    call2      param0 file.py:1|1|1",
+                "     2    leaf       sink   file.py:1|2|2",
                 "",
             ],
         )
@@ -868,9 +868,9 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                "        leaf       source file.py:1|1|1",
-                " -->    call1      root   file.py:1|2|3",
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file.py:1|1|1",
+                " --> 2    call1      root   file.py:1|2|3",
                 "",
             ],
         )
@@ -953,10 +953,10 @@ class InteractiveTest(TestCase):
 
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
-        self.assertIn("     +2 leaf       source file.py:0|0|0", output)
-        self.assertIn(" -->    call1      root   file.py:1|2|3", output)
-        self.assertIn("     +2 call2      param2 file.py:2|2|2", output)
-        self.assertIn("     +2 leaf       sink   file.py:4|4|4", output)
+        self.assertIn("     1 +2 leaf       source file.py:0|0|0", output)
+        self.assertIn(" --> 2    call1      root   file.py:1|2|3", output)
+        self.assertIn("     3 +2 call2      param2 file.py:2|2|2", output)
+        self.assertIn("     4 +2 leaf       sink   file.py:4|4|4", output)
 
     def testExpand(self):
         self._set_up_branched_trace()
@@ -972,7 +972,7 @@ class InteractiveTest(TestCase):
             output,
         )
         self.assertIn(
-            "[1] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            "[2] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
             output,
         )
 
@@ -987,7 +987,7 @@ class InteractiveTest(TestCase):
             output,
         )
         self.assertIn(
-            "[1] call2 : param2\n        [1 hops: sink1]\n        [file.py:3|3|3]",
+            "[2] call2 : param2\n        [1 hops: sink1]\n        [file.py:3|3|3]",
             output,
         )
 
@@ -1000,7 +1000,7 @@ class InteractiveTest(TestCase):
             "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:4|4|4]", output
         )
         self.assertIn(
-            "[1] leaf : sink\n        [0 hops: sink1]\n        [file.py:5|5|5]", output
+            "[2] leaf : sink\n        [0 hops: sink1]\n        [file.py:5|5|5]", output
         )
 
     def testGetTraceFrameBranches(self):
@@ -1036,32 +1036,32 @@ class InteractiveTest(TestCase):
 
         # We are testing for the source location, which differs between branches
         self._clear_stdout()
-        self.interactive.branch(1)  # location 0|0|0 -> 1|1|1
+        self.interactive.branch(2)  # location 0|0|0 -> 1|1|1
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> +2 leaf       source file.py:1|1|1", output)
+        self.assertIn(" --> 1 +2 leaf       source file.py:1|1|1", output)
 
         self._clear_stdout()
-        self.interactive.branch(0)  # location 1|1|1 -> 0|0|0
+        self.interactive.branch(1)  # location 1|1|1 -> 0|0|0
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> +2 leaf       source file.py:0|0|0", output)
+        self.assertIn(" --> 1 +2 leaf       source file.py:0|0|0", output)
 
         self.interactive.next_cursor_location()
         self.interactive.next_cursor_location()
 
         self._clear_stdout()
-        self.interactive.branch(1)  # location 2|2|2 -> 3|3|3
+        self.interactive.branch(2)  # location 2|2|2 -> 3|3|3
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> +2 call2      param2 file.py:3|3|3", output)
+        self.assertIn(" --> 3 +2 call2      param2 file.py:3|3|3", output)
 
         self.interactive.next_cursor_location()
 
         self._clear_stdout()
-        self.interactive.branch(1)  # location 4|4|4 -> 5|5|5
-        output = self.stdout.getvalue().strip()
-        self.assertIn("     +2 call2      param2 file.py:3|3|3", output)
-        self.assertIn(" --> +2 leaf       sink   file.py:5|5|5", output)
-
         self.interactive.branch(2)  # location 4|4|4 -> 5|5|5
+        output = self.stdout.getvalue().strip()
+        self.assertIn("     3 +2 call2      param2 file.py:3|3|3", output)
+        self.assertIn(" --> 4 +2 leaf       sink   file.py:5|5|5", output)
+
+        self.interactive.branch(3)  # location 4|4|4 -> 5|5|5
         stderr = self.stderr.getvalue().strip()
         self.assertIn("out of bounds", stderr)
 
@@ -1147,24 +1147,24 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                " --> +2 leaf       source file.py:1|1|1",
-                "        call1      root   file.py:1|2|3",
-                "        leaf       sink   file.py:1|2|2",
+                "     # ⎇  [callable] [port] [location]",
+                " --> 1 +2 leaf       source file.py:1|1|1",
+                "     2    call1      root   file.py:1|2|3",
+                "     3    leaf       sink   file.py:1|2|2",
                 "",
             ],
         )
 
         self._clear_stdout()
-        self.interactive.branch(1)
+        self.interactive.branch(2)
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     ⎇  [callable] [port] [location]",
-                "        leaf       source file.py:1|1|1",
-                " --> +2 prev_call  result file.py:1|1|1",
-                "        call1      root   file.py:1|2|3",
-                "        leaf       sink   file.py:1|2|2",
+                "     # ⎇  [callable] [port] [location]",
+                "     1    leaf       source file.py:1|1|1",
+                " --> 2 +2 prev_call  result file.py:1|1|1",
+                "     3    call1      root   file.py:1|2|3",
+                "     4    leaf       sink   file.py:1|2|2",
                 "",
             ],
         )
