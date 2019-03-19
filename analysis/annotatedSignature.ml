@@ -88,6 +88,7 @@ type argument =
 type ranks = {
   arity: int;
   annotation: int;
+  position: int;
 }
 
 
@@ -134,6 +135,7 @@ let select
         ranks = {
           arity = 0;
           annotation = 0;
+          position = 0;
         };
         reasons = {
           arity = [];
@@ -585,7 +587,7 @@ let select
   let calculate_rank
       ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
     let arity_rank = List.length arity in
-    let (_, annotation_rank) =
+    let (positions, annotation_rank) =
       let count_unique (positions, count) = function
         | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position) ->
             (Set.add positions position, count + 1)
@@ -596,7 +598,15 @@ let select
       in
       List.fold ~init:(Int.Set.empty, 0) ~f:(count_unique) annotation
     in
-    { signature_match with ranks = { arity = arity_rank; annotation = annotation_rank }}
+    let position_rank =
+      Int.Set.min_elt positions
+      >>| Int.neg
+      |> Option.value ~default:Int.min_value
+    in
+    {
+      signature_match with
+      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank }
+    }
   in
   let find_closest signature_matches =
     let get_arity_rank { ranks = { arity; _ }; _ } =
@@ -604,6 +614,9 @@ let select
     in
     let get_annotation_rank { ranks = { annotation; _ }; _ } =
       annotation
+    in
+    let get_position_rank { ranks = { position; _ }; _ } =
+      position
     in
     let rec get_best_rank ~best_matches ~best_rank ~getter = function
       | [] ->
@@ -653,6 +666,10 @@ let select
     signature_matches
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_arity_rank
     |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_annotation_rank
+    |> get_best_rank ~best_matches:[] ~best_rank:Int.max_value ~getter:get_position_rank
+    (* Each get_best_rank reverses the list, because we have an odd number, we need an extra
+       reverse in order to prefer the first defined overload *)
+    |> List.rev
     |> List.hd
     >>| determine_reason
     |> Option.value ~default:(NotFound { callable; reason = None })

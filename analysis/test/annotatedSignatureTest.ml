@@ -570,6 +570,20 @@ let test_select _ =
     "(i=1, d=2)"
     (`NotFoundUnexpectedKeywordWithClosest ("[[Named(c, int), Named(d, int)], int]", "i"));
 
+  (* Prefer the overload where the mismatch comes latest *)
+  assert_select
+    ~allow_undefined:true
+    "[..., $unknown][[[int, str], int][[str, int], str]]"
+    "(1, 1)"
+    (`NotFoundMismatchWithClosest
+       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+  assert_select
+    ~allow_undefined:true
+    "[..., $unknown][[[str, int], str][[int, str], int]]"
+    "(1, 1)"
+    (`NotFoundMismatchWithClosest
+       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+
   (* Void functions. *)
   assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");
   assert_select "[[int], None]" "(1)" (`Found "[[int], None]");

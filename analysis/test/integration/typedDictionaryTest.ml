@@ -638,6 +638,23 @@ let test_check_typed_dictionaries _ =
 
   assert_test_typed_dictionary
     {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      ReversedMovie = mypy_extensions.TypedDict('Movie', {'year': 'int', 'name': str})
+      def f() -> None:
+        movie: Movie
+        movie['name'] = 7
+        reversedMovie: ReversedMovie
+        reversedMovie['name'] = 7
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter " ^
+      "to call `TypedDictionary.__setitem__` but got `int`.";
+      "Incompatible parameter type [6]: Expected `str` for 2nd anonymous parameter " ^
+      "to call `TypedDictionary.__setitem__` but got `int`.";
+    ];
+
+  assert_test_typed_dictionary
+    {|
       from foo.bar.baz import ClassBasedTypedDictGreekLetters
       def f() -> int:
         baz = ClassBasedTypedDictGreekLetters(alpha = 7, beta = "a", gamma = True)
