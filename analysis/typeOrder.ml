@@ -896,11 +896,16 @@ and less_or_equal
         (* 1. Go one level down in the class hierarchy and try from there. *)
         let step_into_subclasses () =
           let target_to_parametric { Target.target; parameters } =
+            let parameters =
+              Handler.find (Handler.edges ()) target
+              >>| get_instantiated_successors ~generic_index ~parameters
+              >>= get_generic_parameters ~generic_index
+              |> Option.value ~default:[]
+            in
             Handler.find (Handler.annotations ()) target
-            >>= fun annotation ->
-            Type.split annotation
-            |> fst
-            |> fun primitive -> parametric ~primitive ~parameters
+            >>| Type.split
+            >>| fst
+            >>= (fun primitive -> parametric ~primitive ~parameters)
           in
           let successors =
             let left_index = index_of handler left_primitive in

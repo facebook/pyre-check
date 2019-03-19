@@ -1418,6 +1418,84 @@ let test_less_or_equal _ =
        ~implements
        ~left:"typing.Callable[[int], str]"
        ~right:"B[str]");
+
+  let assert_less_or_equal ?(source = "") ~left ~right expected_result =
+    let resolution =
+      let source =
+        parse source
+        |> Preprocessing.preprocess
+      in
+      AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
+      |> (fun environment -> TypeCheck.resolution environment ())
+    in
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> Resolution.parse_annotation resolution
+    in
+    let left, right = parse_annotation left, parse_annotation right in
+    assert_equal
+      ~printer:(Printf.sprintf "%B")
+      expected_result
+      (Resolution.less_or_equal resolution ~left ~right)
+  in
+  assert_less_or_equal
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+    |}
+    ~left:"NonGenericChild"
+    ~right:"GenericBase[typing.Any, typing.Any]"
+    true;
+  (* This should get filtered by mismatch with any postprocessing *)
+  assert_less_or_equal
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+    |}
+    ~left:"NonGenericChild"
+    ~right:"GenericBase[int, str]"
+    false;
+  assert_less_or_equal
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1", contravariant=True)
+      T2 = TypeVar("T2", contravariant=True)
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+    |}
+    ~left:"GenericBase[typing.Any, typing.Any]"
+    ~right:"GenericBase[int, str]"
+    true;
+  assert_less_or_equal
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1", contravariant=True)
+      T2 = TypeVar("T2", contravariant=True)
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+    |}
+    ~left:"NonGenericChild"
+    ~right:"GenericBase[int, str]"
+    true;
+  assert_less_or_equal
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1")
+      T2 = TypeVar("T2")
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+      class Grandchild(NonGenericChild): pass
+    |}
+    ~left:"Grandchild"
+    ~right:"GenericBase[typing.Any, typing.Any]"
+    true;
   ()
 
 
@@ -2136,6 +2214,37 @@ let test_join _ =
   assert_type_equal
     (join order (Type.literal_string "A") (Type.integer))
     (Type.union [Type.string; Type.integer]);
+
+  let assert_join ?(source = "") ~left ~right expected_result =
+    let resolution =
+      let source =
+        parse source
+        |> Preprocessing.preprocess
+      in
+      AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
+      |> (fun environment -> TypeCheck.resolution environment ())
+    in
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> Resolution.parse_annotation resolution
+    in
+    let left, right = parse_annotation left, parse_annotation right in
+    assert_type_equal
+      (parse_annotation expected_result)
+      (Resolution.join resolution left right)
+  in
+  assert_join
+    ~source:{|
+      from typing import Generic, TypeVar
+      T1 = TypeVar("T1", covariant=True)
+      T2 = TypeVar("T2", covariant=True)
+      class GenericBase(Generic[T1, T2]): pass
+      class NonGenericChild(GenericBase): pass
+    |}
+    ~left:"NonGenericChild"
+    ~right:"GenericBase[int, str]"
+    "GenericBase[typing.Any, typing.Any]";
   ()
 
 
