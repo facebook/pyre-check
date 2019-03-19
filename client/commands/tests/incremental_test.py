@@ -28,7 +28,7 @@ class IncrementalTest(unittest.TestCase):
         commands_Command_state.return_value = state
         file_monitor_instance = MagicMock()
         ProjectFilesMonitor.return_value = file_monitor_instance
-        ProjectFilesMonitor._is_alive.return_value = False
+        ProjectFilesMonitor.is_alive.return_value = False
 
         arguments = mock_arguments()
 
@@ -58,14 +58,14 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor._is_alive.assert_called_once_with(".")
+            ProjectFilesMonitor.is_alive.assert_called_once_with(".")
             ProjectFilesMonitor.assert_called_once_with(
                 arguments, configuration, analysis_directory
             )
             file_monitor_instance.daemonize.assert_called_once_with()
 
         ProjectFilesMonitor.reset_mock()
-        ProjectFilesMonitor._is_alive.return_value = True
+        ProjectFilesMonitor.is_alive.return_value = True
         file_monitor_instance.reset_mock()
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
@@ -92,7 +92,7 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor._is_alive.assert_called_once_with(".")
+            ProjectFilesMonitor.is_alive.assert_called_once_with(".")
             ProjectFilesMonitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 

@@ -115,7 +115,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         ]
 
     @staticmethod
-    def _is_alive(analysis_directory_root: str) -> bool:
+    def is_alive(analysis_directory_root: str) -> bool:
         pid_path = os.path.join(
             analysis_directory_root,
             ".pyre",

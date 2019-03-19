@@ -94,7 +94,7 @@ class Incremental(Reporting):
             super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
 
     def _refresh_file_monitor(self) -> None:
-        if not ProjectFilesMonitor._is_alive(self._analysis_directory.get_root()):
+        if not ProjectFilesMonitor.is_alive(self._analysis_directory.get_root()):
             LOG.info("File monitor is not running.")
             try:
                 ProjectFilesMonitor(
