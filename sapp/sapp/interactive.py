@@ -72,6 +72,7 @@ show()          show info about selected issue or trace frame
 trace()         show a trace of the selected issue or trace frame
 prev()/p()      move backward within the trace
 next()/n()      move forward within the trace
+jump(NUM)       jump to a specific trace frame in a trace
 expand()        show alternative trace branches
 branch(INDEX)   select a trace branch
 {list_string}          show source code at the current trace frame
@@ -100,6 +101,7 @@ set_frame(ID)   select a trace frame to explore
             "n": self.next_cursor_location,
             "prev": self.prev_cursor_location,
             "p": self.prev_cursor_location,
+            "jump": self.jump,
             "expand": self.expand,
             "branch": self.branch,
             "list": self.list_source_code,
@@ -466,6 +468,23 @@ set_frame(ID)   select a trace frame to explore
         """
         self._verify_entrypoint_selected()
         self.current_trace_frame_index = max(self.current_trace_frame_index - 1, 0)
+        self.trace()
+
+    @catch_user_error()
+    def jump(self, selected_number: int) -> None:
+        """Jump to a specific trace frame in a trace.
+
+        Parameters:
+            selected_number: int    the trace frame number from trace() output
+        """
+        self._verify_entrypoint_selected()
+        if selected_number < 1 or selected_number > len(self.trace_tuples):
+            raise UserError(
+                "Trace frame number out of bounds "
+                f"(expected 1-{len(self.trace_tuples)} but got {selected_number})."
+            )
+
+        self.current_trace_frame_index = selected_number - 1
         self.trace()
 
     @catch_user_error()

@@ -831,6 +831,64 @@ class InteractiveTest(TestCase):
         self.interactive.prev_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
 
+    def testJumpToLocation(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        issue = self._generic_issue()
+        issue_instance = self._generic_issue_instance()
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.POSTCONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="source",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="leaf",
+                callee_port="sink",
+                callee_location=SourceLocation(1, 2),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        assocs = [
+            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
+            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
+        ]
+        with self.db.make_session() as session:
+            session.add(run)
+            session.add(issue)
+            session.add(issue_instance)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.commit()
+
+        self.interactive.setup()
+        self.interactive.set_issue(1)
+        self.assertEqual(self.interactive.current_trace_frame_index, 1)
+
+        self.interactive.jump(1)
+        self.assertEqual(self.interactive.current_trace_frame_index, 0)
+
+        self.interactive.jump(3)
+        self.assertEqual(self.interactive.current_trace_frame_index, 2)
+
+        self.interactive.jump(4)
+        self.assertEqual(self.interactive.current_trace_frame_index, 2)
+
+        self.interactive.jump(0)
+        self.assertEqual(self.interactive.current_trace_frame_index, 2)
+
     def testTraceNoSinks(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
