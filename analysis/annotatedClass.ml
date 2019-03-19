@@ -328,6 +328,7 @@ module Attribute = struct
       ~parent
       ?instantiated
       ?(defined = true)
+      ?(inherited = false)
       ?(default_class_attribute = false)
       {
         Node.location;
@@ -373,6 +374,7 @@ module Attribute = struct
       in
       if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
          not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
+         not inherited &&
          primitive then
         Some class_annotation, None, true  (* Enums override values. *)
       else
@@ -687,7 +689,7 @@ let attributes
           ~instantiated
           ~class_attributes
           attributes
-          ({ Node.value = definition; _ } as parent) =
+          ({ Node.value = ({ Class.name = parent_name; _ } as definition); _ } as parent) =
         let collect_attributes attributes attribute =
           let reverse_define_order
               { Node.value = { Statement.Attribute.defines; _ } as attribute_value; location } =
@@ -706,6 +708,7 @@ let attributes
               ~resolution
               ~parent
               ~instantiated
+              ~inherited:(name <> parent_name)
               ~default_class_attribute:class_attributes
           in
           let existing_attribute =

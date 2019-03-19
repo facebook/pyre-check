@@ -938,19 +938,7 @@ let test_check_missing_attribute _ =
         a: typing.Any
       Foo.a = 1
     |}
-    [];
-
-  assert_type_errors
-    {|
-      class Foo(enum.IntEnum):
-        A: int = 1
-      class Bar:
-        A = Foo.A.value
-    |}
-    [
-      "Missing attribute annotation [4]: Attribute `A` of class `Bar` has type `int` but no type \
-       is specified.";
-    ]
+    []
 
 
 let test_check_getattr _ =
@@ -1077,16 +1065,6 @@ let test_check_getattr _ =
 let test_check_metaclass_attributes _ =
   assert_type_errors
     {|
-      class C(enum.Enum):
-        ...
-      def f() -> None:
-        all_cases = [kind for kind in C]
-        reveal_type(all_cases)
-    |}
-    ["Revealed type [-1]: Revealed type for `all_cases` is `typing.List[C]`."];
-
-  assert_type_errors
-    {|
       class Meta(type):
         def f(cls) -> int:
           return 0
@@ -1098,69 +1076,11 @@ let test_check_metaclass_attributes _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
 
-let test_check_enumeration_attributes _ =
-  assert_type_errors
-    {|
-      class C(enum.IntEnum):
-        a: int = 1
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class C(enum.IntEnum):
-        a = 1
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class C(enum.IntEnum):
-        a: int
-    |}
-    [
-      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have non-optional \
-       type `C` but is never initialized.";
-    ];
-
-  assert_type_errors
-    {|
-      class C(enum.IntEnum):
-        a: str = 1
-    |}
-    [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `C` has type `str` but is \
-       used as type `int`.";
-    ];
-
-  assert_type_errors
-    {|
-      class C(enum.Enum):
-        a = enum.auto()
-    |}
-    [];
-
-  assert_type_errors
-    {|
-      class Color(enum.Enum):
-        RED = "red"
-        BLUE = "blue"
-
-      def foo() -> Color:
-        return Color.RED
-
-      def bar() -> str:
-        return Color.RED
-    |}
-    ["Incompatible return type [7]: Expected `str` but got `Color`."]
-
-
 let () =
   "attribute">:::[
     "check_attributes">::test_check_attributes;
     "check_missing_attribute">::test_check_missing_attribute;
     "check_getattr">::test_check_getattr;
     "check_metaclass_attributes">::test_check_metaclass_attributes;
-    "check_enumeration_attributes">::test_check_enumeration_attributes;
   ]
   |> Test.run

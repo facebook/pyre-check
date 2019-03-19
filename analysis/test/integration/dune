@@ -20,6 +20,7 @@
   controlFlowTest
   dataClassTest
   decoratorTest
+  enumerationTest
   errorMessageTest
   formatStringTest
   generatorTest

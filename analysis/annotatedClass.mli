@@ -116,6 +116,7 @@ module Attribute : sig
     -> parent: class_t
     -> ?instantiated: Type.t
     -> ?defined: bool
+    -> ?inherited: bool
     -> ?default_class_attribute: bool
     -> Statement.Attribute.t
     -> t
