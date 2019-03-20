@@ -98,7 +98,7 @@ module State (Context: Context) = struct
     let resolution =
       TypeCheck.resolution_with_key
         ~environment:Context.environment
-        ~parent:(parent >>| Reference.expression)
+        ~parent
         ~name
         ~key
     in

@@ -142,7 +142,7 @@ val resolution
 
 val resolution_with_key
   :  environment: (module Environment.Handler)
-  -> parent: Expression.Access.t option
+  -> parent: Reference.t option
   -> name: Reference.t
   -> key: int option
   -> Resolution.t

@@ -33,7 +33,7 @@ val create
   -> class_representation: (Type.t -> class_representation option)
   -> constructor: (instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t)
   -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
-  -> ?parent: Access.t
+  -> ?parent: Reference.t
   -> unit
   -> t
 
@@ -48,8 +48,8 @@ val type_variable_exists: t -> variable: Type.t -> bool
 val annotations: t -> Annotation.t Access.Map.t
 val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
 
-val parent: t -> Access.t option
-val with_parent: t -> parent: Access.t option -> t
+val parent: t -> Reference.t option
+val with_parent: t -> parent: Reference.t option -> t
 
 val order: t -> (module TypeOrder.Handler)
 

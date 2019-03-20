@@ -360,7 +360,7 @@ let test_redirect _ =
   in
   assert_redirect ~source:"a = 1" "a" ("a", []);
   assert_redirect
-    ~parent:(Access.create "Subclass")
+    ~parent:(Reference.create "Subclass")
     ~source:
       {|
         class Superclass: pass
@@ -369,7 +369,7 @@ let test_redirect _ =
     "super()"
     ("$super", ["$super", Type.Primitive "Superclass"]);
   assert_redirect
-    ~parent:(Access.create "Superclass")
+    ~parent:(Reference.create "Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -379,7 +379,7 @@ let test_redirect _ =
     ("$super.foo()", ["$super", Type.object_primitive]);
 
   assert_redirect
-    ~parent:(Access.create "Superclass")
+    ~parent:(Reference.create "Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -1131,7 +1131,7 @@ let test_forward_access _ =
           attribute: int = 1
           def method(self) -> int: ...
       |}
-    ~parent:(Access.create "Class")
+    ~parent:(Reference.create "Class")
     "super().__init__()"
     [
       { annotation = Type.Primitive "Super"; element = Value };

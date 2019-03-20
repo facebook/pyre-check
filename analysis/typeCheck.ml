@@ -86,9 +86,7 @@ module AccessState = struct
     (* Resolve `super()` calls. *)
     | (Access.Identifier "super") :: (Access.Call _) :: tail ->
         (Resolution.parent resolution
-         >>| (fun parent ->
-             Access.expression parent
-             |> Resolution.parse_annotation resolution)
+         >>| (fun parent -> Resolution.parse_reference resolution parent)
          >>= Resolution.class_representation resolution
          >>| (fun { Resolution.successors; _ } -> successors)
          >>|  List.filter
@@ -1789,7 +1787,7 @@ module State = struct
     in
     create
       ~configuration
-      ~resolution:(Resolution.with_parent resolution ~parent:(parent >>| Reference.expression))
+      ~resolution:(Resolution.with_parent resolution ~parent)
       ~define:define_node
       ()
     |> check_decorators
