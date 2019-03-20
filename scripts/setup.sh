@@ -16,7 +16,7 @@ die() {
 COMPILER_VERSION="4.06.0"
 DEVELOPMENT_COMPILER="${COMPILER_VERSION}"
 RELEASE_COMPILER="${COMPILER_VERSION}+flambda"
-MAKE_ARGUMENTS=""
+MAKE_ARGUMENTS="dev"
 
 # Compatibility settings with MacOS.
 if [[ "${MACHTYPE}" = *apple* ]]; then
@@ -173,7 +173,7 @@ opam install --yes \
 test "$opam_install_dependencies_succeeded" = 1 \
   || die 'Could not install dependencies'
 
-make clean
+make clean_hack_parallel
 
 # Build and install hack parallel.
 (cd hack_parallel \
