@@ -210,13 +210,16 @@ let full_order ({ order; _ } as resolution) =
   in
   { TypeOrder.handler = order; constructor; implements }
 
+
 let solve_constraints resolution =
   full_order resolution
   |> TypeOrder.solve_constraints
 
+
 let constraints_solution_exists ~source ~target resolution =
   solve_constraints resolution ~constraints:Type.Map.empty ~source ~target
   |> Option.is_some
+
 
 let less_or_equal resolution =
   full_order resolution
@@ -328,6 +331,13 @@ let is_invariance_mismatch resolution ~left ~right =
       |> Option.value ~default:false
   | _ ->
       false
+
+
+let resolve_reference resolution reference =
+  Reference.expression reference
+  |> (fun access -> Expression.Access (SimpleAccess access))
+  |> Node.create_with_default_location
+  |> resolve resolution
 
 
 (* In general, python expressions can be self-referential. This resolution only checks
@@ -447,6 +457,7 @@ let rec resolve_literal resolution expression =
 
   | _ ->
       Type.Any
+
 
 let resolve_mutable_literals resolution ~expression ~resolved ~expected =
   match expression, expected with

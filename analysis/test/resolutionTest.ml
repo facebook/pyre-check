@@ -93,6 +93,24 @@ let make_resolution source =
   |> fun environment -> TypeCheck.resolution environment ()
 
 
+let test_resolve_reference _ =
+  let resolution =
+    make_resolution
+    {|
+      import typing
+      i = 1
+    |}
+  in
+  let assert_resolve_reference reference expected =
+    assert_equal
+      ~printer:Type.show expected
+      (Resolution.resolve_reference resolution (Reference.create reference))
+  in
+  assert_resolve_reference "undefined" Type.Top;
+  assert_resolve_reference "i" Type.integer;
+  assert_resolve_reference "typing.List" (Type.Primitive "typing.TypeAlias")
+
+
 let test_resolve_literal _ =
   let resolution =
     make_resolution
@@ -334,6 +352,7 @@ let () =
   "resolution">:::[
     "set_local">::test_set_local;
     "parse_annotation">::test_parse_annotation;
+    "resolve_reference">::test_resolve_reference;
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
     "function_definitions">::test_function_definitions;
