@@ -633,6 +633,17 @@ class FilesystemTest(unittest.TestCase):
         analysis_directory = SharedAnalysisDirectory(
             ["/ROOT"], [], search_path=search_path
         )
+        with patch.object(
+            analysis_directory, "_resolve_source_directories"
+        ), patch.object(os, "makedirs"), patch.object(
+            filesystem, "acquire_lock"
+        ), patch.object(
+            analysis_directory, "_clear"
+        ), patch.object(
+            analysis_directory, "_merge"
+        ):
+            analysis_directory.prepare()  # compute symlinks, but don't build directory
+
         updated_files = analysis_directory.process_updated_files(
             [*tracked_files, *untracked_files]
         )

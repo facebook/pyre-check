@@ -131,6 +131,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._original_directory = original_directory
         self._filter_paths = filter_paths or []
         self._local_configuration_root = local_configuration_root
+        self._extensions = set(extensions or []) | {"py", "pyi"}
         self._search_path = search_path or []
         self._isolate = isolate
         self._build = build
@@ -138,9 +139,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
-        self._symbolic_links = _compute_symbolic_link_mapping(
-            self.get_root(), extensions or ["py", "pyi"]
-        )  # type: Dict[str, str]
+        self._symbolic_links = {}  # type: Dict[str, str]
 
     def get_scratch_directory(self) -> str:
         try:
@@ -195,6 +194,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             LOG.log(
                 log.PERFORMANCE, "Merged analysis directories in %fs", time() - start
             )
+        self._symbolic_links.update(
+            _compute_symbolic_link_mapping(self.get_root(), self._extensions)
+        )
 
     def process_updated_files(self, paths: List[str]) -> List[str]:
         """
