@@ -374,8 +374,7 @@ let test_check_globals _ =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Optional[str]` but no type is specified.";
-      "Missing global annotation [5]: Globally accessible variable `y` has type " ^
-      "`typing.List[]` but no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
     ];
 
   assert_type_errors

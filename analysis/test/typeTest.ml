@@ -846,6 +846,14 @@ let test_contains_any _ =
   assert_true (Type.contains_any (Type.Any))
 
 
+let test_is_concrete _ =
+  assert_true (Type.is_concrete (Type.none));
+  assert_true (Type.is_concrete (Type.parametric "typing.Optional" [Type.Bottom]));
+  assert_true (Type.is_concrete (Type.Callable.create ~annotation:Type.none ()));
+  assert_false (Type.is_concrete (Type.Callable.create ~annotation:(Type.list Type.Bottom) ()));
+  ()
+
+
 let test_is_not_instantiated _ =
   assert_true (Type.is_not_instantiated Type.Bottom);
   assert_true (Type.is_not_instantiated (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom));
@@ -1352,6 +1360,7 @@ let () =
     "is_async_generator">::test_is_generator;
     "contains_callable">::test_contains_callable;
     "contains_any">::test_contains_any;
+    "is_concrete">::test_is_concrete;
     "is_not_instantiated">::test_is_not_instantiated;
     "is_meta">::test_is_meta;
     "is_none">::test_is_none;

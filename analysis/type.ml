@@ -1803,17 +1803,34 @@ let is_callable = function
 
 
 let is_concrete annotation =
-  match annotation with
-  | Bottom -> false
-  | _ ->
-      let predicate = function
-        | Top
-        | Any ->
-            true
-        | _ ->
+  let module ConcreteTransform = Transform.Make(struct
+      type state = bool
+
+      let visit_children_before _ = function
+        | Optional Bottom -> false
+        | Parametric { name; parameters }
+          when (name = "typing.Optional" or name = "Optional") &&
+               parameters = [Bottom] ->
             false
-      in
-      not (exists annotation ~predicate)
+        | _ -> true
+
+      let visit_children_after =
+        false
+
+      let visit sofar annotation =
+        let new_state =
+          match annotation with
+          | Bottom
+          | Top
+          | Any ->
+              false
+          | _ ->
+              sofar
+        in
+        { Transform.transformed_annotation = annotation; new_state }
+    end)
+  in
+  fst (ConcreteTransform.visit true annotation)
 
 
 let is_contravariant annotation =

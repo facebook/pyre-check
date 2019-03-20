@@ -390,10 +390,7 @@ let test_infer _ =
       def returns_dict ():
           return {}
     |}
-    [
-      "\"Missing return annotation [3]: Returning `typing.Dict[]` " ^
-      "but no return type is specified.\""
-    ];
+    ["\"Missing return annotation [3]: Return type is not specified.\""];
 
   assert_infer ~fields:["inference.parameters"]
     {|
