@@ -20,7 +20,11 @@ class AstVisitorBaseCase(unittest.TestCase):
         source_code = test_file.read_text()
         tree = ast.parse(source_code)
         return AstChecker(
-            tree, source_code.split("\n"), test_repository, str(test_file)
+            # pyre-fixme[6]: Expected `Module` for 1st param but got `AST`.
+            tree,
+            source_code.split("\n"),
+            test_repository,
+            str(test_file),
         )
 
     def assert_errors(self, actual: List[Error], expected: List[ExpectedError]) -> None:
