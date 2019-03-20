@@ -7,6 +7,7 @@ open Core
 open Sexplib.Conv
 
 open Expression
+open Pyre
 
 type t = string list
 [@@deriving compare, eq, sexp, hash]
@@ -54,11 +55,16 @@ let show reference =
   Format.asprintf "%a" pp reference
 
 
-let create name =
-  if String.equal name "..." then
-    [name]
-  else
-    String.split ~on:'.' name
+let create ?prefix name =
+  let name =
+    if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  prefix
+  >>| (fun prefix -> prefix @ name)
+  |> Option.value ~default:name
 
 
 let expression =

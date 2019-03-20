@@ -13,12 +13,17 @@ open Test
 
 
 let test_create _ =
-  let assert_create input =
-    assert_equal input (Reference.show (Reference.create input))
+  let assert_create ?prefix input =
+    let expected =
+      prefix >>| (fun prefix -> prefix ^ "." ^ input) |> Option.value ~default:input
+    in
+    let prefix = prefix >>| Reference.create in
+    assert_equal expected (Reference.show (Reference.create ?prefix input))
   in
   assert_create "";
   assert_create "a";
-  assert_create "a.b.c"
+  assert_create "a.b.c";
+  assert_create ~prefix:"a.b" "c.d.e"
 
 
 let test_expression _ =

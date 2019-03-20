@@ -13,7 +13,7 @@ module SerializableMap: SerializableMap.S with type key = t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
-val create: string -> t
+val create: ?prefix: t -> string -> t
 val expression: t -> Expression.Access.t
 val new_expression: t -> Expression.t Expression.Name.t
 
