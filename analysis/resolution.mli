@@ -33,6 +33,7 @@ val create
   -> class_representation: (Type.t -> class_representation option)
   -> constructor: (instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t)
   -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
+  -> generics: (resolution: t -> Class.t Node.t -> Type.t list)
   -> ?parent: Reference.t
   -> unit
   -> t

@@ -39,6 +39,7 @@ type t = {
   class_representation: Type.t -> class_representation option;
   constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
+  generics: resolution: t -> Class.t Node.t -> Type.t list;
 
   parent: Reference.t option;
 }
@@ -55,6 +56,7 @@ let create
     ~class_representation
     ~constructor
     ~implements
+    ~generics
     ?parent
     () =
   {
@@ -69,6 +71,7 @@ let create
     class_representation;
     constructor;
     implements;
+    generics;
     parent;
   }
 
@@ -180,6 +183,10 @@ let implements ({ implements; _ } as resolution) =
   implements ~resolution
 
 
+let generics ({ generics; _ } as resolution) =
+  generics ~resolution
+
+
 let function_definitions resolution access =
   let qualifier =
     let rec qualifier ~lead ~tail =
@@ -198,8 +205,8 @@ let function_definitions resolution access =
   Ast.SharedMemory.Sources.get_for_qualifier qualifier
   >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
   >>| List.filter
-      ~f:(fun { Node.value = { Define.name; _ }; _ } ->
-          Access.equal access (Reference.access name))
+    ~f:(fun { Node.value = { Define.name; _ }; _ } ->
+        Access.equal access (Reference.access name))
 
 
 let full_order ({ order; _ } as resolution) =
@@ -347,9 +354,11 @@ let rec resolve_literal resolution expression =
   match Node.value expression with
   | Access (SimpleAccess access) ->
       begin
-        let is_defined class_name =
+        let is_concrete_constructable class_name =
           class_definition resolution class_name
-          |> Option.is_some
+          >>| generics resolution
+          >>| List.is_empty
+          |> Option.value ~default:false
         in
         match Expression.Access.name_and_arguments ~call:access with
         | Some { Expression.Access.callee; _ } ->
@@ -358,7 +367,7 @@ let rec resolve_literal resolution expression =
               |> Expression.Access.expression
               |> parse_annotation resolution
             in
-            if is_defined class_name then
+            if is_concrete_constructable class_name then
               class_name
             else
               Type.Top
@@ -367,7 +376,7 @@ let rec resolve_literal resolution expression =
             (* None is a special type that doesn't have a constructor. *)
             if Type.equal class_name Type.none then
               Type.none
-            else if is_defined class_name then
+            else if is_concrete_constructable class_name then
               Type.meta class_name
             else
               Type.Top

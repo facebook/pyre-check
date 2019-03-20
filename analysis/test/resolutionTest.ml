@@ -96,7 +96,7 @@ let make_resolution source =
 let test_parse_reference _ =
   let resolution =
     make_resolution
-    {|
+      {|
       import typing
       class Foo: ...
       MyType = int
@@ -119,6 +119,10 @@ let test_resolve_literal _ =
       {|
       class C:
         def __init__(self) -> None:
+          pass
+      T = typing.TypeVar("T")
+      class G(typing.Generic[T]):
+        def __init__(self, x: T) -> None:
           pass
       def foo()->int:
         ...
@@ -147,7 +151,9 @@ let test_resolve_literal _ =
   assert_resolve_literal "j" Type.Top;
   assert_resolve_literal "foo()" Type.Top;
   assert_resolve_literal "C()" (Type.Primitive "C");
+  assert_resolve_literal "G(7)" Type.Top;
   assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
+  assert_resolve_literal "G" Type.Top;
 
   (* None *)
   assert_resolve_literal "None" (Type.none);

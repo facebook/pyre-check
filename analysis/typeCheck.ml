@@ -3852,6 +3852,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~class_representation:(fun _ -> None)
         ~constructor:(fun ~instantiated:_ ~resolution:_ _ -> Type.Top)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
+        ~generics:(fun ~resolution:_ _ -> [])
         ()
     in
     {
@@ -3894,6 +3895,10 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     >>| implements
     |> Option.value ~default:TypeOrder.DoesNotImplement
   in
+  let generics ~resolution class_definition =
+    AnnotatedClass.create class_definition
+    |>  AnnotatedClass.generics ~resolution
+  in
   Resolution.create
     ~annotations
     ~order
@@ -3905,6 +3910,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ~class_representation
     ~constructor
     ~implements
+    ~generics
     ()
 
 
