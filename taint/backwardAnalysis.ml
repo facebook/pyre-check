@@ -115,7 +115,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let rec analyze_argument ~resolution taint { Argument.value = argument; _ } state =
-      analyze_expression ~resolution taint argument state
+      analyze_expression ~resolution ~taint ~state ~expression:argument
 
 
     and apply_call_targets ~resolution arguments state call_taint call_targets =
@@ -280,10 +280,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               ~f:(analyze_argument ~resolution taint)
               ~init:state
           in
-          analyze_normalized_expression ~resolution state taint callee
+          analyze_normalized_expression ~resolution ~taint ~state ~expression:callee
 
 
-    and analyze_normalized_expression ~resolution state taint expression =
+    and analyze_normalized_expression ~resolution ~taint ~state ~expression =
       Log.log
         ~section:`Taint
         "analyze_normalized_expression: %a\n  under taint %a"
@@ -313,20 +313,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let property_call =
               Call { callee = expression; arguments = Node.create_with_default_location [] }
             in
-            analyze_normalized_expression ~resolution state taint property_call
+            analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
           else
             let field = AbstractTreeDomain.Label.Field member in
             let taint =
               BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
             in
-            analyze_normalized_expression ~resolution state taint expression
+            analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Index { expression; index; _ } ->
           let taint = BackwardState.Tree.prepend [index] taint in
-          analyze_normalized_expression ~resolution state taint expression
+          analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state taint
       | Expression expression ->
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression
       | Global _ ->
           state
       | Local name ->
@@ -335,24 +335,24 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value; } =
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
-      analyze_expression ~resolution value_taint value state
+      analyze_expression ~resolution ~taint:value_taint ~state ~expression:value
 
     and analyze_reverse_list_element ~total ~resolution taint reverse_position state expression =
       let position = total - reverse_position - 1 in
       let index_name = AbstractTreeDomain.Label.Field (string_of_int position) in
       let value_taint = read_tree [index_name] taint in
-      analyze_expression ~resolution value_taint expression state
+      analyze_expression ~resolution ~taint:value_taint ~state ~expression
 
     and analyze_comprehension ~resolution taint { Comprehension.element; generators; _ } state =
       let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
-      let state = analyze_expression ~resolution element_taint element state in
+      let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
       let handle_generator state { Comprehension.target; iterator; _ } =
         let access_path = of_expression target in
         let bound_variable_taint = get_taint access_path state in
         let iterator_taint =
           BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] bound_variable_taint
         in
-        analyze_expression ~resolution iterator_taint iterator state
+        analyze_expression ~resolution ~taint:iterator_taint ~state ~expression:iterator
       in
       List.fold ~f:handle_generator generators ~init:state
 
@@ -361,25 +361,25 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match expression.Node.value with
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression
       | _ ->
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression
 
-    and analyze_expression ~resolution taint { Node.value = expression; _ } state =
+    and analyze_expression ~resolution ~taint ~state ~expression:{ Node.value = expression; _ } =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Access (SimpleAccess access) ->
           normalize_access access ~resolution
-          |> analyze_normalized_expression ~resolution state taint
+          |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Access (ExpressionAccess { expression; access }) ->
           List.fold access ~init:(Expression expression) ~f:normalize_access_list
-          |> analyze_normalized_expression ~resolution state taint
+          |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Await expression ->
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator=_; right } ->
-          analyze_expression ~resolution taint right state
-          |> analyze_expression ~resolution taint left
+          analyze_expression ~resolution ~taint ~state ~expression:right
+          |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | Call _ ->
           (* TODO: T37313693 *)
           state
@@ -398,7 +398,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
-          analyze_expression ~resolution taint body state
+          analyze_expression ~resolution ~taint ~state ~expression:body
       | List list ->
           let total = List.length list in
           List.foldi
@@ -414,21 +414,23 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold
             set
-            ~f:(Fn.flip (analyze_expression ~resolution element_taint))
+            ~f:(fun state expression ->
+                analyze_expression ~resolution ~taint:element_taint ~state ~expression)
             ~init:state
       | SetComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
           let taint = BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] taint in
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression
       | String _ ->
           state
       | Ternary { target; test; alternative } ->
-          let state_then = analyze_expression ~resolution taint target state in
-          let state_else = analyze_expression ~resolution taint alternative state in
+          let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in
+          let state_else = analyze_expression ~resolution ~taint ~state ~expression:alternative in
           join state_then state_else
-          |> analyze_expression ~resolution BackwardState.Tree.empty test
+          |> fun state ->
+          analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression:test
       | True ->
           state
       | Tuple list ->
@@ -438,9 +440,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ~f:(analyze_reverse_list_element ~total ~resolution taint)
             ~init:state
       | UnaryOperator { operator = _; operand } ->
-          analyze_expression ~resolution taint operand state
+          analyze_expression ~resolution ~taint ~state ~expression:operand
       | Yield (Some expression) ->
-          analyze_expression ~resolution taint expression state
+          analyze_expression ~resolution ~taint ~state ~expression:expression
       | Yield None ->
           state
 
@@ -492,7 +494,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match statement with
       | Assign { target; value; _ } ->
           let taint, _ = compute_assignment_taint target state in
-          analyze_expression ~resolution taint value state
+          analyze_expression ~resolution ~taint ~state ~expression:value
       | Assert _
       | Break
       | Class _
@@ -503,7 +505,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Delete _ ->
           state
       | Expression expression ->
-          analyze_expression ~resolution BackwardState.Tree.empty expression state
+          analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression
       | For _
       | Global _
       | If _
@@ -515,7 +517,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Return { expression = Some expression; _ } ->
           let access_path = { root = Root.LocalResult; path = [] } in
           let return_taint = get_taint (Some access_path) state in
-          analyze_expression ~resolution return_taint expression state
+          analyze_expression ~resolution ~taint:return_taint ~state ~expression
       | Return { expression = None; _ }
       | Try _
       | With _
@@ -525,7 +527,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | YieldFrom expression ->
           let access_path = { root = Root.LocalResult; path = [] } in
           let return_taint = get_taint (Some access_path) state in
-          analyze_expression ~resolution return_taint expression state
+          analyze_expression ~resolution ~taint:return_taint ~state ~expression
 
 
     let backward ?key state ~statement:({ Node.value = statement; _ }) =
