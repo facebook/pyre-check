@@ -568,7 +568,7 @@ compound_statement:
           | { Node.location; value = Assign assign } ->
               {
                 Node.location;
-                value = Assign { assign with Assign.parent = Some (Reference.expression name) };
+                value = Assign { assign with Assign.parent = Some name };
               }
           | { Node.location; value = Define define } ->
               {

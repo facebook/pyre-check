@@ -122,7 +122,7 @@ module Assign : sig
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Access.t option;
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

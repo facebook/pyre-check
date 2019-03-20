@@ -2821,8 +2821,7 @@ module State = struct
                 let is_valid_enumeration_assignment =
                   let parent_annotation =
                     parent
-                    >>| Access.expression
-                    >>| Resolution.parse_annotation resolution
+                    >>| Resolution.parse_reference resolution
                     |> (fun annotation -> Option.value annotation ~default:Type.Top)
                   in
                   let resolved = Type.weaken_literals resolved in

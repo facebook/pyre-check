@@ -2782,7 +2782,7 @@ let test_class _ =
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = +Integer 1;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2800,7 +2800,7 @@ let test_class _ =
             Assign.target = !"attribute";
             annotation = Some (+String (StringLiteral.create "int"));
             value = +Integer 1;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2818,7 +2818,7 @@ let test_class _ =
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = +Ellipsis;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -4216,7 +4216,7 @@ let test_stubs _ =
             Assign.target = !"a";
             annotation = Some (+String (StringLiteral.create "int"));
             value = +Ellipsis;
-            parent = Some (Access.create "A");
+            parent = Some (Reference.create "A");
           };
         ];
         decorators = [];

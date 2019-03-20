@@ -30,12 +30,6 @@ let get_access_basename name =
   List.last_exn split
 
 
-let access_with_parent name parent =
-  parent
-  >>| (fun parent -> (Access.show parent) ^ "." ^ (Access.show name))
-  |> Option.value ~default:(Access.show name)
-
-
 let combine_with_parent ~parent name =
   parent
   >>| (fun parent -> Reference.combine parent name)
@@ -271,7 +265,7 @@ let rec source_statement_codex_representation
       match assign_value with
       | Access (SimpleAccess access) -> [
           CodexNode.VariableNode {
-            CodexNode.Variable.name = access_with_parent access parent;
+            CodexNode.Variable.name = combine_with_parent ~parent (Reference.from_access access);
             default = Some (Expression.show value);
             location =
               [location.Location.start.Location.line; location.Location.start.Location.column];

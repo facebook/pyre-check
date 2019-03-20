@@ -141,7 +141,7 @@ module Assign = struct
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Access.t option;
+    parent: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -1335,7 +1335,7 @@ module PrettyPrinter = struct
     Format.fprintf
       formatter
       "%a%a%a = %a"
-      pp_access_list_option parent
+      pp_reference_option parent
       Expression.pp target
       pp_expression_option (": ", annotation)
       Expression.pp value

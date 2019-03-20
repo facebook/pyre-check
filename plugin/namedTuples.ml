@@ -83,8 +83,9 @@ let transform_ast ({ Source.statements; _ } as source) =
         |> Type.tuple
         |> Type.expression
       in
+      let target = Reference.create ~prefix:parent "_fields" |> Reference.expression in
       Assign {
-        Assign.target = Access (SimpleAccess (parent @ (Access.create "_fields"))) |> node;
+        Assign.target = Access (SimpleAccess target) |> node;
         annotation = Some annotation;
         value;
         parent = Some parent;
@@ -95,7 +96,9 @@ let transform_ast ({ Source.statements; _ } as source) =
       let attribute_statements =
         let attribute (name, annotation, value) =
           let target =
-            Access (SimpleAccess (parent @ (Access.create name)))
+            Reference.create ~prefix:parent name
+            |> Reference.expression
+            |> (fun access -> Access (SimpleAccess access))
             |> Node.create ~location
           in
           Assign {
@@ -154,16 +157,14 @@ let transform_ast ({ Source.statements; _ } as source) =
           value = expression;
           _;
         } ->
-          let name = Access.delocalize name in
+          let name = Reference.from_access (Access.delocalize name) in
           begin
             match extract_attributes expression with
             | Some attributes ->
-                let constructor =
-                  tuple_constructor ~parent:(Reference.from_access name) ~location attributes
-                in
+                let constructor = tuple_constructor ~parent:name ~location attributes in
                 let attributes = tuple_attributes ~parent:name ~location attributes in
                 Class {
-                  Class.name = Reference.from_access name;
+                  Class.name;
                   bases = [tuple_base ~location];
                   body = constructor :: attributes;
                   decorators = [];
@@ -204,18 +205,14 @@ let transform_ast ({ Source.statements; _ } as source) =
             in
             let attributes = List.filter_map body ~f:extract_assign in
             let constructor = tuple_constructor ~parent:name ~location attributes in
-            let fields_attribute =
-              fields_attribute ~parent:(Reference.expression name) ~location attributes
-            in
+            let fields_attribute = fields_attribute ~parent:name ~location attributes in
             Class { original with Class.body = constructor :: fields_attribute :: body }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
               match extract_attributes value with
               | Some attributes ->
                   let constructor = tuple_constructor ~parent:name ~location attributes in
-                  let attributes =
-                    tuple_attributes ~parent:(Reference.expression name) ~location attributes
-                  in
+                  let attributes = tuple_attributes ~parent:name ~location attributes in
                   (tuple_base ~location) :: bases, attributes_sofar @ (constructor :: attributes)
               | None ->
                   base :: bases, attributes_sofar

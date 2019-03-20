@@ -285,7 +285,7 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
       let open Statement in
       match value with
       | Assign { Assign.target; annotation; value; parent } ->
-          [%hash: Expression.t * (Expression.t option) * Expression.t * (Access.t option)]
+          [%hash: Expression.t * (Expression.t option) * Expression.t * (Reference.t option)]
             (target, annotation, value, parent)
       | Define { Define.name; parameters; decorators; return_annotation; async; parent; _ } ->
           [%hash:

@@ -556,7 +556,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           annotation = annotation >>| qualify_expression ~qualify_strings:true ~scope;
           (* Assignments can be type aliases. *)
           value;
-          parent = parent >>| fun access -> qualify_access ~qualify_strings:false ~scope access;
+          parent = parent >>| fun parent -> qualify_reference ~qualify_strings:false ~scope parent;
         }
       in
       let qualify_define
