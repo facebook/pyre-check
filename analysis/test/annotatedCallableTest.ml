@@ -191,7 +191,7 @@ let test_create _ =
     in
     let callable =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
-      let parent = parent >>| Access.create in
+      let parent = parent >>| Reference.create in
       parse source
       |> Preprocessing.defines ~include_stubs:true
       |> List.rev

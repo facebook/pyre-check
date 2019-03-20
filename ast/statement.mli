@@ -17,7 +17,7 @@ module Record : sig
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
-      parent: Access.t option;
+      parent: Reference.t option;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end

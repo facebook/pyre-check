@@ -26,7 +26,7 @@ let test_is_method _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = parent >>| Access.create;
+      parent = parent >>| Reference.create;
     }
   in
   assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
@@ -43,7 +43,7 @@ let test_is_classmethod _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = Some (Access.create "bar");
+      parent = Some (Reference.create "bar");
     } in
 
   assert_false (Define.is_class_method (define "foo" []));
@@ -64,7 +64,7 @@ let test_is_class_property _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = Some (Access.create "bar");
+      parent = Some (Reference.create "bar");
     }
   in
   assert_false (Define.is_class_property (define "foo" []));
@@ -109,11 +109,6 @@ let test_decorator _ =
 
 let test_is_constructor _ =
   let assert_is_constructor ?(in_test = false) ~name ?(parent = None) expected =
-    let parent =
-      if Option.is_some parent then
-        Some (Access.create (Option.value_exn parent))
-      else None
-    in
     let define =
       {
         Define.name = Reference.create name;
@@ -123,7 +118,7 @@ let test_is_constructor _ =
         docstring = None;
         return_annotation = None;
         async = false;
-        parent;
+        parent = parent >>| Reference.create;
       }
     in
     assert_equal expected (Define.is_constructor ~in_test define)
@@ -446,7 +441,7 @@ let test_attributes _ =
     in
     let define =
       let define = parse_single_define source in
-      { define with Define.parent = Some (Access.create "Parent") }
+      { define with Define.parent = Some (Reference.create "Parent") }
     in
     assert_equal
       ~cmp:(Option.equal Attribute.equal)

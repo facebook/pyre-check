@@ -58,7 +58,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some name;
+              parent = Some (Reference.from_access name);
             }
             |> Node.create ~location
           in

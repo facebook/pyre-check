@@ -54,7 +54,6 @@ val with_parent: t -> parent: Access.t option -> t
 val order: t -> (module TypeOrder.Handler)
 
 val resolve: t -> Expression.t -> Type.t
-val resolve_reference: t -> Reference.t -> Type.t
 val resolve_literal: t -> Expression.t -> Type.t
 val resolve_mutable_literals
   :  t
@@ -88,6 +87,7 @@ val contains_untracked: t -> Type.t -> bool
 val is_string_to_any_mapping: t -> Type.t -> bool
 
 val parse_annotation: ?allow_untracked:bool -> t -> Expression.t -> Type.t
+val parse_reference: ?allow_untracked:bool -> t -> Reference.t -> Type.t
 val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool
 val solve_constraints
   :  t

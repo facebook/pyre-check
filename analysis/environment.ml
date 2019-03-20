@@ -791,8 +791,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             let parent =
               if Define.is_class_method define then
                 parent
-                >>| (fun access -> Node.create ~location (Expression.Access (SimpleAccess access)))
-                >>| Resolution.parse_annotation ~allow_untracked:true resolution
+                >>| Resolution.parse_reference ~allow_untracked:true resolution
                 >>| Type.meta
               else
                 None
@@ -1165,7 +1164,7 @@ module Builder = struct
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Access.create "typing.Generic");
+            parent = Some (Reference.create "typing.Generic");
           }
           |> Node.create_with_default_location
         ];

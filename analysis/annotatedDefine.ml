@@ -41,10 +41,7 @@ let parameter_annotations { Define.parameters; _ } ~resolution =
 let parent_definition { Define.parent; _ } ~resolution =
   match parent with
   | Some parent ->
-      let annotation =
-        Access.expression parent
-        |> Resolution.parse_annotation resolution
-      in
+      let annotation = Resolution.parse_reference resolution parent in
       Resolution.class_definition resolution annotation
       >>| Class.create
   | _ -> None

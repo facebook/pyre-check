@@ -597,7 +597,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let resolution =
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
-          ~parent:FunctionContext.definition.value.parent
+          ~parent:(FunctionContext.definition.value.parent >>| Reference.expression)
           ~access:(Reference.expression FunctionContext.definition.value.name)
           ~key
       in

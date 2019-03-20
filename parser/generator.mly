@@ -573,7 +573,7 @@ compound_statement:
           | { Node.location; value = Define define } ->
               {
                 Node.location;
-                value = Define { define with Define.parent = Some name };
+                value = Define { define with Define.parent = Some (Reference.from_access name) };
               }
           | {
               Node.location;

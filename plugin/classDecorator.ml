@@ -50,7 +50,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                ~location
                                (Access (SimpleAccess (Access.create return_annotation))));
                         async = false;
-                        parent = Some parent;
+                        parent = Some (Reference.from_access parent);
                       }
                     in
                     let methods =

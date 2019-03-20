@@ -36,6 +36,13 @@ let access_with_parent name parent =
   |> Option.value ~default:(Access.show name)
 
 
+let combine_with_parent ~parent name =
+  parent
+  >>| (fun parent -> Reference.combine parent name)
+  |> Option.value ~default:name
+  |> Reference.show
+
+
 module ArgumentData = struct
   type t = {
     args: string list;
@@ -244,7 +251,7 @@ let rec source_statement_codex_representation
       in
       CodexNode.FunctionNode {
         CodexNode.Function.docstring;
-        name = access_with_parent (name |> Reference.expression) parent;
+        name = combine_with_parent ~parent name;
         rank = 0;
         comments = None;
         location = [start_line; column];

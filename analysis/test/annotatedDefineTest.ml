@@ -28,7 +28,7 @@ let test_parent_definition _ =
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = parent >>| Access.create;
+      parent = parent >>| Reference.create;
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(TypeCheck.resolution environment ())

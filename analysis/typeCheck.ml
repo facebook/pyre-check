@@ -1393,8 +1393,7 @@ module State = struct
               when not (Define.is_class_toplevel define || Define.is_static_method define) ->
                 let resolved, is_class_method =
                   let parent_annotation =
-                    Access.expression parent
-                    |> Resolution.parse_annotation resolution
+                    Resolution.parse_reference resolution parent
                     |> function
                     | Type.Primitive name ->
                         let variables =
@@ -1790,7 +1789,7 @@ module State = struct
     in
     create
       ~configuration
-      ~resolution:(Resolution.with_parent resolution ~parent)
+      ~resolution:(Resolution.with_parent resolution ~parent:(parent >>| Reference.expression))
       ~define:define_node
       ()
     |> check_decorators
@@ -2924,8 +2923,7 @@ module State = struct
                     } =
                   let parent_annotation =
                     define_parent
-                    >>| Access.expression
-                    >>| Resolution.parse_annotation resolution
+                    >>| Resolution.parse_reference resolution
                     |> (fun annotation -> Option.value annotation ~default:Type.Top)
                   in
                   explicit && (not (Type.equal parent_annotation attribute_parent))
@@ -3999,7 +3997,7 @@ let run
         begin
           let name =
             match parent with
-            | Some parent -> Reference.combine (Reference.from_access parent) name
+            | Some parent -> Reference.combine parent name
             | None -> name
           in
           Path.create_relative

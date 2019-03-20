@@ -2686,7 +2686,7 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2720,7 +2720,7 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2841,7 +2841,7 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2877,7 +2877,7 @@ let test_class _ =
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Access.create "foo");
+            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2909,7 +2909,7 @@ let test_class _ =
                 docstring = None;
                 return_annotation = None;
                 async = false;
-                parent = Some (Access.create "foo");
+                parent = Some (Reference.create "foo");
               };
             ];
             orelse = []

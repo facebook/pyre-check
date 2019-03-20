@@ -2437,7 +2437,7 @@ module TypedDictionary = struct
         docstring = None;
         return_annotation;
         async = false;
-        parent = Some [ Identifier class_name ];
+        parent = Some (Reference.create class_name);
       }
       |> Node.create_with_default_location
     in

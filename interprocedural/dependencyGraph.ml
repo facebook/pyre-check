@@ -34,7 +34,7 @@ let create_callgraph ~environment ~source =
         let resolution =
           TypeCheck.resolution_with_key
             ~environment
-            ~parent
+            ~parent:(parent >>| Reference.expression)
             ~access:(Reference.expression caller)
             ~key:(Some ([%hash: int * int](node_id, index)))
         in

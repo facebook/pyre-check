@@ -304,6 +304,13 @@ let parse_annotation
     annotation
 
 
+let parse_reference ?(allow_untracked=false) resolution reference =
+  Reference.expression reference
+  |> (fun access -> Expression.Access (SimpleAccess access))
+  |> Node.create_with_default_location
+  |> parse_annotation ~allow_untracked resolution
+
+
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | Type.Parametric { name = left_name; parameters = left_parameters },
@@ -333,13 +340,6 @@ let is_invariance_mismatch resolution ~left ~right =
       |> Option.value ~default:false
   | _ ->
       false
-
-
-let resolve_reference resolution reference =
-  Reference.expression reference
-  |> (fun access -> Expression.Access (SimpleAccess access))
-  |> Node.create_with_default_location
-  |> resolve resolution
 
 
 (* In general, python expressions can be self-referential. This resolution only checks

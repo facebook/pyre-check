@@ -294,7 +294,7 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
             (Expression.t list) *
             (Expression.t option) *
             bool *
-            (Access.t option)]
+            (Reference.t option)]
             (name, parameters, decorators, return_annotation, async, parent)
       | Class { Class.name; bases; body; decorators; _ } ->
           [%hash: Access.t * (Argument.t list) * (int list) * (Expression.t list)]

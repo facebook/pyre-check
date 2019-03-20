@@ -50,12 +50,12 @@ let record_path_of_definitions ~path ~source =
         let () = Callable.add_function_definition name path in
         Callable.create_function name, definition
     | Some class_name ->
-        if not (Callable.class_exists class_name) then
+        if not (Callable.class_exists (Reference.expression class_name)) then
           begin
             Log.error "Method's class non-existing";
             Format.asprintf
               "Class %a for method %a not found"
-              Access.pp class_name
+              Reference.pp class_name
               Access.pp name
             |> failwith
           end

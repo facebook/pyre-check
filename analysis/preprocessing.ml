@@ -576,7 +576,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         in
         let parent =
           parent
-          >>| fun access -> qualify_access ~qualify_strings:false ~scope access
+          >>| fun parent -> qualify_reference ~qualify_strings:false ~scope parent
         in
         let decorators =
           List.map

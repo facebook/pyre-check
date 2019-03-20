@@ -21,7 +21,7 @@ module Record = struct
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
-      parent: Access.t option; (* The class owning the method. *)
+      parent: Reference.t option; (* The class owning the method. *)
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -275,7 +275,7 @@ module Define = struct
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = Some (qualifier |> Reference.expression);
+      parent = Some qualifier;
     }
 
 
@@ -548,14 +548,9 @@ module Define = struct
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
-            let equals callee name parent =
-               Reference.equal
-                callee
-                (Reference.create ~prefix:(Reference.from_access parent) name)
-            in
             let inline = function
               | { Node.value = Define { name = callee; body; parent = Some parent; _ }; _ }
-                when equals callee name parent ->
+                when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
               | _ ->
                   None
@@ -585,7 +580,7 @@ module Define = struct
       parent
       >>= (fun parent ->
           Attribute.name
-            ~parent
+            ~parent:(Reference.expression parent)
             (Node.create ~location (Access (SimpleAccess (Reference.expression name)))))
       >>| fun name ->
       Attribute.create
@@ -1271,6 +1266,12 @@ module PrettyPrinter = struct
           Expression.pp_expression_list decorators
 
 
+  let pp_reference_option formatter =
+    function
+    | None -> ()
+    | Some reference -> Format.fprintf formatter "%a" Reference.pp reference
+
+
   let pp_access_list_option formatter =
     function
     | None -> ()
@@ -1366,7 +1367,7 @@ module PrettyPrinter = struct
       "%a@[<v 2>%adef %a%s%a(%a)%s:@;%a@]@."
       pp_decorators decorators
       pp_async async
-      pp_access_list_option parent
+      pp_reference_option parent
       (if Option.is_some parent then "#" else "")
       Reference.pp name
       Expression.pp_expression_parameter_list parameters

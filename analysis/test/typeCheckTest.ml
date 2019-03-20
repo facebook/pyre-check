@@ -74,7 +74,7 @@ let test_initial _ =
       let define =
         match parse_single_statement define with
         | { Node.value = Define define; _ } ->
-            { define with Define.parent = parent >>| Access.create }
+            { define with Define.parent = parent >>| Reference.create }
         | _ ->
             failwith "Unable to parse define."
       in

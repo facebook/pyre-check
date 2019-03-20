@@ -1679,7 +1679,7 @@ let test_classes _ =
           docstring = None;
           return_annotation = None;
           async = false;
-          parent = Some (Access.create "foo");
+          parent = Some (Reference.create "foo");
         };
       ];
       decorators = [];

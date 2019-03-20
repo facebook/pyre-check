@@ -1225,7 +1225,7 @@ let inference_information
   in
   let print_parent parent =
     parent
-    >>| Access.show_sanitized
+    >>| Reference.show_sanitized
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
