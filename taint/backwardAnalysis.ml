@@ -280,10 +280,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               ~f:(analyze_argument ~resolution taint)
               ~init:state
           in
-          analyze_normalized_expression ~resolution ~taint ~state ~expression:callee
+          analyze_normalized_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:(Node.create ~location callee)
 
 
-    and analyze_normalized_expression ~resolution ~taint ~state ~expression =
+    and analyze_normalized_expression
+        ~resolution
+        ~taint
+        ~state
+        ~expression:{ Node.location; value = expression } =
       Log.log
         ~section:`Taint
         "analyze_normalized_expression: %a\n  under taint %a"
@@ -294,7 +302,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let is_property =
             let access = AccessPath.as_access expression in
             let annotation =
-              Node.create_with_default_location (Expression.Access access)
+              Node.create ~location (Expression.Access access)
               |> Resolution.resolve resolution
             in
             let is_property define =
@@ -311,7 +319,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           if is_property then
             let property_call =
-              Call { callee = expression; arguments = Node.create_with_default_location [] }
+              Call { callee = expression; arguments = { Node.location; value = [] } }
+              |> Node.create ~location
             in
             analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
           else
@@ -319,9 +328,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let taint =
               BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
             in
+            let expression = Node.create ~location expression in
             analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Index { expression; index; _ } ->
           let taint = BackwardState.Tree.prepend [index] taint in
+          let expression = Node.create ~location expression in
           analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state taint
@@ -365,14 +376,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | _ ->
           analyze_expression ~resolution ~taint ~state ~expression
 
-    and analyze_expression ~resolution ~taint ~state ~expression:{ Node.value = expression; _ } =
+    and analyze_expression
+        ~resolution
+        ~taint
+        ~state
+        ~expression:{ Node.location; value = expression } =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
       | Access (SimpleAccess access) ->
           normalize_access access ~resolution
+          |> Node.create ~location
           |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Access (ExpressionAccess { expression; access }) ->
           List.fold access ~init:(Expression expression) ~f:normalize_access_list
+          |> Node.create ~location
           |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Await expression ->
           analyze_expression ~resolution ~taint ~state ~expression
