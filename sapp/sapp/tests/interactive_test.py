@@ -52,26 +52,23 @@ class InteractiveTest(TestCase):
         for row in data:
             session.add(row)
 
-    def _generic_issue(
-        self, id: int = 1, callable: str = "call1", filename: str = "file.py"
-    ) -> Issue:
+    def _generic_issue(self, id: int = 1, callable: str = "call1") -> Issue:
         return Issue(
             id=id,
             handle=str(id),
             first_seen=datetime.now(),
             code=1000 + id - 1,
             callable=callable,
-            filename=filename,
         )
 
     def _generic_issue_instance(
-        self, id: int = 1, run_id: int = 1, issue_id: int = 1
+        self, id: int = 1, run_id: int = 1, issue_id: int = 1, filename: str = "file.py"
     ) -> IssueInstance:
         return IssueInstance(
             id=id,
             run_id=run_id,
             message_id=1,
-            filename="file.py",
+            filename=filename,
             location=SourceLocation(1, 2, 3),
             issue_id=issue_id,
         )
@@ -153,20 +150,16 @@ class InteractiveTest(TestCase):
     def _list_issues_filter_setup(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issues = [
-            self._generic_issue(
-                id=1, callable="module.sub.function1", filename="module/sub.py"
-            ),
-            self._generic_issue(
-                id=2, callable="module.sub.function2", filename="module/sub.py"
-            ),
-            self._generic_issue(
-                id=3, callable="module.function3", filename="module/__init__.py"
-            ),
+            self._generic_issue(id=1, callable="module.sub.function1"),
+            self._generic_issue(id=2, callable="module.sub.function2"),
+            self._generic_issue(id=3, callable="module.function3"),
         ]
         issue_instances = [
-            self._generic_issue_instance(id=1, issue_id=1),
-            self._generic_issue_instance(id=2, issue_id=2),
-            self._generic_issue_instance(id=3, issue_id=3),
+            self._generic_issue_instance(id=1, issue_id=1, filename="module/sub.py"),
+            self._generic_issue_instance(id=2, issue_id=2, filename="module/sub.py"),
+            self._generic_issue_instance(
+                id=3, issue_id=3, filename="module/__init__.py"
+            ),
         ]
 
         with self.db.make_session() as session:

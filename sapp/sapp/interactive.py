@@ -279,7 +279,9 @@ set_frame(ID)   select a trace frame to explore
 
             if filenames is not None:
                 self._verify_list_filter(filenames, "filenames")
-                query = self._add_list_filter_to_query(filenames, query, Issue.filename)
+                query = self._add_list_filter_to_query(
+                    filenames, query, IssueInstance.filename
+                )
 
             issues = query.options(joinedload(IssueInstance.message)).all()
             sources_list = [
