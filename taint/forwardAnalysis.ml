@@ -273,9 +273,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let callee_taint =
             analyze_normalized_expression
               ~resolution
-              ~location
               ~state
-              ~expression:callee
+              ~expression:(Node.create ~location callee)
           in
           (* For now just join all argument and receiver taint and propagate to result. *)
           let taint =
@@ -287,7 +286,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint
 
 
-    and analyze_normalized_expression ~resolution ~location ~state ~expression =
+    and analyze_normalized_expression
+        ~resolution
+        ~state
+        ~expression:{ Node.location; value = expression } =
       let global_model access =
         (* Fields are handled like methods *)
         let target_candidates = [
@@ -356,8 +358,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           if is_property then
             let property_call =
               Call { callee = expression; arguments = { Node.location; value = [] } }
+              |> Node.create ~location
             in
-            analyze_normalized_expression ~resolution ~location ~state ~expression:property_call
+            analyze_normalized_expression ~resolution ~state ~expression:property_call
           else
             let attribute_taint =
               let annotations =
@@ -377,7 +380,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let inferred_taint =
               let field = AbstractTreeDomain.Label.Field member in
-              analyze_normalized_expression ~resolution ~location ~state ~expression
+              analyze_normalized_expression
+                ~resolution
+                ~state
+                ~expression:(Node.create ~location expression)
               |> ForwardState.Tree.read [field]
               |> ForwardState.Tree.transform
                 ForwardTaint.simple_feature_set
@@ -386,7 +392,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ForwardState.Tree.join inferred_taint attribute_taint
       | Index { expression; index; _ } ->
           let taint =
-            analyze_normalized_expression ~resolution ~location ~state ~expression
+            analyze_normalized_expression
+              ~resolution
+              ~state
+              ~expression:(Node.create ~location expression)
             |> ForwardState.Tree.read [index]
           in
           ForwardState.Tree.transform
@@ -459,8 +468,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       match expression.Node.value with
       | Access (SimpleAccess access) ->
-          let expression = AccessPath.normalize_access access ~resolution in
-          analyze_normalized_expression ~resolution ~location ~state ~expression
+          let expression =
+            AccessPath.normalize_access access ~resolution
+            |> Node.create ~location
+          in
+          analyze_normalized_expression ~resolution ~state ~expression
       | Await expression ->
           analyze_expression ~resolution ~state ~expression
       | BooleanOperator { left; operator = _; right }
