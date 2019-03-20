@@ -609,6 +609,7 @@ set_frame(ID)   select a trace frame to explore
         self._output_file_lines(current_trace_frame, file_lines, context)
 
     def warning(self, message: str) -> None:
+        # pyre-fixme[6]: Expected `Optional[_Writer]` for 2nd param but got `TextIO`.
         print(message, file=sys.stderr)
 
     def _get_trace_frame_branches(self, session: Session) -> List[TraceFrame]:
