@@ -285,6 +285,15 @@ module UpdateFilesParameters = struct
   [@@deriving yojson]
 end
 
+module DisplayTypeErrorsParameters = struct
+  type t = {
+    files: string list
+        [@default []];
+    flush: bool
+        [@default false];
+  }
+  [@@deriving yojson]
+end
 
 module SaveOptions = struct
   type t = {
@@ -936,6 +945,9 @@ module HandshakeClient = NotificationMessage.Make(HandshakeClientParameters)
 
 
 module UpdateFiles = NotificationMessage.Make(UpdateFilesParameters)
+
+
+module DisplayTypeErrors = NotificationMessage.Make(DisplayTypeErrorsParameters)
 
 (** Responses *)
 

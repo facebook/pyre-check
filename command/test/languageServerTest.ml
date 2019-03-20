@@ -967,7 +967,17 @@ let test_request_parser context =
     }
     |> UpdateFiles.to_yojson
   in
-
+  let display_type_errors_message =
+    {
+      LanguageServer.Types.DisplayTypeErrors.jsonrpc = "2.0";
+      method_ = "displayTypeErrors";
+      parameters = Some {
+          LanguageServer.Types.DisplayTypeErrorsParameters.files = [absolute; symlink_source; stub];
+          flush = false;
+        }
+    }
+    |> LanguageServer.Types.DisplayTypeErrors.to_yojson
+  in
   let assert_parsed_request_equals message request =
     assert_equal
       ~cmp:(Option.equal Protocol.Request.equal)
@@ -1004,27 +1014,38 @@ let test_request_parser context =
   assert_parsed_request_equals
     change_message
     None;
+
+  let absolute_file =
+    Path.create_absolute absolute
+    |> File.create
+  in
+  let linked_file =
+    Path.create_absolute ~follow_symbolic_links:false symlink_source
+    |> File.create
+  in
+  let stub_file =
+    Path.create_absolute stub
+    |> File.create
+  in
   assert_parsed_request_equals
     update_message
     (
-      let absolute_file =
-        Path.create_absolute absolute
-        |> File.create
-      in
-      let linked_file =
-        Path.create_absolute ~follow_symbolic_links:false symlink_source
-        |> File.create
-      in
-      let stub_file =
-        Path.create_absolute stub
-        |> File.create
-      in
       Some
         (Protocol.Request.TypeCheckRequest {
             Protocol.TypeCheckRequest.update_environment_with =
               [absolute_file; linked_file; stub_file];
             check = [absolute_file; linked_file]
           })
+    );
+  assert_parsed_request_equals
+    display_type_errors_message
+    (
+      Some (
+        Protocol.Request.DisplayTypeErrors {
+          files = [absolute_file; linked_file; stub_file];
+          flush = false;
+        }
+      )
     )
 
 

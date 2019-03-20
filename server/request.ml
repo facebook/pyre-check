@@ -37,6 +37,9 @@ let parse_lsp ~configuration ~request =
         Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
         >>= fun path -> Path.search_for_path ~search_path ~path
   in
+  let string_path_to_file string_path =
+    File.create (Path.create_absolute ~follow_symbolic_links:false string_path)
+  in
   let process_request request_method =
     match request_method with
     | "textDocument/definition" ->
@@ -188,11 +191,7 @@ let parse_lsp ~configuration ~request =
               _
             } ->
               let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
-              let files =
-                files
-                |> List.map ~f:(Path.create_absolute ~follow_symbolic_links:false)
-                |> List.map ~f:File.create
-              in
+              let files = List.map files ~f:string_path_to_file in
               Some (
                 TypeCheckRequest
                   (TypeCheckRequest.create
@@ -204,6 +203,24 @@ let parse_lsp ~configuration ~request =
           | Error yojson_error ->
               Log.log ~section:`Server "Error: %s" yojson_error;
               None
+        end
+    | "displayTypeErrors" ->
+        begin
+          match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
+          | Ok {
+              LanguageServer.Types.DisplayTypeErrors.parameters = Some {
+                  files;
+                  flush;
+                  _
+                };
+              _
+            } ->
+              let files = List.map files ~f:string_path_to_file in
+              Some (DisplayTypeErrors { files; flush })
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error; None
         end
 
     | "shutdown" ->
