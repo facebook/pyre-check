@@ -7,23 +7,36 @@ open Core
 open OUnit2
 
 open Analysis
-open Ast
 open Pyre
-open Expression
 open Taint
 
-open Test
 open Interprocedural
 open TestHelper
 
 
-let assert_taint source expected =
-  Annotated.Class.Attribute.Cache.clear ();
-  let source =
-    parse ~qualifier:(Access.create "qualifier") source
-    |> Preprocessing.preprocess
+let assert_taint ?(qualifier = "qualifier") source expected =
+  let configuration =
+    Configuration.Analysis.create
+      ~project_root:(Path.current_working_directory ())
+      ()
   in
-  let configuration = Test.mock_configuration in
+
+  let source =
+    let path = Test.mock_path (qualifier ^ ".py") in
+    let file = File.create ~content:(Test.trim_extra_indentation source) path in
+    let handle = File.handle file ~configuration in
+    Ast.SharedMemory.Sources.remove ~handles:[handle];
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler:(Scheduler.mock ())
+      ~preprocessing_state:None
+      ~files:[file]
+    |> ignore;
+    match Ast.SharedMemory.Sources.get handle with
+    | Some source -> source
+    | None -> failwith "Unable to parse source."
+  in
+
   let environment = Test.environment ~configuration () in
   Service.Environment.populate ~configuration environment [source];
   TypeCheck.run ~configuration ~environment ~source |> ignore;
@@ -407,6 +420,28 @@ let test_apply_method_model_at_call_site _ =
           { name = "tainted_parameter"; sinks = [Taint.Sinks.Test] };
         ]
         "qualifier.taint_across_union_receiver_types";
+    ];
+
+  (* Propagation through properties. *)
+  assert_taint
+    {|
+      class Class:
+        self.tainted = ...
+        @property
+        def property(self):
+          return self.tainted
+
+      c: Class = ...
+
+      def property_into_sink(input):
+        c.tainted = input
+        __testSink(c.property)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "input"; sinks = [Taint.Sinks.Test] }]
+        "qualifier.property_into_sink";
     ]
 
 

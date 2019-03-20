@@ -291,11 +291,35 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         BackwardState.Tree.pp taint;
       match expression with
       | Access { expression; member } ->
-          let field = AbstractTreeDomain.Label.Field member in
-          let taint =
-            BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+          let is_property =
+            let access = AccessPath.as_access expression in
+            let annotation =
+              Node.create_with_default_location (Expression.Access access)
+              |> Resolution.resolve resolution
+            in
+            let is_property define =
+              String.Set.exists
+                ~f:(Statement.Define.has_decorator define)
+                Recognized.property_decorators
+            in
+            (Type.access annotation) @ [Identifier member]
+            |> Resolution.function_definitions resolution
+            >>| (function
+                | [{ Node.value = define; _ }] -> is_property define
+                | _ -> false)
+            |> Option.value ~default:false
           in
-          analyze_normalized_expression ~resolution state taint expression
+          if is_property then
+            let property_call =
+              Call { callee = expression; arguments = Node.create_with_default_location [] }
+            in
+            analyze_normalized_expression ~resolution state taint property_call
+          else
+            let field = AbstractTreeDomain.Label.Field member in
+            let taint =
+              BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+            in
+            analyze_normalized_expression ~resolution state taint expression
       | Index { expression; index; _ } ->
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_normalized_expression ~resolution state taint expression
