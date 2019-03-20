@@ -224,7 +224,7 @@ let full_order ({ order; _ } as resolution) =
   let implements =
     implements resolution
   in
-  { TypeOrder.handler = order; constructor; implements }
+  { TypeOrder.handler = order; constructor; implements; any_is_bottom = false }
 
 
 let solve_constraints resolution =
@@ -256,9 +256,9 @@ let widen resolution =
   full_order resolution
   |> TypeOrder.widen
 
-let mismatch_with_any resolution =
+let is_consistent_with resolution =
   full_order resolution
-  |> TypeOrder.mismatch_with_any
+  |> TypeOrder.is_consistent_with
 
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order

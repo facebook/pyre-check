@@ -511,7 +511,8 @@ type implements_result =
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
-  implements: protocol: Type.t -> Type.t -> implements_result
+  implements: protocol: Type.t -> Type.t -> implements_result;
+  any_is_bottom: bool;
 }
 
 
@@ -814,7 +815,12 @@ and solve_constraints ({ constructor; implements; _ } as order) ~constraints ~so
 
 
 and less_or_equal
-    ({ handler = ((module Handler: Handler) as handler); constructor; implements } as order)
+    ({
+      handler = ((module Handler: Handler) as handler);
+      constructor;
+      implements;
+      any_is_bottom;
+    } as order)
     ~left
     ~right =
   Type.equal left right ||
@@ -827,7 +833,7 @@ and less_or_equal
   | _, Type.Any ->
       true
   | Type.Any, _ ->
-      false
+      any_is_bottom
 
   | Type.Bottom, _ ->
       true
@@ -1983,113 +1989,11 @@ and diff_variables_list substitutions left right =
   | Unequal_lengths -> substitutions
 
 
-let rec mismatch_with_any order left right =
-  let open Type in
-  match left, right with
-  | Any, _
-  | _, Any ->
-      true
-  | Callable {
-      Callable.implementation = {
-        Callable.annotation = left_annotation;
-        parameters = left_parameters;
-      };
-      _;
-    },
-    Callable {
-      Callable.implementation = {
-        Callable.annotation = right_annotation;
-        parameters = right_parameters;
-      };
-      _;
-    } ->
-      let open Type.Callable in
-      let parameters_mismatch_with_any left right =
-        match left, right with
-        | Defined left, Defined right when List.length left = List.length right ->
-            let left = List.map ~f:Callable.Parameter.annotation left in
-            let right = List.map ~f:Callable.Parameter.annotation right in
-            List.exists2_exn left right ~f:(mismatch_with_any order)
-        | _ ->
-            false
-      in
-      let parameters_compatible =
-        match left_parameters, right_parameters with
-        | Defined left, Defined right when List.length left = List.length right ->
-            true
-        | Defined _, Defined _ ->
-            false
-        | _ ->
-            true
-      in
-      if parameters_compatible then
-        mismatch_with_any order left_annotation right_annotation
-        || parameters_mismatch_with_any left_parameters right_parameters
-      else
-        false
-  | Parametric { name = "typing.Optional"; parameters = [left] }, right ->
-      mismatch_with_any order left right
-  | left, Parametric { name = "typing.Optional"; parameters = [right] } ->
-      mismatch_with_any order left right
-  | Optional left, Optional right
-  | Optional left, right
-  | left, Optional right ->
-      mismatch_with_any order left right
-
-  | Union left, Union right ->
-      let left = Set.of_list left in
-      let right = Set.of_list right in
-      let mismatched left right =
-        Set.length left = Set.length right &&
-        Set.mem left Any &&
-        not (Set.mem right Any) &&
-        Set.length (Set.diff left right) = 1
-      in
-      mismatched left right || mismatched right left
-  | Union union, other
-  | other, Union union ->
-      List.exists ~f:(mismatch_with_any order other) union
-
-
-  | Tuple (Bounded left), Tuple (Bounded right) when List.length left = List.length right ->
-      List.exists2_exn ~f:(mismatch_with_any order) left right
-  | Tuple (Unbounded left), Tuple (Unbounded right) ->
-      mismatch_with_any order left right
-  | Tuple (Bounded bounded), Tuple (Unbounded unbounded)
-  | Tuple (Unbounded unbounded), Tuple (Bounded bounded) ->
-      begin
-        match unbounded, bounded with
-        | Any, _ ->
-            true
-        | unbounded, head :: tail ->
-            mismatch_with_any order unbounded head ||
-            List.for_all ~f:(equal Any) tail
-        | _ ->
-            false
-      end
-
-  | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
-      begin
-        try
-          instantiate_successors_parameters
-            order
-            ~source:left
-            ~target:(Type.Primitive right_name)
-          >>| (fun resolved_parameters ->
-              (* TODO(T41730335): This is too generous, as the mismatch could have been in something
-                 other than the parameter with the any.  This and the rest of this function should
-                 instead be based on a solve with the Anys replaced with free type variables *)
-              List.length resolved_parameters = List.length right_parameters &&
-              List.exists2_exn ~f:(mismatch_with_any order) resolved_parameters right_parameters)
-          |> Option.value ~default:false
-        with
-        | Untracked _ ->
-            false
-      end
-
-
-  | _ ->
-      false
+let rec is_consistent_with order left right =
+  less_or_equal
+    { order with any_is_bottom = true }
+    ~left
+    ~right
 
 
 let widen order ~widening_threshold ~previous ~next ~iteration =
@@ -2182,7 +2086,8 @@ let connect_annotations_to_top
       {
         handler;
         constructor = (fun _ -> None);
-        implements = (fun ~protocol:_ _ -> DoesNotImplement)
+        implements = (fun ~protocol:_ _ -> DoesNotImplement);
+        any_is_bottom = false;
       }
     in
     if not (less_or_equal order ~left:top ~right:annotation) then

@@ -1415,7 +1415,8 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
   | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
-      Resolution.mismatch_with_any resolution actual expected
+      (Type.contains_any actual || Type.contains_any expected) &&
+      Resolution.is_consistent_with resolution actual expected
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _

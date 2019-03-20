@@ -63,6 +63,18 @@ let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifie
     ]
 
 
+let order_and_environment source =
+  let environment = populate source in
+  let module Handler = (val environment) in
+  {
+    TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+    constructor = (fun _ -> None);
+    implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+    any_is_bottom = false;
+  },
+  environment
+
+
 let global environment =
   TypeCheck.resolution environment ()
   |> Resolution.global
@@ -1019,20 +1031,11 @@ let test_infer_protocols_edges _ =
 
 
 let test_less_or_equal_type_order _ =
-  let environment =
-    populate {|
+  let order, environment  =
+    order_and_environment {|
       class module.super(): ...
       class module.sub(module.super): ...
     |} in
-
-  let module Handler = (val environment) in
-  let order =
-    {
-      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-    }
-  in
 
   let super =
     parse_annotation
@@ -1053,21 +1056,12 @@ let test_less_or_equal_type_order _ =
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
   assert_false (TypeOrder.less_or_equal order ~left:super ~right:sub);
 
-  let environment =
-    populate {|
+  let order, environment =
+    order_and_environment  {|
         class module.sub(module.super): pass
         class module.super(module.top): pass
         class module.top(): pass
     |} in
-
-  let module Handler = (val environment) in
-  let order =
-    {
-      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-    }
-  in
 
   let super =
     parse_annotation
@@ -1091,20 +1085,12 @@ let test_less_or_equal_type_order _ =
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:top);
 
   (* Optionals. *)
-  let environment =
-    populate {|
+  let order, _ =
+    order_and_environment  {|
       class A: ...
       class B(A): ...
       class C(typing.Optional[A]): ...
     |} in
-  let module Handler = (val environment) in
-  let order =
-    {
-      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-    }
-  in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -1134,21 +1120,13 @@ let test_less_or_equal_type_order _ =
        ~right:(Type.Primitive "C"));
 
   (* Unions. *)
-  let environment =
-    populate {|
+  let order, _ =
+    order_and_environment  {|
       class A: ...
       class B(A): ...
       class int(): ...
       class float(): ...
     |} in
-  let module Handler = (val environment) in
-  let order =
-    {
-      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-    }
-  in
   assert_true
     (TypeOrder.less_or_equal
        order
@@ -1205,17 +1183,11 @@ let test_less_or_equal_type_order _ =
 
 
 let test_join_type_order _ =
-  let environment =
-    populate {|
+  let order, _ =
+    order_and_environment  {|
       class foo(): ...
       class bar(L[T]): ...
     |} in
-  let module Handler = (val environment) in
-  let order = {
-    TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-    constructor = (fun _ -> None);
-    implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-  } in
   let foo = Type.Primitive "foo" in
   let bar = Type.Primitive "bar" in
 
@@ -1250,8 +1222,8 @@ let test_join_type_order _ =
 
 
 let test_meet_type_order _ =
-  let environment =
-    populate {|
+  let order, _ =
+    order_and_environment  {|
       class foo(): ...
       class bar(L[T]): ...
       class A: ...
@@ -1259,14 +1231,6 @@ let test_meet_type_order _ =
       class C(A): ...
       class D(B,C): ...
     |} in
-  let module Handler = (val environment) in
-  let order =
-    {
-      TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
-    }
-  in
   let assert_meet left right expected =
     assert_equal
       ~cmp:Type.equal

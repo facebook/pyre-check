@@ -86,7 +86,7 @@ val widen
   -> next: Type.t
   -> iteration: int
   -> Type.t
-val mismatch_with_any: t -> Type.t -> Type.t -> bool
+val is_consistent_with: t -> Type.t -> Type.t -> bool
 val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool
 val contains_untracked: t -> Type.t -> bool

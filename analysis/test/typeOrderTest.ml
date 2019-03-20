@@ -25,19 +25,19 @@ let less_or_equal
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  less_or_equal { handler; constructor; implements }
+  less_or_equal { handler; constructor; implements; any_is_bottom = false }
 
 let join
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  join { handler; constructor; implements }
+  join { handler; constructor; implements; any_is_bottom = false }
 
 let meet
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  meet  { handler; constructor; implements }
+  meet  { handler; constructor; implements; any_is_bottom = false }
 
 (* Butterfly:
     0 - 2
@@ -2488,6 +2488,7 @@ let test_instantiate_parameters _ =
       handler = default;
       constructor = (fun _ -> None);
       implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+      any_is_bottom = false;
     }
   in
   assert_equal
@@ -2987,7 +2988,7 @@ let test_solve_constraints _ =
       | _ ->
           TypeOrder.DoesNotImplement
     in
-    { handler = Resolution.order resolution; constructor; implements }
+    { handler = Resolution.order resolution; constructor; implements; any_is_bottom = false }
   in
   let assert_solve
       ~source
@@ -3230,207 +3231,208 @@ let test_solve_constraints _ =
   ()
 
 
-let test_mismatch_with_any _ =
-  let mismatch_with_any =
+let test_is_consistent_with _ =
+  let is_consistent_with =
     let order =
       {
         handler = default;
         constructor = (fun _ -> None);
         implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+        any_is_bottom = false;
       }
     in
-    mismatch_with_any order
+    is_consistent_with order
   in
-  assert_false (mismatch_with_any Type.Bottom Type.Top);
-  assert_false (mismatch_with_any Type.integer Type.string);
+  assert_true (is_consistent_with Type.Bottom Type.Top);
+  assert_false (is_consistent_with Type.integer Type.string);
 
-  assert_true (mismatch_with_any Type.Any Type.string);
-  assert_true (mismatch_with_any Type.integer Type.Any);
+  assert_true (is_consistent_with Type.Any Type.string);
+  assert_true (is_consistent_with Type.integer Type.Any);
 
-  assert_false (mismatch_with_any (Type.Optional Type.integer) (Type.Optional Type.string));
-  assert_true (mismatch_with_any (Type.Optional Type.Any) (Type.Optional Type.string));
+  assert_false (is_consistent_with (Type.Optional Type.integer) (Type.Optional Type.string));
+  assert_true (is_consistent_with (Type.Optional Type.Any) (Type.Optional Type.string));
 
-  assert_false (mismatch_with_any (Type.list Type.integer) (Type.list Type.string));
-  assert_true (mismatch_with_any (Type.list Type.Any) (Type.list Type.string));
+  assert_false (is_consistent_with (Type.list Type.integer) (Type.list Type.string));
+  assert_true (is_consistent_with (Type.list Type.Any) (Type.list Type.string));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.string ~value:Type.integer)
        (Type.dictionary ~key:Type.string ~value:Type.string));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.string ~value:Type.Any)
        (Type.dictionary ~key:Type.string ~value:Type.string));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.dictionary ~key:Type.string ~value:(Type.list Type.integer)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.dictionary
           ~key:Type.string
           ~value:(Type.dictionary ~key:Type.string ~value:Type.integer)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.Any)
        (Type.Optional
           (Type.dictionary
              ~key:Type.string
              ~value:Type.string)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.bool)
        (Type.parametric "typing.Mapping" [Type.integer; Type.bool]));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.bool)
        (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool]));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.dictionary ~key:Type.integer ~value:Type.bool)
        (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool]));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool])
        (Type.dictionary ~key:Type.Any ~value:Type.bool));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool])
        (Type.dictionary ~key:Type.integer ~value:Type.bool));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.list Type.Any)
        (Type.iterable Type.string));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.list Type.integer)
        (Type.sequence Type.Any));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterable Type.string)
-       (Type.parametric "typing.Optional" [Type.Any]));
+       (Type.Optional Type.Any));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterable Type.string)
-       (Type.parametric "typing.Optional" [Type.string]));
+       (Type.Optional Type.string));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterable Type.string)
        (Type.list Type.Any));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterable Type.Any)
        (Type.list Type.string));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterable Type.integer)
        (Type.set Type.Any));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.parametric "typing.AbstractSet" [Type.object_primitive])
        (Type.set Type.Any));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.set Type.Any)
        (Type.parametric "typing.AbstractSet" [Type.object_primitive]));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.tuple [Type.string; Type.string])
        (Type.tuple [Type.string; Type.integer]));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.tuple [Type.string; Type.string])
        (Type.tuple [Type.string; Type.Any]));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Tuple (Type.Unbounded Type.integer))
        (Type.Tuple (Type.Unbounded Type.string)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Tuple (Type.Unbounded Type.integer))
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Tuple (Type.Bounded [Type.integer; Type.Any]))
        (Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
        (Type.Tuple (Type.Unbounded Type.string)));
 
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.union [Type.integer; Type.string])
        (Type.union [Type.integer; Type.float]));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.union [Type.integer; Type.string])
        (Type.union [Type.integer; Type.Any]));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.union [Type.integer; Type.Any])
        Type.integer);
 
 
-  assert_false (mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.Any));
-  assert_true (mismatch_with_any (Type.generator Type.Any) (Type.iterator Type.integer));
+  assert_false (is_consistent_with (Type.iterator Type.integer) (Type.generator Type.Any));
+  assert_true (is_consistent_with (Type.generator Type.Any) (Type.iterator Type.integer));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (Type.iterator (Type.list Type.integer))
        (Type.generator (Type.list Type.Any)));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.generator (Type.list Type.Any))
        (Type.iterator (Type.list Type.integer)));
-  assert_false (mismatch_with_any (Type.iterator Type.integer) (Type.generator Type.float));
+  assert_false (is_consistent_with (Type.iterator Type.integer) (Type.generator Type.float));
 
-  assert_true
-    (mismatch_with_any
+  assert_false
+    (is_consistent_with
        (Type.Union [Type.list Type.integer; Type.string])
        (Type.list Type.Any));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (Type.Callable.create ~annotation:Type.integer ())
        Type.Any);
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        Type.Any
        (Type.Callable.create ~annotation:Type.integer ()));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        Type.Any
        (Type.union [Type.integer; Type.Callable.create ~annotation:Type.integer ()]));
 
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (parse_callable "typing.Callable[[typing.Any], int]")
        (parse_callable "typing.Callable[[str], int]"));
   assert_true
-    (mismatch_with_any
+    (is_consistent_with
        (parse_callable "typing.Callable[[int], typing.Any]")
        (parse_callable "typing.Callable[[int], int]"));
-  assert_true
-    (mismatch_with_any
+  assert_false
+    (is_consistent_with
        (parse_callable "typing.Callable[[int], typing.Any]")
        (parse_callable "typing.Callable[[str], int]"));
   assert_false
-    (mismatch_with_any
+    (is_consistent_with
        (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
        (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
 
@@ -3459,6 +3461,6 @@ let () =
     "normalize">::test_normalize;
     "variables">::test_variables;
     "solve_constraints">::test_solve_constraints;
-    "mismatch_with_any">::test_mismatch_with_any;
+    "is_consistent_with">::test_is_consistent_with;
   ]
   |> Test.run
