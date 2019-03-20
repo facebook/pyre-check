@@ -295,7 +295,7 @@ let test_function_definitions _ =
     in
     let functions =
       Resolution.function_definitions resolution (Access.create access)
-      >>| List.map ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.show name)
+      >>| List.map ~f:(fun { Node.value = { Define.name; _ }; _ } -> Reference.show name)
       |> Option.value ~default:[]
     in
     assert_equal ~printer:(String.concat ~sep:", ") expected functions

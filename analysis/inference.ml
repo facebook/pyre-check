@@ -407,14 +407,14 @@ let run
   let dequalify_map = Preprocessing.dequalify_map source in
 
   let check ({ Node.location; value = { Define.name; _ } as define } as define_node) =
-    Log.log ~section:`Check "Checking %a" Access.pp name;
+    Log.log ~section:`Check "Checking %a" Reference.pp name;
     let dump = Define.dump define in
 
     if dump then
       begin
         Log.dump
           "Checking `%s`..."
-          (Log.Color.yellow (Access.show name));
+          (Log.Color.yellow (Reference.show name));
         Log.dump "AST:\n%s" (Annotated.Define.create define |> Annotated.Define.show);
       end;
 
@@ -467,7 +467,7 @@ let run
           ~integers:[]
           ~normals:[
             "handle", (File.Handle.show handle);
-            "define", Access.show name;
+            "define", Reference.show name;
             "type", Type.show annotation;
           ]
           ();

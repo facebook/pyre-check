@@ -64,7 +64,7 @@ module CountingFixpoint = Fixpoint.Make(CountingState)
 
 let assert_fixpoint body expected =
   let define = {
-    Define.name = Access.create "foo";
+    Define.name = Reference.create "foo";
     parameters = [];
     body;
     decorators = [];

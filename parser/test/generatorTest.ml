@@ -578,7 +578,7 @@ let test_define _ =
     "def foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -598,7 +598,7 @@ let test_define _ =
     "def foo(*, a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "*";
@@ -623,7 +623,7 @@ let test_define _ =
     "def foo(**a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "**a";
@@ -643,7 +643,7 @@ let test_define _ =
     "async def foo():\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1)];
         decorators = [];
@@ -657,7 +657,7 @@ let test_define _ =
     "async def foo():\n  ..."
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -671,7 +671,7 @@ let test_define _ =
     "@foo\nasync def foo():\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1)];
         decorators = [!"foo"];
@@ -685,7 +685,7 @@ let test_define _ =
     "@decorator\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -705,7 +705,7 @@ let test_define _ =
     "@decorator(a=b, c=d)\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -734,7 +734,7 @@ let test_define _ =
     "@foo\n\n@bar\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -754,7 +754,7 @@ let test_define _ =
     "def foo(a, b):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -779,7 +779,7 @@ let test_define _ =
     "def foo(a = 1, b):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -804,7 +804,7 @@ let test_define _ =
     "def foo(a=()):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -824,7 +824,7 @@ let test_define _ =
     "def foo(): 1; 2"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -838,7 +838,7 @@ let test_define _ =
     "def foo():\n  1\n  2\n3"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -853,11 +853,11 @@ let test_define _ =
     "def foo():\n  def bar():\n    1\n    2\n3"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            Define.name = Reference.create "bar";
             parameters = [];
             body = [+Expression (+Integer 1); +Expression (+Integer 2)];
             decorators = [];
@@ -880,7 +880,7 @@ let test_define _ =
     "def foo(a: int):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -900,7 +900,7 @@ let test_define _ =
     "def foo(a: int = 1):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -920,7 +920,7 @@ let test_define _ =
     "def foo(a: int, b: string):  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -945,7 +945,7 @@ let test_define _ =
     "def foo(a: Tuple[int, str]):\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -980,7 +980,7 @@ let test_define _ =
     "def foo(a, b,) -> c:\n  1"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1005,7 +1005,7 @@ let test_define _ =
     "def foo() -> str:\n  1\n  2"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
         decorators = [];
@@ -1023,7 +1023,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [
           +Return {
@@ -1045,7 +1045,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [
           +Return {
@@ -1068,7 +1068,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [
           +Return {
@@ -1091,7 +1091,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1119,7 +1119,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1148,7 +1148,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1176,7 +1176,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1210,7 +1210,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1244,7 +1244,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "self";
@@ -1283,7 +1283,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "self";
@@ -1322,7 +1322,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body = [
           +Return {
@@ -1348,7 +1348,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "self";
@@ -1384,7 +1384,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1415,7 +1415,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1443,7 +1443,7 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -2679,7 +2679,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            Define.name = Reference.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -2702,11 +2702,11 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            Define.name = Reference.create "bar";
             parameters = [];
             body = [
               +Define {
-                Define.name = Access.create "baz";
+                Define.name = Reference.create "baz";
                 parameters = [];
                 body = [+Pass];
                 decorators = [];
@@ -2834,7 +2834,7 @@ let test_class _ =
         bases = [{ Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
-            Define.name = Access.create "bar";
+            Define.name = Reference.create "bar";
             parameters = [];
             body = [+Pass];
             decorators = [];
@@ -2857,7 +2857,7 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Access.create "__init__";
+            Define.name = Reference.create "__init__";
             parameters = [
               +{
                 Parameter.name = "self";
@@ -2902,7 +2902,7 @@ let test_class _ =
             If.test = +Expression.True;
             body = [
               +Define {
-                Define.name = Access.create "bar";
+                Define.name = Reference.create "bar";
                 parameters = [];
                 body = [+Pass];
                 decorators = [];
@@ -4228,7 +4228,7 @@ let test_stubs _ =
     "def foo(a): ..."
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -4248,7 +4248,7 @@ let test_stubs _ =
     "def foo(a): ... # type: ignore"
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -4268,7 +4268,7 @@ let test_stubs _ =
     "def foo(a):\n\t..."
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -4289,7 +4289,7 @@ let test_stubs _ =
     "@overload\ndef foo(a: int = ...):  ..."
     [
       +Define {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -4353,7 +4353,7 @@ let test_ellipsis _ =
     "def __init__(debug = ...):\n\tpass"
     [
       +Define {
-        Define.name = Access.create "__init__";
+        Define.name = Reference.create "__init__";
         parameters = [
           +{
             Parameter.name = "debug";

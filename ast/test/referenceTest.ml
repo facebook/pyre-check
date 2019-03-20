@@ -86,6 +86,22 @@ let test_new_expression _ =
 
 
 let test_prefix _ =
+  let check_prefix prefix reference =
+    Reference.is_prefix ~prefix:(Reference.create prefix) (Reference.create reference)
+  in
+  assert_true (check_prefix "" "a");
+  assert_true (check_prefix "a" "a.b");
+  assert_true (check_prefix "a.b" "a.b");
+  assert_false (check_prefix "a.c" "c.a");
+
+  let check_suffix suffix reference =
+    Reference.is_suffix ~suffix:(Reference.create suffix) (Reference.create reference)
+  in
+  assert_true (check_suffix "" "a");
+  assert_true (check_suffix "a" "a");
+  assert_true (check_suffix "b.c" "a.b.c");
+  assert_false (check_suffix "a" "a.b");
+
   let check_strict prefix reference =
     Reference.is_strict_prefix ~prefix:(Reference.create prefix) (Reference.create reference)
   in
@@ -117,7 +133,10 @@ let test_prefix _ =
   assert_prefix "a.b.c" (Some "a.b");
 
   let assert_last reference last =
-    assert_equal last (Reference.last (Reference.create reference))
+    assert_equal
+      ~printer:Reference.show
+      (Reference.create last)
+      (Reference.last (Reference.create reference))
   in
   assert_last "a" "a";
   assert_last "a.b" "b"

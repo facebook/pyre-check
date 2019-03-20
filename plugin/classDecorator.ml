@@ -37,7 +37,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                   let generated_methods =
                     let create_method ~name ~parameters ~return_annotation =
                       {
-                        Define.name = parent @ (Access.create name);
+                        Define.name = Reference.create ~prefix:(Reference.from_access parent) name;
                         parameters =
                           Parameter.create ~name:"self" ()
                           :: parameters;

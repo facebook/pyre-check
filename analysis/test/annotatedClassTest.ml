@@ -356,10 +356,7 @@ let test_methods _ =
           |> fun environment -> TypeCheck.resolution environment ()
         in
         let actuals =
-          let method_name { Define.name; _ } =
-            List.tl_exn name
-            |> Access.show
-          in
+          let method_name { Define.name; _ } = Reference.show (Reference.last name) in
           Node.create_with_default_location definition
           |> Class.create
           |> Class.methods ~resolution

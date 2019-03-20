@@ -7,7 +7,6 @@ open Core
 open Sexplib.Conv
 
 open Expression
-open Pyre
 
 type t = string list
 [@@deriving compare, eq, sexp, hash]
@@ -62,9 +61,26 @@ let create ?prefix name =
     else
       String.split ~on:'.' name
   in
-  prefix
-  >>| (fun prefix -> prefix @ name)
-  |> Option.value ~default:name
+  match prefix with
+  | None
+  | Some [""] ->
+      name
+  | Some prefix ->
+      prefix @ name
+
+
+let create_from_list names =
+  names
+
+
+let combine prefix suffix =
+  match prefix with
+  | [""] -> suffix
+  | _ -> prefix @ suffix
+
+
+let from_access access =
+  Access.show access |> create
 
 
 let expression =
@@ -121,12 +137,28 @@ let show_sanitized reference =
   Format.asprintf "%a" pp_sanitized reference
 
 
+let rec is_prefix ~prefix reference =
+  match prefix, reference with
+  | [], _ -> true
+  | prefix_head :: prefix, _ when prefix_head = "" ->
+      is_prefix ~prefix reference
+  | prefix_head :: prefix, head :: reference when prefix_head = head ->
+      is_prefix ~prefix reference
+  | _ ->
+      false
+
+
+let is_suffix ~suffix reference =
+  is_prefix ~prefix:(List.rev suffix) (List.rev reference)
+
+
 let rec is_strict_prefix ~prefix reference =
   match prefix, reference with
   | [], _ :: _ ->
       true
-  | prefix_head :: prefix, head :: reference
-    when equal [prefix_head] [head] ->
+  | prefix_head :: prefix, _ when prefix_head = "" ->
+      is_strict_prefix ~prefix reference
+  | prefix_head :: prefix, head :: reference when prefix_head = head ->
       is_strict_prefix ~prefix reference
   | _ ->
       false
@@ -137,7 +169,7 @@ let drop_prefix ~prefix reference =
     match prefix, reference with
     | _, [_] when not stripped ->
         None
-    | prefix_head :: prefix_tail, head :: tail when equal [prefix_head] [head] ->
+    | prefix_head :: prefix_tail, head :: tail when prefix_head = head ->
         strip true tail prefix_tail
     | [], reference ->
         Some reference
@@ -159,4 +191,4 @@ let prefix reference =
 
 let last = function
   | [] -> failwith "Reference cannot be empty."
-  | reference -> List.last_exn reference
+  | reference -> List.last_exn reference |> create

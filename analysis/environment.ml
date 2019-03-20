@@ -782,7 +782,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             callables
             ({ Define.name; _ } as define) =
 
-          Handler.DependencyHandler.add_function_key ~handle name;
+          Handler.DependencyHandler.add_function_key ~handle (Reference.expression name);
 
           (* Register callable global. *)
           let callable =
@@ -804,7 +804,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             | None -> Some [callable]
             | Some existing -> Some (existing @ [callable])
           in
-          Map.change callables name ~f:(change callable)
+          Map.change callables (Reference.expression name) ~f:(change callable)
         in
         match statement with
         | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->
@@ -958,7 +958,7 @@ let infer_protocol_edges
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
               | Define define ->
-                  let method_name = Define.unqualified_name define in
+                  let method_name = Reference.show (Define.unqualified_name define) in
                   if Set.mem protocol_methods method_name then
                     let classes =
                       match Map.find methods_to_implementing_classes method_name with
@@ -1155,7 +1155,7 @@ module Builder = struct
         [],
         [
           Define {
-            Define.name = Access.create "typing.Generic.__getitem__";
+            Define.name = Reference.create "typing.Generic.__getitem__";
             parameters = [
               { Parameter.name = "*args"; value = None; annotation = None}
               |> Node.create_with_default_location;

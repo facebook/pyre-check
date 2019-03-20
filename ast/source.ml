@@ -289,7 +289,7 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
             (target, annotation, value, parent)
       | Define { Define.name; parameters; decorators; return_annotation; async; parent; _ } ->
           [%hash:
-            Access.t *
+            Reference.t *
             ((Expression.t Parameter.t) list) *
             (Expression.t list) *
             (Expression.t option) *

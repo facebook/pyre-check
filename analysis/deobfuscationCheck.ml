@@ -131,7 +131,7 @@ module ConstantPropagationState(Context: Context) = struct
       TypeCheck.resolution_with_key
         ~environment:Context.environment
         ~parent
-        ~access:name
+        ~access:(Reference.expression name)
         ~key
     in
 
@@ -390,6 +390,7 @@ module Scheduler (State: State) (Context: Context) = struct
                 run ~state:(Some state) ~define:nested_define))
       |> ignore
     in
+    let qualifier = Some (Reference.from_access qualifier) in
     let define = Define.create_toplevel ~qualifier ~statements in
     run ~state:None ~define;
 
@@ -499,6 +500,15 @@ let run
       | _ ->
           access
     in
+    let sanitize_reference reference =
+      let last = Reference.show (Reference.last reference) in
+      if String.length last > 15 then
+        let replacement = generate_identifier () in
+        Hashtbl.set replacements ~key:last ~data:replacement;
+        Reference.create ?prefix:(Reference.prefix reference) replacement
+      else
+        reference
+    in
     let sanitize_identifier identifier =
       if String.length (Identifier.sanitized identifier) > 15 then
         begin
@@ -523,7 +533,7 @@ let run
                   let names = String.Hash_set.create () in
                   let scope_name identifier =
                     let qualifier =
-                      Access.show name
+                      Reference.show name
                       |> String.substr_replace_all ~pattern:"." ~with_:"?"
                     in
                     identifier
@@ -580,7 +590,7 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter
                   in
-                  Define { define with Define.name = sanitize_access name; parameters; body }
+                  Define { define with Define.name = sanitize_reference name; parameters; body }
               | For ({
                   For.target = { Node.value = Access (SimpleAccess access); _ } as target;
                   _;
@@ -675,6 +685,14 @@ let run
           else
             sanitized
 
+        let dequalify_reference reference =
+          let sanitized = Reference.sanitized reference in
+          let qualifier = Reference.from_access qualifier in
+          if Reference.is_strict_prefix ~prefix:qualifier sanitized then
+            Reference.drop_prefix ~prefix:qualifier sanitized
+          else
+            sanitized
+
         let expression _ expression =
           let value =
             match Node.value expression with
@@ -700,7 +718,7 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define { define with Define.name = dequalify_access name; parameters }
+                  Define { define with Define.name = dequalify_reference name; parameters }
               | Try ({ Try.handlers; _ } as block) ->
                   let handlers =
                     let sanitize_handler ({ Try.name; _ } as handler) =
@@ -761,7 +779,9 @@ let run
 
   (* Create error. *)
   let location = Location.Reference.create_with_handle ~handle in
-  let define = Define.create_toplevel ~qualifier ~statements in
+  let define =
+    Define.create_toplevel ~qualifier:(Some (Reference.from_access qualifier)) ~statements
+  in
   [
     Error.create
       ~location

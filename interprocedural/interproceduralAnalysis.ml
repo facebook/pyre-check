@@ -296,7 +296,7 @@ let analyze_define
         Log.log
           ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%a`"
-          Access.pp name
+          Reference.pp name
           Analysis.Type.pp annotation;
         Result.Kind.Map.empty, Result.Kind.Map.empty
     | Sys.Break as exn ->
@@ -676,7 +676,7 @@ let compute_fixpoint
       in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
-        (Log.Color.yellow (Access.show name))
+        (Log.Color.yellow (Reference.show name))
         iterations
         Result.pp_model_t model;
     in

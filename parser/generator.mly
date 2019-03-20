@@ -607,7 +607,7 @@ compound_statement:
       }
     }
 
-  | definition = DEFINE; name = simple_access;
+  | definition = DEFINE; name = reference;
     LEFTPARENS;
     parameters = define_parameters;
     RIGHTPARENS;
@@ -881,6 +881,19 @@ simple_access:
         List.map ~f:snd identifiers
         |> List.map ~f:(fun identifier -> Access.Identifier identifier) in
       location, identifiers
+    }
+  ;
+
+reference:
+  | identifiers = separated_nonempty_list(DOT, identifier) {
+      let location =
+        let (start, _) = List.hd_exn identifiers in
+        let (stop, _) = List.last_exn identifiers in
+        { start with Location.stop = stop.Location.stop } in
+      let reference =
+        List.map ~f:snd identifiers
+        |> Reference.create_from_list in
+      location, reference
     }
   ;
 

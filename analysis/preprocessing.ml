@@ -348,6 +348,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
           }
       | Define { Define.name; _ } ->
+          let name = Reference.expression name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -585,10 +586,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   ~scope:{ scope with use_forward_references = true })
         in
         let scope, parameters = qualify_parameters ~scope parameters in
-        let _, body = qualify_statements ~scope:{ scope with qualifier = qualifier @ name } body in
+        let qualifier = qualifier @ (Reference.expression name) in
+        let _, body = qualify_statements ~scope:{ scope with qualifier } body in
         {
           define with
-          Define.name = qualify_access ~suppress_synthetics:true ~qualify_strings:false ~scope name;
+          Define.name =
+            qualify_reference ~suppress_synthetics:true ~qualify_strings:false ~scope name;
           parameters;
           body;
           decorators;
@@ -641,7 +644,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     Node.location;
                     value = Define {
                         define with
-                        Define.name = qualify_access name ~scope ~qualify_strings:false;
+                        Define.name = qualify_reference ~qualify_strings:false ~scope name;
                         parameters;
                         decorators;
                         return_annotation;
@@ -900,6 +903,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         |> List.rev
     | _ ->
         access
+
+  and qualify_reference ?(suppress_synthetics = false) ~qualify_strings ~scope reference =
+    Reference.expression reference
+    |> qualify_access ~suppress_synthetics ~qualify_strings ~scope
+    |> Reference.from_access
 
   and qualify_expression
       ~qualify_strings
@@ -1378,6 +1386,7 @@ let defines
   in
   let defines = (Collector.collect source) in
   if extract_into_toplevel then
+    let qualifier = Some (Reference.from_access qualifier) in
     let toplevel =
       Node.create_with_default_location (Statement.Define.create_toplevel ~qualifier ~statements)
     in
@@ -1455,7 +1464,7 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
       } |> node
     in
     let replace_typed_dictionary_define = function
-      | { Node.location; value = Define { name; _ } } when Access.show name = "TypedDict" ->
+      | { Node.location; value = Define { name; _ } } when Reference.show name = "TypedDict" ->
           typed_dictionary_stub ~location
       | statement ->
           statement

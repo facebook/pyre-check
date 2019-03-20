@@ -14,7 +14,7 @@ module Argument = Expression.Argument
 module Record = struct
   module Define = struct
     type 'statement record = {
-      name: Access.t;
+      name: Reference.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -255,7 +255,7 @@ module Define = struct
 
   let create_toplevel ~qualifier ~statements =
     {
-      name = qualifier @ (Access.create "$toplevel");
+      name = Reference.create ?prefix:qualifier "$toplevel";
       parameters = [];
       body = statements;
       decorators = [];
@@ -268,21 +268,19 @@ module Define = struct
 
   let create_class_toplevel ~qualifier ~statements =
     {
-      name = qualifier @ (Access.create "$class_toplevel");
+      name = Reference.create ~prefix:qualifier "$class_toplevel";
       parameters = [];
       body = statements;
       decorators = [];
       docstring = None;
       return_annotation = None;
       async = false;
-      parent = Some qualifier;
+      parent = Some (qualifier |> Reference.expression);
     }
 
 
   let unqualified_name { name; _ } =
-    match List.last_exn name with
-    | Access.Identifier identifier -> identifier
-    | _ -> failwith "Define does not have a valid name."
+    Reference.last name
 
 
   let self_identifier { parameters; _ } =
@@ -325,17 +323,18 @@ module Define = struct
 
   let is_dunder_method define =
     let name = unqualified_name define in
-    String.is_prefix ~prefix:"__" name &&
-    String.is_suffix ~suffix:"__" name
+    String.is_prefix ~prefix:"__" (Reference.show name) &&
+    String.is_suffix ~suffix:"__" (Reference.show name)
 
 
   let is_class_method ({ parent; _ } as define) =
+    let valid_names =
+      ["__init_subclass__"; "__new__"; "__class_getitem__"]
+      |> List.map ~f:Reference.create
+    in
     Option.is_some parent &&
     (Set.exists Recognized.classmethod_decorators ~f:(has_decorator define) ||
-     List.mem
-       ["__init_subclass__"; "__new__"; "__class_getitem__"]
-       (unqualified_name define)
-       ~equal:String.equal)
+     List.mem valid_names (unqualified_name define) ~equal:Reference.equal)
 
 
   let is_class_property ({ parent; _ } as define) =
@@ -344,7 +343,7 @@ module Define = struct
 
 
   let is_constructor ?(in_test = false) ({ parent; _ } as define) =
-    let name = unqualified_name define in
+    let name = Reference.show (unqualified_name define) in
     if Option.is_none parent then
       false
     else
@@ -357,7 +356,7 @@ module Define = struct
 
 
   let is_property_setter define =
-    has_decorator define ((unqualified_name define) ^ ".setter")
+    has_decorator define ((Reference.show (unqualified_name define)) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -369,11 +368,11 @@ module Define = struct
 
 
   let is_toplevel define =
-    Identifier.equal (unqualified_name define) "$toplevel"
+    Reference.equal (unqualified_name define) (Reference.create "$toplevel")
 
 
   let is_class_toplevel define =
-    Identifier.equal (unqualified_name define) "$class_toplevel"
+    Reference.equal (unqualified_name define) (Reference.create "$class_toplevel")
 
 
   let contains_call { body; _ } name =
@@ -543,15 +542,20 @@ module Define = struct
               Access
                 (SimpleAccess [
                     Access.Identifier self;
-                    (Access.Identifier _) as name;
+                    Access.Identifier name;
                     Access.Call _;
                   ]);
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
+            let equals callee name parent =
+               Reference.equal
+                callee
+                (Reference.create ~prefix:(Reference.from_access parent) name)
+            in
             let inline = function
               | { Node.value = Define { name = callee; body; parent = Some parent; _ }; _ }
-                when Access.equal callee (parent @ [name]) ->
+                when equals callee name parent ->
                   Some body
               | _ ->
                   None
@@ -582,7 +586,7 @@ module Define = struct
       >>= (fun parent ->
           Attribute.name
             ~parent
-            (Node.create ~location (Access (SimpleAccess name))))
+            (Node.create ~location (Access (SimpleAccess (Reference.expression name)))))
       >>| fun name ->
       Attribute.create
         ~location
@@ -682,7 +686,7 @@ module Class = struct
   let find_define { Record.Class.body; _ } ~method_name =
     let is_define = function
       | { Node.value = Define define; location}
-        when Identifier.equal (Define.unqualified_name define) method_name ->
+        when Reference.equal (Define.unqualified_name define) (Reference.create method_name) ->
           Some { Node.value = define; location }
       | _ ->
           None
@@ -833,7 +837,9 @@ module Class = struct
         match value with
         | Define ({ Define.name = target; _ } as define) ->
             Attribute.name
-              (Node.create ~location (Expression.Access (SimpleAccess target)))
+              (Node.create
+                ~location
+                (Expression.Access (SimpleAccess (Reference.expression target))))
               ~parent:name
             >>| (fun name ->
                   let attribute =
@@ -1007,7 +1013,7 @@ module Class = struct
                       _;
                     };
                   _;
-                } when Access.equal name stub_name &&
+                } when Reference.equal name stub_name &&
                        List.length parameters = List.length stub_parameters ->
                     true
                 | _ ->
@@ -1362,7 +1368,7 @@ module PrettyPrinter = struct
       pp_async async
       pp_access_list_option parent
       (if Option.is_some parent then "#" else "")
-      pp_access_list name
+      Reference.pp name
       Expression.pp_expression_parameter_list parameters
       return_annotation
       pp_statement_list body

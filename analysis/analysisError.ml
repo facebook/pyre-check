@@ -324,6 +324,13 @@ let messages ~concise ~define location kind =
     in
     Access.pp_sanitized format access
   in
+  let pp_reference format reference =
+    if concise then
+      Reference.last reference
+      |> Reference.pp_sanitized format
+    else
+      Reference.pp_sanitized format reference
+  in
   let pp_identifier = Identifier.pp_sanitized in
   let kind = weaken_literals kind in
   match kind with
@@ -529,7 +536,7 @@ let messages ~concise ~define location kind =
       [
         Format.asprintf
           "`%a` overrides method defined in `%a` inconsistently.%s"
-          pp_access define_name
+          pp_reference define_name
           pp_access parent
           (if concise then "" else " " ^ detail)
       ]
@@ -1222,7 +1229,7 @@ let inference_information
     >>| (fun string -> `String string)
     |> Option.value ~default:`Null
   in
-  let function_name = Access.show_sanitized name in
+  let function_name = Reference.show_sanitized name in
   match kind with
   | MissingReturnAnnotation { annotation = Some annotation; _ } ->
       `Assoc [

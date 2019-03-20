@@ -90,9 +90,9 @@ let create_override access =
 let create { Node.value = define; _ } =
   match define.Define.parent with
   | Some _ ->
-      create_method define.name
+      create_method (Reference.expression define.name)
   | None ->
-      create_function define.name
+      create_function (Reference.expression define.name)
 
 
 let create_derived_override override ~at_type =
@@ -174,7 +174,7 @@ let class_exists class_name =
 
 
 let define_matches search { Node.value = { Define.name; _ } ; _ } =
-  search = Access.show name
+  search = Reference.show name
 
 
 let class_matches search { Node.value = { Class.name; _ } ; _ } =

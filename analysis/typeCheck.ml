@@ -231,7 +231,7 @@ module State = struct
 
 
   let pp_nested_define format { nested = { Define.name; _ }; _ } =
-    Format.fprintf format "%a" Access.pp name
+    Format.fprintf format "%a" Reference.pp name
 
 
   let show_nested_define nested =
@@ -516,11 +516,9 @@ module State = struct
         begin
           let no_explicit_class_constructor =
             let name =
-              List.rev name
-              |> List.tl
-              |> Option.value ~default:[]
-              |> List.rev
-              |> Access.show
+              Reference.prefix name
+              >>| Reference.show
+              |> Option.value ~default:""
             in
             Resolution.class_definition resolution (Type.Primitive name)
             >>| (fun { Node.value = definition; _ } -> Class.constructors definition)
@@ -1615,13 +1613,13 @@ module State = struct
              Class.overrides
                definition
                ~resolution
-               ~name:(Statement.Define.unqualified_name define)
+               ~name:(Reference.show (Statement.Define.unqualified_name define))
              >>| fun overridden_attribute ->
              (* Check strengthening of postcondition. *)
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
              | Type.Callable { Type.Callable.implementation; _ } ->
                  let original_implementation =
-                   name
+                   Reference.expression name
                    |> Statement.Access.expression
                    |> Resolution.resolve resolution
                    |> function
@@ -1639,7 +1637,8 @@ module State = struct
                        Error.create
                          ~location
                          ~kind:(Error.InconsistentOverride {
-                             overridden_method = Statement.Define.unqualified_name define;
+                             overridden_method =
+                               Reference.show (Statement.Define.unqualified_name define);
                              parent =
                                Attribute.parent overridden_attribute
                                |> Type.show
@@ -1694,7 +1693,8 @@ module State = struct
                                Error.create
                                  ~location
                                  ~kind:(Error.InconsistentOverride {
-                                     overridden_method = Statement.Define.unqualified_name define;
+                                     overridden_method =
+                                       Reference.show (Statement.Define.unqualified_name define);
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
@@ -1743,7 +1743,8 @@ module State = struct
                            Error.create
                              ~location
                              ~kind:(Error.InconsistentOverride {
-                                 overridden_method = Statement.Define.unqualified_name define;
+                                 overridden_method =
+                                   Reference.show (Statement.Define.unqualified_name define);
                                  parent =
                                    Attribute.parent overridden_attribute
                                    |> Type.show
@@ -3769,9 +3770,10 @@ module State = struct
               |> Annotated.Class.create
               |> Annotated.Class.generics ~resolution
             in
+            let qualifier = Reference.from_access name in
             schedule
               ~variables
-              ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
+              ~define:(Define.create_class_toplevel ~qualifier ~statements:body)
         | Define ({ Define.parameters; _ } as define) when not (Define.is_stub define) ->
             let variables =
               let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
@@ -3863,7 +3865,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
       State.configuration = Configuration.Analysis.create ();
       errors = Error.Set.empty;
       define =
-        Define.create_toplevel ~qualifier:[] ~statements:[]
+        Define.create_toplevel ~qualifier:None ~statements:[]
         |> Node.create_with_default_location;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
@@ -3968,14 +3970,14 @@ let run
       ~define:{ Node.value = ({ Define.name; parent; _ } as define); _ }
       ~initial
       ~queue =
-    Log.log ~section:`Check "Checking %a" Access.pp name;
+    Log.log ~section:`Check "Checking %a" Reference.pp name;
     let dump = Define.dump define in
 
     if dump then
       begin
         Log.dump
           "Checking `%s`..."
-          (Log.Color.yellow (Access.show name));
+          (Log.Color.yellow (Reference.show name));
         Log.dump "AST:\n%a" Define.pp define;
       end;
 
@@ -3997,12 +3999,12 @@ let run
         begin
           let name =
             match parent with
-            | Some parent -> parent @ name
+            | Some parent -> Reference.combine (Reference.from_access parent) name
             | None -> name
           in
           Path.create_relative
             ~root:(Configuration.Analysis.pyre_root configuration)
-            ~relative:(Format.asprintf "cfgs%a.dot" Access.pp name)
+            ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
           |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
           |> File.write
         end
@@ -4017,7 +4019,7 @@ let run
 
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
-      ResolutionSharedMemory.add name resolution_fixpoint
+      ResolutionSharedMemory.add (Reference.expression name) resolution_fixpoint
     in
     exit
     >>| dump_resolutions
@@ -4056,6 +4058,7 @@ let run
               }
               |> Location.reference
             in
+            let qualifier = Some (Reference.from_access qualifier) in
             Define.create_toplevel ~qualifier ~statements
             |> Node.create ~location
           in
@@ -4085,7 +4088,7 @@ let run
                   ~integers:[]
                   ~normals:[
                     "handle", (File.Handle.show handle);
-                    "define", Access.show name;
+                    "define", Reference.show name;
                     "type", Type.show annotation;
                   ]
                   ();

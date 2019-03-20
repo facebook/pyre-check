@@ -1469,7 +1469,7 @@ let test_expand_implicit_returns _ =
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
-             Define.name = Access.create "foo";
+             Define.name = Reference.create "foo";
              parameters = [];
              body = expected_body;
              decorators = [];
@@ -1567,7 +1567,7 @@ let test_defines _ =
   in
   let create_define name =
     {
-      Define.name = Access.create name;
+      Define.name = Reference.create name;
       parameters = [
         +{
           Parameter.name = "a";
@@ -1585,7 +1585,7 @@ let test_defines _ =
   in
   let create_toplevel body =
     {
-      Define.name = Access.create "$toplevel";
+      Define.name = Reference.create "$toplevel";
       parameters = [];
       body;
       decorators = [];
@@ -1603,7 +1603,7 @@ let test_defines _ =
 
   let inner =
     {
-      Define.name = Access.create "foo";
+      Define.name = Reference.create "foo";
       parameters = [
         +{
           Parameter.name = "a";
@@ -1621,7 +1621,7 @@ let test_defines _ =
   in
   let define =
     {
-      Define.name = Access.create "foo";
+      Define.name = Reference.create "foo";
       parameters = [
         +{
           Parameter.name = "a";
@@ -1672,7 +1672,7 @@ let test_classes _ =
       bases = [];
       body = [
         +Define {
-          Define.name = Access.create "bar";
+          Define.name = Reference.create "bar";
           parameters = [];
           body = [+Pass];
           decorators = [];

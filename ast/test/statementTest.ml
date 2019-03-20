@@ -19,7 +19,7 @@ open Test
 let test_is_method _ =
   let define ~name ~parent =
     {
-      Define.name = Access.create name;
+      Define.name = Reference.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];
@@ -36,7 +36,7 @@ let test_is_method _ =
 let test_is_classmethod _ =
   let define name decorators =
     {
-      Define.name = Access.create name;
+      Define.name = Reference.create name;
       parameters = [];
       body = [+Pass];
       decorators;
@@ -57,7 +57,7 @@ let test_is_classmethod _ =
 let test_is_class_property _ =
   let define name decorators =
     {
-      Define.name = Access.create name;
+      Define.name = Reference.create name;
       parameters = [];
       body = [+Pass];
       decorators;
@@ -76,7 +76,7 @@ let test_is_class_property _ =
 let test_decorator _ =
   let define decorators =
     {
-      Define.name = Access.create "foo";
+      Define.name = Reference.create "foo";
       parameters = [];
       body = [+Pass];
       decorators;
@@ -116,7 +116,7 @@ let test_is_constructor _ =
     in
     let define =
       {
-        Define.name = Access.create name;
+        Define.name = Reference.create name;
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -201,14 +201,14 @@ let test_defines _ =
     | Some define when exists ->
         assert_equal
           define.Node.value.Define.name
-          [Access.Identifier method_id]
-          ~printer:Access.show
+          (Reference.create method_id)
+          ~printer:Reference.show
     | None when not exists ->
         ()
     | Some { Node.value = { Define.name; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
-          Access.pp name
+          Reference.pp name
           method_name
         |> assert_failure
     | None ->
@@ -497,7 +497,7 @@ let test_attributes _ =
         let defines =
           if number_of_defines > 0 then
             let define = {
-              Statement.Define.name = Access.create "foo";
+              Statement.Define.name = Reference.create "foo";
               parameters = [];
               body = [];
               decorators = [];

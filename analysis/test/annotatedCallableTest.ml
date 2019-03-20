@@ -28,7 +28,7 @@ let test_return_annotation _ =
         |}
       in
       {
-        Statement.Define.name = Access.create "derp";
+        Statement.Define.name = Reference.create "derp";
         parameters = [];
         body = [+Pass];
         decorators = [];
@@ -52,7 +52,7 @@ let test_return_annotation _ =
 let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
     {
-      Statement.Define.name = Access.create "define";
+      Statement.Define.name = Reference.create "define";
       parameters;
       body = [+Pass];
       decorators;

@@ -8,6 +8,7 @@ open Core
 open Ast
 open Analysis
 open Expression
+open Pyre
 open PyreParser
 open Interprocedural
 open Statement
@@ -300,16 +301,17 @@ let create ~resolution ?(verify = true) ~configuration source =
     let filter_define node =
       match node with
       | { Node.value = Define define; _ } ->
-          let class_name = Access.prefix define.name in
           let class_candidate =
-            Access.expression class_name
-            |> Resolution.parse_annotation resolution
-            |> Resolution.class_definition resolution
+            Reference.prefix define.name
+            >>| Reference.expression
+            >>| Access.expression
+            >>| Resolution.parse_annotation resolution
+            >>= Resolution.class_definition resolution
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method define.name
-            | None -> Callable.create_function define.name
+            | Some _ -> Callable.create_method (Reference.expression define.name)
+            | None -> Callable.create_function (Reference.expression define.name)
           in
           Some (define, call_target)
       | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
@@ -317,7 +319,7 @@ let create ~resolution ?(verify = true) ~configuration source =
           let name =
             match Node.value target with
             | Access (SimpleAccess access) ->
-                access
+                Reference.from_access access
             | _ ->
                 failwith "Non-access name for define."
           in
@@ -332,7 +334,7 @@ let create ~resolution ?(verify = true) ~configuration source =
             parent = None;
           }
           in
-          Some (define, Callable.create_object define.name)
+          Some (define, Callable.create_object (Reference.expression define.name))
       | _ ->
           None
     in
@@ -345,7 +347,9 @@ let create ~resolution ?(verify = true) ~configuration source =
       begin
         (* Make sure we know about what we model. *)
         let call_target = (call_target :> Callable.t) in
-        let annotation = Resolution.resolve resolution (Access.expression name) in
+        let annotation =
+          Resolution.resolve resolution (Access.expression (Reference.expression name))
+        in
         if Type.equal annotation Type.Top then
           raise_invalid_model "Modeled entity is not part of the environment!";
 
@@ -379,7 +383,7 @@ let create ~resolution ?(verify = true) ~configuration source =
         |> (fun model -> { model; call_target; is_obscure = false })
       end
     with (Failure message | InvalidModel message) ->
-      Format.asprintf "Invalid model for `%a`: %s" Access.pp name message
+      Format.asprintf "Invalid model for `%a`: %s" Reference.pp name message
       |> raise_invalid_model
   in
   List.map defines ~f:create_model

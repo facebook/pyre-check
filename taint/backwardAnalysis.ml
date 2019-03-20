@@ -25,8 +25,8 @@ end
 
 
 let initial_taint define =
-  match List.rev define.Define.name with
-  | Access.Identifier name :: _ when name = "__init__" ->
+  match Reference.show (Reference.last define.Define.name) with
+  | "__init__" ->
       begin
         (* Constructor. Make self the return value *)
         match define.Define.parameters with
@@ -509,7 +509,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
           ~parent:FunctionContext.definition.value.parent
-          ~access:FunctionContext.definition.value.name
+          ~access:(Reference.expression FunctionContext.definition.value.name)
           ~key
       in
       analyze_statement ~resolution state statement
@@ -611,7 +611,7 @@ let run
       Log.log
         ~section:`Taint
         "Callable: %a Models: %a"
-        Access.pp name
+        Reference.pp name
         TaintResult.Backward.pp_model model
     in
     model

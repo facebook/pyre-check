@@ -244,8 +244,7 @@ let rec source_statement_codex_representation
       in
       CodexNode.FunctionNode {
         CodexNode.Function.docstring;
-        name =
-          access_with_parent name parent;
+        name = access_with_parent (name |> Reference.expression) parent;
         rank = 0;
         comments = None;
         location = [start_line; column];

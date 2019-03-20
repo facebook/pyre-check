@@ -38,7 +38,7 @@ let record_path_of_definitions ~path ~source =
     Callable.add_class_definition class_node.Class.name path
   in
   let record_toplevel_definition definition =
-    let name = definition.Node.value.Define.name in
+    let name = Reference.expression definition.Node.value.Define.name in
     match definition.Node.value.Define.parent with
     | None ->
         (*

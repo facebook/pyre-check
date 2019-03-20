@@ -877,7 +877,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let state =
             let define =
               Statement.Define.create_toplevel
-                ~qualifier:[]
+                ~qualifier:None
                 ~statements:[]
               |> Node.create_with_default_location
             in
@@ -1240,6 +1240,7 @@ let process_type_check_files
   List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
   |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
   |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
+  |> List.map ~f:Reference.expression
   |> ResolutionSharedMemory.remove;
 
   let new_errors =

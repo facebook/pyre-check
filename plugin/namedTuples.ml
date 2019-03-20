@@ -125,7 +125,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         self_parameter :: List.map attributes ~f:to_parameter
       in
       Statement.Define {
-        Define.name = parent @ Access.create "__init__";
+        Define.name = Reference.create ~prefix:(Reference.from_access parent) "__init__";
         parameters;
         body = [
           Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipsis));

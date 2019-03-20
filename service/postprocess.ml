@@ -141,7 +141,7 @@ let ignore ~configuration scheduler handles errors =
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         define = {
           Node.location = Ignore.location unused_ignore;
-          value = Statement.Define.create_toplevel ~qualifier:[] ~statements:[];
+          value = Statement.Define.create_toplevel ~qualifier:None ~statements:[];
         };
       }
     in

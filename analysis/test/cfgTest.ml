@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 
+open Ast
 open Ast.Expression
 open Ast.Statement
 open Analysis.Cfg
@@ -17,7 +18,7 @@ let test_to_dot _ =
   let assert_dot ?(precondition=fun _ -> "") body expected =
     let define =
       {
-        Define.name = Access.create "foo";
+        Define.name = Reference.create "foo";
         parameters = [];
         body;
         decorators = [];
@@ -101,7 +102,7 @@ let test_to_dot _ =
 
 let assert_cfg body expected =
   let define = {
-    Define.name = Access.create "foo";
+    Define.name = Reference.create "foo";
     parameters = [];
     body;
     decorators = [];

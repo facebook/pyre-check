@@ -47,7 +47,8 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           let name = (qualifier @ Access.create name) in
           let constructor =
             Define {
-              Define.name = name @ [Access.Identifier "__init__"];
+              Define.name =
+                Reference.create ~prefix:(Reference.from_access name) "__init__";
               parameters = [
                 Parameter.create ~location ~name:"self" ();
                 Parameter.create ~location ~annotation:base ~name:"input" ();

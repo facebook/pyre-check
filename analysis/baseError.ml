@@ -156,7 +156,7 @@ module Make(Kind: Kind) = struct
             description error ~show_error_traces ~concise:true ~separator:"\n"
         );
         "inference", (Kind.inference_information ~define:define_node kind);
-        "define", `String (Access.show_sanitized define.Define.name);
+        "define", `String (Reference.show_sanitized define.Define.name);
       ])
 
 

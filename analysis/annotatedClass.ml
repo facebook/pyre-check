@@ -96,7 +96,7 @@ module Method = struct
 
 
   let name { define; _ } =
-    Define.unqualified_name define
+    Define.unqualified_name define |> Reference.show
 
 
   let define { define; _ } =
@@ -1152,11 +1152,7 @@ let has_method ?transitive definition ~resolution ~name =
 let inferred_callable_type definition ~resolution =
   let explicit_callables =
     let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
-      match List.last name with
-      | Some (Access.Identifier "__call__") ->
-          Some define
-      | _ ->
-          None
+      Option.some_if (Reference.is_suffix ~suffix:(Reference.create "__call__") name) define
     in
     methods definition ~resolution
     |> List.filter_map ~f:extract_callable

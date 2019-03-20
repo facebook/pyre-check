@@ -15,7 +15,7 @@ open Test
 
 let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
   {
-    Statement.Define.name = Access.create name;
+    Statement.Define.name = Reference.create name;
     parameters = [];
     body;
     decorators = [];

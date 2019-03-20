@@ -238,7 +238,7 @@ let create_of_source environment source =
   let walk_define ({ Node.value = ({ Define.name = caller; _ } as define); _ } as define_node) =
     let cfg = Cfg.create define in
     let annotation_lookup =
-      ResolutionSharedMemory.get caller
+      ResolutionSharedMemory.get (Reference.expression caller)
       >>| Int.Map.of_tree
       |> Option.value ~default:Int.Map.empty
     in

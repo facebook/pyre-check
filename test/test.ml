@@ -1001,7 +1001,7 @@ let environment
 
 
 let mock_define = {
-  Define.name = Access.create "$empty";
+  Define.name = Reference.create "$empty";
   parameters = [];
   body = [];
   decorators = [];

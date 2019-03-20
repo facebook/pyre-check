@@ -197,7 +197,9 @@ let function_definitions resolution access =
   in
   Ast.SharedMemory.Sources.get_for_qualifier qualifier
   >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
-  >>| List.filter ~f:(fun { Node.value = { Define.name; _ }; _ } -> Access.equal access name)
+  >>| List.filter
+      ~f:(fun { Node.value = { Define.name; _ }; _ } ->
+          Access.equal access (Reference.expression name))
 
 
 let full_order ({ order; _ } as resolution) =

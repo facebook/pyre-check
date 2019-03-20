@@ -21,7 +21,7 @@ module Define = Annotated.Define
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Access.create name;
+      Statement.Define.name = Reference.create name;
       parameters = [];
       body = [+Pass];
       decorators = [];

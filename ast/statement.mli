@@ -10,7 +10,7 @@ module Argument = Expression.Argument
 module Record : sig
   module Define : sig
     type 'statement record = {
-      name: Access.t;
+      name: Reference.t;
       parameters: (Expression.t Parameter.t) list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -191,10 +191,10 @@ module Define : sig
   type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  val create_toplevel: qualifier: Access.t -> statements: statement_t list -> t
-  val create_class_toplevel: qualifier: Access.t -> statements: statement_t list -> t
+  val create_toplevel: qualifier: Reference.t option -> statements: statement_t list -> t
+  val create_class_toplevel: qualifier: Reference.t -> statements: statement_t list -> t
 
-  val unqualified_name: t -> Identifier.t
+  val unqualified_name: t -> Reference.t
   val self_identifier: t -> Identifier.t
 
   val is_method: t -> bool

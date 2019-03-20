@@ -35,7 +35,7 @@ let create_callgraph ~environment ~source =
           TypeCheck.resolution_with_key
             ~environment
             ~parent
-            ~access:caller
+            ~access:(Reference.expression caller)
             ~key:(Some ([%hash: int * int](node_id, index)))
         in
         let process_access callees access =
@@ -230,6 +230,7 @@ let create_overrides ~environment ~source =
     let get_method_overrides class_ child_method =
       let method_name =
         Statement.Define.unqualified_name (Annotated.Method.define child_method)
+        |> Reference.show
       in
       Annotated.Class.overrides
         class_

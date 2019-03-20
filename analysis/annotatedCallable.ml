@@ -151,7 +151,7 @@ let create ~parent ~resolution defines =
   in
   let callable =
     {
-      kind = Named name;
+      kind = Named (Reference.expression name);
       implementation;
       overloads;
       implicit = None;
