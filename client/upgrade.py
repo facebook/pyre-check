@@ -319,9 +319,7 @@ def _commit_message(directory, summary_override: Optional[str] = None):
 def _submit_changes(arguments, message):
     LOG.info("Committing changes.")
     subprocess.call(["hg", "commit", "--message", message])
-    submit_command = ["jf", "submit", "--update-fields"]
-    if arguments.sandcastle is True:
-        submit_command.append("--no-deps")
+    submit_command = ["jf", "submit", "--update-fields", "--no-deps"]
     if arguments.submit is True:
         subprocess.call(submit_command)
 
