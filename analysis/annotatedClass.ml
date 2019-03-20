@@ -159,6 +159,15 @@ module Method = struct
 end
 
 
+let find_propagated_type_variables bases ~resolution =
+  let find_type_variables { Argument.value; _ } =
+    Resolution.parse_annotation resolution value
+    |> Type.free_variables
+  in
+  List.concat_map ~f:find_type_variables bases
+  |> List.dedup ~compare:Type.compare
+
+
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   let generic { Argument.value; _ } =
     let annotation = Resolution.parse_annotation resolution value in
@@ -172,19 +181,11 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
     | _ ->
         None
   in
-  let find_single_type_variable { Argument.value; _ } =
-    match Resolution.parse_annotation resolution value with
-    | Type.Parametric { parameters = [Type.Variable variable]; _ } ->
-        Some [Type.Variable variable]
-    | _ ->
-        None
-  in
   begin
     match List.find_map ~f:generic bases with
-    | None -> List.find_map ~f:find_single_type_variable bases
-    | Some parameters -> Some parameters
+    | None -> find_propagated_type_variables bases ~resolution
+    | Some parameters -> parameters
   end
-  |> Option.value ~default:[]
 
 
 let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
@@ -195,30 +196,19 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     in
     Type.equal primitive Type.generic
   in
-  let find_single_type_variable { Argument.value; _ } =
-    let _, parameters =
-      Resolution.parse_annotation resolution value
-      |> Type.split
-    in
-    match parameters with
-    | [Type.Variable variable] ->
-        Some (Type.Variable variable)
-    | _ ->
-        None
-  in
   if List.exists ~f:is_generic bases then
     []
   else
-    begin
-      List.find_map ~f:find_single_type_variable bases
-      >>| fun annotation -> [{
-          Argument.name = None;
-          value =
-            Type.parametric "typing.Generic" [annotation]
-            |> Type.expression;
-        }]
-    end
-    |> Option.value ~default:[]
+    let variables = find_propagated_type_variables bases ~resolution in
+    if List.is_empty variables then
+      []
+    else
+      [{
+        Argument.name = None;
+        value =
+          Type.parametric "typing.Generic" variables
+          |> Type.expression;
+      }]
 
 
 let constraints ?target ?parameters definition ~instantiated ~resolution =

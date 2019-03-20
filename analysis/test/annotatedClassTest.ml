@@ -28,7 +28,12 @@ let test_generics _ =
           populate source
           |> fun environment -> TypeCheck.resolution environment ()
         in
+        let printer generics =
+          List.map generics ~f:Type.show
+          |> String.concat ~sep:", "
+        in
         assert_equal
+          ~printer
           ~cmp:(List.equal ~equal:Type.equal)
           (Class.create (Node.create_with_default_location definition)
            |> Class.generics ~resolution)
@@ -63,7 +68,31 @@ let test_generics _ =
       _T = typing.TypeVar('_T')
       class Foo(typing.Iterable[_T]): pass
     |}
-    [Type.variable "_T"]
+    [Type.variable "_T"];
+
+  assert_generics
+    {|
+      _T1 = typing.TypeVar('_T1')
+      _T2 = typing.TypeVar('_T2')
+      class Foo(typing.Dict[_T1, _T2]): pass
+    |}
+    [Type.variable "_T1"; Type.variable "_T2"];
+
+  assert_generics
+    {|
+      _T1 = typing.TypeVar('_T1')
+      _T2 = typing.TypeVar('_T2')
+      class Foo(typing.Iterable[_T1], typing.AsyncIterable[_T2]): pass
+    |}
+    [Type.variable "_T1"; Type.variable "_T2"];
+
+  assert_generics
+    {|
+      _T1 = typing.TypeVar('_T1')
+      class Foo(typing.Dict[_T1, _T1]): pass
+    |}
+    [Type.variable "_T1"];
+  ()
 
 
 let test_superclasses _ =
@@ -1528,7 +1557,35 @@ let test_inferred_generic_base _ =
        class List(Iterable[_T], typing.Generic[_T]):
          pass
      |}
-    []
+    [];
+  assert_inferred_generic
+    ~target:"Foo"
+    {|
+      _T1 = typing.TypeVar('_T1')
+      _T2 = typing.TypeVar('_T2')
+      class Foo(typing.Dict[_T1, _T2]): pass
+    |}
+    [{
+      Argument.name = None;
+      value =
+        Type.expression
+          (Type.parametric "typing.Generic" [Type.variable "_T1"; Type.variable "_T2"]);
+    }];
+  assert_inferred_generic
+    ~target:"Foo"
+    {|
+      _T1 = typing.TypeVar('_T1')
+      class Foo(typing.Dict[_T1, _T1]): pass
+    |}
+    [{
+      Argument.name = None;
+      value =
+        Type.expression
+          (Type.parametric "typing.Generic" [Type.variable "_T1"]);
+    }];
+
+  ()
+
 
 
 let test_metaclasses _ =
