@@ -309,12 +309,6 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "typing")
-        {|
-          class Iterator: ...
-          class Iterable: ...
-        |};
-      parse
         ~qualifier:(Access.create "collections")
         {|
           from typing import Iterator as TypingIterator
@@ -678,7 +672,7 @@ let test_populate _ =
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
-    (Type.Primitive "collections.defaultdict");
+    (Type.parametric "collections.defaultdict" [Type.Any; Type.Any]);
 
   (* Check custom class definitions. *)
   assert_is_some (Handler.class_definition (Type.Primitive "None"));

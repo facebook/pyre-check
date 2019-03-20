@@ -345,6 +345,7 @@ let test_check_behavioral_subtyping _ =
           return x
     |}
     [
+      "Invalid type parameters [24]: Non-generic type `Foo` cannot take parameters.";
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
       "Parameter of type `str` is not a supertype of the overridden parameter " ^
       "`Variable[T (bound to int)]`.";

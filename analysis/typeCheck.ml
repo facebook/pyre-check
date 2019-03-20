@@ -326,8 +326,24 @@ module State = struct
       resolution_fixpoint;
     }
 
+  let add_invalid_type_parameters_errors ~resolution ~location ~define ~errors annotation =
+    let mismatches, annotation = Resolution.check_invalid_type_parameters resolution annotation in
+    let add_error
+        errors
+        { Resolution.name; expected_number_of_parameters; given_number_of_parameters } =
+      Error.create
+        ~location
+        ~kind:(Error.InvalidTypeParameters {
+            annotation = Type.Primitive name;
+            expected_number_of_parameters;
+            given_number_of_parameters;
+          })
+        ~define
+      |> Set.add errors
+    in
+    List.fold mismatches ~f:add_error ~init:errors, annotation
 
-  let check_annotation ~resolution ~location ~define ~annotation ~resolved =
+  let check_and_correct_annotation ~resolution ~location ~define ~annotation ~resolved errors =
     let is_aliased_to_any =
       (* Special-case expressions typed as Any to be valid types. *)
       match annotation with
@@ -341,31 +357,6 @@ module State = struct
         Error.create ~location ~kind:(Error.InvalidType annotation) ~define :: errors
       else
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
-    in
-    let check_missing_type_parameters errors annotation =
-      match annotation with
-      | Type.Primitive _ ->
-          let generics =
-            Resolution.class_definition resolution annotation
-            >>| Annotated.Class.create
-            >>| Annotated.Class.generics ~resolution
-            |> Option.value ~default:[]
-          in
-          if not (List.is_empty generics) then
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.MissingTypeParameters {
-                    annotation;
-                    number_of_parameters = List.length generics;
-                  })
-                ~define
-            in
-            error :: errors
-          else
-            errors
-      | _ ->
-          errors
     in
     let check_invalid_variables resolution errors variable =
       if not (Resolution.type_variable_exists resolution ~variable) then
@@ -387,7 +378,6 @@ module State = struct
       else
         errors
     in
-    let primitives = Type.primitives annotation in
     let resolution =
       match annotation with
       | Type.Callable {
@@ -408,20 +398,33 @@ module State = struct
       | _ ->
           resolution
     in
-    List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
-    |> (fun errors -> List.fold primitives ~f:check_missing_type_parameters ~init:errors)
-    |> (fun errors ->
-        List.fold
-          (Type.free_variables annotation)
-          ~f:(check_invalid_variables resolution)
-          ~init:errors)
-
+    let critical_errors =
+      List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
+      |> (fun errors ->
+          List.fold
+            (Type.free_variables annotation)
+            ~f:(check_invalid_variables resolution)
+            ~init:errors)
+    in
+    if List.is_empty critical_errors then
+      add_invalid_type_parameters_errors annotation ~resolution ~location ~define ~errors
+    else
+      let errors =
+        List.fold critical_errors ~init:errors ~f:(fun errors error -> Set.add errors error)
+      in
+      errors, Type.Top
 
   let parse_and_check_annotation
       ?(bind_variables = true)
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
-    let annotation = Resolution.parse_annotation ~allow_untracked:true resolution expression in
+    let annotation =
+      Resolution.parse_annotation
+        ~allow_untracked:true
+        ~allow_invalid_type_parameters:true
+        resolution
+        expression
+    in
     let errors =
       if Type.equal annotation Type.Top then
         (* Could not even parse expression. *)
@@ -434,17 +437,12 @@ module State = struct
         errors
     in
     let resolved = Resolution.resolve resolution expression in
-    let annotation_errors = check_annotation ~resolution ~location ~define ~annotation ~resolved in
-    let errors =
-      List.fold
-        ~init:errors
-        ~f:(fun errors error -> Set.add errors error)
-        annotation_errors
+    let errors, annotation =
+      check_and_correct_annotation errors ~resolution ~location ~define ~annotation ~resolved
     in
     let annotation =
       if bind_variables then Type.mark_variables_as_bound annotation else annotation
     in
-    let annotation = if List.is_empty annotation_errors then annotation else Type.Top in
     { state with errors }, annotation
 
 
@@ -2661,13 +2659,16 @@ module State = struct
               Type.class_variable_value annotation
               |> Option.value ~default:annotation)
         in
+        let parsed =
+          Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
+        in
         let is_type_alias =
           (* Consider anything with a RHS that is a type to be an alias. *)
           match Node.value value with
           | Expression.String _ -> false
           | _ ->
               begin
-                match Resolution.parse_annotation resolution value with
+                match parsed with
                 | Type.Top -> false
                 | Type.Optional Type.Bottom -> false
                 | annotation -> not (Resolution.contains_untracked resolution annotation)
@@ -2680,7 +2681,15 @@ module State = struct
           let resolved = Type.remove_undeclared resolved in
           (* TODO(T35601774): We need to suppress subscript related errors on generic classes. *)
           if is_type_alias then
-            { state with resolution }, resolved
+            let errors, _ =
+              add_invalid_type_parameters_errors
+                ~resolution
+                ~location
+                ~define:define_node
+                ~errors:state.errors
+                parsed
+            in
+            { state with resolution; errors }, resolved
           else
             new_state, resolved
         in
@@ -3823,7 +3832,7 @@ type result = {
 
 
 let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.empty) () =
-  let parse_annotation = Type.create ~aliases:Handler.aliases in
+  let aliases = Handler.aliases in
 
   let class_representation annotation =
     let primitive, _ = Type.split annotation in
@@ -3845,7 +3854,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
         ~annotations:Access.Map.empty
         ~order:(module Handler.TypeOrderHandler)
         ~resolve:(fun ~resolution:_ _ -> Type.Top)
-        ~parse_annotation:(fun _ -> Type.Top)
+        ~aliases:(fun _ -> None)
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
         ~class_definition:(fun _ -> None)
@@ -3872,10 +3881,12 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     State.forward_expression ~state ~expression
     |> fun { State.resolved; _ } -> resolved
   in
+
   let constructor ~instantiated ~resolution class_node =
     AnnotatedClass.create class_node
     |> AnnotatedClass.constructor ~instantiated ~resolution
   in
+
   let implements ~resolution ~protocol annotation =
     let implements protocol =
       if AnnotatedClass.is_protocol protocol then
@@ -3895,15 +3906,17 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     >>| implements
     |> Option.value ~default:TypeOrder.DoesNotImplement
   in
+
   let generics ~resolution class_definition =
     AnnotatedClass.create class_definition
     |>  AnnotatedClass.generics ~resolution
   in
+
   Resolution.create
     ~annotations
     ~order
     ~resolve
-    ~parse_annotation
+    ~aliases
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition

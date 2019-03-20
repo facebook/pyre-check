@@ -25,13 +25,20 @@ type class_representation = {
 }
 
 
+type type_parameters_mismatch = {
+  name: string;
+  expected_number_of_parameters: int;
+  given_number_of_parameters: int;
+}
+
+
 type t = {
   annotations: Annotation.t Access.Map.t;
   type_variables: Type.Set.t;
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
-  parse_annotation: Expression.t -> Type.t;
+  aliases: Type.t -> Type.t option;
 
   global: Access.t -> global option;
   module_definition: Access.t -> Module.t option;
@@ -49,7 +56,7 @@ let create
     ~annotations
     ~order
     ~resolve
-    ~parse_annotation
+    ~aliases
     ~global
     ~module_definition
     ~class_definition
@@ -64,7 +71,7 @@ let create
     type_variables = Type.Set.empty;
     order;
     resolve;
-    parse_annotation;
+    aliases;
     global;
     module_definition;
     class_definition;
@@ -275,9 +282,64 @@ let is_string_to_any_mapping resolution annotation =
     ~right:(Type.optional (Type.parametric "typing.Mapping" [Type.string; Type.Any]))
 
 
+let check_invalid_type_parameters resolution annotation =
+  let module InvalidTypeParametersTransform = Type.Transform.Make(struct
+      type state = type_parameters_mismatch list
+
+      let visit_children_before _ _ = false
+      let visit_children_after = true
+      let visit sofar annotation =
+        let transformed_annotation, new_state =
+          let generics_for_name name =
+            match name with
+            | "type"
+            | "typing.Type"
+            | "typing.ClassVar"
+            | "typing.Iterator"
+            | "Optional"
+            | "typing.Optional" ->
+                [Type.variable "T"]
+            | _ ->
+                class_definition resolution (Type.Primitive name)
+                >>| generics resolution
+                |> Option.value ~default:[]
+          in
+          let invalid_type_parameters ~name ~given =
+            let generics = generics_for_name name in
+            if List.length generics = given then
+              annotation, sofar
+            else
+              let mismatch =
+                {
+                  name;
+                  expected_number_of_parameters = List.length generics;
+                  given_number_of_parameters = given;
+                }
+              in
+              Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
+          in
+          match annotation with
+          | Type.Primitive name ->
+              invalid_type_parameters ~name ~given:0
+          (* natural variadics *)
+          | Type.Parametric { name = "typing.Protocol"; _ }
+          | Type.Parametric { name = "typing.Generic"; _ } ->
+              annotation, sofar
+          | Type.Parametric { name; parameters } ->
+              invalid_type_parameters ~name ~given:(List.length parameters)
+          | _ ->
+              annotation, sofar
+        in
+        { Type.Transform.transformed_annotation; new_state }
+    end)
+  in
+  InvalidTypeParametersTransform.visit [] annotation
+
+
 let parse_annotation
     ?(allow_untracked=false)
-    ({ parse_annotation; module_definition; _ } as resolution)
+    ?(allow_invalid_type_parameters=false)
+    ({ aliases; module_definition; _ } as resolution)
     expression =
   let expression =
     let is_local_access =
@@ -289,7 +351,15 @@ let parse_annotation
     else
       expression
   in
-  let parsed = parse_annotation expression in
+  let aliases annotation =
+    if allow_invalid_type_parameters then
+      aliases annotation
+    else
+      aliases annotation
+      >>| check_invalid_type_parameters resolution
+      >>| snd
+  in
+  let parsed = Type.create ~aliases expression in
   let constraints = function
     | Type.Primitive name ->
         let originates_from_empty_stub =
@@ -307,13 +377,16 @@ let parse_annotation
   let annotation = Type.instantiate parsed ~constraints in
   if contains_untracked resolution annotation && not allow_untracked then
     Type.Top
+  else if not allow_invalid_type_parameters then
+    check_invalid_type_parameters resolution annotation
+    |> snd
   else
     annotation
 
 
 let parse_reference ?(allow_untracked=false) resolution reference =
   Reference.expression reference
-  |> parse_annotation ~allow_untracked resolution
+  |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
 let is_invariance_mismatch resolution ~left ~right =

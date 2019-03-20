@@ -22,11 +22,17 @@ type class_representation = {
 type t
 [@@deriving show]
 
+type type_parameters_mismatch = {
+  name: string;
+  expected_number_of_parameters: int;
+  given_number_of_parameters: int;
+}
+
 val create
   :  annotations: Annotation.t Access.Map.t
   -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
-  -> parse_annotation: (Expression.t -> Type.t)
+  -> aliases: (Type.t -> Type.t option)
   -> global: (Access.t -> global option)
   -> module_definition: (Access.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
@@ -87,8 +93,15 @@ val contains_untracked: t -> Type.t -> bool
 
 val is_string_to_any_mapping: t -> Type.t -> bool
 
-val parse_annotation: ?allow_untracked:bool -> t -> Expression.t -> Type.t
+val check_invalid_type_parameters: t -> Type.t -> type_parameters_mismatch list * Type.t
+
 val parse_reference: ?allow_untracked:bool -> t -> Reference.t -> Type.t
+val parse_annotation
+  :  ?allow_untracked:bool
+  -> ?allow_invalid_type_parameters:bool
+  -> t
+  -> Expression.t
+  -> Type.t
 val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool
 val solve_constraints
   :  t

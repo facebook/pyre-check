@@ -18,6 +18,9 @@ open Request
 open Pyre
 
 
+exception IncorrectParameters of Type.t
+
+
 let parse_lsp ~configuration ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -410,10 +413,17 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
         Expression.Access.expression access
-        |> Resolution.parse_annotation ~allow_untracked:true resolution
+        |> Resolution.parse_annotation
+          ~allow_untracked:true
+          ~allow_invalid_type_parameters:true
+          resolution
       in
       if TypeOrder.is_instantiated order annotation then
-        annotation
+        let mismatches, _ = Resolution.check_invalid_type_parameters resolution annotation in
+        if List.is_empty mismatches then
+          annotation
+        else
+          raise (IncorrectParameters annotation)
       else
         raise (TypeOrder.Untracked annotation)
     in
@@ -944,11 +954,17 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   let response =
     try
       process_request ()
-    with TypeOrder.Untracked untracked ->
-      let untracked_response =
-        Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
-      in
-      TypeQuery.Error untracked_response
+    with
+    | TypeOrder.Untracked untracked ->
+        let untracked_response =
+          Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
+        in
+        TypeQuery.Error untracked_response
+    | IncorrectParameters untracked ->
+        let untracked_response =
+          Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
+        in
+        TypeQuery.Error untracked_response
   in
   { state; response = Some (TypeQueryResponse response) }
 

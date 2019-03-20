@@ -91,6 +91,11 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
+  | InvalidTypeParameters of {
+      annotation: Type.t;
+      expected_number_of_parameters: int;
+      given_number_of_parameters: int;
+    }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | MissingArgument of { callee: Access.t option; name: Identifier.t }
@@ -98,7 +103,6 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
-  | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | MutuallyRecursiveTypeVariables of Access.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation

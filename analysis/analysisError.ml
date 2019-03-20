@@ -102,6 +102,11 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
+  | InvalidTypeParameters of {
+      annotation: Type.t;
+      expected_number_of_parameters: int;
+      given_number_of_parameters: int;
+    }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | MissingArgument of { callee: Access.t option; name: Identifier.t }
@@ -109,7 +114,6 @@ type kind =
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
-  | MissingTypeParameters of { annotation: Type.t; number_of_parameters: int }
   | MutuallyRecursiveTypeVariables of Access.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
@@ -164,7 +168,7 @@ let code = function
   | UndefinedImport _ -> 21
   | RedundantCast _ -> 22
   | Unpack _ -> 23
-  | MissingTypeParameters _ -> 24
+  | InvalidTypeParameters _ -> 24
   | ImpossibleIsinstance _ -> 25
   | TypedDictionaryAccessWithNonLiteral _ -> 26
   | TypedDictionaryKeyNotFound _ -> 27
@@ -200,6 +204,7 @@ let name = function
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidType _ -> "Invalid type"
+  | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
   | MissingArgument _ -> "Missing argument"
@@ -207,7 +212,6 @@ let name = function
   | MissingGlobalAnnotation _ -> "Missing global annotation"
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
-  | MissingTypeParameters _ -> "Missing type parameters"
   | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
   | NotCallable _ -> "Call error"
   | ProhibitedAny _ -> "Prohibited any"
@@ -583,6 +587,25 @@ let messages ~concise ~define location kind =
           "Expression `%a` is not a valid type."
           pp_type annotation
       ]
+  | InvalidTypeParameters
+      { annotation; expected_number_of_parameters; given_number_of_parameters } ->
+      if expected_number_of_parameters > 0 then
+        let received =
+          if given_number_of_parameters = 0 then
+            ""
+          else
+            Format.asprintf ", received %d" given_number_of_parameters
+        in
+        [
+          Format.asprintf
+            "Generic type `%a` expects %d type parameter%s%s."
+            pp_type annotation
+            expected_number_of_parameters
+            (if (expected_number_of_parameters = 1) then "" else "s")
+            received;
+        ]
+      else
+        [ Format.asprintf "Non-generic type `%a` cannot take parameters." pp_type annotation ]
   | InvalidTypeVariable { annotation; origin } when concise ->
       let format: ('a, Format.formatter, unit, string) format4 =
         match origin with
@@ -921,14 +944,6 @@ let messages ~concise ~define location kind =
         | _ ->
             ["Return type is not specified."]
       end
-  | MissingTypeParameters { annotation; number_of_parameters } ->
-      [
-        Format.asprintf
-          "Generic type `%a` expects %d type parameter%s."
-          pp_type annotation
-          number_of_parameters
-          (if (number_of_parameters > 1) then "s" else "");
-      ]
   | MutuallyRecursiveTypeVariables callee ->
       let callee =
         match callee with
@@ -1333,7 +1348,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType actual
-  | MissingTypeParameters { annotation = actual; _ }
+  | InvalidTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | ProhibitedAny { given_annotation = Some actual; _ }
   | RedundantCast actual
@@ -1408,13 +1423,13 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InconsistentOverride _
   | InvalidMethodSignature _
   | InvalidType _
+  | InvalidTypeParameters _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
-  | MissingTypeParameters _
   | MutuallyRecursiveTypeVariables _
   | ProhibitedAny _
   | RedundantCast _
@@ -1498,16 +1513,24 @@ let less_or_equal ~resolution left right =
         end
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
+    | InvalidTypeParameters {
+        annotation = left;
+        expected_number_of_parameters = left_expected;
+        given_number_of_parameters = left_given;
+      },
+      InvalidTypeParameters {
+        annotation = right;
+        expected_number_of_parameters = right_expected;
+        given_number_of_parameters = right_given;
+      }
+      when left_expected = right_expected && left_given = right_given ->
+        Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
         Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ->
         Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
-    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
-      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
-      when left_parameters = right_parameters ->
-        Resolution.less_or_equal resolution ~left ~right
     | MissingArgument left, MissingArgument right ->
         Option.equal Access.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -1589,8 +1612,9 @@ let less_or_equal ~resolution left right =
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
-    | InvalidType _, _
     | InvalidMethodSignature _, _
+    | InvalidType _, _
+    | InvalidTypeParameters _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
     | MissingArgument _, _
@@ -1598,7 +1622,6 @@ let less_or_equal ~resolution left right =
     | MissingGlobalAnnotation _, _
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
-    | MissingTypeParameters _, _
     | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
     | ProhibitedAny _, _
@@ -1657,6 +1680,22 @@ let join ~resolution left right =
         IllegalAnnotationTarget left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
+    | InvalidTypeParameters {
+        annotation = left;
+        expected_number_of_parameters = left_expected;
+        given_number_of_parameters = left_given;
+      },
+      InvalidTypeParameters {
+        annotation = right;
+        expected_number_of_parameters = right_expected;
+        given_number_of_parameters = right_given;
+      }
+      when left_expected = right_expected && left_given = right_given ->
+        InvalidTypeParameters {
+          annotation = Resolution.join resolution left right;
+          expected_number_of_parameters = left_expected;
+          given_number_of_parameters = left_given;
+        }
     | MissingArgument left, MissingArgument right
       when Option.equal Access.equal_sanitized left.callee right.callee &&
            Identifier.equal_sanitized left.name right.name ->
@@ -1679,13 +1718,6 @@ let join ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when Access.equal_sanitized left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
-    | MissingTypeParameters { annotation = left; number_of_parameters = left_parameters },
-      MissingTypeParameters { annotation = right; number_of_parameters = right_parameters }
-      when left_parameters = right_parameters ->
-        MissingTypeParameters {
-          annotation = Resolution.join resolution left right;
-          number_of_parameters = left_parameters;
-        }
     | NotCallable left, NotCallable right ->
         NotCallable (Resolution.join resolution left right)
     | ProhibitedAny left, ProhibitedAny right ->
@@ -1857,6 +1889,7 @@ let join ~resolution left right =
     | InvalidArgument _, _
     | InvalidMethodSignature _, _
     | InvalidType _, _
+    | InvalidTypeParameters _, _
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
     | MissingArgument _, _
@@ -1864,7 +1897,6 @@ let join ~resolution left right =
     | MissingGlobalAnnotation _, _
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
-    | MissingTypeParameters _, _
     | MutuallyRecursiveTypeVariables _, _
     | NotCallable _, _
     | ProhibitedAny _, _
@@ -2159,11 +2191,13 @@ let suppress ~mode ~resolution error =
         _;
       } ->
         true
+    | InvalidTypeParameters { given_number_of_parameters; _ }
+      when given_number_of_parameters = 0 ->
+        true
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
     | MissingGlobalAnnotation _
-    | MissingTypeParameters _
     | ProhibitedAny _
     | Unpack { unpack_problem = UnacceptableType Type.Any; _ }
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
@@ -2251,6 +2285,8 @@ let dequalify
         InvalidMethodSignature { kind with annotation = (annotation >>| dequalify) }
     | InvalidType annotation ->
         InvalidType (dequalify annotation)
+    | InvalidTypeParameters ({ annotation; _ } as missing_type_parameters) ->
+        InvalidTypeParameters { missing_type_parameters with annotation = dequalify annotation }
     | InvalidTypeVariable { annotation; origin } ->
         InvalidTypeVariable { annotation = dequalify annotation; origin }
     | InvalidTypeVariance { annotation; origin } ->
@@ -2275,8 +2311,6 @@ let dequalify
         MissingGlobalAnnotation {
           immutable_type with  annotation = annotation >>| dequalify;
         }
-    | MissingTypeParameters { annotation; number_of_parameters } ->
-        MissingTypeParameters { annotation = dequalify annotation; number_of_parameters }
     | MutuallyRecursiveTypeVariables callee ->
         MutuallyRecursiveTypeVariables callee
     | NotCallable annotation ->

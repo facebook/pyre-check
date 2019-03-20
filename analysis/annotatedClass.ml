@@ -161,7 +161,7 @@ end
 
 let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Argument.value; _ } =
-    Resolution.parse_annotation resolution value
+    Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.free_variables
   in
   List.concat_map ~f:find_type_variables bases
@@ -170,7 +170,9 @@ let find_propagated_type_variables bases ~resolution =
 
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   let generic { Argument.value; _ } =
-    let annotation = Resolution.parse_annotation resolution value in
+    let annotation =
+      Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
+    in
     match annotation with
     | Type.Parametric { parameters; _ }
       when Type.is_generic annotation ->
@@ -191,7 +193,7 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
 let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
   let is_generic { Argument.value; _ } =
     let primitive, _ =
-      Resolution.parse_annotation resolution value
+      Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
       |> Type.split
     in
     Type.equal primitive Type.generic

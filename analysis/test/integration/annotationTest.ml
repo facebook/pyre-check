@@ -457,7 +457,7 @@ let test_check_missing_type_parameters _ =
       def f(c: C) -> None:
         return None
     |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
       T = typing.TypeVar("_T")
@@ -465,7 +465,7 @@ let test_check_missing_type_parameters _ =
       def f(c: typing.List[C]) -> None:
         return None
     |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
       T = typing.TypeVar("_T")
@@ -473,7 +473,7 @@ let test_check_missing_type_parameters _ =
       def f() -> typing.List[C]:
         return []
     |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
   assert_type_errors
     {|
       T = typing.TypeVar("_T")
@@ -482,7 +482,7 @@ let test_check_missing_type_parameters _ =
       def f() -> typing.List[C]:
         return []
     |}
-    ["Missing type parameters [24]: Generic type `C` expects 2 type parameters."]
+    ["Invalid type parameters [24]: Generic type `C` expects 2 type parameters."]
 
 
 let test_check_analysis_failure _ =

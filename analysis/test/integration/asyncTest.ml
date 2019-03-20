@@ -39,9 +39,8 @@ let test_check_async _ =
         return (await c)
     |}
     [
-      "Missing type parameters [24]: Generic type `C` expects 1 type parameter.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
+      "Invalid type parameters [24]: Generic type `C` expects 1 type parameter.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Any`.";
     ];
 
   assert_strict_type_errors
@@ -52,7 +51,7 @@ let test_check_async _ =
       def foo(c: C) -> int:
         return (await c)
     |}
-    ["Missing type parameters [24]: Generic type `C` expects 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `C` expects 1 type parameter."];
 
   assert_type_errors
     {|

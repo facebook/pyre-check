@@ -263,7 +263,7 @@ let test_constructors _ =
     in
     let instantiated =
       parse_single_expression instantiated
-      |> Resolution.parse_annotation resolution
+      |> Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->

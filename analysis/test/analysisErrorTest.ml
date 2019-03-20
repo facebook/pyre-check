@@ -1109,15 +1109,24 @@ let test_suppress _ =
 
   assert_suppressed
     Source.Default
-    (Error.MissingTypeParameters {
+    (Error.InvalidTypeParameters {
         annotation = Type.Primitive "dict";
-        number_of_parameters = 2;
+        expected_number_of_parameters = 2;
+        given_number_of_parameters = 0;
+      });
+  assert_not_suppressed
+    Source.Default
+    (Error.InvalidTypeParameters {
+        annotation = Type.Primitive "dict";
+        expected_number_of_parameters = 2;
+        given_number_of_parameters = 1;
       });
   assert_not_suppressed
     Source.Strict
-    (Error.MissingTypeParameters {
+    (Error.InvalidTypeParameters {
         annotation = Type.Primitive "dict";
-        number_of_parameters = 2;
+        expected_number_of_parameters = 2;
+        given_number_of_parameters = 0;
       });
 
   let suppress_missing_return =

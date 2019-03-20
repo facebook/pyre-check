@@ -110,7 +110,11 @@ let connect_definition
       | Access (SimpleAccess name) ->
           let supertype, parameters =
             (* While building environment, allow untracked to parse into primitives *)
-            Resolution.parse_annotation ~allow_untracked:true resolution value
+            Resolution.parse_annotation
+              ~allow_untracked:true
+              ~allow_invalid_type_parameters:true
+              resolution
+              value
             |> Type.split
           in
           if not (TypeOrder.contains (module Handler) supertype) &&
