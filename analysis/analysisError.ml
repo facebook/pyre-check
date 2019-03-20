@@ -933,7 +933,7 @@ let messages ~concise ~define location kind =
       let callee =
         match callee with
         | Some callee ->
-            Format.asprintf "call `%a`" Access.pp callee
+            Format.asprintf "call `%a`" pp_access callee
         | _ ->
             "anoynmous call"
       in
