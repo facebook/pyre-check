@@ -5,6 +5,7 @@
   identifierTest
   moduleTest
   nodeTest
+  referenceTest
   sharedMemoryTest
   sourceTest
   statementTest

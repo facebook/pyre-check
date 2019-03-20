@@ -1,0 +1,28 @@
+(** Copyright (c) 2016-present, Facebook, Inc.
+
+    This source code is licensed under the MIT license found in the
+    LICENSE file in the root directory of this source tree. *)
+
+open Core
+
+type t
+[@@deriving compare, eq, sexp, show, hash]
+
+module Map : Map.S with type Key.t = t
+module SerializableMap: SerializableMap.S with type key = t
+module Set: Set.S with type Elt.t = t
+include Hashable with type t := t
+
+val create: string -> t
+val expression: t -> Expression.Access.t
+val new_expression: t -> Expression.t Expression.Name.t
+
+val sanitized: t -> t
+val equal_sanitized: t -> t -> bool
+val pp_sanitized: Format.formatter -> t -> unit
+val show_sanitized: t -> string
+
+val is_strict_prefix: prefix: t -> t -> bool
+val drop_prefix: prefix: t -> t -> t
+val prefix: t -> t option
+val last: t -> string
