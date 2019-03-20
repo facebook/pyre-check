@@ -385,7 +385,6 @@ let register_class_definitions (module Handler: Handler) source =
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
             let primitive, _ =
               Reference.expression name
-              |> Access.expression
               |> Type.create ~aliases:Handler.aliases
               |> Type.split
             in
@@ -492,7 +491,7 @@ let register_aliases (module Handler: Handler) sources =
           List.fold
             body
             ~init:aliases
-            ~f:(visit_statement ~qualifier:(Reference.expression name) ~in_class_body:true)
+            ~f:(visit_statement ~qualifier:(Reference.access name) ~in_class_body:true)
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with
@@ -621,7 +620,7 @@ let register_globals
   let qualified_access access =
     Reference.from_access access
     |> qualified_reference
-    |> Reference.expression
+    |> Reference.access
   in
 
   (* Register meta annotations for classes. *)
@@ -647,7 +646,7 @@ let register_globals
             in
             Handler.register_global
               ~handle
-              ~access:(qualified_reference name |> Reference.expression)
+              ~access:(qualified_reference name |> Reference.access)
               ~global
         | _ ->
             ()
@@ -796,7 +795,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             callables
             ({ Define.name; _ } as define) =
 
-          Handler.DependencyHandler.add_function_key ~handle (Reference.expression name);
+          Handler.DependencyHandler.add_function_key ~handle (Reference.access name);
 
           (* Register callable global. *)
           let callable =
@@ -817,7 +816,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             | None -> Some [callable]
             | Some existing -> Some (existing @ [callable])
           in
-          Map.change callables (Reference.expression name) ~f:(change callable)
+          Map.change callables (Reference.access name) ~f:(change callable)
         in
         match statement with
         | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->

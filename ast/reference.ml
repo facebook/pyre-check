@@ -83,11 +83,11 @@ let from_access access =
   Access.show access |> create
 
 
-let expression =
+let access =
   List.map ~f:(fun identifier -> Access.Identifier identifier)
 
 
-let new_expression reference =
+let name reference =
   let rec create = function
     | [] ->
         failwith "Reference cannot be empty."
@@ -104,6 +104,17 @@ let new_expression reference =
   match create (List.rev reference) with
   | { Node.value = Name name; _ } -> name
   | _ -> failwith "Impossible."
+
+
+let expression ?(location = Location.Reference.any) reference =
+  access reference
+  |> Access.expression ~location
+
+
+let new_expression ?(location = Location.Reference.any) reference =
+  name reference
+  |> (fun name -> Name name)
+  |> Node.create ~location
 
 
 let sanitized reference =

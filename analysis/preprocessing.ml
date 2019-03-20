@@ -343,13 +343,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             skip = Set.add skip location;
           }
       | Class { Class.name; _ } ->
-          let name = Reference.expression name in
+          let name = Reference.access name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
           }
       | Define { Define.name; _ } ->
-          let name = Reference.expression name in
+          let name = Reference.access name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -587,7 +587,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   ~scope:{ scope with use_forward_references = true })
         in
         let scope, parameters = qualify_parameters ~scope parameters in
-        let qualifier = qualifier @ (Reference.expression name) in
+        let qualifier = qualifier @ (Reference.access name) in
         let _, body = qualify_statements ~scope:{ scope with qualifier } body in
         {
           define with
@@ -611,7 +611,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             ~f:(qualify_expression ~qualify_strings:false ~scope)
         in
         let body =
-          let qualifier = qualifier @ (Reference.expression name) in
+          let qualifier = qualifier @ (Reference.access name) in
           let original_scope = { scope with qualifier } in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
@@ -701,8 +701,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             aliases =
               Map.set
                 aliases
-                ~key:(Reference.expression name)
-                ~data:(local_alias ~qualifier ~access:(qualifier @ (Reference.expression name)));
+                ~key:(Reference.access name)
+                ~data:(local_alias ~qualifier ~access:(qualifier @ (Reference.access name)));
           }
           in
           scope,
@@ -907,7 +907,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         access
 
   and qualify_reference ?(suppress_synthetics = false) ~qualify_strings ~scope reference =
-    Reference.expression reference
+    Reference.access reference
     |> qualify_access ~suppress_synthetics ~qualify_strings ~scope
     |> Reference.from_access
 
@@ -1606,7 +1606,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             Expression.String { value = identifier; kind = StringLiteral.String }
             |> Node.create ~location
           in
-          let class_name = Reference.expression class_name in
+          let class_name = Reference.access class_name in
           let fields =
             let extract = function
               | {

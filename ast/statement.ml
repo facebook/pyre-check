@@ -575,13 +575,12 @@ module Define = struct
 
 
   let property_attribute ~location ({ name; return_annotation; parameters; parent; _ } as define) =
-    let open Expression in
     let attribute ?(setter = false) annotation =
       parent
       >>= (fun parent ->
           Attribute.name
-            ~parent:(Reference.expression parent)
-            (Node.create ~location (Access (SimpleAccess (Reference.expression name)))))
+            ~parent:(Reference.access parent)
+            (Reference.expression ~location name))
       >>| fun name ->
       Attribute.create
         ~location
@@ -700,7 +699,7 @@ module Class = struct
           _;
         } ->
           let add_attribute map target value =
-            Attribute.name ~parent:(Reference.expression name) target
+            Attribute.name ~parent:(Reference.access name) target
             |> function
             | Some name ->
                 let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
@@ -718,7 +717,7 @@ module Class = struct
           _;
         } ->
           let add_attribute index map target =
-            Attribute.name ~parent:(Reference.expression name) target
+            Attribute.name ~parent:(Reference.access name) target
             |> function
             | Some name ->
                 let value =
@@ -747,7 +746,7 @@ module Class = struct
           List.foldi ~init:map ~f:add_attribute targets
       | Assign { Assign.target; annotation; value; _ } ->
           begin
-            Attribute.name ~parent:(Reference.expression name) target
+            Attribute.name ~parent:(Reference.access name) target
             |> function
             | Some name  ->
                 let attribute =
@@ -832,10 +831,8 @@ module Class = struct
         match value with
         | Define ({ Define.name = target; _ } as define) ->
             Attribute.name
-              (Node.create
-                ~location
-                (Expression.Access (SimpleAccess (Reference.expression target))))
-              ~parent:(Reference.expression name)
+              (Reference.expression ~location target)
+              ~parent:(Reference.access name)
             >>| (fun name ->
                   let attribute =
                     match Identifier.SerializableMap.find_opt name map with
@@ -867,7 +864,7 @@ module Class = struct
             let annotation =
               let meta_annotation =
                 let argument =
-                  { Argument.name = None; value = Access.expression (Reference.expression name) }
+                  { Argument.name = None; value = Reference.expression name }
                 in
                 Node.create
                   ~location

@@ -1617,7 +1617,6 @@ module State = struct
              | Type.Callable { Type.Callable.implementation; _ } ->
                  let original_implementation =
                    Reference.expression name
-                   |> Statement.Access.expression
                    |> Resolution.resolve resolution
                    |> function
                    | Type.Callable { Type.Callable.implementation = original_implementation; _ } ->

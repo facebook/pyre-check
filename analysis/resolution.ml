@@ -199,7 +199,7 @@ let function_definitions resolution access =
   >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
   >>| List.filter
       ~f:(fun { Node.value = { Define.name; _ }; _ } ->
-          Access.equal access (Reference.expression name))
+          Access.equal access (Reference.access name))
 
 
 let full_order ({ order; _ } as resolution) =
@@ -306,8 +306,6 @@ let parse_annotation
 
 let parse_reference ?(allow_untracked=false) resolution reference =
   Reference.expression reference
-  |> (fun access -> Expression.Access (SimpleAccess access))
-  |> Node.create_with_default_location
   |> parse_annotation ~allow_untracked resolution
 
 

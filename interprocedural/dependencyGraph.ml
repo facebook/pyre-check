@@ -241,7 +241,7 @@ let create_overrides ~environment ~source =
         Annotated.Attribute.parent ancestor
         |> Type.access
       in
-      let class_name = Reference.expression (Annotated.Class.name class_) in
+      let class_name = Reference.access (Annotated.Class.name class_) in
       ancestor_parent @ [Access.Identifier method_name], class_name
     in
     let annotated_class = Annotated.Class.create class_node in

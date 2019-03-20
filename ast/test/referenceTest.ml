@@ -35,8 +35,6 @@ let test_expression _ =
     let actual =
       Reference.create reference
       |> Reference.expression
-      |> (fun access -> Expression.Access (SimpleAccess access))
-      |> Node.create_with_default_location
     in
     assert_equal
       ~printer:Expression.show
@@ -57,8 +55,6 @@ let test_new_expression _ =
     let actual =
       Reference.create reference
       |> Reference.new_expression
-      |> (fun name -> Expression.Name name)
-      |> node
     in
     assert_equal
       ~printer:Expression.show

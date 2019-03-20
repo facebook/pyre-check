@@ -303,15 +303,13 @@ let create ~resolution ?(verify = true) ~configuration source =
       | { Node.value = Define define; _ } ->
           let class_candidate =
             Reference.prefix define.name
-            >>| Reference.expression
-            >>| Access.expression
-            >>| Resolution.parse_annotation resolution
+            >>| Resolution.parse_reference resolution
             >>= Resolution.class_definition resolution
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method (Reference.expression define.name)
-            | None -> Callable.create_function (Reference.expression define.name)
+            | Some _ -> Callable.create_method (Reference.access define.name)
+            | None -> Callable.create_function (Reference.access define.name)
           in
           Some (define, call_target)
       | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
@@ -334,7 +332,7 @@ let create ~resolution ?(verify = true) ~configuration source =
             parent = None;
           }
           in
-          Some (define, Callable.create_object (Reference.expression define.name))
+          Some (define, Callable.create_object (Reference.access define.name))
       | _ ->
           None
     in
@@ -347,9 +345,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       begin
         (* Make sure we know about what we model. *)
         let call_target = (call_target :> Callable.t) in
-        let annotation =
-          Resolution.resolve resolution (Access.expression (Reference.expression name))
-        in
+        let annotation = Resolution.resolve resolution (Reference.expression name) in
         if Type.equal annotation Type.Top then
           raise_invalid_model "Modeled entity is not part of the environment!";
 

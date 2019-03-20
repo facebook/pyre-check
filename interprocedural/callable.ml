@@ -90,9 +90,9 @@ let create_override access =
 let create { Node.value = define; _ } =
   match define.Define.parent with
   | Some _ ->
-      create_method (Reference.expression define.name)
+      create_method (Reference.access define.name)
   | None ->
-      create_function (Reference.expression define.name)
+      create_function (Reference.access define.name)
 
 
 let create_derived_override override ~at_type =

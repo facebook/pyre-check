@@ -675,7 +675,7 @@ let attributes
       Attribute.Cache.transitive;
       class_attributes;
       include_generated_attributes;
-      name = (Reference.expression name);
+      name = (Reference.access name);
       instantiated;
     }
   in

@@ -35,10 +35,10 @@ let record_path_of_definitions ~path ~source =
       Access.pp class_node.Class.name
       File.Handle.pp path;
     *)
-    Callable.add_class_definition (Reference.expression class_node.Class.name) path
+    Callable.add_class_definition (Reference.access class_node.Class.name) path
   in
   let record_toplevel_definition definition =
-    let name = Reference.expression definition.Node.value.Define.name in
+    let name = Reference.access definition.Node.value.Define.name in
     match definition.Node.value.Define.parent with
     | None ->
         (*
@@ -50,7 +50,7 @@ let record_path_of_definitions ~path ~source =
         let () = Callable.add_function_definition name path in
         Callable.create_function name, definition
     | Some class_name ->
-        if not (Callable.class_exists (Reference.expression class_name)) then
+        if not (Callable.class_exists (Reference.access class_name)) then
           begin
             Log.error "Method's class non-existing";
             Format.asprintf

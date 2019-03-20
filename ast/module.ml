@@ -152,9 +152,9 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       | Assign { Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ }; _ } ->
           public_values @ (filter_private [target]), dunder_all
       | Class { Record.Class.name; _ } ->
-          public_values @ (filter_private [name |> Reference.expression]), dunder_all
+          public_values @ (filter_private [name |> Reference.access]), dunder_all
       | Define { Define.name; _ } ->
-          public_values @ (filter_private [name |> Reference.expression]), dunder_all
+          public_values @ (filter_private [name |> Reference.access]), dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } = Option.value alias ~default:name in
           public_values @ (filter_private (List.map imports ~f:get_import_name)), dunder_all
