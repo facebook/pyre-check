@@ -25,9 +25,9 @@ module TypeAnnotationsValue = struct
   let description = "Node type resolution"
 end
 
-(** A map of function definitions (indexed by Access.t key) to
+(** A map of function definitions (indexed by Reference.t key) to
     to annotations for each statement *)
-include SharedMemory.WithCache (Ast.SharedMemory.AccessKey) (TypeAnnotationsValue)
+include SharedMemory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
 
 
 let remove accesses =

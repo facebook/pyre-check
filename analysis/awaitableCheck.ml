@@ -99,7 +99,7 @@ module State (Context: Context) = struct
       TypeCheck.resolution_with_key
         ~environment:Context.environment
         ~parent:(parent >>| Reference.expression)
-        ~access:(Reference.expression name)
+        ~name
         ~key
     in
 

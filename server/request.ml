@@ -1240,7 +1240,6 @@ let process_type_check_files
   List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
   |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
   |> List.map ~f:(fun { Node.value = { Statement.Define.name; _ }; _ } -> name)
-  |> List.map ~f:Reference.expression
   |> ResolutionSharedMemory.remove;
 
   let new_errors =

@@ -44,6 +44,16 @@ module AccessKey = struct
 end
 
 
+module ReferenceKey = struct
+  type t = Reference.t
+  let to_string = Reference.show
+  let compare = Reference.compare
+
+  type out = t
+  let from_string name = Reference.create name
+end
+
+
 module SymlinksToPaths = struct
   module SymlinkTarget = struct
     type t = string

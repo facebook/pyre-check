@@ -11,6 +11,10 @@ module AccessKey: Memory.KeyType with
   type t = Expression.Access.t and
 type out = Expression.Access.t
 
+module ReferenceKey: Memory.KeyType with
+  type t = Reference.t and
+type out = Reference.t
+
 module IntKey: Memory.KeyType with type t = int and type out = int
 
 module SymlinksToPaths: sig

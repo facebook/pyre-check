@@ -3911,9 +3911,9 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
     ()
 
 
-let resolution_with_key ~environment ~parent ~access ~key =
+let resolution_with_key ~environment ~parent ~name ~key =
   let annotations =
-    match key, ResolutionSharedMemory.get access with
+    match key, ResolutionSharedMemory.get name with
     | Some key, Some map ->
         map
         |> Int.Map.of_tree
@@ -4015,7 +4015,7 @@ let run
 
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
-      ResolutionSharedMemory.add (Reference.expression name) resolution_fixpoint
+      ResolutionSharedMemory.add name resolution_fixpoint
     in
     exit
     >>| dump_resolutions

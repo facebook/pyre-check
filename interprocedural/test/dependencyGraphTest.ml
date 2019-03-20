@@ -220,7 +220,7 @@ let test_type_collection _ =
     in
     let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
-      ResolutionSharedMemory.get (Reference.expression name)
+      ResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)
       |> Int.Map.of_tree
     in

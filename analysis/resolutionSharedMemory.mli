@@ -19,7 +19,7 @@ type annotation_map = {
 
 type annotations = annotation_map Int.Map.Tree.t
 
-val add: Access.t -> annotations -> unit
-val remove: Access.t list -> unit
+val add: Reference.t -> annotations -> unit
+val remove: Reference.t list -> unit
 
-val get: Access.t -> annotations option
+val get: Reference.t -> annotations option
