@@ -62,8 +62,12 @@ val normalize_access_list
   -> normalized_expression
 
 val as_access: normalized_expression -> Expression.Access.general_access
-
 val to_json: t -> Yojson.Safe.json
+
+val is_property_access
+  :  resolution: Resolution.t
+  -> expression: normalized_expression Node.t
+  -> bool
 
 type argument_match = {
   root: Root.t;

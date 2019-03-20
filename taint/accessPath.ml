@@ -276,7 +276,6 @@ let is_get_item member =
   member = "__getitem__" ||
   member = "get"   (* Hack to treat dictionary lookup like [ ] *)
 
-
 let get_index { Node.value = expression; _ } =
   match expression with
   | String literal ->
@@ -381,3 +380,26 @@ let to_json { root; path; } =
         Format.sprintf "local(%s)" name
   in
   `String (root_name root ^ AbstractTreeDomain.Label.show_path path)
+
+
+let is_property_access ~resolution ~expression:{ Node.location; value = expression } =
+  match expression with
+  | Access { expression; member } ->
+      let access = as_access expression in
+      let annotation =
+        Node.create ~location (Expression.Access access)
+        |> Resolution.resolve resolution
+      in
+      let is_property define =
+        String.Set.exists
+          ~f:(Statement.Define.has_decorator define)
+          Recognized.property_decorators
+      in
+      (Type.access annotation) @ [Identifier member]
+      |> Resolution.function_definitions resolution
+      >>| (function
+          | [{ Node.value = define; _ }] -> is_property define
+          | _ -> false)
+      |> Option.value ~default:false
+  | _ ->
+      false

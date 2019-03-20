@@ -291,45 +291,27 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         ~resolution
         ~taint
         ~state
-        ~expression:{ Node.location; value = expression } =
+        ~expression:({ Node.location; value = expression } as expression_node) =
       Log.log
         ~section:`Taint
         "analyze_normalized_expression: %a\n  under taint %a"
         pp_normalized_expression expression
         BackwardState.Tree.pp taint;
       match expression with
-      | Access { expression; member } ->
-          let is_property =
-            let access = AccessPath.as_access expression in
-            let annotation =
-              Node.create ~location (Expression.Access access)
-              |> Resolution.resolve resolution
-            in
-            let is_property define =
-              String.Set.exists
-                ~f:(Statement.Define.has_decorator define)
-                Recognized.property_decorators
-            in
-            (Type.access annotation) @ [Identifier member]
-            |> Resolution.function_definitions resolution
-            >>| (function
-                | [{ Node.value = define; _ }] -> is_property define
-                | _ -> false)
-            |> Option.value ~default:false
+      | Access { expression; _ }
+        when AccessPath.is_property_access ~resolution ~expression:expression_node ->
+          let property_call =
+            Call { callee = expression; arguments = { Node.location; value = [] } }
+            |> Node.create ~location
           in
-          if is_property then
-            let property_call =
-              Call { callee = expression; arguments = { Node.location; value = [] } }
-              |> Node.create ~location
-            in
-            analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
-          else
-            let field = AbstractTreeDomain.Label.Field member in
-            let taint =
-              BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
-            in
-            let expression = Node.create ~location expression in
-            analyze_normalized_expression ~resolution ~taint ~state ~expression
+          analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
+      | Access { expression; member } ->
+          let field = AbstractTreeDomain.Label.Field member in
+          let taint =
+            BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+          in
+          let expression = Node.create ~location expression in
+          analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Index { expression; index; _ } ->
           let taint = BackwardState.Tree.prepend [index] taint in
           let expression = Node.create ~location expression in
