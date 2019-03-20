@@ -79,7 +79,7 @@ let test_superclasses _ =
     |} in
   let (!) name =
     {
-      Statement.Class.name = Access.create name;
+      Statement.Class.name = Reference.create name;
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -99,7 +99,7 @@ let test_superclasses _ =
   in
   let assert_superclasses target expected =
     let actual = Class.superclasses ~resolution target in
-    let equal left right = Access.equal (Class.name left) (Class.name right) in
+    let equal left right = Reference.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes: Class.t list)])
       ~cmp:(List.equal ~equal) expected actual
@@ -426,7 +426,7 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol =
       {
-        Statement.Class.name = Access.create "Derp";
+        Statement.Class.name = Reference.create "Derp";
         bases;
         body = [];
         decorators = [];
@@ -1229,7 +1229,7 @@ let test_constraints _ =
       let { Source.statements; _ } = parse source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
-          when Access.show name = target ->
+          when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ ->
             None
@@ -1484,7 +1484,7 @@ let test_inferred_generic_base _ =
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
-          when Access.show name = target ->
+          when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ ->
             None
@@ -1537,7 +1537,7 @@ let test_metaclasses _ =
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
-          when Access.show name = target ->
+          when Reference.show name = target ->
             Some (Class.create { Node.location; value = definition })
         | _ ->
             None

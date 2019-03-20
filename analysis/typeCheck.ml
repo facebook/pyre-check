@@ -3768,10 +3768,9 @@ module State = struct
               |> Annotated.Class.create
               |> Annotated.Class.generics ~resolution
             in
-            let qualifier = Reference.from_access name in
             schedule
               ~variables
-              ~define:(Define.create_class_toplevel ~qualifier ~statements:body)
+              ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
         | Define ({ Define.parameters; _ } as define) when not (Define.is_stub define) ->
             let variables =
               let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =

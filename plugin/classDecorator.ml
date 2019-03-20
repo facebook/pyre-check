@@ -37,7 +37,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                   let generated_methods =
                     let create_method ~name ~parameters ~return_annotation =
                       {
-                        Define.name = Reference.create ~prefix:(Reference.from_access parent) name;
+                        Define.name = Reference.create ~prefix:parent name;
                         parameters =
                           Parameter.create ~name:"self" ()
                           :: parameters;
@@ -50,7 +50,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                ~location
                                (Access (SimpleAccess (Access.create return_annotation))));
                         async = false;
-                        parent = Some (Reference.from_access parent);
+                        parent = Some parent;
                       }
                     in
                     let methods =

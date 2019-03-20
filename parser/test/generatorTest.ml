@@ -2652,7 +2652,7 @@ let test_class _ =
     "@bar\nclass foo():\n\tpass"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [+Pass];
         decorators = [!"bar"];
@@ -2663,7 +2663,7 @@ let test_class _ =
     "class foo: pass"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [+Pass];
         decorators = [];
@@ -2675,7 +2675,7 @@ let test_class _ =
     "class foo():\n\tdef bar(): pass"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Define {
@@ -2698,7 +2698,7 @@ let test_class _ =
     "class foo():\n\tdef bar():\n\t\tdef baz(): pass"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Define {
@@ -2732,7 +2732,7 @@ let test_class _ =
     "class foo.bar: pass"
     [
       +Class {
-        Class.name = (Access.create "foo.bar");
+        Class.name = Reference.create "foo.bar";
         bases = [];
         body = [+Pass];
         decorators = [];
@@ -2743,7 +2743,7 @@ let test_class _ =
     "class foo(1, 2):\n\t1"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [
           { Argument.name = None; value = +Integer 1 };
           { Argument.name = None; value = +Integer 2 };
@@ -2757,7 +2757,7 @@ let test_class _ =
     "class foo(1, **kwargs):\n\t1"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [
           { Argument.name = None; value = +Integer 1 };
           {
@@ -2775,7 +2775,7 @@ let test_class _ =
     "class foo:\n\tattribute: int = 1"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Assign {
@@ -2793,7 +2793,7 @@ let test_class _ =
     "class foo:\n\tattribute = 1 # type: int"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Assign {
@@ -2811,7 +2811,7 @@ let test_class _ =
     "class foo:\n\tattribute: int"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Assign {
@@ -2830,7 +2830,7 @@ let test_class _ =
     "class foo(superfoo):\n\tdef bar(): pass"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [{ Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
@@ -2853,7 +2853,7 @@ let test_class _ =
     "class foo():\n\tdef __init__(self): self.bar = 0"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +Define {
@@ -2895,7 +2895,7 @@ let test_class _ =
     |})
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [
           +If {
@@ -4209,7 +4209,7 @@ let test_stubs _ =
     "class A:\n\ta = ... # type: int"
     [
       +Class {
-        Class.name = Access.create "A";
+        Class.name = Reference.create "A";
         bases = [];
         body = [
           +Assign {
@@ -4310,7 +4310,7 @@ let test_stubs _ =
     "class foo(): ..."
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -4321,7 +4321,7 @@ let test_stubs _ =
     "class foo():\n\t..."
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -4332,7 +4332,7 @@ let test_stubs _ =
     "class foo(): ... # type: ignore"
     [
       +Class {
-        Class.name = Access.create "foo";
+        Class.name = Reference.create "foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];

@@ -28,7 +28,7 @@ module Record = struct
 
   module Class = struct
     type 'statement record = {
-      name: Access.t;
+      name: Reference.t;
       bases: Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
@@ -700,7 +700,7 @@ module Class = struct
           _;
         } ->
           let add_attribute map target value =
-            Attribute.name ~parent:name target
+            Attribute.name ~parent:(Reference.expression name) target
             |> function
             | Some name ->
                 let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
@@ -718,7 +718,7 @@ module Class = struct
           _;
         } ->
           let add_attribute index map target =
-            Attribute.name ~parent:name target
+            Attribute.name ~parent:(Reference.expression name) target
             |> function
             | Some name ->
                 let value =
@@ -747,7 +747,7 @@ module Class = struct
           List.foldi ~init:map ~f:add_attribute targets
       | Assign { Assign.target; annotation; value; _ } ->
           begin
-            Attribute.name ~parent:name target
+            Attribute.name ~parent:(Reference.expression name) target
             |> function
             | Some name  ->
                 let attribute =
@@ -835,7 +835,7 @@ module Class = struct
               (Node.create
                 ~location
                 (Expression.Access (SimpleAccess (Reference.expression target))))
-              ~parent:name
+              ~parent:(Reference.expression name)
             >>| (fun name ->
                   let attribute =
                     match Identifier.SerializableMap.find_opt name map with
@@ -862,11 +862,13 @@ module Class = struct
     let class_attributes =
       let callable_attributes map { Node.location; value } =
         match value with
-        | Class { Record.Class.name; _ } when not (List.is_empty name) ->
+        | Class { Record.Class.name; _ } ->
             let open Expression in
             let annotation =
               let meta_annotation =
-                let argument = { Argument.name = None; value = Access.expression name } in
+                let argument =
+                  { Argument.name = None; value = Access.expression (Reference.expression name) }
+                in
                 Node.create
                   ~location
                   (Access
@@ -888,16 +890,11 @@ module Class = struct
                        Access.Call (Node.create_with_default_location [argument]);
                      ]))
             in
-            begin
-              match List.last_exn name with
-              | Access.Identifier attribute_name ->
-                  Identifier.SerializableMap.set
-                    map
-                    ~key:attribute_name
-                    ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
-              | _ ->
-                  map
-            end
+            let attribute_name = Reference.last name |> Reference.show in
+            Identifier.SerializableMap.set
+              map
+              ~key:attribute_name
+              ~data:(Attribute.create ~location ~name:attribute_name ~annotation ())
         | _ ->
             map
       in
@@ -1051,7 +1048,7 @@ module Class = struct
 
 
   let is_unit_test { name; _ } =
-    let name = Access.show name in
+    let name = Reference.show name in
     name = "unittest.TestCase" || name = "unittest.case.TestCase"
 end
 
@@ -1349,7 +1346,7 @@ module PrettyPrinter = struct
       formatter
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
       pp_decorators decorators
-      pp_access_list name
+      Reference.pp name
       Expression.pp_expression_argument_list bases
       pp_statement_list body
 

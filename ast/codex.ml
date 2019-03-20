@@ -219,7 +219,7 @@ let rec source_statement_codex_representation
   | Statement.Class { Statement.Class.body; name; docstring; _ } -> [
       CodexNode.ClassNode {
         CodexNode.Class.docstring;
-        name = Access.show name;
+        name = Reference.show name;
         rank = 0;
         comments = None;
         location = [start_line; column];

@@ -21,6 +21,7 @@ val expression: t -> Expression.Access.t
 val new_expression: t -> Expression.t Expression.Name.t
 
 val sanitized: t -> t
+val sanitize_qualified: t -> t
 val equal_sanitized: t -> t -> bool
 val pp_sanitized: Format.formatter -> t -> unit
 val show_sanitized: t -> string

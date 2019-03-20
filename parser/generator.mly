@@ -556,7 +556,7 @@ raise_from:
   ;
 
 compound_statement:
-  | definition = CLASS; name = simple_access;
+  | definition = CLASS; name = reference;
     bases = bases; colon_position = COLON;
     body = block_or_stub_body {
       let location = Location.create ~start:definition ~stop:colon_position in
@@ -568,12 +568,12 @@ compound_statement:
           | { Node.location; value = Assign assign } ->
               {
                 Node.location;
-                value = Assign { assign with Assign.parent = Some name };
+                value = Assign { assign with Assign.parent = Some (Reference.expression name) };
               }
           | { Node.location; value = Define define } ->
               {
                 Node.location;
-                value = Define { define with Define.parent = Some (Reference.from_access name) };
+                value = Define { define with Define.parent = Some name };
               }
           | {
               Node.location;

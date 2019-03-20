@@ -1646,7 +1646,7 @@ let test_defines _ =
   let define_bar = create_define "bar" in
   let parent =
     {
-      Statement.Class.name = Access.create "Foo";
+      Statement.Class.name = Reference.create "Foo";
       bases = [];
       body = [+Define define_foo; +Define define_bar];
       decorators = [];
@@ -1668,7 +1668,7 @@ let test_classes _ =
 
   let class_define =
     {
-      Class.name = Access.create "foo";
+      Class.name = Reference.create "foo";
       bases = [];
       body = [
         +Define {
@@ -1692,7 +1692,7 @@ let test_classes _ =
 
   let inner =
     {
-      Class.name = Access.create "bar";
+      Class.name = Reference.create "bar";
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -1701,7 +1701,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = Access.create "foo";
+      Class.name = Reference.create "foo";
       bases = [];
       body = [
         +Class inner;

@@ -27,7 +27,7 @@ type decorator = {
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
-  Access.equal left right
+  Reference.equal left right
 
 
 type class_t = t
@@ -65,8 +65,8 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
   List.filter_map ~f:(matches decorator) decorators
 
 
-let annotation { Node.value = { Class.name; _ }; location } ~resolution =
-  Resolution.parse_annotation resolution (Node.create ~location (Access (SimpleAccess name)))
+let annotation { Node.value = { Class.name; _ }; _ } ~resolution =
+  Resolution.parse_reference resolution name
 
 
 let successors class_node ~resolution =
@@ -369,7 +369,7 @@ module Attribute = struct
     let annotation, value, class_attribute =
       let superclasses =
         superclasses ~resolution parent
-        |> List.map ~f:(fun definition -> name definition |> Access.show)
+        |> List.map ~f:(fun definition -> name definition |> Reference.show)
         |> String.Set.of_list
       in
       if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
@@ -675,7 +675,7 @@ let attributes
       Attribute.Cache.transitive;
       class_attributes;
       include_generated_attributes;
-      name;
+      name = (Reference.expression name);
       instantiated;
     }
   in

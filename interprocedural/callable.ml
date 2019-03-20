@@ -178,7 +178,7 @@ let define_matches search { Node.value = { Define.name; _ } ; _ } =
 
 
 let class_matches search { Node.value = { Class.name; _ } ; _ } =
-  search = Access.show name
+  search = Reference.show name
 
 
 let get_definition ~resolution = function

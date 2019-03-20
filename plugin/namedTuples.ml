@@ -125,7 +125,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         self_parameter :: List.map attributes ~f:to_parameter
       in
       Statement.Define {
-        Define.name = Reference.create ~prefix:(Reference.from_access parent) "__init__";
+        Define.name = Reference.create ~prefix:parent "__init__";
         parameters;
         body = [
           Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipsis));
@@ -134,7 +134,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = Some (Reference.from_access parent);
+        parent = Some parent;
       }
       |> Node.create ~location
     in
@@ -158,10 +158,12 @@ let transform_ast ({ Source.statements; _ } as source) =
           begin
             match extract_attributes expression with
             | Some attributes ->
-                let constructor = tuple_constructor ~parent:name ~location attributes in
+                let constructor =
+                  tuple_constructor ~parent:(Reference.from_access name) ~location attributes
+                in
                 let attributes = tuple_attributes ~parent:name ~location attributes in
                 Class {
-                  Class.name;
+                  Class.name = Reference.from_access name;
                   bases = [tuple_base ~location];
                   body = constructor :: attributes;
                   decorators = [];
@@ -202,14 +204,18 @@ let transform_ast ({ Source.statements; _ } as source) =
             in
             let attributes = List.filter_map body ~f:extract_assign in
             let constructor = tuple_constructor ~parent:name ~location attributes in
-            let fields_attribute = fields_attribute ~parent:name ~location attributes in
+            let fields_attribute =
+              fields_attribute ~parent:(Reference.expression name) ~location attributes
+            in
             Class { original with Class.body = constructor :: fields_attribute :: body }
           else
             let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
               match extract_attributes value with
               | Some attributes ->
                   let constructor = tuple_constructor ~parent:name ~location attributes in
-                  let attributes = tuple_attributes ~parent:name ~location attributes in
+                  let attributes =
+                    tuple_attributes ~parent:(Reference.expression name) ~location attributes
+                  in
                   (tuple_base ~location) :: bases, attributes_sofar @ (constructor :: attributes)
               | None ->
                   base :: bases, attributes_sofar

@@ -516,7 +516,7 @@ let test_connect_definition _ =
   in
   let class_definition =
     +{
-      Class.name = Access.create "C";
+      Class.name = Reference.create "C";
       bases = [];
       body = [];
       decorators = [];
@@ -975,7 +975,7 @@ let test_infer_protocols_edges _ =
 
     let methods_to_implementing_classes =
       let add key values map =
-        Map.set map ~key ~data:(List.map values ~f:Access.create)
+        Map.set map ~key ~data:(List.map values ~f:Reference.create)
       in
       Identifier.Map.empty
       |> add "__hash__" ["object"; "SuperObject"]
@@ -1372,7 +1372,7 @@ let test_class_definition _ =
     |> value
     |> Node.value
   in
-  assert_equal any.Class.name (access ["object"])
+  assert_equal any.Class.name (Reference.create "object")
 
 
 let test_protocols _ =

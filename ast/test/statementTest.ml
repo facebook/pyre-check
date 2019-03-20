@@ -302,7 +302,7 @@ let test_attributes _ =
     in
     let definition =
       {
-        Record.Class.name = [];
+        Record.Class.name = Reference.create "";
         bases = [];
         body = [];
         decorators = [];

@@ -38,7 +38,8 @@ let assert_environment_contains source expected =
           None
     in
     let get_type name =
-      Access.expression name
+      Reference.expression name
+      |> Access.expression
       |> Type.create ~aliases:Handler.aliases
     in
     List.map ~f:Source.statements expected

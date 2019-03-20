@@ -35,7 +35,7 @@ let record_path_of_definitions ~path ~source =
       Access.pp class_node.Class.name
       File.Handle.pp path;
     *)
-    Callable.add_class_definition class_node.Class.name path
+    Callable.add_class_definition (Reference.expression class_node.Class.name) path
   in
   let record_toplevel_definition definition =
     let name = Reference.expression definition.Node.value.Define.name in

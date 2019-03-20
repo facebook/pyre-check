@@ -25,7 +25,7 @@ type class_t = t
 
 val create: Class.t Node.t -> t
 
-val name: t -> Access.t
+val name: t -> Reference.t
 val bases: t -> Argument.t list
 val get_decorator: t -> decorator: string -> decorator list
 

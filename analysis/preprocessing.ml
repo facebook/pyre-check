@@ -343,6 +343,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             skip = Set.add skip location;
           }
       | Class { Class.name; _ } ->
+          let name = Reference.expression name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -610,7 +611,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             ~f:(qualify_expression ~qualify_strings:false ~scope)
         in
         let body =
-          let original_scope = { scope with qualifier = qualifier @ name } in
+          let qualifier = qualifier @ (Reference.expression name) in
+          let original_scope = { scope with qualifier } in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
@@ -662,7 +664,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = scope.qualifier @ name;
+          Class.name = Reference.combine (Reference.from_access scope.qualifier) name;
           bases = List.map bases ~f:qualify_base;
           body;
           decorators;
@@ -699,8 +701,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             aliases =
               Map.set
                 aliases
-                ~key:name
-                ~data:(local_alias ~qualifier ~access:(qualifier @ name));
+                ~key:(Reference.expression name)
+                ~data:(local_alias ~qualifier ~access:(qualifier @ (Reference.expression name)));
           }
           in
           scope,
@@ -1604,6 +1606,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             Expression.String { value = identifier; kind = StringLiteral.String }
             |> Node.create ~location
           in
+          let class_name = Reference.expression class_name in
           let fields =
             let extract = function
               | {

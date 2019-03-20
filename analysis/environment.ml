@@ -102,7 +102,7 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.object_primitive) or Access.show name = "object" then
+  if not (Type.equal primitive Type.object_primitive) || Reference.show name = "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =
       let value = Expression.delocalize value in
@@ -384,7 +384,8 @@ let register_class_definitions (module Handler: Handler) source =
       let statement { Source.handle; _ } new_annotations = function
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
             let primitive, _ =
-              Access.expression name
+              Reference.expression name
+              |> Access.expression
               |> Type.create ~aliases:Handler.aliases
               |> Type.split
             in
@@ -488,7 +489,10 @@ let register_aliases (module Handler: Handler) sources =
                 aliases
           end
       | Class { Class.name; body; _ } ->
-          List.fold body ~init:aliases ~f:(visit_statement ~qualifier:name ~in_class_body:true)
+          List.fold
+            body
+            ~init:aliases
+            ~f:(visit_statement ~qualifier:(Reference.expression name) ~in_class_body:true)
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with
@@ -603,13 +607,21 @@ let register_globals
     resolution
     ({ Source.handle; qualifier; statements; _ } as source) =
 
-  let qualified_access access =
-    let access =
-      match access with
-      | (Access.Identifier "builtins") :: tail -> tail
-      | _ -> access
+  let qualified_reference reference =
+    let reference =
+      let builtins = Reference.create "builtins" in
+      if Reference.is_strict_prefix ~prefix:builtins reference then
+        Reference.drop_prefix ~prefix:builtins reference
+      else
+        reference
     in
-    Access.delocalize_qualified access
+    Reference.sanitize_qualified reference
+  in
+
+  let qualified_access access =
+    Reference.from_access access
+    |> qualified_reference
+    |> Reference.expression
   in
 
   (* Register meta annotations for classes. *)
@@ -623,8 +635,7 @@ let register_globals
         | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
             let primitive, _ =
-              Node.create ~location (Access (SimpleAccess name))
-              |> Resolution.parse_annotation ~allow_untracked:true resolution
+              Resolution.parse_reference ~allow_untracked:true resolution name
               |> Type.split
             in
             let global =
@@ -634,7 +645,10 @@ let register_globals
                 (Type.meta primitive)
               |> Node.create ~location
             in
-            Handler.register_global ~handle ~access:(qualified_access name) ~global
+            Handler.register_global
+              ~handle
+              ~access:(qualified_reference name |> Reference.expression)
+              ~global
         | _ ->
             ()
     end)
@@ -856,7 +870,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             let get_implementing_methods method_name =
               implementing_classes ~method_name
               |> Option.value ~default:[]
-              |> List.map ~f:(fun class_name -> Type.Primitive (Statement.Access.show class_name))
+              |> List.map ~f:(fun class_name -> Type.Primitive (Reference.show class_name))
             in
             List.concat_map ~f:get_implementing_methods names
             |> List.dedup_and_sort ~compare:Type.compare
@@ -867,10 +881,10 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             (
               not (Class.is_protocol definition) ||
               (
-                Class.name protocol_definition = [Identifier "typing"; Identifier "Sized"] &&
+                Class.name protocol_definition = Reference.create "typing.Sized" &&
                 (
-                  Class.name definition = [Identifier "typing"; Identifier "_Collection"] ||
-                  Class.name definition = [Identifier "typing"; Identifier "Collection"]
+                  Class.name definition = Reference.create "typing._Collection" ||
+                  Class.name definition = Reference.create "typing.Collection"
                 )
               )
             )
@@ -1024,19 +1038,19 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function
         | { Node.value = Class { name = nested_name; _ }; _ } ->
-            Some (Access.drop_prefix nested_name ~prefix:name, nested_name)
+            Some (Reference.drop_prefix nested_name ~prefix:name, nested_name)
         | _ ->
             None
       in
       List.filter_map ~f:extract_classes body
     in
     let create_alias added_sofar (stripped_name, full_name) =
-      let alias = name @ stripped_name in
-      if List.exists added_sofar ~f:(Access.equal alias) then
+      let alias = Reference.combine name stripped_name in
+      if List.exists added_sofar ~f:(Reference.equal alias) then
         added_sofar
       else
         begin
-          let primitive access = Type.Primitive (Access.show access) in
+          let primitive name = Type.Primitive (Reference.show name) in
           Handler.register_alias ~handle ~key:(primitive alias) ~data:(primitive full_name);
           alias :: added_sofar
         end
@@ -1108,7 +1122,7 @@ module Builder = struct
     let add_special_class ~name ~bases ~body =
       let definition =
         {
-          Class.name = Access.create name;
+          Class.name = Reference.create name;
           bases;
           body;
           decorators = [];

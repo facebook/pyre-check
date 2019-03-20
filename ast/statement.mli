@@ -24,7 +24,7 @@ module Record : sig
 
   module Class : sig
     type 'statement record = {
-      name: Access.t;
+      name: Reference.t;
       bases: Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;

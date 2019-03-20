@@ -123,6 +123,14 @@ let sanitized reference =
   List.map ~f:sanitize reference
 
 
+let sanitize_qualified reference =
+  List.rev reference
+  |> (function
+      | head :: tail -> sanitized [head] @ tail
+      | reference -> reference)
+  |> List.rev
+
+
 let equal_sanitized left right =
   equal (sanitized left) (sanitized right)
 
