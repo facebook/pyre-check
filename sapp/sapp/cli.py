@@ -12,9 +12,16 @@ logger = logging.getLogger("sapp")
 
 
 @common_options
+@click.option(
+    "--database-engine",
+    "--database",
+    type=click.Choice([DBType.SQLITE, DBType.MEMORY]),
+    default=DBType.SQLITE,
+    help="database engine to use",
+)
 @click.pass_context
 def cli(
-    ctx: click.Context, repository: str, database_engine: DBType, database_name: str
+    ctx: click.Context, repository: str, database_name: str, database_engine: DBType
 ):
     ctx.obj = Context(
         repository=repository,

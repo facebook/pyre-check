@@ -11,7 +11,7 @@ import IPython
 from click import Choice, Parameter, Path, argument, group, option
 from sapp.analysis_output import AnalysisOutput
 from sapp.database_saver import DatabaseSaver
-from sapp.db import DB, DBType
+from sapp.db import DB
 from sapp.interactive import Interactive
 from sapp.model_generator import ModelGenerator
 from sapp.models import PrimaryKeyGenerator
@@ -39,13 +39,6 @@ def common_options(func):
         help="Root of the repository (regardless of the directory analyzed)",
     )
     @option(
-        "--database-engine",
-        "--database",
-        type=Choice([DBType.SQLITE, DBType.MEMORY]),
-        default=DBType.SQLITE,
-        help="database engine to use",
-    )
-    @option(
         "--database-name",
         "--dbname",
         callback=default_database,
@@ -59,13 +52,9 @@ def common_options(func):
 
 
 def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]):
-    """Try to guess a reasonable database name by looking at the repository
-    path and database engine"""
+    """Try to guess a reasonable database name by looking at the repository path"""
     if value:
         return value
-
-    if ctx.params["database_engine"] == DBType.MEMORY:
-        return ":memory:"
 
     if ctx.params["repository"]:
         return os.path.join(ctx.params["repository"], DB.DEFAULT_DB_FILE)
