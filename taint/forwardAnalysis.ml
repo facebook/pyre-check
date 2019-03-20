@@ -105,7 +105,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let rec analyze_argument ~resolution state taint_accumulator { Argument.value = argument; _ } =
-      analyze_expression ~resolution argument state
+      analyze_expression ~resolution ~state ~expression:argument
       |> ForwardState.Tree.join taint_accumulator
 
 
@@ -266,11 +266,17 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   ~method_name
                 |> apply_call_targets ~resolution location arguments state
             | _ ->
-                analyze_expression ~resolution receiver state
+                analyze_expression ~resolution ~state ~expression:receiver
           end
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
-          let callee_taint = analyze_normalized_expression ~resolution location state callee in
+          let callee_taint =
+            analyze_normalized_expression
+              ~resolution
+              ~location
+              ~state
+              ~expression:callee
+          in
           (* For now just join all argument and receiver taint and propagate to result. *)
           let taint =
             List.fold_left
@@ -281,7 +287,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint
 
 
-    and analyze_normalized_expression ~resolution location state expression =
+    and analyze_normalized_expression ~resolution ~location ~state ~expression =
       let global_model access =
         (* Fields are handled like methods *)
         let target_candidates = [
@@ -351,7 +357,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             let property_call =
               Call { callee = expression; arguments = { Node.location; value = [] } }
             in
-            analyze_normalized_expression ~resolution location state property_call
+            analyze_normalized_expression ~resolution ~location ~state ~expression:property_call
           else
             let attribute_taint =
               let annotations =
@@ -371,7 +377,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             in
             let inferred_taint =
               let field = AbstractTreeDomain.Label.Field member in
-              analyze_normalized_expression ~resolution location state expression
+              analyze_normalized_expression ~resolution ~location ~state ~expression
               |> ForwardState.Tree.read [field]
               |> ForwardState.Tree.transform
                 ForwardTaint.simple_feature_set
@@ -380,7 +386,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             ForwardState.Tree.join inferred_taint attribute_taint
       | Index { expression; index; _ } ->
           let taint =
-            analyze_normalized_expression ~resolution location state expression
+            analyze_normalized_expression ~resolution ~location ~state ~expression
             |> ForwardState.Tree.read [index]
           in
           ForwardState.Tree.transform
@@ -391,7 +397,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Call { callee; arguments; } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
       | Global access ->
           global_model access
       | Local identifier ->
@@ -406,19 +412,19 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         | String literal -> AbstractTreeDomain.Label.Field literal.value
         | _ -> AbstractTreeDomain.Label.Any
       in
-      let value_taint = analyze_expression ~resolution value state in
+      let value_taint = analyze_expression ~resolution ~state ~expression:value in
       ForwardState.Tree.prepend [field_name] value_taint
       |> ForwardState.Tree.join taint
 
     and analyze_list_element ~resolution state position taint expression =
       let index_name = AbstractTreeDomain.Label.Field (string_of_int position) in
-      let value_taint = analyze_expression ~resolution expression state in
+      let value_taint = analyze_expression ~resolution ~state ~expression in
       ForwardState.Tree.prepend [index_name] value_taint
       |> ForwardState.Tree.join taint
 
     and analyze_set_element ~resolution state taint expression =
       let value_taint =
-        analyze_expression ~resolution expression state
+        analyze_expression ~resolution ~state ~expression
         |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any]
       in
       ForwardState.Tree.join taint value_taint
@@ -426,14 +432,19 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_comprehension ~resolution { Comprehension.element; generators; _ } state =
       let add_binding state { Comprehension.target; iterator; _ } =
         let taint =
-          analyze_expression ~resolution iterator state
+          analyze_expression ~resolution ~state ~expression:iterator
           |> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
         in
         let access_path = AccessPath.of_expression target in
         store_taint_option access_path taint state
       in
       let bound_state = List.fold ~f:add_binding generators ~init:state in
-      let collection_taint = analyze_expression ~resolution element bound_state in
+      let collection_taint =
+        analyze_expression
+          ~resolution
+          ~state:bound_state
+          ~expression:element
+      in
       ForwardState.Tree.prepend [AbstractTreeDomain.Label.Any] collection_taint
 
     (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
@@ -441,21 +452,21 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       match expression.Node.value with
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
       | _ ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
 
-    and analyze_expression ~resolution expression state =
+    and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       match expression.Node.value with
       | Access (SimpleAccess access) ->
-          AccessPath.normalize_access access ~resolution
-          |> analyze_normalized_expression ~resolution expression.Node.location state
+          let expression = AccessPath.normalize_access access ~resolution in
+          analyze_normalized_expression ~resolution ~location ~state ~expression
       | Await expression ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator = _; right } ->
-          let left_taint = analyze_expression ~resolution left state in
-          let right_taint = analyze_expression ~resolution right state in
+          let left_taint = analyze_expression ~resolution ~state ~expression:left in
+          let right_taint = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint
       | Call _ ->
           (* TODO: T37313693 *)
@@ -473,14 +484,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Float _ ->
           ForwardState.Tree.empty
       | Access (ExpressionAccess { expression; _ }) ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
       | Generator comprehension ->
           analyze_comprehension ~resolution comprehension state
       | Integer _ ->
           ForwardState.Tree.empty
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
-          analyze_expression ~resolution body state
+          analyze_expression ~resolution ~state ~expression:body
       | List list ->
           List.foldi ~f:(analyze_list_element ~resolution state) list ~init:ForwardState.Tree.empty
       | ListComprehension comprehension ->
@@ -494,18 +505,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           analyze_comprehension ~resolution comprehension state
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
           |> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
       | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
           expressions
-          |> List.map ~f:(fun expression -> analyze_expression ~resolution expression state)
+          |> List.map ~f:(fun expression -> analyze_expression ~resolution ~state ~expression)
           |> List.fold ~f:(ForwardState.Tree.join) ~init:ForwardState.Tree.empty
       | String _ ->
           ForwardState.Tree.empty
       | Ternary { target; test; alternative } ->
-          let taint_then = analyze_expression ~resolution target state in
-          let taint_else = analyze_expression ~resolution alternative state in
-          let _ = analyze_expression ~resolution test state in
+          let taint_then = analyze_expression ~resolution ~state ~expression:target in
+          let taint_else = analyze_expression ~resolution ~state ~expression:alternative in
+          let _ = analyze_expression ~resolution ~state ~expression:test in
           ForwardState.Tree.join taint_then taint_else
       | True ->
           ForwardState.Tree.empty
@@ -515,9 +526,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             expressions
             ~init:ForwardState.Tree.empty
       | UnaryOperator { operator = _; operand } ->
-          analyze_expression ~resolution operand state
+          analyze_expression ~resolution ~state ~expression:operand
       | Yield (Some expression) ->
-          analyze_expression ~resolution expression state
+          analyze_expression ~resolution ~state ~expression
       | Yield None ->
           ForwardState.Tree.empty
 
@@ -549,7 +560,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let rec analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Assign { target; value; _ } ->
-          let taint = analyze_expression ~resolution value state in
+          let taint = analyze_expression ~resolution ~state ~expression:value in
           analyze_assignment target taint taint state
       | Assert _
       | Break
@@ -561,7 +572,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Delete _ ->
           state
       | Expression expression ->
-          let _ = analyze_expression ~resolution expression state in
+          let _ = analyze_expression ~resolution ~state ~expression in
           state
       | For _
       | Global _
@@ -571,7 +582,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Pass
       | Raise _ -> state
       | Return { expression = Some expression; _ } ->
-          let taint = analyze_expression ~resolution expression state in
+          let taint = analyze_expression ~resolution ~state ~expression in
           FunctionContext.check_flow
             ~location
             ~source_tree:taint
@@ -584,7 +595,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           state
       | Yield expression
       | YieldFrom expression ->
-          let taint = analyze_expression ~resolution expression state in
+          let taint = analyze_expression ~resolution ~state ~expression in
           store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
 
 
