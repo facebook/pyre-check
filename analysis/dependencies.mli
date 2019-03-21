@@ -41,7 +41,7 @@ module type Handler = sig
 
   val clear_keys_batch: File.Handle.t list -> unit
 
-  val normalize: handle: File.Handle.t -> unit
+  val normalize: File.Handle.t list -> unit
 end
 
 val create: unit -> t

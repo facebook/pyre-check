@@ -210,17 +210,21 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
     let dependents = Dependents.get
 
-    let normalize ~handle =
-      let name = Source.qualifier ~handle in
-      match Dependents.get name with
-      | Some unnormalized ->
-          Dependents.remove_batch (Dependents.KeySet.singleton name);
-          File.Handle.Set.Tree.to_list unnormalized
-          |> List.sort ~compare:File.Handle.compare
-          |> File.Handle.Set.Tree.of_list
-          |> Dependents.add name
-      | None ->
-          ()
+    let normalize handles =
+      let normalize name =
+        match Dependents.get name with
+        | Some unnormalized ->
+            Dependents.remove_batch (Dependents.KeySet.singleton name);
+            File.Handle.Set.Tree.to_list unnormalized
+            |> List.sort ~compare:File.Handle.compare
+            |> File.Handle.Set.Tree.of_list
+            |> Dependents.add name
+        | None ->
+            ()
+      in
+      List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
+      |> List.dedup_and_sort ~compare:Expression.Access.compare
+      |> List.iter ~f:normalize
   end: Dependencies.Handler)
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let refine_class_definition annotation =
@@ -439,6 +443,5 @@ let normalize_shared_memory () =
   TypeOrder.normalize (module SharedHandler.TypeOrderHandler);
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in
-  File.Handle.Set.Tree.iter
-    handles
-    ~f:(fun handle -> SharedHandler.DependencyHandler.normalize ~handle)
+  File.Handle.Set.Tree.to_list handles
+  |> SharedHandler.DependencyHandler.normalize

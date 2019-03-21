@@ -201,8 +201,13 @@ let test_normalize _ =
         (Access.create right)
     in
     List.iter edges ~f:add_dependent;
+    let all_handles =
+      edges
+      |> List.concat_map ~f:(fun (left, right) -> [left; right])
+      |> List.map ~f:(fun name -> File.Handle.create (name ^ ".py"))
+    in
+    Handler.DependencyHandler.normalize all_handles;
     let assert_dependents_equal (node, expected) =
-      Handler.DependencyHandler.normalize ~handle:(File.Handle.create node);
       let expected =
         List.map expected ~f:(fun name -> File.Handle.create name)
         |> List.sort ~compare:File.Handle.compare

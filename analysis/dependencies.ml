@@ -43,7 +43,7 @@ module type Handler = sig
 
   val clear_keys_batch: File.Handle.t list -> unit
 
-  val normalize: handle: File.Handle.t -> unit
+  val normalize: File.Handle.t list -> unit
 end
 
 
@@ -117,16 +117,8 @@ let handler {
       Hashtbl.update dependents dependent ~f:update
 
 
-    let normalize ~handle =
-      let qualifier = Source.qualifier ~handle in
-      match Hashtbl.find dependents qualifier with
-      | Some unnormalized ->
-          File.Handle.Set.to_list unnormalized
-          |> List.sort ~compare:File.Handle.compare
-          |> File.Handle.Set.of_list
-          |>  fun normalized -> Hashtbl.set dependents ~key:qualifier ~data:normalized
-      | None ->
-          ()
+    let dependents_table = dependents
+
 
     let dependents access =
       Hashtbl.find dependents access
@@ -169,6 +161,22 @@ let handler {
       List.iter ~f:(Hashtbl.remove alias_keys) handles;
       List.iter ~f:(Hashtbl.remove global_keys) handles;
       List.iter ~f:(Hashtbl.remove dependent_keys) handles
+
+
+    let normalize handles =
+      let normalize qualifier =
+        match Hashtbl.find dependents_table qualifier with
+        | Some unnormalized ->
+            File.Handle.Set.to_list unnormalized
+            |> List.sort ~compare:File.Handle.compare
+            |> File.Handle.Set.of_list
+            |>  fun normalized -> Hashtbl.set dependents_table ~key:qualifier ~data:normalized
+        | None ->
+            ()
+      in
+      List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
+      |> List.dedup_and_sort ~compare:Expression.Access.compare
+      |> List.iter ~f:normalize
   end: Handler)
 
 
