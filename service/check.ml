@@ -185,6 +185,7 @@ let check
     List.fold sources ~init:(Coverage.create ()) ~f:aggregate
   in
   Statistics.coverage
+    ~randomly_log_every:20
     ~path:path_to_files
     ~coverage:[
       "crashes", crashes;

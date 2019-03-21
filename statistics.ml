@@ -176,7 +176,7 @@ let performance
   |> log ~flush ?randomly_log_every category
 
 
-let coverage ?(flush = false) ~path ~coverage  () =
+let coverage ?(flush = false) ?randomly_log_every ~path ~coverage  () =
   Log.log
     ~section:`Coverage
     "%s [%s]"
@@ -184,7 +184,7 @@ let coverage ?(flush = false) ~path ~coverage  () =
     (List.map coverage ~f:(fun (kind, value) -> Format.sprintf "%s: %d" kind value)
      |> String.concat ~sep:", ");
   sample ~integers:coverage ~normals:["file_name", path] ()
-  |> log ~flush "perfpipe_pyre_coverage"
+  |> log ~flush ?randomly_log_every "perfpipe_pyre_coverage"
 
 
 let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals = []) () =
