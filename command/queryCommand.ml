@@ -74,6 +74,29 @@ let parse_query
                           (Expression.show value)))
             in
             Request.TypeQueryRequest (DecodeOcamlValues (List.map pairs ~f:pair_of_strings))
+        | "decode_ocaml_values_from_file", [path] ->
+            let lines =
+              let format line =
+                line
+                |> String.split ~on:','
+                |> function
+                | [serialized_key; serialized_value] ->
+                    Some { serialized_key; serialized_value }
+                | _ -> None
+              in
+              string path
+              |> Path.create_absolute
+              |> File.create
+              |> File.lines
+              >>| List.filter_map ~f:format
+            in
+            begin
+              match lines with
+              | Some pairs ->
+                  Request.TypeQueryRequest (DecodeOcamlValues pairs)
+              | None ->
+                  raise (InvalidQuery (Format.sprintf "Malformatted file at `%s`" (string path)))
+            end
         | "dump_dependencies", [path] ->
             let file =
               Path.create_relative ~root ~relative:(string path)

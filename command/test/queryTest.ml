@@ -184,7 +184,21 @@ let test_parse_query context =
           serialized_value = "second_value";
         };
       ]);
-  assert_fails_to_parse "decode_ocaml_values('a', 'b')"
+  assert_fails_to_parse "decode_ocaml_values('a', 'b')";
+
+  let file = Test.write_file ("decode.me", "key,value\nsecond_key,second_value") in
+  assert_parses
+    (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute (File.path file)))
+    (DecodeOcamlValues [
+        {
+          TypeQuery.serialized_key = "key";
+          serialized_value = "value";
+        };
+        {
+          TypeQuery.serialized_key = "second_key";
+          serialized_value = "second_value";
+        };
+      ])
 
 
 let () =
