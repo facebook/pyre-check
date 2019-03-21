@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import enum
 import logging
 from collections import namedtuple
 from itertools import islice, tee
@@ -34,6 +35,16 @@ from sqlalchemy.orm import Session, relationship
 
 
 log = logging.getLogger()
+
+
+# For use on enums to alias upper case value.
+#
+# FLAKE8 does not understand that this is a static property
+# flake8: noqa B902
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return classmethod(self.fget).__get__(None, owner)()
+
 
 Base = declarative_base()
 INNODB_MAX_INDEX_LENGTH = 767
@@ -544,11 +555,27 @@ class IssueInstancePreconditionAssoc(Base, PrepareMixin, RecordMixin):  # noqa
         )
 
 
-class SharedTextKind(Enum):
-    FEATURE = "feature"
-    MESSAGE = "message"
-    SOURCE = "source"
-    SINK = "sink"
+class SharedTextKind(enum.Enum):
+    feature = enum.auto()
+    message = enum.auto()
+    source = enum.auto()
+    sink = enum.auto()
+
+    @classproperty
+    def FEATURE(cls):
+        return cls.feature
+
+    @classproperty
+    def MESSAGE(cls):
+        return cls.message
+
+    @classproperty
+    def SOURCE(cls):
+        return cls.source
+
+    @classproperty
+    def SINK(cls):
+        return cls.sink
 
 
 class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
@@ -567,15 +594,7 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
     kind: SharedTextKind = Column(
-        Enum(
-            SharedTextKind.FEATURE,
-            SharedTextKind.MESSAGE,
-            SharedTextKind.SOURCE,
-            SharedTextKind.SINK,
-        ),
-        server_default=SharedTextKind.FEATURE,
-        nullable=False,
-        index=True,
+        Enum(SharedTextKind), server_default="feature", nullable=False, index=True
     )
 
     issue_instances = association_proxy("shared_text_issue_instance", "issue_instance")
@@ -764,21 +783,45 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
             yield i
 
 
-class IssueStatus(Enum):
+class IssueStatus(enum.Enum):
     """Issues are born uncategorized. Humans can
     set it to FALSE_POSITIVE or VALID_BUG upon review."""
 
-    """Not a security bug, but a bad practice. Still needs fixing."""
-    BAD_PRACTICE = "bad_practice"
-    """False positive from analysis"""
-    FALSE_POSITIVE = "false_positive"
-    """Reviewed and seen to be a valid bug that needs fixing"""
-    VALID_BUG = "valid_bug"
     """An issue that hasn't been marked as a bug or FP"""
-    UNCATEGORIZED = "uncategorized"
+    uncategorized = enum.auto()
+
+    """Not a security bug, but a bad practice. Still needs fixing."""
+    bad_practice = enum.auto()
+
+    """False positive from analysis"""
+    false_positive = enum.auto()
+
+    """Reviewed and seen to be a valid bug that needs fixing"""
+    valid_bug = enum.auto()
+
     """I don't care about this particular issue,
     but still want to see issues of this kind."""
-    DO_NOT_CARE = "do_not_care"
+    do_not_care = enum.auto()
+
+    @classproperty
+    def UNCATEGORIZED(cls):
+        return cls.uncategorized
+
+    @classproperty
+    def BAD_PRACTICE(cls):
+        return cls.bad_practice
+
+    @classproperty
+    def FALSE_POSITIVE(cls):
+        return cls.false_positive
+
+    @classproperty
+    def VALID_BUG(cls):
+        return cls.valid_bug
+
+    @classproperty
+    def DO_NOT_CARE(cls):
+        return cls.do_not_care
 
 
 class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
@@ -841,16 +884,9 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
     run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
 
     status = Column(
-        Enum(
-            IssueStatus.UNCATEGORIZED,
-            IssueStatus.BAD_PRACTICE,
-            IssueStatus.FALSE_POSITIVE,
-            IssueStatus.VALID_BUG,
-            IssueStatus.DO_NOT_CARE,
-            name="issue_states",
-        ),
+        Enum(IssueStatus),
         doc="Shows the issue status from the latest run",
-        server_default=IssueStatus.UNCATEGORIZED,
+        server_default="uncategorized",
         nullable=False,
         index=True,
     )
@@ -881,11 +917,27 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         return cls._merge_by_key(session, issues, cls.handle)
 
 
-class RunStatus(Enum):
-    FINISHED = "finished"
-    INCOMPLETE = "incomplete"
-    SKIPPED = "skipped"
-    FAILED = "failed"
+class RunStatus(enum.Enum):
+    finished = enum.auto()
+    incomplete = enum.auto()
+    skipped = enum.auto()
+    failed = enum.auto()
+
+    @classproperty
+    def FINISHED(cls):
+        return cls.finished
+
+    @classproperty
+    def INCOMPLETE(cls):
+        return cls.incomplete
+
+    @classproperty
+    def SKIPPED(cls):
+        return cls.skipped
+
+    @classproperty
+    def FAILED(cls):
+        return cls.failed
 
 
 class Run(Base):  # noqa
@@ -936,16 +988,7 @@ class Run(Base):  # noqa
     )
 
     status = Column(
-        Enum(
-            RunStatus.FINISHED,
-            RunStatus.INCOMPLETE,
-            RunStatus.SKIPPED,
-            RunStatus.FAILED,
-            name="run_states",
-        ),
-        server_default=RunStatus.FINISHED,
-        nullable=False,
-        index=True,
+        Enum(RunStatus), server_default="finished", nullable=False, index=True
     )
 
     status_description = Column(
@@ -1201,9 +1244,17 @@ class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
 
-class TraceKind(Enum):
-    PRECONDITION = "precondition"
-    POSTCONDITION = "postcondition"
+class TraceKind(enum.Enum):
+    precondition = enum.auto()
+    postcondition = enum.auto()
+
+    @classproperty
+    def PRECONDITION(cls):
+        return cls.precondition
+
+    @classproperty
+    def POSTCONDITION(cls):
+        return cls.postcondition
 
 
 class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
@@ -1217,11 +1268,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
-    kind = Column(
-        Enum(TraceKind.PRECONDITION, TraceKind.POSTCONDITION),
-        nullable=False,
-        index=True,
-    )
+    kind = Column(Enum(TraceKind), nullable=False, index=True)
 
     caller: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
@@ -1565,9 +1612,17 @@ class WarningMessage(Base):  # noqa
     message = Column(String(length=4096), nullable=False)
 
 
-class WarningCodeCategory(Enum):
-    BUG = "bug"
-    CODE_SMELL = "code_smell"
+class WarningCodeCategory(enum.Enum):
+    bug = enum.auto()
+    code_smell = enum.auto()
+
+    @classproperty
+    def BUG(cls):
+        return cls.bug
+
+    @classproperty
+    def CODE_SMELL(cls):
+        return cls.code_smell
 
 
 class WarningCodeProperties(Base):  # noqa
@@ -1584,7 +1639,7 @@ class WarningCodeProperties(Base):  # noqa
     )
 
     category = Column(
-        Enum(WarningCodeCategory.BUG, WarningCodeCategory.CODE_SMELL, name="category"),
+        Enum(WarningCodeCategory),
         nullable=True,
         index=False,
         doc=(

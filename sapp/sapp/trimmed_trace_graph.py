@@ -103,12 +103,12 @@ class TrimmedTraceGraph(TraceGraph):
             self._populate_issue_and_traces(graph, instance_id)
 
     def _get_sink_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        kind: SharedTextKind = SharedTextKind.SINK  # pyre-ignore
+        kind: SharedTextKind = SharedTextKind.SINK
         sinks = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {sink.contents for sink in sinks}
 
     def _get_source_names(self, graph: TraceGraph, instance_id: int) -> Set[str]:
-        kind: SharedTextKind = SharedTextKind.SOURCE  # pyre-ignore
+        kind: SharedTextKind = SharedTextKind.SOURCE
         sources = graph.get_issue_instance_shared_texts(instance_id, kind)
         return {source.contents for source in sources}
 
@@ -459,7 +459,7 @@ class TrimmedTraceGraph(TraceGraph):
         Also copies all the post-source assocs since we don't know which ones
         are needed until we know the issue that reaches it.
         """
-        kind: SharedTextKind = SharedTextKind.SOURCE  # pyre-ignore
+        kind: SharedTextKind = SharedTextKind.SOURCE
         post_id = postcondition.id.local_id
         self.add_postcondition(postcondition)
         for (source_id, depth) in graph._postcondition_source_assoc[post_id]:
@@ -499,7 +499,7 @@ class TrimmedTraceGraph(TraceGraph):
     def _add_precondition(self, graph: TraceGraph, precondition: Precondition) -> None:
         """ Similar to _add_postcondition
         """
-        kind: SharedTextKind = SharedTextKind.SINK  # pyre-ignore
+        kind: SharedTextKind = SharedTextKind.SINK
         pre_id = precondition.id.local_id
         self.add_precondition(precondition)
         for (sink_id, depth) in graph._precondition_sink_assoc[pre_id]:
