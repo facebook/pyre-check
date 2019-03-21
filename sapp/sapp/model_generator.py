@@ -201,14 +201,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         if fix_info is not None:
             self.graph.add_issue_instance_fix_info(instance, fix_info)
 
-        taint_locations = [
-            SourceLocation(t["line"], t["start"], t["end"])
-            for t in entry["taint_locations"]
-        ]
-
-        if len(taint_locations) > 0:
-            instance.taint_locations = taint_locations
-
         for precondition in preconditions:
             self.graph.add_issue_instance_precondition_assoc(instance, precondition)
 

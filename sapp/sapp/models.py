@@ -685,12 +685,6 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         index=True,
     )
 
-    taint_locations = Column(
-        SourceLocationsType,
-        nullable=True,
-        doc="Locations with interesting taint information",
-    )
-
     is_new_issue = Column(
         Boolean,
         index=True,
@@ -843,22 +837,8 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         + "different code revisions",
     )
 
-    message__DEPRECATED = Column(
-        "message",
-        String(length=MESSAGE_LENGTH),
-        doc="Deprecated: Use IssueInstance.message instead",
-        nullable=True,
-    )
-
     code = Column(
         Integer, doc="Code identifiying the issue type", nullable=False, index=True
-    )
-
-    filename: str = Column(
-        String(length=767),
-        doc="Filename containing the issue",
-        nullable=True,
-        index=True,
     )
 
     callable = Column(
@@ -880,8 +860,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
         nullable=False,
         index=True,
     )
-
-    run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
 
     status = Column(
         Enum(IssueStatus),
@@ -993,14 +971,6 @@ class Run(Base):  # noqa
 
     status_description = Column(
         String(length=255), doc="The reason why a run didn't finish", nullable=True
-    )
-
-    previous_run_id = Column(BIGDBIDType, nullable=True, index=True)
-
-    previous_run = relationship(
-        "Run",
-        uselist=False,
-        primaryjoin="(remote(Run.id) == foreign(Run.previous_run_id))",
     )
 
     kind = Column(

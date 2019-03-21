@@ -107,7 +107,6 @@ class Parser(BaseParser):
         issue["postconditions"], issue[
             "initial_sources"
         ], fw_features = self._parse_issue_traces(json["traces"], "forward", "source")
-        issue["taint_locations"] = []
         issue["features"] = bw_features + fw_features
         yield issue
 
