@@ -681,8 +681,10 @@ let run
     "Starting analysis of %a"
     Interprocedural.Callable.pp (Interprocedural.Callable.create define);
   let cfg = Cfg.create define.value in
-  let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
-  let initial = FixpointState.create ~existing_model normalized_parameters in
+  let initial =
+    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+    FixpointState.create ~existing_model normalized_parameters
+  in
   let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
     Analyzer.forward ~cfg ~initial
