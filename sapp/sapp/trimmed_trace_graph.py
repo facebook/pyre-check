@@ -74,7 +74,7 @@ class TrimmedTraceGraph(TraceGraph):
                 if no_fwd_trace:
                     self._populate_issue_forward_trace(graph, instance_id)
                     self._populate_issue_trace(
-                        graph, instance_id, TraceKind.POSTCONDITION # pyre-ignore
+                        graph, instance_id, TraceKind.POSTCONDITION  # pyre-ignore
                     )
 
                 no_bwd_trace = (
@@ -83,7 +83,7 @@ class TrimmedTraceGraph(TraceGraph):
                 if no_bwd_trace:
                     self._populate_issue_backward_trace(graph, instance_id)
                     self._populate_issue_trace(
-                        graph, instance_id, TraceKind.PRECONDITION # pyre-ignore
+                        graph, instance_id, TraceKind.PRECONDITION  # pyre-ignore
                     )
 
     def _populate_affected_issues(self, graph: TraceGraph) -> None:
