@@ -25,6 +25,8 @@ from sapp.decorators import UserError, catch_keyboard_interrupt, catch_user_erro
 from sapp.models import (
     Issue,
     IssueInstance,
+    IssueInstanceSharedTextAssoc,
+    IssueInstanceTraceFrameAssoc,
     Run,
     RunStatus,
     SharedText,
@@ -821,7 +823,11 @@ set_frame(ID)   select a trace frame to explore
     def _initial_trace_frames(self, session, issue_instance_id, kind):
         return (
             session.query(TraceFrame)
-            .filter(TraceFrame.issue_instances.any(id=issue_instance_id))
+            .join(
+                IssueInstanceTraceFrameAssoc,
+                IssueInstanceTraceFrameAssoc.trace_frame_id == TraceFrame.id,
+            )
+            .filter(IssueInstanceTraceFrameAssoc.issue_instance_id == issue_instance_id)
             .filter(TraceFrame.kind == kind)
             .join(TraceFrame.leaf_assoc)
             .group_by(TraceFrame.id)
@@ -870,6 +876,7 @@ set_frame(ID)   select a trace frame to explore
             )  # skip recursive calls for now
             .filter(TraceFrame.caller == trace_frame.callee)
             .filter(TraceFrame.caller_port == trace_frame.callee_port)
+            .filter(TraceFrame.kind == trace_frame.kind)
             .join(TraceFrame.leaf_assoc)
             .group_by(TraceFrame.id)
             .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
@@ -941,8 +948,11 @@ set_frame(ID)   select a trace frame to explore
         return [
             leaf
             for leaf, in session.query(distinct(SharedText.contents))
-            .join(SharedText.shared_text_issue_instance)
-            .filter(SharedText.issue_instances.any(id=issue_instance.id))
+            .join(
+                IssueInstanceSharedTextAssoc,
+                SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
+            )
+            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance.id)
             .filter(SharedText.kind == kind)
             .all()
         ]
