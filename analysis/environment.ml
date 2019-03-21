@@ -769,11 +769,18 @@ let register_dependencies (module Handler: Handler) source =
       let statement { Source.handle; _ } _ = function
         | { Node.value = Import { Import.from; imports }; _ } ->
             let imports =
-              match from with
-              (* If analyzing from x import y, only add x to the dependencies.
-                 Otherwise, add all dependencies. *)
-              | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
-              | Some base_module -> [base_module]
+              let imports =
+                match from with
+                (* If analyzing from x import y, only add x to the dependencies.
+                   Otherwise, add all dependencies. *)
+                | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
+                | Some base_module -> [base_module]
+              in
+              let qualify_builtins = function
+                | [Access.Identifier "builtins"] -> []
+                | qualifier -> qualifier
+              in
+              List.map imports ~f:qualify_builtins
             in
             List.iter
               ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency)

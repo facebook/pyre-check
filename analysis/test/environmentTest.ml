@@ -1411,10 +1411,11 @@ let test_import_dependencies context =
     Unix.handle_unix_error (fun () -> Unix.mkdir_p "subdirectory");
     Out_channel.create "subdirectory/b.py" |> Out_channel.close;
     let source = {|
-         import a # a is added here
-         from subdirectory.b import c # subdirectory.b is added here
-         import sys # no dependency created here
-         from . import ignored # no dependency created here
+         import a
+         from builtins import str
+         from subdirectory.b import c
+         import sys
+         from . import ignored
       |}
     in
     let environment =
@@ -1423,6 +1424,7 @@ let test_import_dependencies context =
           parse ~handle:"test.py" ~qualifier:(Access.create "test") source;
           parse ~handle:"a.py" ~qualifier:(Access.create "a") "";
           parse ~handle:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
+          parse ~handle:"builtins.pyi" ~qualifier:[] "";
         ]
     in
     let dependencies handle =
@@ -1431,12 +1433,18 @@ let test_import_dependencies context =
       >>| String.Set.Tree.map ~f:File.Handle.show
       >>| String.Set.Tree.to_list
     in
-    assert_equal ~printer:(fun lo -> lo >>| List.to_string ~f:ident |> Option.value ~default:"nun")
+    assert_equal
       (dependencies "subdirectory/b.py")
       (Some ["test.py"]);
     assert_equal
       (dependencies "a.py")
       (Some ["test.py"]);
+    assert_equal
+      (dependencies "builtins.pyi")
+      (Some ["test.py"]);
+    assert_equal
+      (dependencies "sys.py")
+      (Some ["test.py"])
   in
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
