@@ -64,7 +64,7 @@ class Reporting(Command):
     ) -> Sequence[Error]:
         result.check()
 
-        errors = set()  # type: Set[Error]
+        errors = []  # type: List[Error]
         # pyre-ignore: T39175181
         results = {}  # type: List[Dict[str, Any]]
         try:
@@ -91,10 +91,10 @@ class Reporting(Command):
                 if fnmatch.fnmatch(full_path, (absolute_ignore_path + "*")):
                     ignore_error = True
                     break
-            errors.add(Error(ignore_error, external_to_global_root, **error))
+            errors.append(Error(ignore_error, external_to_global_root, **error))
 
         if bypass_filtering:
-            return list(errors)
+            return errors
         else:
             filtered_errors = [
                 error
