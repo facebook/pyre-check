@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
-from typing import Any, Iterable, List, Set, Tuple
+from typing import Any, Iterable, List, Optional, Set, Tuple
 
-from sapp.models import Postcondition, Precondition, SharedTextKind, TraceFrame
+from sapp.models import (
+    Postcondition,
+    Precondition,
+    SharedTextKind,
+    TraceFrame,
+    TraceKind,
+)
 from sapp.trace_graph import TraceGraph
 
 
@@ -31,6 +37,7 @@ class TrimmedTraceGraph(TraceGraph):
         # the full backward/forward traces of the graph.
         self._visited_post_ids: Set[int] = set()
         self._visited_pre_ids: Set[int] = set()
+        self._visited_trace_frame_ids: Set[int] = set()
 
         self._populate_affected_issues(graph)
 
@@ -40,6 +47,7 @@ class TrimmedTraceGraph(TraceGraph):
             # conditions.
             self._populate_issues_from_affected_preconditions(graph)
             self._populate_issues_from_affected_postconditions(graph)
+            self._populate_issues_from_affected_trace_frames(graph)
 
             # Traces populated above may be missing all forward or all backward
             # traces because _populate_issues_from_affected_* only populates
@@ -65,11 +73,18 @@ class TrimmedTraceGraph(TraceGraph):
                 )
                 if no_fwd_trace:
                     self._populate_issue_forward_trace(graph, instance_id)
+                    self._populate_issue_trace(
+                        graph, instance_id, TraceKind.POSTCONDITION # pyre-ignore
+                    )
+
                 no_bwd_trace = (
                     len(self._issue_instance_precondition_assoc[instance_id]) == 0
                 )
                 if no_bwd_trace:
                     self._populate_issue_backward_trace(graph, instance_id)
+                    self._populate_issue_trace(
+                        graph, instance_id, TraceKind.PRECONDITION # pyre-ignore
+                    )
 
     def _populate_affected_issues(self, graph: TraceGraph) -> None:
         """Populates the trimmed graph with issues whose locations are in
@@ -229,6 +244,7 @@ class TrimmedTraceGraph(TraceGraph):
                     for trace_frame_id in graph._trace_frames_rev_map[
                         (trace_frame.caller, trace_frame.caller_port)
                     ]
+                    if graph._trace_frames[trace_frame_id].kind == trace_frame.kind
                 ]
             ),
             lambda instance_id: (self._get_leaf_names(graph, instance_id)),
@@ -375,14 +391,18 @@ class TrimmedTraceGraph(TraceGraph):
             )
         self._populate_backward_trace(graph, pre_ids)
 
-    def _populate_issue_trace(self, graph: TraceGraph, instance_id: int) -> None:
+    def _populate_issue_trace(
+        self, graph: TraceGraph, instance_id: int, kind: Optional[TraceKind] = None
+    ) -> None:
         trace_frame_ids = list(graph._issue_instance_trace_frame_assoc[instance_id])
         instance = graph._issue_instances[instance_id]
+        filtered_ids = []
         for trace_frame_id in trace_frame_ids:
-            self.add_issue_instance_trace_frame_assoc(
-                instance, graph._trace_frames[trace_frame_id]
-            )
-        self._populate_trace(graph, trace_frame_ids)
+            frame = graph._trace_frames[trace_frame_id]
+            if not kind or kind == frame.kind:
+                self.add_issue_instance_trace_frame_assoc(instance, frame)
+                filtered_ids.append(trace_frame_id)
+        self._populate_trace(graph, filtered_ids)
 
     def _populate_issue(self, graph: TraceGraph, instance_id: int) -> None:
         """Adds an issue to the trace graph along with relevant information
@@ -500,6 +520,7 @@ class TrimmedTraceGraph(TraceGraph):
     def _populate_trace(self, graph: TraceGraph, trace_frame_ids: List[int]) -> None:
         """ Populates (from the given trace graph) the forward and backward
         traces reachable from the given traces (including input trace frames).
+        Make sure to respect trace kind in successors
         """
         while len(trace_frame_ids) > 0:
             trace_frame_id = trace_frame_ids.pop()
@@ -516,6 +537,7 @@ class TrimmedTraceGraph(TraceGraph):
                     trace_frame_id
                     for trace_frame_id in graph._trace_frames_map[key]
                     if trace_frame_id not in self._visited_trace_frame_ids
+                    and graph._trace_frames[trace_frame_id].kind == trace_frame.kind
                 ]
             )
 
