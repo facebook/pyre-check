@@ -69,8 +69,10 @@ class DB(object):
     @contextmanager
     def make_session(self, *args, **kwargs) -> Iterator[Session]:
         session = self.make_session_object(*args, **kwargs)
-        yield session
-        self.close_session(session)
+        try:
+            yield session
+        finally:
+            self.close_session(session)
 
     @retryable(num_tries=2, retryable_exs=[OperationalError])
     def make_session_object(self, *args, **kwargs):
