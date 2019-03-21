@@ -55,6 +55,30 @@ let test_check_isinstance _ =
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
     ];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, typing.List[int]]) -> None:
+        if isinstance(x, list):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, typing.List[str], str, typing.List[int]]) -> None:
+        if isinstance(x, list):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
 
   assert_type_errors "isinstance(1, (int, str))" [];
   assert_type_errors "isinstance(1, (int, (int, str)))" [];

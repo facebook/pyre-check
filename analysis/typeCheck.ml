@@ -3356,20 +3356,25 @@ module State = struct
                       let parameters =
                         match unrefined with
                         | Type.Optional _ ->
-                            Type.Set.of_list (Type.none :: parameters)
+                            Type.none :: parameters
                         | _ ->
-                            Type.Set.of_list parameters
+                            parameters
                       in
-                      let constraints =
-                        begin
-                          match annotation with
-                          | Type.Union elements -> elements
-                          | _ -> [annotation]
-                        end
-                        |> Type.Set.of_list
+                      let parameters, constraints =
+                        let is_not_list = function
+                          | Type.Parametric { name = "list"; _ } -> false
+                          | _ -> true
+                        in
+                        match annotation with
+                        | Type.Union elements ->
+                            parameters, elements
+                        | Type.Parametric { name = "list"; parameters = [Type.Any] } ->
+                            List.filter parameters ~f:is_not_list, []
+                        | _ ->
+                            parameters, [annotation]
                       in
                       let constrained =
-                        Set.diff parameters constraints
+                        Set.diff (Type.Set.of_list parameters) (Type.Set.of_list constraints)
                         |> Set.to_list
                         |> Type.union
                       in
