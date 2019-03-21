@@ -163,6 +163,87 @@
 {
   "kind": "model",
   "data": {
+    "callable": "select.view_entry_get",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(request)[GET]",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 29,
+              "start": 9,
+              "end": 24
+            },
+            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_get",
+    "callable_line": 28,
+    "code": 5001,
+    "line": 29,
+    "start": 9,
+    "end": 24,
+    "filename": "select.py",
+    "message":
+      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 29,
+              "start": 24,
+              "end": 46
+            },
+            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}"
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "has": "first-index" },
+              { "first-index": "payload" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 29,
+              "start": 9,
+              "end": 24
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "select.view_entry_index",
     "sources": [
       {

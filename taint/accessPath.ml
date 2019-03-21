@@ -273,8 +273,7 @@ type normalized_expression =
 
 
 let is_get_item member =
-  member = "__getitem__" ||
-  member = "get"   (* Hack to treat dictionary lookup like [ ] *)
+  member = "__getitem__"
 
 let get_index { Node.value = expression; _ } =
   match expression with

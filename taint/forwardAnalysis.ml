@@ -104,6 +104,30 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | None -> state
 
 
+    let add_first kind name set =
+      let already_has_first = function
+        | SimpleFeatures.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
+            has_kind = kind
+        | _ ->
+            false
+      in
+      if List.exists set ~f:already_has_first then
+        set
+      else
+        (SimpleFeatures.Breadcrumb (Breadcrumb.HasFirst kind)) ::
+        (SimpleFeatures.Breadcrumb (Breadcrumb.First { kind; name })) :: set
+
+
+    let add_first_index index =
+      match index with
+      | AbstractTreeDomain.Label.Field name when is_numeric name ->
+          add_first Breadcrumb.FirstIndex "<numeric>"
+      | AbstractTreeDomain.Label.Field name ->
+          add_first Breadcrumb.FirstIndex name
+      | AbstractTreeDomain.Label.Any ->
+          add_first Breadcrumb.FirstIndex "<unknown>"
+
+
     let rec analyze_argument ~resolution state taint_accumulator { Argument.value = argument; _ } =
       analyze_expression ~resolution ~state ~expression:argument
       |> ForwardState.Tree.join taint_accumulator
@@ -258,6 +282,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             receiver :: arguments
           in
           begin
+            let add_index_breadcrumb_if_necessary taint =
+              if method_name <> "get" then
+                taint
+              else
+                match arguments with
+                | _receiver :: index:: _ ->
+                    let label = get_index index.value in
+                    ForwardState.Tree.transform
+                      ForwardTaint.simple_feature_set
+                      ~f:(add_first_index label)
+                      taint
+                | _ ->
+                    taint
+            in
             match Node.value receiver with
             | Access (SimpleAccess receiver) ->
                 Interprocedural.CallResolution.get_indirect_targets
@@ -265,6 +303,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   ~receiver
                   ~method_name
                 |> apply_call_targets ~resolution location arguments state
+                |> add_index_breadcrumb_if_necessary
             | _ ->
                 analyze_expression ~resolution ~state ~expression:receiver
           end
@@ -312,28 +351,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 ~port:AccessPath.Root.LocalResult
         in
         List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
-      in
-      let add_first kind name set =
-        let already_has_first = function
-          | SimpleFeatures.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
-              has_kind = kind
-          | _ ->
-              false
-        in
-        if List.exists set ~f:already_has_first then
-          set
-        else
-          (SimpleFeatures.Breadcrumb (Breadcrumb.HasFirst kind)) ::
-          (SimpleFeatures.Breadcrumb (Breadcrumb.First { kind; name })) :: set
-      in
-      let add_first_index index =
-        match index with
-        | AbstractTreeDomain.Label.Field name when is_numeric name ->
-            add_first Breadcrumb.FirstIndex "<numeric>"
-        | AbstractTreeDomain.Label.Field name ->
-            add_first Breadcrumb.FirstIndex name
-        | AbstractTreeDomain.Label.Any ->
-            add_first Breadcrumb.FirstIndex "<unknown>"
       in
       match expression with
       | Access { expression; _ }
