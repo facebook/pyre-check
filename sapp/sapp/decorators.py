@@ -80,3 +80,11 @@ def catch_user_error():
         yield
     except UserError as error:
         print(str(error), file=sys.stderr)
+
+
+@contextmanager
+def catch_keyboard_interrupt():
+    try:
+        yield
+    except KeyboardInterrupt:
+        print("\nOperation aborted.", file=sys.stderr)

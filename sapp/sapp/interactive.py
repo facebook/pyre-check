@@ -21,7 +21,7 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
 from sapp.db import DB
-from sapp.decorators import UserError, catch_user_error
+from sapp.decorators import UserError, catch_keyboard_interrupt, catch_user_error
 from sapp.models import (
     Issue,
     IssueInstance,
@@ -155,6 +155,7 @@ set_frame(ID)   select a trace frame to explore
         print(f"      Sources filter: {self.sources}")
         print(f"        Sinks filter: {self.sinks}")
 
+    @catch_keyboard_interrupt()
     def runs(self, use_pager=None):
         pager = self._resolve_pager(use_pager)
 
@@ -169,6 +170,7 @@ set_frame(ID)   select a trace frame to explore
         pager(run_output)
         print(f"Found {len(runs)} runs.")
 
+    @catch_keyboard_interrupt()
     def set_run(self, run_id):
         with self.db.make_session() as session:
             selected_run = (
@@ -188,6 +190,7 @@ set_frame(ID)   select a trace frame to explore
         self.current_run_id = selected_run.id
         print(f"Set run to {run_id}.")
 
+    @catch_keyboard_interrupt()
     def set_issue(self, issue_id):
         with self.db.make_session() as session:
             selected_issue = (
@@ -219,6 +222,7 @@ set_frame(ID)   select a trace frame to explore
         print(f"Set issue to {issue_id}.")
         self.show()
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def show(self):
         """ More details about the selected issue or trace frame.
@@ -231,6 +235,7 @@ set_frame(ID)   select a trace frame to explore
 
         self._show_current_trace_frame()
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def issues(
         self,
@@ -330,6 +335,7 @@ set_frame(ID)   select a trace frame to explore
         self._verify_entrypoint_selected()
         self._output_trace_tuples(self.trace_tuples)
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def frames(
         self, *, callers: Optional[List[str]] = None, kind: Optional[TraceKind] = None
@@ -374,6 +380,7 @@ set_frame(ID)   select a trace frame to explore
 
             self._output_trace_frames(self._group_trace_frames(trace_frames))
 
+    @catch_keyboard_interrupt()
     def set_frame(self, frame_id: int) -> None:
         with self.db.make_session() as session:
             selected_frame = (
@@ -489,6 +496,7 @@ set_frame(ID)   select a trace frame to explore
         self.current_trace_frame_index = selected_number - 1
         self.trace()
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def expand(self):
         """Show and select branches for a branched trace.
@@ -535,6 +543,7 @@ set_frame(ID)   select a trace frame to explore
             ]
             self._output_trace_expansion(branches, leaves_strings)
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def branch(self, selected_number: int) -> None:
         """Selects a branch when there are multiple possible traces to follow.
@@ -582,6 +591,7 @@ set_frame(ID)   select a trace frame to explore
 
         self.trace()
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def list_source_code(self, context: int = 5) -> None:
         """Show source code around the current trace frame location.

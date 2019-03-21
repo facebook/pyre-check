@@ -3,7 +3,14 @@
 import gc
 from unittest import TestCase, mock
 
-from sapp.decorators import UserError, catch_user_error, disable_gc, log_time, retryable
+from sapp.decorators import (
+    UserError,
+    catch_keyboard_interrupt,
+    catch_user_error,
+    disable_gc,
+    log_time,
+    retryable,
+)
 
 
 class RetryableTest(TestCase):
@@ -99,6 +106,26 @@ class CatchUserErrorTest(TestCase):
             self.fail("Unexpected UserError")
 
     @catch_user_error()
+    def throwsException(self):
+        raise Exception
+
+    def testDoesNotCatchOtherExceptions(self):
+        with self.assertRaises(Exception):
+            self.throwsException()
+
+
+class CatchKeyboardInterruptTest(TestCase):
+    @catch_keyboard_interrupt()
+    def throwsKeyboardInterrupt(self):
+        raise KeyboardInterrupt
+
+    def testCatchesKeyboardInterrupt(self):
+        try:
+            self.throwsKeyboardInterrupt()
+        except KeyboardInterrupt:
+            self.fail("Unexpected KeyboardInterrupt")
+
+    @catch_keyboard_interrupt()
     def throwsException(self):
         raise Exception
 
