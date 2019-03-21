@@ -201,8 +201,61 @@ let test_parse_query context =
       ])
 
 
+
+let test_to_yojson _ =
+  let open Server.Protocol in
+  let assert_yojson response json =
+    assert_equal
+      ~printer:Yojson.Safe.pretty_to_string
+      (Yojson.Safe.from_string json)
+      (TypeQuery.response_to_yojson response)
+
+  in
+  assert_yojson
+    (TypeQuery.Response
+       (TypeQuery.Decoded {
+           decoded = [
+             {
+               serialized_key = "first_encoded";
+               kind = "Type";
+               actual_key = "first";
+               actual_value = Some "int";
+             };
+             {
+               serialized_key = "first_encoded";
+               kind = "Type";
+               actual_key = "first";
+               actual_value = Some "str";
+             };
+           ];
+           undecodable_keys = ["no"];
+         }))
+    {|
+      {
+       "response": {
+         "decoded": [
+           {
+             "serialized_key": "first_encoded",
+             "kind": "Type",
+             "key": "first",
+             "value": "int"
+           },
+           {
+             "serialized_key": "first_encoded",
+             "kind": "Type",
+             "key": "first",
+             "value": "str"
+           }
+         ],
+         "undecodable_keys": [ "no" ]
+       }
+     }
+   |}
+
+
 let () =
   "query">:::[
     "parse_query">::test_parse_query;
+    "to_yojson">::test_to_yojson;
   ]
   |> Test.run

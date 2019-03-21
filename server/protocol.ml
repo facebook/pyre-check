@@ -148,14 +148,18 @@ module TypeQuery = struct
           let value =
             match actual_value with
             | Some actual_value ->
-                [`String actual_value]
+                ["value", `String actual_value]
             | None ->
                 []
           in
-          serialized_key, `List (`String kind :: `String actual_key :: value)
+          `Assoc ([
+              "serialized_key", `String serialized_key;
+              "kind", `String kind;
+              "key", `String actual_key;
+            ] @ value)
         in
         `Assoc [
-          "decoded", `Assoc (List.map decoded ~f:to_json);
+          "decoded", `List (List.map decoded ~f:to_json);
           "undecodable_keys", `List (List.map undecodable_keys ~f:(fun key -> `String key));
         ]
     | Path path ->
