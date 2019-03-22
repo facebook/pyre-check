@@ -3,11 +3,13 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+
 open Ast
 open Statement
 
 
-let apply ~define ~resolution:_ =
+let apply ~define:({ Define.parameters; _ } as define) ~resolution:_ =
   if Define.has_decorator ~match_prefix:true define "$strip_first_parameter" then
     let parameters =
       List.tl parameters
