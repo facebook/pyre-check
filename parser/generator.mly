@@ -1272,7 +1272,7 @@ atom:
       }
     }
 
-  | position = ASTERIKS; test = test_without_comparison {
+  | position = ASTERIKS; test = expression {
     let start, _ = position in
     let location = location_create_with_stop ~start ~stop:(Node.stop test) in
     match test with
@@ -1384,8 +1384,7 @@ mixed_string:
   ;
 
 test_without_ternary:
-  | test_without_comparison = test_without_comparison { test_without_comparison }
-
+  | expression = expression { expression }
   | left = expression; comparisons = nonempty_list(comparison) {
       let rec comparison ({ Node.location; _ } as left) comparisons =
         match comparisons with
@@ -1416,21 +1415,6 @@ test_without_ternary:
       }
     };
 
-
-test_without_comparison:
-  | start = LAMBDA;
-    parameters = separated_list(COMMA, lambda_parameter);
-    COLON;
-    body = test {
-      {
-        Node.location =  location_create_with_stop ~start ~stop:(Node.stop body);
-        value = Lambda { Lambda.parameters; body }
-      }
-    }
-
-  | expression = expression { expression }
-  ;
-
 test_with_generator:
   | generator = generator { generator }
   | test = test { test }
@@ -1447,6 +1431,15 @@ test:
       {
         Node.location = target.Node.location;
         value = Ternary { Ternary.target; test; alternative };
+      }
+    }
+  | start = LAMBDA;
+    parameters = separated_list(COMMA, lambda_parameter);
+    COLON;
+    body = test {
+      {
+        Node.location =  location_create_with_stop ~start ~stop:(Node.stop body);
+        value = Lambda { Lambda.parameters; body }
       }
     }
   ;
@@ -1587,6 +1580,9 @@ set_or_dictionary_entry:
           Item test
     }
   | key = expression; COLON; value = test {
+      Entry { Dictionary.key = key; value = value; }
+    }
+  | key = test_without_ternary; COLON; value = test {
       Entry { Dictionary.key = key; value = value; }
     }
   ;

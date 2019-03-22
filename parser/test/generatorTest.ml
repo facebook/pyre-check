@@ -1959,7 +1959,44 @@ let test_dictionary _ =
              };
            ];
          });
-    ]
+    ];
+  assert_parsed_equal
+    "{a or b: 2}"
+    [
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +BooleanOperator {
+                   BooleanOperator.left = !"a";
+                   operator = BooleanOperator.Or;
+                   right = !"b";
+                 };
+               value = +Integer 2
+             };
+           ];
+           keywords = [];
+         });
+    ];
+  assert_parsed_equal
+    "{a and b: 2}"
+    [
+      +Expression
+        (+Dictionary {
+           Dictionary.entries = [
+             { Dictionary.key = +BooleanOperator {
+                   BooleanOperator.left = !"a";
+                   operator = BooleanOperator.And;
+                   right = !"b";
+                 };
+               value = +Integer 2
+             };
+           ];
+           keywords = [];
+         });
+    ];
+  assert_raises
+    (Failure "Could not parse test")
+    (fun () -> parse_untrimmed ~silent:true "{ a or lambda b: b + 1: c }")
 
 
 let test_list _ =
