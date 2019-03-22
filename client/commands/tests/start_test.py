@@ -8,16 +8,23 @@ import fcntl
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
-from ... import commands, monitor  # noqa
+from ... import commands, monitor, project_files_monitor  # noqa
 from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
 class StartTest(unittest.TestCase):
+    @patch("{}.ProjectFilesMonitor".format(project_files_monitor.__name__))
     @patch("fcntl.lockf")
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")
-    def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
+    def test_start(
+        self,
+        _daemonize,
+        get_directories_to_analyze,
+        lock_file,
+        _daemonize_files_monitor,
+    ) -> None:
         arguments = mock_arguments()
         arguments.terminal = False
 
