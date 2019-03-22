@@ -25,6 +25,7 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
+    readable_directory,
     resolve_analysis_directory,
     switch_root,
 )
@@ -445,6 +446,12 @@ def main():
         action="store_true",
         help="Display detailed information about parse errors",
     )
+    parser.add_argument(
+        "--typeshed",
+        default=None,
+        type=readable_directory,
+        help="Location of the typeshed stubs",
+    )
 
     parser.add_argument("--logging-sections", help="Enable sectional logging")
     parser.add_argument(
@@ -528,7 +535,10 @@ def main():
         log.initialize(arguments)
         switch_root(arguments)
 
-        configuration = Configuration(local_configuration=arguments.local_configuration)
+        configuration = Configuration(
+            local_configuration=arguments.local_configuration,
+            typeshed=arguments.typeshed,
+        )
 
         if arguments.version or arguments.binary_version:
             sys.stdout.write(get_binary_version(configuration) + "\n")

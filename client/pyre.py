@@ -23,6 +23,7 @@ from . import (
     is_capable_terminal,
     log,
     log_statistics,
+    readable_directory,
     resolve_analysis_directory,
     switch_root,
     translate_arguments,
@@ -37,10 +38,6 @@ LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
 def main() -> int:
-    def readable_directory(directory: str) -> str:
-        assert_readable_directory(directory)
-        return directory
-
     def executable_file(file_path: str) -> str:
         if not os.path.isfile(file_path):
             raise EnvironmentException("%s is not a valid file" % file_path)

@@ -39,6 +39,11 @@ def assert_readable_directory(directory: str) -> None:
         raise EnvironmentException("{} is not a readable directory.".format(directory))
 
 
+def readable_directory(directory: str) -> str:
+    assert_readable_directory(directory)
+    return directory
+
+
 def is_capable_terminal(file=sys.stderr) -> bool:
     """
     Determine whether we are connected to a capable terminal.
