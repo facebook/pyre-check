@@ -8,7 +8,11 @@ open Statement
 
 
 let apply ~define ~resolution:_ =
-  if Define.has_decorator ~match_prefix:true define "$strip_parameters" then
-    { define with parameters = [] }
+  if Define.has_decorator ~match_prefix:true define "$strip_first_parameter" then
+    let parameters =
+      List.tl parameters
+      |> Option.value ~default:[]
+    in
+    { define with parameters }
   else
     define

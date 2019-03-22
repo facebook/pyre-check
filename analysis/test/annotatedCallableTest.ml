@@ -154,12 +154,15 @@ let test_apply_decorators _ =
   (* Custom decorators. *)
   let resolution = resolution () in
   create_define
-    ~decorators:[!"$strip_parameters"]
-    ~parameters:[Parameter.create ~name:"self" ()]
+    ~decorators:[!"$strip_first_parameter"]
+    ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
     ~return_annotation:None
   |> (fun define -> Callable.apply_decorators ~define ~resolution)
   |> (fun { Define.parameters; _ } ->
-      assert_equal ~printer:Int.to_string 0 (List.length parameters))
+      assert_equal
+        ~cmp:(List.equal ~equal:(Parameter.equal Expression.equal))
+        [Parameter.create ~name:"other" ()]
+        parameters)
 
 
 let test_create _ =
