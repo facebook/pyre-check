@@ -1083,6 +1083,28 @@ let test_define _ =
       };
     ];
 
+   assert_parsed_equal
+      (trim_extra_indentation {|
+        def foo(): # type: ()-> str
+          return 4
+      |})
+      [
+        +Define {
+          Define.name = Reference.create "foo";
+          parameters = [];
+          body = [
+            +Return {
+              Return.expression = Some (+Integer 4);
+              is_implicit = false;
+            }];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
+      ];
+
   assert_parsed_equal
     (trim_extra_indentation {|
       def foo(a):
