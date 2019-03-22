@@ -113,6 +113,18 @@ let test_lexer _ =
     [+Expression !"a"];
 
   assert_parsed_equal
+    "print (a, file=b)"
+    [+Expression
+      (simple_access [
+          Access.Identifier "print";
+          Access.Call (+[
+              { Argument.name = None; value = !"a" };
+              { Argument.name = (Some ~+"file"); value = !"b" };
+            ]);
+        ]);
+    ];
+
+  assert_parsed_equal
     "print >> a, b"
     [+Expression (+Tuple [!"a"; !"b"])];
 

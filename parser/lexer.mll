@@ -209,7 +209,11 @@ and read_without_indent state = parse
       else
         read_without_indent state lexbuf
     }
-
+  (* handle whitespace in python3 print statements  *)
+  | "print" whitespace+ "(" {
+      lexbuf.lex_curr_pos <- lexbuf.lex_start_pos + 5;
+      IDENTIFIER ((lexbuf.lex_start_p, lexbuf.lex_curr_p), lexeme lexbuf)
+    }
   (* Don't even try to do anything with Python 2 print statements. *)
   | "print " { read_without_indent state lexbuf }
   | "print" whitespace+ ">>" { read_without_indent state lexbuf }
