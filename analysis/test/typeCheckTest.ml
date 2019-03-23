@@ -40,7 +40,7 @@ let create
           in
           create annotation
         in
-        !+ name, annotation
+        !+name, annotation
       in
       List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
@@ -351,7 +351,7 @@ let test_redirect _ =
       access
       (Access.SimpleAccess (parse_single_access expected_access));
     let assert_in_scope (expected_name, expected_type) =
-      !+ expected_name
+      !+expected_name
       |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
       |> Annotation.annotation
       |> assert_equal ~printer:Type.show expected_type
@@ -419,7 +419,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~qualifier:(!+ qualifier)
+            ~qualifier:(!+qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess

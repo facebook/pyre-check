@@ -430,7 +430,7 @@ let test_name_and_arguments _ =
 
 let test_is_assert_function _ =
   let is_assert name =
-    !+ name
+    !+name
     |> Access.is_assert_function
   in
   assert_true (is_assert "pyretestassert");

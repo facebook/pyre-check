@@ -48,7 +48,7 @@ let test_aliased_export _ =
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
-        !+ source
+        !+source
         |> Module.aliased_export module_definition
         |> (fun value -> Option.value value ~default:[Access.Identifier "$not_exported"])
         |> Access.show
@@ -165,12 +165,12 @@ let test_wildcard_exports _ =
       assert_true
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (!+ access))
+           (!+access))
     else
       assert_false
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (!+ access))
+           (!+access))
   in
   assert_wildcard_exports
     {|

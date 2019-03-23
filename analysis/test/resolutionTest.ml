@@ -18,7 +18,7 @@ let test_set_local _ =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
-      (Resolution.get_local resolution ~access:(!+ access) >>| Annotation.annotation)
+      (Resolution.get_local resolution ~access:(!+access) >>| Annotation.annotation)
   in
 
   let resolution = Test.resolution ~sources:[] () in
@@ -292,7 +292,7 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~qualifier:(!+ (String.chop_suffix_exn path ~suffix:".py"))
+            ~qualifier:(!+(String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content
           |> Preprocessing.qualify
@@ -302,7 +302,7 @@ let test_function_definitions _ =
       resolution ~sources ()
     in
     let functions =
-      Resolution.function_definitions resolution (!+ access)
+      Resolution.function_definitions resolution (!+access)
       >>| List.map ~f:(fun { Node.value = { Define.name; _ }; _ } -> Reference.show name)
       |> Option.value ~default:[]
     in

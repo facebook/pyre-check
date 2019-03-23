@@ -547,7 +547,7 @@ let test_register_globals _ =
 
   let assert_global access expected =
     let actual =
-      !+ access
+      !+access
       |> Handler.globals
       >>| Node.value
       >>| Annotation.annotation

@@ -47,7 +47,7 @@ let error ?(define = mock_define) ?(location = Location.Instantiated.any) kind =
 
 let revealed_type access annotation =
   Error.RevealedType {
-    expression = Access.expression (!+ access);
+    expression = Access.expression (!+access);
     annotation;
   }
 
@@ -453,13 +453,13 @@ let test_due_to_mismatch_with_any _ =
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
         overridden_method = "foo";
-        parent = !+ (Type.show mock_parent);
+        parent = !+(Type.show mock_parent);
         override = (StrengthenedPrecondition (NotFound "x"));
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
         overridden_method = "foo";
-        parent = !+ (Type.show mock_parent);
+        parent = !+(Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Top;
             expected = Type.integer;
@@ -469,7 +469,7 @@ let test_due_to_mismatch_with_any _ =
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
         overridden_method = "foo";
-        parent = !+ (Type.show mock_parent);
+        parent = !+(Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Any;
             expected = Type.integer;
@@ -479,7 +479,7 @@ let test_due_to_mismatch_with_any _ =
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
         overridden_method = "foo";
-        parent = !+ (Type.show mock_parent);
+        parent = !+(Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
             expected = Type.integer;
@@ -489,7 +489,7 @@ let test_due_to_mismatch_with_any _ =
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
         overridden_method = "foo";
-        parent = !+ (Type.show mock_parent);
+        parent = !+(Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
             expected = Type.Any;
@@ -1036,14 +1036,14 @@ let test_filter _ =
     (incompatible_return_type Type.integer Type.float);
 
   (* Suppress errors due to importing builtins. *)
-  let undefined_import import = UndefinedImport (!+ import) in
+  let undefined_import import = UndefinedImport (!+import) in
   assert_filtered (undefined_import "builtins");
   assert_unfiltered (undefined_import "sys");
 
   let inconsistent_override name override =
     InconsistentOverride {
       overridden_method = name;
-      parent = !+ (Type.show mock_parent);
+      parent = !+(Type.show mock_parent);
       override;
     }
   in

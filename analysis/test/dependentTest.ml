@@ -199,7 +199,7 @@ let test_normalize _ =
     let add_dependent (left, right) =
       Handler.DependencyHandler.add_dependent
         ~handle:(File.Handle.create (left ^ ".py"))
-        (!+ right)
+        (!+right)
     in
     List.iter edges ~f:add_dependent;
     let all_handles =
@@ -225,7 +225,7 @@ let test_normalize _ =
       assert_equal
         ~printer
         (Some expected)
-        (Handler.DependencyHandler.dependents (!+ node))
+        (Handler.DependencyHandler.dependents (!+node))
     in
     List.iter expected ~f:assert_dependents_equal
   in

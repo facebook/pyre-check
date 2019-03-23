@@ -34,7 +34,7 @@ let create
           in
           create annotation
         in
-        !+ name, annotation
+        !+name, annotation
       in
       List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
