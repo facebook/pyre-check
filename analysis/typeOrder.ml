@@ -1311,7 +1311,10 @@ and join_implementations ~parameter_join ~return_join order left right =
   { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
 
-and join ({ handler= ((module Handler: Handler) as handler); constructor; _ } as order) left right =
+and join
+    ({ handler = ((module Handler: Handler) as handler); constructor; _ } as order)
+    left
+    right =
   if Type.equal left right then
     left
   else
@@ -1572,7 +1575,10 @@ and join ({ handler= ((module Handler: Handler) as handler); constructor; _ } as
             union
 
 
-and meet ({ handler= ((module Handler: Handler) as handler); constructor; _ } as order) left right =
+and meet
+    ({ handler = ((module Handler: Handler) as handler); constructor; _ } as order)
+    left
+    right =
   if Type.equal left right then
     left
   else
@@ -1842,7 +1848,7 @@ and get_instantiated_predecessors
 
 
 and instantiate_successors_parameters
-    ({ handler= ((module Handler: Handler) as handler); _ } as order)
+    ({ handler = ((module Handler: Handler) as handler); _ } as order)
     ~source
     ~target =
   let primitive, parameters = Type.split source in
@@ -1891,7 +1897,7 @@ and instantiate_successors_parameters
 
 
 and instantiate_predecessors_parameters
-    { handler= ((module Handler: Handler) as handler); _ }
+    { handler = ((module Handler: Handler) as handler); _ }
     ~source
     ~target =
   let primitive, parameters = Type.split source in
