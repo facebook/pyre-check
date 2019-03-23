@@ -243,12 +243,12 @@ let test_access _ =
   assert_parsed_equal
     "a.b"
     [
-      +Expression (+Access (SimpleAccess (Access.create "a.b")));
+      +Expression (+Access (SimpleAccess (!+"a.b")));
     ];
   assert_parsed_equal
     "a.async"
     [
-      +Expression (+Access (SimpleAccess (Access.create "a.async")));
+      +Expression (+Access (SimpleAccess (!+"a.async")));
     ];
   assert_parsed_equal
     "1.0.b"
@@ -261,7 +261,7 @@ let test_access _ =
   assert_parsed_equal
     "a.b.c"
     [
-      +Expression (+Access (SimpleAccess (Access.create "a.b.c")));
+      +Expression (+Access (SimpleAccess (!+"a.b.c")));
     ];
 
   assert_parsed_equal
@@ -2340,7 +2340,7 @@ let test_comparison _ =
     [
       +Expression
         (+ComparisonOperator {
-           ComparisonOperator.left = simple_access (Access.create "a.b");
+           ComparisonOperator.left = simple_access (!+"a.b");
            operator = ComparisonOperator.LessThan;
            right = +Integer 2;
          });
@@ -2938,7 +2938,7 @@ let test_class _ =
             ];
             body = [
               +Assign {
-                Assign.target = simple_access (Access.create "self.bar");
+                Assign.target = simple_access (!+"self.bar");
                 annotation = None;
                 value = +Integer 0;
                 parent = None;
@@ -3167,7 +3167,7 @@ let test_assign _ =
     "a.b += 1"
     [
       +Assign {
-        Assign.target = simple_access (Access.create "a.b");
+        Assign.target = simple_access (!+"a.b");
         annotation = None;
         value = simple_access [
             Access.Identifier "a";
@@ -3182,7 +3182,7 @@ let test_assign _ =
     "a = b if b else c"
     [
       +Assign {
-        Assign.target = simple_access (Access.create "a");
+        Assign.target = simple_access (!+"a");
         annotation = None;
         value = +Ternary {
           Ternary.target = !"b";
@@ -3196,7 +3196,7 @@ let test_assign _ =
     "a = b or c"
     [
       +Assign {
-        Assign.target = simple_access (Access.create "a");
+        Assign.target = simple_access (!+"a");
         annotation = None;
         value = +BooleanOperator {
           BooleanOperator.left = !"b";
@@ -3210,7 +3210,7 @@ let test_assign _ =
     "a = b or c or d"
     [
       +Assign {
-        Assign.target = simple_access (Access.create "a");
+        Assign.target = simple_access (!+"a");
         annotation = None;
         value = +BooleanOperator {
           BooleanOperator.left = !"b";
@@ -3845,7 +3845,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = Access.create "a";
+            Import.name = !+"a";
             alias = None;
           };
         ];
@@ -3858,7 +3858,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = Access.create "async";
+            Import.name = !+"async";
             alias = None;
           };
         ];
@@ -3871,7 +3871,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = (Access.create "a.async");
+            Import.name = (!+"a.async");
             alias = None;
           };
         ];
@@ -3884,7 +3884,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = (Access.create "a.b");
+            Import.name = (!+"a.b");
             alias = None;
           };
         ];
@@ -3897,8 +3897,8 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = Access.create "a";
-            alias = Some (Access.create "b");
+            Import.name = !+"a";
+            alias = Some (!+"b");
           };
         ];
       };
@@ -3910,16 +3910,16 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = Access.create "a";
-            alias = Some (Access.create "b");
+            Import.name = !+"a";
+            alias = Some (!+"b");
           };
           {
-            Import.name = Access.create "c";
+            Import.name = !+"c";
             alias = None;
           };
           {
-            Import.name = Access.create "d";
-            alias = Some (Access.create "e");
+            Import.name = !+"d";
+            alias = Some (!+"e");
           };
         ];
       };
@@ -3928,10 +3928,10 @@ let test_import _ =
     "from a import b"
     [
       +Import {
-        Import.from = Some (Access.create "a");
+        Import.from = Some (!+"a");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -3941,10 +3941,10 @@ let test_import _ =
     "from a import *"
     [
       +Import {
-        Import.from = Some (Access.create "a");
+        Import.from = Some (!+"a");
         imports = [
           {
-            Import.name = Access.create "*";
+            Import.name = !+"*";
             alias = None;
           };
         ];
@@ -3955,10 +3955,10 @@ let test_import _ =
     "from . import b"
     [
       +Import {
-        Import.from = Some (Access.create ".");
+        Import.from = Some (!+".");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -3968,10 +3968,10 @@ let test_import _ =
     "from ...foo import b"
     [
       +Import {
-        Import.from = Some (Access.create "...foo");
+        Import.from = Some (!+"...foo");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -3981,10 +3981,10 @@ let test_import _ =
     "from .....foo import b"
     [
       +Import {
-        Import.from = Some (Access.create ".....foo");
+        Import.from = Some (!+".....foo");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -3994,10 +3994,10 @@ let test_import _ =
     "from .a import b"
     [
       +Import {
-        Import.from = Some (Access.create ".a");
+        Import.from = Some (!+".a");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -4007,10 +4007,10 @@ let test_import _ =
     "from ..a import b"
     [
       +Import {
-        Import.from = Some (Access.create "..a");
+        Import.from = Some (!+"..a");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
         ];
@@ -4021,14 +4021,14 @@ let test_import _ =
     "from a import (b, c)"
     [
       +Import {
-        Import.from = Some (Access.create "a");
+        Import.from = Some (!+"a");
         imports = [
           {
-            Import.name = Access.create "b";
+            Import.name = !+"b";
             alias = None;
           };
           {
-            Import.name = Access.create "c";
+            Import.name = !+"c";
             alias = None;
           };
         ];
@@ -4038,10 +4038,10 @@ let test_import _ =
     "from a.b import c"
     [
       +Import {
-        Import.from = Some (Access.create "a.b");
+        Import.from = Some (!+"a.b");
         imports = [
           {
-            Import.name = Access.create "c";
+            Import.name = !+"c";
             alias = None;
           };
         ]
@@ -4051,19 +4051,19 @@ let test_import _ =
     "from f import a as b, c, d as e"
     [
       +Import {
-        Import.from = Some (Access.create "f");
+        Import.from = Some (!+"f");
         imports = [
           {
-            Import.name = Access.create "a";
-            alias = Some (Access.create "b");
+            Import.name = !+"a";
+            alias = Some (!+"b");
           };
           {
-            Import.name = Access.create "c";
+            Import.name = !+"c";
             alias = None;
           };
           {
-            Import.name = Access.create "d";
-            alias = Some (Access.create "e");
+            Import.name = !+"d";
+            alias = Some (!+"e");
           };
         ];
       };
