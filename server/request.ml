@@ -561,9 +561,19 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         match value with
                         | Some {
                             Resolution.class_definition = { Node.value = definition; _ };
+                            successors;
+                            is_test;
+                            methods;
                             _;
                           } ->
-                            Some (Ast.Statement.Class.show definition)
+                            `Assoc [
+                              "class_definition", `String (Ast.Statement.Class.show definition);
+                              "successors", `String (List.to_string ~f:Type.show successors);
+                              "is_test", `Bool is_test;
+                              "methods", `String (List.to_string ~f:Type.show methods);
+                            ]
+                            |> Yojson.to_string
+                            |> Option.some
                         | None ->
                             None
                       in

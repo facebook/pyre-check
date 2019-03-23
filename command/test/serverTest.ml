@@ -1156,9 +1156,23 @@ let test_decode_serialized_ocaml_values context =
                       kind = "Class";
                       actual_key = "int";
                       actual_value =
-                        Some
-                          "{ Statement.Record.Class.name = C; bases = []; body = \
-                           [Statement.Pass];\n  decorators = []; docstring = None }";
+                        let json =
+                          let class_definition =
+                            "{ Statement.Record.Class.name = C; bases = []; body = \
+                             [Statement.Pass];\n  decorators = []; docstring = None }"
+                          in
+                          Format.sprintf
+                            {|
+                              {
+                                "class_definition": "%s",
+                                "successors": "()",
+                                "is_test": false,
+                                "methods": "()"
+                              }
+                            |}
+                            class_definition
+                        in
+                        Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
                     };
                   ];
                   undecodable_keys = [];
