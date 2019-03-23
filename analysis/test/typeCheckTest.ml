@@ -40,7 +40,7 @@ let create
           in
           create annotation
         in
-        Access.create name, annotation
+        !+ name, annotation
       in
       List.map annotations ~f:annotify
       |> Access.Map.of_alist_exn
@@ -351,7 +351,7 @@ let test_redirect _ =
       access
       (Access.SimpleAccess (parse_single_access expected_access));
     let assert_in_scope (expected_name, expected_type) =
-      Access.create expected_name
+      !+ expected_name
       |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
       |> Annotation.annotation
       |> assert_equal ~printer:Type.show expected_type
@@ -419,7 +419,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~qualifier:(Access.create qualifier)
+            ~qualifier:(!+ qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
@@ -1043,7 +1043,7 @@ let test_forward_access _ =
         annotation =
           Type.Union [
             Type.Callable {
-              kind = Named (Access.create "Class.method");
+              kind = Named (!+"Class.method");
               implementation = {
                 annotation= Type.integer;
                 parameters= Defined [];
@@ -1055,7 +1055,7 @@ let test_forward_access _ =
                 };
             };
             Type.Callable {
-              kind = Named (Access.create "Other.method");
+              kind = Named (!+"Other.method");
               implementation = {
                 annotation= Type.string;
                 parameters= Defined [];
@@ -1248,7 +1248,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Access.create "os")
+        ~qualifier:(!+"os")
         {|
           sep: str = '/'
         |};
@@ -1260,7 +1260,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Access.create "empty.stub")
+        ~qualifier:(!+"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1273,7 +1273,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Access.create "empty.stub")
+        ~qualifier:(!+"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1288,7 +1288,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Access.create "empty.stub")
+        ~qualifier:(!+"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1302,7 +1302,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Access.create "has_getattr")
+        ~qualifier:(!+"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
     ]
@@ -1432,7 +1432,7 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (Access.create "TypedDictionary.__getitem__");
+        kind = Named (!+"TypedDictionary.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1658,7 +1658,7 @@ let test_forward_access _ =
   let set_item = {
     annotation =
       Type.Callable {
-        kind = Named (Access.create "TypedDictionary.__setitem__");
+        kind = Named (!+"TypedDictionary.__setitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1798,7 +1798,7 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (Access.create "tuple.__getitem__");
+        kind = Named (!+"tuple.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           overload ~return_annotation:Type.integer ~name:"x" (Type.literal_integer 0);
@@ -1990,32 +1990,32 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Access.create "loop.b")
+          ~qualifier:(!+"loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Access.create "loop.a")
+          ~qualifier:(!+"loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~qualifier:(Access.create "loop")
+          ~qualifier:(!+"loop")
           {|
             from loop.a import b
           |};
         parse
-          ~qualifier:(Access.create "no_loop.b")
+          ~qualifier:(!+"no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Access.create "no_loop.a")
+          ~qualifier:(!+"no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~qualifier:(Access.create "no_loop")
+          ~qualifier:(!+"no_loop")
           {|
             from no_loop.a import c
           |};
@@ -2030,7 +2030,7 @@ let test_object_callables _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Access.create "module")
+          ~qualifier:(!+"module")
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')

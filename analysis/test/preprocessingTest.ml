@@ -1808,7 +1808,7 @@ let test_expand_typed_dictionaries _ =
     ("Movie: " ^
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]")
-    ~qualifier:(Access.create "foo.bar");
+    ~qualifier:(!+"foo.bar");
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):

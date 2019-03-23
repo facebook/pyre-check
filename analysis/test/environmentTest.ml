@@ -16,10 +16,7 @@ open Test
 
 
 let access names =
-  List.map
-    ~f:Access.create
-    names
-  |> List.concat
+  List.concat_map names ~f:Access.create
 
 
 let value option =
@@ -301,7 +298,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "qualifier")
+        ~qualifier:(!+"qualifier")
         {|
           class C: ...
           class D(C): pass
@@ -321,7 +318,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "collections")
+        ~qualifier:(!+"collections")
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
@@ -336,7 +333,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "collections")
+        ~qualifier:(!+"collections")
         {|
           from builtins import int
           from builtins import dict as CDict
@@ -349,7 +346,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "collections")
+        ~qualifier:(!+"collections")
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
@@ -363,7 +360,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "asyncio.tasks")
+        ~qualifier:(!+"asyncio.tasks")
         {|
            from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
@@ -381,7 +378,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "a")
+        ~qualifier:(!+"a")
         {|
           import typing
           _T = typing.TypeVar("_T")
@@ -397,7 +394,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "qualifier")
+        ~qualifier:(!+"qualifier")
         {|
           class Class:
             T = typing.TypeVar('T')
@@ -413,12 +410,12 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "stubbed")
+        ~qualifier:(!+"stubbed")
         ~local_mode:Source.PlaceholderStub
         ~handle:"stubbed.pyi"
         "";
       parse
-        ~qualifier:(Access.create "qualifier")
+        ~qualifier:(!+"qualifier")
         {|
           class str: ...
           T = stubbed.Something
@@ -430,7 +427,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "t")
+        ~qualifier:(!+"t")
         {|
           import x
           X = typing.Dict[int, int]
@@ -438,7 +435,7 @@ let test_register_aliases _ =
           C = typing.Callable[[T], int]
         |};
       parse
-        ~qualifier:(Access.create "x")
+        ~qualifier:(!+"x")
         {|
           import t
           X = typing.Dict[int, int]
@@ -454,7 +451,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Access.create "x")
+        ~qualifier:(!+"x")
         {|
           C = typing.Callable[[gurbage], gurbage]
         |};
@@ -550,7 +547,7 @@ let test_register_globals _ =
 
   let assert_global access expected =
     let actual =
-      Access.create access
+      !+ access
       |> Handler.globals
       >>| Node.value
       >>| Annotation.annotation
@@ -564,7 +561,7 @@ let test_register_globals _ =
 
   let source =
     parse
-      ~qualifier:(Access.create "qualifier")
+      ~qualifier:(!+"qualifier")
       {|
         with_join = 1 or 'asdf'
         with_resolve = with_join
@@ -602,7 +599,7 @@ let test_register_globals _ =
   let source =
     parse
       ~handle:"test.py"
-      ~qualifier:(Access.create "test")
+      ~qualifier:(!+"test")
       {|
         class Class: ...
         alias = Class
@@ -788,7 +785,7 @@ let test_populate _ =
       G: Foo = ...
       H: alias = ...
     |}
-    |> populate_preprocess ~handle:"test.py" ~qualifier:(Access.create "test")
+    |> populate_preprocess ~handle:"test.py" ~qualifier:(!+"test")
     |> assert_global_with_environment
   in
 
@@ -835,7 +832,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(Access.create "function")
+          ~name:(!+"function")
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
           ()));
@@ -856,7 +853,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(Access.create "Class.__init__")
+          ~name:(!+"Class.__init__")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
@@ -882,7 +879,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(Access.create "Class.property")
+          ~name:(!+"Class.property")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
@@ -1383,23 +1380,23 @@ let test_protocols _ =
 let test_modules _ =
   let environment =
     populate_with_sources [
-      Source.create ~qualifier:(Access.create "wingus") [];
-      Source.create ~qualifier:(Access.create "dingus") [];
-      Source.create ~qualifier:(Access.create "os.path") [];
+      Source.create ~qualifier:(!+"wingus") [];
+      Source.create ~qualifier:(!+"dingus") [];
+      Source.create ~qualifier:(!+"os.path") [];
     ]
   in
   let module Handler = (val environment) in
 
-  assert_is_some (Handler.module_definition (Access.create "wingus"));
-  assert_is_some (Handler.module_definition (Access.create "dingus"));
-  assert_is_none (Handler.module_definition (Access.create "zap"));
+  assert_is_some (Handler.module_definition (!+"wingus"));
+  assert_is_some (Handler.module_definition (!+"dingus"));
+  assert_is_none (Handler.module_definition (!+"zap"));
 
-  assert_is_some (Handler.module_definition (Access.create "os"));
-  assert_is_some (Handler.module_definition (Access.create "os.path"));
+  assert_is_some (Handler.module_definition (!+"os"));
+  assert_is_some (Handler.module_definition (!+"os.path"));
 
-  assert_true (Handler.is_module (Access.create "wingus"));
-  assert_true (Handler.is_module (Access.create "dingus"));
-  assert_false (Handler.is_module (Access.create "zap"));
+  assert_true (Handler.is_module (!+"wingus"));
+  assert_true (Handler.is_module (!+"dingus"));
+  assert_false (Handler.is_module (!+"zap"));
   ()
 
 
@@ -1421,9 +1418,9 @@ let test_import_dependencies context =
     let environment =
       populate_with_sources
         [
-          parse ~handle:"test.py" ~qualifier:(Access.create "test") source;
-          parse ~handle:"a.py" ~qualifier:(Access.create "a") "";
-          parse ~handle:"subdirectory/b.py" ~qualifier:(Access.create "subdirectory.b") "";
+          parse ~handle:"test.py" ~qualifier:(!+"test") source;
+          parse ~handle:"a.py" ~qualifier:(!+"a") "";
+          parse ~handle:"subdirectory/b.py" ~qualifier:(!+"subdirectory.b") "";
           parse ~handle:"builtins.pyi" ~qualifier:[] "";
         ]
     in
@@ -1713,14 +1710,14 @@ let test_propagate_nested_classes _ =
   test_propagate
     [
       parse
-        ~qualifier:(Access.create "qual")
+        ~qualifier:(!+"qual")
         {|
           class B:
             class N:
               pass
         |};
       parse
-        ~qualifier:(Access.create "importer")
+        ~qualifier:(!+"importer")
         {|
           from qual import B
           class C(B):

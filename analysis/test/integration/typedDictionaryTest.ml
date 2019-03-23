@@ -7,14 +7,12 @@ open OUnit2
 open IntegrationTest
 open Test
 
-open Ast.Expression
-
 
 let test_check_typed_dictionaries _ =
   let assert_test_typed_dictionary source =
     let typing_stub =
       {
-        qualifier = Access.create "typing";
+        qualifier = !+"typing";
         handle = "typing.pyi";
         source =
           {|
@@ -26,7 +24,7 @@ let test_check_typed_dictionaries _ =
     in
     let mypy_extensions_stub =
       {
-        qualifier = Access.create "mypy_extensions";
+        qualifier = !+"mypy_extensions";
         handle = "mypy_extensions.pyi";
         source =
           "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], \
@@ -35,7 +33,7 @@ let test_check_typed_dictionaries _ =
     in
     let typed_dictionary_for_import =
       {
-        qualifier = Access.create "foo.bar.baz";
+        qualifier = !+"foo.bar.baz";
         handle = "foo/bar/baz.py";
         source =
           {|

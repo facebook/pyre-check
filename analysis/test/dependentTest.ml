@@ -23,10 +23,11 @@ let populate source =
 
 
 let access names =
-  List.map ~f:Expression.Access.create names |> List.concat
+  List.concat_map names ~f:Access.create
 
 
-let primitive name = Type.Primitive name
+let primitive name =
+  Type.Primitive name
 
 
 let test_index _ =
@@ -198,7 +199,7 @@ let test_normalize _ =
     let add_dependent (left, right) =
       Handler.DependencyHandler.add_dependent
         ~handle:(File.Handle.create (left ^ ".py"))
-        (Access.create right)
+        (!+ right)
     in
     List.iter edges ~f:add_dependent;
     let all_handles =
@@ -224,7 +225,7 @@ let test_normalize _ =
       assert_equal
         ~printer
         (Some expected)
-        (Handler.DependencyHandler.dependents (Access.create node))
+        (Handler.DependencyHandler.dependents (!+ node))
     in
     List.iter expected ~f:assert_dependents_equal
   in

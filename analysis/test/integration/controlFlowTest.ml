@@ -3,10 +3,9 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Test
 open OUnit2
 open IntegrationTest
-
-open Ast.Expression
 
 
 let test_scheduling _ =
@@ -343,7 +342,7 @@ let test_check_nested _ =
 
   (* Nesting behaves differently for the toplevel function. *)
   assert_type_errors
-    ~qualifier:(Access.create "shadowing")
+    ~qualifier:(!+"shadowing")
     {|
       def shadowing(i: int) -> None: ...
       shadowing('asdf')  # `shadowing` is not replaced with a dummy entry in the globals map.

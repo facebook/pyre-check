@@ -153,7 +153,7 @@ let test_block _ =
 
 let test_for _ =
   let loop = {
-    For.target = +Access (SimpleAccess (Access.create "a"));
+    For.target = +Access (SimpleAccess (!+"a"));
     iterator = +List [];
     body = [!!"body"];
     orelse = [!!"orelse"];

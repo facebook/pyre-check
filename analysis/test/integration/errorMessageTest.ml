@@ -3,6 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Test
 open OUnit2
 open IntegrationTest
 
@@ -302,7 +303,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = Ast.Statement.Access.create "export";
+        qualifier = !+"export";
         handle = "export.py";
         source = "class Foo:\n  a: int = 1"
       };
@@ -316,7 +317,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = Ast.Statement.Access.create "export";
+        qualifier = !+"export";
         handle = "export.py";
         source = "a: int = 1"
       };
@@ -331,7 +332,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = Ast.Statement.Access.create "export";
+        qualifier = !+"export";
         handle = "export.py";
         source = {|
           class Foo:
