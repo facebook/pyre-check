@@ -7,8 +7,6 @@ open OUnit2
 
 open Core
 
-open Ast
-open Expression
 open Server
 open Protocol
 open Pyre
@@ -36,36 +34,36 @@ let test_parse_query context =
 
   assert_parses
     "less_or_equal(int, bool)"
-    (LessOrEqual (Access.create "int", Access.create "bool"));
+    (LessOrEqual (!+"int", !+"bool"));
   assert_parses
     "less_or_equal (int, bool)"
-    (LessOrEqual (Access.create "int", Access.create "bool"));
+    (LessOrEqual (!+"int", !+"bool"));
   assert_parses
     "less_or_equal(  int, int)"
-    (LessOrEqual (Access.create "int", Access.create "int"));
+    (LessOrEqual (!+"int", !+"int"));
   assert_parses
     "Less_Or_Equal(  int, int)"
-    (LessOrEqual (Access.create "int", Access.create "int"));
+    (LessOrEqual (!+"int", !+"int"));
 
   assert_parses
     "is_compatible_with(int, bool)"
-    (IsCompatibleWith (Access.create "int", Access.create "bool"));
+    (IsCompatibleWith (!+"int", !+"bool"));
   assert_parses
     "is_compatible_with (int, bool)"
-    (IsCompatibleWith (Access.create "int", Access.create "bool"));
+    (IsCompatibleWith (!+"int", !+"bool"));
   assert_parses
     "is_compatible_with(  int, int)"
-    (IsCompatibleWith (Access.create "int", Access.create "int"));
+    (IsCompatibleWith (!+"int", !+"int"));
   assert_parses
     "Is_Compatible_With(  int, int)"
-    (IsCompatibleWith (Access.create "int", Access.create "int"));
+    (IsCompatibleWith (!+"int", !+"int"));
 
   assert_parses
     "meet(int, bool)"
-    (Meet (Access.create "int", Access.create "bool"));
+    (Meet (!+"int", !+"bool"));
   assert_parses
     "join(int, bool)"
-    (Join (Access.create "int", Access.create "bool"));
+    (Join (!+"int", !+"bool"));
 
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";
@@ -80,11 +78,11 @@ let test_parse_query context =
   assert_fails_to_parse "meet(int)";
 
   assert_fails_to_parse "join(int)";
-  assert_parses "superclasses(int)" (Superclasses (Access.create "int"));
+  assert_parses "superclasses(int)" (Superclasses (!+"int"));
   assert_fails_to_parse "superclasses()";
   assert_fails_to_parse "superclasses(int, bool)";
 
-  assert_parses "normalize_type(int)" (NormalizeType (Access.create "int"));
+  assert_parses "normalize_type(int)" (NormalizeType (!+"int"));
   assert_fails_to_parse "normalizeType(int, str)";
 
   assert_equal
@@ -119,10 +117,10 @@ let test_parse_query context =
   assert_fails_to_parse "types_in_file(a.py)";
   assert_fails_to_parse "types_in_file('a.py', 1, 2)";
 
-  assert_parses "attributes(C)" (Attributes (Access.create "C"));
+  assert_parses "attributes(C)" (Attributes (!+"C"));
   assert_fails_to_parse "attributes(C, D)";
 
-  assert_parses "signature(a.b)" (Signature (Access.create "a.b"));
+  assert_parses "signature(a.b)" (Signature (!+"a.b"));
   assert_fails_to_parse "signature(a.b, a.c)";
 
   assert_parses "save_server_state('state')"
@@ -159,7 +157,7 @@ let test_parse_query context =
        (Path.create_relative
           ~root:(Path.current_working_directory ())
           ~relative:"absolute.sqlite"));
-  assert_parses "path_of_module(a.b.c)" (PathOfModule (Expression.Access.create "a.b.c"));
+  assert_parses "path_of_module(a.b.c)" (PathOfModule (!+"a.b.c"));
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";
 

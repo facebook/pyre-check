@@ -814,7 +814,7 @@ let test_query context =
            {
              Protocol.TypeQuery.name = "foo";
              annotation = Type.Callable {
-                 Type.Callable.kind = Type.Callable.Named (Access.create "C.foo");
+                 Type.Callable.kind = Type.Callable.Named (!+"C.foo");
                  implementation = {
                    Type.Callable.annotation = Type.integer;
                    parameters = Type.Callable.Defined [];
@@ -974,7 +974,7 @@ let test_query context =
   |> File.write;
 
   assert_type_query_response
-    ~qualifier:(Access.create "a")
+    ~qualifier:(!+"a")
     ~handle:"a.py"
     ~source:"pass"
     ~query:"path_of_module(a)"
@@ -1215,7 +1215,7 @@ let test_decode_serialized_ocaml_values context =
       Request.TypeQueryRequest
         (TypeQuery.DecodeOcamlValues [
             {
-              TypeQuery.serialized_key = Globals.serialize_key (Access.create "string_global");
+              TypeQuery.serialized_key = Globals.serialize_key (!+"string_global");
               serialized_value =
                 Annotation.create Type.string
                 |> Node.create_with_default_location
@@ -1231,7 +1231,7 @@ let test_decode_serialized_ocaml_values context =
                   TypeQuery.decoded = [
                     {
                       TypeQuery.serialized_key =
-                        Globals.serialize_key (Access.create "string_global");
+                        Globals.serialize_key (!+"string_global");
                       kind = "Global";
                       actual_key = "string_global";
                       actual_value = Some "(str: m)";
@@ -1246,7 +1246,7 @@ let test_decode_serialized_ocaml_values context =
       Request.TypeQueryRequest
         (TypeQuery.DecodeOcamlValues [
             {
-              TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
+              TypeQuery.serialized_key = Dependents.serialize_key (!+"module");
               serialized_value =
                 ["dependentA.py"; "dependentB.py"]
                 |> List.map ~f:File.Handle.create
@@ -1262,7 +1262,7 @@ let test_decode_serialized_ocaml_values context =
                 {
                   TypeQuery.decoded = [
                     {
-                      TypeQuery.serialized_key = Dependents.serialize_key (Access.create "module");
+                      TypeQuery.serialized_key = Dependents.serialize_key (!+"module");
                       kind = "Dependent";
                       actual_key = "module";
                       actual_value = Some "(dependentA.py dependentB.py)";
@@ -1520,8 +1520,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~qualifier:(Access.create "a") a_source;
-        parse ~handle:"b.py" ~qualifier:(Access.create "b") b_source;
+        parse ~handle:"a.py" ~qualifier:(!+"a") a_source;
+        parse ~handle:"b.py" ~qualifier:(!+"b") b_source;
       ]
     in
     List.zip_exn handles sources
@@ -1743,7 +1743,7 @@ let test_incremental_repopulate context =
       errors
   in
   let get_annotation access_name =
-    match Resolution.function_definitions resolution (Access.create access_name) with
+    match Resolution.function_definitions resolution (!+ access_name) with
     | Some [ { Node.value = { Statement.Define.return_annotation; _ }; _ } ] ->
         return_annotation
     | _ -> None

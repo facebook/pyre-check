@@ -7,6 +7,7 @@ open OUnit2
 open Core
 
 open Server
+open Test
 
 open Pyre
 
@@ -127,7 +128,7 @@ let test_saved_state context =
   CommandTest.stop_server server_configuration;
 
   let expected_errors =
-    CommandTest.make_errors ~handle:"a.py" ~qualifier:(Ast.Expression.Access.create "a") content
+    CommandTest.make_errors ~handle:"a.py" ~qualifier:(!+"a") content
     |> CommandTest.associate_errors_and_filenames
     |> fun errors -> Protocol.TypeCheckResponse errors
   in
