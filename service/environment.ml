@@ -238,7 +238,50 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let dependents = Dependents.get
 
     let normalize handles =
-      let normalize name =
+      let normalize_keys handle =
+        begin
+          match FunctionKeys.get handle with
+          | Some keys ->
+              FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton handle);
+              FunctionKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+          | None ->
+              ()
+        end;
+        begin
+          match ClassKeys.get handle with
+          | Some keys ->
+              ClassKeys.remove_batch (ClassKeys.KeySet.singleton handle);
+              ClassKeys.add handle (List.dedup_and_sort ~compare:Type.compare keys)
+          | None ->
+              ()
+        end;
+        begin
+          match AliasKeys.get handle with
+          | Some keys ->
+              AliasKeys.remove_batch (AliasKeys.KeySet.singleton handle);
+              AliasKeys.add handle (List.dedup_and_sort ~compare:Type.compare keys)
+          | None ->
+              ()
+        end;
+        begin
+          match GlobalKeys.get handle with
+          | Some keys ->
+              GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton handle);
+              GlobalKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+          | None ->
+              ()
+        end;
+        begin
+          match DependentKeys.get handle with
+          | Some keys ->
+              DependentKeys.remove_batch (DependentKeys.KeySet.singleton handle);
+              DependentKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+          | None ->
+              ()
+        end
+      in
+      List.iter handles ~f:normalize_keys;
+      let normalize_dependents name =
         match Dependents.get name with
         | Some unnormalized ->
             Dependents.remove_batch (Dependents.KeySet.singleton name);
@@ -251,7 +294,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       in
       List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
       |> List.dedup_and_sort ~compare:Expression.Access.compare
-      |> List.iter ~f:normalize
+      |> List.iter ~f:normalize_dependents
   end: Dependencies.Handler)
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let refine_class_definition annotation =

@@ -5,11 +5,10 @@
 
 
 open Core
-
 open Ast.Expression
 open Analysis
-
 open OUnit2
+open Test
 
 module Handler = Service.Environment.SharedHandler.DependencyHandler
 
@@ -71,6 +70,57 @@ let test_global_keys _ =
   assert_global_keys ["a"; "b"; "f"] ~expected:["f"; "b"; "a"]
 
 
+let test_normalize_dependencies _ =
+  let handle = File.Handle.create "dummy.py" in
+  Handler.clear_keys_batch [handle];
+  Handler.add_function_key ~handle (!+"f");
+  (* Only keep one copy. *)
+  Handler.add_function_key ~handle (!+"f");
+  Handler.add_function_key ~handle (!+"h");
+  Handler.add_function_key ~handle (!+"g");
+  Handler.normalize [handle];
+  assert_equal
+    ~printer:(List.to_string ~f:Access.show)
+    (Handler.get_function_keys ~handle)
+    [!+"f"; !+"g"; !+"h"];
+
+  Handler.add_global_key ~handle (!+"b");
+  Handler.add_global_key ~handle (!+"c");
+  Handler.add_global_key ~handle (!+"a");
+  Handler.normalize [handle];
+  assert_equal
+    ~printer:(List.to_string ~f:Access.show)
+    (Handler.get_global_keys ~handle) [!+"a"; !+"b"; !+"c"];
+
+  Handler.add_dependent_key ~handle (!+"first.module");
+  Handler.add_dependent_key ~handle (!+"second.module");
+  Handler.add_dependent_key ~handle (!+"aardvark");
+  Handler.normalize [handle];
+  assert_equal
+    ~printer:(List.to_string ~f:Access.show)
+    (Handler.get_dependent_keys ~handle)
+    [!+"aardvark"; !+"first.module"; !+"second.module"];
+
+
+  Handler.add_class_key ~handle (Type.Primitive "T1");
+  Handler.add_class_key ~handle (Type.Primitive "T3");
+  Handler.add_class_key ~handle (Type.Primitive "T2");
+  Handler.normalize [handle];
+  assert_equal
+    ~printer:(List.to_string ~f:Type.show)
+    (Handler.get_class_keys ~handle)
+    [Type.Primitive "T1"; Type.Primitive "T2"; Type.Primitive "T3"];
+
+  Handler.add_alias_key ~handle (Type.Primitive "C_Alias");
+  Handler.add_alias_key ~handle (Type.Primitive "A_Alias");
+  Handler.add_alias_key ~handle (Type.Primitive "B_Alias");
+  Handler.normalize [handle];
+  assert_equal
+    ~printer:(List.to_string ~f:Type.show)
+    (Handler.get_alias_keys ~handle)
+    [Type.Primitive "A_Alias"; Type.Primitive "B_Alias"; Type.Primitive "C_Alias"]
+
+
 let () =
   "environment">:::[
     "dependent_keys">::test_dependency_keys;
@@ -78,5 +128,6 @@ let () =
     "class_keys">::test_class_keys;
     "function_keys">::test_function_keys;
     "global_keys">::test_global_keys;
+    "normalize_dependencies">::test_normalize_dependencies;
   ]
   |> Test.run

@@ -291,6 +291,10 @@ let (!!) name =
   +Statement.Expression !name
 
 
+let (!+) name =
+  Access.create name
+
+
 (* Assertion helpers. *)
 let assert_true =
   assert_bool ""
