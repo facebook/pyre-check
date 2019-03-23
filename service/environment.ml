@@ -169,25 +169,52 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Dependents.get
 
   module DependencyHandler = (struct
-    let add_new_key ~get ~add ~handle ~key =
-      match get handle with
+    let add_new_key ~remove ~get ~add ~handle ~key =
+      let existing = get handle in
+      remove handle;
+      match existing with
       | None -> add handle [key]
       | Some keys -> add handle (key :: keys)
 
     let add_function_key ~handle access =
-      add_new_key ~handle ~key:access ~get:FunctionKeys.get ~add:FunctionKeys.add
+      add_new_key
+        ~handle
+        ~key:access
+        ~get:FunctionKeys.get
+        ~add:FunctionKeys.add
+        ~remove:(fun key -> FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton key))
 
     let add_class_key ~handle class_type =
-      add_new_key ~handle ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
+      add_new_key
+        ~handle
+        ~key:class_type
+        ~get:ClassKeys.get
+        ~add:ClassKeys.add
+        ~remove:(fun key -> ClassKeys.remove_batch (ClassKeys.KeySet.singleton key))
 
     let add_alias_key ~handle alias =
-      add_new_key ~handle ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
+      add_new_key
+        ~handle
+        ~key:alias
+        ~get:AliasKeys.get
+        ~add:AliasKeys.add
+        ~remove:(fun key -> AliasKeys.remove_batch (ClassKeys.KeySet.singleton key))
 
     let add_global_key ~handle global =
-      add_new_key ~handle ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
+      add_new_key
+        ~handle
+        ~key:global
+        ~get:GlobalKeys.get
+        ~add:GlobalKeys.add
+        ~remove:(fun key -> GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton key))
 
     let add_dependent_key ~handle dependent =
-      add_new_key ~handle ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
+      add_new_key
+        ~handle
+        ~key:dependent
+        ~get:DependentKeys.get
+        ~add:DependentKeys.add
+        ~remove:(fun key -> DependentKeys.remove_batch (DependentKeys.KeySet.singleton key))
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;

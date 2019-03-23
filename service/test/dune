@@ -1,5 +1,6 @@
 (tests
  (names
+  environmentTest
   ignoreTest
   memoryTest
   parserTest
@@ -9,6 +10,7 @@
   (pps ppx_sexp_message ppx_hash))
  (libraries
   oUnit
+  pyrelib.ast
   pyrelib.analysis
   pyrelib.test
   pyrelib.service
