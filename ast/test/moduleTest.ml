@@ -48,7 +48,7 @@ let test_aliased_export _ =
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
-        Access.create source
+        !+ source
         |> Module.aliased_export module_definition
         |> (fun value -> Option.value value ~default:[Access.Identifier "$not_exported"])
         |> Access.show
@@ -88,32 +88,32 @@ let test_aliased_export _ =
     ["*", "some.module"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.module")
+    ~qualifier:(!+"some.module")
     "from . import path as other"
     ["other", "some.path"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.long.module")
+    ~qualifier:(!+"some.long.module")
     "from .relative import path as other"
     ["other", "some.long.relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.long.module")
+    ~qualifier:(!+"some.long.module")
     "from ..relative import path as other"
     ["other", "some.relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.long.module")
+    ~qualifier:(!+"some.long.module")
     "from ...relative import path as other"
     ["other", "relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.module")
+    ~qualifier:(!+"some.module")
     "from some.module.derp import path as other"
     ["other", "some.module.derp.path"];
 
   assert_aliased_exports
-    ~qualifier:(Access.create "some.module")
+    ~qualifier:(!+"some.module")
     "from some.module.other import other as other"
     ["other", "other.other"];
 
@@ -131,7 +131,7 @@ let test_aliased_export _ =
 
   (* Exports through assignments. *)
   assert_aliased_exports
-    ~qualifier:(Access.create "requests")
+    ~qualifier:(!+"requests")
     ~handle:(File.Handle.create "requests/__init__.pyi")
     {|
       from . import api
@@ -165,12 +165,12 @@ let test_wildcard_exports _ =
       assert_true
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (Access.create access))
+           (!+ access))
     else
       assert_false
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (Access.create access))
+           (!+ access))
   in
   assert_wildcard_exports
     {|
@@ -216,7 +216,7 @@ let test_wildcard_exports _ =
     [];
 
   assert_wildcard_exports
-    ~qualifier:(Access.create "_underscore")
+    ~qualifier:(!+"_underscore")
     {|
       def foo(): ...
       variable = ...
@@ -225,7 +225,7 @@ let test_wildcard_exports _ =
     ["foo"; "variable"; "Bar"];
 
   assert_wildcard_exports
-    ~qualifier:(Access.create "qualified")
+    ~qualifier:(!+"qualified")
     {|
       def qualified.foo(): ...
       qualified.variable = ...

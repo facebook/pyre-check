@@ -189,10 +189,7 @@ let test_parse _ =
 
 let test_qualifier _ =
   let qualifier modules =
-    List.map
-      ~f:Expression.Access.create
-      modules
-    |> List.concat
+    List.concat_map modules ~f:Access.create
   in
 
   assert_equal

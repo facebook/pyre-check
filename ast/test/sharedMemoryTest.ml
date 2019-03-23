@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 open Core
 
+open Test
 open OUnit2
 
 let test_normalize_handle_keys context =
@@ -43,7 +44,6 @@ let test_compute_hashes_to_keys _ =
       (String.Map.of_alist_exn expected)
       actual
   in
-  let open Ast.Expression in
   assert_mapping_equal
     [
       SymlinksToPaths.hash_of_key "first", SymlinksToPaths.serialize_key "first";
@@ -54,12 +54,12 @@ let test_compute_hashes_to_keys _ =
     [
       Sources.hash_of_handle (File.Handle.create "first.py"),
       Sources.serialize_handle (File.Handle.create "first.py");
-      Sources.hash_of_qualifier (Access.create "first"),
-      Sources.serialize_qualifier (Access.create "first");
+      Sources.hash_of_qualifier (!+"first"),
+      Sources.serialize_qualifier (!+"first");
       Sources.hash_of_handle (File.Handle.create "second/__init__.py"),
       Sources.serialize_handle (File.Handle.create "second/__init__.py");
-      Sources.hash_of_qualifier (Access.create "second"),
-      Sources.serialize_qualifier (Access.create "second");
+      Sources.hash_of_qualifier (!+"second"),
+      Sources.serialize_qualifier (!+"second");
 
     ]
     (Sources.compute_hashes_to_keys
@@ -70,15 +70,15 @@ let test_compute_hashes_to_keys _ =
     (HandleKeys.compute_hashes_to_keys ());
   assert_mapping_equal
     [
-      Modules.hash_of_key (Access.create "foo"), Modules.serialize_key (Access.create "foo");
-      Modules.hash_of_key (Access.create "bar"), Modules.serialize_key (Access.create "bar");
-      Modules.hash_of_key (Access.create "foo.b"), Modules.serialize_key (Access.create "foo.b");
+      Modules.hash_of_key (!+"foo"), Modules.serialize_key (!+"foo");
+      Modules.hash_of_key (!+"bar"), Modules.serialize_key (!+"bar");
+      Modules.hash_of_key (!+"foo.b"), Modules.serialize_key (!+"foo.b");
     ]
     (Modules.compute_hashes_to_keys
        ~keys:[
-         Access.create "foo";
-         Access.create "bar";
-         Access.create "foo.b";
+         !+"foo";
+         !+"bar";
+         !+"foo.b";
        ]);
   assert_mapping_equal
     [

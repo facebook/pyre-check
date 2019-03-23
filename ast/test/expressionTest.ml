@@ -259,20 +259,20 @@ let test_drop_prefix _ =
   let assert_access_equal = assert_equal ~printer:(Access.show) ~pp_diff:(diff ~print:Access.pp) in
 
   assert_access_equal
-    (Access.drop_prefix ~prefix:(Access.create "a.b") (Access.create "a.b.c"))
-    (Access.create "c");
+    (Access.drop_prefix ~prefix:(!+"a.b") (!+"a.b.c"))
+    (!+"c");
 
   assert_access_equal
-    (Access.drop_prefix ~prefix:(Access.create "b.c") (Access.create "a.b.c"))
-    (Access.create "a.b.c")
+    (Access.drop_prefix ~prefix:(!+"b.c") (!+"a.b.c"))
+    (!+"a.b.c")
 
 
 let test_prefix _ =
   let assert_access_equal = assert_equal ~printer:(Access.show) ~pp_diff:(diff ~print:Access.pp) in
 
   assert_access_equal
-    (Access.prefix (Access.create "a.b.c"))
-    (Access.create "a.b");
+    (Access.prefix (!+"a.b.c"))
+    (!+"a.b");
 
   assert_access_equal
     (Access.prefix [])
@@ -430,7 +430,7 @@ let test_name_and_arguments _ =
 
 let test_is_assert_function _ =
   let is_assert name =
-    Access.create name
+    !+ name
     |> Access.is_assert_function
   in
   assert_true (is_assert "pyretestassert");
