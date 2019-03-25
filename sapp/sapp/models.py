@@ -602,8 +602,15 @@ class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
     shared_text_issue_instance = relationship(
         "IssueInstanceSharedTextAssoc",
         primaryjoin=(
-            "SharedText.id == " "foreign(IssueInstanceSharedTextAssoc.shared_text_id)"
+            "SharedText.id == foreign(IssueInstanceSharedTextAssoc.shared_text_id)"
         ),
+    )
+
+    trace_frames = association_proxy("shared_text_trace_frame", "trace_frames")
+
+    shared_text_trace_frame = relationship(
+        "TraceFrameLeafAssoc",
+        primaryjoin=("SharedText.id == foreign(TraceFrameLeafAssoc.leaf_id)"),
     )
 
     @classmethod
@@ -731,6 +738,16 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         primaryjoin=(
             "IssueInstance.id == "
             "foreign(IssueInstancePostconditionAssoc.issue_instance_id)"
+        ),
+    )
+
+    trace_frames = association_proxy("issue_instance_trace_frame", "trace_frame")
+
+    issue_instance_trace_frame = relationship(
+        "IssueInstanceTraceFrameAssoc",
+        primaryjoin=(
+            "IssueInstance.id == "
+            "foreign(IssueInstanceTraceFrameAssoc.issue_instance_id)"
         ),
     )
 
