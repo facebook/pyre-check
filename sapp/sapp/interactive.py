@@ -16,6 +16,7 @@ from typing import (
     Union,
 )
 
+import click
 from IPython.core import page
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
@@ -438,7 +439,12 @@ parents()       show trace frames that call the current trace frame
             )
             return
 
-        self._select_parent_trace_frame(parent_trace_frames)
+        parent_trace_frame = self._select_parent_trace_frame(parent_trace_frames)
+        if not parent_trace_frame:
+            return
+
+        self._update_trace_tuples_new_parent(parent_trace_frame)
+        self.trace()
 
     def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
@@ -502,6 +508,7 @@ parents()       show trace frames that call the current trace frame
                     callee_port=first_trace_frame.caller_port,
                     filename=first_trace_frame.filename,
                     callee_location=first_trace_frame.callee_location,
+                    kind=first_trace_frame.kind,
                 ),
                 1,
             ),
@@ -1005,10 +1012,56 @@ parents()       show trace frames that call the current trace frame
             ]
         )
 
-    def _select_parent_trace_frame(self, parent_trace_frames: List[TraceFrame]) -> None:
+    def _select_parent_trace_frame(
+        self, parent_trace_frames: List[TraceFrame]
+    ) -> Optional[TraceFrame]:
         for i, parent in enumerate(parent_trace_frames):
             print(f"[{i + 1}] {parent.caller} : {parent.caller_port}")
-        # TODO: prompt user for choice
+
+        try:
+            parent_number = click.prompt(
+                f"\nParent number (1-{len(parent_trace_frames)})", type=int
+            )
+            if parent_number < 1 or parent_number > len(parent_trace_frames):
+                raise UserError("Out of bounds.")
+            print()
+            return parent_trace_frames[parent_number - 1]  # pyre-ignore
+        except click.Abort:
+            print("\nParent not selected.")
+            pass
+
+    def _update_trace_tuples_new_parent(self, parent_trace_frame: TraceFrame) -> None:
+        # Construct the placeholder trace tuple and the actual one.
+        new_head = [
+            TraceTuple(
+                trace_frame=TraceFrame(
+                    caller="unused",
+                    callee=parent_trace_frame.caller,
+                    callee_port=parent_trace_frame.caller_port,
+                    filename=parent_trace_frame.filename,
+                    callee_location=parent_trace_frame.callee_location,
+                    kind=parent_trace_frame.kind,
+                )
+            ),
+            TraceTuple(trace_frame=parent_trace_frame),
+        ]
+
+        if parent_trace_frame.kind == TraceKind.POSTCONDITION:
+            # If current state is: C in [A,B,C,D,E]
+            # Then new state is:   [A,B] + new_tail
+            new_tail = new_head[::-1]
+            self.trace_tuples = (
+                self.trace_tuples[: self.current_trace_frame_index] + new_tail
+            )
+            self.current_trace_frame_index = len(self.trace_tuples) - 1
+            return
+
+        # If current state is: C in [A,B,C,D,E]
+        # Then new state is:   new_head + [D,E]
+        self.trace_tuples = (
+            new_head + self.trace_tuples[self.current_trace_frame_index + 1 :]
+        )
+        self.current_trace_frame_index = 0
 
     def _resolve_pager(self, use_pager):
         use_pager = sys.stdin.isatty() if use_pager is None else use_pager

@@ -1617,7 +1617,8 @@ else:
         self.interactive.current_trace_frame_index = 1
 
         self._clear_stdout()
-        self.interactive.parents()
+        with patch("click.prompt", return_value=0):
+            self.interactive.parents()
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             ["[1] call1 : root", "[2] call1 : root", ""],
@@ -1631,6 +1632,80 @@ else:
         self.interactive.current_trace_frame_index = 2
         self.interactive.parents()
         self.assertIn("Try running from a non-leaf node", self.stderr.getvalue())
+
+    def testParentsSelectParent(self):
+        self._set_up_branched_trace()
+        self.interactive.setup()
+
+        self.interactive.set_frame(3)
+        self.interactive.current_trace_frame_index = 1
+
+        self._clear_stdout()
+        with patch("click.prompt", return_value=1):
+            self.interactive.parents()
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[1] call1 : root",
+                "[2] call1 : root",
+                "",
+                "     # ⎇  [callable] [port] [location]",
+                " --> 1    call1      root   file.py:2|2|2",
+                "     2    call2      param2 file.py:2|2|2",
+                "     3 +2 leaf       sink   file.py:4|4|4",
+                "",
+            ],
+        )
+
+    def testUpdateTraceTuplesNewParent(self):
+        self.interactive.setup()
+        # Test postcondition
+        self.interactive.current_trace_frame_index = 2
+        self.interactive.trace_tuples = [
+            TraceTuple(TraceFrame(callee="A")),
+            TraceTuple(TraceFrame(callee="B")),
+            TraceTuple(TraceFrame(callee="C")),
+            TraceTuple(TraceFrame(callee="D")),
+            TraceTuple(TraceFrame(callee="E")),
+        ]
+
+        trace_frame = TraceFrame(
+            caller="caller",
+            caller_port="caller_port",
+            callee="F",
+            filename="file.py",
+            callee_location=SourceLocation(1, 1, 1),
+            kind=TraceKind.POSTCONDITION,
+        )
+        self.interactive._update_trace_tuples_new_parent(trace_frame)
+        self.assertEqual(self.interactive.current_trace_frame_index, 3)
+        self.assertEqual(
+            [
+                trace_tuple.trace_frame.callee
+                for trace_tuple in self.interactive.trace_tuples
+            ],
+            ["A", "B", "F", "caller"],
+        )
+
+        # Test precondition
+        self.interactive.current_trace_frame_index = 2
+        self.interactive.trace_tuples = [
+            TraceTuple(TraceFrame(callee="A")),
+            TraceTuple(TraceFrame(callee="B")),
+            TraceTuple(TraceFrame(callee="C")),
+            TraceTuple(TraceFrame(callee="D")),
+            TraceTuple(TraceFrame(callee="E")),
+        ]
+        trace_frame.kind = TraceKind.PRECONDITION
+        self.interactive._update_trace_tuples_new_parent(trace_frame)
+        self.assertEqual(self.interactive.current_trace_frame_index, 0)
+        self.assertEqual(
+            [
+                trace_tuple.trace_frame.callee
+                for trace_tuple in self.interactive.trace_tuples
+            ],
+            ["caller", "F", "D", "E"],
+        )
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
