@@ -308,8 +308,8 @@ let create ~resolution ?(verify = true) ~configuration source =
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method (Reference.access define.name)
-            | None -> Callable.create_function (Reference.access define.name)
+            | Some _ -> Callable.create_method define.name
+            | None -> Callable.create_function define.name
           in
           Some (define, call_target)
       | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
@@ -332,7 +332,7 @@ let create ~resolution ?(verify = true) ~configuration source =
             parent = None;
           }
           in
-          Some (define, Callable.create_object (Reference.access define.name))
+          Some (define, Callable.create_object define.name)
       | _ ->
           None
     in

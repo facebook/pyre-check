@@ -61,48 +61,38 @@ let pretty_print formatter callable =
 type target_with_result = real_target
 
 
-let create_function access =
-  `Function (Access.show access)
+let create_function reference =
+  `Function (Reference.show reference)
 
 
-let unqualified_method_name method_access =
-  match Access.last method_access with
-  | Some (Access.Identifier name) -> name
-  | _ ->
-      Format.asprintf "Bad method name %a" Access.pp method_access
-      |> failwith
-
-
-let create_method access =
+let create_method reference =
   `Method {
-    class_name = Access.show (Access.prefix access);
-    method_name = unqualified_method_name access;
+    class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
+    method_name = Reference.last reference;
   }
 
 
-let create_override access =
+let create_override reference =
   `OverrideTarget {
-    class_name = Access.show (Access.prefix access);
-    method_name = unqualified_method_name access;
+    class_name = Reference.prefix reference >>| Reference.show |> Option.value ~default:"";
+    method_name = Reference.last reference;
   }
 
 
 let create { Node.value = define; _ } =
   match define.Define.parent with
-  | Some _ ->
-      create_method (Reference.access define.name)
-  | None ->
-      create_function (Reference.access define.name)
+  | Some _ -> create_method define.name
+  | None -> create_function define.name
 
 
 let create_derived_override override ~at_type =
   match override with
   | `OverrideTarget { method_name; _ } ->
-      `OverrideTarget { class_name = Access.show at_type; method_name }
+      `OverrideTarget { class_name = Reference.show at_type; method_name }
 
 
-let create_object access =
-  `Object (Access.show access)
+let create_object reference =
+  `Object (Reference.show reference)
 
 
 module Key = struct
@@ -162,15 +152,15 @@ module OverrideSet = Caml.Set.Make(OverrideKey)
 
 
 let add_function_definition function_name handle =
-  FileOfDefinition.add (Access.show function_name) handle
+  FileOfDefinition.add (Reference.show function_name) handle
 
 
 let add_class_definition class_name handle =
-  FileOfDefinition.add (Access.show class_name) handle
+  FileOfDefinition.add (Reference.show class_name) handle
 
 
 let class_exists class_name =
-  FileOfDefinition.mem (Access.show class_name)
+  FileOfDefinition.mem (Reference.show class_name)
 
 
 let define_matches search { Node.value = { Define.name; _ } ; _ } =
@@ -193,14 +183,14 @@ let get_definition ~resolution = function
       >>= Class.find_define ~method_name
 
 
-let get_override_access = function
+let get_override_reference = function
   | `OverrideTarget { class_name; method_name } ->
-      (Access.create class_name) @ (Access.create method_name)
+      Reference.combine (Reference.create class_name) (Reference.create method_name)
 
 
-let get_method_access = function
+let get_method_reference = function
   | `Method { class_name; method_name } ->
-      (Access.create class_name) @ (Access.create method_name)
+      Reference.combine (Reference.create class_name) (Reference.create method_name)
 
 
 let get_corresponding_method = function

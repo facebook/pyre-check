@@ -9,7 +9,6 @@ open OUnit2
 open Analysis
 open Ast
 open Interprocedural
-open Statement
 
 
 let configuration = Configuration.Analysis.create ()
@@ -146,7 +145,7 @@ let assert_summaries ~expected summaries =
 
 let test_unknown_function_analysis _ =
   let targets =
-    List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
+    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:(fun access -> Callable.create_function access)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0; } in
@@ -197,7 +196,7 @@ let check_meta_data ~step ~is_partial target =
 
 let test_meta_data _ =
   let targets =
-    List.map ~f:Access.create ["fun_a"; "fun_b"; "fun_c"]
+    List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
     |> List.map ~f:Callable.create_function in
   let step1 = Fixpoint.{ epoch = 1; iteration = 0; } in
   let environment = environment () in

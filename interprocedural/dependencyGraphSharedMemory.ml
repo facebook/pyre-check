@@ -4,20 +4,19 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Statement
 
 module SharedMemory = Memory
 
 
 module OverrideTypes = struct
-  type t = Access.t list
+  type t = Reference.t list
   let prefix = Prefix.make ()
   let description = "overriding types"
 end
 
 
 (* Maps the method access to the next subtypes that override that method *)
-module Overrides = SharedMemory.WithCache(Ast.SharedMemory.AccessKey)(OverrideTypes)
+module Overrides = SharedMemory.WithCache(Ast.SharedMemory.ReferenceKey)(OverrideTypes)
 
 
 let add_overriding_types ~member ~subtypes =

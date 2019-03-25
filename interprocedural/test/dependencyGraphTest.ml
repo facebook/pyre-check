@@ -42,10 +42,10 @@ let create_call_graph ?(update_environment_with = []) source_text =
 
 let create_callable = function
   | `Function name ->
-      Access.create name
+      Reference.create name
       |> Callable.create_function
   | `Method name ->
-      Access.create name
+      Reference.create name
       |> Callable.create_method
 
 
@@ -309,7 +309,7 @@ let test_method_overrides _ =
   let assert_method_overrides source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
-        Access.create member, List.map overriding_types ~f:Access.create
+        Reference.create member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
@@ -318,15 +318,15 @@ let test_method_overrides _ =
     let environment = Test.environment ~configuration () in
     Service.Environment.populate ~configuration environment [source];
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
-    let expected_overrides = Access.Map.of_alist_exn expected in
-    let equal_elements = List.equal ~equal:Access.equal in
+    let expected_overrides = Reference.Map.of_alist_exn expected in
+    let equal_elements = List.equal ~equal:Reference.equal in
     let printer map =
       map
-      |> Access.Map.sexp_of_t (List.sexp_of_t Access.sexp_of_t)
+      |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t)
       |> Sexp.to_string
     in
     assert_equal
-      ~cmp:(Access.Map.equal equal_elements)
+      ~cmp:(Reference.Map.equal equal_elements)
       ~printer
       expected_overrides
       overrides_map

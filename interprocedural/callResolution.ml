@@ -8,6 +8,7 @@ open Core
 open Ast
 open Analysis
 open Expression
+open Pyre
 
 
 let global_prefix ~resolution access =
@@ -82,11 +83,7 @@ let is_global ~resolution access =
     2) the real target otherwise
 *)
 let compute_indirect_targets ~resolution ~receiver_type target_name =
-  let get_class_type class_name =
-    class_name
-    |> Access.expression
-    |> Resolution.parse_annotation resolution
-  in
+  let get_class_type = Resolution.parse_reference resolution in
   let get_actual_target method_name =
     if DependencyGraphSharedMemory.overrides_exist method_name then
       Callable.create_override method_name
@@ -102,10 +99,10 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
     strip_optional_and_meta receiver_type
   in
   let declaring_type =
-    Access.prefix target_name
-    |> get_class_type
+    Reference.prefix target_name
+    >>| get_class_type
   in
-  if Type.equal receiver_type declaring_type then
+  if declaring_type >>| Type.equal receiver_type |> Option.value ~default:false then
     (* case a *)
     [get_actual_target target_name]
   else
@@ -125,7 +122,7 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
         | subtypes ->
             (* case c *)
             let create_override_target class_name =
-              (class_name @ [List.last_exn target_name])
+              Reference.create ~prefix:class_name (Reference.last target_name)
               |> get_actual_target
             in
             List.map subtypes ~f:create_override_target
@@ -149,23 +146,26 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
     match callable_type, receiver_type with
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_global ~resolution access ->
-        [Callable.create_function name, implicit]
+        [Callable.create_function (Reference.from_access name), implicit]
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_super_call reverse_access ->
-        [Callable.create_method name, implicit]
+        [Callable.create_method (Reference.from_access name), implicit]
     | Type.Callable { implicit = None; kind = Named name; _ }, None
       when is_all_names access ->
-        [Callable.create_function name, None]
+        [Callable.create_function (Reference.from_access name), None]
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_all_names access ->
-        [Callable.create_method name, implicit]
+        [Callable.create_method (Reference.from_access name), implicit]
     | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
-        compute_indirect_targets ~resolution  ~receiver_type:type_or_class name
+        compute_indirect_targets
+          ~resolution
+          ~receiver_type:type_or_class
+          (Reference.from_access name)
         |> List.map ~f:(fun target -> target, implicit)
     | access_type, _ when Type.is_meta access_type && is_global ~resolution access ->
         let access, _ = normalize_global ~resolution access in
         [
-          Callable.create_method access,
+          Callable.create_method (Reference.from_access access),
           Some { Type.Callable.implicit_annotation = access_type; name = "self" };
         ]
     | Type.Union annotations, _ ->

@@ -14,12 +14,12 @@ open Analysis
 
 type t = (Callable.t list) Callable.Map.t
 type callgraph = (Callable.t list) Callable.RealMap.t
-type overrides = (Access.t list) Access.Map.t
+type overrides = (Reference.t list) Reference.Map.t
 
 
 let empty = Callable.Map.empty
 let empty_callgraph = Callable.RealMap.empty
-let empty_overrides = Access.Map.empty
+let empty_overrides = Reference.Map.empty
 
 
 let create_callgraph ~environment ~source =
@@ -221,7 +221,7 @@ let from_overrides overrides =
     in
     Callable.Map.set result ~key ~data
   in
-  Access.Map.fold overrides ~f:add ~init:Callable.Map.empty
+  Reference.Map.fold overrides ~f:add ~init:Callable.Map.empty
 
 
 let create_overrides ~environment ~source =
@@ -237,9 +237,9 @@ let create_overrides ~environment ~source =
       let ancestor_parent =
         Annotated.Attribute.parent ancestor
         |> Type.access
+        |> Reference.from_access
       in
-      let class_name = Reference.access (Annotated.Class.name class_) in
-      ancestor_parent @ [Access.Identifier method_name], class_name
+      Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
     in
     let annotated_class = Annotated.Class.create class_node in
     let methods = Annotated.Class.methods ~resolution annotated_class in
@@ -250,14 +250,14 @@ let create_overrides ~environment ~source =
       | Some types -> overriding_type :: types
       | None -> [overriding_type]
     in
-    Access.Map.update map ancestor_method ~f:update_types
+    Reference.Map.update map ancestor_method ~f:update_types
   in
   let record_overrides_list map relations =
     List.fold relations ~init:map ~f:record_overrides
   in
   Preprocessing.classes source
   |> List.map ~f:class_method_overrides
-  |> List.fold ~init:Access.Map.empty ~f:record_overrides_list
+  |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
 
 
 let union left right =
@@ -276,7 +276,7 @@ let expand_callees callees =
           Callable.create_derived_override override ~at_type
         in
         let overrides =
-          let member = Callable.get_override_access override in
+          let member = Callable.get_override_reference override in
           DependencyGraphSharedMemory.get_overriding_types ~member
           |> Option.value ~default:[]
           |> List.map ~f:make_override

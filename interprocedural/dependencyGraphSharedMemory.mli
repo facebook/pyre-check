@@ -4,16 +4,15 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Statement
 
 
 val add_overriding_types
-  :  member: Access.t
-  -> subtypes: Access.t list
+  :  member: Reference.t
+  -> subtypes: Reference.t list
   -> unit
 
 val get_overriding_types
-  :  member: Access.t
-  -> Access.t list option
+  :  member: Reference.t
+  -> Reference.t list option
 
-val overrides_exist: Access.t -> bool
+val overrides_exist: Reference.t -> bool

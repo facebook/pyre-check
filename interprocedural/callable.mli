@@ -49,18 +49,18 @@ val compare: ([< t ] as 'a) -> 'a -> int
 
 type target_with_result = real_target
 
-val create_function: Access.t -> [> function_target ]
-val create_method: Access.t -> [> method_target ]
-val create_override: Access.t -> [> override_target ]
-val create_object: Access.t -> [> object_target ]
+val create_function: Reference.t -> [> function_target ]
+val create_method: Reference.t -> [> method_target ]
+val create_override: Reference.t -> [> override_target ]
+val create_object: Reference.t -> [> object_target ]
 val create: Define.t Node.t -> [> real_target ]
 val create_derived_override
   : override_target
-  -> at_type:Access.t
+  -> at_type: Reference.t
   -> [> override_target]
 
-val get_method_access: method_target -> Access.t
-val get_override_access: override_target -> Access.t
+val get_method_reference: method_target -> Reference.t
+val get_override_reference: override_target -> Reference.t
 val get_corresponding_method: override_target -> [> method_target]
 val get_corresponding_override: method_target -> [> override_target]
 
@@ -94,10 +94,10 @@ end
 module Set : Caml.Set.S with type elt = t
 
 (* Shared heap access to top-level definitions. *)
-val add_function_definition: Access.t -> File.Handle.t -> unit
-val add_class_definition: Access.t -> File.Handle.t -> unit
+val add_function_definition: Reference.t -> File.Handle.t -> unit
+val add_class_definition: Reference.t -> File.Handle.t -> unit
 val get_definition: resolution: Analysis.Resolution.t -> [< real_target ] -> Define.t Node.t option
-val class_exists: Access.t -> bool
+val class_exists: Reference.t -> bool
 
 
 module Map : Core.Map.S with type Key.t = t

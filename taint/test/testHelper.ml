@@ -9,7 +9,6 @@ open Core
 open OUnit2
 
 open Ast
-open Expression
 open Pyre
 open Taint
 
@@ -77,7 +76,7 @@ let get_model callable =
 
 
 let create_callable kind define_name =
-  let name = Access.create define_name in
+  let name = Reference.create define_name in
   match kind with
   | `Method -> Callable.create_method name
   | `Function -> Callable.create_function name

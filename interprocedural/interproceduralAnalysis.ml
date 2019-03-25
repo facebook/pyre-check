@@ -309,7 +309,8 @@ let analyze_define
 
 let analyze_overrides ({ Fixpoint.iteration; _ } as step) callable =
   let overrides =
-    DependencyGraphSharedMemory.get_overriding_types ~member:(Callable.get_override_access callable)
+    DependencyGraphSharedMemory.get_overriding_types
+      ~member:(Callable.get_override_reference callable)
     |> Option.value ~default:[]
     |> List.map ~f:(fun at_type -> Callable.create_derived_override callable ~at_type)
   in

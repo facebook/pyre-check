@@ -4,14 +4,13 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Statement
 open Analysis
 
 
 type t = (Callable.t list) Callable.Map.t
 type callgraph = (Callable.t list) Callable.RealMap.t
 (* Maps method names to closest sub-types that override them next *)
-type overrides = (Access.t list) Access.Map.t
+type overrides = (Reference.t list) Reference.Map.t
 
 val empty: t
 val empty_callgraph: callgraph

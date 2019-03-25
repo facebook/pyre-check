@@ -329,11 +329,11 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         ~resolution
         ~state
         ~expression:({ Node.location; value = expression } as expression_node) =
-      let global_model access =
+      let global_model reference =
         (* Fields are handled like methods *)
         let target_candidates = [
-          Interprocedural.Callable.create_method access;
-          Interprocedural.Callable.create_object access;
+          Interprocedural.Callable.create_method reference;
+          Interprocedural.Callable.create_object reference;
         ]
         in
         let merge_models result candidate =
@@ -376,7 +376,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               annotation :: successors
             in
             let attribute_taint sofar annotation =
-              (Type.class_name annotation) @ [Access.Identifier member]
+              Reference.create ~prefix:(Reference.from_access (Type.class_name annotation)) member
               |> global_model
               |> ForwardState.Tree.join sofar
             in
@@ -412,7 +412,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | Expression expression ->
           analyze_expression ~resolution ~state ~expression
       | Global access ->
-          global_model access
+          global_model (Reference.from_access access)
       | Local identifier ->
           ForwardState.read
             ~root:(AccessPath.Root.Variable identifier)
