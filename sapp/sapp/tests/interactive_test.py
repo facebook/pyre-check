@@ -1609,6 +1609,29 @@ else:
         trace_tuple = TraceTuple(trace_frame=TraceFrame(callee_port="not_root"))
         self.assertFalse(self.interactive._is_root_trace_tuple(trace_tuple))
 
+    def testParents(self):
+        self._set_up_branched_trace()
+        self.interactive.setup()
+
+        self.interactive.set_frame(3)
+        self.interactive.current_trace_frame_index = 1
+
+        self._clear_stdout()
+        self.interactive.parents()
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            ["[1] call1 : root", "[2] call1 : root", ""],
+        )
+
+        self._clear_stdout()
+        self.interactive.current_trace_frame_index = 0
+        self.interactive.parents()
+        self.assertIn("No parents calling", self.stdout.getvalue())
+
+        self.interactive.current_trace_frame_index = 2
+        self.interactive.parents()
+        self.assertIn("Try running from a non-leaf node", self.stderr.getvalue())
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 

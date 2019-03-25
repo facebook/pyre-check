@@ -81,6 +81,7 @@ branch(INDEX)   select a trace branch
 
 frames()        show trace frames independently of an issue
 set_frame(ID)   select a trace frame to explore
+parents()       show trace frames that call the current trace frame
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -109,6 +110,7 @@ set_frame(ID)   select a trace frame to explore
             "list": self.list_source_code,
             "frames": self.frames,
             "set_frame": self.set_frame,
+            "parents": self.parents,
         }
         self.repository_directory = repository_directory or os.getcwd()
 
@@ -411,6 +413,32 @@ set_frame(ID)   select a trace frame to explore
 
         print(f"Set trace frame to {frame_id}.")
         self.show()
+
+    @catch_user_error()
+    def parents(self) -> None:
+        self._verify_entrypoint_selected()
+        current_trace_frame = self.trace_tuples[
+            self.current_trace_frame_index
+        ].trace_frame
+
+        # Don't allow calling from the leaf node in a trace. Instead, call
+        # parents() from the placeholder of the caller of the leaf node.
+        if self._is_leaf(current_trace_frame):
+            raise UserError("Try running from a non-leaf node.")
+
+        with self.db.make_session() as session:
+            parent_trace_frames = self._next_trace_frames(
+                session, current_trace_frame, backwards=True
+            )
+
+        if len(parent_trace_frames) == 0:
+            print(
+                f"No parents calling [{current_trace_frame.callee} "
+                f": {current_trace_frame.callee_port}]."
+            )
+            return
+
+        self._select_parent_trace_frame(parent_trace_frames)
 
     def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
@@ -865,7 +893,7 @@ set_frame(ID)   select a trace frame to explore
             return []
 
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
-        while not self._is_leaf(trace_frames[-1]):
+        while not self._is_leaf(trace_frames[-1][0]):
             trace_frame, branches = trace_frames[-1]
             next_nodes = self._next_forward_trace_frames(session, trace_frame)
 
@@ -886,8 +914,7 @@ set_frame(ID)   select a trace frame to explore
             trace_frames.append((next_nodes[0], len(next_nodes)))
         return trace_frames
 
-    def _is_leaf(self, node: Tuple[TraceFrame, int]) -> bool:
-        trace_frame, branches = node
+    def _is_leaf(self, trace_frame: TraceFrame) -> bool:
         return trace_frame.callee_port in self.LEAF_NAMES
 
     def _next_forward_trace_frames(
@@ -977,6 +1004,11 @@ set_frame(ID)   select a trace frame to explore
                 ),
             ]
         )
+
+    def _select_parent_trace_frame(self, parent_trace_frames: List[TraceFrame]) -> None:
+        for i, parent in enumerate(parent_trace_frames):
+            print(f"[{i + 1}] {parent.caller} : {parent.caller_port}")
+        # TODO: prompt user for choice
 
     def _resolve_pager(self, use_pager):
         use_pager = sys.stdin.isatty() if use_pager is None else use_pager
