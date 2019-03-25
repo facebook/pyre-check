@@ -672,6 +672,19 @@ class IssueInstanceSharedTextAssoc(Base, PrepareMixin, RecordMixin):  # noqa
         )
 
 
+class TraceKind(enum.Enum):
+    precondition = enum.auto()
+    postcondition = enum.auto()
+
+    @classproperty
+    def PRECONDITION(cls):
+        return cls.precondition
+
+    @classproperty
+    def POSTCONDITION(cls):
+        return cls.postcondition
+
+
 class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
     """A particularly instance of an issue found in a run"""
 
@@ -783,6 +796,9 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     def get_shared_texts_by_kind(self, kind: SharedTextKind):
         return [text for text in self.shared_texts if text.kind == kind]
+
+    def get_trace_frames_by_kind(self, kind: TraceKind):
+        return [frame for frame in self.trace_frames if frame.kind == kind]
 
     @classmethod
     def merge(cls, session, items):
@@ -1229,19 +1245,6 @@ class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
         ),
         uselist=False,
     )
-
-
-class TraceKind(enum.Enum):
-    precondition = enum.auto()
-    postcondition = enum.auto()
-
-    @classproperty
-    def PRECONDITION(cls):
-        return cls.precondition
-
-    @classproperty
-    def POSTCONDITION(cls):
-        return cls.postcondition
 
 
 class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
