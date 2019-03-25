@@ -663,7 +663,7 @@ set_frame(ID)   select a trace frame to explore
             return self._initial_trace_frames(session, self.current_issue_id, kind)
 
         parent_trace_frame = self.trace_tuples[parent_index].trace_frame
-        return self._next_trace_frames(session, parent_trace_frame)
+        return self._next_forward_trace_frames(session, parent_trace_frame)
 
     def _is_before_root(self) -> bool:
         trace_tuple = self.trace_tuples[self.current_trace_frame_index]
@@ -867,7 +867,7 @@ set_frame(ID)   select a trace frame to explore
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
         while not self._is_leaf(trace_frames[-1]):
             trace_frame, branches = trace_frames[-1]
-            next_nodes = self._next_trace_frames(session, trace_frame)
+            next_nodes = self._next_forward_trace_frames(session, trace_frame)
 
             if len(next_nodes) == 0:
                 # Denote a missing frame by setting caller to None
@@ -890,17 +890,43 @@ set_frame(ID)   select a trace frame to explore
         trace_frame, branches = node
         return trace_frame.callee_port in self.LEAF_NAMES
 
-    def _next_trace_frames(self, session, trace_frame):
-        results = (
+    def _next_forward_trace_frames(
+        self, session: Session, trace_frame: TraceFrame
+    ) -> List[TraceFrame]:
+        return self._next_trace_frames(session, trace_frame, backwards=False)
+
+    def _next_backward_trace_frames(
+        self, session: Session, trace_frame: TraceFrame
+    ) -> List[TraceFrame]:
+        return self._next_trace_frames(session, trace_frame, backwards=True)
+
+    def _next_trace_frames(
+        self, session: Session, trace_frame: TraceFrame, backwards: bool = False
+    ) -> List[TraceFrame]:
+        """Finds all trace frames that the given trace_frame flows to.
+
+        When backwards=True, the result will include the parameter trace_frame,
+        since we are filtering on the parameter's callee.
+        """
+        query = (
             session.query(TraceFrame)
             .filter(TraceFrame.run_id == self.current_run_id)
             .filter(
                 TraceFrame.caller != TraceFrame.callee
             )  # skip recursive calls for now
-            .filter(TraceFrame.caller == trace_frame.callee)
-            .filter(TraceFrame.caller_port == trace_frame.callee_port)
             .filter(TraceFrame.kind == trace_frame.kind)
-            .join(TraceFrame.leaf_assoc)
+        )
+        if backwards:
+            query = query.filter(TraceFrame.callee == trace_frame.callee).filter(
+                TraceFrame.callee_port == trace_frame.callee_port
+            )
+        else:
+            query = query.filter(TraceFrame.caller == trace_frame.callee).filter(
+                TraceFrame.caller_port == trace_frame.callee_port
+            )
+
+        results = (
+            query.join(TraceFrame.leaf_assoc)
             .group_by(TraceFrame.id)
             .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
             .all()

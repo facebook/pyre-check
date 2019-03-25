@@ -434,7 +434,9 @@ class InteractiveTest(TestCase):
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
-            next_frames = self.interactive._next_trace_frames(session, trace_frames[0])
+            next_frames = self.interactive._next_forward_trace_frames(
+                session, trace_frames[0]
+            )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[1].id))
 
@@ -465,11 +467,40 @@ class InteractiveTest(TestCase):
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
-            next_frames = self.interactive._next_trace_frames(
+            next_frames = self.interactive._next_forward_trace_frames(
                 session, trace_frames_run2[0]
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames_run2[1].id))
+
+    def testNextTraceFramesBackwards(self):
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        trace_frames = self._basic_trace_frames()
+        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
+        ]
+
+        trace_frames[0].callee = "call3"
+        trace_frames[0].callee_port = "param1"
+        trace_frames[1].callee = "call3"
+        trace_frames[1].callee_port = "param1"
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(run)
+            session.add(sink)
+            session.commit()
+
+            self.interactive.setup()
+            self.interactive.sinks = {"sink1"}
+            next_frames = self.interactive._next_backward_trace_frames(
+                session, trace_frames[1]
+            )
+            self.assertEqual(len(next_frames), 2)
+            self.assertEqual(int(next_frames[0].id), int(trace_frames[0].id))
 
     def testNavigateTraceFrames(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
