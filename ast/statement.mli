@@ -194,7 +194,7 @@ module Define : sig
   val create_toplevel: qualifier: Reference.t option -> statements: statement_t list -> t
   val create_class_toplevel: qualifier: Reference.t -> statements: statement_t list -> t
 
-  val unqualified_name: t -> Reference.t
+  val unqualified_name: t -> Identifier.t
   val self_identifier: t -> Identifier.t
 
   val is_method: t -> bool

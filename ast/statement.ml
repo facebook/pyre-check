@@ -323,18 +323,17 @@ module Define = struct
 
   let is_dunder_method define =
     let name = unqualified_name define in
-    String.is_prefix ~prefix:"__" (Reference.show name) &&
-    String.is_suffix ~suffix:"__" (Reference.show name)
+    String.is_prefix ~prefix:"__" name &&
+    String.is_suffix ~suffix:"__" name
 
 
   let is_class_method ({ parent; _ } as define) =
     let valid_names =
       ["__init_subclass__"; "__new__"; "__class_getitem__"]
-      |> List.map ~f:Reference.create
     in
     Option.is_some parent &&
     (Set.exists Recognized.classmethod_decorators ~f:(has_decorator define) ||
-     List.mem valid_names (unqualified_name define) ~equal:Reference.equal)
+     List.mem valid_names (unqualified_name define) ~equal:String.equal)
 
 
   let is_class_property ({ parent; _ } as define) =
@@ -343,7 +342,7 @@ module Define = struct
 
 
   let is_constructor ?(in_test = false) ({ parent; _ } as define) =
-    let name = Reference.show (unqualified_name define) in
+    let name = unqualified_name define in
     if Option.is_none parent then
       false
     else
@@ -356,7 +355,7 @@ module Define = struct
 
 
   let is_property_setter define =
-    has_decorator define ((Reference.show (unqualified_name define)) ^ ".setter")
+    has_decorator define ((unqualified_name define) ^ ".setter")
 
 
   let is_untyped { return_annotation; _ } =
@@ -368,11 +367,11 @@ module Define = struct
 
 
   let is_toplevel define =
-    Reference.equal (unqualified_name define) (Reference.create "$toplevel")
+    unqualified_name define = "$toplevel"
 
 
   let is_class_toplevel define =
-    Reference.equal (unqualified_name define) (Reference.create "$class_toplevel")
+    unqualified_name define = "$class_toplevel"
 
 
   let contains_call { body; _ } name =
@@ -680,7 +679,7 @@ module Class = struct
   let find_define { Record.Class.body; _ } ~method_name =
     let is_define = function
       | { Node.value = Define define; location}
-        when Reference.equal (Define.unqualified_name define) (Reference.create method_name) ->
+        when Define.unqualified_name define = method_name ->
           Some { Node.value = define; location }
       | _ ->
           None
@@ -887,7 +886,7 @@ module Class = struct
                        Access.Call (Node.create_with_default_location [argument]);
                      ]))
             in
-            let attribute_name = Reference.last name |> Reference.show in
+            let attribute_name = Reference.last name in
             Identifier.SerializableMap.set
               map
               ~key:attribute_name

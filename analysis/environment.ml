@@ -983,7 +983,7 @@ let infer_protocol_edges
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
               | Define define ->
-                  let method_name = Reference.show (Define.unqualified_name define) in
+                  let method_name = Define.unqualified_name define in
                   if Set.mem protocol_methods method_name then
                     let classes =
                       match Map.find methods_to_implementing_classes method_name with

@@ -331,6 +331,7 @@ let messages ~concise ~define location kind =
   let pp_reference format reference =
     if concise then
       Reference.last reference
+      |> Reference.create
       |> Reference.pp_sanitized format
     else
       Reference.pp_sanitized format reference

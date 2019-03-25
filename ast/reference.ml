@@ -8,7 +8,7 @@ open Sexplib.Conv
 
 open Expression
 
-type t = string list
+type t = Identifier.t list
 [@@deriving compare, eq, sexp, hash]
 
 
@@ -122,20 +122,7 @@ let new_expression ?(location = Location.Reference.any) reference =
 
 
 let sanitized reference =
-  let sanitize name =
-    let stars, name =
-      if String.is_prefix name ~prefix:"**" then
-        "**", String.drop_prefix name 2
-      else if String.is_prefix name ~prefix:"*" then
-        "*", String.drop_prefix name 1
-      else
-        "", name
-    in
-    let sanitization_pattern = Str.regexp "^\\$.*\\$" in
-    Str.global_replace sanitization_pattern "" name
-    |> Format.asprintf "%s%s" stars
-  in
-  List.map ~f:sanitize reference
+  List.map ~f:Identifier.sanitized reference
 
 
 let sanitize_qualified reference =
@@ -218,5 +205,5 @@ let prefix reference =
 
 
 let last = function
-  | [] -> create ""
-  | reference -> List.last_exn reference |> create
+  | [] -> ""
+  | reference -> List.last_exn reference

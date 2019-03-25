@@ -129,10 +129,7 @@ let test_prefix _ =
   assert_prefix "a.b.c" (Some "a.b");
 
   let assert_last reference last =
-    assert_equal
-      ~printer:Reference.show
-      (Reference.create last)
-      (Reference.last (Reference.create reference))
+    assert_equal last (Reference.last (Reference.create reference))
   in
   assert_last "a" "a";
   assert_last "a.b" "b"

@@ -1608,7 +1608,7 @@ module State = struct
              Class.overrides
                definition
                ~resolution
-               ~name:(Reference.show (Statement.Define.unqualified_name define))
+               ~name:(Statement.Define.unqualified_name define)
              >>| fun overridden_attribute ->
              (* Check strengthening of postcondition. *)
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
@@ -1631,8 +1631,7 @@ module State = struct
                        Error.create
                          ~location
                          ~kind:(Error.InconsistentOverride {
-                             overridden_method =
-                               Reference.show (Statement.Define.unqualified_name define);
+                             overridden_method = Statement.Define.unqualified_name define;
                              parent =
                                Attribute.parent overridden_attribute
                                |> Type.show
@@ -1687,8 +1686,7 @@ module State = struct
                                Error.create
                                  ~location
                                  ~kind:(Error.InconsistentOverride {
-                                     overridden_method =
-                                       Reference.show (Statement.Define.unqualified_name define);
+                                     overridden_method = Statement.Define.unqualified_name define;
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
@@ -1737,8 +1735,7 @@ module State = struct
                            Error.create
                              ~location
                              ~kind:(Error.InconsistentOverride {
-                                 overridden_method =
-                                   Reference.show (Statement.Define.unqualified_name define);
+                                 overridden_method = Statement.Define.unqualified_name define;
                                  parent =
                                    Attribute.parent overridden_attribute
                                    |> Type.show

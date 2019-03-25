@@ -228,10 +228,7 @@ let create_overrides ~environment ~source =
   let resolution = TypeCheck.resolution environment () in
   let class_method_overrides class_node =
     let get_method_overrides class_ child_method =
-      let method_name =
-        Statement.Define.unqualified_name (Annotated.Method.define child_method)
-        |> Reference.show
-      in
+      let method_name = Statement.Define.unqualified_name (Annotated.Method.define child_method) in
       Annotated.Class.overrides
         class_
         ~name:method_name

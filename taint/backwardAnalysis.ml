@@ -25,7 +25,7 @@ end
 
 
 let initial_taint define =
-  match Reference.show (Reference.last define.Define.name) with
+  match Reference.last define.Define.name with
   | "__init__" ->
       begin
         (* Constructor. Make self the return value *)

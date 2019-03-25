@@ -30,10 +30,10 @@ val equal_sanitized: t -> t -> bool
 val pp_sanitized: Format.formatter -> t -> unit
 val show_sanitized: t -> string
 
-val single: t -> string option
+val single: t -> Identifier.t option
 val is_prefix: prefix: t -> t -> bool
 val is_suffix: suffix: t -> t -> bool
 val is_strict_prefix: prefix: t -> t -> bool
 val drop_prefix: prefix: t -> t -> t
 val prefix: t -> t option
-val last: t -> t
+val last: t -> Identifier.t

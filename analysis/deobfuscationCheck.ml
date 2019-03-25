@@ -500,7 +500,7 @@ let run
           access
     in
     let sanitize_reference reference =
-      let last = Reference.show (Reference.last reference) in
+      let last = Reference.last reference in
       if String.length last > 15 then
         let replacement = generate_identifier () in
         Hashtbl.set replacements ~key:last ~data:replacement;

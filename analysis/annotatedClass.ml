@@ -96,7 +96,7 @@ module Method = struct
 
 
   let name { define; _ } =
-    Define.unqualified_name define |> Reference.show
+    Define.unqualified_name define
 
 
   let define { define; _ } =
