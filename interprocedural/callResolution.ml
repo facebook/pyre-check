@@ -63,7 +63,8 @@ let is_global ~resolution access =
     when not (is_local head)
       && head <> "super"
       && head <> "type" ->
-      Resolution.global resolution access
+      Reference.from_access access
+      |> Resolution.global resolution
       |> Option.is_some
       && not (is_class ~resolution (Access.prefix access))
   | _ -> false

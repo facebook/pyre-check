@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Pyre
 
 
@@ -14,7 +13,7 @@ type index = {
   function_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   class_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
-  global_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  global_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   dependent_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
 }
 
@@ -29,7 +28,7 @@ module type Handler = sig
   val add_function_key: handle: File.Handle.t -> Reference.t -> unit
   val add_class_key: handle: File.Handle.t -> Type.t -> unit
   val add_alias_key: handle: File.Handle.t -> Type.t -> unit
-  val add_global_key: handle: File.Handle.t -> Access.t -> unit
+  val add_global_key: handle: File.Handle.t -> Reference.t -> unit
   val add_dependent_key: handle: File.Handle.t -> Reference.t -> unit
 
   val add_dependent: handle: File.Handle.t -> Reference.t -> unit
@@ -38,7 +37,7 @@ module type Handler = sig
   val get_function_keys: handle: File.Handle.t -> Reference.t list
   val get_class_keys: handle: File.Handle.t -> Type.t list
   val get_alias_keys: handle: File.Handle.t -> Type.t list
-  val get_global_keys: handle: File.Handle.t -> Access.t list
+  val get_global_keys: handle: File.Handle.t -> Reference.t list
   val get_dependent_keys: handle: File.Handle.t -> Reference.t list
 
   val clear_keys_batch: File.Handle.t list -> unit
@@ -91,7 +90,7 @@ let handler {
           Hashtbl.set
             global_keys
             ~key:handle
-            ~data:(Access.Hash_set.of_list [global])
+            ~data:(Reference.Hash_set.of_list [global])
       | Some hash_set ->
           Hash_set.add hash_set global
 

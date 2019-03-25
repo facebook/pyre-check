@@ -17,7 +17,7 @@ type t = {
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Resolution.global Access.Table.t;
+  globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
 }
 
@@ -25,7 +25,7 @@ module type Handler = sig
   val register_dependency: handle: File.Handle.t -> dependency: Reference.t -> unit
   val register_global
     :  handle: File.Handle.t
-    -> access: Access.t
+    -> reference: Reference.t
     -> global: Resolution.global
     -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
@@ -51,7 +51,7 @@ module type Handler = sig
 
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: Access.t -> Resolution.global option
+  val globals: Reference.t -> Resolution.global option
   val dependencies: Reference.t -> File.Handle.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
@@ -170,9 +170,9 @@ let handler
       DependencyHandler.add_dependent ~handle dependency
 
 
-    let register_global ~handle ~access ~global =
-      DependencyHandler.add_global_key ~handle access;
-      Hashtbl.set ~key:access ~data:global globals
+    let register_global ~handle ~reference ~global =
+      DependencyHandler.add_global_key ~handle reference;
+      Hashtbl.set ~key:reference ~data:global globals
 
 
     let set_class_definition ~primitive ~definition =
@@ -296,15 +296,16 @@ let handler
         Annotation.create_immutable ~global:true Type.string
         |> Node.create_with_default_location
       in
-      Hashtbl.set globals ~key:(qualifier @ (Access.create "__file__")) ~data:string;
-      Hashtbl.set globals ~key:(qualifier @ (Access.create "__name__")) ~data:string;
+      let global_key = Reference.create ~prefix:(Reference.from_access qualifier) in
+      Hashtbl.set globals ~key:(global_key "__file__") ~data:string;
+      Hashtbl.set globals ~key:(global_key "__name__") ~data:string;
       let dictionary_annotation =
         Type.dictionary ~key:Type.string ~value:Type.Any
         |> Annotation.create_immutable ~global:true
         |> Node.create_with_default_location
       in
       Hashtbl.set globals
-        ~key:(qualifier @ (Access.create "__dict__"))
+        ~key:(global_key "__dict__")
         ~data:dictionary_annotation;
 
       if not is_registered_empty_stub then
@@ -624,12 +625,6 @@ let register_globals
     Reference.sanitize_qualified reference
   in
 
-  let qualified_access access =
-    Reference.from_access access
-    |> qualified_reference
-    |> Reference.access
-  in
-
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
@@ -653,7 +648,7 @@ let register_globals
             in
             Handler.register_global
               ~handle
-              ~access:(qualified_reference name |> Reference.access)
+              ~reference:(qualified_reference name)
               ~global
         | _ ->
             ()
@@ -694,16 +689,15 @@ let register_globals
                   annotation, false
             in
             let rec register_assign ~target ~annotation =
-              let register ~location access annotation =
-                let qualifier = Reference.access qualifier in
-                let access = qualified_access (qualifier @ access) in
-                match Access.drop_prefix ~prefix:qualifier access with
-                | [Access.Identifier _] ->
+              let register ~location reference annotation =
+                let reference = qualified_reference (Reference.combine qualifier reference) in
+                (* Don't register attributes or chained accesses as globals *)
+                if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
                     let register_global global =
                       Node.create ~location global
-                      |> (fun global -> Handler.register_global ~handle ~access ~global)
+                      |> (fun global -> Handler.register_global ~handle ~reference ~global)
                     in
-                    let exists = Option.is_some (Handler.globals access) in
+                    let exists = Option.is_some (Handler.globals reference) in
                     if explicit then
                       Annotation.create_immutable ~global:true annotation
                       |> register_global
@@ -716,13 +710,10 @@ let register_globals
                       |> register_global
                     else
                       ()
-                | _ ->
-                    (* Don't register attributes or chained accesses as globals *)
-                    ()
               in
               match target.Node.value, annotation with
               | Access (SimpleAccess access), _ ->
-                  register ~location:target.Node.location access annotation
+                  register ~location:target.Node.location (Reference.from_access access) annotation
               | Tuple elements, Type.Tuple (Type.Bounded parameters)
                 when List.length elements = List.length parameters ->
                   List.map2_exn
@@ -858,7 +849,8 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
-    >>| (fun global -> Handler.register_global ~handle ~access:key ~global)
+    >>| (fun global ->
+        Handler.register_global ~handle ~reference:(Reference.from_access key) ~global)
     |> ignore
   in
   CollectCallables.visit Access.Map.empty source
@@ -1099,7 +1091,7 @@ module Builder = struct
     let modules = Access.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
-    let globals = Access.Table.create () in
+    let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
 
     (* Register dummy module for `builtins` and `future.builtins`. *)
@@ -1129,9 +1121,9 @@ module Builder = struct
       Annotation.create_immutable ~global:true annotation
       |> Node.create_with_default_location
     in
-    Hashtbl.set globals ~key:(Access.create "None") ~data:(annotation Type.none);
+    Hashtbl.set globals ~key:(Reference.create "None") ~data:(annotation Type.none);
     Hashtbl.set globals
-      ~key:[Access.Identifier ("...")]
+      ~key:(Reference.create "...")
       ~data:(annotation Type.Any);
 
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded
@@ -1305,7 +1297,7 @@ module Builder = struct
       let global (key, { Node.value; _ }) =
         Format.asprintf
           "  %a -> %a"
-          Access.pp key
+          Reference.pp key
           Annotation.pp value
       in
       Hashtbl.to_alist globals

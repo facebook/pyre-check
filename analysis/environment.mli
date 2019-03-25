@@ -14,7 +14,7 @@ type t = {
   modules: Module.t Access.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
-  globals: Resolution.global Access.Table.t;
+  globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
 }
 
@@ -26,7 +26,7 @@ module type Handler = sig
   val register_dependency: handle: File.Handle.t -> dependency: Reference.t -> unit
   val register_global
     :  handle: File.Handle.t
-    -> access: Access.t
+    -> reference: Reference.t
     -> global: Resolution.global
     -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
@@ -52,7 +52,7 @@ module type Handler = sig
 
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
-  val globals: Access.t -> Resolution.global option
+  val globals: Reference.t -> Resolution.global option
   val dependencies: Reference.t -> File.Handle.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option

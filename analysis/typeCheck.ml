@@ -2989,7 +2989,9 @@ module State = struct
                        insufficiently_annotated &&
                        not is_type_alias ->
                     let global_location =
-                      Resolution.global resolution (Expression.Access.delocalize access)
+                      Reference.from_access access
+                      |> Reference.delocalize
+                      |> Resolution.global resolution
                       >>| Node.location
                       |> Option.value ~default:location
                     in

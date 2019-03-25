@@ -59,7 +59,7 @@ module ExpressionVisitor = struct
     let resolve ~expression =
       try
         let annotation = Resolution.resolve resolution expression in
-        if (Type.equal annotation Type.Top) or (Type.is_unbound annotation) then
+        if (Type.equal annotation Type.Top) || (Type.is_unbound annotation) then
           None
         else
           Some annotation
@@ -136,7 +136,8 @@ module ExpressionVisitor = struct
         (* Definitions. *)
         let filter_definition ~prefix ~element =
           let find_definition access =
-            Resolution.global resolution access
+            Reference.from_access access
+            |> Resolution.global resolution
             >>| Node.location
             >>= fun location ->
             if Location.equal location Location.Reference.any then None else Some location

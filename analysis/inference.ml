@@ -491,7 +491,7 @@ let run
       let add_error (changed, globals_added_sofar) error =
         let module Handler = (val environment : Environment.Handler) in
         let add_missing_annotation_error ~access ~name ~location ~annotation =
-          match Handler.globals name with
+          match Handler.globals (Reference.from_access name) with
           | Some { Node.value; _ }
             when not (Type.is_unknown (Annotation.annotation value)) ->
               changed, globals_added_sofar
@@ -500,7 +500,7 @@ let run
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~handle ~access ~global;
+              Handler.register_global ~handle ~reference:(Reference.from_access access) ~global;
               true, error :: globals_added_sofar
         in
         (* TODO(T31680236): use inferred annotations in global fixpoint. *)

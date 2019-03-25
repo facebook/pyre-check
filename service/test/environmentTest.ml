@@ -5,10 +5,8 @@
 
 
 open Core
-open Ast.Expression
 open Analysis
 open OUnit2
-open Test
 
 module Handler = Service.Environment.SharedHandler.DependencyHandler
 
@@ -66,8 +64,8 @@ let test_function_keys _ =
 
 let test_global_keys _ =
   let assert_global_keys keys ~expected =
-    let keys = List.map keys ~f:Access.create in
-    let expected = List.map expected ~f:Access.create in
+    let keys = List.map keys ~f:Ast.Reference.create in
+    let expected = List.map expected ~f:Ast.Reference.create in
     assert_keys ~add:Handler.add_global_key ~get:Handler.get_global_keys keys expected
   in
   assert_global_keys ["a"] ~expected:["a"];
@@ -89,13 +87,13 @@ let test_normalize_dependencies _ =
     (Handler.get_function_keys ~handle)
     [reference "f"; reference "g"; reference "h"];
 
-  Handler.add_global_key ~handle (!+"b");
-  Handler.add_global_key ~handle (!+"c");
-  Handler.add_global_key ~handle (!+"a");
+  Handler.add_global_key ~handle (reference "b");
+  Handler.add_global_key ~handle (reference "c");
+  Handler.add_global_key ~handle (reference "a");
   Handler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Access.show)
-    (Handler.get_global_keys ~handle) [!+"a"; !+"b"; !+"c"];
+    ~printer:(List.to_string ~f:Ast.Reference.show)
+    (Handler.get_global_keys ~handle) [reference "a"; reference "b"; reference "c"];
 
   Handler.add_dependent_key ~handle (reference "first.module");
   Handler.add_dependent_key ~handle (reference "second.module");

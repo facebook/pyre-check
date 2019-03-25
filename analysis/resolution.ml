@@ -40,7 +40,7 @@ type t = {
   resolve: resolution: t -> Expression.t -> Type.t;
   aliases: Type.t -> Type.t option;
 
-  global: Access.t -> global option;
+  global: Reference.t -> global option;
   module_definition: Access.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
   class_representation: Type.t -> class_representation option;
@@ -114,6 +114,7 @@ let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
       Some result
   | _ when global_fallback ->
       Access.delocalize access
+      |> Reference.from_access
       |> global
       >>| Node.value
   | _ ->
@@ -130,6 +131,7 @@ let is_global { annotations; global; _ } ~access =
       Annotation.is_global annotation
   | _ ->
       Access.delocalize access
+      |> Reference.from_access
       |> global
       |> Option.is_some
 

@@ -1215,7 +1215,7 @@ let test_decode_serialized_ocaml_values context =
       Request.TypeQueryRequest
         (TypeQuery.DecodeOcamlValues [
             {
-              TypeQuery.serialized_key = Globals.serialize_key (!+"string_global");
+              TypeQuery.serialized_key = Globals.serialize_key (Reference.create "string_global");
               serialized_value =
                 Annotation.create Type.string
                 |> Node.create_with_default_location
@@ -1231,7 +1231,7 @@ let test_decode_serialized_ocaml_values context =
                   TypeQuery.decoded = [
                     {
                       TypeQuery.serialized_key =
-                        Globals.serialize_key (!+"string_global");
+                        Globals.serialize_key (Reference.create "string_global");
                       kind = "Global";
                       actual_key = "string_global";
                       actual_value = Some "(str: m)";

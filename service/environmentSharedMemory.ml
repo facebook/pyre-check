@@ -6,7 +6,6 @@
 open Core
 open Analysis
 open Ast
-open Statement
 
 module SharedMemory = Memory
 
@@ -45,7 +44,7 @@ module FunctionKeyValue = struct
 end
 
 module GlobalKeyValue = struct
-  type t = Access.t list
+  type t = Reference.t list
   let prefix = Prefix.make ()
   let description = "Global keys"
 end
@@ -145,7 +144,7 @@ module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
 
 module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 
-module Globals = Memory.WithCache (Ast.SharedMemory.AccessKey) (GlobalValue)
+module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 

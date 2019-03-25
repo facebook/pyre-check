@@ -81,6 +81,25 @@ let test_new_expression _ =
     })
 
 
+let test_delocalize _ =
+  let assert_delocalize source expected =
+    assert_equal
+      ~printer:Reference.show
+      ~cmp:Reference.equal
+      (Reference.create expected)
+      (Reference.create source |> Reference.delocalize)
+  in
+
+  assert_delocalize "constant" "constant";
+  assert_delocalize "$local_qualifier$variable" "qualifier.variable";
+  assert_delocalize "$local_base64$b64encode" "base64.b64encode";
+  assert_delocalize "$local_module?qualifier$variable" "module.qualifier.variable";
+
+  (* Don't attempt to delocalize qualified expressions. *)
+  assert_delocalize "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable"
+
+
+
 let test_prefix _ =
   let check_prefix prefix reference =
     Reference.is_prefix ~prefix:(Reference.create prefix) (Reference.create reference)
@@ -140,6 +159,7 @@ let () =
     "create">::test_create;
     "expression">::test_expression;
     "new_expression">::test_new_expression;
+    "delocalize">::test_delocalize;
     "prefix">::test_prefix;
   ]
   |> Test.run

@@ -33,7 +33,7 @@ val create
   -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> aliases: (Type.t -> Type.t option)
-  -> global: (Access.t -> global option)
+  -> global: (Reference.t -> global option)
   -> module_definition: (Access.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
   -> class_representation: (Type.t -> class_representation option)
@@ -69,7 +69,7 @@ val resolve_mutable_literals
   -> expected:Type.t
   -> Type.t
 
-val global: t -> Access.t -> global option
+val global: t -> Reference.t -> global option
 
 val module_definition: t -> Access.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option

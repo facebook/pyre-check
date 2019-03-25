@@ -597,7 +597,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = GlobalValue.description;
-                        actual_key = Expression.Access.show key;
+                        actual_key = Reference.show key;
                         actual_value =
                           value
                           >>| Node.value
@@ -647,7 +647,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Expression.Access.show;
+                          >>| List.to_string ~f:Reference.show;
                       }
                   | Ok (AliasKeys.Decoded (key, value)) ->
                       Some {
@@ -852,6 +852,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               Some annotation
         in
         begin
+          let function_name = Reference.from_access function_name in
           match Resolution.global resolution function_name with
           | Some { Node.value; _ } ->
               begin
@@ -887,14 +888,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     TypeQuery.Error
                       (Format.sprintf
                          "%s is not a callable"
-                         (Expression.Access.show function_name))
+                         (Reference.show function_name))
               end
 
           | None ->
               TypeQuery.Error
                 (Format.sprintf
                    "No signature found for %s"
-                   (Expression.Access.show function_name))
+                   (Reference.show function_name))
         end
 
     | TypeQuery.Superclasses annotation ->

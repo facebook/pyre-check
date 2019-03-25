@@ -268,7 +268,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match GlobalKeys.get handle with
           | Some keys ->
               GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton handle);
-              GlobalKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+              GlobalKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
           | None ->
               ()
         end;
@@ -340,10 +340,10 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependencyHandler.add_dependent ~handle dependency
 
 
-  let register_global ~handle ~access ~global =
-    DependencyHandler.add_global_key ~handle access;
-    Globals.remove_batch (Globals.KeySet.singleton access);
-    Globals.add access global
+  let register_global ~handle ~reference ~global =
+    DependencyHandler.add_global_key ~handle reference;
+    Globals.remove_batch (Globals.KeySet.singleton reference);
+    Globals.add reference global
 
 
   let set_class_definition ~primitive ~definition =
@@ -391,7 +391,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
     in
     List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
-    |> List.map ~f:Reference.access
     |> fun keys ->
     begin
       (* We add a global name for each function definition as well. *)

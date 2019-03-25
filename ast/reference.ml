@@ -121,6 +121,26 @@ let new_expression ?(location = Location.Reference.any) reference =
   |> Node.create ~location
 
 
+let delocalize reference =
+  match reference with
+  | head :: tail when String.is_prefix ~prefix:"$local_" head ->
+      let qualifier =
+        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
+        if Str.string_match local_qualifier_pattern head 0 then
+          Str.matched_group 1 head
+          |> String.substr_replace_all ~pattern:"?" ~with_:"."
+          |> create
+        else
+          begin
+            Log.debug "Unable to extract qualifier from %s" head;
+            []
+          end
+      in
+      qualifier @ [Identifier.sanitized head] @ tail
+  | _ ->
+      reference
+
+
 let sanitized reference =
   List.map ~f:Identifier.sanitized reference
 
@@ -150,6 +170,10 @@ let show_sanitized reference =
 let single = function
   | [single] -> Some single
   | _ -> None
+
+
+let length =
+  List.length
 
 
 let rec is_prefix ~prefix reference =

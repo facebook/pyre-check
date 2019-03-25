@@ -545,9 +545,9 @@ let test_register_globals _ =
   let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
 
-  let assert_global access expected =
+  let assert_global reference expected =
     let actual =
-      !+access
+      Reference.create reference
       |> Handler.globals
       >>| Node.value
       >>| Annotation.annotation
@@ -770,7 +770,7 @@ let test_populate _ =
       ~cmp:(Option.equal (Node.equal Annotation.equal))
       ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
       (Some (Node.create_with_default_location expected))
-      (global environment (parse_single_access actual))
+      (global environment (Reference.create actual))
   in
 
   let assert_global =
