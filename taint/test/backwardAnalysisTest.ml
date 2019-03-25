@@ -1542,6 +1542,28 @@ let test_constructor_argument_tito _ =
     ]
 
 
+let test_decorator _ =
+  assert_taint
+    {|
+      @$strip_first_parameter
+      def decorated(self, into_sink):
+        __testSink(into_sink)
+
+      def using_decorated(into_decorated):
+        decorated(into_decorated)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "into_sink"; sinks = [Taint.Sinks.Test] }]
+        "qualifier.decorated";
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "into_decorated"; sinks = [Taint.Sinks.Test] }]
+        "qualifier.using_decorated";
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -1568,5 +1590,6 @@ let () =
     "test_named_arguments">::test_named_arguments;
     "test_actual_parameter_matching">::test_actual_parameter_matching;
     "test_constructor_argument_tito">::test_constructor_argument_tito;
+    "decorator">::test_decorator;
   ]
   |> TestHelper.run_with_taint_models

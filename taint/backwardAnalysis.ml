@@ -603,10 +603,15 @@ let extract_tito_and_sink_models parameters entry_taint =
   List.fold normalized_parameters ~f:split_and_simplify ~init:TaintResult.Backward.empty
 
 
-let run
-    ~environment
-    ~define:({ Node.value = { Define.parameters; name; _ }; _ } as define)
-    ~existing_model:_ =
+let run ~environment ~define ~existing_model:_ =
+  let ({ Node.value = { Define.name; parameters; _ }; _ } as define) =
+    (* Apply decorators to make sure we match parameters up correctly. *)
+    let resolution = TypeCheck.resolution environment () in
+    Node.map
+      define
+      ~f:(fun define -> Annotated.Callable.apply_decorators ~define ~resolution)
+  in
+
   let module AnalysisInstance =
     AnalysisInstance(struct
       let definition = define
