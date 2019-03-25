@@ -456,6 +456,29 @@ set_frame(ID)   select a trace frame to explore
 
             navigation = self._navigate_trace_frames(session, [trace_frame])
 
+        # We need to "fake" another node for the selected trace frame.
+        # Suppose we select a trace frame (A->B) and the generated navigation
+        #   is (A->B), (B->C), (C->D) with D as leaf.
+        # When we display traces, we only use the callee, so this trace would
+        #   look like B->C->D. If we also want to see A->, then we need to add a
+        #   placeholder.
+        # Set caller to "unused", since _create_trace_tuples checks presence
+        #   of a caller to determine insertion of "Missing frame".
+        first_trace_frame = navigation[0][0]
+        navigation.insert(
+            0,
+            (
+                TraceFrame(
+                    caller="unused",
+                    callee=first_trace_frame.caller,
+                    callee_port=first_trace_frame.caller_port,
+                    filename=first_trace_frame.filename,
+                    callee_location=first_trace_frame.callee_location,
+                ),
+                1,
+            ),
+        )
+
         self.current_trace_frame_index = 0
         if trace_frame.kind == TraceKind.POSTCONDITION:
             self.current_trace_frame_index = len(navigation) - 1

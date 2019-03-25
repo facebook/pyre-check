@@ -713,8 +713,9 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable] [port] [location]",
-                " --> 1    call2      param0 file.py:1|1|1",
-                "     2    leaf       sink   file.py:1|2|2",
+                " --> 1    call1      root   file.py:1|1|1",
+                "     2    call2      param0 file.py:1|1|1",
+                "     3    leaf       sink   file.py:1|2|2",
                 "",
             ],
         )
