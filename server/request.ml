@@ -607,7 +607,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = DependentValue.description;
-                        actual_key = Expression.Access.show key;
+                        actual_key = Reference.show key;
                         actual_value =
                           value
                           >>| File.Handle.Set.Tree.to_list
@@ -629,7 +629,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Expression.Access.show;
+                          >>| List.to_string ~f:Reference.show;
                       }
                   | Ok (ClassKeys.Decoded (key, value)) ->
                       Some {
@@ -665,7 +665,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Expression.Access.show;
+                          >>| List.to_string ~f:Reference.show;
                       }
                   | Ok (OrderIndices.Decoded (key, value)) ->
                       Some {
@@ -1156,10 +1156,7 @@ let process_type_check_files
             |> List.exists ~f:was_starred_import
           in
           if signature_hash_changed or has_starred_import () then
-            let qualifier =
-              Ast.Source.qualifier ~handle
-              |> Reference.access
-            in
+            let qualifier = Ast.Source.qualifier ~handle in
             Handler.dependencies qualifier
           else
             None

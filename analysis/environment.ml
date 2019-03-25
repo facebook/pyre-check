@@ -22,7 +22,7 @@ type t = {
 }
 
 module type Handler = sig
-  val register_dependency: handle: File.Handle.t -> dependency: Access.t -> unit
+  val register_dependency: handle: File.Handle.t -> dependency: Reference.t -> unit
   val register_global
     :  handle: File.Handle.t
     -> access: Access.t
@@ -52,7 +52,7 @@ module type Handler = sig
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Access.t -> Resolution.global option
-  val dependencies: Access.t -> File.Handle.Set.Tree.t option
+  val dependencies: Reference.t -> File.Handle.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
 
@@ -165,7 +165,7 @@ let handler
       Log.log
         ~section:`Dependencies
         "Adding dependency from %a to %a"
-        Access.pp dependency
+        Reference.pp dependency
         File.Handle.pp handle;
       DependencyHandler.add_dependent ~handle dependency
 
@@ -303,7 +303,9 @@ let handler
         |> Annotation.create_immutable ~global:true
         |> Node.create_with_default_location
       in
-      Hashtbl.set globals ~key:(qualifier @ (Access.create "__dict__")) ~data:dictionary_annotation;
+      Hashtbl.set globals
+        ~key:(qualifier @ (Access.create "__dict__"))
+        ~data:dictionary_annotation;
 
       if not is_registered_empty_stub then
         Hashtbl.set
@@ -775,12 +777,15 @@ let register_dependencies (module Handler: Handler) source =
                 match from with
                 (* If analyzing from x import y, only add x to the dependencies.
                    Otherwise, add all dependencies. *)
-                | None -> imports |> List.map ~f:(fun { Import.name; _ } -> name)
-                | Some base_module -> [base_module]
+                | None ->
+                    imports
+                    |> List.map ~f:(fun { Import.name; _ } -> Reference.from_access name)
+                | Some base_module -> [Reference.from_access base_module]
               in
-              let qualify_builtins = function
-                | [Access.Identifier "builtins"] -> []
-                | qualifier -> qualifier
+              let qualify_builtins import =
+                match Reference.single import with
+                | Some "builtins" -> Reference.empty
+                | _ -> import
               in
               List.map imports ~f:qualify_builtins
             in
@@ -808,7 +813,7 @@ let register_functions (module Handler: Handler) resolution ({ Source.handle; _ 
             callables
             ({ Define.name; _ } as define) =
 
-          Handler.DependencyHandler.add_function_key ~handle (Reference.access name);
+          Handler.DependencyHandler.add_function_key ~handle name;
 
           (* Register callable global. *)
           let callable =

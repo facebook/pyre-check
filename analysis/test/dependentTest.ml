@@ -7,7 +7,6 @@ open OUnit2
 
 open Analysis
 open Ast
-open Expression
 
 open Test
 
@@ -22,12 +21,7 @@ let populate source =
   |> Environment.handler
 
 
-let access names =
-  List.concat_map names ~f:Access.create
-
-
-let primitive name =
-  Type.Primitive name
+let primitive name = Type.Primitive name
 
 
 let test_index _ =
@@ -53,13 +47,13 @@ let test_index _ =
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys (primitive "baz.baz");
-  assert_table_contains_key function_keys (access ["foo"]);
+  assert_table_contains_key function_keys (Reference.create "foo");
   assert_table_contains_key alias_keys (primitive "_T")
 
 
 let add_dependent table handle dependent =
   let handle = File.Handle.create handle in
-  let source = Source.qualifier ~handle |> Reference.access in
+  let source = Source.qualifier ~handle in
   let dependent = File.Handle.create dependent in
   let update entry =
     match entry with
@@ -72,7 +66,7 @@ let add_dependent table handle dependent =
 
 
 let get_dependencies (module Handler: Environment.Handler) handle =
-  Handler.dependencies (Source.qualifier ~handle |> Reference.access)
+  Handler.dependencies (Source.qualifier ~handle)
 
 
 let assert_dependencies ~environment ~handles ~expected function_to_test =
@@ -90,7 +84,7 @@ let assert_dependencies ~environment ~handles ~expected function_to_test =
 
 
 let test_dependent_of_list _ =
-  let table = Access.Table.create () in
+  let table = Reference.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
@@ -118,7 +112,7 @@ let test_dependent_of_list _ =
 
 
 let test_dependent_of_list_duplicates _ =
-  let table = Access.Table.create () in
+  let table = Reference.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
@@ -137,7 +131,7 @@ let test_dependent_of_list_duplicates _ =
 
 
 let test_transitive_dependent_of_list _ =
-  let table = Access.Table.create () in
+  let table = Reference.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
@@ -162,7 +156,7 @@ let test_transitive_dependent_of_list _ =
 
 
 let test_transitive_dependents _ =
-  let table = Access.Table.create () in
+  let table = Reference.Table.create () in
   let environment = Environment.Builder.create () in
   let dependencies =
     { environment.Environment.dependencies with Dependencies.dependents = table }
@@ -199,7 +193,7 @@ let test_normalize _ =
     let add_dependent (left, right) =
       Handler.DependencyHandler.add_dependent
         ~handle:(File.Handle.create (left ^ ".py"))
-        (!+right)
+        (Reference.create right)
     in
     List.iter edges ~f:add_dependent;
     let all_handles =
@@ -225,7 +219,7 @@ let test_normalize _ =
       assert_equal
         ~printer
         (Some expected)
-        (Handler.DependencyHandler.dependents (!+node))
+        (Handler.DependencyHandler.dependents (Reference.create node))
     in
     List.iter expected ~f:assert_dependents_equal
   in

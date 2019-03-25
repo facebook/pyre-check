@@ -1246,7 +1246,8 @@ let test_decode_serialized_ocaml_values context =
       Request.TypeQueryRequest
         (TypeQuery.DecodeOcamlValues [
             {
-              TypeQuery.serialized_key = Dependents.serialize_key (!+"module");
+              TypeQuery.serialized_key =
+                Dependents.serialize_key (Reference.create "module");
               serialized_value =
                 ["dependentA.py"; "dependentB.py"]
                 |> List.map ~f:File.Handle.create
@@ -1262,7 +1263,8 @@ let test_decode_serialized_ocaml_values context =
                 {
                   TypeQuery.decoded = [
                     {
-                      TypeQuery.serialized_key = Dependents.serialize_key (!+"module");
+                      TypeQuery.serialized_key =
+                        Dependents.serialize_key (Reference.create "module");
                       kind = "Dependent";
                       actual_key = "module";
                       actual_value = Some "(dependentA.py dependentB.py)";

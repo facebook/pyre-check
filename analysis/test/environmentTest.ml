@@ -1426,7 +1426,7 @@ let test_import_dependencies context =
     in
     let dependencies handle =
       let handle = File.Handle.create handle in
-      Environment.dependencies environment (Source.qualifier ~handle |> Reference.access)
+      Environment.dependencies environment (Source.qualifier ~handle)
       >>| String.Set.Tree.map ~f:File.Handle.show
       >>| String.Set.Tree.to_list
     in
@@ -1458,7 +1458,7 @@ let test_register_dependencies _ =
     (parse ~handle:"test.py" source);
   let dependencies handle =
     let handle = File.Handle.create handle in
-    Environment.dependencies (module Handler) (Source.qualifier ~handle |> Reference.access)
+    Environment.dependencies (module Handler) (Source.qualifier ~handle)
     >>| String.Set.Tree.map ~f:File.Handle.show
     >>| String.Set.Tree.to_list
   in
@@ -1489,7 +1489,7 @@ let test_purge _ =
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   let dependencies handle =
     let handle = File.Handle.create handle in
-    Handler.dependencies (Source.qualifier ~handle |> Reference.access)
+    Handler.dependencies (Source.qualifier ~handle)
     >>| String.Set.Tree.map ~f:File.Handle.show
     >>| String.Set.Tree.to_list
   in

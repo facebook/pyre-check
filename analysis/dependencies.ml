@@ -11,35 +11,35 @@ open Pyre
 
 
 type index = {
-  function_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  function_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   class_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   global_keys: (Access.t Hash_set.t) File.Handle.Table.t;
-  dependent_keys: (Access.t Hash_set.t) File.Handle.Table.t;
+  dependent_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
 }
 
 
 type t = {
   index: index;
-  dependents: (File.Handle.Set.t) Access.Table.t;
+  dependents: (File.Handle.Set.t) Reference.Table.t;
 }
 
 
 module type Handler = sig
-  val add_function_key: handle: File.Handle.t -> Access.t -> unit
+  val add_function_key: handle: File.Handle.t -> Reference.t -> unit
   val add_class_key: handle: File.Handle.t -> Type.t -> unit
   val add_alias_key: handle: File.Handle.t -> Type.t -> unit
   val add_global_key: handle: File.Handle.t -> Access.t -> unit
-  val add_dependent_key: handle: File.Handle.t -> Access.t -> unit
+  val add_dependent_key: handle: File.Handle.t -> Reference.t -> unit
 
-  val add_dependent: handle: File.Handle.t -> Access.t -> unit
-  val dependents: Access.t -> File.Handle.Set.Tree.t option
+  val add_dependent: handle: File.Handle.t -> Reference.t -> unit
+  val dependents: Reference.t -> File.Handle.Set.Tree.t option
 
-  val get_function_keys: handle: File.Handle.t -> Access.t list
+  val get_function_keys: handle: File.Handle.t -> Reference.t list
   val get_class_keys: handle: File.Handle.t -> Type.t list
   val get_alias_keys: handle: File.Handle.t -> Type.t list
   val get_global_keys: handle: File.Handle.t -> Access.t list
-  val get_dependent_keys: handle: File.Handle.t -> Access.t list
+  val get_dependent_keys: handle: File.Handle.t -> Reference.t list
 
   val clear_keys_batch: File.Handle.t list -> unit
 
@@ -58,7 +58,7 @@ let handler {
           Hashtbl.set
             function_keys
             ~key:handle
-            ~data:(Access.Hash_set.of_list [name])
+            ~data:(Reference.Hash_set.of_list [name])
       | Some hash_set ->
           Hash_set.add hash_set name
 
@@ -102,7 +102,7 @@ let handler {
           Hashtbl.set
             dependent_keys
             ~key:handle
-            ~data:(Access.Hash_set.of_list [dependent])
+            ~data:(Reference.Hash_set.of_list [dependent])
       | Some hash_set ->
           Hash_set.add hash_set dependent
 
@@ -120,8 +120,8 @@ let handler {
     let dependents_table = dependents
 
 
-    let dependents access =
-      Hashtbl.find dependents access
+    let dependents reference =
+      Hashtbl.find dependents reference
       >>| Set.to_tree
 
 
@@ -175,7 +175,7 @@ let handler {
             ()
       in
       List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
-      |> List.dedup_and_sort ~compare:Expression.Access.compare
+      |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize
   end: Handler)
 
@@ -189,7 +189,7 @@ let create () =
     dependent_keys = File.Handle.Table.create ();
   }
   in
-  { index = index; dependents = Access.Table.create () }
+  { index = index; dependents = Reference.Table.create () }
 
 
 let copy {
@@ -248,24 +248,24 @@ let to_dot ~get_dependencies ~handle =
   let nodes, edges =
     let rec iterate ~worklist ~visited ~result:((nodes, edges) as result) =
       match Queue.dequeue worklist with
-      | Some access ->
+      | Some reference ->
           let visited, nodes, edges =
-            if not (Set.mem visited access) then
-              let visited = Set.add visited access in
-              let nodes = access :: nodes in
+            if not (Set.mem visited reference) then
+              let visited = Set.add visited reference in
+              let nodes = reference :: nodes in
 
               let dependencies =
-                get_dependencies access
-                >>| Access.Set.Tree.map
-                  ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access)
-                |> Option.value ~default:Access.Set.Tree.empty
+                get_dependencies reference
+                >>| Reference.Set.Tree.map
+                  ~f:(fun handle -> Ast.Source.qualifier ~handle)
+                |> Option.value ~default:Reference.Set.Tree.empty
               in
               let enqueue edges dependency =
                 if not (Set.mem visited dependency) then
                   Queue.enqueue worklist dependency;
-                (access, dependency) :: edges
+                (reference, dependency) :: edges
               in
-              let edges = Access.Set.Tree.fold dependencies ~init:edges ~f:enqueue in
+              let edges = Reference.Set.Tree.fold dependencies ~init:edges ~f:enqueue in
               visited, nodes, edges
             else
               visited, nodes, edges
@@ -276,20 +276,20 @@ let to_dot ~get_dependencies ~handle =
     in
 
     let worklist = Queue.create () in
-    Queue.enqueue worklist (Ast.Source.qualifier ~handle |> Reference.access);
-    let nodes, edges = iterate ~worklist ~visited:Access.Set.empty ~result:([], []) in
+    Queue.enqueue worklist (Ast.Source.qualifier ~handle);
+    let nodes, edges = iterate ~worklist ~visited:Reference.Set.empty ~result:([], []) in
     List.rev nodes, List.rev edges
   in
 
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
-  let print_node access =
+  let print_node reference =
     let label =
       Printf.sprintf
         "  %d[label=\"%s\"%s]\n"
-        (Access.hash access)
-        (Access.show access)
-        (if (Access.equal access (Ast.Source.qualifier ~handle |> Reference.access))
+        (Reference.hash reference)
+        (Reference.show reference)
+        (if (Reference.equal reference (Ast.Source.qualifier ~handle))
          then " color=\"red\"" else "")
     in
     Buffer.add_string buffer label
@@ -298,8 +298,8 @@ let to_dot ~get_dependencies ~handle =
     let edge =
       Printf.sprintf
         "  %d -> %d [dir=back]\n"
-        (Access.hash source)
-        (Access.hash dependency)
+        (Reference.hash source)
+        (Reference.hash dependency)
     in
     Buffer.add_string buffer edge
   in

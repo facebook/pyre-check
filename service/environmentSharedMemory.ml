@@ -39,7 +39,7 @@ end
 
 (** Values *)
 module FunctionKeyValue = struct
-  type t = Access.t list
+  type t = Reference.t list
   let prefix = Prefix.make ()
   let description = "Function keys"
 end
@@ -69,7 +69,7 @@ module ProtocolValue = struct
 end
 
 module DependentKeyValue = struct
-  type t = Access.t list
+  type t = Reference.t list
   let prefix = Prefix.make ()
   let description = "Dependent keys"
 end
@@ -147,7 +147,7 @@ module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 
 module Globals = Memory.WithCache (Ast.SharedMemory.AccessKey) (GlobalValue)
 
-module Dependents = Memory.WithCache (Ast.SharedMemory.AccessKey) (DependentValue)
+module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
 module Protocols = Memory.WithCache (StringKey) (ProtocolValue)
 

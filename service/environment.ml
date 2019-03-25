@@ -177,14 +177,14 @@ module SharedHandler: Analysis.Environment.Handler = struct
       | None -> add handle [key]
       | Some keys -> add handle (key :: keys)
 
-    let add_function_key ~handle access =
+
+    let add_function_key ~handle reference =
       add_new_key
         ~handle
-        ~key:access
+        ~key:reference
         ~get:FunctionKeys.get
         ~add:FunctionKeys.add
         ~remove:(fun key -> FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton key))
-
     let add_class_key ~handle class_type =
       add_new_key
         ~handle
@@ -244,7 +244,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match FunctionKeys.get handle with
           | Some keys ->
               FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton handle);
-              FunctionKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+              FunctionKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
           | None ->
               ()
         end;
@@ -276,7 +276,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match DependentKeys.get handle with
           | Some keys ->
               DependentKeys.remove_batch (DependentKeys.KeySet.singleton handle);
-              DependentKeys.add handle (List.dedup_and_sort ~compare:Expression.Access.compare keys)
+              DependentKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
           | None ->
               ()
         end
@@ -294,7 +294,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
             ()
       in
       List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
-      |> List.dedup_and_sort ~compare:Expression.Access.compare
+      |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize_dependents
   end: Dependencies.Handler)
   module TypeOrderHandler = ServiceTypeOrder.Handler
@@ -335,7 +335,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Log.log
       ~section:`Dependencies
       "Adding dependency from %a to %a"
-      Expression.Access.pp dependency
+      Reference.pp dependency
       File.Handle.pp handle;
     DependencyHandler.add_dependent ~handle dependency
 
@@ -391,6 +391,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
     in
     List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
+    |> List.map ~f:Reference.access
     |> fun keys ->
     begin
       (* We add a global name for each function definition as well. *)
@@ -412,7 +413,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
-    |> List.dedup_and_sort ~compare:Expression.Access.compare
+    |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
 
     DependencyHandler.clear_keys_batch handles;

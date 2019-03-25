@@ -21,10 +21,14 @@ let assert_keys ~add ~get keys expected =
 
 
 let test_dependency_keys _ =
-  let assert_dependencies accesses ~expected =
-    let accesses = List.map accesses ~f:Access.create in
-    let expected = List.map expected ~f:Access.create in
-    assert_keys ~add:Handler.add_dependent_key ~get:Handler.get_dependent_keys accesses expected
+  let assert_dependencies references ~expected =
+    let references = List.map references ~f:Ast.Reference.create in
+    let expected = List.map expected ~f:Ast.Reference.create in
+    assert_keys
+      ~add:Handler.add_dependent_key
+      ~get:Handler.get_dependent_keys
+      references
+      expected
   in
   assert_dependencies ["a.b.c"; "d"; "e"] ~expected:["e"; "d"; "a.b.c"];
   assert_dependencies ["a.b.c"] ~expected:["a.b.c"]
@@ -52,8 +56,8 @@ let test_class_keys _ =
 
 let test_function_keys _ =
   let assert_function_keys keys ~expected =
-    let keys = List.map keys ~f:Access.create in
-    let expected = List.map expected ~f:Access.create in
+    let keys = List.map keys ~f:Ast.Reference.create in
+    let expected = List.map expected ~f:Ast.Reference.create in
     assert_keys ~add:Handler.add_function_key ~get:Handler.get_function_keys keys expected
   in
   assert_function_keys ["f1"] ~expected:["f1"];
@@ -72,17 +76,18 @@ let test_global_keys _ =
 
 let test_normalize_dependencies _ =
   let handle = File.Handle.create "dummy.py" in
+  let reference = Ast.Reference.create in
   Handler.clear_keys_batch [handle];
-  Handler.add_function_key ~handle (!+"f");
+  Handler.add_function_key ~handle (reference "f");
   (* Only keep one copy. *)
-  Handler.add_function_key ~handle (!+"f");
-  Handler.add_function_key ~handle (!+"h");
-  Handler.add_function_key ~handle (!+"g");
+  Handler.add_function_key ~handle (reference "f");
+  Handler.add_function_key ~handle (reference "h");
+  Handler.add_function_key ~handle (reference "g");
   Handler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Access.show)
+    ~printer:(List.to_string ~f:Ast.Reference.show)
     (Handler.get_function_keys ~handle)
-    [!+"f"; !+"g"; !+"h"];
+    [reference "f"; reference "g"; reference "h"];
 
   Handler.add_global_key ~handle (!+"b");
   Handler.add_global_key ~handle (!+"c");
@@ -92,14 +97,14 @@ let test_normalize_dependencies _ =
     ~printer:(List.to_string ~f:Access.show)
     (Handler.get_global_keys ~handle) [!+"a"; !+"b"; !+"c"];
 
-  Handler.add_dependent_key ~handle (!+"first.module");
-  Handler.add_dependent_key ~handle (!+"second.module");
-  Handler.add_dependent_key ~handle (!+"aardvark");
+  Handler.add_dependent_key ~handle (reference "first.module");
+  Handler.add_dependent_key ~handle (reference "second.module");
+  Handler.add_dependent_key ~handle (reference "aardvark");
   Handler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Access.show)
+    ~printer:(List.to_string ~f:Ast.Reference.show)
     (Handler.get_dependent_keys ~handle)
-    [!+"aardvark"; !+"first.module"; !+"second.module"];
+    [reference "aardvark"; reference "first.module"; reference "second.module"];
 
 
   Handler.add_class_key ~handle (Type.Primitive "T1");
