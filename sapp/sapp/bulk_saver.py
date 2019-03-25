@@ -128,40 +128,10 @@ class BulkSaver:
             )
         )
 
-    def add_postcondition_source_assoc(self, source, postcondition, depth):
-        self.add(
-            PostconditionSourceAssoc.Record(
-                postcondition_id=postcondition.id,
-                source_id=source.id,
-                trace_length=depth,
-            )
-        )
-
-    def add_precondition_sink_assoc(self, sink, precondition, depth):
-        self.add(
-            PreconditionSinkAssoc.Record(
-                precondition_id=precondition.id, sink_id=sink.id, trace_length=depth
-            )
-        )
-
     def add_issue_instance_trace_frame_assoc(self, issue_instance, trace_frame):
         self.add(
             IssueInstanceTraceFrameAssoc.Record(
                 issue_instance_id=issue_instance.id, trace_frame_id=trace_frame.id
-            )
-        )
-
-    def add_issue_instance_postcondition_assoc(self, issue_instance, postcondition):
-        self.add(
-            IssueInstancePostconditionAssoc.Record(
-                issue_instance_id=issue_instance.id, postcondition_id=postcondition.id
-            )
-        )
-
-    def add_issue_instance_precondition_assoc(self, issue_instance, precondition):
-        self.add(
-            IssueInstancePreconditionAssoc.Record(
-                issue_instance_id=issue_instance.id, precondition_id=precondition.id
             )
         )
 

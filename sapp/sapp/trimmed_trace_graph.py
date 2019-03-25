@@ -2,13 +2,7 @@
 
 from typing import Any, Iterable, List, Optional, Set, Tuple
 
-from sapp.models import (
-    Postcondition,
-    Precondition,
-    SharedTextKind,
-    TraceFrame,
-    TraceKind,
-)
+from sapp.models import SharedTextKind, TraceFrame, TraceKind
 from sapp.trace_graph import TraceGraph
 
 
@@ -26,17 +20,13 @@ class TrimmedTraceGraph(TraceGraph):
         super().__init__()
         self._affected_files = affected_files
         self._affected_issues_only = affected_issues_only
-        self._visited_post_ids: Set[int] = set()
-        self._visited_pre_ids: Set[int] = set()
         self._visited_trace_frame_ids: Set[int] = set()
 
     def populate_from_trace_graph(self, graph: TraceGraph) -> None:
         """Populates this graph from the given one based on affected_files
         """
-        # Track which post/preconditions have been visited as we populate
-        # the full backward/forward traces of the graph.
-        self._visited_post_ids: Set[int] = set()
-        self._visited_pre_ids: Set[int] = set()
+        # Track which trace frames have been visited as we populate the full
+        # traces of the graph.
         self._visited_trace_frame_ids: Set[int] = set()
 
         self._populate_affected_issues(graph)
@@ -45,22 +35,21 @@ class TrimmedTraceGraph(TraceGraph):
             # Finds issues from the conditions and saves them.
             # Also saves traces that have been trimmed to the affected
             # conditions.
-            self._populate_issues_from_affected_preconditions(graph)
-            self._populate_issues_from_affected_postconditions(graph)
             self._populate_issues_from_affected_trace_frames(graph)
 
-            # Traces populated above may be missing all forward or all backward
-            # traces because _populate_issues_from_affected_* only populates
+            # Traces populated above may be missing all traces because
+            # _populate_issues_from_affected_trace_frames only populates
             # traces that reach the affected conditions in one direction. We
-            # may need to populate traces in the other direction too.
+            # may need to populate traces in other directions too.
+            #
             # For example:
             #
-            # Issue_x reaches affected_file_x via postcondition_x. None of its
-            # backward traces reach the affected files.
+            # Issue_x reaches affected_file_x via postcondition_x (forward
+            # trace, i.e. trace leading to source). None of its backward
+            # traces (leading to sinks) reach the affected files.
             #
-            # _populate_issues_from_affected_postconditions would have copied
-            # its forward traces and trimmed it to those reaching
-            # postcondition_x.
+            # _populate_issues_from_affected_trace_frames would have copied its
+            # forward traces and trimmed it to those reaching postcondition_x.
             # We cannot blindly populate all forward traces in this case as
             # branches not leading to postcondition_x are unnecessary.
             #
@@ -68,20 +57,24 @@ class TrimmedTraceGraph(TraceGraph):
             # to give a complete picture of which sinks the issue reaches.
             # The following ensures that.
             for instance_id in self._issue_instances.keys():
-                no_fwd_trace = (
-                    len(self._issue_instance_postcondition_assoc[instance_id]) == 0
-                )
-                if no_fwd_trace:
-                    self._populate_issue_forward_trace(graph, instance_id)
+                first_hop_ids = self._issue_instance_trace_frame_assoc[instance_id]
+                fwd_trace_ids = {
+                    tf_id
+                    for tf_id in first_hop_ids
+                    if self._trace_frames[tf_id].kind == TraceKind.POSTCONDITION
+                }
+                bwd_trace_ids = {
+                    tf_id
+                    for tf_id in first_hop_ids
+                    if self._trace_frames[tf_id].kind == TraceKind.PRECONDITION
+                }
+
+                if len(fwd_trace_ids) == 0:
                     self._populate_issue_trace(
                         graph, instance_id, TraceKind.POSTCONDITION
                     )
 
-                no_bwd_trace = (
-                    len(self._issue_instance_precondition_assoc[instance_id]) == 0
-                )
-                if no_bwd_trace:
-                    self._populate_issue_backward_trace(graph, instance_id)
+                if len(bwd_trace_ids) == 0:
                     self._populate_issue_trace(
                         graph, instance_id, TraceKind.PRECONDITION
                     )
@@ -117,13 +110,6 @@ class TrimmedTraceGraph(TraceGraph):
             self._get_sink_names(graph, instance_id)
         )
 
-    def _get_sink_names_from_pairs(
-        self, graph: TraceGraph, sink_pairs: Iterable[Tuple[int, Any]]
-    ) -> Set[str]:
-        return {
-            sink.name for sink in (graph._sinks[sink_id] for (sink_id, _) in sink_pairs)
-        }
-
     def _get_leaf_names_from_pairs(
         self, graph: TraceGraph, leaf_pairs: Set[Tuple[int, Any]]
     ) -> Set[str]:
@@ -131,92 +117,6 @@ class TrimmedTraceGraph(TraceGraph):
             leaf.contents
             for leaf in (graph._shared_texts[leaf_id] for (leaf_id, _) in leaf_pairs)
         }
-
-    def _get_source_names_from_pairs(self, graph: TraceGraph, source_pairs) -> Set[str]:
-        return {
-            source.name
-            for source in (graph._sources[source_id] for (source_id, _) in source_pairs)
-        }
-
-    def _populate_issues_from_affected_preconditions(self, graph: TraceGraph) -> None:
-        """Preconditions found in affected_files should be reachable via some
-        issue instance. Follow the backward traces of graph to find them and
-        populate this TrimmedGraph with it.
-        """
-        initial_preconditions = [
-            pre
-            for pre in graph._preconditions.values()
-            if self._is_filename_prefixed_with(pre.filename, self._affected_files)
-        ]
-
-        self._populate_issues_from_affected_conditions(
-            initial_preconditions,
-            graph,
-            lambda pre_id: (graph._precondition_issue_instance_assoc[pre_id]),
-            lambda pre: (
-                [
-                    graph._preconditions[pre_id]
-                    for pre_id in graph._preconditions_rev_map[
-                        (pre.caller, pre.caller_condition)
-                    ]
-                ]
-            ),
-            lambda instance_id: self._get_sink_names(graph, instance_id),
-            lambda pre_id: (
-                self._get_sink_names_from_pairs(
-                    graph, graph._precondition_sink_assoc[pre_id]
-                )
-            ),
-            lambda instance, cond: (
-                self.add_issue_instance_precondition_assoc(instance, cond)
-            ),
-            lambda condition_id: (
-                self._add_precondition(graph, graph._preconditions[condition_id])
-            ),
-            lambda initial_condition_ids: (
-                self._populate_backward_trace(graph, initial_condition_ids)
-            ),
-        )
-
-    def _populate_issues_from_affected_postconditions(self, graph: TraceGraph) -> None:
-        """Postconditions found in affected_files should be reachable via some
-        issue instance. Follow the forward traces to find them and populate
-        this TrimmedGraph with it.
-        """
-        initial_postconditions = [
-            post
-            for post in graph._postconditions.values()
-            if self._is_filename_prefixed_with(post.filename, self._affected_files)
-        ]
-
-        self._populate_issues_from_affected_conditions(
-            initial_postconditions,
-            graph,
-            lambda post_id: (graph._postcondition_issue_instance_assoc[post_id]),
-            lambda post: (
-                [
-                    graph._postconditions[post_id]
-                    for post_id in graph._postconditions_rev_map[
-                        (post.caller, post.caller_condition)
-                    ]
-                ]
-            ),
-            lambda instance_id: self._get_source_names(graph, instance_id),
-            lambda post_id: (
-                self._get_source_names_from_pairs(
-                    graph, graph._postcondition_source_assoc[post_id]
-                )
-            ),
-            lambda instance, cond: (
-                self.add_issue_instance_postcondition_assoc(instance, cond)
-            ),
-            lambda condition_id: (
-                self._add_postcondition(graph, graph._postconditions[condition_id])
-            ),
-            lambda initial_condition_ids: (
-                self._populate_forward_trace(graph, initial_condition_ids)
-            ),
-        )
 
     def _populate_issues_from_affected_trace_frames(self, graph: TraceGraph) -> None:
         """TraceFrames found in affected_files should be reachable via some
@@ -364,32 +264,7 @@ class TrimmedTraceGraph(TraceGraph):
         traces and assocs.
         """
         self._populate_issue(graph, instance_id)
-        self._populate_issue_forward_trace(graph, instance_id)
-        self._populate_issue_backward_trace(graph, instance_id)
         self._populate_issue_trace(graph, instance_id)
-
-    def _populate_issue_forward_trace(
-        self, graph: TraceGraph, instance_id: int
-    ) -> None:
-        post_ids = list(graph._issue_instance_postcondition_assoc[instance_id])
-        instance = graph._issue_instances[instance_id]
-        for post_id in post_ids:
-            self.add_issue_instance_postcondition_assoc(
-                instance, graph._postconditions[post_id]
-            )
-        self._populate_forward_trace(graph, post_ids)
-
-    def _populate_issue_backward_trace(self, graph: TraceGraph, instance_id) -> None:
-        """ Populates backward traces from the input trace graph for the
-        given issue instance
-        """
-        pre_ids = list(graph._issue_instance_precondition_assoc[instance_id])
-        instance = graph._issue_instances[instance_id]
-        for pre_id in pre_ids:
-            self.add_issue_instance_precondition_assoc(
-                instance, graph._preconditions[pre_id]
-            )
-        self._populate_backward_trace(graph, pre_ids)
 
     def _populate_issue_trace(
         self, graph: TraceGraph, instance_id: int, kind: Optional[TraceKind] = None
@@ -429,93 +304,6 @@ class TrimmedTraceGraph(TraceGraph):
             if shared_text_id not in self._shared_texts:
                 self.add_shared_text(shared_text)
             self.add_issue_instance_shared_text_assoc(instance, shared_text)
-
-    def _populate_forward_trace(self, graph: TraceGraph, post_ids: List[int]) -> None:
-        """ Populates (from the given trace graph) the forward traces reachable
-        from the given postconditions (including the input postconditions).
-        """
-        while len(post_ids) > 0:
-            post_id = post_ids.pop()
-            if post_id in self._visited_post_ids:
-                continue
-
-            postcondition = graph._postconditions[post_id]
-            self._add_postcondition(graph, postcondition)
-            self._visited_post_ids.add(post_id)
-
-            key = (postcondition.callee, postcondition.callee_condition)
-            post_ids.extend(
-                [
-                    post_id
-                    for post_id in graph._postconditions_map[key]
-                    if post_id not in self._visited_post_ids
-                ]
-            )
-
-    def _add_postcondition(
-        self, graph: TraceGraph, postcondition: Postcondition
-    ) -> None:
-        """ Copies the postcondition from 'graph' to this (self) graph.
-        Also copies all the post-source assocs since we don't know which ones
-        are needed until we know the issue that reaches it.
-        """
-        kind: SharedTextKind = SharedTextKind.SOURCE
-        post_id = postcondition.id.local_id
-        self.add_postcondition(postcondition)
-        for (source_id, depth) in graph._postcondition_source_assoc[post_id]:
-            # T30720232 & T31386476 Remove reference to _sources when
-            # pre and postconditions are unified
-            source = graph._sources[source_id]
-            shared_text = self.get_shared_text(kind, source.name)
-            if shared_text is None:
-                # Source has not been added to the trimmed graph. Copy it over.
-                shared_text = graph.get_shared_text(kind, source.name)
-                if shared_text:
-                    self.add_shared_text(shared_text)
-            if shared_text:
-                self.add_postcondition_source_assoc(postcondition, shared_text, depth)
-
-    def _populate_backward_trace(self, graph: TraceGraph, pre_ids: List[int]) -> None:
-        """ Similar to _populate_forward_trace, but for preconditions.
-        """
-        while len(pre_ids) > 0:
-            pre_id = pre_ids.pop()
-            if pre_id in self._visited_pre_ids:
-                continue
-
-            precondition = graph._preconditions[pre_id]
-            self._add_precondition(graph, precondition)
-            self._visited_pre_ids.add(pre_id)
-
-            key = (precondition.callee, precondition.callee_condition)
-            pre_ids.extend(
-                [
-                    pre_id
-                    for pre_id in graph._preconditions_map[key]
-                    if pre_id not in self._visited_pre_ids
-                ]
-            )
-
-    def _add_precondition(self, graph: TraceGraph, precondition: Precondition) -> None:
-        """ Similar to _add_postcondition
-        """
-        kind: SharedTextKind = SharedTextKind.SINK
-        pre_id = precondition.id.local_id
-        self.add_precondition(precondition)
-        for (sink_id, depth) in graph._precondition_sink_assoc[pre_id]:
-            # T30720232 & T31386476 Remove reference to _sinks when
-            # pre and postconditions are unified
-            sink = graph._sinks[sink_id]
-            shared_text = self.get_shared_text(kind, sink.name)
-            if shared_text is None:
-                # Sink has not been added to the trimmed graph. Copy it over.
-                shared_text = graph.get_shared_text(kind, sink.name)
-                if shared_text:
-                    self.add_shared_text(shared_text)
-            if shared_text:
-                self.add_precondition_sink_assoc(precondition, shared_text, depth)
-        for trace_annotation in graph.get_precondition_annotations(pre_id):
-            self.add_trace_annotation(trace_annotation)
 
     def _populate_trace(self, graph: TraceGraph, trace_frame_ids: List[int]) -> None:
         """ Populates (from the given trace graph) the forward and backward

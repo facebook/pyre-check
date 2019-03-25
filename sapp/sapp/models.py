@@ -734,9 +734,11 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         uselist=False,
     )
 
-    preconditions = association_proxy("issue_instance_precondition", "precondition")
+    preconditions_deprecated = association_proxy(
+        "issue_instance_precondition_deprecated", "precondition"
+    )
 
-    issue_instance_precondition = relationship(
+    issue_instance_precondition_deprecated = relationship(
         "IssueInstancePreconditionAssoc",
         primaryjoin=(
             "IssueInstance.id == "
@@ -744,9 +746,11 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         ),
     )
 
-    postconditions = association_proxy("issue_instance_postcondition", "postcondition")
+    postconditions_deprecated = association_proxy(
+        "issue_instance_postcondition_deprecated", "postcondition"
+    )
 
-    issue_instance_postcondition = relationship(
+    issue_instance_postcondition_deprecated = relationship(
         "IssueInstancePostconditionAssoc",
         primaryjoin=(
             "IssueInstance.id == "

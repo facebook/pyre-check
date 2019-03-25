@@ -15,8 +15,6 @@ from sapp.models import (
     IssueInstance,
     IssueInstanceFixInfo,
     IssueStatus,
-    Postcondition,
-    Precondition,
     Run,
     RunStatus,
     SharedText,
@@ -120,16 +118,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         trace_frames = []
 
-        preconditions = []
         for p in entry["preconditions"]:
-            pre, tf = self._generate_issue_precondition(run, entry, p)
-            preconditions.append(pre)
+            tf = self._generate_issue_precondition(run, entry, p)
             trace_frames.append(tf)
 
-        postconditions = []
         for p in entry["postconditions"]:
-            post, tf = self._generate_issue_postcondition(run, entry, p)
-            postconditions.append(post)
+            tf = self._generate_issue_postcondition(run, entry, p)
             trace_frames.append(tf)
 
         features = set()
@@ -194,18 +188,12 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         )
 
         for sink in final_sinks:
-            self.graph.add_issue_instance_sink_assoc(instance, sink)
+            self.graph.add_issue_instance_shared_text_assoc(instance, sink)
         for source in initial_sources:
-            self.graph.add_issue_instance_source_assoc(instance, source)
+            self.graph.add_issue_instance_shared_text_assoc(instance, source)
 
         if fix_info is not None:
             self.graph.add_issue_instance_fix_info(instance, fix_info)
-
-        for precondition in preconditions:
-            self.graph.add_issue_instance_precondition_assoc(instance, precondition)
-
-        for postcondition in postconditions:
-            self.graph.add_issue_instance_postcondition_assoc(instance, postcondition)
 
         for trace_frame in trace_frames:
             self.graph.add_issue_instance_trace_frame_assoc(instance, trace_frame)
@@ -229,7 +217,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        call_post, call_tf = self._generate_raw_postcondition(
+        call_tf = self._generate_raw_postcondition(
             run,
             issue["filename"],
             caller,
@@ -253,9 +241,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             if len(new) == 0 and key[1] != "source":
                 self.summary["missing_postconditions"].add(key)
 
-            keys.extend([(e.callee, e.callee_condition) for e, tf in new])
+            keys.extend([(tf.callee, tf.callee_port) for tf in new])
 
-        return call_post, call_tf
+        return call_tf
 
     def _generate_postcondition(self, run, entry):
         callee_location = entry["callee_location"]
@@ -287,23 +275,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         type_interval,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
-        postcondition = Postcondition.Record(
-            id=DBID(),
-            caller=caller,
-            callee=callee,
-            callee_location=SourceLocation(
-                callee_location["line"],
-                callee_location["start"],
-                callee_location["end"],
-            ),
-            filename=filename,
-            run_id=run.id,
-            caller_condition=caller_port,
-            callee_condition=callee_port,
-            preserves_type_context=preserves_type_context,
-            type_interval_lower=lb,
-            type_interval_upper=ub,
-        )
 
         trace_frame = TraceFrame.Record(
             id=DBID(),
@@ -328,15 +299,10 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         for (source, depth) in sources:
             source_record = self._get_shared_text(SharedTextKind.SOURCE, source)
-            self.graph.add_postcondition_source_assoc(
-                postcondition, source_record, depth
-            )
             self.graph.add_trace_frame_leaf_assoc(trace_frame, source_record, depth)
 
-        self.graph.add_postcondition(postcondition)
         self.graph.add_trace_frame(trace_frame)
-        self.graph.add_trace_frame_to_postcondition(trace_frame, postcondition)
-        return postcondition, trace_frame
+        return trace_frame
 
     def _generate_issue_precondition(self, run, issue, callinfo):
         # Generates a synthetic precondition from the backward_trace in callinfo
@@ -346,7 +312,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         caller = issue["callable"]
         callee = callinfo["callee"]
         callee_port = callinfo["port"]
-        call_pre, call_tf = self._generate_raw_precondition(
+        call_tf = self._generate_raw_precondition(
             run,
             issue["filename"],
             caller,
@@ -362,7 +328,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         keys = [(callee, callee_port)]
         while len(keys) > 0:
             key = keys.pop()
-            if self.graph.has_precondition_with_caller(key[0], key[1]):
+            if self.graph.has_preconditions_with_caller(key[0], key[1]):
                 continue
 
             new = [
@@ -372,9 +338,9 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             if len(new) == 0 and key[1] != "sink":
                 self.summary["missing_preconditions"].add(key)
 
-            keys.extend([(e.callee, e.callee_condition) for e, tf in new])
+            keys.extend([(tf.callee, tf.callee_port) for tf in new])
 
-        return call_pre, call_tf
+        return call_tf
 
     def _generate_precondition(self, run, entry):
         callee_location = entry["callee_location"]
@@ -423,25 +389,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         features,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
-        precondition = Precondition.Record(
-            id=DBID(),
-            caller=caller,
-            caller_condition=caller_port,
-            callee=callee,
-            callee_condition=callee_port,
-            callee_location=SourceLocation(
-                callee_location["line"],
-                callee_location["start"],
-                callee_location["end"],
-            ),
-            filename=filename,
-            titos=titos,
-            message="",
-            run_id=run.id,
-            preserves_type_context=preserves_type_context,
-            type_interval_lower=lb,
-            type_interval_upper=ub,
-        )
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.PRECONDITION,
@@ -465,14 +412,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         for (sink, depth) in sinks:
             sink_record = self._get_shared_text(SharedTextKind.SINK, sink)
-            self.graph.add_precondition_sink_assoc(precondition, sink_record, depth)
             self.graph.add_trace_frame_leaf_assoc(trace_frame, sink_record, depth)
 
-        self.graph.add_precondition(precondition)
         self.graph.add_trace_frame(trace_frame)
-        self.graph.add_trace_frame_to_precondition(trace_frame, precondition)
-        self._generate_trace_annotations(precondition.id, trace_frame.id, features)
-        return precondition, trace_frame
+        self._generate_trace_annotations(trace_frame.id, features)
+        return trace_frame
 
     def _generate_issue_feature_contents(self, issue, feature):
         # Generates a synthetic feature from the extra/feature
@@ -491,7 +435,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         preserves_type_context = ti.get("preserves_type_context", False)
         return (lower, upper, preserves_type_context)
 
-    def _generate_trace_annotations(self, pre_id, frame_id, features) -> None:
+    def _generate_trace_annotations(self, frame_id, features) -> None:
         for f in features:
             if "extra_trace" in f:
                 annotation = f["extra_trace"]
@@ -499,8 +443,8 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 self.graph.add_trace_annotation(
                     TraceFrameAnnotation.Record(
                         id=DBID(),
-                        trace_frame_id=pre_id,
-                        trace_frame_id2=frame_id,
+                        trace_frame_id=frame_id,
+                        trace_frame_id2=frame_id,  # TODO: Deprecate id2 field
                         location=SourceLocation(
                             location["line"], location["start"], location["end"]
                         ),

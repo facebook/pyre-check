@@ -16,6 +16,7 @@ from sapp.models import (
     RunSummary,
     TraceFrame,
     TraceFrameAnnotation,
+    TraceKind,
 )
 from sapp.pipeline import PipelineStep, Summary
 from sapp.trace_graph import TraceGraph
@@ -74,14 +75,25 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
         """
         assert self.summary["run"] is not None, "Must have called process before"
 
+        trace_frames = self.bulk_saver.get_items_to_add(TraceFrame)
         log.info(
-            "Saving %d issues, %d preconditions, %d postconditions, "
-            "%d trace frames, %d trace annotations",
+            "Saving %d issues, %d trace frames, %d trace annotations",
             len(self.bulk_saver.get_items_to_add(Issue)),
-            len(self.bulk_saver.get_items_to_add(Precondition)),
-            len(self.bulk_saver.get_items_to_add(Postcondition)),
             len(self.bulk_saver.get_items_to_add(TraceFrame)),
             len(self.bulk_saver.get_items_to_add(TraceFrameAnnotation)),
+        )
+
+        num_pre = 0
+        num_post = 0
+        for frame in trace_frames:
+            if frame.kind == TraceKind.PRECONDITION:
+                num_pre += 1
+            elif frame.kind == TraceKind.POSTCONDITION:
+                num_post += 1
+        log.info(
+            "Within trace frames: %d preconditions, %d postconditions",
+            num_pre,
+            num_post,
         )
 
         with self.database.make_session() as session:
