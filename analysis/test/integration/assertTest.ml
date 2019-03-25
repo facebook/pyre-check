@@ -3,7 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Test
 open OUnit2
 open IntegrationTest
 
@@ -167,7 +166,7 @@ let test_check_assert_functions _ =
     |}
     [];
   assert_default_type_errors
-    ~qualifier:(!+"foo")
+    ~qualifier:(Ast.Reference.create "foo")
     {|
       class One:
           a: int

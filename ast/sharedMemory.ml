@@ -102,7 +102,7 @@ module Sources = struct
   end
 
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
-  module QualifiersToHandles = SharedMemory.NoCache (AccessKey) (HandleValue)
+  module QualifiersToHandles = SharedMemory.NoCache (ReferenceKey) (HandleValue)
 
   let get handle =
     Sources.get handle

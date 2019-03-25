@@ -188,9 +188,7 @@ let test_parse _ =
 
 
 let test_qualifier _ =
-  let qualifier modules =
-    List.concat_map modules ~f:Access.create
-  in
+  let qualifier = Reference.create_from_list in
 
   assert_equal
     (Source.qualifier ~handle: (File.Handle.create "module.py"))
@@ -216,7 +214,10 @@ let test_qualifier _ =
 let test_expand_relative_import _ =
   let assert_export ~handle ~from ~expected =
     let handle = File.Handle.create handle in
-    let qualifier = Source.qualifier ~handle in
+    let qualifier =
+      Source.qualifier ~handle
+      |> Reference.access
+    in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from

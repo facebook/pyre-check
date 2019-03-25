@@ -59,7 +59,7 @@ let test_index _ =
 
 let add_dependent table handle dependent =
   let handle = File.Handle.create handle in
-  let source = Source.qualifier ~handle in
+  let source = Source.qualifier ~handle |> Reference.access in
   let dependent = File.Handle.create dependent in
   let update entry =
     match entry with
@@ -72,7 +72,7 @@ let add_dependent table handle dependent =
 
 
 let get_dependencies (module Handler: Environment.Handler) handle =
-  Handler.dependencies (Source.qualifier ~handle)
+  Handler.dependencies (Source.qualifier ~handle |> Reference.access)
 
 
 let assert_dependencies ~environment ~handles ~expected function_to_test =

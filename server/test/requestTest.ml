@@ -62,17 +62,19 @@ let initialize sources =
     let handles = List.map files ~f:(File.handle ~configuration) in
     SharedMemory.Sources.remove ~handles;
     SharedMemory.Modules.remove
-      ~qualifiers:(List.map handles ~f:(fun handle -> Source.qualifier ~handle));
+      ~qualifiers:(
+        List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
+      );
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;
     let add_module handle =
       match SharedMemory.Sources.get handle with
       | Some { Ast.Source.handle; statements; metadata = { local_mode; _ }; _ } ->
           SharedMemory.Modules.add
-            ~qualifier:(Source.qualifier ~handle)
+            ~qualifier:(Source.qualifier ~handle |> Reference.access)
             ~ast_module:
               (Module.create
-                 ~qualifier:(Source.qualifier ~handle)
+                 ~qualifier:(Source.qualifier ~handle |> Reference.access)
                  ~local_mode
                  ~handle
                  ~stub:false

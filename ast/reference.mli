@@ -13,6 +13,7 @@ module SerializableMap: SerializableMap.S with type key = t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
+val empty: t
 val create: ?prefix: t -> string -> t
 val create_from_list: string list -> t
 val combine: t -> t -> t
@@ -29,6 +30,7 @@ val equal_sanitized: t -> t -> bool
 val pp_sanitized: Format.formatter -> t -> unit
 val show_sanitized: t -> string
 
+val single: t -> string option
 val is_prefix: prefix: t -> t -> bool
 val is_suffix: suffix: t -> t -> bool
 val is_strict_prefix: prefix: t -> t -> bool

@@ -209,7 +209,7 @@ let function_definitions resolution access =
     in
     qualifier ~lead:[] ~tail:access
   in
-  Ast.SharedMemory.Sources.get_for_qualifier qualifier
+  Ast.SharedMemory.Sources.get_for_qualifier (Reference.from_access qualifier)
   >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
   >>| List.filter
     ~f:(fun { Node.value = { Define.name; _ }; _ } ->

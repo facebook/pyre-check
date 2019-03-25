@@ -54,6 +54,10 @@ let show reference =
   Format.asprintf "%a" pp reference
 
 
+let empty =
+  []
+
+
 let create ?prefix name =
   let name =
     if String.equal name "..." then
@@ -156,6 +160,11 @@ let show_sanitized reference =
   Format.asprintf "%a" pp_sanitized reference
 
 
+let single = function
+  | [single] -> Some single
+  | _ -> None
+
+
 let rec is_prefix ~prefix reference =
   match prefix, reference with
   | [], _ -> true
@@ -209,5 +218,5 @@ let prefix reference =
 
 
 let last = function
-  | [] -> failwith "Reference cannot be empty."
+  | [] -> create ""
   | reference -> List.last_exn reference |> create

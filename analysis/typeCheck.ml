@@ -4075,8 +4075,7 @@ let run
               }
               |> Location.reference
             in
-            let qualifier = Some (Reference.from_access qualifier) in
-            Define.create_toplevel ~qualifier ~statements
+            Define.create_toplevel ~qualifier:(Some qualifier) ~statements
             |> Node.create ~location
           in
           Queue.enqueue queue (toplevel, resolution)

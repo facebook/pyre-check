@@ -268,7 +268,7 @@ let handler
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
       DependencyHandler.clear_keys_batch handles;
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
+      List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
       |> List.iter ~f:(Hashtbl.remove modules);
 
       SharedMem.collect `aggressive;
@@ -367,6 +367,7 @@ let register_module
             ~statements:[];
         register_submodules tail
   in
+  let qualifier = Reference.access qualifier in
   Handler.register_module
     ~qualifier
     ~local_mode
@@ -428,7 +429,7 @@ let register_aliases (module Handler: Handler) sources =
             if in_class_body then
               access
             else
-              qualifier @ access
+              Reference.access qualifier @ access
           in
           let target_annotation =
             Type.create
@@ -495,7 +496,7 @@ let register_aliases (module Handler: Handler) sources =
           List.fold
             body
             ~init:aliases
-            ~f:(visit_statement ~qualifier:(Reference.access name) ~in_class_body:true)
+            ~f:(visit_statement ~qualifier:name ~in_class_body:true)
       | Import { Import.from = Some from; imports } ->
           let from =
             match Access.show from with
@@ -506,8 +507,8 @@ let register_aliases (module Handler: Handler) sources =
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
-              | None -> qualifier @ name
-              | Some alias -> qualifier @ alias
+              | None -> Reference.access qualifier @ name
+              | Some alias -> Reference.access qualifier @ alias
             in
             let original_name = from @ name in
             match qualified_name, original_name with
@@ -692,6 +693,7 @@ let register_globals
             in
             let rec register_assign ~target ~annotation =
               let register ~location access annotation =
+                let qualifier = Reference.access qualifier in
                 let access = qualified_access (qualifier @ access) in
                 match Access.drop_prefix ~prefix:qualifier access with
                 | [Access.Identifier _] ->

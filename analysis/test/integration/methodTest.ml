@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Test
 open OUnit2
 open IntegrationTest
 
@@ -184,7 +183,7 @@ let test_check_method_parameters _ =
 let test_check_abstract_methods _ =
   let update_environment_with =
     [{
-      Test.qualifier = !+"abc";
+      Test.qualifier = Ast.Reference.create "abc";
       handle = "abc.pyi";
       (* This is just a mock stub of abc and is not meant to be accurate or complete *)
       source =

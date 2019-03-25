@@ -303,7 +303,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = !+"export";
+        qualifier = Ast.Reference.create "export";
         handle = "export.py";
         source = "class Foo:\n  a: int = 1"
       };
@@ -317,7 +317,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = !+"export";
+        qualifier = Ast.Reference.create "export";
         handle = "export.py";
         source = "a: int = 1"
       };
@@ -332,7 +332,7 @@ let test_concise _ =
   assert_type_errors ~concise:true
     ~update_environment_with:[
       {
-        qualifier = !+"export";
+        qualifier = Ast.Reference.create "export";
         handle = "export.py";
         source = {|
           class Foo:

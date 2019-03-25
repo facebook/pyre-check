@@ -6,7 +6,6 @@
 open Core
 
 open Ast
-open Expression
 open Pyre
 open PyreParser
 
@@ -85,6 +84,7 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
               metadata = { Source.Metadata.local_mode; _ };
               _;
             } =
+          let qualifier = Reference.access qualifier in
           Module.create
             ~qualifier
             ~local_mode
@@ -168,6 +168,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
     let get_qualifier file =
       File.handle ~configuration file
       |> (fun handle -> Source.qualifier ~handle)
+      |> Reference.access
     in
     List.map files ~f:get_qualifier
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
@@ -339,7 +340,7 @@ let find_stubs
       in
       List.fold ~f:add ~init:(qualifiers, all_paths) paths
     in
-    List.fold ~f:filter_interfering_stubs ~init:(Access.Set.empty, []) paths
+    List.fold ~f:filter_interfering_stubs ~init:(Reference.Set.empty, []) paths
   in
   paths
 
@@ -412,7 +413,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       | _ ->
           sofar
     in
-    List.fold stubs ~init:Access.Set.empty ~f:add_to_known_stubs
+    List.fold stubs ~init:Reference.Set.empty ~f:add_to_known_stubs
   in
   let sources =
     let filter path =

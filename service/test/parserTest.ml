@@ -367,6 +367,7 @@ let test_register_modules _ =
       File.handle ~configuration file
       |> Ast.SharedMemory.Sources.get
       >>| (fun { Source.qualifier; _ } -> qualifier)
+      >>| Reference.access
     in
     let file =
       File.create

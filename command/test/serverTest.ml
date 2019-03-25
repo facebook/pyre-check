@@ -253,7 +253,7 @@ let environment ~local_root =
   environment
 
 
-let make_errors ~local_root ?(handle = "test.py") ?(qualifier = []) source =
+let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty) source =
   let configuration = CommandTest.mock_analysis_configuration () in
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment = Environment.handler (environment ~local_root) in
@@ -974,7 +974,7 @@ let test_query context =
   |> File.write;
 
   assert_type_query_response
-    ~qualifier:(!+"a")
+    ~qualifier:(Reference.create "a")
     ~handle:"a.py"
     ~source:"pass"
     ~query:"path_of_module(a)"
@@ -1461,7 +1461,7 @@ let test_did_save_with_content context =
   in
   let qualifier =
     String.chop_suffix_exn ~suffix:".py" filename
-    |> Access.create
+    |> Reference.create
   in
   let errors = make_errors ~local_root:root ~handle:filename ~qualifier source in
   let request =
@@ -1520,8 +1520,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~qualifier:(!+"a") a_source;
-        parse ~handle:"b.py" ~qualifier:(!+"b") b_source;
+        parse ~handle:"a.py" ~qualifier:(Reference.create "a") a_source;
+        parse ~handle:"b.py" ~qualifier:(Reference.create "b") b_source;
       ]
     in
     List.zip_exn handles sources
@@ -1685,7 +1685,7 @@ let test_incremental_lookups context =
       Format.sprintf
         ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
         (Source.qualifier ~handle
-         |> Access.show);
+         |> Reference.show);
       ":5:8-5:9/typing.Any";
       ":6:11-6:12/typing_extensions.Literal[2]";
     ]

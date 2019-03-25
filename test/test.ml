@@ -73,7 +73,7 @@ let run tests =
 
 let parse_untrimmed
     ?(handle = "test.py")
-    ?(qualifier = [])
+    ?(qualifier = Reference.empty)
     ?(debug = true)
     ?(strict = false)
     ?(declare = false)
@@ -140,7 +140,7 @@ let parse_untrimmed
 
 let parse
     ?(handle = "test.py")
-    ?(qualifier = [])
+    ?(qualifier = Reference.empty)
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
@@ -661,9 +661,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       builtin_stubs
   in
   [
-    Source.create ~qualifier:(Access.create "sys") [];
+    Source.create ~qualifier:(Reference.create "sys") [];
     parse
-      ~qualifier:(Access.create "hashlib")
+      ~qualifier:(Reference.create "hashlib")
       ~handle:"hashlib.pyi"
       {|
         _DataType = typing.Union[int, str]
@@ -673,7 +673,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "typing")
+      ~qualifier:(Reference.create "typing")
       ~handle:"typing.pyi"
       {|
         class _SpecialForm:
@@ -805,14 +805,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def cast(tp: str, obj: Any) -> Any: ...
       |}
     |> Preprocessing.qualify;
-    Source.create ~qualifier:(Access.create "unittest.mock") [];
+    Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
-      ~qualifier:[]
+      ~qualifier:Reference.empty
       ~handle:"builtins.pyi"
       builtins
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "django.http")
+      ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
       {|
         class Request:
@@ -821,21 +821,21 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "dataclasses")
+      ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
       {|
         _T = typing.TypeVar('_T')
         class InitVar(typing.Generic[_T]): ...
       |};
     parse
-      ~qualifier:(Access.create "os")
+      ~qualifier:(Reference.create "os")
       ~handle:"os.pyi"
       {|
         environ: typing.Dict[str, str] = ...
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "subprocess")
+      ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
       {|
         def run(command, shell): ...
@@ -845,7 +845,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "abc")
+      ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
       {|
         from typing import Type, TypeVar
@@ -856,7 +856,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "enum")
+      ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
       {|
         from abc import ABCMeta
@@ -879,7 +879,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "threading")
+      ~qualifier:(Reference.create "threading")
       ~handle:"threading.pyi"
       {|
         class Thread:
@@ -887,7 +887,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "typing_extensions")
+      ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
       {|
         class _SpecialForm:
@@ -896,7 +896,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "collections")
+      ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
       {|
         from typing import (
@@ -978,7 +978,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.qualify;
     parse
-      ~qualifier:(Access.create "contextlib")
+      ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
       (* TODO (T41494196): Change the parameter and return type to AnyCallable *)
       {|
@@ -1023,7 +1023,7 @@ let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configurati
 
 
 type test_update_environment_with_t = {
-  qualifier: Access.t;
+  qualifier: Reference.t;
   handle: string;
   source: string;
 }
@@ -1038,7 +1038,7 @@ let assert_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
-    ?(qualifier = [])
+    ?(qualifier = Reference.empty)
     ?(handle = "test.py")
     ?(update_environment_with = [])
     ~check

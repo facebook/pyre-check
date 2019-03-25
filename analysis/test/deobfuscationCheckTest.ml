@@ -14,7 +14,7 @@ open Test
 let assert_deobfuscation source expected =
   let environment = environment () in
   let configuration = mock_configuration in
-  let qualifier = !+"qualifier" in
+  let qualifier = Reference.create "qualifier" in
   let actual =
     let source = parse ~qualifier source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;

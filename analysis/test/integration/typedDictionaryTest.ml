@@ -12,7 +12,7 @@ let test_check_typed_dictionaries _ =
   let assert_test_typed_dictionary source =
     let typing_stub =
       {
-        qualifier = !+"typing";
+        qualifier = Ast.Reference.create "typing";
         handle = "typing.pyi";
         source =
           {|
@@ -24,7 +24,7 @@ let test_check_typed_dictionaries _ =
     in
     let mypy_extensions_stub =
       {
-        qualifier = !+"mypy_extensions";
+        qualifier = Ast.Reference.create "mypy_extensions";
         handle = "mypy_extensions.pyi";
         source =
           "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], \
@@ -33,7 +33,7 @@ let test_check_typed_dictionaries _ =
     in
     let typed_dictionary_for_import =
       {
-        qualifier = !+"foo.bar.baz";
+        qualifier = Ast.Reference.create "foo.bar.baz";
         handle = "foo/bar/baz.py";
         source =
           {|

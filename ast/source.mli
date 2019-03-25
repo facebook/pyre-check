@@ -44,7 +44,7 @@ type t = {
   hash: int;
   metadata: Metadata.t;
   handle: File.Handle.t;
-  qualifier: Access.t;
+  qualifier: Reference.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]
@@ -55,7 +55,7 @@ val create
   :  ?docstring: string option
   -> ?metadata: Metadata.t
   -> ?handle: File.Handle.t
-  -> ?qualifier: Access.t
+  -> ?qualifier: Reference.t
   -> ?hash: int
   -> Statement.t list
   -> t
@@ -67,7 +67,7 @@ val ignore_lines: t -> Ignore.t list
 
 val statements: t -> Statement.t list
 
-val qualifier: handle: File.Handle.t -> Access.t
+val qualifier: handle: File.Handle.t -> Reference.t
 val expand_relative_import
   :  ?handle: File.Handle.t
   -> qualifier: Access.t

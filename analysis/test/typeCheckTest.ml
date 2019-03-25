@@ -331,7 +331,7 @@ let test_redirect _ =
         | Some source ->
             [
               parse
-                ~qualifier:[]
+                ~qualifier:Reference.empty
                 ~handle:"source.pyi"
                 source
               |> Preprocessing.preprocess;
@@ -419,7 +419,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~qualifier:(!+qualifier)
+            ~qualifier:(Reference.create qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
@@ -1248,7 +1248,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(!+"os")
+        ~qualifier:(Reference.create "os")
         {|
           sep: str = '/'
         |};
@@ -1260,7 +1260,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(!+"empty.stub")
+        ~qualifier:(Reference.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1273,7 +1273,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(!+"empty.stub")
+        ~qualifier:(Reference.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1288,7 +1288,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(!+"empty.stub")
+        ~qualifier:(Reference.create "empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1302,7 +1302,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(!+"has_getattr")
+        ~qualifier:(Reference.create "has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
     ]
@@ -1990,32 +1990,32 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(!+"loop.b")
+          ~qualifier:(Reference.create "loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(!+"loop.a")
+          ~qualifier:(Reference.create "loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~qualifier:(!+"loop")
+          ~qualifier:(Reference.create "loop")
           {|
             from loop.a import b
           |};
         parse
-          ~qualifier:(!+"no_loop.b")
+          ~qualifier:(Reference.create "no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(!+"no_loop.a")
+          ~qualifier:(Reference.create "no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~qualifier:(!+"no_loop")
+          ~qualifier:(Reference.create "no_loop")
           {|
             from no_loop.a import c
           |};
@@ -2030,7 +2030,7 @@ let test_object_callables _ =
     assert_resolved
       [
         parse
-          ~qualifier:(!+"module")
+          ~qualifier:(Reference.create "module")
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')

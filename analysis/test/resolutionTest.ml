@@ -54,9 +54,9 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:([
-          parse ~qualifier:(!+"empty") ~handle:"empty.pyi" "class Empty: ...";
+          parse ~qualifier:(Reference.create "empty") ~handle:"empty.pyi" "class Empty: ...";
           parse
-            ~qualifier:(!+"empty.stub")
+            ~qualifier:(Reference.create "empty.stub")
             ~local_mode:Source.PlaceholderStub
             ~handle:"empty/stub.pyi"
             "";
@@ -292,7 +292,7 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~qualifier:(!+(String.chop_suffix_exn path ~suffix:".py"))
+            ~qualifier:(Reference.create (String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content
           |> Preprocessing.qualify

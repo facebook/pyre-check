@@ -34,7 +34,7 @@ end
 module Sources: sig
   val get: File.Handle.t -> Source.t option
 
-  val get_for_qualifier: Expression.Access.t -> Source.t option
+  val get_for_qualifier: Reference.t -> Source.t option
 
   val add: File.Handle.t -> Source.t -> unit
 
@@ -43,8 +43,8 @@ module Sources: sig
   (* Exposed for testing. *)
   val hash_of_handle: File.Handle.t -> string
   val serialize_handle: File.Handle.t -> string
-  val hash_of_qualifier: Expression.Access.t -> string
-  val serialize_qualifier: Expression.Access.t -> string
+  val hash_of_qualifier: Reference.t -> string
+  val serialize_qualifier: Reference.t -> string
 
   val compute_hashes_to_keys: keys: File.Handle.t list -> string String.Map.t
 end

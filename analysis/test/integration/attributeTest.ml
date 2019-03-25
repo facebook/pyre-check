@@ -945,7 +945,7 @@ let test_check_getattr _ =
   let assert_test_getattr source =
     let getattr_stub =
       {
-        qualifier = !+"has_getattr";
+        qualifier = Ast.Reference.create "has_getattr";
         handle = "has_getattr.pyi";
         source =
           {|
@@ -956,7 +956,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_str =
       {
-        qualifier = !+"has_getattr_str";
+        qualifier = Ast.Reference.create "has_getattr_str";
         handle = "has_getattr_str.pyi";
         source =
           {|
@@ -966,7 +966,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_untyped =
       {
-        qualifier = !+"has_getattr_untyped";
+        qualifier = Ast.Reference.create "has_getattr_untyped";
         handle = "has_getattr_untyped.pyi";
         source =
           {|
@@ -976,7 +976,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_invalid_arity =
       {
-        qualifier = !+"has_getattr_invalid_arity";
+        qualifier = Ast.Reference.create "has_getattr_invalid_arity";
         handle = "has_getattr_invalid_arity.pyi";
         source =
           {|
@@ -986,7 +986,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_not_callable =
       {
-        qualifier = !+"has_getattr_not_callable";
+        qualifier = Ast.Reference.create "has_getattr_not_callable";
         handle = "has_getattr_not_callable.pyi";
         source =
           {|

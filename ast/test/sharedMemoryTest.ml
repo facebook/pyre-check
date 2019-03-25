@@ -54,12 +54,12 @@ let test_compute_hashes_to_keys _ =
     [
       Sources.hash_of_handle (File.Handle.create "first.py"),
       Sources.serialize_handle (File.Handle.create "first.py");
-      Sources.hash_of_qualifier (!+"first"),
-      Sources.serialize_qualifier (!+"first");
+      Sources.hash_of_qualifier (Ast.Reference.create "first"),
+      Sources.serialize_qualifier (Ast.Reference.create "first");
       Sources.hash_of_handle (File.Handle.create "second/__init__.py"),
       Sources.serialize_handle (File.Handle.create "second/__init__.py");
-      Sources.hash_of_qualifier (!+"second"),
-      Sources.serialize_qualifier (!+"second");
+      Sources.hash_of_qualifier (Ast.Reference.create "second"),
+      Sources.serialize_qualifier (Ast.Reference.create "second");
 
     ]
     (Sources.compute_hashes_to_keys

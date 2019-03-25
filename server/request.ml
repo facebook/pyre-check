@@ -492,7 +492,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Modules.compute_hashes_to_keys
-                ~keys:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
+                ~keys:(
+                  List.map
+                    ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access)
+                    handles))
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Handles.compute_hashes_to_keys
@@ -1015,7 +1018,10 @@ let process_type_check_files
           false
       | handle ->
           begin
-            match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
+            let module_lookup =
+              Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle |> Reference.access)
+            in
+            match module_lookup with
             | Some existing ->
                 let existing_handle =
                   Module.handle existing
@@ -1068,7 +1074,7 @@ let process_type_check_files
             >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
             |> ignore
           in
-          List.map handles ~f:(fun handle -> Source.qualifier ~handle)
+          List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
           |> List.iter ~f:store_exports;
           old_exports
         in
@@ -1150,7 +1156,10 @@ let process_type_check_files
             |> List.exists ~f:was_starred_import
           in
           if signature_hash_changed or has_starred_import () then
-            let qualifier = Ast.Source.qualifier ~handle in
+            let qualifier =
+              Ast.Source.qualifier ~handle
+              |> Reference.access
+            in
             Handler.dependencies qualifier
           else
             None
@@ -1232,6 +1241,7 @@ let process_type_check_files
       let keep file =
         (handle file
          >>= fun handle -> Some (Source.qualifier ~handle)
+         >>| Reference.access
          >>= Handler.module_definition
          >>= Module.handle
          >>| (fun existing_handle -> File.Handle.equal handle existing_handle))

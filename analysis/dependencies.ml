@@ -256,7 +256,8 @@ let to_dot ~get_dependencies ~handle =
 
               let dependencies =
                 get_dependencies access
-                >>| Access.Set.Tree.map ~f:(fun handle -> Ast.Source.qualifier ~handle)
+                >>| Access.Set.Tree.map
+                  ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access)
                 |> Option.value ~default:Access.Set.Tree.empty
               in
               let enqueue edges dependency =
@@ -275,7 +276,7 @@ let to_dot ~get_dependencies ~handle =
     in
 
     let worklist = Queue.create () in
-    Queue.enqueue worklist (Ast.Source.qualifier ~handle);
+    Queue.enqueue worklist (Ast.Source.qualifier ~handle |> Reference.access);
     let nodes, edges = iterate ~worklist ~visited:Access.Set.empty ~result:([], []) in
     List.rev nodes, List.rev edges
   in
@@ -288,7 +289,7 @@ let to_dot ~get_dependencies ~handle =
         "  %d[label=\"%s\"%s]\n"
         (Access.hash access)
         (Access.show access)
-        (if (Access.equal access (Ast.Source.qualifier ~handle))
+        (if (Access.equal access (Ast.Source.qualifier ~handle |> Reference.access))
          then " color=\"red\"" else "")
     in
     Buffer.add_string buffer label

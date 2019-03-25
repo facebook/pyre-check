@@ -222,7 +222,7 @@ type t = {
   hash: int;
   metadata: Metadata.t;
   handle: File.Handle.t;
-  qualifier: Access.t;
+  qualifier: Reference.t;
   statements: Statement.t list;
 }
 [@@deriving compare, eq, hash, show, sexp]
@@ -263,7 +263,7 @@ let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
     ?(handle = File.Handle.create "")
-    ?(qualifier = [])
+    ?(qualifier = Reference.empty)
     ?(hash = -1)
     statements =
   {
@@ -325,7 +325,7 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
     in
     List.map statements ~f:statement_hash
   in
-  [%hash: int * File.Handle.t * Access.t * (int list)]
+  [%hash: int * File.Handle.t * Reference.t * (int list)]
     (Metadata.signature_hash metadata, handle, qualifier, (statement_hashes statements))
 
 
@@ -360,34 +360,34 @@ let qualifier ~handle =
           elements in
     (last_without_suffix :: (List.tl_exn reversed_elements))
     |> strip
-    |> List.rev_map
-      ~f:Access.create
+    |> List.rev_map ~f:(String.split ~on:'.')
     |> List.concat
   in
-  if File.Handle.is_stub handle then
-    (* Drop version from qualifier. *)
-    let is_digit qualifier =
-      try
-        qualifier
-        |> Int.of_string
-        |> ignore;
-        true
-      with _ ->
-        false
-    in
-    begin
+  let stripped_qualifier =
+    if File.Handle.is_stub handle then
+      (* Drop version from qualifier. *)
+      let is_digit qualifier =
+        try
+          qualifier
+          |> Int.of_string
+          |> ignore;
+          true
+        with _ ->
+          false
+      in
       match qualifier with
       | minor :: major :: tail
-        when is_digit (Access.show [minor]) &&
-             is_digit (Access.show [major]) ->
+        when is_digit minor && is_digit major ->
           tail
-      | major :: tail when is_digit (String.prefix (Access.show [major]) 1) ->
+      | major :: tail when is_digit (String.prefix major 1) ->
           tail
       | qualifier ->
           qualifier
-    end
-  else
-    qualifier
+    else
+      qualifier
+  in
+  Reference.create_from_list stripped_qualifier
+
 
 
 let expand_relative_import ?handle ~qualifier ~from =

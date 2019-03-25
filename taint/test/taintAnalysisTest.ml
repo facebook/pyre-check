@@ -12,7 +12,6 @@ module AnalysisError = Analysis.Error
 
 open Ast
 open Pyre
-open Statement
 open Taint
 
 open Interprocedural
@@ -59,7 +58,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
   let environment =
     let models =
       models
-      >>| (fun model -> [Test.parse ~qualifier:(Access.create qualifier) model])
+      >>| (fun model -> [Test.parse ~qualifier:(Reference.create qualifier) model])
       |> Option.value ~default:[]
     in
     Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()

@@ -390,8 +390,7 @@ module Scheduler (State: State) (Context: Context) = struct
                 run ~state:(Some state) ~define:nested_define))
       |> ignore
     in
-    let qualifier = Some (Reference.from_access qualifier) in
-    let define = Define.create_toplevel ~qualifier ~statements in
+    let define = Define.create_toplevel ~qualifier:(Some qualifier) ~statements in
     run ~state:None ~define;
 
     let module Transform =
@@ -674,6 +673,7 @@ let run
 
         let dequalify_access access =
           let sanitized = Access.sanitized access in
+          let qualifier = Reference.access qualifier in
           let has_qualifier_as_prefix =
             List.is_prefix
               sanitized
@@ -687,7 +687,6 @@ let run
 
         let dequalify_reference reference =
           let sanitized = Reference.sanitized reference in
-          let qualifier = Reference.from_access qualifier in
           if Reference.is_strict_prefix ~prefix:qualifier sanitized then
             Reference.drop_prefix ~prefix:qualifier sanitized
           else
@@ -780,7 +779,7 @@ let run
   (* Create error. *)
   let location = Location.Reference.create_with_handle ~handle in
   let define =
-    Define.create_toplevel ~qualifier:(Some (Reference.from_access qualifier)) ~statements
+    Define.create_toplevel ~qualifier:(Some qualifier) ~statements
   in
   [
     Error.create

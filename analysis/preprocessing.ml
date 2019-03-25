@@ -34,7 +34,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         qualifier, [{ Node.location; value }]
     end)
   in
-  Transform.transform qualifier source
+  Transform.transform (Reference.access qualifier) source
   |> Transform.source
 
 
@@ -311,7 +311,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           ~key:access
           ~data:{
             access = [Access.Identifier renamed];
-            qualifier = source_qualifier;
+            qualifier = Reference.access source_qualifier;
             is_forward_reference = false;
           };
       immutables = Set.add immutables access;
@@ -1082,7 +1082,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
 
   let scope =
     {
-      qualifier = source_qualifier;
+      qualifier = Reference.access source_qualifier;
       aliases = Access.Map.empty;
       locals = Access.Set.empty;
       immutables = Access.Set.empty;
@@ -1388,9 +1388,9 @@ let defines
   in
   let defines = (Collector.collect source) in
   if extract_into_toplevel then
-    let qualifier = Some (Reference.from_access qualifier) in
     let toplevel =
-      Node.create_with_default_location (Statement.Define.create_toplevel ~qualifier ~statements)
+      Node.create_with_default_location
+        (Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements)
     in
     toplevel :: defines
   else
@@ -1449,7 +1449,8 @@ let dequalify_map source =
     end)
   in
   (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
-  let map = Map.set ~key:(List.rev source.Source.qualifier) ~data:[] Access.Map.empty in
+  let qualifier = Reference.access source.Source.qualifier in
+  let map = Map.set ~key:(List.rev qualifier) ~data:[] Access.Map.empty in
   ImportDequalifier.transform map source
   |> fun { ImportDequalifier.state; _ } -> state
 
@@ -1597,16 +1598,10 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           docstring = _;
         }
         when is_typed_dictionary ~module_name ~typed_dictionary ->
-          let single_identifier access =
-            match access with
-            | [ Access.Identifier identifier ] -> Some identifier
-            | _ -> None
-          in
           let string_literal identifier =
             Expression.String { value = identifier; kind = StringLiteral.String }
             |> Node.create ~location
           in
-          let class_name = Reference.access class_name in
           let fields =
             let extract = function
               | {
@@ -1619,8 +1614,8 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                   };
                 _;
               } ->
-                  Access.drop_prefix name ~prefix:class_name
-                  |> single_identifier
+                  Reference.drop_prefix ~prefix:class_name (Reference.from_access name)
+                  |> Reference.single
                   >>| (fun name -> string_literal name, annotation)
               | _ ->
                   None
@@ -1628,7 +1623,9 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             List.filter_map body ~f:extract
           in
           let declaration class_name =
-            let qualified = qualify_local_identifier class_name ~qualifier in
+            let qualified =
+              qualify_local_identifier class_name ~qualifier:(Reference.access qualifier)
+            in
             typed_dictionary_declaration_assignment
               ~name:(string_literal class_name)
               ~fields
@@ -1636,8 +1633,8 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
               ~parent:None
               ~total:(extract_totality bases_tail)
           in
-          Access.drop_prefix class_name ~prefix:qualifier
-          |> single_identifier
+          Reference.drop_prefix ~prefix:qualifier class_name
+          |> Reference.single
           >>| declaration
           |> Option.value ~default:value
       | _ ->

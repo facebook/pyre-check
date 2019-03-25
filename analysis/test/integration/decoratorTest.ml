@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Test
 open OUnit2
 open IntegrationTest
 
@@ -146,7 +145,7 @@ let test_check_click_command _ =
   let assert_type_errors =
     let update_environment_with =
       [{
-        Test.qualifier = !+"click";
+        Test.qualifier = Ast.Reference.create "click";
         handle = "click.pyi";
         (* This is just a mock stub of click and is not meant to be accurate or complete *)
         source =

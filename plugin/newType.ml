@@ -44,7 +44,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
             };
           _;
         } when typing = "typing" && new_type = "NewType" ->
-          let name = Reference.create ~prefix:(Reference.from_access qualifier) name in
+          let name = Reference.create ~prefix:qualifier name in
           let constructor =
             Define {
               Define.name = Reference.create ~prefix:name "__init__";

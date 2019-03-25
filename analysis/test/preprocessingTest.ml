@@ -1368,6 +1368,7 @@ let test_expand_wildcard_imports _ =
         File.handle ~configuration file
         |> Ast.SharedMemory.Sources.get
         >>| (fun { Source.qualifier; _ } -> qualifier)
+        >>| Reference.access
       in
       Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
       Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
@@ -1749,7 +1750,7 @@ let test_replace_mypy_extensions_stub _ =
 
 
 let test_expand_typed_dictionaries _ =
-  let assert_expand ?(qualifier = []) source expected =
+  let assert_expand ?(qualifier = Reference.empty) source expected =
     let actual =
       parse ~qualifier source
       |> Preprocessing.qualify
@@ -1808,7 +1809,7 @@ let test_expand_typed_dictionaries _ =
     ("Movie: " ^
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]")
-    ~qualifier:(!+"foo.bar");
+    ~qualifier:(Reference.create "foo.bar");
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):

@@ -89,7 +89,8 @@ let build
   let sources =
     (* If a stub matching a handle's qualifier already exists, we shouldn't override. *)
     let should_keep { Source.handle; qualifier; _ } =
-      Handler.module_definition qualifier
+      Reference.access qualifier
+      |> Handler.module_definition
       >>= Module.handle
       >>| File.Handle.equal handle
       |> Option.value ~default:true
@@ -415,7 +416,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> purge_dependents;
 
     DependencyHandler.clear_keys_batch handles;
-    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
+    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access) handles
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers;
 
     if debug then

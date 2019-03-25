@@ -284,7 +284,7 @@ let source_to_codex_representation ~configuration { Source.handle; statements; d
     |> Option.value ~default:""
   in
   {
-    PythonModule.name = Access.show (Source.qualifier ~handle);
+    PythonModule.name = Reference.show (Source.qualifier ~handle);
     docstring;
     rank = 0;
     filename = path;

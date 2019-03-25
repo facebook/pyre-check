@@ -22,7 +22,7 @@ let test_normalize_access _ =
         else
           List.map
             modules
-            ~f:(fun name -> Source.create ~qualifier:(Access.create name) [])
+            ~f:(fun name -> Source.create ~qualifier:(Reference.create name) [])
           |> Option.some
       in
       Test.resolution ?sources ()
