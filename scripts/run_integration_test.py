@@ -97,25 +97,34 @@ def find_test_typeshed(base_directory: str) -> str:
     raise Exception("Could not find a valid typeshed to use")
 
 
-def poor_mans_rsync(source_directory, destination_directory):
+def poor_mans_rsync(source_directory, destination_directory, ignored_files=None):
+    ignored_files = ignored_files or []
     # Do not delete the server directory while copying!
     assert_readable_directory(source_directory)
     source_files = [
         entry
         for entry in os.listdir(source_directory)
-        if os.path.isfile(os.path.join(source_directory, entry))
+        if entry not in ignored_files
+        and os.path.isfile(os.path.join(source_directory, entry))
     ]
     assert_readable_directory(destination_directory)
     destination_files = [
         entry
         for entry in os.listdir(destination_directory)
-        if os.path.isfile(os.path.join(destination_directory, entry))
+        if entry not in ignored_files
+        and os.path.isfile(os.path.join(destination_directory, entry))
     ]
     source_directories = [
         entry
         for entry in os.listdir(source_directory)
         if os.path.isdir(os.path.join(source_directory, entry))
     ]
+    destination_directories = [
+        entry
+        for entry in os.listdir(destination_directory)
+        if os.path.isdir(os.path.join(destination_directory, entry))
+    ]
+
     # Copy all directories over blindly.
     for directory in source_directories:
         source = os.path.join(source_directory, directory)
@@ -124,6 +133,12 @@ def poor_mans_rsync(source_directory, destination_directory):
             shutil.rmtree(destination)
         shutil.copytree(source, destination)
 
+    # Delete any missing directories.
+    for directory in destination_directories:
+        if directory not in source_directories:
+            destination = os.path.join(destination_directory, directory)
+            shutil.rmtree(destination)
+
     for filename in destination_files:
         if filename not in source_files:
             LOG.info("Removing file '%s' from destination" % filename)
@@ -131,7 +146,7 @@ def poor_mans_rsync(source_directory, destination_directory):
 
     # Compare files across source and destination.
     (match, mismatch, error) = filecmp.cmpfiles(
-        source_directory, destination_directory, source_files
+        source_directory, destination_directory, source_files, shallow=False
     )
     for filename in match:
         LOG.info("Skipping file '%s' because it matches" % filename)
@@ -178,13 +193,21 @@ class Repository:
         original_path = os.path.join(
             self._base_repository_path, self._current_commit, ""
         )
-        # I could not find the right flags for rsync to touch/write
-        # only the changed files. This is crucial for watchman to
-        # generate the right notifications. Hence, this.
-        poor_mans_rsync(original_path, ".")
+
+        self._copy_commit(original_path, ".")
 
         self._resolve_typeshed_location(".pyre_configuration")
         return self._current_commit
+
+    def _copy_commit(self, original_path, destination_path):
+        """
+            Copies the next commit at original_path to destination path. Can be
+            overridden by child classes to change copying logic.
+        """
+        # I could not find the right flags for rsync to touch/write
+        # only the changed files. This is crucial for watchman to
+        # generate the right notifications. Hence, this.
+        poor_mans_rsync(original_path, destination_path)
 
     def _resolve_typeshed_location(self, filename):
         with fileinput.input(filename, inplace=True) as f:
@@ -197,8 +220,9 @@ class Repository:
                 )
 
     def get_pyre_errors(self):
-        incremental_errors = self.run_pyre("incremental")
+        # Run the full check first so that watchman updates have time to propagate.
         check_errors = self.run_pyre("check")
+        incremental_errors = self.run_pyre("incremental")
         return (incremental_errors, check_errors)
 
     def run_pyre(self, command: str) -> str:
@@ -238,6 +262,7 @@ def run_integration_test(repository_path) -> int:
 
         if discrepancies:
             LOG.error("Pyre rage:")
+            # pyre-ignore[6]: TextIO is not inferred to implement the _Writer protocol
             print(repository.run_pyre("rage"), file=sys.stderr)
             LOG.error("Found discrepancies between incremental and complete checks!")
             for revision, (actual_error, expected_error) in discrepancies.items():
