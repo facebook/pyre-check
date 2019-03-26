@@ -231,7 +231,11 @@ def fix_file(
         arguments.max_line_length if arguments.max_line_length > 0 else None
     )
     path = pathlib.Path(filename)
-    lines = path.read_text().split("\n")  # type: List[str]
+    text = path.read_text()
+    if "@" "generated" in text:
+        LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
+        return
+    lines = text.split("\n")  # type: List[str]
 
     # Replace lines in file.
     new_lines = []

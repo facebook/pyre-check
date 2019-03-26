@@ -455,6 +455,21 @@ class FixmeTest(unittest.TestCase):
                 "  # pyre-fixme[1]: description\n  1\n2"
             )
 
+        # Generated files.
+        with patch.object(pathlib.Path, "write_text") as path_write_text:
+            errors = [
+                {
+                    "path": "path.py",
+                    "line": 2,
+                    "concise_description": "Error [1]: description",
+                }
+            ]
+            stdin_errors.return_value = errors
+            run_errors.return_value = errors
+            path_read_text.return_value = "# @" "generated\n1\n2\n"
+            upgrade.run_fixme(arguments)
+            path_write_text.assert_not_called()
+
         # Test single error with lint.
         arguments.run = True
         arguments.lint = True
