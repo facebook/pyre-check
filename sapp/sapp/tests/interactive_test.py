@@ -359,8 +359,9 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
+            self.interactive.setup()
             sources = self.interactive._get_leaves(
-                session, issue_instance, SharedTextKind.SOURCE
+                session, int(issue_instance.id), SharedTextKind.SOURCE
             )
 
         self.assertEqual(len(sources), 2)
@@ -1706,6 +1707,27 @@ else:
             ],
             ["caller", "F", "D", "E"],
         )
+
+    def testAllLeavesByKind(self):
+        shared_texts = [
+            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
+            SharedText(id=2, contents="source2", kind=SharedTextKind.SOURCE),
+            SharedText(id=3, contents="source3", kind=SharedTextKind.SOURCE),
+            SharedText(id=4, contents="sink4", kind=SharedTextKind.SINK),
+            SharedText(id=5, contents="sink5", kind=SharedTextKind.SINK),
+        ]
+        with self.db.make_session() as session:
+            self._add_to_session(session, shared_texts)
+            session.commit()
+
+            self.assertEqual(
+                self.interactive._all_leaves_by_kind(session, SharedTextKind.SOURCE),
+                {1: "source1", 2: "source2", 3: "source3"},
+            )
+            self.assertEqual(
+                self.interactive._all_leaves_by_kind(session, SharedTextKind.SINK),
+                {4: "sink4", 5: "sink5"},
+            )
 
     def mock_pager(self, output_string):
         self.pager_calls += 1

@@ -123,6 +123,9 @@ parents()       show trace frames that call the current trace frame
 
         self.sources: Set[str] = set()
         self.sinks: Set[str] = set()
+        self.sources_dict: Dict[int, str] = {}
+        self.sinks_dict: Dict[int, str] = {}
+
         # Tuples representing the trace of the current issue
         self.trace_tuples: List[TraceTuple] = []
         # Active trace frame of the current trace
@@ -135,6 +138,9 @@ parents()       show trace frames that call the current trace frame
                 .filter(Run.status == RunStatus.FINISHED)
                 .scalar()
             )
+
+            self.sources_dict = self._all_leaves_by_kind(session, SharedTextKind.SOURCE)
+            self.sinks_dict = self._all_leaves_by_kind(session, SharedTextKind.SINK)
 
         if latest_run_id.resolved() is None:
             self.warning(
@@ -212,11 +218,9 @@ parents()       show trace frames that call the current trace frame
                 return
 
             self.sources = set(
-                self._get_leaves(session, selected_issue, SharedTextKind.SOURCE)
+                self._get_leaves(session, issue_id, SharedTextKind.SOURCE)
             )
-            self.sinks = set(
-                self._get_leaves(session, selected_issue, SharedTextKind.SINK)
-            )
+            self.sinks = set(self._get_leaves(session, issue_id, SharedTextKind.SINK))
 
         self.current_issue_id = selected_issue.id
         self.current_frame_id = -1
@@ -294,12 +298,13 @@ parents()       show trace frames that call the current trace frame
                 )
 
             issues = query.options(joinedload(IssueInstance.message)).all()
+
             sources_list = [
-                self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
+                self._get_leaves(session, int(issue_instance.id), SharedTextKind.SOURCE)
                 for issue_instance, _ in issues
             ]
             sinks_list = [
-                self._get_leaves(session, issue_instance, SharedTextKind.SINK)
+                self._get_leaves(session, int(issue_instance.id), SharedTextKind.SINK)
                 for issue_instance, _ in issues
             ]
 
@@ -1077,28 +1082,32 @@ parents()       show trace frames that call the current trace frame
         )
 
     def _get_leaves(
-        self, session: Session, issue_instance: IssueInstance, kind: SharedTextKind
+        self, session: Session, issue_instance_id: int, kind: SharedTextKind
     ) -> List[str]:
-        return [
-            leaf
-            for leaf, in session.query(distinct(SharedText.contents))
+        message_ids = [
+            int(id)
+            for id, in session.query(SharedText.id)
             .join(
                 IssueInstanceSharedTextAssoc,
                 SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
             )
-            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance.id)
+            .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
             .filter(SharedText.kind == kind)
             .all()
         ]
+        leaf_dict = (
+            self.sources_dict if kind == SharedTextKind.SOURCE else self.sinks_dict
+        )
+        return [leaf_dict[id] for id in message_ids if id in leaf_dict]
 
     def _show_current_issue_instance(self):
         with self.db.make_session() as session:
             issue_instance, issue = self._get_current_issue(session)
-            sources = self._get_leaves(session, issue_instance, SharedTextKind.SOURCE)
-            sinks = self._get_leaves(session, issue_instance, SharedTextKind.SINK)
 
         page.display_page(
-            self._create_issue_output_string(issue_instance, issue, sources, sinks)
+            self._create_issue_output_string(
+                issue_instance, issue, self.sources, self.sinks
+            )
         )
 
     def _show_current_trace_frame(self):
@@ -1124,3 +1133,13 @@ parents()       show trace frames that call the current trace frame
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
         if current_trace_tuple.branches < 2:
             raise UserError("This trace frame has no alternate branches to take.")
+
+    def _all_leaves_by_kind(
+        self, session: Session, kind: SharedTextKind
+    ) -> Dict[int, str]:
+        return {
+            int(id): contents
+            for id, contents in session.query(SharedText.id, SharedText.contents)
+            .filter(SharedText.kind == kind)
+            .all()
+        }
