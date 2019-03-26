@@ -10,6 +10,7 @@ import logging
 import os
 import signal
 import sys
+from multiprocessing import Event
 from typing import Any, Dict, List, NamedTuple
 
 from .filesystem import AnalysisDirectory, acquire_lock, remove_if_exists
@@ -29,6 +30,7 @@ class WatchmanSubscriber(object):
             analysis_directory.get_root(), ".pyre", self._name
         )  # type: str
         self._alive = True  # type: bool
+        self._ready = Event()  # type: multiprocessing.synchronize.Event
 
     @property
     def _name(self) -> str:
@@ -118,6 +120,7 @@ class WatchmanSubscriber(object):
                         )
                     else:
                         self._handle_response(response)
+                    self._ready.set()  # At least one message has been received.
                 except KeyError:
                     pass
 

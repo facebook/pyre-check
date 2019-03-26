@@ -26,6 +26,9 @@ class Start(Reporting):
         self._no_watchman = True  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
         self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
+        self._file_monitor = (
+            None
+        )  # type: Optional[project_files_monitor.ProjectFilesMonitor]
         if not arguments.no_saved_state:
             # Saved state.
             self._save_initial_state_to = (
@@ -82,11 +85,12 @@ class Start(Reporting):
                     self._call_client(command=self.NAME).check()
 
                     try:  # TODO(T41488848) guard this block with a no_watchman check
-                        project_files_monitor.ProjectFilesMonitor(
+                        self._file_monitor = project_files_monitor.ProjectFilesMonitor(
                             self._arguments,
                             self._configuration,
                             self._analysis_directory,
-                        ).daemonize()
+                        )
+                        self._file_monitor.daemonize()
                         LOG.info("Initialized file monitor.")
                     except project_files_monitor.ProjectFilesMonitorException as error:
                         LOG.warning("Failed to initialize file monitor: %s", error)
