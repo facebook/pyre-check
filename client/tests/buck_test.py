@@ -1,6 +1,7 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
 import glob
+import json
 import subprocess
 import unittest
 from collections import OrderedDict, namedtuple
@@ -196,3 +197,37 @@ class BuckTest(unittest.TestCase):
                 mock_normalize.return_value = ["normalized"]
                 buck.generate_source_directories(["target"], build=True, prompt=True)
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
+
+    @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
+    def test_resolve_relative_paths(self, find_buck_root):
+        with patch.object(subprocess, "check_output") as buck_query:
+            buck_query.return_value = json.dumps(
+                {
+                    "ownerA": {
+                        "buck.base_path": "src/python",
+                        "srcs": {"a.py": "a.py", "b/c.py": "otherDirectory/c.py"},
+                    },
+                    "ownerB": {
+                        "buck.base_path": "src/python",
+                        "buck.base_module": "com.companyname",
+                        "srcs": {"package.py": "package.py"},
+                    },
+                }
+            ).encode("utf-8")
+
+            paths = [
+                "/BUCK_ROOT/src/python/a.py",  # tracked paths
+                "/BUCK_ROOT/src/python/b/c.py",
+                "/BUCK_ROOT/src/python/package.py",
+                "/BUCK_ROOT/src/java/python/a.py",  # untracked paths
+                "/BUCK_ROOT/com/companyname/package.py"
+                "/OTHER_PROJECT/src/python/a.py",
+            ]
+            self.assertDictEqual(
+                buck.resolve_relative_paths(paths),
+                {
+                    "/BUCK_ROOT/src/python/a.py": "src/python/a.py",
+                    "/BUCK_ROOT/src/python/b/c.py": "src/python/otherDirectory/c.py",
+                    "/BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
+                },
+            )

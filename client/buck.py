@@ -1,12 +1,14 @@
 # Copyright 2004-present Facebook.  All rights reserved.
 
+import functools
 import glob
+import json
 import logging
 import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import Dict, Iterable, List, cast  # noqa
+from typing import Dict, Iterable, List, Optional, cast  # noqa
 
 from . import log
 from .filesystem import find_root
@@ -35,7 +37,7 @@ def presumed_target_root(target):
 def _find_built_source_directories(targets: Iterable[str]) -> BuckOut:
     targets_not_found = []
     source_directories = []
-    buck_root = find_root(os.getcwd(), ".buckconfig")
+    buck_root = find_buck_root(os.getcwd())
     if buck_root is None:
         raise Exception("No .buckconfig found in ancestors of the current directory.")
 
@@ -160,6 +162,65 @@ def _map_normalized_targets_to_original(
             name = target
         mapped_targets.add(name)
     return list(mapped_targets)
+
+
+@functools.lru_cache()
+def find_buck_root(path: str) -> Optional[str]:
+    return find_root(path, ".buckconfig")
+
+
+def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
+    """
+        Query buck to obtain a mapping from each absolute path to the relative
+        location in the analysis directory.
+    """
+    buck_root = find_buck_root(os.getcwd())
+    if buck_root is None:
+        LOG.error(
+            "Buck root couldn't be found. Returning empty analysis directory mapping."
+        )
+        return {}
+    command = [
+        "buck",
+        "query",
+        "--json",
+        "--output-attribute",
+        ".*",
+        "owner(%s)",
+        *paths,
+    ]
+    try:
+        output = json.loads(
+            subprocess.check_output(command, timeout=10, stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+    except (subprocess.CalledProcessError, json.decoder.JSONDecodeError) as error:
+        raise BuckException("Querying buck for relative paths failed: {}".format(error))
+    # TODO(T40580762) we should use the owner name to determine which files are a
+    # part of the pyre project
+    results = {}
+    for path in paths:
+        # For each path, search for the target that owns it.
+        for owner in output.values():
+            prefix = os.path.join(buck_root, owner["buck.base_path"]) + os.sep
+
+            if not path.startswith(prefix):
+                continue
+
+            suffix = path[len(prefix) :]
+
+            if suffix not in owner["srcs"]:
+                continue
+
+            if "buck.base_module" in owner:
+                base_path = os.path.join(*owner["buck.base_module"].split("."))
+            else:
+                base_path = owner["buck.base_path"]
+
+            results[path] = os.path.join(base_path, owner["srcs"][suffix])
+            break  # move on to next path
+    return results
 
 
 def generate_source_directories(
