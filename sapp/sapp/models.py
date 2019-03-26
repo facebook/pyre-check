@@ -698,7 +698,7 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         doc="Location (possibly a range) of the issue",
     )
 
-    filename: str = Column(
+    filename = Column(
         String(length=767),
         doc="Filename containing the issue",
         nullable=True,
@@ -1296,7 +1296,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         doc="The callee port of this call edge'",
     )
 
-    filename: str = Column(
+    filename = Column(
         String(length=4096), doc="Filename containing the call", nullable=False
     )
 
@@ -1389,7 +1389,7 @@ class Postcondition(Base, PrepareMixin, RecordMixin):  # noqa
         doc="The location the callee in the source code (line|start|end)",
     )
 
-    filename: str = Column(
+    filename = Column(
         String(length=4096), doc="Filename containing the call", nullable=False
     )
 
@@ -1482,7 +1482,7 @@ class Precondition(Base, PrepareMixin, RecordMixin):  # noqa
         SourceLocationType, nullable=False, doc="The location the call"
     )
 
-    filename: str = Column(
+    filename = Column(
         String(length=4096), doc="Filename containing the call", nullable=False
     )
 

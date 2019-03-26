@@ -28,6 +28,28 @@ logger = logging.getLogger("sapp")
 click_log.basic_config(logger)
 
 
+def require_option(current_ctx: click.Context, param_name: str) -> None:
+    """Throw an exception if an option wasn't required. This is useful when its
+    optional in some contexts but required for a subcommand"""
+
+    ctx = current_ctx
+    param_definition = None
+    while ctx is not None:
+        # ctx.command.params has the actual definition of the param. We use
+        # this when raising the exception.
+        param_definition = next(
+            (p for p in ctx.command.params if p.name == param_name), None
+        )
+
+        # ctx.params has the current value of the parameter, as set by the user.
+        if ctx.params.get(param_name):
+            return
+        ctx = ctx.parent
+
+    assert param_definition, f"unknown parameter {param_name}"
+    raise click.MissingParameter(ctx=current_ctx, param=param_definition)
+
+
 def common_options(func):
     @click.group(context_settings={"help_option_names": ["--help", "-h"]})
     @click_log.simple_verbosity_option(logger)
