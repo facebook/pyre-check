@@ -507,6 +507,20 @@ let test_check_constructors _ =
       "Call error [29]: `unknown` is not a function.";
     ];
 
+  assert_type_errors ~debug:false
+    {|
+      def foo(x: typing.Type[typing.Any]) -> typing.Any:
+        return x()
+    |}
+    [];
+
+  assert_type_errors ~debug:false
+    {|
+      def foo(x: typing.Type[typing.Any]) -> typing.Any:
+        return x(42)
+    |}
+    [];
+
   assert_strict_type_errors
     {|
       class Class:

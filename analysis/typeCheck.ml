@@ -947,6 +947,8 @@ module State = struct
                           | Variable { constraints = Type.Explicit constraints; _ }
                             when List.length constraints > 1 ->
                               backup
+                          | Any ->
+                              backup
                           | meta_parameter ->
                               let parent =
                                 match meta_parameter with
