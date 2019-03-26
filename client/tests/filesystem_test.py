@@ -427,6 +427,25 @@ class FilesystemTest(unittest.TestCase):
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
+                {"arguments_target"}, build=True, prompt=True
+            )
+            self.assertEqual(
+                analysis_directory._source_directories,
+                {"realpath(root/arguments_target)"},
+            )
+
+        with patch.object(
+            buck, "generate_source_directories", return_value=["arguments_target"]
+        ) as buck_source_directories:
+            # same test as above, but Start instead of Check; build should be False
+            arguments.command = commands.Start
+
+            analysis_directory = resolve_analysis_directory(
+                arguments, commands, configuration, prompt=True
+            )
+            assert isinstance(analysis_directory, SharedAnalysisDirectory)
+            analysis_directory._resolve_source_directories()
+            buck_source_directories.assert_called_with(
                 {"arguments_target"}, build=False, prompt=True
             )
             self.assertEqual(

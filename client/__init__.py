@@ -159,7 +159,10 @@ def resolve_analysis_directory(
             search_path=configuration.search_path,
         )
     else:
-        build = arguments.build or arguments.command in [commands.Restart]
+        build = arguments.build or arguments.command in [
+            commands.Check,
+            commands.Restart,
+        ]
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
             targets=targets,
