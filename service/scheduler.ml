@@ -116,6 +116,7 @@ let single_job { workers; _ } ~f work =
 
 
 let mock () =
+  Analysis.Resolution.FunctionDefinitionsCache.invalidate ();
   let configuration = Configuration.Analysis.create () in
   Memory.get_heap_handle configuration |> ignore;
   { workers = []; number_of_workers = 1; bucket_multiplier = 1; is_parallel = false }

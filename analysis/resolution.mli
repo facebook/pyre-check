@@ -74,6 +74,12 @@ val global: t -> Reference.t -> global option
 val module_definition: t -> Access.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 val class_representation: t -> Type.t -> class_representation option
+
+module FunctionDefinitionsCache : sig
+  val enable: unit -> unit
+  val invalidate: unit -> unit
+end
+
 val function_definitions: t -> Access.t -> ((Define.t Node.t) list) option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool

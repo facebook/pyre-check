@@ -196,26 +196,59 @@ let generics ({ generics; _ } as resolution) =
   generics ~resolution
 
 
+module FunctionDefinitionsCache = struct
+  let cache =
+    Access.Table.create ()
+
+  let enabled =
+    (* Only enable this in nonincremental mode for now. *)
+    ref false
+
+  let enable () =
+    enabled := true
+
+  let set key value =
+    Hashtbl.set cache ~key ~data:value
+
+  let get key =
+    if !enabled then
+      Hashtbl.find cache key
+    else
+      None
+
+  let invalidate () =
+    Hashtbl.clear cache
+end
+
+
 let function_definitions resolution access =
-  let qualifier =
-    let rec qualifier ~lead ~tail =
-      match tail with
-      | head :: tail ->
-          let new_lead = lead @ [head] in
-          if Option.is_none (module_definition resolution new_lead) then
-            lead
-          else
-            qualifier ~lead:new_lead ~tail
-      | _ ->
-          lead
-    in
-    qualifier ~lead:[] ~tail:access
-  in
-  Ast.SharedMemory.Sources.get_for_qualifier (Reference.from_access qualifier)
-  >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
-  >>| List.filter
-    ~f:(fun { Node.value = { Define.name; _ }; _ } ->
-        Access.equal access (Reference.access name))
+  match FunctionDefinitionsCache.get access with
+  | Some result ->
+      result
+  | None ->
+      let qualifier =
+        let rec qualifier ~lead ~tail =
+          match tail with
+          | head :: tail ->
+              let new_lead = lead @ [head] in
+              if Option.is_none (module_definition resolution new_lead) then
+                lead
+              else
+                qualifier ~lead:new_lead ~tail
+          | _ ->
+              lead
+        in
+        qualifier ~lead:[] ~tail:access
+      in
+      let result =
+        Ast.SharedMemory.Sources.get_for_qualifier (Reference.from_access qualifier)
+        >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
+        >>| List.filter
+          ~f:(fun { Node.value = { Define.name; _ }; _ } ->
+              Access.equal access (Reference.access name))
+      in
+      FunctionDefinitionsCache.set access result;
+      result
 
 
 let full_order ({ order; _ } as resolution) =

@@ -42,6 +42,7 @@
   core
   sexplib
   ppxlib
+  pyrelib.analysis
   pyrelib.configuration
   pyrelib.memory
   pyrelib.statistics
