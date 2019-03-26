@@ -2738,6 +2738,24 @@ let test_forward_statement _ =
     ["x", Type.list Type.Top; "y", Type.integer]
     "assert y in x"
     ["x", Type.list Type.Top; "y", Type.integer];
+  assert_forward
+    []
+    "assert None in []"
+    [];
+  assert_forward
+    []
+    "assert None in [1]"
+    [];
+  assert_forward
+    ["x", Type.list Type.Top]
+    "assert None in x"
+    ["x", Type.list Type.Top];
+  assert_forward
+    ~precondition_immutables:["x", (false, Type.float)]
+    ~postcondition_immutables:["x", (false, Type.float)]
+    ["x", Type.float]
+    "assert x in [1]"
+    ["x", Type.float];
 
   (* Isinstance. *)
   assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];

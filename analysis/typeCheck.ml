@@ -3570,7 +3570,7 @@ module State = struct
               if Type.is_iterable iterable then
                 let refined = Annotation.create (Type.single_parameter iterable) in
                 match Resolution.get_local ~global_fallback:false resolution ~access with
-                | Some previous ->
+                | Some previous when not (Annotation.is_immutable previous) ->
                     if Refinement.less_or_equal ~resolution refined previous then
                       let resolution =
                         Resolution.set_local resolution ~access ~annotation:refined
@@ -3579,9 +3579,11 @@ module State = struct
                     else
                       (* Keeping previous state, since it is more refined. *)
                       state
-                | None ->
+                | None when not (Resolution.is_global resolution ~access) ->
                     let resolution = Resolution.set_local resolution ~access ~annotation:refined in
                     { state with resolution }
+                | _ ->
+                    state
               else
                 state
           | _ ->
