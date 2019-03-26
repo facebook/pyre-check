@@ -588,18 +588,25 @@ class FilesystemTest(unittest.TestCase):
             },
         )
 
+    @patch.object(filesystem, "_add_symbolic_link")
     @patch.object(filesystem, "_delete_symbolic_link")
     @patch.object(filesystem, "_compute_symbolic_link_mapping", return_value={})
     @patch.object(os.path, "isfile")
     @patch.object(os.path, "realpath", side_effect=lambda path: path)
     def test_process_updated_files(
-        self, realpath, isfile, compute_symbolic_links, delete_symbolic_link
+        self,
+        realpath,
+        isfile,
+        compute_symbolic_links,
+        delete_symbolic_link,
+        add_symbolic_link,
     ):
         search_path = ["/SEARCH_PATH", "/SECOND_SEARCH_PATH$subdir"]
         tracked_files = [
             "/ROOT/a.py",
             "/ROOT/subdir/b.py",
             "/ROOT/deleted_file.py",
+            "/ROOT/new_file.py",
             "/SEARCH_PATH/library.py",
             "/SECOND_SEARCH_PATH/subdir/library2.py",
         ]
@@ -627,12 +634,14 @@ class FilesystemTest(unittest.TestCase):
             "/ANALYSIS/a.py",
             "/ANALYSIS/subdir/b.py",
             "/ANALYSIS/deleted_file.py",
+            "/ANALYSIS/new_file.py",
             "/SEARCH_PATH/library.py",
             "/SECOND_SEARCH_PATH/subdir/library2.py",
         ]
         analysis_directory = SharedAnalysisDirectory(
             ["/ROOT"], [], search_path=search_path
         )
+
         with patch.object(
             analysis_directory, "_resolve_source_directories"
         ), patch.object(os, "makedirs"), patch.object(
@@ -644,11 +653,27 @@ class FilesystemTest(unittest.TestCase):
         ):
             analysis_directory.prepare()  # compute symlinks, but don't build directory
 
-        updated_files = analysis_directory.process_updated_files(
-            [*tracked_files, *untracked_files]
-        )
+        with patch.object(
+            buck,
+            "resolve_relative_paths",
+            return_value={"/ROOT/new_file.py": "new_file.py"},
+        ), patch.object(
+            analysis_directory, "get_root", return_value="/ANALYSIS"
+        ), patch.object(
+            os, "getcwd", return_value="/ROOT"
+        ):
+            updated_files = analysis_directory.process_updated_files(
+                [*tracked_files, *untracked_files]
+            )
         self.assertListEqual(sorted(updated_files), sorted(shared_tracked_files))
         delete_symbolic_link.assert_called_once_with("/ANALYSIS/deleted_file.py")
+        add_symbolic_link.assert_called_once_with(
+            "/ANALYSIS/new_file.py", "/ROOT/new_file.py"
+        )
         self.assertTrue(
             "/ROOT/deleted_files.py" not in analysis_directory._symbolic_links
+        )
+        self.assertEqual(
+            analysis_directory._symbolic_links.get("/ROOT/new_file.py"),
+            "/ANALYSIS/new_file.py",
         )

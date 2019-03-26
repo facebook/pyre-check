@@ -58,6 +58,10 @@ def exists(path: str) -> str:
     return path
 
 
+def is_parent(parent: str, child: str) -> bool:
+    return child.startswith(parent.rstrip(os.sep) + os.sep)
+
+
 class AnalysisDirectory:
     def __init__(
         self,
@@ -107,8 +111,7 @@ class AnalysisDirectory:
 
     def _is_tracked(self, path: str) -> bool:
         return any(
-            path.startswith(directory.rstrip(os.sep) + os.sep)
-            for directory in self._tracked_directories
+            is_parent(directory, path) for directory in self._tracked_directories
         )
 
 
@@ -203,17 +206,30 @@ class SharedAnalysisDirectory(AnalysisDirectory):
 
     def process_updated_files(self, paths: List[str]) -> List[str]:
         """
-            Return the paths to in the analysis directory (symbolic links)
+            Return the paths in the analysis directory (symbolic links)
             corresponding to the given paths.
             Result also includes any files which are within a tracked directory.
 
-            This method will remove symbolic links for deleted files.
-
-            TODO(T40580762) use buck to support new files
+            This method will remove/add symbolic links for deleted/new files.
         """
         tracked_files = []
 
         deleted_paths = [path for path in paths if not os.path.isfile(path)]
+        # TODO(T40580762) use buck targets to properly identify what new files belong
+        # to the project rather than checking if they are within the current directory
+        new_paths = [
+            path
+            for path in paths
+            if path not in self._symbolic_links
+            and os.path.isfile(path)
+            and is_parent(os.getcwd(), path)
+        ]
+        updated_paths = [
+            path
+            for path in paths
+            if path not in deleted_paths and path not in new_paths
+        ]
+
         if deleted_paths:
             LOG.info("Detected deleted paths: `%s`.", "`,`".join(deleted_paths))
         for path in deleted_paths:
@@ -225,7 +241,24 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 except OSError:
                     LOG.warning("Failed to delete link at `%s`.", link)
 
-        for path in paths:
+        if new_paths:
+            LOG.info("Detected new paths: %s.", ",".join(new_paths))
+            try:
+                for path, relative_link in buck.resolve_relative_paths(
+                    new_paths
+                ).items():
+                    link = os.path.join(self.get_root(), relative_link)
+                    try:
+                        _add_symbolic_link(link, path)
+                        self._symbolic_links[path] = link
+                        tracked_files.append(link)
+                    except OSError:
+                        LOG.warning("Failed to add link at %s.", link)
+            except buck.BuckException as error:
+                LOG.error("Exception occurred when querying buck: %s", error)
+                LOG.error("No new paths will be added to the analysis directory.")
+
+        for path in updated_paths:
             if path in self._symbolic_links:
                 tracked_files.append(self._symbolic_links[path])
             elif self._is_tracked(path):
