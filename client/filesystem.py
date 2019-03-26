@@ -159,6 +159,9 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self.get_scratch_directory(), "{}{}".format(path_to_root, suffix)
         )
 
+    def get_filter_root(self) -> List[str]:
+        return self._filter_paths or [os.getcwd()]
+
     # Exposed for testing.
     def _resolve_source_directories(self):
         if self._targets:

@@ -15,7 +15,7 @@ from typing import Any, Dict, Iterable, List, Sequence, Set  # noqa
 from .. import log
 from ..configuration import Configuration
 from ..error import Error
-from ..filesystem import AnalysisDirectory
+from ..filesystem import AnalysisDirectory, translate_path
 from .command import ClientException, Command, Result
 
 
@@ -52,10 +52,11 @@ class Reporting(Command):
             log.stdout.write(json.dumps([error.__dict__ for error in errors]))
 
     def _get_directories_to_analyze(self) -> Set[str]:
-        current_project_directory = self._analysis_directory.get_filter_root()
+        current_project_directories = self._analysis_directory.get_filter_root()
+        # The server may not exist in the same directory, so use absolute paths.
         directories_to_analyze = {
-            os.path.relpath(filter_root, os.getcwd())
-            for filter_root in current_project_directory
+            translate_path(os.getcwd(), filter_root)
+            for filter_root in current_project_directories
         }
         return directories_to_analyze
 

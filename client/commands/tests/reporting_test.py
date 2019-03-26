@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 from ... import commands  # noqa
 from ...error import Error  # noqa
-from ...filesystem import AnalysisDirectory
+from ...filesystem import AnalysisDirectory, SharedAnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
@@ -163,3 +163,16 @@ class ReportingTest(unittest.TestCase):
             arguments, configuration, AnalysisDirectory("base", filter_paths=["a/b"])
         )
         self.assertEqual(handler._get_directories_to_analyze(), {"a/b"})
+
+        # With no local configuration, no filter paths, and a shared analysis
+        # directory, fall back on the pyre root (current directory).
+        configuration.local_configuration = None
+        handler = commands.Reporting(
+            arguments,
+            configuration,
+            SharedAnalysisDirectory([], ["//target/name"], filter_paths=[]),
+        )
+        with patch.object(os, "getcwd", return_value="source_directory"):
+            self.assertEqual(
+                handler._get_directories_to_analyze(), {"source_directory"}
+            )
