@@ -79,8 +79,8 @@ The Pyre command line flags can be summarized by running `pyre --help` or `pyre 
 $ pyre --help
 usage: pyre [-h] [-l LOCAL_CONFIGURATION] [--version] [--binary-version]
             [--show-error-traces] [--output {text,json}] [--verbose] [-n]
-            [--show-parse-errors] [--target TARGETS] [--build]
-            [--source-directory SOURCE_DIRECTORIES]
+            [--hide-parse-errors] [--show-parse-errors] [--target TARGETS]
+            [--build] [--source-directory SOURCE_DIRECTORIES]
             [--search-path SEARCH_PATH] [--preserve-pythonpath]
             [--binary BINARY] [--exclude EXCLUDE] [--typeshed TYPESHED]
             [--save-initial-state-to SAVE_INITIAL_STATE_TO]

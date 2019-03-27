@@ -42,6 +42,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -78,6 +80,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -107,6 +111,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -138,6 +144,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -163,6 +171,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-workers",
@@ -182,6 +192,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-terminal",
@@ -205,6 +217,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-filter-directories",
@@ -229,6 +243,8 @@ class StartTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-filter-directories",
@@ -253,6 +269,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-save-initial-state-to",
@@ -277,6 +295,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-load-state-from",
@@ -299,6 +319,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-workers",
@@ -317,6 +339,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-workers",
@@ -335,6 +359,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-saved-state-project",
@@ -357,6 +383,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-workers",
@@ -378,6 +406,8 @@ class StartTest(unittest.TestCase):
         self.assertEqual(
             command._flags(),
             [
+                "-logging-sections",
+                "parser",
                 "-project-root",
                 ".",
                 "-workers",

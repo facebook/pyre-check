@@ -504,7 +504,7 @@ def mock_arguments() -> MagicMock:
     arguments.sequential = False
     arguments.show_error_traces = False
     arguments.verbose = False
-    arguments.show_parse_errors = False
+    arguments.hide_parse_errors = True
     arguments.local_configuration = None
     arguments.logging_sections = None
     arguments.logger = None

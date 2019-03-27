@@ -86,7 +86,7 @@ class Command:
         self._additional_checks = arguments.additional_check  # type: List[str]
         self._show_error_traces = arguments.show_error_traces  # type: bool
         self._verbose = arguments.verbose  # type: bool
-        self._show_parse_errors = arguments.show_parse_errors  # type: bool
+        self._hide_parse_errors = arguments.hide_parse_errors  # type: bool
         self._logging_sections = arguments.logging_sections  # type: str
         self._capable_terminal = arguments.capable_terminal  # type: bool
         self._log_identifier = arguments.log_identifier  # type: str
@@ -132,7 +132,7 @@ class Command:
             flags.append("-show-error-traces")
         if self._verbose:
             flags.append("-verbose")
-        if self._show_parse_errors:
+        if not self._hide_parse_errors:
             if self._logging_sections:
                 self._logging_sections = self._logging_sections + ",parser"
             else:

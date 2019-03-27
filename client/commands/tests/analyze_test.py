@@ -33,6 +33,8 @@ class AnalyzeTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -55,6 +57,8 @@ class AnalyzeTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -80,6 +84,8 @@ class AnalyzeTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -105,6 +111,8 @@ class AnalyzeTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",

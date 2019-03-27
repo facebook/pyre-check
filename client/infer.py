@@ -442,9 +442,14 @@ def main():
         "--noninteractive", action="store_true", help="Disable interactive logging"
     )
     parser.add_argument(
-        "--show-parse-errors",
+        "--hide-parse-errors",
         action="store_true",
         help="Display detailed information about parse errors",
+    )
+    parser.add_argument(
+        "--show-parse-errors",
+        action="store_true",
+        help="DEPRECATED Show detailed information about parse errors",
     )
     parser.add_argument(
         "--typeshed",

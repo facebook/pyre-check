@@ -51,8 +51,8 @@ def mock_arguments(
     arguments.save_results_to = None
     arguments.sequential = False
     arguments.show_error_traces = False
-    arguments.show_parse_errors = show_parse_errors
     arguments.source_directories = source_directories
+    arguments.hide_parse_errors = False
     arguments.strict = False
     arguments.taint_models_path = None
     arguments.targets = targets
@@ -123,10 +123,20 @@ class CommandTest(unittest.TestCase):
         analysis_directory = AnalysisDirectory(".")
 
         command = commands.Command(arguments, configuration, analysis_directory)
-        self.assertEqual(command._flags(), ["-project-root", "."])
+        self.assertEqual(
+            command._flags(), ["-logging-sections", "parser", "-project-root", "."]
+        )
 
         configuration.logger = "/foo/bar"
         command = commands.Command(arguments, configuration, analysis_directory)
         self.assertEqual(
-            command._flags(), ["-project-root", ".", "-logger", "/foo/bar"]
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-logger",
+                "/foo/bar",
+            ],
         )

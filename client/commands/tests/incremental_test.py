@@ -45,6 +45,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -78,6 +80,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -106,6 +110,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -136,6 +142,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -165,6 +173,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-typeshed",
@@ -216,6 +226,8 @@ class IncrementalTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     "/",
                     "-typeshed",

@@ -28,6 +28,8 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -73,6 +75,8 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-sequential",
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -108,6 +112,8 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-sequential",
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-filter-directories",
@@ -143,7 +149,7 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-logging-sections",
-                    "-progress",
+                    "parser,-progress",
                     "-project-root",
                     ".",
                     "-workers",
@@ -161,13 +167,13 @@ class CheckTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_check_show_parse_errors(
+    def test_check_hide_parse_errors(
         self, directories_to_analyze, realpath, check_output
     ) -> None:
         realpath.side_effect = lambda x: x
 
         arguments = mock_arguments()
-        arguments.show_parse_errors = True
+        arguments.hide_parse_errors = True
         configuration = mock_configuration()
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -177,8 +183,6 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(
                 command._flags(),
                 [
-                    "-logging-sections",
-                    "parser",
                     "-project-root",
                     ".",
                     "-workers",
@@ -210,6 +214,8 @@ class CheckTest(unittest.TestCase):
                 command._flags(),
                 [
                     "-strict",
+                    "-logging-sections",
+                    "parser",
                     "-project-root",
                     ".",
                     "-workers",

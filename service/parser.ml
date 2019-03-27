@@ -190,7 +190,7 @@ let log_parse_errors ~syntax_error ~system_error ~description =
     let hint =
       if syntax_errors > 0 && not (Log.is_enabled `Parser) then
         Format.asprintf
-          " Run `pyre --show-parse-errors %s` for more details%s."
+          " Run `pyre %s` without `--hide-parse-errors` for more details%s."
           (try (Array.nget Sys.argv 1) with _ -> "restart")
           (if system_errors > 0 then " on the syntax errors" else "")
       else
