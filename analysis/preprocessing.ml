@@ -39,10 +39,12 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
 
 
 let expand_string_annotations ({ Source.handle; _ } as source) =
-  let module Transform = Transform.MakeStatementTransformer(struct
+  let module Transform = Transform.Make(struct
       type t = unit
 
-      let statement _ ({ Node.value; _ } as statement) =
+      let transform_children _ _ = true
+
+      let transform_string_annotation_expression handle =
         let rec transform_expression
             ({
               Node.location = {
@@ -133,8 +135,14 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
           in
           { expression with Node.value }
         in
+        transform_expression
+
+      let statement _ ({ Node.value; _ } as statement) =
         let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
-          { assign with Assign.annotation = annotation >>| transform_expression }
+          {
+            assign with
+            Assign.annotation = annotation >>| transform_string_annotation_expression handle
+          }
         in
         let transform_define ~define:({ Define.parameters; return_annotation; _ } as define) =
           let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
@@ -142,14 +150,14 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               node with
               Node.value = {
                 parameter with
-                Parameter.annotation = annotation >>| transform_expression;
+                Parameter.annotation = annotation >>| transform_string_annotation_expression handle;
               };
             }
           in
           {
             define with
             Define.parameters = List.map parameters ~f:parameter;
-            return_annotation = return_annotation >>| transform_expression;
+            return_annotation = return_annotation >>| transform_string_annotation_expression handle;
           }
         in
         let statement =
@@ -162,6 +170,39 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
           { statement with Node.value }
         in
         (), [statement]
+
+      let expression _ expression =
+        let transform_call_access = function
+          | ({ Node.value = [
+              ({
+                Argument.name = None;
+                value = ({ Node.value = String _; _ } as value)
+              } as type_argument);
+              value_argument;
+            ]; _ } as call) ->
+              let annotation = transform_string_annotation_expression handle value in
+              let value = [{ type_argument with value = annotation }; value_argument] in
+              { call with value }
+          | _ as call -> call
+        in
+        let value =
+          match Node.value expression with
+          | Access (SimpleAccess [
+              Identifier "cast" as cast_identifier;
+              Call call;
+            ]) ->
+              let call = Access.Call (transform_call_access call) in
+              Access (SimpleAccess [cast_identifier; call])
+          | Access (SimpleAccess [
+              Identifier "typing" as typing_identifier;
+              Identifier "cast" as cast_identifier;
+              Call call;
+            ]) ->
+              let call = Access.Call (transform_call_access call) in
+              Access (Access.SimpleAccess [typing_identifier; cast_identifier; call])
+          | value -> value
+        in
+        { expression with Node.value }
     end)
   in
   Transform.transform () source

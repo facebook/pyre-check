@@ -94,6 +94,50 @@ let test_expand_string_annotations _ =
     {|
       class Foo: ...
       def foo(f: Foo[K, V]): ...
+    |};
+
+  assert_expand
+    {|
+      from typing import cast
+      class A: ...
+      class B(A): ...
+      def foo(o: object) -> B:
+        s = cast('str', o)
+        i = 42 + cast('int', o)
+        a = cast('A', o)
+        return cast('B', cast('A', o))
+      class Foo:
+        x: B = cast('float', 42)
+    |}
+    {|
+      from typing import cast
+      class A: ...
+      class B(A): ...
+      def foo(o: object) -> B:
+        s = cast(str, o)
+        i = 42 + cast(int, o)
+        a = cast(A, o)
+        return cast(B, cast(A, o))
+      class Foo:
+        x: B = cast(float, 42)
+    |};
+  assert_expand
+    "x = typing.cast('1234', 42)"
+    "x = typing.cast($unparsed_annotation, 42)";
+  assert_expand
+    {|
+      import typing
+      class Foo: ...
+      def foo(x: typing.Any):
+        y = typing.cast('typing.List[Foo]', x)
+        z = typing.cast("typing.Dict[str, Foo]", x)
+    |}
+    {|
+      import typing
+      class Foo: ...
+      def foo(x: typing.Any):
+        y = typing.cast(typing.List[Foo], x)
+        z = typing.cast(typing.Dict[str, Foo], x)
     |}
 
 
