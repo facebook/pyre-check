@@ -19,11 +19,11 @@
             "root": {
               "filename": "remote_code_execution.py",
               "line": 5,
-              "start": 24,
-              "end": 26
+              "start": 25,
+              "end": 27
             },
             "leaves": [
-              { "kind": "UserControlled", "name": "__userControlled" }
+              { "kind": "UserControlled", "name": "__user_controlled" }
             ]
           }
         ]
@@ -65,11 +65,11 @@
             "root": {
               "filename": "remote_code_execution.py",
               "line": 10,
-              "start": 24,
-              "end": 26
+              "start": 25,
+              "end": 27
             },
             "leaves": [
-              { "kind": "UserControlled", "name": "__userControlled" }
+              { "kind": "UserControlled", "name": "__user_controlled" }
             ]
           }
         ]

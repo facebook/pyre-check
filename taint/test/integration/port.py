@@ -3,12 +3,12 @@
 
 def source_field():
     result = {}
-    result.a = __testSource()
+    result.a = __test_source()
     return result
 
 
 def sink_field(arg):
-    __testSink(arg.a)
+    __test_sink(arg.a)
 
 
 def match_flows():
@@ -53,10 +53,10 @@ def match_star_star_arg_directly():
 class Foo:
     # @cached_property
     def some_source():
-        return __testSource()
+        return __test_source()
 
 
 def refer_to_method_as_field(foo: Foo):
     # This comes up in Instagram due to @cached_property decorators
     taint = foo.some_source
-    __testSink(taint)
+    __test_sink(taint)

@@ -27,7 +27,7 @@
               "port": "result",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
         ]
@@ -47,7 +47,7 @@
               "port": "formal(arg)",
               "length": 2
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
         ]
@@ -76,7 +76,7 @@
               "port": "formal(arg)",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
         ]
@@ -97,10 +97,10 @@
             "root": {
               "filename": "source_sink_flow.py",
               "line": 5,
-              "start": 23,
-              "end": 25
+              "start": 24,
+              "end": 26
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
         ]
@@ -123,10 +123,10 @@
             "root": {
               "filename": "source_sink_flow.py",
               "line": 9,
-              "start": 15,
-              "end": 18
+              "start": 16,
+              "end": 19
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
         ]
@@ -155,7 +155,7 @@
               "port": "result",
               "length": 1
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
         ]

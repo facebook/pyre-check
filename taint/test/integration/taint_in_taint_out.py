@@ -34,7 +34,7 @@ def product_data_wrapper(x):
 
 
 def tito():
-    return product_data_wrapper(__testSource())
+    return product_data_wrapper(__test_source())
 
 
 def via_getattr(x, y):

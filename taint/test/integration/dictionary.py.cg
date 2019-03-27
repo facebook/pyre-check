@@ -1,5 +1,5 @@
 @generated
 Call dependencies
-dictionary.dictionary_entry_sink (fun) -> [__testSink (fun)]
-dictionary.dictionary_source (fun) -> [__testSource (fun)]
+dictionary.dictionary_entry_sink (fun) -> [__test_sink (fun)]
+dictionary.dictionary_source (fun) -> [__test_source (fun)]
 dictionary.dictionary_tito (fun) -> []

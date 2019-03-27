@@ -2,11 +2,11 @@
 
 
 def bar():
-    return __testSource()
+    return __test_source()
 
 
 def qux(arg):
-    __testSink(arg)
+    __test_sink(arg)
 
 
 def bad(ok, arg):

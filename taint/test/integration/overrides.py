@@ -26,7 +26,7 @@ class A(Base):
         super(Base, self).__init__()
 
     def methodA(self, arg):
-        __testSink(arg)
+        __test_sink(arg)
 
 
 class B(Base):
@@ -36,11 +36,11 @@ class B(Base):
         super(Base, self).__init__()
 
     def methodB(self):
-        return __testSource()
+        return __test_source()
 
     @classmethod
     def classMethod(cls, arg):
-        __testSink(arg)
+        __test_sink(arg)
 
 
 class C(B):
@@ -62,10 +62,10 @@ class D(C):
         super(C, self).__init__()
 
     def methodA(self, arg):
-        __testSink(arg)
+        __test_sink(arg)
 
     def methodB(self):
-        return __testSource()
+        return __test_source()
 
 
 def testBase(o: Base, cls: typing.Type[Base]):

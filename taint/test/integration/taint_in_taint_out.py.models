@@ -163,11 +163,11 @@
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 37,
-              "start": 44,
-              "end": 46
+              "start": 45,
+              "end": 47
             },
-            "tito": [ { "line": 37, "start": 32, "end": 44 } ],
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "tito": [ { "line": 37, "start": 32, "end": 45 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "via": "tito" },
               { "via": "special_source" },

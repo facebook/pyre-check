@@ -198,10 +198,10 @@ let test_fixpoint _ =
   assert_fixpoint
     {|
       def bar():
-        return __testSource()
+        return __test_source()
 
       def qux(arg):
-        __testSink(arg)
+        __test_sink(arg)
 
       def bad(arg):
         qux(arg)
@@ -221,7 +221,7 @@ let test_fixpoint _ =
         bad(x)
 
       def rce_problem():
-        x = __userControlled()
+        x = __user_controlled()
         eval(x)
 
       class TestMethods:
@@ -252,22 +252,22 @@ let test_fixpoint _ =
         x.receiver_sink(5)
 
       def list_sink(list):
-        __testSink(list[1])
+        __test_sink(list[1])
 
       def list_match():
-        x = [5, __testSource()]
+        x = [5, __test_source()]
         list_sink(x)
 
       def no_list_match():
-        x = [__testSource(), 5]
+        x = [__test_source(), 5]
         list_sink(x)
 
       def test_getattr_obj_no_match():
-        obj = __userControlled()
+        obj = __user_controlled()
         getattr(obj, 'foo')
 
       def test_getattr_field_match(some_obj):
-        field = __userControlled()
+        field = __user_controlled()
         return getattr(some_obj, field)
 
       def deep_tito(tito, no_tito):
@@ -276,11 +276,11 @@ let test_fixpoint _ =
           return y
 
       def test_deep_tito_no_match():
-        obj = deep_tito(__userControlled(), __testSource())
+        obj = deep_tito(__user_controlled(), __test_source())
         getattr('obj', obj.f.g)
 
       def test_deep_tito_match():
-        obj = deep_tito(__userControlled(), __testSource())
+        obj = deep_tito(__user_controlled(), __test_source())
         getattr('obj', obj.g.f)
     |}
     ~expect:{
@@ -569,8 +569,8 @@ let test_combined_analysis _ =
     |}
     {|
       def combined_model(x, y, z):
-        __testSink(x)
-        return x or __userControlled()
+        __test_sink(x)
+        return x or __user_controlled()
     |}
     ~expect:{
       expect = [
@@ -595,8 +595,8 @@ let test_skipped_analysis _ =
     |}
     {|
       def skipped_model(x, y, z):
-        __testSink(x)
-        return x or __userControlled()
+        __test_sink(x)
+        return x or __user_controlled()
     |}
     ~expect:{
       expect = [
@@ -619,9 +619,9 @@ let test_sanitized_analysis _ =
     |}
     {|
       def sanitized_model(x, y, z):
-        eval(__userControlled())
-        __testSink(x)
-        return x or __userControlled()
+        eval(__user_controlled())
+        __test_sink(x)
+        return x or __user_controlled()
     |}
     ~expect:{
       expect = [

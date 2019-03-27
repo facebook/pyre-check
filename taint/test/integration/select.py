@@ -10,17 +10,17 @@ def view_entry_index(request):
 
 
 def first_index():
-    x = __testSource()
+    x = __test_source()
     return x['access_token']
 
 
 def first_index_numeric():
-    x = __testSource()
+    x = __test_source()
     return x[0]
 
 
 def first_index_unknown():
-    x = __testSource()
+    x = __test_source()
     unknown = 'some text';
     return x[unknown]
 

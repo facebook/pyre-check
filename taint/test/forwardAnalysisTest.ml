@@ -121,7 +121,7 @@ let test_simple_source _ =
   assert_taint
     {|
       def simple_source():
-        return __testSource()
+        return __test_source()
     |}
     [
       outcome
@@ -238,7 +238,7 @@ let test_local_copy _ =
   assert_taint
     {|
       def copy_source():
-        var = __testSource()
+        var = __test_source()
         return var
     |}
     [
@@ -253,12 +253,12 @@ let test_access_paths _ =
   assert_taint
     {|
       def access_downward_closed():
-        o = { 'a': __testSource() }
+        o = { 'a': __test_source() }
         x = o.a
         return x.g
 
       def access_non_taint():
-        o = { 'a': __testSource() }
+        o = { 'a': __test_source() }
         x = o.b
         return x.g
     |}
@@ -279,7 +279,7 @@ let test_class_model _ =
     {|
       class Foo:
         def bar():
-          return __testSource()
+          return __test_source()
     |}
     [
       outcome
@@ -296,7 +296,7 @@ let test_class_model _ =
           return self.tainted
 
       def uses_property(c: Class):
-        c.tainted = __testSource()
+        c.tainted = __test_source()
         return c.property
     |}
     [
@@ -316,7 +316,7 @@ let test_apply_method_model_at_call_site _ =
     {|
       class Foo:
         def qux():
-          return __testSource()
+          return __test_source()
 
       class Bar:
         def qux():
@@ -337,7 +337,7 @@ let test_apply_method_model_at_call_site _ =
     {|
       class Foo:
         def qux():
-          return __testSource()
+          return __test_source()
 
       class Bar:
         def qux():
@@ -358,7 +358,7 @@ let test_apply_method_model_at_call_site _ =
     {|
       class Foo:
         def qux():
-          return __testSource()
+          return __test_source()
 
       class Bar:
         def qux():
@@ -378,7 +378,7 @@ let test_apply_method_model_at_call_site _ =
     {|
       class Foo:
         def qux():
-          return __testSource()
+          return __test_source()
 
       class Bar:
         def qux():
@@ -398,7 +398,7 @@ let test_apply_method_model_at_call_site _ =
     {|
       class Foo:
         def qux():
-          return __testSource()
+          return __test_source()
 
       class Bar:
         def qux():
@@ -431,7 +431,7 @@ let test_apply_method_model_at_call_site _ =
 
       class Baz:
         def qux():
-          return __testSource()
+          return __test_source()
 
       def taint_with_union_type(condition):
         if condition:
@@ -457,7 +457,7 @@ let test_apply_method_model_at_call_site _ =
 
       class Direct:
         def source():
-          return __testSource()
+          return __test_source()
 
       def taint_indirect_concatenated_call(indirect: Indirect):
         direct = indirect.direct()
@@ -476,7 +476,7 @@ let test_apply_method_model_at_call_site _ =
 
       class Direct:
         def source():
-          return __testSource()
+          return __test_source()
 
       def taint_indirect_concatenated_call(indirect: Indirect):
         return indirect.direct().source()
@@ -493,7 +493,7 @@ let test_taint_in_taint_out_application _ =
   assert_taint
     {|
       def simple_source():
-        return __testSource()
+        return __test_source()
 
       def taint_with_tito():
         y = simple_source()
@@ -510,7 +510,7 @@ let test_taint_in_taint_out_application _ =
   assert_taint
     {|
       def simple_source():
-        return __testSource()
+        return __test_source()
 
       def __no_tito(y):
         pass
@@ -533,30 +533,30 @@ let test_dictionary _ =
     {|
       def dictionary_source():
         return {
-          "a": __testSource(),
+          "a": __test_source(),
         }
 
       def dictionary_same_index():
         dict = {
-          "a": __testSource(),
+          "a": __test_source(),
         }
         return dict["a"]
 
       def dictionary_different_index():
         dict = {
-          "a": __testSource(),
+          "a": __test_source(),
         }
         return dict["b"]
 
       def dictionary_unknown_read_index(index):
         dict = {
-          "a": __testSource(),
+          "a": __test_source(),
         }
         return dict[index]
 
       def dictionary_unknown_write_index(index):
         dict = {
-          index: __testSource(),
+          index: __test_source(),
         }
         return dict["a"]
     |}
@@ -588,22 +588,22 @@ let test_comprehensions _ =
   assert_taint
     {|
       def source_in_iterator():
-          return [ x for x in __testSource() ]
+          return [ x for x in __test_source() ]
 
       def source_in_expression(data):
-          return [ __testSource() for x in data ]
+          return [ __test_source() for x in data ]
 
       def source_in_set_iterator():
-          return { x for x in __testSource() }
+          return { x for x in __test_source() }
 
       def source_in_set_expression(data):
-          return { __testSource() for x in data }
+          return { __test_source() for x in data }
 
       def source_in_generator_iterator():
-          return (x for x in __testSource())
+          return (x for x in __test_source())
 
       def source_in_generator_expression(data):
-          return ( __testSource() for x in data )
+          return ( __test_source() for x in data )
     |}
     [
       outcome
@@ -637,31 +637,31 @@ let test_list _ =
   assert_taint
     {|
       def source_in_list():
-          return [ 1, __testSource(), "foo" ]
+          return [ 1, __test_source(), "foo" ]
 
       def list_same_index():
-          list = [ 1, __testSource(), "foo" ]
+          list = [ 1, __test_source(), "foo" ]
           return list[1]
 
       def list_different_index():
-          list = [ 1, __testSource(), "foo" ]
+          list = [ 1, __test_source(), "foo" ]
           return list[2]
 
       def list_unknown_index(index):
-          list = [ 1, __testSource(), "foo" ]
+          list = [ 1, __test_source(), "foo" ]
           return list[index]
 
       def list_pattern_same_index():
-          [_, match, _] = [ 1, __testSource(), "foo" ]
+          [_, match, _] = [ 1, __test_source(), "foo" ]
           return match
 
       def list_pattern_different_index():
-          [_, _, no_match] = [ 1, __testSource(), "foo" ]
+          [_, _, no_match] = [ 1, __test_source(), "foo" ]
           return no_match
 
       def list_pattern_star_index():
           # False positive because we don't know size of RHS in general.
-          [*match, _, _] = [ 1, __testSource(), "foo" ]
+          [*match, _, _] = [ 1, __test_source(), "foo" ]
           return match
     |}
     [
@@ -700,31 +700,31 @@ let test_tuple _ =
   assert_taint
     {|
       def source_in_tuple():
-          return ( 1, __testSource(), "foo" )
+          return ( 1, __test_source(), "foo" )
 
       def tuple_same_index():
-          tuple = ( 1, __testSource(), "foo" )
+          tuple = ( 1, __test_source(), "foo" )
           return tuple[1]
 
       def tuple_different_index():
-          tuple = ( 1, __testSource(), "foo" )
+          tuple = ( 1, __test_source(), "foo" )
           return tuple[2]
 
       def tuple_unknown_index(index):
-          tuple = ( 1, __testSource(), "foo" )
+          tuple = ( 1, __test_source(), "foo" )
           return tuple[index]
 
       def tuple_pattern_same_index():
-          (_, match, _) = ( 1, __testSource(), "foo" )
+          (_, match, _) = ( 1, __test_source(), "foo" )
           return match
 
       def tuple_pattern_different_index():
-          (_, _, no_match) = ( 1, __testSource(), "foo" )
+          (_, _, no_match) = ( 1, __test_source(), "foo" )
           return no_match
 
       def tuple_pattern_star_index():
           # False positive because we don't know size of RHS in general.
-          ( *match, _, _ ) = ( 1, __testSource(), "foo" )
+          ( *match, _, _ ) = ( 1, __test_source(), "foo" )
           return match
     |}
     [
@@ -763,7 +763,7 @@ let test_lambda _ =
   assert_taint
     {|
       def source_in_lambda():
-          return lambda x : x + __testSource()
+          return lambda x : x + __test_source()
     |}
     [
       outcome
@@ -777,14 +777,14 @@ let test_set _ =
   assert_taint
     {|
       def source_in_set():
-          return { 1, __testSource(), "foo" }
+          return { 1, __test_source(), "foo" }
 
       def set_index():
-          set = { 1, __testSource(), "foo" }
+          set = { 1, __test_source(), "foo" }
           return set[2]
 
       def set_unknown_index(index):
-          set = { 1, __testSource(), "foo" }
+          set = { 1, __test_source(), "foo" }
           return set[index]
     |}
     [
@@ -807,13 +807,13 @@ let test_starred _ =
   assert_taint
     {|
       def source_in_starred():
-          list = [ 1, __testSource(), "foo" ]
+          list = [ 1, __test_source(), "foo" ]
           return __tito( *list )
 
       def source_in_starred_starred():
           dict = {
               "a": 1,
-              "b": __testSource(),
+              "b": __test_source(),
               "c": "foo",
           }
           return __tito( **dict )
@@ -840,7 +840,7 @@ let test_string _ =
         return f"{1} {2}"
 
       def tainted_format_string() -> str:
-        input = __testSource()
+        input = __test_source()
         return f"{input}"
     |}
     [
@@ -863,16 +863,16 @@ let test_ternary _ =
   assert_taint
     {|
       def source_in_then(cond):
-          return __testSource() if cond else None
+          return __test_source() if cond else None
 
       def source_in_else(cond):
-          return "foo" if cond else __testSource()
+          return "foo" if cond else __test_source()
 
       def source_in_both(cond, request: django.http.Request):
-        return __testSource() if cond else request.GET['field']
+        return __test_source() if cond else request.GET['field']
 
       def source_in_cond(cond):
-          return "foo" if __testSource() else "bar"
+          return "foo" if __test_source() else "bar"
 
     |}
     [
@@ -899,7 +899,7 @@ let test_unary _ =
   assert_taint
     {|
       def source_in_unary():
-          return not __testSource()
+          return not __test_source()
     |}
     [
       outcome
@@ -913,10 +913,10 @@ let test_yield _ =
   assert_taint
     {|
       def source_in_yield():
-          yield __testSource()
+          yield __test_source()
 
       def source_in_yield_from():
-          yield from __testSource()
+          yield from __test_source()
     |}
     [
       outcome
@@ -940,12 +940,12 @@ let test_construction _ =
         pass
 
       def test_capture():
-        x = __testSource();
+        x = __test_source();
         d = Data(x, 5)
         return d
 
       def test_no_capture():
-        x = __testSource();
+        x = __test_source();
         d = Data(5, x)
         return d
     |}

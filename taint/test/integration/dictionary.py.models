@@ -12,10 +12,10 @@
             "root": {
               "filename": "dictionary.py",
               "line": 10,
-              "start": 30,
-              "end": 33
+              "start": 31,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__testSink" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
             "features": [ { "via": "special_sink" } ]
           }
         ]
@@ -36,10 +36,10 @@
             "root": {
               "filename": "dictionary.py",
               "line": 5,
-              "start": 31,
-              "end": 33
+              "start": 32,
+              "end": 34
             },
-            "leaves": [ { "kind": "Test", "name": "__testSource" } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
           }
         ]
