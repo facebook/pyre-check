@@ -70,6 +70,15 @@ let test_source_models _ =
         ~kind:`Function
         ~returns:[Sources.Test; Sources.UserControlled]
         "taint";
+    ];
+
+  assert_model
+    ~model_source:"os.environ: TaintSink[Test] = ..."
+    ~expect:[
+      outcome
+        ~kind:`Object
+        ~sink_parameters:[{ name = "$global"; sinks = [Sinks.Test] }]
+        "os.environ";
     ]
 
 

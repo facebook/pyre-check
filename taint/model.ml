@@ -312,27 +312,54 @@ let create ~resolution ?(verify = true) ~configuration source =
             | None -> Callable.create_function define.name
           in
           Some (define, call_target)
-      | { Node.value = Assign { Assign.target; annotation = Some annotation; _ }; _ }
+      | {
+        Node.value =
+          Assign {
+            Assign.target = { Node.value = Access (SimpleAccess target); _ };
+            annotation = Some annotation;
+            _;
+          };
+        _;
+      }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          let name =
-            match Node.value target with
-            | Access (SimpleAccess access) ->
-                Reference.from_access access
-            | _ ->
-                failwith "Non-access name for define."
-          in
-          let define = {
-            Define.name;
-            parameters = [];
-            body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = Some annotation;
-            async = false;
-            parent = None;
-          }
+          let name = Reference.from_access target in
+          let define =
+            {
+              Define.name;
+              parameters = [];
+              body = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = Some annotation;
+              async = false;
+              parent = None;
+            }
           in
           Some (define, Callable.create_object define.name)
+      | {
+        Node.value =
+          Assign {
+            Assign.target = { Node.value = Access (SimpleAccess target); _};
+            annotation = Some annotation;
+            _;
+          };
+        _;
+      }
+        when Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
+          let name = Reference.from_access target in
+          let define =
+            {
+              Define.name;
+              parameters = [Parameter.create ~annotation ~name:"$global" ()];
+              body = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = None;
+            }
+          in
+          Some (define, Callable.create_object name)
       | _ ->
           None
     in
