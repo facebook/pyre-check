@@ -67,6 +67,15 @@ let write { path; content } =
       Log.error "No contents to write to `%s`" path
 
 
+let append ~lines path =
+  let append_lines out_channel = Out_channel.output_lines out_channel lines in
+  Out_channel.with_file
+    ~append:true
+    ~fail_if_exists:false
+    ~f:append_lines
+    (Path.absolute path)
+
+
 module Handle = struct
   type t = string
   [@@deriving compare, eq, show, sexp, hash]

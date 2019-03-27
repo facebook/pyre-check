@@ -13,7 +13,8 @@
   fileTest
   logTest
   pathTest
-  statisticsTest)
+  statisticsTest
+  profilingTest)
  (modules :standard \ test)
  (libraries
   oUnit

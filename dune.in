@@ -76,6 +76,19 @@
   core
   yojson))
 
+
+(library
+ (name profiling)
+ (modules profiling)
+ (public_name pyrelib.profiling)
+ (preprocess (pps ppx_deriving_yojson))
+ (libraries
+  pyrelib.configuration
+  pyrelib.timer
+  pyrelib.file
+  ppx_deriving_yojson.runtime))
+
+
 (library
  (name statistics)
  (modules statistics)
@@ -84,6 +97,7 @@
  (libraries
   pyrelib.configuration
   pyrelib.timer
+  pyrelib.profiling
   yojson))
 
 

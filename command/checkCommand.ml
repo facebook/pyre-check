@@ -28,6 +28,7 @@ let run_check
     number_of_workers
     log_identifier
     logger
+    profiling_output
     project_root
     search_path
     typeshed
@@ -52,6 +53,7 @@ let run_check
       ~show_error_traces
       ~log_identifier
       ?logger
+      ?profiling_output
       ~infer
       ~recursive_infer
       ~additional_checks

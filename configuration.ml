@@ -31,6 +31,7 @@ module Analysis = struct
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
+    profiling_output: string option;
     excludes: Str.regexp list [@opaque];
     extensions: string list;
   }
@@ -69,6 +70,7 @@ module Analysis = struct
       ?(show_error_traces = false)
       ?(log_identifier = "")
       ?logger
+      ?profiling_output
       ?(excludes = [])
       ?(extensions = [])
       () =
@@ -94,6 +96,7 @@ module Analysis = struct
       show_error_traces;
       log_identifier;
       logger;
+      profiling_output;
       excludes = List.map excludes ~f:Str.regexp;
       extensions;
     }

@@ -152,7 +152,6 @@ let performance
     ?(flush = false)
     ?randomly_log_every
     ?always_log_time_threshold
-    ?(section = `Performance)
     ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
@@ -168,7 +167,7 @@ let performance
     | None ->
         randomly_log_every
   in
-  Log.log ~section "%s: %fs" (String.capitalize name) seconds;
+  Profiling.log_event (Profiling.Event.create name ~event_type:(Duration milliseconds));
   sample
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)

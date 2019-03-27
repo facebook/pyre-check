@@ -51,6 +51,10 @@ let base_command_line_arguments =
       (optional string)
       ~doc:"Tool used for logging statistics."
     +> flag
+      "-profiling-output"
+      (optional string)
+      ~doc:"FILE If provided, write profiling output to this file."
+    +> flag
       "-project-root"
       (optional_with_default "/" string)
       ~doc:"ROOT Only check sources under this root directory."

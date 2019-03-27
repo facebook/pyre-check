@@ -23,7 +23,6 @@ type section = [
   | `Memory
   | `Parser
   | `Progress
-  | `Performance
   | `Protocols
   | `Server
   | `Taint
@@ -48,7 +47,6 @@ let section_to_string = function
   | `Memory -> "Memory"
   | `Parser -> "Parser"
   | `Progress -> "Progress"
-  | `Performance -> "Performance"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
   | `Taint -> "Taint"
@@ -61,7 +59,6 @@ let enabled =
     "Error";
     "Info";
     "Memory";
-    "Performance";
     "Progress";
     "Warning";
   ]

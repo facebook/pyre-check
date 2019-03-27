@@ -4171,7 +4171,6 @@ let run
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100
-    ~section:`Check
     ~name:"SingleFileTypeCheck"
     ~timer
     ~normals:["handle", File.Handle.show handle; "request kind", "SingleFileTypeCheck"]

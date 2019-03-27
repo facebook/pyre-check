@@ -28,6 +28,7 @@ module Analysis: sig
     show_error_traces: bool;
     log_identifier: string;
     logger: string option;
+    profiling_output: string option;
     excludes: Str.regexp list;
     extensions: string list;
   }
@@ -55,6 +56,7 @@ module Analysis: sig
     -> ?show_error_traces: bool
     -> ?log_identifier: string
     -> ?logger: string
+    -> ?profiling_output: string
     -> ?excludes: string list
     -> ?extensions: string list
     -> unit

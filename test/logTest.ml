@@ -61,11 +61,11 @@ let test_initialize_default_off _ =
 
 
 let test_initialize_default_on _ =
-  assert_enabled `Performance;
-  Log.initialize ~verbose:false ~sections:["-performance"];
-  assert_disabled `Performance;
-  Log.initialize ~verbose:false ~sections:["performance"];
-  assert_enabled `Performance
+  assert_enabled `Warning;
+  Log.initialize ~verbose:false ~sections:["-warning"];
+  assert_disabled `Warning;
+  Log.initialize ~verbose:false ~sections:["warning"];
+  assert_enabled `Warning
 
 
 let () =

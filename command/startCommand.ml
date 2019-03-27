@@ -638,6 +638,7 @@ let run_start_command
     number_of_workers
     log_identifier
     logger
+    profiling_output
     project_root
     search_path
     typeshed
@@ -666,6 +667,7 @@ let run_start_command
       ~show_error_traces
       ~log_identifier
       ?logger
+      ?profiling_output
       ~parallel:(not sequential)
       ?filter_directories
       ~number_of_workers

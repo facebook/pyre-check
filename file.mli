@@ -20,6 +20,8 @@ val lines: t -> (string list) option
 
 val write: t -> unit
 
+val append: lines: string list -> Path.t -> unit
+
 exception NonexistentHandle of string
 
 module Handle : sig
