@@ -1747,8 +1747,8 @@ else:
         self.pager_calls = 0
         with patch("IPython.core.page.page", self.mock_pager):
             self.interactive.setup()
-            self.interactive.issues()
-            self.interactive.runs()
+            self.interactive.issues(use_pager=False)
+            self.interactive.runs(use_pager=False)
         self.assertEqual(self.pager_calls, 0)
 
         self.pager_calls = 0
