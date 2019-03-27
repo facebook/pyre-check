@@ -771,6 +771,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.IsCompatibleWith (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
+        let right =
+          match Type.coroutine_value right with
+          | Type.Top -> right
+          | unwrapped -> unwrapped
+        in
         Resolution.less_or_equal resolution ~left ~right
         |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
 

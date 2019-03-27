@@ -506,6 +506,41 @@ let test_query context =
 
   assert_type_query_response
     ~source:""
+    ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, int])"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+
+  assert_type_query_response
+    ~source:""
+    ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, str])"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+
+  assert_type_query_response
+    ~source:"A = int"
+    ~query:"is_compatible_with(A, typing.Coroutine[typing.Any, typing.Any, A])"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+
+  assert_type_query_response
+    ~source:
+      {|
+         class A: ...
+         class B(A): ...
+      |}
+    ~query:"is_compatible_with(B, typing.Coroutine[typing.Any, typing.Any, A])"
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+
+  assert_type_query_response
+    ~source:
+      {|
+         class A: ...
+         class B(A): ...
+      |}
+    ~query:
+      ("is_compatible_with(typing.Type[B]," ^
+       "typing.Coroutine[typing.Any, typing.Any, typing.Type[A]])")
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+
+  assert_type_query_response
+    ~source:""
     ~query:"superclasses(Unknown)"
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
