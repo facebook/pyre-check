@@ -1564,6 +1564,20 @@ let test_decorator _ =
     ]
 
 
+let test_assignment _ =
+  assert_taint
+    {|
+      def assigns_to_sink(assigned_to_sink):
+        __global_sink = assigned_to_sink
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Taint.Sinks.Test] }]
+        "qualifier.assigns_to_sink";
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -1591,5 +1605,6 @@ let () =
     "test_actual_parameter_matching">::test_actual_parameter_matching;
     "test_constructor_argument_tito">::test_constructor_argument_tito;
     "decorator">::test_decorator;
+    "assignment">::test_assignment;
   ]
   |> TestHelper.run_with_taint_models

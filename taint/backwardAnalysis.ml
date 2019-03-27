@@ -450,18 +450,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       state
 
     (* Returns the taint, and whether to collapse one level (due to star expression) *)
-    let rec compute_assignment_taint target state =
+    let rec compute_assignment_taint ~resolution target state =
       match target.Node.value with
       | Starred (Once target | Twice target) ->
           (* This is approximate. Unless we can get the tuple type on the right
              to tell how many total elements there will be, we just pick up the
              entire collection. *)
-          let taint, _ = compute_assignment_taint target state in
+          let taint, _ = compute_assignment_taint ~resolution target state in
           taint, true
       | List targets
       | Tuple targets ->
           let compute_tuple_target_taint position taint_accumulator target =
-            let taint, collapse = compute_assignment_taint target state in
+            let taint, collapse = compute_assignment_taint ~resolution target state in
             let index_taint =
               if collapse then taint
               else
@@ -481,7 +481,40 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           taint, false
       | _ ->
           let access_path = of_expression target in
-          get_taint access_path state, false
+          let taint =
+            let local_taint =
+              get_taint access_path state
+            in
+            let global_taint =
+              let open Interprocedural in
+              Node.value target
+              |> (function
+                  | Access (SimpleAccess access) ->
+                      Reference.from_access access
+                      |> Reference.sanitized
+                      |> Callable.create_object
+                      |> Option.some
+                  | _ ->
+                      None)
+              >>| (fun call_target ->
+                  Model.get_callsite_model ~resolution ~call_target ~arguments:[])
+              >>| (fun {
+                  Model.model = {
+                    TaintResult.backward = { TaintResult.Backward.sink_taint; _ };
+                    _;
+                  };
+                  _;
+                } ->
+                  BackwardState.read
+                    ~root:(Root.PositionalParameter { position = 0; name = "$global" })
+                    ~path:[]
+                    sink_taint
+                )
+              |> Option.value ~default:BackwardState.Tree.empty
+            in
+            BackwardState.Tree.join local_taint global_taint
+          in
+          taint, false
 
 
     let analyze_statement ~resolution state statement =
@@ -492,7 +525,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         Statement.pp_statement statement;
       match statement with
       | Assign { target; value; _ } ->
-          let taint, _ = compute_assignment_taint target state in
+          let taint, _ = compute_assignment_taint ~resolution target state in
           analyze_expression ~resolution ~taint ~state ~expression:value
       | Assert _
       | Break
