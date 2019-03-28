@@ -15,14 +15,14 @@ logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s")
 # serializable data. And as a single arg, as far as I can tell. Which is why the
 # args type looks so silly.
 def parse(args):
-    (base_parser, repo_dir, extractor), path = args
+    (base_parser, repo_dir), path = args
     with open(path) as handle:
-        return list(base_parser(repo_dir, extractor).parse_handle(handle))
+        return list(base_parser(repo_dir).parse_handle(handle))
 
 
 class ParallelParser(BaseParser):
-    def __init__(self, parser_class, repo_dir=None, extractor=None) -> None:
-        super().__init__(repo_dir, extractor)
+    def __init__(self, parser_class, repo_dir=None) -> None:
+        super().__init__(repo_dir)
         self.parser = parser_class
 
     def parse(self, input: AnalysisOutput) -> Iterable[Dict[str, Any]]:
@@ -30,7 +30,7 @@ class ParallelParser(BaseParser):
         files = list(input.file_names())
 
         # Pair up the arguments with each file.
-        args = zip([(self.parser, self.repo_dir, self.extractor)] * len(files), files)
+        args = zip([(self.parser, self.repo_dir)] * len(files), files)
 
         with Pool(processes=None) as pool:
             for f in pool.imap_unordered(parse, args):

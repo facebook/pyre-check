@@ -18,8 +18,8 @@ class Parser(BaseParser):
     for the Processor.
     """
 
-    def __init__(self, repo_dir=None, extractor=None):
-        super(Parser, self).__init__(repo_dir, extractor)
+    def __init__(self, repo_dir=None):
+        super(Parser, self).__init__(repo_dir)
 
     def parse_raw(self, input):
         return self._parse(input)

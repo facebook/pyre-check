@@ -40,7 +40,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
     def run(self, input: DictEntries, summary: Summary) -> Tuple[TraceGraph, Summary]:
         self.summary = summary
 
-        self.summary["extracted_features"] = {}  # Dict[int, Any]
         self.summary["precondition_entries"] = defaultdict(
             list
         )  # Dict[Tuple[str, str], Any]
@@ -203,11 +202,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             self.graph.add_issue_instance_shared_text_assoc(instance, feature)
 
         self.graph.add_issue_instance(instance)
-
-        if "extracted_features" in entry:
-            self.summary["extracted_features"][instance.id.local_id] = entry[
-                "extracted_features"
-            ]
 
     def _generate_issue_postcondition(self, run, issue, callinfo):
         # Generates a synthetic postcondition from the forward_trace in callinfo

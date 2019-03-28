@@ -67,9 +67,8 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
     for the Processor.
     """
 
-    def __init__(self, repo_dir=None, extractor=None):
+    def __init__(self, repo_dir=None):
         self.repo_dir = os.path.realpath(repo_dir) if repo_dir else None
-        self.extractor = extractor
         self.version = None
 
     def get_version(self):
@@ -100,8 +99,6 @@ class BaseParser(PipelineStep[InputFiles, DictEntries]):
             typ = e["type"]
             if typ == ParseType.ISSUE:
                 key = e["handle"]
-                if self.extractor:
-                    e["extracted_features"] = self.extractor.extract_features(e)
             elif e["type"] == ParseType.PRECONDITION:
                 key = (e["caller"], e["caller_port"])
             elif e["type"] == ParseType.POSTCONDITION:
