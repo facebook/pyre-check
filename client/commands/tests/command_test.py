@@ -151,5 +151,12 @@ class CommandTest(unittest.TestCase):
         command = commands.Command(arguments, configuration, analysis_directory)
         self.assertEqual(
             command._flags(),
-            ["-profiling-output", ".pyre/profiling.log", "-project-root", "."],
+            [
+                "-logging-sections",
+                "parser",
+                "-profiling-output",
+                ".pyre/profiling.log",
+                "-project-root",
+                ".",
+            ],
         )
