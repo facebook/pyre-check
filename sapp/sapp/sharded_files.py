@@ -19,7 +19,7 @@ class ShardedFileComponents(object):
 
     def __init__(self, filepattern):
         self.directory, root = os.path.split(filepattern)
-        m = re.match("([^@]+)@([^.@]+)(\.[^.@]*)?$", root)
+        m = re.match(r"([^@]+)@([^.@]+)(\.[^.@]*)?$", root)
         if not m:
             raise ValueError("Not a sharded file: {}".format(filepattern))
 
@@ -36,7 +36,7 @@ class ShardedFileComponents(object):
                 self.shard_index = -1
             except ValueError:
                 # Look for ?????-of-????? pattern.
-                m = re.match("(\d\d\d\d\d)-of-(\d\d\d\d\d)$", shards)
+                m = re.match(r"(\d{5})-of-(\d{5})$", shards)
                 if not m:
                     raise ValueError("Invalid shard specification: {}".format(shards))
                 self.shard_index = int(m.group(1))
