@@ -1731,6 +1731,45 @@ else:
                 {4: "sink4", 5: "sink5"},
             )
 
+    def testDetails(self):
+        trace_frame = TraceFrame(
+            id=1,
+            kind=TraceKind.PRECONDITION,
+            caller="call1",
+            caller_port="root",
+            callee="call2",
+            callee_port="param0",
+            callee_location=SourceLocation(1, 1),
+            filename="file.py",
+            run_id=1,
+        )
+        issues = [
+            self._generic_issue(id=1, callable="call2"),
+            self._generic_issue(id=2, callable="call3"),
+            self._generic_issue(id=3, callable="call2"),
+        ]
+        issue_instances = [
+            self._generic_issue_instance(id=1, issue_id=1),
+            self._generic_issue_instance(id=2, issue_id=2),
+            self._generic_issue_instance(id=3, issue_id=3),
+        ]
+
+        with self.db.make_session(expire_on_commit=False) as session:
+            session.add(trace_frame)
+            self._add_to_session(session, issues)
+            self._add_to_session(session, issue_instances)
+            session.commit()
+
+        self.interactive.setup()
+        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frame)]
+        self.interactive.current_issue_id = 1
+        self.interactive.current_trace_frame_index = 0
+
+        self._clear_stdout()
+        self.interactive.details()
+        self.assertIn("Trace frame 1", self.stdout.getvalue())
+        self.assertIn("Issues in callable (call2): 2", self.stdout.getvalue())
+
     def mock_pager(self, output_string):
         self.pager_calls += 1
 

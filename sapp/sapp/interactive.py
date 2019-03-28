@@ -91,6 +91,7 @@ branch(INDEX)   select a trace branch
 frames()        show trace frames independently of an issue
 set_frame(ID)   select a trace frame to explore
 parents()       show trace frames that call the current trace frame
+details()       show additional information about the current trace frame
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -120,6 +121,7 @@ parents()       show trace frames that call the current trace frame
             "frames": self.frames,
             "set_frame": self.set_frame,
             "parents": self.parents,
+            "details": self.details,
         }
         self.repository_directory = repository_directory or os.getcwd()
 
@@ -516,6 +518,8 @@ parents()       show trace frames that call the current trace frame
         placeholder_tuple = [
             TraceTuple(
                 trace_frame=TraceFrame(
+                    caller=None,
+                    caller_port=None,
                     callee=first_trace_frame.caller,
                     callee_port=first_trace_frame.caller_port,
                     filename=first_trace_frame.filename,
@@ -694,6 +698,21 @@ parents()       show trace frames that call the current trace frame
             return
 
         self._output_file_lines(current_trace_frame, file_lines, context)
+
+    def details(self) -> None:
+        """Show additional info about the current trace frame.
+        """
+        self._verify_entrypoint_selected()
+
+        current_trace_frame = self.trace_tuples[
+            self.current_trace_frame_index
+        ].trace_frame
+
+        print(self._create_trace_frame_output_string(current_trace_frame))
+        print(
+            f"\nIssues in callable ({current_trace_frame.callee}):",
+            self._num_issues_with_callable(current_trace_frame.callee),
+        )
 
     def warning(self, message: str) -> None:
         # pyre-fixme[6]: Expected `Optional[_Writer]` for 2nd param but got `TextIO`.
@@ -1020,9 +1039,10 @@ parents()       show trace frames that call the current trace frame
             leaves_output = f"\n{' ' * 13}".join(
                 self._get_leaves_trace_frame(session, trace_frame.id, leaf_kind)
             )
+
         return "\n".join(
             [
-                f"Trace frame {trace_frame.id}",
+                f"Trace frame {trace_frame.id or 'placeholder'}",
                 f"     Caller: {trace_frame.caller} : {trace_frame.caller_port}",
                 f"     Callee: {trace_frame.callee} : {trace_frame.callee_port}",
                 f"       Kind: {trace_frame.kind}",
@@ -1057,6 +1077,8 @@ parents()       show trace frames that call the current trace frame
         new_head = [
             TraceTuple(
                 trace_frame=TraceFrame(
+                    caller=None,
+                    caller_port=None,
                     callee=parent_trace_frame.caller,
                     callee_port=parent_trace_frame.caller_port,
                     filename=parent_trace_frame.filename,
@@ -1177,3 +1199,12 @@ parents()       show trace frames that call the current trace frame
             .filter(SharedText.kind == kind)
             .all()
         }
+
+    def _num_issues_with_callable(self, callable: str) -> int:
+        with self.db.make_session() as session:
+            return (
+                session.query(func.count(IssueInstance.id))
+                .join(Issue, Issue.id == IssueInstance.issue_id)
+                .filter(Issue.callable == callable)
+                .scalar()
+            )
