@@ -21,7 +21,11 @@ module Event = struct
   [@@deriving yojson]
 
   let now_in_milliseconds () =
-    Unix.gettimeofday () |> Int.of_float
+    Time_stamp_counter.now ()
+    |> Time_stamp_counter.to_time
+    |> Time.to_span_since_epoch
+    |> Time.Span.to_ms
+    |> Int.of_float
 
   let create ?(timestamp = now_in_milliseconds ()) ~event_type name =
     let name = String.filter ~f:Char.is_print name in

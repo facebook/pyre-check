@@ -157,8 +157,7 @@ let performance
     ~timer
     ?(integers = [])
     ?(normals = []) () =
-  let seconds = Timer.stop timer in
-  let milliseconds = Int.of_float (seconds *. 1000.0) in
+  let milliseconds = Timer.stop_in_ms timer in
   let randomly_log_every =
     match always_log_time_threshold with
     | Some threshold ->

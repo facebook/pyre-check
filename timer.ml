@@ -3,16 +3,27 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-type t = float
+open Core
 
-let start () = Unix.gettimeofday ()
+type t = Time_stamp_counter.t
+
+let start () = Time_stamp_counter.now ()
+
+
+let span start_time =
+  let stop_time = Time_stamp_counter.now () in
+  let timestamp_span = Time_stamp_counter.diff stop_time start_time in
+  Time_stamp_counter.Span.to_time_span timestamp_span
 
 
 let stop start_time =
-  let stop_time = Unix.gettimeofday () in
-  stop_time -. start_time
+  start_time
+  |> span
+  |> Time.Span.to_sec
 
 
 let stop_in_ms start_time =
-  let stop_time = Unix.gettimeofday () in
-  (stop_time -. start_time) *. 1000.0 |> Core.Int.of_float
+  start_time
+  |> span
+  |> Time.Span.to_ms
+  |> Int.of_float
