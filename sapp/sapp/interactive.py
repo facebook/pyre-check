@@ -24,6 +24,7 @@ from pygments.lexers import get_lexer_for_filename
 from sapp.db import DB
 from sapp.decorators import UserError, catch_keyboard_interrupt, catch_user_error
 from sapp.models import (
+    DBID,
     Issue,
     IssueInstance,
     IssueInstanceSharedTextAssoc,
@@ -45,6 +46,15 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
+
+
+class IssueQueryResult(NamedTuple):
+    id: DBID
+    filename: str
+    location: SourceLocation
+    code: int
+    callable: str
+    contents: str
 
 
 class TraceTuple(NamedTuple):
@@ -292,11 +302,14 @@ details()       show additional information about the current trace frame
         pager = self._resolve_pager(use_pager)
 
         with self.db.make_session() as session:
-            query = (
-                session.query(IssueInstance, Issue)
-                .filter(IssueInstance.run_id == self.current_run_id)
-                .join(Issue, IssueInstance.issue_id == Issue.id)
-            )
+            query = session.query(
+                IssueInstance.id,
+                IssueInstance.filename,
+                IssueInstance.location,
+                Issue.code,
+                Issue.callable,
+                SharedText.contents,
+            ).filter(IssueInstance.run_id == self.current_run_id)
 
             if codes is not None:
                 self._verify_list_filter(codes, "codes")
@@ -312,26 +325,26 @@ details()       show additional information about the current trace frame
                     filenames, query, IssueInstance.filename
                 )
 
-            issues = query.options(joinedload(IssueInstance.message))
+            issues = query.join(Issue, IssueInstance.issue_id == Issue.id).join(
+                SharedText, SharedText.id == IssueInstance.message_id
+            )
 
             sources_list = [
                 self._get_leaves_issue_instance(
-                    session, int(issue_instance.id), SharedTextKind.SOURCE
+                    session, int(issue.id), SharedTextKind.SOURCE
                 )
-                for issue_instance, _ in issues
+                for issue in issues
             ]
             sinks_list = [
                 self._get_leaves_issue_instance(
-                    session, int(issue_instance.id), SharedTextKind.SINK
+                    session, int(issue.id), SharedTextKind.SINK
                 )
-                for issue_instance, _ in issues
+                for issue in issues
             ]
 
             issue_strings = [
-                self._create_issue_output_string(issue_instance, issue, sources, sinks)
-                for (issue_instance, issue), sources, sinks in zip(
-                    issues, sources_list, sinks_list
-                )
+                self._create_issue_output_string(issue, sources, sinks)
+                for issue, sources, sinks in zip(issues, sources_list, sinks_list)
             ]
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)
@@ -470,19 +483,15 @@ details()       show additional information about the current trace frame
 
     def _generate_trace_from_issue(self):
         with self.db.make_session() as session:
-            issue_instance, issue = self._get_current_issue(session)
+            issue = self._get_current_issue(session)
 
             postcondition_navigation = self._navigate_trace_frames(
                 session,
-                self._initial_trace_frames(
-                    session, issue_instance.id, TraceKind.POSTCONDITION
-                ),
+                self._initial_trace_frames(session, issue.id, TraceKind.POSTCONDITION),
             )
             precondition_navigation = self._navigate_trace_frames(
                 session,
-                self._initial_trace_frames(
-                    session, issue_instance.id, TraceKind.PRECONDITION
-                ),
+                self._initial_trace_frames(session, issue.id, TraceKind.PRECONDITION),
             )
 
         self.trace_tuples = (
@@ -492,8 +501,8 @@ details()       show additional information about the current trace frame
                     trace_frame=TraceFrame(
                         callee=issue.callable,
                         callee_port="root",
-                        filename=issue_instance.filename,
-                        callee_location=issue_instance.location,
+                        filename=issue.filename,
+                        callee_location=issue.location,
                     ),
                     placeholder=True,
                 )
@@ -1008,18 +1017,20 @@ details()       show additional information about the current trace frame
 
         return filtered_results
 
-    def _create_issue_output_string(self, issue_instance, issue, sources, sinks):
+    def _create_issue_output_string(
+        self, issue: IssueQueryResult, sources: List[str], sinks: List[str]
+    ) -> str:
         sources_output = f"\n{' ' * 10}".join(sources)
         sinks_output = f"\n{' ' * 10}".join(sinks)
         return "\n".join(
             [
-                f"Issue {issue_instance.id}",
+                f"Issue {issue.id}",
                 f"    Code: {issue.code}",
-                f" Message: {issue_instance.message.contents}",
+                f" Message: {issue.contents}",
                 f"Callable: {issue.callable}",
                 f" Sources: {sources_output if sources_output else 'No sources'}",
                 f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
-                (f"Location: {issue_instance.filename}" f":{issue_instance.location}"),
+                (f"Location: {issue.filename}" f":{issue.location}"),
             ]
         )
 
@@ -1109,12 +1120,19 @@ details()       show additional information about the current trace frame
         use_pager = sys.stdin.isatty() if use_pager is None else use_pager
         return page.page if use_pager else page.display_page
 
-    def _get_current_issue(self, session):
+    def _get_current_issue(self, session: Session) -> IssueQueryResult:
         return (
-            session.query(IssueInstance, Issue)
+            session.query(
+                IssueInstance.id,
+                IssueInstance.filename,
+                IssueInstance.location,
+                Issue.code,
+                Issue.callable,
+                SharedText.contents,
+            )
             .filter(IssueInstance.id == self.current_issue_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
-            .options(joinedload(IssueInstance.message))
+            .join(SharedText, SharedText.id == IssueInstance.message_id)
             .first()
         )
 
@@ -1155,12 +1173,10 @@ details()       show additional information about the current trace frame
 
     def _show_current_issue_instance(self):
         with self.db.make_session() as session:
-            issue_instance, issue = self._get_current_issue(session)
+            issue = self._get_current_issue(session)
 
         page.display_page(
-            self._create_issue_output_string(
-                issue_instance, issue, self.sources, self.sinks
-            )
+            self._create_issue_output_string(issue, self.sources, self.sinks)
         )
 
     def _show_current_trace_frame(self):

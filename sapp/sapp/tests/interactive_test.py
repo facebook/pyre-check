@@ -9,7 +9,7 @@ from unittest.mock import mock_open, patch
 
 from sapp.db import DB
 from sapp.decorators import UserError
-from sapp.interactive import Interactive, TraceTuple
+from sapp.interactive import Interactive, IssueQueryResult, TraceTuple
 from sapp.models import (
     Issue,
     IssueInstance,
@@ -161,9 +161,11 @@ class InteractiveTest(TestCase):
                 id=3, issue_id=3, filename="module/__init__.py"
             ),
         ]
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
 
         with self.db.make_session() as session:
             session.add(run)
+            session.add(shared_text)
             self._add_to_session(session, issues)
             self._add_to_session(session, issue_instances)
             session.commit()
@@ -265,11 +267,13 @@ class InteractiveTest(TestCase):
             self._generic_issue_instance(id=1, run_id=1),
             self._generic_issue_instance(id=2, run_id=2),
         ]
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
 
         with self.db.make_session() as session:
             self._add_to_session(session, runs)
             self._add_to_session(session, issue_instances)
             session.add(issue)
+            session.add(shared_text)
             session.commit()
 
         self.interactive.setup()
@@ -306,10 +310,12 @@ class InteractiveTest(TestCase):
             self._generic_issue_instance(id=2, run_id=2),
             self._generic_issue_instance(id=3, run_id=3),
         ]
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
 
         with self.db.make_session() as session:
             session.add(run)
             session.add(issue)
+            session.add(shared_text)
             self._add_to_session(session, issue_instances)
             session.commit()
 
@@ -668,6 +674,7 @@ class InteractiveTest(TestCase):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
         issue_instance = self._generic_issue_instance()
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -703,6 +710,7 @@ class InteractiveTest(TestCase):
             session.add(run)
             session.add(issue)
             session.add(issue_instance)
+            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -756,6 +764,7 @@ class InteractiveTest(TestCase):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
         issue_instance = self._generic_issue_instance()
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -791,6 +800,7 @@ class InteractiveTest(TestCase):
             session.add(run)
             session.add(issue)
             session.add(issue_instance)
+            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -805,6 +815,7 @@ class InteractiveTest(TestCase):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
         issue_instance = self._generic_issue_instance()
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -839,6 +850,7 @@ class InteractiveTest(TestCase):
             session.add(run)
             session.add(issue)
             session.add(issue_instance)
+            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -861,6 +873,7 @@ class InteractiveTest(TestCase):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()
         issue_instance = self._generic_issue_instance()
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -895,6 +908,7 @@ class InteractiveTest(TestCase):
             session.add(run)
             session.add(issue)
             session.add(issue_instance)
+            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -1357,26 +1371,23 @@ class InteractiveTest(TestCase):
             )
 
     def testCreateIssueOutputStringNoSourcesNoSinks(self):
-        issue = Issue(code=1000, callable="module.function1")
-        issue_instance = IssueInstance(
+        issue = IssueQueryResult(
             id=1,
-            message=SharedText(contents="leaf"),
             filename="module.py",
             location=SourceLocation(1, 2, 3),
+            code=1000,
+            callable="module.function1",
+            contents="leaf",
         )
         sources = []
         sinks = ["sink1", "sink2"]
-        result = self.interactive._create_issue_output_string(
-            issue_instance, issue, sources, sinks
-        )
+        result = self.interactive._create_issue_output_string(issue, sources, sinks)
         self.assertIn("Sources: No sources", result)
         self.assertIn("Sinks: sink1", result)
 
         sources = ["source1", "source2"]
         sinks = []
-        result = self.interactive._create_issue_output_string(
-            issue_instance, issue, sources, sinks
-        )
+        result = self.interactive._create_issue_output_string(issue, sources, sinks)
         self.assertIn("Sources: source1", result)
         self.assertIn("Sinks: No sinks", result)
 
