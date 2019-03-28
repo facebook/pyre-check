@@ -49,8 +49,10 @@ hack_parallel:
 	@if [ ! -d hack_parallel/_build ]; then echo 'Hack_parallel is not installed...'; make -C hack_parallel; make install -C hack_parallel; fi
 
 .PHONY: configure
-configure:
-	@if [ ! -f dune ]; then ./scripts/setup.sh --configure; fi
+configure: dune;
+
+dune: dune.in
+	./scripts/setup.sh --configure
 
 .PHONY: lint
 lint:
