@@ -1015,30 +1015,41 @@ let process_type_check_files
     ~should_analyze_dependencies =
 
   Annotated.Class.Attribute.Cache.clear ();
-  let update_environment_with, check =
-    let keep file =
+  let removed_handles, update_environment_with, check =
+    let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with
       | exception ((File.NonexistentHandle _) as uncaught_exception) ->
           Statistics.log_exception uncaught_exception ~fatal:false ~origin:"server";
-          false
+          updated, removed
       | handle ->
           begin
-            let module_lookup =
-              Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle |> Reference.access)
-            in
-            match module_lookup with
+            let qualifier = Source.qualifier ~handle |> Reference.access in
+            match Ast.SharedMemory.Modules.get ~qualifier with
             | Some existing ->
                 let existing_handle =
                   Module.handle existing
                   |> Option.value ~default:handle
                 in
-                File.Handle.equal existing_handle handle
+                if File.Handle.equal existing_handle handle then
+                  (file :: updated), removed
+                else if
+                  (File.Handle.is_stub handle) &&
+                  (not (File.Handle.is_stub existing_handle)) then
+                  (* Stubs take priority over existing handles. *)
+                  file :: updated, existing_handle :: removed
+                else
+                  updated, removed
             | _  ->
-                true
+                file :: updated, removed
           end
     in
-    List.filter update_environment_with ~f:keep,
-    List.filter check ~f:keep
+    let update_environment_with, removed_handles =
+      List.fold update_environment_with ~f:update_handle_state ~init:([], [])
+    in
+    let check, _ = List.fold check ~f:update_handle_state ~init:([], []) in
+    removed_handles,
+    update_environment_with,
+    check
   in
 
   let (module Handler: Environment.Handler) = environment in
@@ -1216,13 +1227,13 @@ let process_type_check_files
         None
     in
     let handles = List.filter_map update_environment_with ~f:handle in
-    Ast.SharedMemory.Sources.remove ~handles;
+    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     let targets =
       let find_target file = Path.readlink (File.path file) in
       List.filter_map update_environment_with ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-    Handler.purge ~debug handles;
+    Handler.purge ~debug (handles @ removed_handles);
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
 
