@@ -1150,6 +1150,41 @@ and less_or_equal
       iterate worklist
 
 
+and is_compatible_with order ~left ~right =
+  match left, right with
+
+  (* Optional *)
+  | Type.Optional left, Type.Optional right ->
+      is_compatible_with order ~left ~right
+  | _, Type.Optional parameter ->
+      is_compatible_with order ~left ~right:parameter
+  | Type.Optional _, _ ->
+      false
+
+  (* Tuple *)
+  | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+    when List.length left = List.length right ->
+      List.for_all2_exn left right ~f:(fun left right -> is_compatible_with order ~left ~right)
+  | Type.Tuple (Type.Bounded bounded), Type.Tuple (Type.Unbounded right) ->
+      List.for_all bounded
+        ~f:(fun bounded_type -> is_compatible_with order ~left:bounded_type ~right)
+
+  (* Union *)
+  | left, Type.Union right ->
+      List.exists ~f:(fun right -> is_compatible_with order ~left ~right) right
+
+  (* Parametric *)
+  | Parametric { name = left_name; parameters = left_parameters },
+    Parametric { name = right_name; parameters = right_parameters }
+    when String.equal left_name right_name &&
+         Int.equal (List.length left_parameters) (List.length right_parameters) ->
+      List.for_all2_exn left_parameters right_parameters
+        ~f:(fun left right -> is_compatible_with order ~left ~right)
+
+  (* Fallback *)
+  | _, _ ->
+      less_or_equal order ~left ~right
+
 and least_common_successor ((module Handler: Handler) as order) ~successors left right =
   raise_if_untracked order left;
   raise_if_untracked order right;

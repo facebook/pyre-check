@@ -27,6 +27,12 @@ let less_or_equal
     handler =
   less_or_equal { handler; constructor; implements; any_is_bottom = false }
 
+let is_compatible_with
+    ?(constructor = fun _ -> None)
+    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
+    handler =
+  is_compatible_with { handler; constructor; implements; any_is_bottom = false }
+
 let join
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
@@ -1496,6 +1502,105 @@ let test_less_or_equal _ =
     ~left:"Grandchild"
     ~right:"GenericBase[typing.Any, typing.Any]"
     true;
+  ()
+
+
+let test_is_compatible_with _ =
+  let assert_is_compatible ?(order = default) left right =
+    assert_true (is_compatible_with order ~left ~right);
+  in
+  let assert_not_compatible ?(order = default) left right =
+    assert_false (is_compatible_with order ~left ~right);
+  in
+  let list_of_integer = Type.list Type.integer in
+  let list_of_float = Type.list Type.float in
+  let list_of_string = Type.list Type.string in
+
+  (* Basic *)
+  assert_is_compatible list_of_integer list_of_integer;
+  assert_is_compatible list_of_integer list_of_float;
+  assert_not_compatible list_of_float list_of_integer;
+  assert_not_compatible list_of_integer list_of_string;
+
+  (* Optional *)
+  assert_is_compatible list_of_integer (Type.optional list_of_integer);
+  assert_is_compatible
+    (Type.optional list_of_integer) (Type.optional list_of_integer);
+  assert_is_compatible list_of_integer (Type.optional list_of_float);
+  assert_is_compatible
+    (Type.optional list_of_integer) (Type.optional list_of_float);
+  assert_not_compatible list_of_float (Type.optional list_of_integer);
+  assert_not_compatible list_of_integer (Type.optional list_of_string);
+
+  (* Tuple *)
+  assert_is_compatible
+    (Type.tuple [list_of_integer; list_of_string])
+    (Type.tuple [list_of_integer; list_of_string]);
+  assert_is_compatible
+    (Type.tuple [list_of_integer; list_of_string])
+    (Type.tuple [list_of_float; list_of_string]);
+  assert_is_compatible
+    (Type.tuple [list_of_string; list_of_integer])
+    (Type.tuple [list_of_string; list_of_float]);
+  assert_is_compatible
+    (Type.tuple [list_of_integer; list_of_integer])
+    (Type.tuple [list_of_float; list_of_float]);
+  assert_is_compatible
+    (Type.tuple [list_of_integer; list_of_integer])
+    (Type.Tuple (Unbounded list_of_integer));
+  assert_is_compatible
+    (Type.tuple [list_of_integer; list_of_integer])
+    (Type.Tuple (Unbounded list_of_float));
+  assert_not_compatible
+    (Type.tuple [list_of_integer; list_of_string])
+    (Type.tuple [list_of_string; list_of_string]);
+  assert_not_compatible
+    (Type.tuple [list_of_float; list_of_integer])
+    (Type.tuple [list_of_integer; list_of_float]);
+  assert_not_compatible
+    (Type.tuple [list_of_string; list_of_integer])
+    (Type.Tuple (Unbounded list_of_float));
+
+  (* Union *)
+  assert_is_compatible
+    list_of_integer (Type.union [list_of_integer]);
+  assert_is_compatible
+    list_of_integer (Type.union [list_of_float]);
+  assert_is_compatible
+    list_of_float (Type.union [list_of_float; list_of_integer]);
+  assert_is_compatible
+    list_of_string (Type.union [list_of_float; list_of_string]);
+  assert_is_compatible
+    list_of_string (Type.union [list_of_float; Type.optional list_of_string]);
+  assert_not_compatible
+    list_of_string (Type.union [list_of_float; list_of_integer]);
+
+  (* Parametric *)
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
+    (Type.dictionary ~key:list_of_float ~value:list_of_string);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_string ~value:list_of_integer)
+    (Type.dictionary ~key:list_of_string ~value:list_of_float);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_integer)
+    (Type.dictionary ~key:list_of_float ~value:list_of_float);
+  assert_not_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_integer)
+    (Type.dictionary ~key:list_of_string ~value:list_of_integer);
+  assert_not_compatible
+    (Type.dictionary ~key:list_of_string ~value:list_of_string)
+    (Type.dictionary ~key:list_of_string ~value:list_of_integer);
+  assert_not_compatible
+    (Type.dictionary ~key:list_of_string ~value:list_of_integer)
+    list_of_string;
+  assert_not_compatible
+    list_of_string
+    (Type.dictionary ~key:list_of_string ~value:list_of_integer);
+
   ()
 
 
@@ -3452,6 +3557,7 @@ let () =
     "least_upper_bound">::test_least_upper_bound;
     "less_or_equal">::test_less_or_equal;
     "less_or_equal_variance">::test_less_or_equal_variance;
+    "is_compatible_with">::test_is_compatible_with;
     "meet">::test_meet;
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "predecessors">::test_predecessors;

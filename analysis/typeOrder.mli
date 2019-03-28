@@ -123,6 +123,7 @@ val solve_constraints
   -> target: Type.t
   -> Type.t Type.Map.t option
 val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
+val is_compatible_with: order -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
 val join: order -> Type.t -> Type.t -> Type.t

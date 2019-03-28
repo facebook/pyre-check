@@ -83,6 +83,7 @@ end
 val function_definitions: t -> Access.t -> ((Define.t Node.t) list) option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
+val is_compatible_with: t -> left: Type.t -> right: Type.t -> bool
 val join: t -> Type.t -> Type.t -> Type.t
 val meet: t -> Type.t -> Type.t -> Type.t
 val widen

@@ -775,7 +775,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Type.Top -> right
           | unwrapped -> unwrapped
         in
-        Resolution.less_or_equal resolution ~left ~right
+        Resolution.is_compatible_with resolution ~left ~right
         |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
 
     | TypeQuery.Join (left, right) ->

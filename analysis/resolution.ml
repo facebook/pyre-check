@@ -277,6 +277,11 @@ let less_or_equal resolution =
   |> TypeOrder.less_or_equal
 
 
+let is_compatible_with resolution =
+  full_order resolution
+  |> TypeOrder.is_compatible_with
+
+
 let join resolution =
   full_order resolution
   |> TypeOrder.join
