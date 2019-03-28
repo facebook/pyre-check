@@ -1276,6 +1276,7 @@ let process_type_check_files
     ~section:`Debug
     "Repopulating the environment with %a"
     Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
+  Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
   |> Service.Environment.populate ~configuration environment;
   let classes_to_infer =
