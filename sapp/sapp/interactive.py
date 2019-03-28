@@ -181,15 +181,16 @@ details()       show additional information about the current trace frame
         pager = self._resolve_pager(use_pager)
 
         with self.db.make_session() as session:
-            runs = session.query(Run).filter(Run.status == RunStatus.FINISHED).all()
+            runs = session.query(Run).filter(Run.status == RunStatus.FINISHED)
 
-        run_strings = [
-            "\n".join([f"Run {run.id}", f"Date: {run.date}", "-" * 80]) for run in runs
-        ]
+            run_strings = [
+                "\n".join([f"Run {run.id}", f"Date: {run.date}", "-" * 80])
+                for run in runs
+            ]
         run_output = "\n".join(run_strings)
 
         pager(run_output)
-        print(f"Found {len(runs)} runs.")
+        print(f"Found {len(run_strings)} runs.")
 
     @catch_keyboard_interrupt()
     def set_run(self, run_id):
@@ -311,7 +312,7 @@ details()       show additional information about the current trace frame
                     filenames, query, IssueInstance.filename
                 )
 
-            issues = query.options(joinedload(IssueInstance.message)).all()
+            issues = query.options(joinedload(IssueInstance.message))
 
             sources_list = [
                 self._get_leaves_issue_instance(
@@ -326,15 +327,15 @@ details()       show additional information about the current trace frame
                 for issue_instance, _ in issues
             ]
 
-        issue_strings = [
-            self._create_issue_output_string(issue_instance, issue, sources, sinks)
-            for (issue_instance, issue), sources, sinks in zip(
-                issues, sources_list, sinks_list
-            )
-        ]
+            issue_strings = [
+                self._create_issue_output_string(issue_instance, issue, sources, sinks)
+                for (issue_instance, issue), sources, sinks in zip(
+                    issues, sources_list, sinks_list
+                )
+            ]
         issue_output = f"\n{'-' * 80}\n".join(issue_strings)
         pager(issue_output)
-        print(f"Found {len(issues)} issues with run_id {self.current_run_id}.")
+        print(f"Found {len(issue_strings)} issues with run_id {self.current_run_id}.")
 
     @catch_user_error()
     def trace(self):
@@ -400,10 +401,8 @@ details()       show additional information about the current trace frame
                     )
                 query = query.filter(TraceFrame.kind == kind)
 
-            trace_frames = (
-                query.group_by(TraceFrame.id)
-                .order_by(TraceFrame.caller, TraceFrame.callee)
-                .all()
+            trace_frames = query.group_by(TraceFrame.id).order_by(
+                TraceFrame.caller, TraceFrame.callee
             )
 
             self._output_trace_frames(self._group_trace_frames(trace_frames))
@@ -751,7 +750,7 @@ details()       show additional information about the current trace frame
         return -1
 
     def _group_trace_frames(
-        self, trace_frames: List[TraceFrame]
+        self, trace_frames: Iterable[TraceFrame]
     ) -> Dict[Tuple[str, str], List[TraceFrame]]:
         """Buckets together trace frames that have the same caller:caller_port.
         """
@@ -997,7 +996,6 @@ details()       show additional information about the current trace frame
             query.join(TraceFrame.leaf_assoc)
             .group_by(TraceFrame.id)
             .order_by(TraceFrameLeafAssoc.trace_length, TraceFrame.callee_location)
-            .all()
         )
         filter_leaves = (
             self.sources if trace_frame.kind == TraceKind.POSTCONDITION else self.sinks
@@ -1132,7 +1130,6 @@ details()       show additional information about the current trace frame
             )
             .filter(IssueInstanceSharedTextAssoc.issue_instance_id == issue_instance_id)
             .filter(SharedText.kind == kind)
-            .all()
         ]
         return self._leaf_dict_lookups(message_ids, kind)
 
@@ -1195,9 +1192,9 @@ details()       show additional information about the current trace frame
     ) -> Dict[int, str]:
         return {
             int(id): contents
-            for id, contents in session.query(SharedText.id, SharedText.contents)
-            .filter(SharedText.kind == kind)
-            .all()
+            for id, contents in session.query(
+                SharedText.id, SharedText.contents
+            ).filter(SharedText.kind == kind)
         }
 
     def _num_issues_with_callable(self, callable: str) -> int:
