@@ -1687,6 +1687,7 @@ else:
             ],
             ["A", "B", "F", "caller"],
         )
+        self.assertTrue(self.interactive.trace_tuples[-1].placeholder)
 
         # Test precondition
         self.interactive.current_trace_frame_index = 2
@@ -1707,6 +1708,7 @@ else:
             ],
             ["caller", "F", "D", "E"],
         )
+        self.assertTrue(self.interactive.trace_tuples[0].placeholder)
 
     def testAllLeavesByKind(self):
         shared_texts = [

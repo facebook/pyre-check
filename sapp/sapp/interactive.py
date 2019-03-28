@@ -51,6 +51,14 @@ class TraceTuple(NamedTuple):
     trace_frame: TraceFrame
     branches: int = 1
     missing: bool = False
+    # Placeholder flag is used when we need to "fake" a trace node to display
+    #   the entire trace.
+    # Suppose we select a trace frame (A->B) and the generated trace is
+    #   (A->B), (B->C), (C->D) with D as leaf.
+    # When we display traces, we only use the callee, so this trace would look
+    #   like B->C->D. If we also want to see A->, then we need to add a
+    #   placeholder trace tuple whose callee is A.
+    placeholder: bool = False
 
 
 class ListFilterException(Exception):
@@ -477,7 +485,8 @@ parents()       show trace frames that call the current trace frame
                         callee_port="root",
                         filename=issue_instance.filename,
                         callee_location=issue_instance.location,
-                    )
+                    ),
+                    placeholder=True,
                 )
             ]
             + self._create_trace_tuples(precondition_navigation)
@@ -495,36 +504,29 @@ parents()       show trace frames that call the current trace frame
 
             navigation = self._navigate_trace_frames(session, [trace_frame])
 
-        # We need to "fake" another node for the selected trace frame.
-        # Suppose we select a trace frame (A->B) and the generated navigation
-        #   is (A->B), (B->C), (C->D) with D as leaf.
-        # When we display traces, we only use the callee, so this trace would
-        #   look like B->C->D. If we also want to see A->, then we need to add a
-        #   placeholder.
-        # Set caller to "unused", since _create_trace_tuples checks presence
-        #   of a caller to determine insertion of "Missing frame".
         first_trace_frame = navigation[0][0]
-        navigation.insert(
-            0,
-            (
-                TraceFrame(
-                    caller="unused",
+        placeholder_tuple = [
+            TraceTuple(
+                trace_frame=TraceFrame(
                     callee=first_trace_frame.caller,
                     callee_port=first_trace_frame.caller_port,
                     filename=first_trace_frame.filename,
                     callee_location=first_trace_frame.callee_location,
                     kind=first_trace_frame.kind,
                 ),
-                1,
-            ),
-        )
-
-        self.current_trace_frame_index = 0
-        if trace_frame.kind == TraceKind.POSTCONDITION:
-            self.current_trace_frame_index = len(navigation) - 1
-            navigation = reversed(navigation)
+                placeholder=True,
+            )
+        ]
 
         self.trace_tuples = self._create_trace_tuples(navigation)
+
+        if trace_frame.kind == TraceKind.POSTCONDITION:
+            self.trace_tuples = self.trace_tuples[::-1] + placeholder_tuple
+            self.current_trace_frame_index = len(self.trace_tuples) - 1
+            return
+
+        self.trace_tuples = placeholder_tuple + self.trace_tuples
+        self.current_trace_frame_index = 0
 
     @catch_user_error()
     def next_cursor_location(self):
@@ -1040,13 +1042,13 @@ parents()       show trace frames that call the current trace frame
         new_head = [
             TraceTuple(
                 trace_frame=TraceFrame(
-                    caller="unused",
                     callee=parent_trace_frame.caller,
                     callee_port=parent_trace_frame.caller_port,
                     filename=parent_trace_frame.filename,
                     callee_location=parent_trace_frame.callee_location,
                     kind=parent_trace_frame.kind,
-                )
+                ),
+                placeholder=True,
             ),
             TraceTuple(trace_frame=parent_trace_frame),
         ]
