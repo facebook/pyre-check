@@ -41,6 +41,7 @@ def mock_arguments(
     arguments.log_identifier = None
     arguments.logger = None
     arguments.logging_sections = None
+    arguments.enable_profiling = None
     arguments.no_watchman = no_watchman
     arguments.original_directory = original_directory or "/original/directory/"
     arguments.output = output
@@ -139,4 +140,16 @@ class CommandTest(unittest.TestCase):
                 "-logger",
                 "/foo/bar",
             ],
+        )
+
+    def test_profiling(self) -> None:
+        arguments = mock_arguments()
+        arguments.enable_profiling = True
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory(".")
+
+        command = commands.Command(arguments, configuration, analysis_directory)
+        self.assertEqual(
+            command._flags(),
+            ["-profiling-output", ".pyre/profiling.log", "-project-root", "."],
         )

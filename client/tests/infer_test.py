@@ -509,6 +509,7 @@ def mock_arguments() -> MagicMock:
     arguments.logging_sections = None
     arguments.logger = None
     arguments.log_identifier = None
+    arguments.enable_profiling = None
     arguments.current_directory = "."
 
     return arguments

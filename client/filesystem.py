@@ -62,6 +62,15 @@ def is_parent(parent: str, child: str) -> bool:
     return child.startswith(parent.rstrip(os.sep) + os.sep)
 
 
+def make_pyre_directory() -> str:
+    pyre_directory = ".pyre"
+    try:
+        os.mkdir(pyre_directory)
+    except FileExistsError:
+        pass
+    return pyre_directory
+
+
 class AnalysisDirectory:
     def __init__(
         self,

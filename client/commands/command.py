@@ -19,7 +19,7 @@ from typing import Iterable, List, Optional, Set  # noqa
 
 from .. import EnvironmentException, log
 from ..configuration import Configuration
-from ..filesystem import AnalysisDirectory
+from ..filesystem import AnalysisDirectory, make_pyre_directory, remove_if_exists
 
 
 LOG = logging.getLogger(__name__)  # type: logging.Logger
@@ -79,6 +79,7 @@ class Command:
 
         self._analysis_directory = analysis_directory
         self._debug = arguments.debug  # type: bool
+        self._enable_profiling = arguments.enable_profiling  # type: bool
         self._sequential = arguments.sequential  # type: bool
         self._strict = arguments.strict or (
             configuration and configuration.strict
@@ -146,6 +147,12 @@ class Command:
                 self._logging_sections = "-progress"
         if self._logging_sections:
             flags.extend(["-logging-sections", self._logging_sections])
+        if self._enable_profiling:
+            pyre_directory = make_pyre_directory()
+            profiling_output = os.path.join(pyre_directory, "profiling.log")
+            # Clear the profiling log first since in pyre binary it's append-only
+            remove_if_exists(profiling_output)
+            flags.extend(["-profiling-output", profiling_output])
         if self._current_directory:
             flags.extend(["-project-root", self._current_directory])
         if self._log_identifier:

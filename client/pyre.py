@@ -91,6 +91,9 @@ def main() -> int:
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
+        "--enable-profiling", action="store_true", help=argparse.SUPPRESS
+    )
+    parser.add_argument(
         "-n",
         "--noninteractive",
         action="store_true",

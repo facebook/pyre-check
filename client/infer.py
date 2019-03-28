@@ -467,6 +467,9 @@ def main():
     parser.add_argument(
         "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
     )
+    parser.add_argument(
+        "--enable-profiling", action="store_true", help=argparse.SUPPRESS
+    )
 
     parser.add_argument(
         "--binary-version",
