@@ -226,9 +226,13 @@ parents()       show trace frames that call the current trace frame
                 return
 
             self.sources = set(
-                self._get_leaves(session, issue_id, SharedTextKind.SOURCE)
+                self._get_leaves_issue_instance(
+                    session, issue_id, SharedTextKind.SOURCE
+                )
             )
-            self.sinks = set(self._get_leaves(session, issue_id, SharedTextKind.SINK))
+            self.sinks = set(
+                self._get_leaves_issue_instance(session, issue_id, SharedTextKind.SINK)
+            )
 
         self.current_issue_id = selected_issue.id
         self.current_frame_id = -1
@@ -308,11 +312,15 @@ parents()       show trace frames that call the current trace frame
             issues = query.options(joinedload(IssueInstance.message)).all()
 
             sources_list = [
-                self._get_leaves(session, int(issue_instance.id), SharedTextKind.SOURCE)
+                self._get_leaves_issue_instance(
+                    session, int(issue_instance.id), SharedTextKind.SOURCE
+                )
                 for issue_instance, _ in issues
             ]
             sinks_list = [
-                self._get_leaves(session, int(issue_instance.id), SharedTextKind.SINK)
+                self._get_leaves_issue_instance(
+                    session, int(issue_instance.id), SharedTextKind.SINK
+                )
                 for issue_instance, _ in issues
             ]
 
@@ -999,12 +1007,19 @@ parents()       show trace frames that call the current trace frame
         )
 
     def _create_trace_frame_output_string(self, trace_frame):
-        leaves_label = (
-            "Sinks" if trace_frame.kind == TraceKind.PRECONDITION else "Sources"
-        )
-        leaves_output = f"\n{' ' * 13}".join(
-            [leaf.contents for leaf in trace_frame.leaves]
-        )
+        if trace_frame.kind == TraceKind.POSTCONDITION:
+            leaves_label = "Sources"
+            leaf_kind = SharedTextKind.SOURCE
+        elif trace_frame.kind == TraceKind.PRECONDITION:
+            leaves_label = "Sinks"
+            leaf_kind = SharedTextKind.SINK
+        else:
+            assert False, f"{trace_frame.kind} is not valid."
+
+        with self.db.make_session() as session:
+            leaves_output = f"\n{' ' * 13}".join(
+                self._get_leaves_trace_frame(session, trace_frame.id, leaf_kind)
+            )
         return "\n".join(
             [
                 f"Trace frame {trace_frame.id}",
@@ -1083,7 +1098,7 @@ parents()       show trace frames that call the current trace frame
             .first()
         )
 
-    def _get_leaves(
+    def _get_leaves_issue_instance(
         self, session: Session, issue_instance_id: int, kind: SharedTextKind
     ) -> List[str]:
         message_ids = [
@@ -1097,6 +1112,23 @@ parents()       show trace frames that call the current trace frame
             .filter(SharedText.kind == kind)
             .all()
         ]
+        return self._leaf_dict_lookups(message_ids, kind)
+
+    def _get_leaves_trace_frame(
+        self, session: Session, trace_frame_id: int, kind: SharedTextKind
+    ) -> List[str]:
+        message_ids = [
+            int(id)
+            for id, in session.query(SharedText.id)
+            .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
+            .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
+            .filter(SharedText.kind == kind)
+        ]
+        return self._leaf_dict_lookups(message_ids, kind)
+
+    def _leaf_dict_lookups(
+        self, message_ids: List[int], kind: SharedTextKind
+    ) -> List[str]:
         leaf_dict = (
             self.sources_dict if kind == SharedTextKind.SOURCE else self.sinks_dict
         )
@@ -1120,7 +1152,7 @@ parents()       show trace frames that call the current trace frame
                 .scalar()
             )
 
-            page.display_page(self._create_trace_frame_output_string(trace_frame))
+        page.display_page(self._create_trace_frame_output_string(trace_frame))
 
     def _verify_entrypoint_selected(self) -> None:
         assert self.current_issue_id == -1 or self.current_frame_id == -1

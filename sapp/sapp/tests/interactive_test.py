@@ -360,7 +360,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
             self.interactive.setup()
-            sources = self.interactive._get_leaves(
+            sources = self.interactive._get_leaves_issue_instance(
                 session, int(issue_instance.id), SharedTextKind.SOURCE
             )
 
@@ -387,7 +387,7 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, assocs)
             session.commit()
 
-            sinks = self.interactive._get_leaves(
+            sinks = self.interactive._get_leaves_issue_instance(
                 session, issue_instance, SharedTextKind.SINK
             )
 
