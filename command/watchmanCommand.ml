@@ -153,12 +153,7 @@ let process_response
           >>| File.create)
       paths
   in
-  let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
-  (state,
-   Protocol.Request.TypeCheckRequest
-     (Protocol.TypeCheckRequest.create
-        ~update_environment_with:files
-        ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ()))
+  (state, Protocol.Request.TypeCheckRequest files)
 
 
 (** Main entry called whether spawned as a daemon or not *)

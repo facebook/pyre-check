@@ -126,14 +126,8 @@ let test_watchman_client context =
             watchman_state
             (create_mock_watchman_response "tmp/a.py")
         with
-        | Some (
-            _,
-            Protocol.Request.TypeCheckRequest {
-              Protocol.TypeCheckRequest.update_environment_with = [file];
-              check = [other_file]
-            }) ->
-            assert_equal (File.path file |> Path.relative) (Some "other/c.py");
-            assert_equal file other_file
+        | Some (_, Protocol.Request.TypeCheckRequest [file]) ->
+            assert_equal (File.path file |> Path.relative) (Some "other/c.py")
         | _ ->
             assert_failure "Malformed watchman response")
     ~cleanup;
@@ -144,14 +138,8 @@ let test_watchman_client context =
             watchman_state
             (create_mock_watchman_response "test.py")
         with
-        | Some
-            (_,
-             Protocol.Request.TypeCheckRequest {
-               Protocol.TypeCheckRequest.update_environment_with = [file];
-               check = [other_file]
-             }) ->
+        | Some (_, Protocol.Request.TypeCheckRequest [file]) ->
             assert_equal (File.path file |> Path.relative) (Some "test.py");
-            assert_equal file other_file
         | _ ->
             assert_failure "Malformed watchman response")
     ~cleanup;
@@ -203,14 +191,8 @@ let test_different_root context =
         { Commands.Watchman.configuration; watchman_directory; symlinks }
         mock_watchman_response
     with
-    | Some (
-        _,
-        Protocol.Request.TypeCheckRequest {
-          Protocol.TypeCheckRequest.update_environment_with = [file];
-          check = [other_file];
-        }) ->
-        assert_equal (File.path file |> Path.relative) (Some expected_file);
-        assert_equal file other_file
+    | Some (_, Protocol.Request.TypeCheckRequest [file]) ->
+        assert_equal (File.path file |> Path.relative) (Some expected_file)
     | _ ->
         assert_failure "Unexpected watchman response"
   in

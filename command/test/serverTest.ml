@@ -1357,8 +1357,8 @@ let test_incremental_typecheck context =
     |> fst
   in
   let path = path_to_python_file "test" in
-  let stub_path = path_to_python_file "stub" in
-  Out_channel.write_all (stub_path ^ "i") ~data:"";
+  let stub_path = path_to_python_file "stub" ^ "i" in
+  Out_channel.write_all stub_path ~data:"";
 
   let relativize path =
     Path.create_relative ~root:local_root ~relative:path
@@ -1366,7 +1366,6 @@ let test_incremental_typecheck context =
     |> Option.value ~default:path
   in
   let handle = relativize path in
-  let stub_handle = relativize stub_path in
   let source =
     {|
         def foo() -> None:
@@ -1378,11 +1377,7 @@ let test_incremental_typecheck context =
     assert_response ~local_root ~handle:path ~source ?state ~request (Some response)
   in
   assert_response
-    ~request:(Protocol.Request.TypeCheckRequest
-                (Protocol.TypeCheckRequest.create
-                   ~update_environment_with:[file ~local_root path]
-                   ~check:[file ~local_root path]
-                   ()))
+    ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
     (Protocol.TypeCheckResponse [(File.Handle.create handle), []]);
   (* The handles get updated in shared memory. *)
   let print_tree tree =
@@ -1395,10 +1390,7 @@ let test_incremental_typecheck context =
     (File.Handle.Set.Tree.singleton (File.Handle.create handle));
 
   let files = [file ~local_root ~content:source path] in
-  let request_with_content =
-    (Protocol.Request.TypeCheckRequest
-       (Protocol.TypeCheckRequest.create ~update_environment_with:files ~check:files ()))
-  in
+  let request_with_content = (Protocol.Request.TypeCheckRequest files) in
   let errors =
     CommandTest.associate_errors_and_filenames
       (make_errors
@@ -1410,38 +1402,31 @@ let test_incremental_typecheck context =
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
   (* Assert that only files getting used to update the environment get parsed. *)
   let open Protocol in
-  let check_request ?(update_environment_with = []) ?(check = []) () =
-    Request.TypeCheckRequest
-      (TypeCheckRequest.create
-         ~update_environment_with
-         ~check
-         ())
-  in
   assert_response
-    ~request:(check_request ~check:[file ~local_root ~content:"def foo() -> int: return 1" path] ())
-    (Protocol.TypeCheckResponse errors);
+    ~request:(
+      Request.TypeCheckRequest
+        [file ~local_root ~content:"def foo() -> int: return 1" path])
+    (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename path), []]);
   let () =
-    let stub_file = file ~local_root ~content:"" (stub_path ^ "i") in
-    assert_response
-      ~request:(check_request ~update_environment_with:[stub_file] ())
-      (Protocol.TypeCheckResponse []);
+    let stub_file = file ~local_root ~content:"" stub_path in
+    assert_response ~request:(Request.TypeCheckRequest [stub_file]) (Protocol.TypeCheckResponse []);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
-      (File.Handle.Set.Tree.singleton (File.Handle.create (relativize stub_path ^ "i")));
+      (File.Handle.Set.Tree.singleton (File.Handle.create (relativize stub_path)));
 
   in
   assert_response
     ~request:(
-      check_request
-        ~check:[file ~local_root ~content:"def foo() -> int: return \"\"" stub_path]
-        ())
-    (Protocol.TypeCheckResponse [File.Handle.create stub_handle, []]);
+      Request.TypeCheckRequest
+        [file ~local_root ~content:"def foo() -> int: return \"\"" stub_path])
+    (* We don't error on stub files. *)
+    (Protocol.TypeCheckResponse []);
 
   let () =
     let file = file ~local_root ~content:"def foo() -> int: return 1" path in
     assert_response
-      ~request:(check_request ~update_environment_with:[file] ~check:[file] ())
+      ~request:(Request.TypeCheckRequest [file])
       (Protocol.TypeCheckResponse [File.Handle.create handle, []])
   in
 
@@ -1579,13 +1564,6 @@ let test_incremental_dependencies context =
         ~initial_environment:environment
         (File.Handle.Table.create ())
     in
-    let check_request ?update ?check () =
-      Protocol.Request.TypeCheckRequest
-        (Protocol.TypeCheckRequest.create
-           ?update_environment_with:update
-           ?check
-           ())
-    in
     let process request =
       Request.process
         ~socket:mock_client_socket
@@ -1594,7 +1572,7 @@ let test_incremental_dependencies context =
         ~request
     in
     let { Request.state; response } =
-      process (check_request ~update:[file ~local_root "b.py"] ~check:[file ~local_root "b.py"] ())
+      process (Protocol.Request.TypeCheckRequest [file ~local_root "b.py"])
     in
     assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
     assert_equal
@@ -1603,10 +1581,7 @@ let test_incremental_dependencies context =
       (File.Set.to_list state.State.deferred_state);
     let { Request.state; response } =
       process
-        (check_request
-           ~update:[file ~local_root "b.py"]
-           ~check:[file ~local_root "a.py"; file ~local_root "b.py"]
-           ())
+        (Protocol.Request.TypeCheckRequest [file ~local_root "a.py"; file ~local_root "b.py"])
     in
     let printer = function
       | None -> "None"
@@ -1674,17 +1649,7 @@ let test_incremental_lookups context =
   add_defaults_to_environment ~configuration environment_handler;
   Service.Environment.populate ~configuration environment_handler [parse source];
 
-  let request =
-    Protocol.Request.TypeCheckRequest
-      (Protocol.TypeCheckRequest.create
-         ~update_environment_with:[
-           file
-             ~local_root
-             ~content:source path;
-         ]
-         ~check:[file ~local_root ~content:source path]
-         ())
-  in
+  let request = Protocol.Request.TypeCheckRequest [file ~local_root ~content:source path] in
   let errors = File.Handle.Table.create () in
   let initial_state =
     mock_server_state
@@ -1807,12 +1772,7 @@ let test_incremental_repopulate context =
     ~socket:mock_client_socket
     ~state:initial_state
     ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-    ~request:
-      (Protocol.Request.TypeCheckRequest
-         (Protocol.TypeCheckRequest.create
-            ~update_environment_with:[file]
-            ~check:[file]
-            ()))
+    ~request: (Protocol.Request.TypeCheckRequest [file])
   |> ignore;
   begin
     match (get_annotation "test_incremental.foo") with
@@ -1924,11 +1884,7 @@ let test_incremental_attribute_caching context =
       ~socket:Unix.stdout
       ~state
       ~configuration:server_configuration
-      ~request:(Protocol.Request.TypeCheckRequest
-                  (Protocol.TypeCheckRequest.create
-                     ~update_environment_with:[File.create source_path]
-                     ~check:[File.create source_path]
-                     ()))
+      ~request:(Protocol.Request.TypeCheckRequest [File.create source_path])
     |> fun { Request.state; _ } -> state
   in
   let get_errors { State.errors; _ } = Hashtbl.to_alist errors in

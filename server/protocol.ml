@@ -28,19 +28,6 @@ type client =
 [@@deriving eq, show]
 
 
-module TypeCheckRequest = struct
-  type t = {
-    update_environment_with: File.t list;
-    check: File.t list;
-  }
-  [@@deriving eq, show]
-
-
-  let create ?(update_environment_with = []) ?(check = []) () =
-    { update_environment_with; check }
-end
-
-
 module TypeQuery = struct
   type serialized_ocaml_value = {
     serialized_key: string;
@@ -205,7 +192,7 @@ module Request = struct
     | ClientExitRequest of client
     | RageRequest of LanguageServer.Types.RequestId.t
     | DisplayTypeErrors of { files: File.t list; flush: bool }
-    | TypeCheckRequest of TypeCheckRequest.t
+    | TypeCheckRequest of File.t list
     | TypeQueryRequest of TypeQuery.request
     | StopRequest
     | ClientShutdownRequest of LanguageServer.Types.RequestId.t
@@ -237,7 +224,7 @@ module Request = struct
     | ClientExitRequest _ -> "ClientExit"
     | RageRequest _ -> "Rage"
     | DisplayTypeErrors _ -> "DisplayTypeErrors"
-    | TypeCheckRequest { TypeCheckRequest.check = []; update_environment_with = [] } -> "TypeCheck"
+    | TypeCheckRequest [] -> "TypeCheck"
     | TypeCheckRequest _ -> "IncrementalCheck"
     | TypeQueryRequest _ -> "TypeQuery"
     | StopRequest -> "Stop"

@@ -193,14 +193,8 @@ let parse_lsp ~configuration ~request =
                 };
               _
             } ->
-              let is_stub file = String.is_suffix ~suffix:"pyi" (File.path file |> Path.absolute) in
               let files = List.map files ~f:string_path_to_file in
-              Some (
-                TypeCheckRequest
-                  (TypeCheckRequest.create
-                     ~update_environment_with:files
-                     ~check:(List.filter ~f:(fun file -> not (is_stub file)) files) ())
-              )
+              Some (TypeCheckRequest files)
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -1338,12 +1332,13 @@ let process_type_check_files
 let process_type_check_request
     ~state
     ~configuration
-    ~request:{ TypeCheckRequest.update_environment_with; check} =
+    ~files =
+
   process_type_check_files
     ~state
     ~configuration
-    ~update_environment_with
-    ~check
+    ~update_environment_with:files
+    ~check:(List.filter files ~f:(fun file -> not (File.is_stub file)))
     ~should_analyze_dependencies:true
 
 
@@ -1454,9 +1449,9 @@ let rec process
   let result =
     try
       match request with
-      | TypeCheckRequest request ->
+      | TypeCheckRequest files ->
           SharedMem.collect `aggressive;
-          process_type_check_request ~state ~configuration ~request
+          process_type_check_request ~state ~configuration ~files
 
       | TypeQueryRequest request ->
           process_type_query_request ~state ~configuration ~request
@@ -1530,7 +1525,7 @@ let rec process
           process_type_check_request
             ~state
             ~configuration
-            ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
+            ~files:[file]
 
       | CloseDocument file ->
           LookupCache.evict ~state ~configuration file;
@@ -1551,7 +1546,7 @@ let rec process
             process_type_check_request
               ~state
               ~configuration
-              ~request:{ TypeCheckRequest.update_environment_with = [file]; check = [file]; }
+              ~files:[file]
           else
             begin
               Log.log ~section:`Server "Explicitly ignoring didSave request";

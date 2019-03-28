@@ -88,12 +88,7 @@ let test_parse_query context =
   assert_equal
     (Commands.Query.parse_query ~configuration "type_check('derp/fiddle.py')")
     (Request.TypeCheckRequest
-       (TypeCheckRequest.create
-          ~check:[
-            File.create (Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py");
-          ]
-          ()
-       ));
+       [File.create (Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py")]);
 
   assert_parses "type(C)" (Type (!"C"));
   assert_parses "type((C,B))" (Type (+(Ast.Expression.Tuple [!"C"; !"B"])));

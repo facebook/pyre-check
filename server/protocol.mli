@@ -131,16 +131,6 @@ module TypeQuery: sig
 end
 
 
-module TypeCheckRequest: sig
-  type t = {
-    update_environment_with: File.t list;
-    check: File.t list;
-  }
-  [@@deriving eq, show]
-
-  val create: ?update_environment_with: File.t list -> ?check: File.t list -> unit -> t
-end
-
 module Request : sig
   type t =
     | LanguageServerProtocolRequest of string
@@ -148,7 +138,7 @@ module Request : sig
     | ClientExitRequest of client
     | RageRequest of LanguageServer.Types.RequestId.t
     | DisplayTypeErrors of { files: File.t list; flush: bool }
-    | TypeCheckRequest of TypeCheckRequest.t
+    | TypeCheckRequest of File.t list
     | TypeQueryRequest of TypeQuery.request
     | StopRequest
     | ClientShutdownRequest of LanguageServer.Types.RequestId.t

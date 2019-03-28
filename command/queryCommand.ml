@@ -171,7 +171,7 @@ let parse_query
               |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
               |> List.map ~f:File.create
             in
-            Request.TypeCheckRequest (TypeCheckRequest.create ~check:files ())
+            Request.TypeCheckRequest files
         | _ ->
             raise (InvalidQuery "unexpected query call")
       end

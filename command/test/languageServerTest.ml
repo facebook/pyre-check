@@ -1029,14 +1029,7 @@ let test_request_parser context =
   in
   assert_parsed_request_equals
     update_message
-    (
-      Some
-        (Protocol.Request.TypeCheckRequest {
-            Protocol.TypeCheckRequest.update_environment_with =
-              [absolute_file; linked_file; stub_file];
-            check = [absolute_file; linked_file]
-          })
-    );
+    (Some (Protocol.Request.TypeCheckRequest [absolute_file; linked_file; stub_file]));
   assert_parsed_request_equals
     display_type_errors_message
     (

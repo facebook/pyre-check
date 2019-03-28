@@ -34,7 +34,7 @@ val process_display_type_errors_request
 val process_type_check_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t
-  -> request: Protocol.TypeCheckRequest.t
+  -> files: File.t list
   -> response
 val process_deferred_state
   :  state: State.t

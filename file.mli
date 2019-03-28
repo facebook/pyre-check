@@ -41,4 +41,6 @@ end
 
 module Set: Set.S with type Elt.t = t
 
+val is_stub: t -> bool
+
 val handle: configuration: Configuration.Analysis.t -> t -> Handle.t

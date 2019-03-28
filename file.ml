@@ -143,6 +143,13 @@ module Set = Set.Make(struct
 exception NonexistentHandle of string
 
 
+
+let is_stub { path; _ } =
+  Path.absolute path
+  |> Handle.create
+  |> Handle.is_stub
+
+
 let handle ~configuration { path; _ } =
   let search_path = Configuration.Analysis.search_path configuration in
   let handle =

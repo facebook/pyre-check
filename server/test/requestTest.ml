@@ -331,8 +331,7 @@ let test_process_type_check_request context =
       let actual_errors, actual_deferred_state =
         let configuration, state = initialize sources in
         let check = List.map check ~f:write_file in
-        let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
-        Request.process_type_check_request ~state ~configuration ~request
+        Request.process_type_check_request ~state ~configuration ~files:check
         |> function
         | {
           Request.response = Some (Protocol.TypeCheckResponse response);
@@ -448,14 +447,13 @@ let test_process_type_check_request context =
 
   (* Check nonexistent handles. *)
   let configuration, state = initialize [] in
-  let check =
+  let files =
     Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"
     |> File.create ~content:"def function() -> int: return ''"
     |> fun file -> [file]
   in
-  let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
   let { Request.response; _ } =
-    Request.process_type_check_request ~state ~configuration ~request
+    Request.process_type_check_request ~state ~configuration ~files
   in
   assert_equal (Some (Protocol.TypeCheckResponse [])) response
 
@@ -470,9 +468,8 @@ let test_process_deferred_state context =
       let assert_response_size _ =
         let configuration, state = initialize sources in
         let state =
-          let check = List.map check ~f:write_file in
-          let request = { Protocol.TypeCheckRequest.update_environment_with = check; check } in
-          Request.process_type_check_request ~state ~configuration ~request
+          let files = List.map check ~f:write_file in
+          Request.process_type_check_request ~state ~configuration ~files
           |> fun { state; _ } ->
           state
         in
