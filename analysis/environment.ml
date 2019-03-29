@@ -628,7 +628,6 @@ let register_values
     Reference.sanitize_qualified reference
   in
 
-
   let module CollectCallables = Visit.MakeStatementVisitor(struct
       type t = ((Type.Callable.t Node.t) list) Access.Map.t
 

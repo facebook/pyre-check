@@ -2113,11 +2113,9 @@ let connect_annotations_to_top
     ((module Handler: Handler) as handler)
     ~top
     annotations =
-  let indices =
-    let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-    List.map annotations ~f:index_of
-  in
-  let connect_to_top index =
+  let indices = Handler.indices () in
+  let connect_to_top annotation =
+    let index = Handler.find_unsafe indices annotation in
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
     let order =
       {
@@ -2134,8 +2132,9 @@ let connect_annotations_to_top
             ()
         | _ ->
             connect handler ~predecessor:annotation ~successor:top
-      end in
-  List.iter ~f:connect_to_top indices
+      end
+  in
+  List.iter ~f:connect_to_top annotations
 
 
 let check_integrity (module Handler: Handler) =
