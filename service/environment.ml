@@ -185,6 +185,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~get:FunctionKeys.get
         ~add:FunctionKeys.add
         ~remove:(fun key -> FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton key))
+
     let add_class_key ~handle class_type =
       add_new_key
         ~handle
