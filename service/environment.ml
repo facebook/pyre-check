@@ -19,10 +19,8 @@ let populate
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
     sources =
-  ignore scheduler;
-  ignore configuration;
+  let resolution = TypeCheck.resolution (module Handler) () in
   let populate () =
-    let resolution = TypeCheck.resolution (module Handler) () in
     List.iter ~f:(Environment.register_module (module Handler)) sources;
 
     let all_annotations =
@@ -56,20 +54,34 @@ let populate
       ~bottom:Type.Bottom
       ~top:Type.object_primitive
       all_annotations;
-
-    List.iter sources ~f:(Environment.register_functions (module Handler) resolution);
-    List.iter sources ~f:(Environment.register_globals (module Handler) resolution);
+    Type.Cache.disable ();
     (* TODO(T30713406): Merge with class registration. *)
     List.iter ~f:Handler.refine_class_definition all_annotations;
-    Type.Cache.disable ();
-    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations;
     Type.Cache.enable ();
-
-    List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
-    (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-    Annotated.Class.Attribute.Cache.clear ();
+    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
-  Handler.transaction ~f:populate ()
+  Handler.transaction ~f:populate ();
+  Scheduler.iter
+    scheduler
+    ~configuration
+    ~f:(fun sources ->
+        List.iter
+          sources
+          ~f:(Environment.register_functions (module Handler) resolution))
+    ~inputs:sources;
+  Scheduler.iter
+    scheduler
+    ~configuration
+    ~f:(fun sources ->
+        List.iter
+          sources
+          ~f:(Environment.register_globals (module Handler) resolution))
+    ~inputs:sources;
+  Handler.transaction
+    ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)
+    ();
+  (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
+  Annotated.Class.Attribute.Cache.clear ()
 
 
 let build
