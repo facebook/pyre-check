@@ -67,15 +67,7 @@ let populate
     ~f:(fun sources ->
         List.iter
           sources
-          ~f:(Environment.register_functions (module Handler) resolution))
-    ~inputs:sources;
-  Scheduler.iter
-    scheduler
-    ~configuration
-    ~f:(fun sources ->
-        List.iter
-          sources
-          ~f:(Environment.register_globals (module Handler) resolution))
+          ~f:(Environment.register_values (module Handler) resolution))
     ~inputs:sources;
   Handler.transaction
     ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)

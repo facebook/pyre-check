@@ -613,11 +613,10 @@ let register_aliases (module Handler: Handler) sources =
   Type.Cache.enable ()
 
 
-let register_globals
+let register_values
     (module Handler: Handler)
     resolution
     ({ Source.handle; qualifier; statements; _ } as source) =
-
   let qualified_reference reference =
     let reference =
       let builtins = Reference.create "builtins" in
@@ -629,6 +628,71 @@ let register_globals
     Reference.sanitize_qualified reference
   in
 
+
+  let module CollectCallables = Visit.MakeStatementVisitor(struct
+      type t = ((Type.Callable.t Node.t) list) Access.Map.t
+
+      let visit_children _ =
+        true
+
+      let statement { Source.handle; _ } callables statement =
+        let collect_callable
+            ~parent
+            ~location
+            callables
+            ({ Define.name; _ } as define) =
+
+          Handler.DependencyHandler.add_function_key ~handle name;
+
+          (* Register callable global. *)
+          let callable =
+            (* Only omit `self` for class methods in the environment. When accessed globally,
+               Instance methods require the calling class to be passed in. *)
+            let parent =
+              if Define.is_class_method define then
+                parent
+                >>| Resolution.parse_reference ~allow_untracked:true resolution
+                >>| Type.meta
+              else
+                None
+            in
+            Annotated.Callable.create ~parent [define] ~resolution
+            |> Node.create ~location
+          in
+          let change callable = function
+            | None -> Some [callable]
+            | Some existing -> Some (existing @ [callable])
+          in
+          Map.change callables (Reference.access name) ~f:(change callable)
+        in
+        match statement with
+        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->
+            Annotated.Callable.apply_decorators ~resolution ~define
+            |> collect_callable ~parent ~location callables
+
+        | _ ->
+            callables
+    end)
+  in
+
+  let register_callables handle ~key ~data =
+    assert (not (List.is_empty data));
+    let location =
+      List.hd_exn data
+      |> Node.location
+    in
+    data
+    |> List.map ~f:Node.value
+    |> Type.Callable.from_overloads
+    >>| (fun callable -> Type.Callable callable)
+    >>| Annotation.create_immutable ~global:true
+    >>| Node.create ~location
+    >>| (fun global ->
+        Handler.register_global ~handle ~reference:(Reference.from_access key) ~global)
+    |> ignore
+  in
+  CollectCallables.visit Access.Map.empty source
+  |> Map.iteri ~f:(register_callables handle);
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor(struct
       type t = unit
@@ -790,73 +854,6 @@ let register_dependencies (module Handler: Handler) source =
     end)
   in
   Visit.visit () source
-
-
-let register_functions (module Handler: Handler) resolution ({ Source.handle; _ } as source) =
-  let module CollectCallables = Visit.MakeStatementVisitor(struct
-      type t = ((Type.Callable.t Node.t) list) Access.Map.t
-
-      let visit_children _ =
-        true
-
-      let statement { Source.handle; _ } callables statement =
-        let collect_callable
-            ~parent
-            ~location
-            callables
-            ({ Define.name; _ } as define) =
-
-          Handler.DependencyHandler.add_function_key ~handle name;
-
-          (* Register callable global. *)
-          let callable =
-            (* Only omit `self` for class methods in the environment. When accessed globally,
-               Instance methods require the calling class to be passed in. *)
-            let parent =
-              if Define.is_class_method define then
-                parent
-                >>| Resolution.parse_reference ~allow_untracked:true resolution
-                >>| Type.meta
-              else
-                None
-            in
-            Annotated.Callable.create ~parent [define] ~resolution
-            |> Node.create ~location
-          in
-          let change callable = function
-            | None -> Some [callable]
-            | Some existing -> Some (existing @ [callable])
-          in
-          Map.change callables (Reference.access name) ~f:(change callable)
-        in
-        match statement with
-        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->
-            Annotated.Callable.apply_decorators ~resolution ~define
-            |> collect_callable ~parent ~location callables
-
-        | _ ->
-            callables
-    end)
-  in
-
-  let register_callables handle ~key ~data =
-    assert (not (List.is_empty data));
-    let location =
-      List.hd_exn data
-      |> Node.location
-    in
-    data
-    |> List.map ~f:Node.value
-    |> Type.Callable.from_overloads
-    >>| (fun callable -> Type.Callable callable)
-    >>| Annotation.create_immutable ~global:true
-    >>| Node.create ~location
-    >>| (fun global ->
-        Handler.register_global ~handle ~reference:(Reference.from_access key) ~global)
-    |> ignore
-  in
-  CollectCallables.visit Access.Map.empty source
-  |> Map.iteri ~f:(register_callables handle)
 
 
 let infer_implementations (module Handler: Handler) resolution ~implementing_classes ~protocol =

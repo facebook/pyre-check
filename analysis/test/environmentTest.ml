@@ -583,7 +583,7 @@ let test_register_globals _ =
       |}
     |> Preprocessing.preprocess
   in
-  Environment.register_globals (module Handler) resolution source;
+  Environment.register_values (module Handler) resolution source;
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
   assert_global "qualifier.with_resolve" (Some Type.Top);
@@ -609,7 +609,7 @@ let test_register_globals _ =
       |}
     |> Preprocessing.preprocess
   in
-  Environment.register_globals (module Handler) resolution source;
+  Environment.register_values (module Handler) resolution source;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
   assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"))
 

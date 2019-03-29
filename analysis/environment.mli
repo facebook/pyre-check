@@ -93,7 +93,7 @@ val register_aliases
   -> Source.t list
   -> unit
 
-val register_globals: (module Handler) -> Resolution.t -> Source.t -> unit
+val register_values: (module Handler) -> Resolution.t -> Source.t -> unit
 
 val connect_type_order
   :  (module Handler)
@@ -103,12 +103,6 @@ val connect_type_order
 
 val register_dependencies
   :  (module Handler)
-  -> Source.t
-  -> unit
-
-val register_functions
-  :  (module Handler)
-  -> Resolution.t
   -> Source.t
   -> unit
 
