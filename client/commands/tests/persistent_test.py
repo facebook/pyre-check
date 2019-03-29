@@ -7,17 +7,18 @@ import io
 import unittest
 from unittest.mock import call, patch
 
-from ... import EnvironmentException, commands, monitor  # noqa
+from ... import EnvironmentException, commands, monitor, project_files_monitor  # noqa
 from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
 class PersistentTest(unittest.TestCase):
+    @patch.object(project_files_monitor, "ProjectFilesMonitor")
     @patch.object(commands.Persistent, "run_null_server", return_value=None)
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")
     def test_persistent(
-        self, _daemonize, directories_to_analyze, run_null_server
+        self, _daemonize, directories_to_analyze, run_null_server, ProjectFilesMonitor
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()
