@@ -8,17 +8,10 @@ from typing import List
 import click
 from sapp.models import Issue, IssueInstance, SharedText, TraceFrame
 
-from . import models
-from ..cli_lib import require_option
+from .cli_lib import require_option
 
 
-@click.group()
-def diagnostics():
-    """Commands for diagnosing analysis issues"""
-    pass
-
-
-@diagnostics.command()
+@click.command()
 @click.pass_context
 @click.option("--run-id", type=int, required=True)
 @click.argument(
@@ -28,6 +21,7 @@ def diagnostics():
     required=True,
 )
 def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
+    """Output DB models in a lint-friendly format"""
     ctx = click_ctx.obj
     require_option(click_ctx, "repository")
 

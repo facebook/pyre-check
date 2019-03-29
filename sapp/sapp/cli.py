@@ -4,7 +4,7 @@ import click
 from sapp.cli_lib import commands, common_options
 from sapp.context import Context
 from sapp.db import DB, DBType
-from sapp.diagnostics.cli import diagnostics
+from sapp.lint import lint
 from sapp.pysa_taint_parser import Parser
 
 
@@ -33,7 +33,7 @@ def cli(
 
 for command in commands:
     cli.add_command(command)
-cli.add_command(diagnostics)
+cli.add_command(lint)
 
 if __name__ == "__main__":
     cli()
