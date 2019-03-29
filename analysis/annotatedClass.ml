@@ -222,19 +222,19 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
     | Some parameters ->
         parameters
   in
-  let target =
-    annotation ~resolution target
-    |> Type.split
-    |> fst
-  in
-  let target =
+  let right =
+    let target =
+      annotation ~resolution target
+      |> Type.split
+      |> fst
+    in
     match target with
     | Primitive name ->
         Type.parametric name parameters
     | _ ->
         target
   in
-  Resolution.solve_constraints resolution ~constraints:Type.Map.empty ~source:instantiated ~target
+  Resolution.solve_less_or_equal resolution ~constraints:Type.Map.empty ~left:instantiated ~right
   (* TODO(T39598018): error in this case somehow, something must be wrong *)
   |> Option.value ~default:Type.Map.empty
 
@@ -811,14 +811,14 @@ let callables_of_attributes =
 let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
   let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
     if Access.equal name protocol_name then
-      let source =
+      let left =
         Type.Callable.create_from_implementation overload
         |> Type.mark_variables_as_bound ~simulated:true
       in
-      Resolution.solve_constraints
+      Resolution.solve_less_or_equal
         resolution
-        ~source
-        ~target:(Type.Callable.create_from_implementation protocol_overload)
+        ~left
+        ~right:(Type.Callable.create_from_implementation protocol_overload)
         ~constraints
       >>| Type.Map.map ~f:Type.free_simulated_bound_variables
     else

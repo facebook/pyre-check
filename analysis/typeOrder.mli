@@ -116,11 +116,11 @@ type order = {
   any_is_bottom: bool;
 }
 
-val solve_constraints
+val solve_less_or_equal
   :  order
   -> constraints: Type.t Type.Map.t
-  -> source: Type.t
-  -> target: Type.t
+  -> left: Type.t
+  -> right: Type.t
   -> Type.t Type.Map.t option
 val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
 val is_compatible_with: order -> left: Type.t -> right: Type.t -> bool

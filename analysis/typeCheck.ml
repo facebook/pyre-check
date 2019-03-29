@@ -1326,7 +1326,7 @@ module State = struct
           let add_incompatible_variable_error ~state annotation default =
             if Type.equal default Type.Any ||
                Resolution.less_or_equal resolution ~left:default ~right:annotation ||
-               Resolution.constraints_solution_exists resolution ~source:default ~target:annotation
+               Resolution.constraints_solution_exists resolution ~left:default ~right:annotation
             then
               state
             else
@@ -1426,10 +1426,12 @@ module State = struct
                       in
                       let compatible =
                         Resolution.less_or_equal resolution ~left:annotation ~right:resolved ||
+                        (* TODO(T41994014) This should be reversed once solve_less_or_equal supports
+                           when the variable is on the left  *)
                         Resolution.constraints_solution_exists
                           resolution
-                          ~source:resolved
-                          ~target:annotation
+                          ~left:resolved
+                          ~right:annotation
                       in
                       let state =
                         let name = Identifier.sanitized name in
@@ -1675,11 +1677,11 @@ module State = struct
                              resolution
                              ~left:expected
                              ~right:actual ||
-                           Resolution.solve_constraints
+                           Resolution.solve_less_or_equal
                              resolution
                              ~constraints:Type.Map.empty
-                             ~source:expected
-                             ~target:actual
+                             ~left:expected
+                             ~right:actual
                            |> Option.is_some
                          in
                          try

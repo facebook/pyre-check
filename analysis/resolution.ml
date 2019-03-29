@@ -262,13 +262,12 @@ let full_order ({ order; _ } as resolution) =
   { TypeOrder.handler = order; constructor; implements; any_is_bottom = false }
 
 
-let solve_constraints resolution =
+let solve_less_or_equal resolution =
   full_order resolution
-  |> TypeOrder.solve_constraints
+  |> TypeOrder.solve_less_or_equal
 
-
-let constraints_solution_exists ~source ~target resolution =
-  solve_constraints resolution ~constraints:Type.Map.empty ~source ~target
+let constraints_solution_exists ~left ~right resolution =
+  solve_less_or_equal resolution ~constraints:Type.Map.empty ~left ~right
   |> Option.is_some
 
 

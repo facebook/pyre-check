@@ -3034,7 +3034,7 @@ let test_is_instantiated _ =
        (Type.parametric "C" [Type.Primitive "A"; Type.Primitive "B"]))
 
 
-let test_solve_constraints _ =
+let test_solve_less_or_equal _ =
   let resolution =
     let configuration = Configuration.Analysis.create () in
     let populate source =
@@ -3096,10 +3096,10 @@ let test_solve_constraints _ =
     { handler = Resolution.order resolution; constructor; implements; any_is_bottom = false }
   in
   let assert_solve
-      ~source
-      ~target
+      ~left
+      ~right
       ?constraints
-      ?(leave_unbound_in_source = [])
+      ?(leave_unbound_in_left = [])
       ?(leave_constraint_values_unbound = false)
       expected =
     let parse_annotation annotation =
@@ -3107,18 +3107,18 @@ let test_solve_constraints _ =
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
     in
-    let source =
+    let left =
       let constraints annotation =
         match annotation with
         | Type.Variable { variable = variable_name; _ }
-          when not (List.exists leave_unbound_in_source ~f:((=) variable_name)) ->
+          when not (List.exists leave_unbound_in_left ~f:((=) variable_name)) ->
             Some (Type.mark_variables_as_bound annotation)
         | _ -> None
       in
-      parse_annotation source
+      parse_annotation left
       |> Type.instantiate ~constraints
     in
-    let target = parse_annotation target in
+    let right = parse_annotation right in
     let parse_map map =
       let mark =
         if leave_constraint_values_unbound then
@@ -3154,168 +3154,168 @@ let test_solve_constraints _ =
       ~cmp:optional_map_compare
       ~printer:optional_map_print
       expected
-      (TypeOrder.solve_constraints handler ~constraints ~source ~target)
+      (TypeOrder.solve_less_or_equal handler ~constraints ~left ~right)
   in
-  assert_solve ~source:"C" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
-  assert_solve ~source:"D" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
-  assert_solve ~source:"Q" ~target:"T_Unconstrained" (Some ["T_Unconstrained", "Q"]);
+  assert_solve ~left:"C" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
+  assert_solve ~left:"D" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
+  assert_solve ~left:"Q" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "Q"]);
 
-  assert_solve ~source:"C" ~target:"T_Bound_C" (Some ["T_Bound_C", "C"]);
-  assert_solve ~source:"D" ~target:"T_Bound_C" (Some ["T_Bound_C", "D"]);
-  assert_solve ~source:"Q" ~target:"T_Bound_C" (None);
-  assert_solve ~source:"C" ~target:"T_Bound_D" (None);
+  assert_solve ~left:"C" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+  assert_solve ~left:"D" ~right:"T_Bound_C" (Some ["T_Bound_C", "D"]);
+  assert_solve ~left:"Q" ~right:"T_Bound_C" (None);
+  assert_solve ~left:"C" ~right:"T_Bound_D" (None);
 
-  assert_solve ~source:"C" ~target:"T_C_Q" (Some ["T_C_Q", "C"]);
+  assert_solve ~left:"C" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
   (* An explicit type variable can only be bound to its constraints *)
-  assert_solve ~source:"D" ~target:"T_C_Q" (Some ["T_C_Q", "C"]);
-  assert_solve ~source:"C" ~target:"T_D_Q" (None);
+  assert_solve ~left:"D" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
+  assert_solve ~left:"C" ~right:"T_D_Q" (None);
 
-  assert_solve ~source:"$bottom" ~target:"T_Unconstrained" (Some []);
+  assert_solve ~left:"$bottom" ~right:"T_Unconstrained" (Some []);
 
 
   assert_solve
-    ~source:"typing.Union[int, G_invariant[str], str]"
-    ~target:"T_Unconstrained"
+    ~left:"typing.Union[int, G_invariant[str], str]"
+    ~right:"T_Unconstrained"
     (Some ["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]);
-  assert_solve ~source:"typing.Union[D, C]" ~target:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
 
   assert_solve
     ~constraints:["T_Unconstrained", "Q"]
-    ~source:"G_invariant[C]"
-    ~target:"G_invariant[T_Unconstrained]"
+    ~left:"G_invariant[C]"
+    ~right:"G_invariant[T_Unconstrained]"
     None;
   assert_solve
     ~constraints:["T_Unconstrained", "Q"]
-    ~source:"G_covariant[C]"
-    ~target:"G_covariant[T_Unconstrained]"
+    ~left:"G_covariant[C]"
+    ~right:"G_covariant[T_Unconstrained]"
     (Some ["T_Unconstrained", "typing.Union[Q, C]"]);
 
   assert_solve
-    ~source:"typing.Optional[C]"
-    ~target:"typing.Optional[T_Unconstrained]"
+    ~left:"typing.Optional[C]"
+    ~right:"typing.Optional[T_Unconstrained]"
     (Some ["T_Unconstrained", "C"]);
   assert_solve
-    ~source:"C"
-    ~target:"typing.Optional[T_Unconstrained]"
+    ~left:"C"
+    ~right:"typing.Optional[T_Unconstrained]"
     (Some ["T_Unconstrained", "C"]);
 
   assert_solve
-    ~source:"typing.Tuple[C, ...]"
-    ~target:"typing.Tuple[T_Unconstrained, ...]"
+    ~left:"typing.Tuple[C, ...]"
+    ~right:"typing.Tuple[T_Unconstrained, ...]"
     (Some ["T_Unconstrained", "C"]);
   assert_solve
-    ~source:"typing.Tuple[C, Q, D]"
-    ~target:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
+    ~left:"typing.Tuple[C, Q, D]"
+    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
     (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
   assert_solve
-    ~source:"typing.Tuple[D, ...]"
-    ~target:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
+    ~left:"typing.Tuple[D, ...]"
+    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
     (Some ["T_Unconstrained", "D"]);
   assert_solve
-    ~source:"typing.Tuple[C, Q, D]"
-    ~target:"typing.Tuple[T_Unconstrained, ...]"
+    ~left:"typing.Tuple[C, Q, D]"
+    ~right:"typing.Tuple[T_Unconstrained, ...]"
     (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
 
   assert_solve
-    ~source:"G_covariant[C]"
-    ~target:"typing.Union[G_covariant[T_Unconstrained], int]"
+    ~left:"G_covariant[C]"
+    ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
     (Some ["T_Unconstrained", "C"]);
 
   assert_solve
-    ~source:"typing.Type[int]"
-    ~target:"typing.Callable[[], T_Unconstrained]"
+    ~left:"typing.Type[int]"
+    ~right:"typing.Callable[[], T_Unconstrained]"
     (Some ["T_Unconstrained", "int"]);
 
   assert_solve
-    ~source:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
-    ~target:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
+    ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
+    ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
     (Some ["T", "typing.Union[C, Q, int]"]);
 
   (* Bound => Bound *)
   assert_solve
-    ~source:"T_Bound_D"
-    ~target:"T_Bound_C"
+    ~left:"T_Bound_D"
+    ~right:"T_Bound_C"
     (Some ["T_Bound_C", "T_Bound_D"]);
   assert_solve
-    ~source:"T_Bound_C"
-    ~target:"T_Bound_D"
+    ~left:"T_Bound_C"
+    ~right:"T_Bound_D"
     None;
   assert_solve
-    ~source:"T_Bound_Union"
-    ~target:"T_Bound_Union"
+    ~left:"T_Bound_Union"
+    ~right:"T_Bound_Union"
     (Some ["T_Bound_Union", "T_Bound_Union"]);
 
   (* Bound => Explicit *)
   assert_solve
-    ~source:"T_Bound_D"
-    ~target:"T_C_Q"
+    ~left:"T_Bound_D"
+    ~right:"T_C_Q"
     (Some ["T_C_Q", "C"]);
   assert_solve
-    ~source:"T_Bound_C"
-    ~target:"T_D_Q"
+    ~left:"T_Bound_C"
+    ~right:"T_D_Q"
     None;
 
   (* Explicit => Bound *)
   assert_solve
-    ~source:"T_D_Q"
-    ~target:"T_Bound_Union_C_Q"
+    ~left:"T_D_Q"
+    ~right:"T_Bound_Union_C_Q"
     (Some ["T_Bound_Union_C_Q", "T_D_Q"]);
   assert_solve
-    ~source:"T_D_Q"
-    ~target:"T_Bound_D"
+    ~left:"T_D_Q"
+    ~right:"T_Bound_D"
     None;
 
   (* Explicit => Explicit *)
   assert_solve
-    ~source:"T_C_Q"
-    ~target:"T_C_Q_int"
+    ~left:"T_C_Q"
+    ~right:"T_C_Q_int"
     (Some ["T_C_Q_int", "T_C_Q"]);
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
      T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
   assert_solve
-    ~source:"T_D_Q"
-    ~target:"T_C_Q_int"
+    ~left:"T_D_Q"
+    ~right:"T_C_Q_int"
     None;
 
   assert_solve
-    ~leave_unbound_in_source:["T_Unconstrained"]
-    ~source:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    ~target:"typing.Callable[[int], int]"
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    ~right:"typing.Callable[[int], int]"
     (Some []);
   assert_solve
-    ~source:"typing.Callable[[int], int]"
-    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    ~left:"typing.Callable[[int], int]"
+    ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     (Some ["T_Unconstrained", "int"]);
   assert_solve
-    ~leave_unbound_in_source:["T"]
-    ~source:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
-    ~target:"typing.Callable[[], T_Unconstrained]"
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
+    ~right:"typing.Callable[[], T_Unconstrained]"
     (Some ["T_Unconstrained", "G_invariant[$bottom]"]);
   assert_solve
-    ~leave_unbound_in_source:["T"]
-    ~source:"typing.Callable[[T], T]"
-    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Callable[[T], T]"
+    ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     (Some []);
   (* This will be handled in signature selection *)
   assert_solve
     ~leave_constraint_values_unbound:true
-    ~leave_unbound_in_source:["T"]
-    ~source:"typing.Callable[[T], G_invariant[T]]"
-    ~target:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Callable[[T], G_invariant[T]]"
+    ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     (Some ["T_Unconstrained", "G_invariant[T_Unconstrained]"]);
   assert_solve
-    ~leave_unbound_in_source:["T1"]
-    ~source:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
-    ~target:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
+    ~leave_unbound_in_left:["T1"]
+    ~left:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
+    ~right:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
     (Some ["T4", "T2"]);
   assert_solve
-    ~source:"typing.Type[Constructable]"
-    ~target:"typing.Callable[[T3], T4]"
+    ~left:"typing.Type[Constructable]"
+    ~right:"typing.Callable[[T3], T4]"
     (Some ["T3", "int"; "T4", "Constructable"]);
   assert_solve
-    ~source:"typing.Callable[[typing.Union[int, str]], str]"
-    ~target:"typing.Callable[[int], T4]"
+    ~left:"typing.Callable[[typing.Union[int, str]], str]"
+    ~right:"typing.Callable[[int], T4]"
     (Some ["T4", "str"]);
   (* This should solve to T3 => int, T4 => str, but can't because the simulated signature select
      will fail because T3 isnt leq to int, so it has to fall back to pairwise solve, which breaks
@@ -3324,14 +3324,14 @@ let test_solve_constraints _ =
      the same time, i.e. finding constraints such that x leq y where the variables you're trying
      to constrain exist on both sides of the leq. *)
   assert_solve
-    ~source:"typing.Callable[[typing.Union[int, str], int], str]"
-    ~target:"typing.Callable[[int, T3], T4]"
+    ~left:"typing.Callable[[typing.Union[int, str], int], str]"
+    ~right:"typing.Callable[[int, T3], T4]"
     (None);
 
   (* Callback protocols *)
   assert_solve
-    ~source:"typing.Callable[[int], str]"
-    ~target:"G_invariant[T1]"
+    ~left:"typing.Callable[[int], str]"
+    ~right:"G_invariant[T1]"
     (Some ["T1", "int"]);
   ()
 
@@ -3566,7 +3566,7 @@ let () =
     "to_dot">::test_to_dot;
     "normalize">::test_normalize;
     "variables">::test_variables;
-    "solve_constraints">::test_solve_constraints;
+    "solve_less_or_equal">::test_solve_less_or_equal;
     "is_consistent_with">::test_is_consistent_with;
   ]
   |> Test.run

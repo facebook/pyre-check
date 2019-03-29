@@ -419,11 +419,11 @@ let select
               in
               { reasons with annotation = mismatch :: annotation }
             in
-            Resolution.solve_constraints
+            Resolution.solve_less_or_equal
               resolution
               ~constraints
-              ~source:argument_annotation
-              ~target:parameter_annotation
+              ~left:argument_annotation
+              ~right:parameter_annotation
             >>| (fun updated_constraints ->
                 { signature_match with constraints = updated_constraints }
               )
@@ -566,11 +566,11 @@ let select
         };
         _;
       } when Access.show name = "dict.__init__" && has_matched_keyword_parameter parameters ->
-          Resolution.solve_constraints
+          Resolution.solve_less_or_equal
             resolution
             ~constraints
-            ~source:Type.string
-            ~target:key_type
+            ~left:Type.string
+            ~right:key_type
           >>| (fun updated_constraints ->
               { signature_match with constraints = updated_constraints }
             )
