@@ -999,6 +999,148 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
   |> Map.to_alist
 
 
+let compute_dependencies
+    ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
+    ~configuration
+    update_environment_with
+    check =
+  let old_signature_hashes, new_signature_hashes, old_exports =
+    let signature_hashes ~default =
+      let table = File.Handle.Table.create () in
+      let add_signature_hash file =
+        try
+          let handle = File.handle file ~configuration in
+          let signature_hash =
+            Ast.SharedMemory.Sources.get handle
+            >>| Source.signature_hash
+            |> Option.value ~default
+          in
+          Hashtbl.set table ~key:handle ~data:signature_hash
+        with (File.NonexistentHandle _) ->
+          Log.log ~section:`Server "Unable to get handle for %a" File.pp file
+      in
+      List.iter update_environment_with ~f:add_signature_hash;
+      table
+    in
+    let old_signature_hashes = signature_hashes ~default:0 in
+
+    (* Clear and re-populate ASTs in shared memory. *)
+    let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
+
+    (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
+       them to analyze possible dependencies. *)
+    let old_exports =
+      let old_exports = Expression.Access.Table.create () in
+      let store_exports qualifier =
+        Ast.SharedMemory.Modules.get_exports ~qualifier
+        >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
+        |> ignore
+      in
+      List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
+      |> List.iter ~f:store_exports;
+      old_exports
+    in
+    (* Update the tracked handles, if necessary. *)
+    let newly_introduced_handles =
+      List.filter
+        handles
+        ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
+    in
+    if not (List.is_empty newly_introduced_handles) then
+      Ast.SharedMemory.HandleKeys.add
+        ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
+    Ast.SharedMemory.Sources.remove ~handles;
+    let targets =
+      let find_target file = Path.readlink (File.path file) in
+      List.filter_map update_environment_with ~f:find_target
+    in
+    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:None
+      ~files:update_environment_with
+    |> ignore;
+
+    let new_signature_hashes = signature_hashes ~default:(-1) in
+    old_signature_hashes, new_signature_hashes, old_exports
+  in
+
+  let dependents =
+    let handle file = File.handle file ~configuration in
+    let handles = List.map update_environment_with ~f:handle in
+    let check = List.map check ~f:handle in
+    Log.log
+      ~section:`Server
+      "Handling type check request for files %a"
+      Sexp.pp [%message (handles: File.Handle.t list)];
+    let get_dependencies handle =
+      let signature_hash_changed =
+        (* If the hash is not found, then the handle was not part of
+           handles, hence its hash cannot have changed. *)
+        Hashtbl.find old_signature_hashes handle
+        >>= (fun old_hash ->
+            Hashtbl.find new_signature_hashes handle
+            >>| fun new_hash ->
+            old_hash <> new_hash)
+        |> Option.value ~default:false
+      in
+      let has_starred_import () =
+        let was_starred_import { Node.value; _ } =
+          (* Heuristic: if the list of exports for a module we import matches exactly
+             what that module exports, this was a starred import before preprocessing. *)
+          let open Statement in
+          match value with
+          | Import { Import.from = Some from; imports } ->
+              begin
+                let check_against_imports ~exports =
+                  let import_names =
+                    List.map imports ~f:(fun { Import.name; _ } -> name )
+                  in
+                  List.equal ~equal:Access.equal import_names exports
+                in
+
+                match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
+                | Some exports ->
+                    check_against_imports ~exports
+                | _ ->
+                    Hashtbl.find old_exports from
+                    >>| (fun exports -> check_against_imports ~exports)
+                    |> Option.value ~default:false
+              end
+          | _ ->
+              false
+        in
+
+        Ast.SharedMemory.Sources.get handle
+        >>| Source.statements
+        |> Option.value ~default:[]
+        |> List.exists ~f:was_starred_import
+      in
+      if signature_hash_changed or has_starred_import () then
+        let qualifier = Ast.Source.qualifier ~handle in
+        Handler.dependencies qualifier
+      else
+        None
+    in
+    Dependencies.transitive_of_list
+      ~get_dependencies
+      ~handles
+    |> Fn.flip Set.diff (File.Handle.Set.of_list check)
+  in
+
+  Log.log
+    ~section:`Server
+    "Inferred affected files: %a"
+    Sexp.pp [%message (dependents: File.Handle.Set.t)];
+  let to_file handle =
+    Ast.SharedMemory.Sources.get handle
+    >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
+    >>| File.create
+  in
+  File.Set.filter_map dependents ~f:to_file
+
+
 let process_type_check_files
     ~state:({
         State.environment;
@@ -1052,150 +1194,17 @@ let process_type_check_files
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
 
   (* Compute requests we do not serve immediately. *)
-  let compute_dependencies update_environment_with ~deferred_state =
-    let files =
-      let old_signature_hashes, new_signature_hashes, old_exports =
-        let signature_hashes ~default =
-          let table = File.Handle.Table.create () in
-          let add_signature_hash file =
-            try
-              let handle = File.handle file ~configuration in
-              let signature_hash =
-                Ast.SharedMemory.Sources.get handle
-                >>| Source.signature_hash
-                |> Option.value ~default
-              in
-              Hashtbl.set table ~key:handle ~data:signature_hash
-            with (File.NonexistentHandle _) ->
-              Log.log ~section:`Server "Unable to get handle for %a" File.pp file
-          in
-          List.iter update_environment_with ~f:add_signature_hash;
-          table
-        in
-        let old_signature_hashes = signature_hashes ~default:0 in
-
-        (* Clear and re-populate ASTs in shared memory. *)
-        let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
-
-        (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
-           them to analyze possible dependencies. *)
-        let old_exports =
-          let old_exports = Expression.Access.Table.create () in
-          let store_exports qualifier =
-            Ast.SharedMemory.Modules.get_exports ~qualifier
-            >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
-            |> ignore
-          in
-          List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
-          |> List.iter ~f:store_exports;
-          old_exports
-        in
-        (* Update the tracked handles, if necessary. *)
-        let newly_introduced_handles =
-          List.filter
-            handles
-            ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
-        in
-        if not (List.is_empty newly_introduced_handles) then
-          Ast.SharedMemory.HandleKeys.add
-            ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
-        Ast.SharedMemory.Sources.remove ~handles;
-        let targets =
-          let find_target file = Path.readlink (File.path file) in
-          List.filter_map update_environment_with ~f:find_target
-        in
-        Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-        Service.Parser.parse_sources
-          ~configuration
-          ~scheduler
-          ~preprocessing_state:None
-          ~files:update_environment_with
-        |> ignore;
-
-        let new_signature_hashes = signature_hashes ~default:(-1) in
-        old_signature_hashes, new_signature_hashes, old_exports
-      in
-
-      let dependents =
-        let handle file = File.handle file ~configuration in
-        let handles = List.map update_environment_with ~f:handle in
-        let check = List.map check ~f:handle in
-        Log.log
-          ~section:`Server
-          "Handling type check request for files %a"
-          Sexp.pp [%message (handles: File.Handle.t list)];
-        let get_dependencies handle =
-          let signature_hash_changed =
-            (* If the hash is not found, then the handle was not part of
-               handles, hence its hash cannot have changed. *)
-            Hashtbl.find old_signature_hashes handle
-            >>= (fun old_hash ->
-                Hashtbl.find new_signature_hashes handle
-                >>| fun new_hash ->
-                old_hash <> new_hash)
-            |> Option.value ~default:false
-          in
-          let has_starred_import () =
-            let was_starred_import { Node.value; _ } =
-              (* Heuristic: if the list of exports for a module we import matches exactly
-                 what that module exports, this was a starred import before preprocessing. *)
-              let open Statement in
-              match value with
-              | Import { Import.from = Some from; imports } ->
-                  begin
-                    let check_against_imports ~exports =
-                      let import_names =
-                        List.map imports ~f:(fun { Import.name; _ } -> name )
-                      in
-                      List.equal ~equal:Access.equal import_names exports
-                    in
-
-                    match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
-                    | Some exports ->
-                        check_against_imports ~exports
-                    | _ ->
-                        Hashtbl.find old_exports from
-                        >>| (fun exports -> check_against_imports ~exports)
-                        |> Option.value ~default:false
-                  end
-              | _ ->
-                  false
-            in
-
-            Ast.SharedMemory.Sources.get handle
-            >>| Source.statements
-            |> Option.value ~default:[]
-            |> List.exists ~f:was_starred_import
-          in
-          if signature_hash_changed or has_starred_import () then
-            let qualifier = Ast.Source.qualifier ~handle in
-            Handler.dependencies qualifier
-          else
-            None
-        in
-        Dependencies.transitive_of_list
-          ~get_dependencies
-          ~handles
-        |> Fn.flip Set.diff (File.Handle.Set.of_list check)
-      in
-
-      Log.log
-        ~section:`Server
-        "Inferred affected files: %a"
-        Sexp.pp [%message (dependents: File.Handle.Set.t)];
-      let to_file handle =
-        Ast.SharedMemory.Sources.get handle
-        >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
-        >>| File.create
-      in
-      File.Set.filter_map dependents ~f:to_file
-    in
-    Deferred.add deferred_state ~files
-  in
   let deferred_state =
     if should_analyze_dependencies then
       let timer = Timer.start () in
-      let result = compute_dependencies update_environment_with ~deferred_state in
+      let result =
+        compute_dependencies
+          update_environment_with
+          check
+          ~state
+          ~configuration
+        |> fun files -> Deferred.add deferred_state ~files
+      in
       begin
         let handles =
           List.map update_environment_with ~f:(File.handle ~configuration)
