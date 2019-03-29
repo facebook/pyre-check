@@ -758,7 +758,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         Memory.SharedMemory.save_table_sqlite path
         |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
-        Log.info "Dumped %d slots in %.2f seconds to %s" used_slots (Timer.stop timer) path;
+        Log.info "Dumped %d slots in %.2f seconds to %s"
+          used_slots
+          (Timer.stop timer |> Time.Span.to_sec)
+          path;
         TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
 
     | TypeQuery.IsCompatibleWith (left, right) ->

@@ -654,7 +654,7 @@ let compute_fixpoint
           iteration
           number_of_callables
           (SharedMem.heap_size ())
-          (Timer.stop timer)
+          (Timer.stop timer |> Time.Span.to_sec)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in

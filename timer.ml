@@ -19,11 +19,9 @@ let span start_time =
 let stop start_time =
   start_time
   |> span
-  |> Time.Span.to_sec
 
 
 let stop_in_ms start_time =
-  start_time
-  |> span
+  stop start_time
   |> Time.Span.to_ms
   |> Int.of_float
