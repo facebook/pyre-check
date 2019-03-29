@@ -639,173 +639,172 @@ let rec simulate_signature_select
 
 and solve_less_or_equal ({ constructor; implements; _ } as order) ~constraints ~left ~right =
   let rec solve_less_or_equal_throws order ~constraints ~left ~right =
-    let solve_all ?(ignore_length_mismatch = false) constraints ~lefts ~rights =
-      let folded_constraints =
-        let solve_pair constraints left right =
+    if not (Type.is_resolved right) then
+      let solve_all ?(ignore_length_mismatch = false) constraints ~lefts ~rights =
+        let folded_constraints =
+          let solve_pair constraints left right =
+            constraints
+            >>= (fun constraints ->
+                solve_less_or_equal_throws order ~constraints ~left ~right)
+          in
+          List.fold2 ~init:(Some constraints) ~f:solve_pair lefts rights
+        in
+        match folded_constraints, ignore_length_mismatch with
+        | List.Or_unequal_lengths.Ok constraints, _ -> constraints
+        | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
+        | List.Or_unequal_lengths.Unequal_lengths, false -> None
+      in
+      match left, right with
+      | Type.Bottom, _ ->
+          (* This is needed for representing unbound variables between statements, which can't
+             totally be done by filtering because of the promotion done for explicit type
+             variables *)
+          Some constraints
+      | Type.Union lefts, right ->
+          solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
+      | _, (Type.Variable { constraints = right_constraints; _ } as variable) ->
+          let joined_source =
+            Map.find constraints variable
+            >>| (fun existing -> join order existing left)
+            |> Option.value ~default:left
+          in
+          if Type.equal left variable then
+            Some constraints
+          else
+            begin
+              match joined_source, right_constraints with
+              | Type.Variable { constraints = Type.Explicit left_constraints; _ },
+                Type.Explicit right_constraints ->
+                  let exists_in_right_constraints left_constraint =
+                    List.exists right_constraints ~f:(Type.equal left_constraint)
+                  in
+                  Option.some_if
+                    (List.for_all left_constraints ~f:exists_in_right_constraints)
+                    joined_source
+              | Type.Variable { constraints = Type.Bound joined_source; _ },
+                Type.Explicit right_constraints
+              | joined_source, Type.Explicit right_constraints ->
+                  let in_constraint bound =
+                    less_or_equal order ~left:joined_source ~right:bound
+                  in
+                  (* When doing multiple solves, all of these options ought to be considered, *)
+                  (* and solved in a fixpoint *)
+                  List.find ~f:in_constraint right_constraints
+              | _, Type.Bound bound ->
+                  Option.some_if
+                    (less_or_equal order ~left:joined_source ~right:bound)
+                    joined_source
+              | _, Type.Unconstrained ->
+                  Some joined_source
+            end
+            >>| (fun data -> Map.set constraints ~key:variable ~data)
+      | Type.Callable _, Type.Parametric { name; _ } ->
+          begin
+            match implements ~protocol:right left with
+            | Implements { parameters } ->
+                let left = Type.parametric name parameters in
+                solve_less_or_equal_throws order ~constraints ~left ~right
+            | _ ->
+                None
+          end
+      | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
+          let enforce_variance constraints =
+            let instantiated_right =
+              Type.instantiate right ~constraints:(Type.Map.find constraints)
+            in
+            Option.some_if
+              (less_or_equal order ~left ~right:instantiated_right)
+              constraints
+          in
+          begin
+            instantiate_successors_parameters
+              order
+              ~source:left
+              ~target:(Type.Primitive right_name)
+            >>= (fun resolved_parameters ->
+                solve_all
+                  constraints
+                  ~lefts:resolved_parameters
+                  ~rights:right_parameters)
+            >>= enforce_variance
+          end
+      | Optional left, Optional right
+      | left, Optional right
+      | Type.Tuple (Type.Unbounded left),
+        Type.Tuple (Type.Unbounded right) ->
+          solve_less_or_equal_throws order ~constraints ~left ~right
+      | Type.Tuple (Type.Bounded lefts),
+        Type.Tuple (Type.Bounded rights) ->
+          solve_all constraints ~lefts ~rights
+      | Type.Tuple (Type.Unbounded left),
+        Type.Tuple (Type.Bounded rights) ->
+          let lefts =
+            List.init (List.length rights) ~f:(fun _ -> left)
+          in
+          solve_all constraints ~lefts ~rights
+      | Type.Tuple (Type.Bounded lefts),
+        Type.Tuple (Type.Unbounded right) ->
+          let left = Type.union lefts in
+          solve_less_or_equal_throws order ~constraints ~left ~right
+      | _, Type.Union rights ->
+          (* When doing multiple solves, all of these options ought to be considered, *)
+          (* and solved in a fixpoint *)
+          List.filter_map rights
+            ~f:(fun right ->
+                solve_less_or_equal_throws order ~constraints ~left ~right)
+          |> List.hd
+      | Type.Callable (
+          { implementation = ({ parameters = left_parameters; _ } as original_left); _ }
+          as callable
+        ),
+        Type.Callable { implementation = ({ parameters = right_parameters; _ } as right); _ }
+        ->
+          let parameter_annotations = function
+            | Type.Callable.Defined parameters ->
+                List.map parameters ~f:Type.Callable.Parameter.annotation
+            | _ ->
+                []
+          in
+          let left, constraints =
+            let called_as =
+              Type.Callable.map_implementation
+                right
+                ~f:(Type.mark_variables_as_bound ~simulated:true)
+            in
+            simulate_signature_select order ~callable ~called_as
+            >>| Type.Callable.map_implementation ~f:(Type.free_simulated_bound_variables)
+            |> function
+            | Some left ->
+                left, Some constraints
+            | None ->
+                let constraints =
+                  solve_all
+                    (* Don't ignore previous constraints if encountering a mismatch due to
+                     *args/**kwargs vs. concrete parameters or default arguments. *)
+                    constraints
+                    ~ignore_length_mismatch:true
+                    ~lefts:(parameter_annotations left_parameters)
+                    ~rights:(parameter_annotations right_parameters)
+                in
+                original_left, constraints
+          in
           constraints
           >>= (fun constraints ->
-              solve_less_or_equal_throws order ~constraints ~left ~right)
-        in
-        List.fold2 ~init:(Some constraints) ~f:solve_pair lefts rights
-      in
-      match folded_constraints, ignore_length_mismatch with
-      | List.Or_unequal_lengths.Ok constraints, _ -> constraints
-      | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
-      | List.Or_unequal_lengths.Unequal_lengths, false -> None
-    in
-    match left with
-    | Type.Bottom ->
-        (* This is needed for representing unbound variables between statements, which can't totally
-           be done by filtering because of the promotion done for explicit type variables *)
-        Some constraints
-    | Type.Union lefts ->
-        solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
-    | _ ->
-        if not (Type.is_resolved right) then
-          match left, right with
-          | _, (Type.Variable { constraints = right_constraints; _ } as variable) ->
-              let joined_source =
-                Map.find constraints variable
-                >>| (fun existing -> join order existing left)
-                |> Option.value ~default:left
-              in
-              if Type.equal left variable then
-                Some constraints
-              else
-                begin
-                  match joined_source, right_constraints with
-                  | Type.Variable { constraints = Type.Explicit left_constraints; _ },
-                    Type.Explicit right_constraints ->
-                      let exists_in_right_constraints left_constraint =
-                        List.exists right_constraints ~f:(Type.equal left_constraint)
-                      in
-                      Option.some_if
-                        (List.for_all left_constraints ~f:exists_in_right_constraints)
-                        joined_source
-                  | Type.Variable { constraints = Type.Bound joined_source; _ },
-                    Type.Explicit right_constraints
-                  | joined_source, Type.Explicit right_constraints ->
-                      let in_constraint bound =
-                        less_or_equal order ~left:joined_source ~right:bound
-                      in
-                      (* When doing multiple solves, all of these options ought to be considered, *)
-                      (* and solved in a fixpoint *)
-                      List.find ~f:in_constraint right_constraints
-                  | _, Type.Bound bound ->
-                      Option.some_if
-                        (less_or_equal order ~left:joined_source ~right:bound)
-                        joined_source
-                  | _, Type.Unconstrained ->
-                      Some joined_source
-                end
-                >>| (fun data -> Map.set constraints ~key:variable ~data)
-          | Type.Callable _, Type.Parametric { name; _ } ->
-              begin
-                match implements ~protocol:right left with
-                | Implements { parameters } ->
-                    let left = Type.parametric name parameters in
-                    solve_less_or_equal_throws order ~constraints ~left ~right
-                | _ ->
-                    None
-              end
-          | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
-              let enforce_variance constraints =
-                let instantiated_right =
-                  Type.instantiate right ~constraints:(Type.Map.find constraints)
-                in
-                Option.some_if
-                  (less_or_equal order ~left ~right:instantiated_right)
-                  constraints
-              in
-              begin
-                instantiate_successors_parameters
-                  order
-                  ~source:left
-                  ~target:(Type.Primitive right_name)
-                >>= (fun resolved_parameters ->
-                    solve_all
-                      constraints
-                      ~lefts:resolved_parameters
-                      ~rights:right_parameters)
-                >>= enforce_variance
-              end
-          | Optional left, Optional right
-          | left, Optional right
-          | Type.Tuple (Type.Unbounded left),
-            Type.Tuple (Type.Unbounded right) ->
-              solve_less_or_equal_throws order ~constraints ~left ~right
-          | Type.Tuple (Type.Bounded lefts),
-            Type.Tuple (Type.Bounded rights) ->
-              solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Unbounded left),
-            Type.Tuple (Type.Bounded rights) ->
-              let lefts =
-                List.init (List.length rights) ~f:(fun _ -> left)
-              in
-              solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Bounded lefts),
-            Type.Tuple (Type.Unbounded right) ->
-              let left = Type.union lefts in
-              solve_less_or_equal_throws order ~constraints ~left ~right
-          | _, Type.Union rights ->
-              (* When doing multiple solves, all of these options ought to be considered, *)
-              (* and solved in a fixpoint *)
-              List.filter_map rights
-                ~f:(fun right ->
-                    solve_less_or_equal_throws order ~constraints ~left ~right)
-              |> List.hd
-          | Type.Callable (
-              { implementation = ({ parameters = left_parameters; _ } as original_left); _ }
-              as callable
-            ),
-            Type.Callable { implementation = ({ parameters = right_parameters; _ } as right); _ }
-            ->
-              let parameter_annotations = function
-                | Type.Callable.Defined parameters ->
-                    List.map parameters ~f:Type.Callable.Parameter.annotation
-                | _ ->
-                    []
-              in
-              let left, constraints =
-                let called_as =
-                  Type.Callable.map_implementation
-                    right
-                    ~f:(Type.mark_variables_as_bound ~simulated:true)
-                in
-                simulate_signature_select order ~callable ~called_as
-                >>| Type.Callable.map_implementation ~f:(Type.free_simulated_bound_variables)
-                |> function
-                | Some left ->
-                    left, Some constraints
-                | None ->
-                    let constraints =
-                      solve_all
-                        (* Don't ignore previous constraints if encountering a mismatch due to
-                         *args/**kwargs vs. concrete parameters or default arguments. *)
-                        constraints
-                        ~ignore_length_mismatch:true
-                        ~lefts:(parameter_annotations left_parameters)
-                        ~rights:(parameter_annotations right_parameters)
-                    in
-                    original_left, constraints
-              in
-              constraints
-              >>= (fun constraints ->
-                  solve_less_or_equal_throws
-                    order
-                    ~constraints
-                    ~left:left.annotation
-                    ~right:right.annotation)
-          | _, Type.Callable _  when Type.is_meta left ->
-              Type.single_parameter left
-              |> constructor
-              >>= (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
-          | _ ->
-              None
-        else if less_or_equal order ~left ~right then
-          Some constraints
-        else
+              solve_less_or_equal_throws
+                order
+                ~constraints
+                ~left:left.annotation
+                ~right:right.annotation)
+      | _, Type.Callable _  when Type.is_meta left ->
+          Type.single_parameter left
+          |> constructor
+          >>= (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
+      | _ ->
           None
+    else if less_or_equal order ~left ~right then
+      Some constraints
+    else
+      None
   in
   (* TODO(T39612118): unwrap this when attributes are safe *)
   try solve_less_or_equal_throws order ~constraints ~left ~right
