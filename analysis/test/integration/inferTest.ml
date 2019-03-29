@@ -259,7 +259,6 @@ let test_check_missing_return _ =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Undefined name [18]: Global name `unknown_call` is undefined.";
-      "Incompatible return type [7]: Expected `typing.Any` but got `unknown`.";
     ];
 
   assert_type_errors

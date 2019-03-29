@@ -802,8 +802,6 @@ and solve_less_or_equal ({ constructor; implements; _ } as order) ~constraints ~
               >>= (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
           | _ ->
               None
-        else if Type.equal left Type.Top && Type.equal right Type.Any then
-          Some constraints
         else if less_or_equal order ~left ~right then
           Some constraints
         else
@@ -825,13 +823,12 @@ and less_or_equal
     ~right =
   Type.equal left right ||
   match left, right with
+  | _, Type.Any ->
+      true
   | other, Type.Top ->
       not (Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared))
   | Type.Top, _ ->
       false
-
-  | _, Type.Any ->
-      true
   | Type.Any, _ ->
       any_is_bottom
 
