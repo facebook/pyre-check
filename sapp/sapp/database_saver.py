@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 from sapp.bulk_saver import BulkSaver
 from sapp.db import DB
-from sapp.decorators import disable_gc, log_time
+from sapp.decorators import log_time
 from sapp.models import (
     Issue,
     Postcondition,
@@ -41,7 +41,6 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
         self.bulk_saver = BulkSaver(self.primary_key_generator)
         self.summary: Summary
 
-    @disable_gc
     @log_time
     def run(self, input: TraceGraph, summary: Summary) -> Tuple[RunSummary, Summary]:
         self.graph = input

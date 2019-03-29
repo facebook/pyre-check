@@ -57,19 +57,6 @@ def log_time(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def disable_gc(func: Callable[..., Any]) -> Callable[..., Any]:
-    def wrapper(*args, **kwargs):
-        gcenabled = gc.isenabled()
-        gc.disable()
-        try:
-            return func(*args, **kwargs)
-        finally:
-            if gcenabled:
-                gc.enable()
-
-    return wrapper
-
-
 class UserError(Exception):
     pass
 
