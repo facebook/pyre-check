@@ -202,14 +202,14 @@ module SharedHandler: Analysis.Environment.Handler = struct
       |> Node.create_with_default_location
     in
     let global_key = Reference.create ~prefix:(Reference.from_access qualifier) in
-    Globals.add (global_key "__file__") string;
-    Globals.add (global_key "__name__") string;
+    Globals.write_through (global_key "__file__") string;
+    Globals.write_through (global_key "__name__") string;
     let dictionary_annotation =
       Type.dictionary ~key:Type.string ~value:Type.Any
       |> Annotation.create_immutable ~global:true
       |> Node.create_with_default_location
     in
-    Globals.add (global_key "__dict__") dictionary_annotation;
+    Globals.write_through (global_key "__dict__") dictionary_annotation;
 
     let is_registered_empty_stub =
       Ast.SharedMemory.Modules.get ~qualifier
@@ -388,7 +388,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       in
       let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
       let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-      ClassDefinitions.add
+      ClassDefinitions.write_through
         annotation
         {
           class_definition = { Node.location; value = class_definition };
@@ -414,7 +414,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let register_global ~handle ~reference ~global =
     DependencyHandler.add_global_key ~handle reference;
-    Globals.add reference global
+    Globals.write_through reference global
 
 
   let set_class_definition ~primitive ~definition =
