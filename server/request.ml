@@ -1007,8 +1007,7 @@ let process_type_check_files
         deferred_state;
         _ } as state)
     ~configuration:({ debug; _ } as configuration)
-    ~update_environment_with
-    ~check
+    ~files
     ~should_analyze_dependencies =
 
   Annotated.Class.Attribute.Cache.clear ();
@@ -1041,9 +1040,9 @@ let process_type_check_files
           end
     in
     let update_environment_with, removed_handles =
-      List.fold update_environment_with ~f:update_handle_state ~init:([], [])
+      List.fold files ~f:update_handle_state ~init:([], [])
     in
-    let check, _ = List.fold check ~f:update_handle_state ~init:([], []) in
+    let check = List.filter update_environment_with ~f:(fun file -> not (File.is_stub file)) in
     removed_handles,
     update_environment_with,
     check
@@ -1336,13 +1335,7 @@ let process_type_check_request
     ~state
     ~configuration
     ~files =
-
-  process_type_check_files
-    ~state
-    ~configuration
-    ~update_environment_with:files
-    ~check:(List.filter files ~f:(fun file -> not (File.is_stub file)))
-    ~should_analyze_dependencies:true
+  process_type_check_files ~state ~configuration ~files ~should_analyze_dependencies:true
 
 
 let process_deferred_state
@@ -1375,8 +1368,7 @@ let process_deferred_state
       process_type_check_files
         ~state
         ~configuration
-        ~update_environment_with:current_batch
-        ~check:current_batch
+        ~files:current_batch
         ~should_analyze_dependencies:false
     end
   else
