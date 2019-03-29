@@ -306,11 +306,15 @@ let run_with_taint_models tests =
           default: TaintInTaintOut[Via[default]] = ...,
       ): ...
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
-      __global_sink: TaintSink[Test] = ...
+      taint.__global_sink: TaintSink[Test] = ...
     |}
     |> Test.trim_extra_indentation
   in
-  let environment = Test.environment ~sources:[Test.parse model_source] () in
+  let environment =
+    Test.environment
+      ~sources:(Test.typeshed_stubs () @ [Test.parse model_source])
+      ()
+  in
   let () =
     Model.parse
       ~resolution:(TypeCheck.resolution environment ())

@@ -989,6 +989,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             ...
       |}
     |> Preprocessing.qualify;
+    parse
+      ~qualifier:(Reference.create "taint")
+      ~handle:"taint.pyi"
+      {|
+        __global_sink: Any = ...
+      |}
+    |> Preprocessing.qualify;
   ]
 
 

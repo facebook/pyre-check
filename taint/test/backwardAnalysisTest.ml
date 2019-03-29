@@ -1568,7 +1568,7 @@ let test_assignment _ =
   assert_taint
     {|
       def assigns_to_sink(assigned_to_sink):
-        __global_sink = assigned_to_sink
+        taint.__global_sink = assigned_to_sink
     |}
     [
       outcome

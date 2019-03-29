@@ -491,7 +491,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               |> (function
                   | Access (SimpleAccess access) ->
                       Reference.from_access access
-                      |> Reference.sanitized
+                      |> Reference.delocalize
                       |> Callable.create_object
                       |> Option.some
                   | _ ->
