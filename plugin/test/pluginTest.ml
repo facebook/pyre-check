@@ -19,7 +19,7 @@ let assert_environment_contains source expected =
     environment ~sources:[] ()
   in
   let source = Preprocessing.preprocess (parse source) in
-  Service.Environment.populate
+  Test.populate
     ~configuration:(Configuration.Analysis.create ())
     (module Handler)
     (source :: typeshed_stubs ~include_helper_builtins:false ());

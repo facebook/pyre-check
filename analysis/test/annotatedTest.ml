@@ -17,7 +17,7 @@ let configuration =
 let populate_with_sources sources =
   let environment =
     let environment = Environment.Builder.create () in
-    Service.Environment.populate ~configuration (Environment.handler environment) sources;
+    Test.populate ~configuration (Environment.handler environment) sources;
     environment
   in
   Environment.handler environment
@@ -26,7 +26,7 @@ let populate_with_sources sources =
 let populate source =
   let environment =
     let environment = Environment.Builder.create () in
-    Service.Environment.populate
+    Test.populate
       ~configuration
       (Environment.handler environment)
       (parse source :: typeshed_stubs ());

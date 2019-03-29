@@ -28,7 +28,7 @@ let configuration = Configuration.Analysis.create ~infer:true ()
 
 let create_environment ?(include_helpers = false) () =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     (Environment.handler environment)
     (typeshed_stubs ~include_helper_builtins:include_helpers ());
@@ -37,7 +37,7 @@ let create_environment ?(include_helpers = false) () =
 
 let plain_populate ~environment sources =
   let handler = Environment.handler environment in
-  Service.Environment.populate ~configuration handler sources;
+  Test.populate ~configuration handler sources;
   environment
 
 
@@ -1333,7 +1333,7 @@ let test_class_definition _ =
 let test_protocols _ =
   let environment =
     let environment = Environment.Builder.create () in
-    Service.Environment.populate
+    Test.populate
       ~configuration
       (Environment.handler environment)
       ([]);
@@ -1481,7 +1481,7 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     handler
     [parse ~handle:"test.py" source];
@@ -1527,7 +1527,7 @@ let test_infer_protocols _ =
       |> Preprocessing.preprocess
     in
     let environment = Environment.handler (create_environment ()) in
-    Service.Environment.populate ~configuration environment [source];
+    Test.populate ~configuration environment [source];
     let ((module Handler: Environment.Handler) as handler) = environment in
     let resolution = TypeCheck.resolution (module Handler) () in
     let classes_to_infer =

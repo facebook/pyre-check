@@ -16,7 +16,7 @@ let configuration = Configuration.Analysis.create ()
 
 let populate source =
   let environment = Environment.Builder.create () in
-  Service.Environment.populate ~configuration (Environment.handler environment) [parse source];
+  Test.populate ~configuration (Environment.handler environment) [parse source];
   environment
   |> Environment.handler
 
@@ -32,10 +32,7 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Service.Environment.populate
-    ~configuration
-    (Environment.handler environment)
-    [parse ~handle:"test.py" source];
+  Test.populate ~configuration (Environment.handler environment) [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;

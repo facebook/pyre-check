@@ -50,11 +50,11 @@ let assert_errors
       ~preprocessing_state:None
       ~files:(create_files ~root input_source)
   in
-  Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
+  Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
   let ((module Handler: Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     environment
     (typeshed_stubs ~include_helper_builtins: false ());

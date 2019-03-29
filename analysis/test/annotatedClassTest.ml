@@ -497,7 +497,7 @@ let test_implements _ =
       |> parse
       |> Preprocessing.preprocess
     in
-    Service.Environment.populate
+    Test.populate
       ~configuration
       (Environment.handler environment)
       (definition :: protocol :: Test.typeshed_stubs ());
@@ -805,7 +805,7 @@ let test_callable_implements _ =
       |> parse
       |> Preprocessing.preprocess
     in
-    Service.Environment.populate
+    Test.populate
       ~configuration
       (Environment.handler environment)
       (protocol :: Test.typeshed_stubs ());

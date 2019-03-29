@@ -20,7 +20,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
   let environment =
     let environment =
       let environment = Analysis.Environment.Builder.create () in
-      Service.Environment.populate
+      Test.populate
         ~configuration
         (Analysis.Environment.handler environment)
         (typeshed_stubs () @ sources);

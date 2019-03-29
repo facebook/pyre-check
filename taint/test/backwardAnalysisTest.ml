@@ -38,7 +38,11 @@ let assert_taint ?(qualifier = "qualifier") source expected =
   in
 
   let environment = Test.environment ~configuration () in
-  Service.Environment.populate ~configuration environment [source];
+  Service.Environment.populate
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    environment
+    [source];
   TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source

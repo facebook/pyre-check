@@ -37,8 +37,8 @@ let assert_errors ?filter_directories ~root ~files errors =
   let ((module Handler: Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
   in
-  Service.Environment.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
-  Service.Environment.populate
+  Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
+  Test.populate
     ~configuration
     environment
     (typeshed_stubs ~include_helper_builtins:false ());

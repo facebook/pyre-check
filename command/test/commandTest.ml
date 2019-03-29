@@ -51,6 +51,7 @@ let environment () =
   Service.Environment.populate
     (Environment.handler environment)
     ~configuration
+    ~scheduler:(Scheduler.mock ())
     [
       parse {|
         class int(float): pass
@@ -68,7 +69,11 @@ let make_errors ?handle ?qualifier source =
   let configuration = Configuration.Analysis.create () in
   let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
   let environment = Environment.handler (environment ()) in
-  Service.Environment.populate environment ~configuration [source];
+  Service.Environment.populate
+    environment
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    [source];
   let configuration = mock_analysis_configuration () in
   TypeCheck.run ~configuration ~environment ~source
 

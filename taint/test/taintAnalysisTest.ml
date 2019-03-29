@@ -63,7 +63,11 @@ let initialize ?(qualifier = "test.py") ?models source_content =
     in
     Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
   in
-  Service.Environment.populate ~configuration:Test.mock_configuration environment [source];
+  Service.Environment.populate
+    ~configuration:Test.mock_configuration
+    ~scheduler:(Scheduler.mock ())
+    environment
+    [source];
 
   let errors =
     TypeCheck.run ~configuration ~environment ~source

@@ -246,7 +246,7 @@ let environment ~local_root =
   let environment = Environment.Builder.create () in
   let configuration = configuration ~local_root in
   let sources = typeshed_stubs ~include_helper_builtins: false () in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     (Environment.handler environment)
     sources;
@@ -258,7 +258,7 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty)
   let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
   let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
-  Service.Environment.populate ~configuration environment [source];
+  Test.populate ~configuration environment [source];
   TypeCheck.run ~configuration ~environment ~source
 
 
@@ -312,7 +312,7 @@ let assert_response
   let initial_environment =
     let environment = environment ~local_root in
     let configuration = configuration ~local_root in
-    Service.Environment.populate ~configuration (Environment.handler environment) [parsed];
+    Test.populate ~configuration (Environment.handler environment) [parsed];
     environment
   in
   let mock_server_state =
@@ -1553,7 +1553,7 @@ let test_incremental_dependencies context =
     let configuration = configuration ~local_root in
     let environment_handler = Environment.handler environment in
     add_defaults_to_environment ~configuration environment_handler;
-    Service.Environment.populate ~configuration environment_handler sources;
+    Test.populate ~configuration environment_handler sources;
     let expected_errors = [
       File.Handle.create "b.py", [];
     ]
@@ -1642,12 +1642,12 @@ let test_incremental_lookups context =
   let environment = Environment.Builder.create () in
   let (module Handler: Environment.Handler) = Environment.handler environment in
   let environment_handler = Environment.handler environment in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     environment_handler
     (typeshed_stubs ~include_helper_builtins: false ());
   add_defaults_to_environment ~configuration environment_handler;
-  Service.Environment.populate ~configuration environment_handler [parse source];
+  Test.populate ~configuration environment_handler [parse source];
 
   let request = Protocol.Request.TypeCheckRequest [file ~local_root ~content:source path] in
   let errors = File.Handle.Table.create () in
@@ -1735,7 +1735,7 @@ let test_incremental_repopulate context =
     ~preprocessing_state:None
     ~files:[file]
   |> ignore;
-  Service.Environment.populate ~configuration environment_handler [parse source];
+  Test.populate ~configuration environment_handler [parse source];
 
   let errors = File.Handle.Table.create () in
   let initial_state =
@@ -1839,7 +1839,7 @@ let test_incremental_attribute_caching context =
     Analysis.Environment.Builder.create ()
     |> Analysis.Environment.handler
   in
-  Service.Environment.populate
+  Test.populate
     ~configuration
     environment
     (typeshed_stubs ~include_helper_builtins:false ());

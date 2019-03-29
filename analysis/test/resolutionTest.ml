@@ -81,7 +81,7 @@ let make_resolution source =
   let populate source =
     let environment =
       let environment = Environment.Builder.create () in
-      Service.Environment.populate
+      Test.populate
         ~configuration
         (Environment.handler environment)
         (parse source :: typeshed_stubs ());

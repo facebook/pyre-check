@@ -16,8 +16,11 @@ open PostprocessSharedMemory
 
 let populate
     (module Handler: Environment.Handler)
-    ~configuration:{ Configuration.Analysis.debug; _ }
+    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
+    ~scheduler
     sources =
+  ignore scheduler;
+  ignore configuration;
   let populate () =
     let resolution = TypeCheck.resolution (module Handler) () in
     List.iter ~f:(Environment.register_module (module Handler)) sources;
@@ -54,8 +57,8 @@ let populate
       ~top:Type.object_primitive
       all_annotations;
 
-    List.iter ~f:(Environment.register_functions (module Handler) resolution) sources;
-    List.iter ~f:(Environment.register_globals (module Handler) resolution) sources;
+    List.iter sources ~f:(Environment.register_functions (module Handler) resolution);
+    List.iter sources ~f:(Environment.register_globals (module Handler) resolution);
     (* TODO(T30713406): Merge with class registration. *)
     List.iter ~f:Handler.refine_class_definition all_annotations;
     Type.Cache.disable ();
@@ -64,7 +67,7 @@ let populate
 
     List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
     (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-    Annotated.Class.Attribute.Cache.clear ()
+    Annotated.Class.Attribute.Cache.clear ();
   in
   Handler.transaction ~f:populate ()
 
@@ -72,6 +75,7 @@ let populate
 let build
     ((module Handler: Environment.Handler) as handler)
     ~configuration
+    ~scheduler
     ~stubs
     ~sources =
   Log.info "Building type environment...";
@@ -101,7 +105,7 @@ let build
     let sources = get_sources sources in
     List.filter ~f:should_keep sources
   in
-  populate ~configuration handler (stubs @ sources);
+  populate ~configuration ~scheduler handler (stubs @ sources);
   Statistics.performance ~name:"full environment built" ~timer ();
 
   if Log.is_enabled `Dotty then
@@ -492,6 +496,7 @@ end
     Environment_handler *)
 let populate_shared_memory
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
+    ~scheduler
     ~stubs
     ~sources =
   let add_to_shared_memory
@@ -553,17 +558,14 @@ let populate_shared_memory
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
   let environment = Environment.Builder.create () in
-  let ((module InProcessHandler: Environment.Handler) as handler) =
-    Environment.handler environment
-  in
-  build handler ~configuration ~stubs ~sources;
+  add_to_shared_memory environment;
+  build (module SharedHandler) ~configuration ~scheduler ~stubs ~sources;
 
-  let resolution = TypeCheck.resolution (module InProcessHandler) () in
-  Environment.infer_protocols ~handler:(module InProcessHandler) resolution ();
+  let resolution = TypeCheck.resolution (module SharedHandler) () in
+  Environment.infer_protocols ~handler:(module SharedHandler) resolution ();
 
   if debug then
-    TypeOrder.check_integrity (module InProcessHandler.TypeOrderHandler);
-  add_to_shared_memory environment;
+    TypeOrder.check_integrity (module SharedHandler.TypeOrderHandler);
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

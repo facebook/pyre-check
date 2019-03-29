@@ -163,7 +163,7 @@ let check
   let { Parser.stubs; sources } = Parser.parse_all scheduler ~configuration in
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler: Analysis.Environment.Handler) in
-  Environment.populate_shared_memory ~configuration ~stubs ~sources;
+  Environment.populate_shared_memory ~configuration ~scheduler ~stubs ~sources;
   let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources in
 
   (* Log coverage results *)

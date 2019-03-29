@@ -3040,7 +3040,7 @@ let test_solve_less_or_equal _ =
     let populate source =
       let environment =
         let environment = Environment.Builder.create () in
-        Service.Environment.populate
+        Test.populate
           ~configuration
           (Environment.handler environment)
           (parse source :: typeshed_stubs ());

@@ -274,7 +274,11 @@ let add_defaults_to_environment ~configuration environment_handler =
       class unittest.mock.NonCallableMock: ...
     |};
   in
-  Service.Environment.populate ~configuration environment_handler [source]
+  Service.Environment.populate
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    environment_handler
+    [source]
 
 
 (* Expression helpers. *)
@@ -999,6 +1003,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
   ]
 
 
+let populate ~configuration environment sources =
+  Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment sources
+
+
+let populate_shared_memory =
+  Service.Environment.populate_shared_memory
+    ~scheduler:(Scheduler.mock ())
+
 let environment
     ?(sources = typeshed_stubs ())
     ?(configuration = mock_configuration)
@@ -1007,7 +1019,7 @@ let environment
     let environment = Environment.Builder.create () in
     Environment.handler environment
   in
-  Service.Environment.populate ~configuration environment sources;
+  populate ~configuration environment sources;
   environment
 
 
@@ -1085,7 +1097,11 @@ let assert_errors
             ~configuration:mock_configuration
             ()
         in
-        Service.Environment.populate ~configuration:mock_configuration environment sources;
+        Service.Environment.populate
+          ~configuration:mock_configuration
+          ~scheduler:(Scheduler.mock ())
+          environment
+          sources;
         let resolution = TypeCheck.resolution environment () in
         Analysis.Environment.infer_protocols ~handler:environment resolution ();
         environment

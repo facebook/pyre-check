@@ -985,7 +985,7 @@ let test_filter _ =
     Environment.handler (Environment.Builder.create ())
   in
   add_defaults_to_environment ~configuration environment;
-  Service.Environment.populate
+  Test.populate
     ~configuration
     environment
     [

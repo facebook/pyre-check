@@ -876,7 +876,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
           if List.is_empty names then
             let annotations = Handler.TypeOrderHandler.annotations () in
             Handler.TypeOrderHandler.keys ()
-            |> List.map ~f:(Handler.TypeOrderHandler.find_unsafe annotations)
+            |> List.filter_map ~f:(Handler.TypeOrderHandler.find annotations)
           else
             let get_implementing_methods method_name =
               implementing_classes ~method_name
@@ -971,8 +971,8 @@ let infer_protocol_edges
       let annotations = Handler.TypeOrderHandler.annotations () in
       let add_type_methods methods_to_implementing_classes index =
         let class_definition =
-          Handler.TypeOrderHandler.find_unsafe annotations index
-          |> Handler.class_definition
+          Handler.TypeOrderHandler.find annotations index
+          >>= Handler.class_definition
         in
         match class_definition with
         | None ->

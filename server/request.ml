@@ -1283,7 +1283,7 @@ let process_type_check_files
     Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
   Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
-  |> Service.Environment.populate ~configuration environment;
+  |> Service.Environment.populate ~configuration ~scheduler environment;
   let classes_to_infer =
     let get_class_keys handle =
       Handler.DependencyHandler.get_class_keys ~handle

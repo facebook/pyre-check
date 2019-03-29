@@ -46,7 +46,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
     let environment =
       Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
     in
-    Service.Environment.populate ~configuration environment [source];
+    Test.populate ~configuration environment [source];
     environment
   in
 

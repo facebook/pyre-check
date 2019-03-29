@@ -340,7 +340,7 @@ let assert_infer
     |> Preprocessing.preprocess in
   let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
   let environment = Test.environment () in
-  Service.Environment.populate ~configuration environment [source];
+  Test.populate ~configuration environment [source];
   let to_string json =
     Yojson.Safe.sort json
     |> Yojson.Safe.to_string

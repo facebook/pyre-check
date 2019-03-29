@@ -29,7 +29,7 @@ let create_call_graph ?(update_environment_with = []) source_text =
       update_environment_with
       ~f:(fun { qualifier; handle; source } -> parse_source ~qualifier ~handle source)
   in
-  Service.Environment.populate ~configuration environment sources;
+  Test.populate ~configuration environment sources;
   let errors = TypeCheck.run ~configuration ~environment ~source in
   if not (List.is_empty errors) then
     Format.asprintf "Type errors in %s\n%a"
@@ -212,7 +212,7 @@ let test_type_collection _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate ~configuration environment [source];
+    Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.defines source ~extract_into_toplevel:true
@@ -316,7 +316,7 @@ let test_method_overrides _ =
     let source = parse_source source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate ~configuration environment [source];
+    Test.populate ~configuration environment [source];
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Reference.equal in
@@ -357,7 +357,7 @@ let test_strongly_connected_components _ =
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Service.Environment.populate ~configuration environment [source];
+    Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges =
