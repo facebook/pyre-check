@@ -667,73 +667,71 @@ let register_globals
         (* TODO(T28732125): Properly take an intersection here. *)
         List.iter ~f:visit body;
         List.iter ~f:visit orelse
-    | _ ->
-        match statement with
-        | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
-            let annotation, explicit =
-              match annotation with
-              | Some ({ Node.location; value } as annotation) ->
-                  let annotation =
-                    match value with
-                    | Access (SimpleAccess access) ->
-                        (* Local names don't make sense when used globally. *)
-                        Access.delocalize access
-                        |> Access.expression ~location
-                    | _ ->
-                        annotation
-                  in
-                  Type.create ~aliases:Handler.aliases annotation, true
-              | None ->
-                  let annotation =
-                    try
-                      Resolution.resolve_literal resolution value
-                    with _ ->
-                      Type.Top
-                  in
-                  annotation, false
-            in
-            let rec register_assign ~target ~annotation =
-              let register ~location reference annotation =
-                let reference = qualified_reference (Reference.combine qualifier reference) in
-                (* Don't register attributes or chained accesses as globals *)
-                if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
-                    let register_global global =
-                      Node.create ~location global
-                      |> (fun global -> Handler.register_global ~handle ~reference ~global)
-                    in
-                    let exists = Option.is_some (Handler.globals reference) in
-                    if explicit then
-                      Annotation.create_immutable ~global:true annotation
-                      |> register_global
-                    else if not exists then
-                      (* Treat literal globals as having been explicitly annotated. *)
-                      let original =
-                        if Type.is_partially_typed annotation then (Some Type.Top) else None
-                      in
-                      Annotation.create_immutable ~global:true ~original annotation
-                      |> register_global
-                    else
-                      ()
+    | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
+        let annotation, explicit =
+          match annotation with
+          | Some ({ Node.location; value } as annotation) ->
+              let annotation =
+                match value with
+                | Access (SimpleAccess access) ->
+                    (* Local names don't make sense when used globally. *)
+                    Access.delocalize access
+                    |> Access.expression ~location
+                | _ ->
+                    annotation
               in
-              match target.Node.value, annotation with
-              | Access (SimpleAccess access), _ ->
-                  register ~location:target.Node.location (Reference.from_access access) annotation
-              | Tuple elements, Type.Tuple (Type.Bounded parameters)
-                when List.length elements = List.length parameters ->
-                  List.map2_exn
-                    ~f:(fun target annotation -> register_assign ~target ~annotation)
-                    elements
-                    parameters
-                  |> ignore
-              | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
-                  List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
-                  |> ignore
-              | _ ->
-                  ()
-            in
-            register_assign ~target ~annotation
-        | _ ->
-            ()
+              Type.create ~aliases:Handler.aliases annotation, true
+          | None ->
+              let annotation =
+                try
+                  Resolution.resolve_literal resolution value
+                with _ ->
+                  Type.Top
+              in
+              annotation, false
+        in
+        let rec register_assign ~target ~annotation =
+          let register ~location reference annotation =
+            let reference = qualified_reference (Reference.combine qualifier reference) in
+            (* Don't register attributes or chained accesses as globals *)
+            if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
+              let register_global global =
+                Node.create ~location global
+                |> (fun global -> Handler.register_global ~handle ~reference ~global)
+              in
+              let exists = Option.is_some (Handler.globals reference) in
+              if explicit then
+                Annotation.create_immutable ~global:true annotation
+                |> register_global
+              else if not exists then
+                (* Treat literal globals as having been explicitly annotated. *)
+                let original =
+                  if Type.is_partially_typed annotation then (Some Type.Top) else None
+                in
+                Annotation.create_immutable ~global:true ~original annotation
+                |> register_global
+              else
+                ()
+          in
+          match target.Node.value, annotation with
+          | Access (SimpleAccess access), _ ->
+              register ~location:target.Node.location (Reference.from_access access) annotation
+          | Tuple elements, Type.Tuple (Type.Bounded parameters)
+            when List.length elements = List.length parameters ->
+              List.map2_exn
+                ~f:(fun target annotation -> register_assign ~target ~annotation)
+                elements
+                parameters
+              |> ignore
+          | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
+              List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
+              |> ignore
+          | _ ->
+              ()
+        in
+        register_assign ~target ~annotation
+    | _ ->
+        ()
   in
   List.iter ~f:visit statements
 
