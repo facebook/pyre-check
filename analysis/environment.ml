@@ -56,6 +56,8 @@ module type Handler = sig
 
   val local_mode: File.Handle.t -> Source.mode option
 
+  val transaction: f: (unit -> 'a) -> unit -> 'a
+
   module DependencyHandler: Dependencies.Handler
 
   module TypeOrderHandler: TypeOrder.Handler
@@ -340,6 +342,8 @@ let handler
 
     let local_mode _ =
       None
+
+    let transaction ~f () = f ()
   end: Handler)
 
 

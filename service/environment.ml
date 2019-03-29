@@ -18,52 +18,55 @@ let populate
     (module Handler: Environment.Handler)
     ~configuration:{ Configuration.Analysis.debug; _ }
     sources =
-  let resolution = TypeCheck.resolution (module Handler) () in
-  List.iter ~f:(Environment.register_module (module Handler)) sources;
+  let populate () =
+    let resolution = TypeCheck.resolution (module Handler) () in
+    List.iter ~f:(Environment.register_module (module Handler)) sources;
 
-  let all_annotations =
-    List.fold
-      ~init:Environment.built_in_annotations
-      ~f:(fun annotations source ->
-          Set.union annotations (Environment.register_class_definitions (module Handler) source))
-      sources
-    |> Set.to_list
+    let all_annotations =
+      List.fold
+        ~init:Environment.built_in_annotations
+        ~f:(fun annotations source ->
+            Set.union annotations (Environment.register_class_definitions (module Handler) source))
+        sources
+      |> Set.to_list
+    in
+    Environment.register_aliases (module Handler) sources;
+
+    List.iter
+      ~f:(Environment.register_dependencies (module Handler))
+      sources;
+    (* Build type order. *)
+    List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
+    TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+
+    if debug then
+      (* Validate integrity of the type order built so far before moving forward.
+         Further transformations might be incorrect or not terminate otherwise. *)
+      TypeOrder.check_integrity (module Handler.TypeOrderHandler);
+
+    TypeOrder.connect_annotations_to_top
+      (module Handler.TypeOrderHandler)
+      ~top:Type.object_primitive
+      all_annotations;
+    TypeOrder.remove_extra_edges
+      (module Handler.TypeOrderHandler)
+      ~bottom:Type.Bottom
+      ~top:Type.object_primitive
+      all_annotations;
+
+    List.iter ~f:(Environment.register_functions (module Handler) resolution) sources;
+    List.iter ~f:(Environment.register_globals (module Handler) resolution) sources;
+    (* TODO(T30713406): Merge with class registration. *)
+    List.iter ~f:Handler.refine_class_definition all_annotations;
+    Type.Cache.disable ();
+    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations;
+    Type.Cache.enable ();
+
+    List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
+    (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
+    Annotated.Class.Attribute.Cache.clear ()
   in
-  Environment.register_aliases (module Handler) sources;
-
-  List.iter
-    ~f:(Environment.register_dependencies (module Handler))
-    sources;
-  (* Build type order. *)
-  List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
-  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-
-  if debug then
-    (* Validate integrity of the type order built so far before moving forward.
-       Further transformations might be incorrect or not terminate otherwise. *)
-    TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-
-  TypeOrder.connect_annotations_to_top
-    (module Handler.TypeOrderHandler)
-    ~top:Type.object_primitive
-    all_annotations;
-  TypeOrder.remove_extra_edges
-    (module Handler.TypeOrderHandler)
-    ~bottom:Type.Bottom
-    ~top:Type.object_primitive
-    all_annotations;
-
-  List.iter ~f:(Environment.register_functions (module Handler) resolution) sources;
-  List.iter ~f:(Environment.register_globals (module Handler) resolution) sources;
-  (* TODO(T30713406): Merge with class registration. *)
-  List.iter ~f:Handler.refine_class_definition all_annotations;
-  Type.Cache.disable ();
-  List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations;
-  Type.Cache.enable ();
-
-  List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources;
-  (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-  Annotated.Class.Attribute.Cache.clear ()
+  Handler.transaction ~f:populate ()
 
 
 let build
@@ -117,13 +120,67 @@ let build
     end
 
 
+
 module SharedHandler: Analysis.Environment.Handler = struct
+  let transaction ~f () =
+    Ast.SharedMemory.Modules.begin_transaction ();
+
+    Protocols.LocalChanges.push_stack ();
+    FunctionKeys.LocalChanges.push_stack ();
+    ClassKeys.LocalChanges.push_stack ();
+    AliasKeys.LocalChanges.push_stack ();
+    GlobalKeys.LocalChanges.push_stack ();
+    DependentKeys.LocalChanges.push_stack ();
+    ClassDefinitions.LocalChanges.push_stack ();
+    Globals.LocalChanges.push_stack ();
+    Aliases.LocalChanges.push_stack ();
+    OrderEdges.LocalChanges.push_stack ();
+    OrderBackedges.LocalChanges.push_stack ();
+    OrderAnnotations.LocalChanges.push_stack ();
+    OrderKeys.LocalChanges.push_stack ();
+    OrderIndices.LocalChanges.push_stack ();
+
+    let result = f () in
+
+    Ast.SharedMemory.Modules.end_transaction ();
+
+    Protocols.LocalChanges.commit_all ();
+    FunctionKeys.LocalChanges.commit_all ();
+    ClassKeys.LocalChanges.commit_all ();
+    AliasKeys.LocalChanges.commit_all ();
+    GlobalKeys.LocalChanges.commit_all ();
+    DependentKeys.LocalChanges.commit_all ();
+    ClassDefinitions.LocalChanges.commit_all ();
+    Globals.LocalChanges.commit_all ();
+    Aliases.LocalChanges.commit_all ();
+    OrderEdges.LocalChanges.commit_all ();
+    OrderBackedges.LocalChanges.commit_all ();
+    OrderAnnotations.LocalChanges.commit_all ();
+    OrderKeys.LocalChanges.commit_all ();
+    OrderIndices.LocalChanges.commit_all ();
+
+    Protocols.LocalChanges.pop_stack ();
+    FunctionKeys.LocalChanges.pop_stack ();
+    ClassKeys.LocalChanges.pop_stack ();
+    AliasKeys.LocalChanges.pop_stack ();
+    GlobalKeys.LocalChanges.pop_stack ();
+    DependentKeys.LocalChanges.pop_stack ();
+    ClassDefinitions.LocalChanges.pop_stack ();
+    Globals.LocalChanges.pop_stack ();
+    Aliases.LocalChanges.pop_stack ();
+    OrderEdges.LocalChanges.pop_stack ();
+    OrderBackedges.LocalChanges.pop_stack ();
+    OrderAnnotations.LocalChanges.pop_stack ();
+    OrderKeys.LocalChanges.pop_stack ();
+    OrderIndices.LocalChanges.pop_stack ();
+    result
+
+
   let class_definition =
     ClassDefinitions.get
 
   let register_protocol protocol =
     let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
-    Protocols.remove_batch (Protocols.KeySet.singleton "Protocols");
     Protocols.add "Protocols" (protocol :: protocols)
 
 
@@ -139,7 +196,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     in
     if not is_registered_empty_stub then
       begin
-        Ast.SharedMemory.Modules.remove ~qualifiers:[qualifier];
         Ast.SharedMemory.Modules.add
           ~qualifier
           ~ast_module:
@@ -170,9 +226,8 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Dependents.get
 
   module DependencyHandler = (struct
-    let add_new_key ~remove ~get ~add ~handle ~key =
+    let add_new_key ~get ~add ~handle ~key =
       let existing = get handle in
-      remove handle;
       match existing with
       | None -> add handle [key]
       | Some keys -> add handle (key :: keys)
@@ -184,7 +239,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~key:reference
         ~get:FunctionKeys.get
         ~add:FunctionKeys.add
-        ~remove:(fun key -> FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton key))
 
     let add_class_key ~handle class_type =
       add_new_key
@@ -192,7 +246,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~key:class_type
         ~get:ClassKeys.get
         ~add:ClassKeys.add
-        ~remove:(fun key -> ClassKeys.remove_batch (ClassKeys.KeySet.singleton key))
 
     let add_alias_key ~handle alias =
       add_new_key
@@ -200,7 +253,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~key:alias
         ~get:AliasKeys.get
         ~add:AliasKeys.add
-        ~remove:(fun key -> AliasKeys.remove_batch (ClassKeys.KeySet.singleton key))
 
     let add_global_key ~handle global =
       add_new_key
@@ -208,7 +260,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~key:global
         ~get:GlobalKeys.get
         ~add:GlobalKeys.add
-        ~remove:(fun key -> GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton key))
 
     let add_dependent_key ~handle dependent =
       add_new_key
@@ -216,7 +267,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~key:dependent
         ~get:DependentKeys.get
         ~add:DependentKeys.add
-        ~remove:(fun key -> DependentKeys.remove_batch (DependentKeys.KeySet.singleton key))
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
@@ -316,7 +366,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
       in
       let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
       let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-      ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton annotation);
       ClassDefinitions.add
         annotation
         {
@@ -343,7 +392,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let register_global ~handle ~reference ~global =
     DependencyHandler.add_global_key ~handle reference;
-    Globals.remove_batch (Globals.KeySet.singleton reference);
     Globals.add reference global
 
 
@@ -371,12 +419,10 @@ module SharedHandler: Analysis.Environment.Handler = struct
             is_test = false;
           }
     in
-    ClassDefinitions.remove_batch (ClassDefinitions.KeySet.singleton primitive);
     ClassDefinitions.add primitive definition
 
   let register_alias ~handle ~key ~data =
     DependencyHandler.add_alias_key ~handle key;
-    Aliases.remove_batch (Aliases.KeySet.singleton key);
     Aliases.add key data
 
   let purge ?(debug = false) handles =

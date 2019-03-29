@@ -1291,7 +1291,9 @@ let process_type_check_files
     List.concat_map repopulate_handles ~f:get_class_keys
   in
   let resolution = TypeCheck.resolution environment () in
-  Analysis.Environment.infer_protocols ~handler:environment resolution ~classes_to_infer ();
+  Handler.transaction
+    ~f:(Analysis.Environment.infer_protocols ~handler:environment resolution ~classes_to_infer)
+    ();
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
