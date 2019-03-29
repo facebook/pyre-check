@@ -13,10 +13,12 @@ module Event : sig
     pid: int;
     event_type: event_type;
     timestamp: int;
+    tags: (string * string) list
   }
   [@@deriving yojson]
 
-  val create:  ?timestamp: int -> event_type: event_type -> string -> t
+  val create:
+    ?timestamp: int -> ?tags:(string * string) list -> event_type: event_type -> string -> t
 end
 
 val log_event: Event.t -> unit

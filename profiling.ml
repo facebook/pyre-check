@@ -17,6 +17,7 @@ module Event = struct
     pid: int;
     event_type: event_type;
     timestamp: int;
+    tags: (string * string) list
   }
   [@@deriving yojson]
 
@@ -27,10 +28,10 @@ module Event = struct
     |> Time.Span.to_ms
     |> Int.of_float
 
-  let create ?(timestamp = now_in_milliseconds ()) ~event_type name =
+  let create ?(timestamp = now_in_milliseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
     let pid = Unix.getpid () |> Pid.to_int in
-    { name; pid; event_type; timestamp }
+    { name; pid; event_type; timestamp; tags }
 end
 
 

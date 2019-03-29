@@ -166,7 +166,8 @@ let performance
     | None ->
         randomly_log_every
   in
-  Profiling.log_event (Profiling.Event.create name ~event_type:(Duration milliseconds));
+  Profiling.log_event
+    (Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags:normals);
   sample
     ~integers:(("elapsed_time", milliseconds) :: integers)
     ~normals:(("name", name) :: normals)

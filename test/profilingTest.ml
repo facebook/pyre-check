@@ -19,7 +19,7 @@ let set_profiling_output path =
 let test_event_format _ =
   let output_name = Filename.temp_file "profiling" "test" in
   set_profiling_output output_name;
-  let assert_event event ~name ~event_type ~timestamp =
+  let assert_event event ~name ~event_type ~timestamp ~tags =
     Sys.remove output_name;
     Profiling.log_event event;
     let canonicalized_event_type =
@@ -30,6 +30,14 @@ let test_event_format _ =
     let event_json = Json.from_file output_name in
     let assert_string_equal = assert_equal ~cmp:String.equal ~printer:Fn.id in
     let assert_int_equal = assert_equal ~cmp:Int.equal ~printer:Int.to_string in
+    let assert_tag ((key, value), json) =
+      match Json.Util.to_list json with
+      | [key_json; value_json] ->
+          assert_string_equal key (Json.Util.to_string key_json);
+          assert_string_equal value (Json.Util.to_string value_json)
+      | _ ->
+          failwith "Unexpected tag length"
+    in
     event_json
     |> Json.Util.member "name"
     |> Json.Util.to_string
@@ -41,7 +49,12 @@ let test_event_format _ =
     event_json
     |> Json.Util.member "timestamp"
     |> Json.Util.to_int
-    |> assert_int_equal timestamp
+    |> assert_int_equal timestamp;
+    event_json
+    |> Json.Util.member "tags"
+    |> Json.Util.to_list
+    |> List.zip_exn tags
+    |> List.iter ~f:assert_tag
   in
 
   assert_event
@@ -49,6 +62,13 @@ let test_event_format _ =
     ~name:"foo"
     ~event_type:"[\"Duration\", 42]"
     ~timestamp:0
+    ~tags:[];
+  assert_event
+    (Profiling.Event.create "bar" ~event_type:(Duration 24) ~timestamp:1 ~tags:["hello", "world"])
+    ~name:"bar"
+    ~event_type:"[\"Duration\", 24]"
+    ~timestamp:1
+    ~tags:["hello", "world"]
 
 
 let () =
