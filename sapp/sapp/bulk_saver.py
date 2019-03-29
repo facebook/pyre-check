@@ -31,7 +31,7 @@ from sapp.models import (
 )
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class BulkSaver:

@@ -8,7 +8,7 @@ from sapp.analysis_output import AnalysisOutput
 from sapp.base_parser import BaseParser
 
 
-log: logging.Logger = logging.getLogger()
+log: logging.Logger = logging.getLogger("sapp")
 logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s")
 
 # We are going to call this per process, so we need to pass in and return

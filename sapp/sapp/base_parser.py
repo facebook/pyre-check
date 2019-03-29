@@ -20,7 +20,7 @@ except ImportError:
     import json  # noqa
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class ParseType(Enum):

@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import AssertionPool
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class DBType(sqlalchemy.Enum):

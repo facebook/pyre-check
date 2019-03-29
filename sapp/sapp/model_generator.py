@@ -28,7 +28,7 @@ from sapp.pipeline import DictEntries, PipelineStep, Summary
 from sapp.trace_graph import TraceGraph
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):

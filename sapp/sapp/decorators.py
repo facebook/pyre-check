@@ -10,7 +10,7 @@ from functools import wraps
 from typing import Any, Callable, List, Optional
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class retryable(object):

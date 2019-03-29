@@ -34,7 +34,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 # For use on enums to alias upper case value.

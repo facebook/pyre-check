@@ -8,7 +8,7 @@ from sapp.trace_graph import TraceGraph
 from sapp.trimmed_trace_graph import TrimmedTraceGraph
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class TrimTraceGraph(PipelineStep[TraceGraph, TraceGraph]):

@@ -10,7 +10,7 @@ from sapp.analysis_output import AnalysisOutput
 from sapp.base_parser import BaseParser, ParseType, log_trace_keyerror_in_generator
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class Parser(BaseParser):

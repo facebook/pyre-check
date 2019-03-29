@@ -69,8 +69,8 @@ class LogTimeTest(TestCase):
         self.assertEqual(
             cm.output,
             [
-                "INFO:root:Takes_Some_Time starting...",
-                "INFO:root:Takes_Some_Time finished (0:00:20)",
+                "INFO:sapp:Takes_Some_Time starting...",
+                "INFO:sapp:Takes_Some_Time finished (0:00:20)",
             ],
         )
 

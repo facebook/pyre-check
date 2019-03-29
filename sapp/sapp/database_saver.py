@@ -22,7 +22,7 @@ from sapp.pipeline import PipelineStep, Summary
 from sapp.trace_graph import TraceGraph
 
 
-log = logging.getLogger()
+log = logging.getLogger("sapp")
 
 
 class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
