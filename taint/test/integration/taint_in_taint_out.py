@@ -38,4 +38,4 @@ def tito():
 
 
 def via_getattr(x, y):
-    return getattr(x, 'foo', y)
+    return getattr(x, "foo", y)
