@@ -706,9 +706,69 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                           >>| List.to_string ~f:Int.to_string;
                       }
 
+                  | Ok (Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.SymlinksToPaths.SymlinkSource.description;
+                        actual_key = key;
+                        actual_value =
+                          value
+                          >>| Path.show
+                      }
+
+                  | Ok (Ast.SharedMemory.Sources.Sources.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.Sources.SourceValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value =
+                          value
+                          >>| Source.show
+                      }
+
+                  | Ok (Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.Sources.HandleValue.description;
+                        actual_key = Reference.show key;
+                        actual_value =
+                          value
+                          >>| File.Handle.show
+                      }
+
+                  | Ok (Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.HandleKeys.HandleKeysValue.description;
+                        actual_key = Int.to_string key;
+                        actual_value =
+                          value
+                          >>| File.Handle.Set.Tree.sexp_of_t
+                          >>| Sexp.to_string
+                      }
+
+                  | Ok (Ast.SharedMemory.Modules.Modules.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.Modules.ModuleValue.description;
+                        actual_key = Expression.Access.show key;
+                        actual_value =
+                          value
+                          >>| Module.sexp_of_t
+                          >>| Sexp.to_string
+                      }
+
+                  | Ok (Ast.SharedMemory.Handles.Paths.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Ast.SharedMemory.Handles.PathValue.description;
+                        actual_key = Int.to_string key;
+                        actual_value = value
+                      }
 
                   | Ok _ ->
                       None
+
                   | Error _ ->
                       None
                 end

@@ -23,3 +23,12 @@ val add: Reference.t -> annotations -> unit
 val remove: Reference.t list -> unit
 
 val get: Reference.t -> annotations option
+
+
+module TypeAnnotationsValue: sig
+  type t = annotations
+  val prefix: Prefix.t
+  val description: string
+end
+
+include module type of Memory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)

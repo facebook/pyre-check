@@ -1306,6 +1306,170 @@ let test_decode_serialized_ocaml_values context =
                     };
                   ];
                   undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key =
+                Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
+              serialized_value =
+                Path.create_absolute ~follow_symbolic_links:false "actual_filename.py"
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
+                      kind = "SymlinkSource";
+                      actual_key = "symbolic_link.py";
+                      actual_value = Some "actual_filename.py";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key =
+                Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py");
+              serialized_value =
+                Source.create [Test.parse_single_statement "x = 1 + 2"]
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Ast.SharedMemory.Sources.Sources.serialize_key
+                          (File.Handle.create "handle.py");
+                      kind = "AST";
+                      actual_key = "handle.py";
+                      actual_value = Some "x = 1.__add__(2)\n";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key =
+                Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
+                  (Reference.create "handle");
+              serialized_value =
+                File.Handle.create "handle.py"
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
+                          (Reference.create "handle");
+                      kind = "File handle";
+                      actual_key = "handle";
+                      actual_value = Some "handle.py";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key =
+                Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
+              serialized_value =
+                Ast.Module.create
+                  ~qualifier:(!+"handle")
+                  ~local_mode:Ast.Source.Default
+                  ~stub:false
+                  [Test.parse_single_statement "x = 2"]
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key =
+                        Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
+                      kind = "Module";
+                      actual_key = "handle";
+                      actual_value =
+                        Some
+                          "((aliased_exports())(empty_stub false)(handle())\
+                           (wildcard_exports(((Identifier x)))))";
+                    };
+                  ];
+                  undecodable_keys = [];
+                }))));
+
+  assert_response
+    ~local_root
+    ~source:""
+    ~request:(
+      Request.TypeQueryRequest
+        (TypeQuery.DecodeOcamlValues [
+            {
+              TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
+              serialized_value =
+                File.Handle.create "five.py"
+                |> (fun value -> Marshal.to_string value [Marshal.Closures])
+                |> Base64.encode_exn;
+            };
+          ]))
+    (Some
+       (Protocol.TypeQueryResponse
+          (TypeQuery.Response
+             (TypeQuery.Decoded
+                {
+                  TypeQuery.decoded = [
+                    {
+                      TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
+                      kind = "Path";
+                      actual_key = "5";
+                      actual_value = Some "five.py";
+                    };
+                  ];
+                  undecodable_keys = [];
                 }))))
 
 

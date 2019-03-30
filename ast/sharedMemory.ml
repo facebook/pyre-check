@@ -18,12 +18,6 @@ module HandleKey = struct
   let from_string = File.Handle.create
 end
 
-module HandleValue = struct
-  type t = File.Handle.t
-  let prefix = Prefix.make ()
-  let description = "File handle"
-end
-
 module IntKey = struct
   type t = int
   let to_string = Int.to_string
@@ -102,6 +96,13 @@ module Sources = struct
   end
 
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+
+  module HandleValue = struct
+    type t = File.Handle.t
+    let prefix = Prefix.make ()
+    let description = "File handle"
+  end
+
   module QualifiersToHandles = SharedMemory.NoCache (ReferenceKey) (HandleValue)
 
   let get handle =
