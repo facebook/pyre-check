@@ -139,6 +139,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     AliasKeys.LocalChanges.push_stack ();
     GlobalKeys.LocalChanges.push_stack ();
     DependentKeys.LocalChanges.push_stack ();
+    Dependents.LocalChanges.push_stack ();
     ClassDefinitions.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack ();
     Aliases.LocalChanges.push_stack ();
@@ -158,6 +159,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     AliasKeys.LocalChanges.commit_all ();
     GlobalKeys.LocalChanges.commit_all ();
     DependentKeys.LocalChanges.commit_all ();
+    Dependents.LocalChanges.commit_all ();
     ClassDefinitions.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
     Aliases.LocalChanges.commit_all ();
@@ -173,6 +175,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     AliasKeys.LocalChanges.pop_stack ();
     GlobalKeys.LocalChanges.pop_stack ();
     DependentKeys.LocalChanges.pop_stack ();
+    Dependents.LocalChanges.pop_stack ();
     ClassDefinitions.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
     Aliases.LocalChanges.pop_stack ();
