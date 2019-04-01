@@ -2255,6 +2255,13 @@ let dequalify
       _;
     } as error) =
   let dequalify = Type.dequalify dequalify_map in
+  let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
+    {
+      mismatch with
+      actual = dequalify actual;
+      expected = dequalify expected;
+    }
+  in
   let kind =
     match kind with
     | AnalysisFailure annotation ->
@@ -2263,18 +2270,8 @@ let dequalify
         Deobfuscation left
     | IllegalAnnotationTarget left ->
         IllegalAnnotationTarget left
-    | ImpossibleIsinstance ({
-        mismatch = { actual; expected; due_to_invariance };
-        _;
-      } as isinstance) ->
-        ImpossibleIsinstance {
-          isinstance with
-          mismatch = {
-            actual = dequalify actual;
-            expected = dequalify expected;
-            due_to_invariance;
-          };
-        }
+    | ImpossibleIsinstance ({ mismatch; _ } as isinstance) ->
+        ImpossibleIsinstance { isinstance with mismatch = dequalify_mismatch mismatch }
     | IncompatibleAwaitableType actual  ->
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
@@ -2323,68 +2320,23 @@ let dequalify
         RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
         RevealedType { expression; annotation = dequalify annotation }
-    | IncompatibleParameterType ({
-        mismatch = { actual; expected; due_to_invariance };
-        _;
-      } as parameter) ->
-        IncompatibleParameterType {
-          parameter with
-          mismatch = {
-            actual = dequalify actual;
-            expected = dequalify expected;
-            due_to_invariance;
-          };
-        }
-    | IncompatibleReturnType ({
-        mismatch = { actual; expected; due_to_invariance };
-        _;
-      } as return) ->
-        IncompatibleReturnType {
-          return with
-          mismatch = { actual = dequalify actual; expected = dequalify expected; due_to_invariance }
-        }
-    | IncompatibleAttributeType {
-        parent;
-        incompatible_type = {
-          mismatch = { actual; expected; due_to_invariance };
-          _;
-        } as incompatible_type;
-      } ->
+    | IncompatibleParameterType ({ mismatch; _; } as parameter) ->
+        IncompatibleParameterType { parameter with mismatch = dequalify_mismatch mismatch }
+    | IncompatibleReturnType ({ mismatch; _ } as return) ->
+        IncompatibleReturnType { return with mismatch = dequalify_mismatch mismatch }
+    | IncompatibleAttributeType { parent; incompatible_type = { mismatch; _ } as incompatible_type }
+      ->
         IncompatibleAttributeType {
           parent;
-          incompatible_type = {
-            incompatible_type with
-            mismatch = {
-              actual = dequalify actual;
-              expected = dequalify expected;
-              due_to_invariance;
-            };
-          };
+          incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch };
         }
-    | IncompatibleVariableType ({
-        mismatch = { actual; expected; due_to_invariance };
-        _;
-      } as incompatible_type) ->
-        IncompatibleVariableType {
-          incompatible_type with
-          mismatch = {
-            actual = dequalify actual;
-            expected = dequalify expected;
-            due_to_invariance;
-          };
-        }
+    | IncompatibleVariableType ({ mismatch; _ } as incompatible_type) ->
+        IncompatibleVariableType { incompatible_type with mismatch = dequalify_mismatch mismatch }
     | InconsistentOverride
-        ({
-          override = StrengthenedPrecondition (Found { actual; expected; due_to_invariance });
-          _;
-        } as inconsistent_override) ->
+        ({ override = StrengthenedPrecondition (Found mismatch); _ } as inconsistent_override) ->
         InconsistentOverride {
           inconsistent_override with
-          override = StrengthenedPrecondition (Found {
-              actual = dequalify actual;
-              expected = dequalify expected;
-              due_to_invariance;
-            });
+          override = StrengthenedPrecondition (Found (dequalify_mismatch mismatch));
         }
     | InconsistentOverride (
         { override = StrengthenedPrecondition (NotFound access); _ } as inconsistent_override
@@ -2393,33 +2345,19 @@ let dequalify
           inconsistent_override with override = StrengthenedPrecondition (NotFound access);
         }
     | InconsistentOverride
-        ({
-          override = WeakenedPostcondition { actual; expected; due_to_invariance };
-          _;
-        } as inconsistent_override) ->
+        ({ override = WeakenedPostcondition mismatch; _ } as inconsistent_override) ->
         InconsistentOverride {
           inconsistent_override with
-          override = WeakenedPostcondition {
-              actual = dequalify actual;
-              expected = dequalify expected;
-              due_to_invariance;
-            };
+          override = WeakenedPostcondition (dequalify_mismatch mismatch);
         }
     | TypedDictionaryAccessWithNonLiteral expression ->
         TypedDictionaryAccessWithNonLiteral expression
     | TypedDictionaryKeyNotFound key ->
         TypedDictionaryKeyNotFound key
-    | UninitializedAttribute ({
-        mismatch = { actual; expected; due_to_invariance };
-        _;
-      } as inconsistent_usage) ->
+    | UninitializedAttribute ({ mismatch; _ } as inconsistent_usage) ->
         UninitializedAttribute {
           inconsistent_usage with
-          mismatch = {
-            actual = dequalify actual;
-            expected = dequalify expected;
-            due_to_invariance;
-          };
+          mismatch = dequalify_mismatch mismatch;
         }
     | UnawaitedAwaitable left ->
         UnawaitedAwaitable left
