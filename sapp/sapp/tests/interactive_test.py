@@ -1573,6 +1573,37 @@ else:
         self.interactive.frames(kind=TraceKind.PRECONDITION)
         self.assertEqual(self.stdout.getvalue().strip(), "No trace frames found.")
 
+    def testListTracesFilterCallersCallees(self):
+        trace_frames = self._basic_trace_frames()
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            session.commit()
+
+        self.interactive.current_run_id = 1
+        self._clear_stdout()
+        self.interactive.frames(callers=["call2"])
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call2:param0 ->",
+                "2        leaf:sink",
+                "",
+            ],
+        )
+
+        self._clear_stdout()
+        self.interactive.frames(callees=["call2"])
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call1:root ->",
+                "1        call2:param0",
+                "",
+            ],
+        )
+
     def testSetFrame(self):
         trace_frames = self._basic_trace_frames()
         shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)

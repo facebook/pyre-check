@@ -380,12 +380,17 @@ details()       show additional information about the current trace frame
     @catch_keyboard_interrupt()
     @catch_user_error()
     def frames(
-        self, *, callers: Optional[List[str]] = None, kind: Optional[TraceKind] = None
+        self,
+        *,
+        callers: Optional[List[str]] = None,
+        callees: Optional[List[str]] = None,
+        kind: Optional[TraceKind] = None,
     ):
         """Display trace frames independent of the current issue.
 
         Parameters (all optional):
             callers: list[str]                  filter traces by this caller name
+            callees: list[str]                  filter traces by this callee name
             kind: precondition|postcondition    the type of trace frames to show
 
         Sample usage:
@@ -404,6 +409,12 @@ details()       show additional information about the current trace frame
                 self._verify_list_filter(callers, "callers")
                 query = self._add_list_filter_to_query(
                     callers, query, TraceFrame.caller
+                )
+
+            if callees is not None:
+                self._verify_list_filter(callees, "callees")
+                query = self._add_list_filter_to_query(
+                    callees, query, TraceFrame.callee
                 )
 
             if kind is not None:
