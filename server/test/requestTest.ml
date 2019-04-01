@@ -326,6 +326,7 @@ let test_process_type_check_request context =
       ~check
       ~expected_errors
       ?(expected_deferred_state = [])
+      ?temporary_directory
       () =
     let assert_response _ =
       let actual_errors, actual_deferred_state =
@@ -356,7 +357,11 @@ let test_process_type_check_request context =
         expected_deferred_state
         actual_deferred_state
     in
-    OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response
+    let temporary_directory = match temporary_directory with
+      | Some temporary_directory -> temporary_directory
+      | None -> OUnit2.bracket_tmpdir context
+    in
+    OUnit2.with_bracket_chdir context temporary_directory assert_response
   in
 
   assert_response ~check:[] ~expected_errors:[] ();
@@ -370,6 +375,26 @@ let test_process_type_check_request context =
     ]
     ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
     ();
+
+  (* Absolute paths *)
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  let absolute_path =
+    Path.create_absolute temporary_directory
+    |> (fun root -> Path.append root ~element:"test.py")
+    |> Path.absolute
+  in
+  assert_response
+    ~check:[
+      absolute_path,
+      {|
+        def foo() -> int:
+          return 'asdf'
+      |};
+    ]
+    ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
+    ~temporary_directory
+    ();
+
 
   (* Check deferred requests for dependencies. *)
   assert_response

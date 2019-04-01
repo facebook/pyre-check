@@ -326,7 +326,13 @@ let mock_path path =
 
 let write_file (path, content) =
   let content = trim_extra_indentation content in
-  let file = File.create ~content (mock_path path) in
+  let path =
+    if (Filename.is_absolute path) then
+      Path.create_absolute ~follow_symbolic_links:false path
+    else
+      mock_path path
+  in
+  let file = File.create ~content path in
   File.write file;
   file
 

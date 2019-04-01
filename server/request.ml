@@ -1392,7 +1392,14 @@ let process_type_check_files
         Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
   let checked_files =
     List.filter_map
-      ~f:(fun file -> File.path file |> Path.relative >>| File.Handle.create)
+      ~f:(fun file -> try
+             Some (File.handle ~configuration file)
+           with File.NonexistentHandle _ ->
+             Log.warning
+               "Could not create a handle for %s. It will be excluded from the type-check response."
+               (Path.absolute (File.path file));
+             None
+         )
       check
     |> Option.some
   in
