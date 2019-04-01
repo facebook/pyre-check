@@ -64,10 +64,10 @@ class LogTimeTest(TestCase):
         pass
 
     def testBasic(self, mocked_time_generator):
-        with self.assertLogs() as cm:
+        with self.assertLogs("sapp") as context_manager:
             self.takes_some_time()
         self.assertEqual(
-            cm.output,
+            context_manager.output,
             [
                 "INFO:sapp:Takes_Some_Time starting...",
                 "INFO:sapp:Takes_Some_Time finished (0:00:20)",
