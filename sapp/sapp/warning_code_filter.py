@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterable, Set, Tuple
 
-from sapp.pipeline import DictEntries, PipelineStep, Summary
+from .pipeline import DictEntries, PipelineStep, Summary
 
 
 class WarningCodeFilter(PipelineStep[DictEntries, DictEntries]):

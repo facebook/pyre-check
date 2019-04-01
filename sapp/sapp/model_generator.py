@@ -7,7 +7,8 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 import ujson as json
-from sapp.models import (
+
+from .models import (
     DBID,
     SHARED_TEXT_LENGTH,
     Issue,
@@ -24,8 +25,8 @@ from sapp.models import (
     TraceFrameAnnotation,
     TraceKind,
 )
-from sapp.pipeline import DictEntries, PipelineStep, Summary
-from sapp.trace_graph import TraceGraph
+from .pipeline import DictEntries, PipelineStep, Summary
+from .trace_graph import TraceGraph
 
 
 log = logging.getLogger("sapp")

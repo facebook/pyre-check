@@ -5,9 +5,10 @@ import logging
 from typing import Any, Dict, Iterable, List, Tuple
 
 import ujson as json
-from sapp import errors
-from sapp.analysis_output import AnalysisOutput
-from sapp.base_parser import BaseParser, ParseType, log_trace_keyerror_in_generator
+
+from . import errors
+from .analysis_output import AnalysisOutput
+from .base_parser import BaseParser, ParseType, log_trace_keyerror_in_generator
 
 
 log = logging.getLogger("sapp")

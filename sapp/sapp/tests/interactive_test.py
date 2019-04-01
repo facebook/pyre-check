@@ -7,10 +7,10 @@ from io import StringIO
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
-from sapp.db import DB
-from sapp.decorators import UserError
-from sapp.interactive import Interactive, IssueQueryResult, TraceTuple
-from sapp.models import (
+from ..db import DB
+from ..decorators import UserError
+from ..interactive import Interactive, IssueQueryResult, TraceTuple
+from ..models import (
     Issue,
     IssueInstance,
     IssueInstanceSharedTextAssoc,

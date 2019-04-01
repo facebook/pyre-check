@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import List
 
 import click
-from sapp.models import Issue, IssueInstance, SharedText, TraceFrame
 
 from .cli_lib import require_option
+from .models import Issue, IssueInstance, SharedText, TraceFrame
 
 
 @click.command()

@@ -7,10 +7,12 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from sapp.cli import cli
+
+from .. import __name__ as client
+from ..cli import cli
 
 
-PIPELINE_RUN = "sapp.pipeline.Pipeline.run"
+PIPELINE_RUN = f"{client}.pipeline.Pipeline.run"
 
 
 @contextlib.contextmanager
@@ -21,7 +23,8 @@ def isolated_fs():
 
 
 @patch(
-    "sapp.analysis_output.AnalysisOutput.from_file", return_value="fake_analysis_output"
+    f"{client}.analysis_output.AnalysisOutput.from_file",
+    return_value="fake_analysis_output",
 )
 class TestSappCli(TestCase):
     def setUp(self) -> None:

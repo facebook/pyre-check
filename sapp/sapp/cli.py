@@ -1,11 +1,12 @@
 import logging
 
 import click
-from sapp.cli_lib import commands, common_options
-from sapp.context import Context
-from sapp.db import DB, DBType
-from sapp.lint import lint
-from sapp.pysa_taint_parser import Parser
+
+from .cli_lib import commands, common_options
+from .context import Context
+from .db import DB, DBType
+from .lint import lint
+from .pysa_taint_parser import Parser
 
 
 logger = logging.getLogger("sapp")

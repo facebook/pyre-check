@@ -21,9 +21,15 @@ from IPython.core import page
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
-from sapp.db import DB
-from sapp.decorators import UserError, catch_keyboard_interrupt, catch_user_error
-from sapp.models import (
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.orm.query import Query
+from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import or_
+
+from .db import DB
+from .decorators import UserError, catch_keyboard_interrupt, catch_user_error
+from .models import (
     DBID,
     Issue,
     IssueInstance,
@@ -33,19 +39,11 @@ from sapp.models import (
     RunStatus,
     SharedText,
     SharedTextKind,
-    Sink,
-    Source,
     SourceLocation,
     TraceFrame,
     TraceFrameLeafAssoc,
     TraceKind,
 )
-from sqlalchemy import distinct
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.orm.attributes import InstrumentedAttribute
-from sqlalchemy.orm.query import Query
-from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import or_
 
 
 class IssueQueryResult(NamedTuple):

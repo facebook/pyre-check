@@ -3,7 +3,7 @@
 import gc
 from unittest import TestCase, mock
 
-from sapp.decorators import (
+from ..decorators import (
     UserError,
     catch_keyboard_interrupt,
     catch_user_error,

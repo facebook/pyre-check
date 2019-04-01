@@ -3,8 +3,9 @@
 from typing import NamedTuple, Optional, Type
 
 import click
-from sapp.base_parser import BaseParser
-from sapp.db import DB
+
+from .base_parser import BaseParser
+from .db import DB
 
 
 class Context(NamedTuple):

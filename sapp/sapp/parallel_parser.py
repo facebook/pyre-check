@@ -4,8 +4,8 @@ import logging
 from multiprocessing import Pool
 from typing import Any, Dict, Iterable
 
-from sapp.analysis_output import AnalysisOutput
-from sapp.base_parser import BaseParser
+from .analysis_output import AnalysisOutput
+from .base_parser import BaseParser
 
 
 log: logging.Logger = logging.getLogger("sapp")

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from sapp.iterutil import split_every
+from ..iterutil import split_every
 
 
 class UtilsTest(TestCase):

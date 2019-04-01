@@ -7,8 +7,6 @@ from itertools import islice, tee
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
 from munch import Munch
-from sapp.errors import AIException
-from sapp.iterutil import split_every
 from sqlalchemy import (
     Boolean,
     Column,
@@ -32,6 +30,9 @@ from sqlalchemy.dialects.mysql import BIGINT, INTEGER
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, relationship
+
+from .errors import AIException
+from .iterutil import split_every
 
 
 log = logging.getLogger("sapp")

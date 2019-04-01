@@ -9,17 +9,17 @@ import click
 import click_log
 import IPython
 from click import Choice, Parameter, Path, argument, group, option
-from sapp.analysis_output import AnalysisOutput
-from sapp.database_saver import DatabaseSaver
-from sapp.db import DB
-from sapp.interactive import Interactive
-from sapp.model_generator import ModelGenerator
-from sapp.models import PrimaryKeyGenerator
-from sapp.pipeline import Pipeline
-from sapp.trim_trace_graph import TrimTraceGraph
 
+from .analysis_output import AnalysisOutput
 from .context import Context, pass_context
+from .database_saver import DatabaseSaver
+from .db import DB
 from .filesystem import find_root
+from .interactive import Interactive
+from .model_generator import ModelGenerator
+from .models import PrimaryKeyGenerator
+from .pipeline import Pipeline
+from .trim_trace_graph import TrimTraceGraph
 
 
 MARKER_DIRECTORIES = [".pyre", ".hg", ".git", ".svn"]

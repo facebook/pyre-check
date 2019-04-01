@@ -3,9 +3,9 @@
 import logging
 from typing import Tuple
 
-from sapp.pipeline import PipelineStep, Summary
-from sapp.trace_graph import TraceGraph
-from sapp.trimmed_trace_graph import TrimmedTraceGraph
+from .pipeline import PipelineStep, Summary
+from .trace_graph import TraceGraph
+from .trimmed_trace_graph import TrimmedTraceGraph
 
 
 log = logging.getLogger("sapp")

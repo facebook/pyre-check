@@ -9,8 +9,9 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Set, TextIO, Tuple
 
 import xxhash
-from sapp.analysis_output import AnalysisOutput
-from sapp.pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
+
+from .analysis_output import AnalysisOutput
+from .pipeline import DictEntries, InputFiles, Optional, PipelineStep, Summary
 
 
 # if these imports have the same name we get a linter error

@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from sapp.sharded_files import ShardedFile
+from ...sharded_files import ShardedFile
 
 
 test_path = "tools/sapp/sapp//tests/sharded_files"
