@@ -175,6 +175,22 @@ let test_normalize_dependencies _ =
     [Type.Primitive "A_Alias"; Type.Primitive "B_Alias"; Type.Primitive "C_Alias"]
 
 
+let test_normalize_order_keys _ =
+  TypeOrder.insert (module Handler.TypeOrderHandler) Type.integer;
+  TypeOrder.insert (module Handler.TypeOrderHandler) Type.string;
+  let indices =
+    let index_of annotation =
+      Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
+    in
+    [index_of Type.integer; index_of Type.string]
+    |> List.sort ~compare:Int.compare
+  in
+  Service.Environment.normalize_shared_memory ();
+  assert_equal
+    (Service.EnvironmentSharedMemory.OrderKeys.get "Order")
+    (Some indices)
+
+
 let () =
   "environment">:::[
     "alias_keys">::test_alias_keys;
@@ -183,6 +199,7 @@ let () =
     "function_keys">::test_function_keys;
     "global_keys">::test_global_keys;
     "normalize_dependencies">::test_normalize_dependencies;
+    "normalize_order_keys">::test_normalize_order_keys;
     "register_modules">::test_register_modules;
   ]
   |> Test.run

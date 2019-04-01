@@ -582,6 +582,17 @@ let populate_shared_memory
 
 let normalize_shared_memory () =
   TypeOrder.normalize (module SharedHandler.TypeOrderHandler);
+  (* Since we don't provide an API to the raw order keys in the type order handler,
+     handle it inline here. *)
+  begin
+    match OrderKeys.get "Order" with
+    | None ->
+        ()
+    | Some keys ->
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
+        List.sort ~compare:Int.compare keys
+        |> OrderKeys.add "Order";
+  end;
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in
   File.Handle.Set.Tree.to_list handles
