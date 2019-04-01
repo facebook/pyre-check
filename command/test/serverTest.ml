@@ -1157,47 +1157,54 @@ let test_decode_serialized_ocaml_values context =
                   ];
                   undecodable_keys = ["Can't decode this"];
                 }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
-              serialized_value =
-                {
-                  Resolution.class_definition =
-                    Node.create_with_default_location
-                      (Test.parse_single_class "class C: pass");
-                  successors = [];
-                  explicit_attributes = Identifier.SerializableMap.empty;
-                  implicit_attributes = Identifier.SerializableMap.empty;
-                  is_test = false;
-                  methods = [];
-                }
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
-                      kind = "Class";
-                      actual_key = "int";
-                      actual_value =
-                        let json =
-                          let class_definition =
-                            "{ Statement.Record.Class.name = C; bases = []; body = \
-                             [Statement.Pass];\n  decorators = []; docstring = None }"
-                          in
-                          Format.sprintf
-                            {|
+  let assert_decode ~key ~value ~response =
+    let value =
+      Marshal.to_string value [Marshal.Closures]
+      |> Base64.encode_exn
+    in
+    assert_response
+      ~local_root
+      ~source:""
+      ~request:(
+        Request.TypeQueryRequest
+          (TypeQuery.DecodeOcamlValues [
+              {
+                TypeQuery.serialized_key = key;
+                serialized_value = value;
+              }
+            ]))
+      (Some response)
+  in
+  assert_decode
+    ~key:(ClassDefinitions.serialize_key Type.integer)
+    ~value:{
+      Resolution.class_definition =
+        Node.create_with_default_location
+          (Test.parse_single_class "class C: pass");
+      successors = [];
+      explicit_attributes = Identifier.SerializableMap.empty;
+      implicit_attributes = Identifier.SerializableMap.empty;
+      is_test = false;
+      methods = [];
+    }
+    ~response:
+      (Protocol.TypeQueryResponse
+         (TypeQuery.Response
+            (TypeQuery.Decoded
+               {
+                 TypeQuery.decoded = [
+                   {
+                     TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
+                     kind = "Class";
+                     actual_key = "int";
+                     actual_value =
+                       let json =
+                         let class_definition =
+                           "{ Statement.Record.Class.name = C; bases = []; body = \
+                            [Statement.Pass];\n  decorators = []; docstring = None }"
+                         in
+                         Format.sprintf
+                           {|
                               {
                                 "class_definition": "%s",
                                 "successors": "()",
@@ -1205,272 +1212,182 @@ let test_decode_serialized_ocaml_values context =
                                 "methods": "()"
                               }
                             |}
-                            class_definition
-                        in
-                        Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Aliases.serialize_key (Type.Primitive "my_integer");
-              serialized_value =
-                Type.integer
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Aliases.serialize_key (Type.Primitive "my_integer");
-                      kind = "Alias";
-                      actual_key = "my_integer";
-                      actual_value = Some "int";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key = Globals.serialize_key (Reference.create "string_global");
-              serialized_value =
-                Annotation.create Type.string
-                |> Node.create_with_default_location
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Globals.serialize_key (Reference.create "string_global");
-                      kind = "Global";
-                      actual_key = "string_global";
-                      actual_value = Some "(str: m)";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Dependents.serialize_key (Reference.create "module");
-              serialized_value =
-                ["dependentA.py"; "dependentB.py"]
-                |> List.map ~f:File.Handle.create
-                |> File.Handle.Set.Tree.of_list
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Dependents.serialize_key (Reference.create "module");
-                      kind = "Dependent";
-                      actual_key = "module";
-                      actual_value = Some "(dependentA.py dependentB.py)";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
-              serialized_value =
-                Path.create_absolute ~follow_symbolic_links:false "actual_filename.py"
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
-                      kind = "SymlinkSource";
-                      actual_key = "symbolic_link.py";
-                      actual_value = Some "actual_filename.py";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py");
-              serialized_value =
-                Source.create [Test.parse_single_statement "x = 1 + 2"]
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Ast.SharedMemory.Sources.Sources.serialize_key
-                          (File.Handle.create "handle.py");
-                      kind = "AST";
-                      actual_key = "handle.py";
-                      actual_value = Some "x = 1.__add__(2)\n";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
-                  (Reference.create "handle");
-              serialized_value =
-                File.Handle.create "handle.py"
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
-                          (Reference.create "handle");
-                      kind = "File handle";
-                      actual_key = "handle";
-                      actual_value = Some "handle.py";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key =
-                Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
-              serialized_value =
-                Ast.Module.create
-                  ~qualifier:(!+"handle")
-                  ~local_mode:Ast.Source.Default
-                  ~stub:false
-                  [Test.parse_single_statement "x = 2"]
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key =
-                        Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
-                      kind = "Module";
-                      actual_key = "handle";
-                      actual_value =
-                        Some
-                          "((aliased_exports())(empty_stub false)(handle())\
-                           (wildcard_exports(((Identifier x)))))";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))));
+                           class_definition
+                       in
+                       Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
+                   };
+                 ];
+                 undecodable_keys = [];
+               })));
 
-  assert_response
-    ~local_root
-    ~source:""
-    ~request:(
-      Request.TypeQueryRequest
-        (TypeQuery.DecodeOcamlValues [
-            {
-              TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
-              serialized_value =
-                File.Handle.create "five.py"
-                |> (fun value -> Marshal.to_string value [Marshal.Closures])
-                |> Base64.encode_exn;
-            };
-          ]))
-    (Some
-       (Protocol.TypeQueryResponse
-          (TypeQuery.Response
-             (TypeQuery.Decoded
-                {
-                  TypeQuery.decoded = [
-                    {
-                      TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
-                      kind = "Path";
-                      actual_key = "5";
-                      actual_value = Some "five.py";
-                    };
-                  ];
-                  undecodable_keys = [];
-                }))))
+  assert_decode
+    ~key:(Aliases.serialize_key (Type.Primitive "my_integer"))
+    ~value:Type.integer
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Aliases.serialize_key (Type.Primitive "my_integer");
+                    kind = "Alias";
+                    actual_key = "my_integer";
+                    actual_value = Some "int";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Globals.serialize_key (Reference.create "string_global"))
+    ~value:(
+      Annotation.create Type.string
+      |> Node.create_with_default_location
+    )
+    ~response:(
+      (Protocol.TypeQueryResponse
+         (TypeQuery.Response
+            (TypeQuery.Decoded
+               {
+                 TypeQuery.decoded = [
+                   {
+                     TypeQuery.serialized_key =
+                       Globals.serialize_key (Reference.create "string_global");
+                     kind = "Global";
+                     actual_key = "string_global";
+                     actual_value = Some "(str: m)";
+                   };
+                 ];
+                 undecodable_keys = [];
+               }))));
+  assert_decode
+    ~key:(Dependents.serialize_key (Reference.create "module"))
+    ~value:(
+      ["dependentA.py"; "dependentB.py"]
+      |> List.map ~f:File.Handle.create
+      |> File.Handle.Set.Tree.of_list)
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Dependents.serialize_key (Reference.create "module");
+                    kind = "Dependent";
+                    actual_key = "module";
+                    actual_value = Some "(dependentA.py dependentB.py)";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py")
+    ~value: (Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
+                    kind = "SymlinkSource";
+                    actual_key = "symbolic_link.py";
+                    actual_value = Some "actual_filename.py";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py"))
+    ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Ast.SharedMemory.Sources.Sources.serialize_key
+                        (File.Handle.create "handle.py");
+                    kind = "AST";
+                    actual_key = "handle.py";
+                    actual_value = Some "x = 1.__add__(2)\n";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "handle"))
+    ~value:(File.Handle.create "handle.py")
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
+                        (Reference.create "handle");
+                    kind = "File handle";
+                    actual_key = "handle";
+                    actual_value = Some "handle.py";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key !+"handle")
+    ~value:(
+      Ast.Module.create
+        ~qualifier:(!+"handle")
+        ~local_mode:Ast.Source.Default
+        ~stub:false
+        [Test.parse_single_statement "x = 2"])
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
+                    kind = "Module";
+                    actual_key = "handle";
+                    actual_value =
+                      Some
+                        "((aliased_exports())(empty_stub false)(handle())\
+                         (wildcard_exports(((Identifier x)))))";
+                  };
+                ];
+                undecodable_keys = [];
+              })));
+
+  assert_decode
+    ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
+    ~value:(File.Handle.create "five.py")
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
+                    kind = "Path";
+                    actual_key = "5";
+                    actual_value = Some "five.py";
+                  };
+                ];
+                undecodable_keys = [];
+              })))
 
 
 let test_connect context =
