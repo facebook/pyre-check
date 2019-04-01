@@ -25,12 +25,17 @@ def _translate(event: Dict[str, Any]) -> Dict[str, Any]:
         duration_ms = event_type[1]
         start_time_ms = timestamp_ms - duration_ms
         trace_event_type = "X"
+        arguments = {}
+        if "tags" in event:
+            for key, value in event["tags"]:
+                arguments[key] = value
         return {
             "pid": pid,
             "ts": start_time_ms * 1000,
             "ph": trace_event_type,
             "name": name,
             "dur": duration_ms * 1000,
+            "args": arguments,
         }
     else:
         raise ValueError(f"{event_type[0]}")
