@@ -106,7 +106,7 @@ let test_show_error_traces _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
-      "non-optional type `int` but is never initialized. Attribute `attribute` is declared on " ^
+      "type `int` but is never initialized. Attribute `attribute` is declared on " ^
       "line 3, never initialized and therefore must be `typing.Optional[int]`.";
     ];
   assert_type_errors ~show_error_traces:true

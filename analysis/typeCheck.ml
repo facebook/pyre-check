@@ -470,7 +470,6 @@ module State = struct
            match Attribute.name attribute with
            | name
              when not (Type.equal expected Type.Top ||
-                       Type.is_optional expected ||
                        Attribute.initialized attribute) ->
                let access =
                  (Expression.Access.Identifier (Statement.Define.self_identifier define)) ::

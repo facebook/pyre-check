@@ -1151,7 +1151,7 @@ let messages ~concise ~define location kind =
           Format.asprintf "Attribute `%a` is never initialized." pp_identifier name
         else
           Format.asprintf
-            "Attribute `%a` is declared in class `%a` to have non-optional type `%a` but is never \
+            "Attribute `%a` is declared in class `%a` to have type `%a` but is never \
              initialized."
             pp_identifier name
             pp_type parent

@@ -63,7 +63,7 @@ let test_check_enumeration_attributes _ =
         a: int
     |}
     [
-      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have non-optional \
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `C` to have \
        type `C` but is never initialized.";
     ];
 

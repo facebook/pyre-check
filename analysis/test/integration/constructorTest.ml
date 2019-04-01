@@ -39,7 +39,7 @@ let test_check_init _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
-      "non-optional type `int` but is never initialized.";
+      "type `int` but is never initialized.";
     ];
   assert_type_errors
     {|
@@ -48,7 +48,7 @@ let test_check_init _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
-      "non-optional type `int` but is never initialized.";
+      "type `int` but is never initialized.";
     ];
 
   assert_type_errors
@@ -111,9 +111,9 @@ let test_check_init _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
-      "non-optional type `int` but is never initialized.";
+      "type `int` but is never initialized.";
       "Uninitialized attribute [13]: Attribute `attribute_two` is declared in class `Foo` to " ^
-      "have non-optional type `str` but is never initialized.";
+      "have type `str` but is never initialized.";
     ];
 
   assert_type_errors
@@ -213,7 +213,7 @@ let test_check_init _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
-      "non-optional type `int` but is never initialized.";
+      "type `int` but is never initialized.";
     ];
 
   assert_type_errors
@@ -229,6 +229,18 @@ let test_check_init _ =
       class Foo:
         attribute: typing.Optional[int]
         def __init__(self) -> None:
+          pass
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have " ^
+      "type `typing.Optional[int]` but is never initialized."
+    ];
+  assert_type_errors
+    {|
+      class Foo:
+        attribute: typing.Optional[int]
+        def __init__(self) -> None:
+          self.attribute = None
           pass
     |}
     [];

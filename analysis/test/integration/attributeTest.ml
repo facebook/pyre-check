@@ -180,7 +180,7 @@ let test_check_attributes _ =
     [
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "non-optional type `typing.Any` but is never initialized."
+      "type `typing.Any` but is never initialized."
     ];
 
   assert_type_errors
@@ -206,7 +206,7 @@ let test_check_attributes _ =
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type " ^
       "`Any` is specified.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "non-optional type `typing.Any` but is never initialized.";
+      "type `typing.Any` but is never initialized.";
       "Incompatible return type [7]: Expected `int` but got `str`."
     ];
 
@@ -224,7 +224,7 @@ let test_check_attributes _ =
       "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type " ^
       "`typing.Union[int, str]` but type `Any` is specified.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "non-optional type `typing.Any` but is never initialized.";
+      "type `typing.Any` but is never initialized.";
     ];
 
   (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
@@ -349,7 +349,8 @@ let test_check_attributes _ =
         foo_obj.bar = 1
         return foo_obj.bar
     |}
-    [];
+    ["Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
+     "to have type `typing.Optional[int]` but is never initialized."];
 
   assert_type_errors
     {|
@@ -360,7 +361,8 @@ let test_check_attributes _ =
           return a.bar
         return 0
     |}
-    [];
+    ["Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
+     "to have type `typing.Optional[int]` but is never initialized."];
 
   assert_type_errors
     {|
@@ -372,6 +374,8 @@ let test_check_attributes _ =
         return 0
     |}
     [
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
+      "to have type `typing.Optional[int]` but is never initialized.";
       "Undefined attribute [16]: Optional type has no attribute `bar`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
     ];
@@ -442,7 +446,7 @@ let test_check_attributes _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "non-optional type `typing.Generic[Variable[_T]]` but is never initialized.";
+      "type `typing.Generic[Variable[_T]]` but is never initialized.";
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
@@ -601,7 +605,7 @@ let test_check_attributes _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
-      "non-optional type `Variable[_VALUE]` but is never initialized.";
+      "type `Variable[_VALUE]` but is never initialized.";
     ];
   assert_type_errors
     {|
@@ -617,7 +621,7 @@ let test_check_attributes _ =
     |}
     [
       "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
-      "non-optional type `Variable[_VALUE]` but is never initialized.";
+      "type `Variable[_VALUE]` but is never initialized.";
     ];
   assert_type_errors
     {|
@@ -846,7 +850,7 @@ let test_check_missing_attribute _ =
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
       "but type `Any` is specified.";
       "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have " ^
-      "non-optional type `typing.Any` but is never initialized."
+      "type `typing.Any` but is never initialized."
     ];
 
   assert_type_errors
