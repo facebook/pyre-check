@@ -554,7 +554,7 @@ def run_fixme_all(arguments: argparse.Namespace) -> None:
         )
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
@@ -652,3 +652,7 @@ if __name__ == "__main__":
         exit_code = ExitCode.FAILURE
 
     sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

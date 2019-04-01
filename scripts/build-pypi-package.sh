@@ -186,6 +186,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pyre = ${MODULE_NAME}.pyre:main',
+            'pyre-upgrade = ${MODULE_NAME}.upgrade:main'
         ],
     }
 )
