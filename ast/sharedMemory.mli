@@ -63,6 +63,8 @@ module HandleKeys: sig
 
   val add: handles: File.Handle.Set.Tree.t -> unit
 
+  val remove: handles: File.Handle.t list -> unit
+
   (* Can only be called from the master process. *)
   val clear: unit -> unit
 

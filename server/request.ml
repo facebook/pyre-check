@@ -1288,6 +1288,14 @@ let process_type_check_files
       with File.NonexistentHandle _ ->
         None
     in
+    (* Watchman only notifies Pyre that a file has been updated, we have to detect
+       removals manually and update our handle set. *)
+    let () =
+      List.filter update_environment_with ~f:(fun file -> not (Path.file_exists (File.path file)))
+      |> List.filter_map ~f:handle
+      |> (fun handles -> handles @ removed_handles)
+      |> fun handles -> Ast.SharedMemory.HandleKeys.remove ~handles;
+    in
     let handles = List.filter_map update_environment_with ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     let targets =

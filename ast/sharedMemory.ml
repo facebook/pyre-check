@@ -192,6 +192,16 @@ module HandleKeys = struct
     let handles = File.Handle.Set.Tree.union handles new_keys in
     HandleKeys.add 0 handles
 
+  let remove ~handles:old_keys =
+    let handles = get () in
+    clear ();
+    let handles =
+      old_keys
+      |> File.Handle.Set.Tree.of_list
+      |> File.Handle.Set.Tree.diff handles
+    in
+    HandleKeys.add 0 handles
+
   let normalize () =
     let handles = get () in
     clear ();

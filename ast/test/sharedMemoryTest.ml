@@ -89,9 +89,30 @@ let test_compute_hashes_to_keys _ =
     (Handles.compute_hashes_to_keys ~keys:["a.py"; "b/c.py"])
 
 
+let test_remove_handle_keys _ =
+  let open Ast.SharedMemory in
+  HandleKeys.clear ();
+  let handles paths =
+    paths
+    |> List.map  ~f:File.Handle.create
+    |> File.Handle.Set.Tree.of_list
+  in
+  HandleKeys.add ~handles:(handles ["a.py"; "b.py"; "c.py"]);
+  assert_equal
+    ~cmp:File.Handle.Set.Tree.equal
+    (HandleKeys.get ())
+    (handles ["a.py"; "b.py"; "c.py"]);
+  HandleKeys.remove ~handles:(List.map ~f:File.Handle.create ["b.py"; "nonexistent"]);
+  assert_equal
+    ~cmp:File.Handle.Set.Tree.equal
+    (HandleKeys.get ())
+    (handles ["a.py"; "c.py"])
+
+
 let () =
   "ast_shared_memory">:::[
     "normalize_handle_keys">::test_normalize_handle_keys;
     "compute_hashes_to_keys">::test_compute_hashes_to_keys;
+    "remove_handle_keys">::test_remove_handle_keys;
   ]
   |> Test.run
