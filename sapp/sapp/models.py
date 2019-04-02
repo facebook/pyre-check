@@ -872,6 +872,9 @@ class RunStatus(enum.Enum):
         return cls.failed
 
 
+CURRENT_DB_VERSION = 1
+
+
 class Run(Base):  # noqa
     """A particular run of the static analyzer.
 
@@ -941,6 +944,14 @@ class Run(Base):  # noqa
         String(length=255),
         doc=("The repository that static analysis was run on."),
         nullable=True,
+    )
+
+    db_version = Column(
+        Integer,
+        doc="Tracks under which DB version this was written (for migrations)",
+        nullable=False,
+        default=CURRENT_DB_VERSION,
+        server_default="0",
     )
 
     def get_summary(self, **kwargs):
