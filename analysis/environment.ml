@@ -14,7 +14,7 @@ open Statement
 type t = {
   class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
-  modules: Module.t Access.Table.t;
+  modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Reference.Table.t;
@@ -39,15 +39,15 @@ module type Handler = sig
   val protocols: unit -> Type.t list
 
   val register_module
-    :  qualifier: Access.t
+    :  qualifier: Reference.t
     -> local_mode: Source.mode
     -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
 
-  val is_module: Access.t -> bool
-  val module_definition: Access.t -> Module.t option
+  val is_module: Reference.t -> bool
+  val module_definition: Reference.t -> Module.t option
 
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option
@@ -270,7 +270,7 @@ let handler
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
       DependencyHandler.clear_keys_batch handles;
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
+      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
 
       SharedMem.collect `aggressive;
@@ -298,7 +298,7 @@ let handler
         Annotation.create_immutable ~global:true Type.string
         |> Node.create_with_default_location
       in
-      let global_key = Reference.create ~prefix:(Reference.from_access qualifier) in
+      let global_key = Reference.create ~prefix:qualifier in
       Hashtbl.set globals ~key:(global_key "__file__") ~data:string;
       Hashtbl.set globals ~key:(global_key "__name__") ~data:string;
       let dictionary_annotation =
@@ -361,10 +361,9 @@ let register_module
       _;
     } =
   let rec register_submodules = function
-    | [] ->
+    | None ->
         ()
-    | (_ :: tail) as reversed ->
-        let qualifier = List.rev reversed in
+    | Some qualifier ->
         if not (Handler.is_module qualifier) then
           Handler.register_module
             ~handle:None
@@ -372,17 +371,17 @@ let register_module
             ~local_mode
             ~stub:false
             ~statements:[];
-        register_submodules tail
+        register_submodules (Reference.prefix qualifier)
   in
-  let qualifier = Reference.access qualifier in
   Handler.register_module
     ~qualifier
     ~local_mode
     ~handle:(Some handle)
     ~stub:(File.Handle.is_stub handle)
     ~statements;
-  if List.length qualifier > 1 then
-    register_submodules (List.rev qualifier |> List.tl_exn)
+  if Reference.length qualifier > 1 then
+    Reference.prefix qualifier
+    |> register_submodules
 
 
 let register_class_definitions (module Handler: Handler) source =
@@ -560,14 +559,15 @@ let register_aliases (module Handler: Handler) sources =
             match annotation with
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
-                let access =
+                let reference =
                   match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Access (SimpleAccess access) ->
-                      access
+                  | Expression.Access (SimpleAccess name) ->
+                      Reference.from_access name
                   | _ ->
-                      Expression.Access.create "typing.Any"
+                      Reference.create "typing.Any"
                 in
-                if Module.from_empty_stub ~access ~module_definition:Handler.module_definition then
+                let module_definition = Handler.module_definition in
+                if Module.from_empty_stub ~reference ~module_definition then
                   sofar, Type.Any
                 else if TypeOrder.contains order (Primitive primitive) then
                   sofar, annotation
@@ -1086,14 +1086,14 @@ module Builder = struct
   let create () =
     let class_definitions = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
-    let modules = Access.Table.create () in
+    let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
 
     (* Register dummy module for `builtins` and `future.builtins`. *)
-    let builtins = Access.create "builtins" in
+    let builtins = Reference.create "builtins" in
     Hashtbl.set
       modules
       ~key:builtins
@@ -1103,7 +1103,7 @@ module Builder = struct
           ~local_mode:Ast.Source.PlaceholderStub
           ~stub:true
           []);
-    let future_builtins = Access.create "future.builtins" in
+    let future_builtins = Reference.create "future.builtins" in
     Hashtbl.set
       modules
       ~key:future_builtins

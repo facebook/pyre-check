@@ -11,7 +11,7 @@ open Statement
 type t = {
   class_definitions: Resolution.class_representation Type.Table.t;
   protocols: Type.Hash_set.t;
-  modules: Module.t Access.Table.t;
+  modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Reference.Table.t;
@@ -40,15 +40,15 @@ module type Handler = sig
   val protocols: unit -> Type.t list
 
   val register_module
-    :  qualifier: Access.t
+    :  qualifier: Reference.t
     -> local_mode: Source.mode
     -> handle: File.Handle.t option
     -> stub: bool
     -> statements: Statement.t list
     -> unit
 
-  val is_module: Access.t -> bool
-  val module_definition: Access.t -> Module.t option
+  val is_module: Reference.t -> bool
+  val module_definition: Reference.t -> Module.t option
 
   val in_class_definition_keys: Type.t -> bool
   val aliases: Type.t -> Type.t option

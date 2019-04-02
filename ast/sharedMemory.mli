@@ -7,10 +7,6 @@ open Core
 
 module HandleKey: Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
 
-module AccessKey: Memory.KeyType with
-  type t = Expression.Access.t and
-type out = Expression.Access.t
-
 module ReferenceKey: Memory.KeyType with
   type t = Reference.t and
 type out = Reference.t
@@ -82,23 +78,23 @@ end
 
 module Modules: sig
   module ModuleValue: Value.Type with type t = Module.t
-  module Modules: module type of Memory.NoCache (AccessKey) (ModuleValue)
+  module Modules: module type of Memory.NoCache (ReferenceKey) (ModuleValue)
 
-  val get: qualifier: Expression.Access.t -> Module.t option
+  val get: qualifier: Reference.t -> Module.t option
 
-  val get_exports: qualifier: Expression.Access.t -> (Expression.Access.t list) option
+  val get_exports: qualifier: Reference.t -> (Reference.t list) option
 
-  val add: qualifier: Expression.Access.t -> ast_module: Module.t -> unit
+  val add: qualifier: Reference.t -> ast_module: Module.t -> unit
 
-  val remove: qualifiers: Expression.Access.t list -> unit
+  val remove: qualifiers: Reference.t list -> unit
 
-  val exists: qualifier: Expression.Access.t -> bool
+  val exists: qualifier: Reference.t -> bool
 
   (* Exposed for testing. *)
-  val hash_of_key: Expression.Access.t -> string
-  val serialize_key: Expression.Access.t -> string
+  val hash_of_key: Reference.t -> string
+  val serialize_key: Reference.t -> string
 
-  val compute_hashes_to_keys: keys: Expression.Access.t list -> string String.Map.t
+  val compute_hashes_to_keys: keys: Reference.t list -> string String.Map.t
 
   (* Instead of writing values to shared memory, changes to shared memory are cached locally in a
      begin_transaction/end_transaction block. *)

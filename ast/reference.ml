@@ -60,7 +60,9 @@ let empty =
 
 let create ?prefix name =
   let name =
-    if String.equal name "..." then
+    if String.equal name "" then
+      []
+    else if String.equal name "..." then
       [name]
     else
       String.split ~on:'.' name
@@ -75,6 +77,10 @@ let create ?prefix name =
 
 let create_from_list names =
   names
+
+
+let as_list reference =
+  reference
 
 
 let combine prefix suffix =
@@ -221,8 +227,7 @@ let drop_prefix ~prefix reference =
 
 let prefix reference =
   match List.rev reference with
-  | []
-  | [_] ->
+  | [] ->
       None
   | _ :: prefix_reversed ->
       Some (List.rev prefix_reversed)

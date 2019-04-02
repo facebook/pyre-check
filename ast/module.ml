@@ -10,10 +10,10 @@ open Statement
 
 
 type t = {
-  aliased_exports: (Access.t * Access.t) list;
+  aliased_exports: (Reference.t * Reference.t) list;
   empty_stub: bool;
   handle: File.Handle.t option;
-  wildcard_exports: Access.t list;
+  wildcard_exports: Reference.t list;
 }
 [@@deriving compare, eq, sexp]
 
@@ -21,11 +21,12 @@ type t = {
 let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
   let aliased_exports =
     List.map aliased_exports
-      ~f:(fun (source, target) -> Format.asprintf "%a -> %a" Access.pp source Access.pp target)
+      ~f:(fun (source, target) ->
+        Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
     |> String.concat ~sep:", "
   in
   let wildcard_exports =
-    List.map wildcard_exports ~f:(Format.asprintf "%a" Access.pp)
+    List.map wildcard_exports ~f:(Format.asprintf "%a" Reference.pp)
     |> String.concat ~sep:", "
   in
   Format.fprintf format
@@ -44,13 +45,13 @@ let empty_stub { empty_stub; _ } =
   empty_stub
 
 
-let from_empty_stub ~access ~module_definition =
+let from_empty_stub ~reference ~module_definition =
   let rec is_empty_stub ~lead ~tail =
     match tail with
     | head :: tail ->
         begin
           let lead = lead @ [head] in
-          match module_definition lead with
+          match module_definition (Reference.create_from_list lead) with
           | Some definition when empty_stub definition -> true
           | Some _ -> is_empty_stub ~lead ~tail
           | _ -> false
@@ -58,7 +59,7 @@ let from_empty_stub ~access ~module_definition =
     | _ ->
         false
   in
-  is_empty_stub ~lead:[] ~tail:access
+  is_empty_stub ~lead:[] ~tail:(Reference.as_list reference)
 
 
 let handle { handle; _ } =
@@ -75,26 +76,37 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       match value with
       | Assign {
           Assign.target = { Node.value = Access (SimpleAccess ([_] as target)); _ };
-          value = { Node.value = Access (SimpleAccess value); _ };
+          value = { Node.value = Access (SimpleAccess value_access); _ };
           _;
         } ->
-          if Access.is_strict_prefix value ~prefix:qualifier &&
-             List.for_all value ~f:(function | Access.Identifier _ -> true | _ -> false) then
-            Map.set aliases ~key:(Access.sanitized target) ~data:value
+          let target = Reference.from_access target in
+          let value = Reference.from_access value_access in
+          if Reference.is_strict_prefix ~prefix:qualifier value &&
+             List.for_all value_access ~f:(function | Access.Identifier _ -> true | _ -> false) then
+            Map.set aliases ~key:(Reference.sanitized target) ~data:value
           else
             aliases
       | Import { Import.from = Some from; imports } ->
-          let from = Source.expand_relative_import ?handle ~qualifier ~from in
+          let from =
+            Source.expand_relative_import ?handle ~qualifier:(Reference.access qualifier) ~from
+            |> Reference.from_access
+          in
           let export aliases { Import.name; alias } =
-            let alias = Option.value ~default:name alias in
-            let name = if Access.show alias = "*" then from else from @ name in
+            let alias =
+              Option.value alias ~default:name
+              |> Reference.from_access
+            in
+            let name =
+              let name = Reference.from_access name in
+              if Reference.show alias = "*" then from else Reference.combine from name
+            in
             (* The problem this bit solves is that we may generate an alias prefix <- prefix.rest
                after qualification, which would cause an infinite loop when folding over
                prefix.attribute. To avoid this, drop the prefix whenever we see that the
                qualified alias would cause a loop. *)
             let source, target =
-              if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
-                alias, Access.drop_prefix ~prefix:qualifier name
+              if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then
+                alias, Reference.drop_prefix ~prefix:qualifier name
               else
                 alias, name
             in
@@ -103,10 +115,14 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
           let export aliases { Import.name; alias } =
-            let alias = Option.value ~default:name alias in
+            let alias =
+              Option.value alias ~default:name
+              |> Reference.from_access
+            in
+            let name = Reference.from_access name in
             let source, target =
-              if Access.is_strict_prefix ~prefix:(qualifier @ alias) name then
-                alias, Access.drop_prefix ~prefix:qualifier name
+              if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then
+                alias, Reference.drop_prefix ~prefix:qualifier name
               else
                 alias, name
             in
@@ -116,7 +132,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       | _ ->
           aliases
     in
-    List.fold statements ~f:aliased_exports ~init:Access.Map.empty
+    List.fold statements ~f:aliased_exports ~init:Reference.Map.empty
     |> Map.to_alist
   in
   let toplevel_public, dunder_all =
@@ -124,10 +140,10 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       let filter_private =
         let is_public name =
           let dequalified =
-            Access.drop_prefix ~prefix:qualifier name
-            |> Access.delocalize_qualified
+            Reference.drop_prefix ~prefix:qualifier name
+            |> Reference.sanitize_qualified
           in
-          if not (String.is_prefix ~prefix:"_" (Access.show dequalified)) then
+          if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
             Some dequalified
           else
             None
@@ -141,22 +157,26 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           _;
         }
         when Access.equal (Access.sanitized target) (Access.create "__all__") ->
-          let to_access = function
+          let to_reference = function
             | { Node.value = Expression.String { value = name; _ }; _ } ->
-                Access.create name
-                |> List.last
-                >>| fun access -> [access]
+                Reference.create name
+                |> Reference.last
+                |> (fun last -> if last = "" then None else Some last)
+                >>| Reference.create
             | _ -> None
           in
-          public_values, Some (List.filter_map ~f:to_access names)
+          public_values, Some (List.filter_map ~f:to_reference names)
       | Assign { Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ }; _ } ->
-          public_values @ (filter_private [target]), dunder_all
+          public_values @ (filter_private [target |> Reference.from_access]), dunder_all
       | Class { Record.Class.name; _ } ->
-          public_values @ (filter_private [name |> Reference.access]), dunder_all
+          public_values @ (filter_private [name]), dunder_all
       | Define { Define.name; _ } ->
-          public_values @ (filter_private [name |> Reference.access]), dunder_all
+          public_values @ (filter_private [name]), dunder_all
       | Import { Import.imports; _ } ->
-          let get_import_name { Import.alias; name } = Option.value alias ~default:name in
+          let get_import_name { Import.alias; name } =
+            Option.value alias ~default:name
+            |> Reference.from_access
+          in
           public_values @ (filter_private (List.map imports ~f:get_import_name)), dunder_all
       | _ ->
           public_values, dunder_all
@@ -172,12 +192,12 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
 
 
 let aliased_export { aliased_exports; _ } access =
-  Access.Map.of_alist aliased_exports
+  Reference.Map.of_alist aliased_exports
   |> (function
       | `Ok exports -> Some exports
       | _ -> None)
   >>= (fun exports -> Map.find exports access)
 
 
-let in_wildcard_exports { wildcard_exports; _ } access =
-  List.exists ~f:(Expression.Access.equal access) wildcard_exports
+let in_wildcard_exports { wildcard_exports; _ } reference =
+  List.exists ~f:(Reference.equal reference) wildcard_exports

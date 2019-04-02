@@ -7,31 +7,30 @@ open Core
 open OUnit2
 
 open Ast
-open Statement
 
 open Test
 
 
 let test_empty_stub _ =
   assert_true
-    (Module.create ~qualifier:[] ~local_mode:Source.PlaceholderStub ~stub:true []
+    (Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:true []
      |> Module.empty_stub);
   assert_false
-    (Module.create ~qualifier:[] ~local_mode:Source.PlaceholderStub ~stub:false []
+    (Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:false []
      |> Module.empty_stub);
   assert_false
-    (Module.create ~qualifier:[] ~local_mode:Source.Default ~stub:true []
+    (Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
      |> Module.empty_stub)
 
 
 let test_handle _ =
   assert_equal
-    (Module.create ~qualifier:[] ~local_mode:Source.Default ~stub:true []
+    (Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
      |> Module.handle)
     None;
   assert_equal
     (Module.create
-       ~qualifier:[]
+       ~qualifier:Reference.empty
        ~local_mode:Source.Default
        ~handle:(File.Handle.create "voodoo.py")
        ~stub:false
@@ -41,17 +40,17 @@ let test_handle _ =
 
 
 let test_aliased_export _ =
-  let assert_aliased_exports ?(qualifier = []) ?handle source aliased_exports =
+  let assert_aliased_exports ?(qualifier = Reference.empty) ?handle source aliased_exports =
     let module_definition =
       let { Source.statements; _ } = parse source in
       Module.create ?handle ~qualifier ~local_mode:Source.Default ~stub:false statements
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
-        !+source
+        Reference.create source
         |> Module.aliased_export module_definition
-        |> (fun value -> Option.value value ~default:[Access.Identifier "$not_exported"])
-        |> Access.show
+        |> (fun value -> Option.value value ~default:(Reference.create "$not_exported"))
+        |> Reference.show
       in
       assert_equal ~printer:Fn.id expected_target actual_target
     in
@@ -88,32 +87,32 @@ let test_aliased_export _ =
     ["*", "some.module"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.module")
+    ~qualifier:(Reference.create "some.module")
     "from . import path as other"
     ["other", "some.path"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.long.module")
+    ~qualifier:(Reference.create "some.long.module")
     "from .relative import path as other"
     ["other", "some.long.relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.long.module")
+    ~qualifier:(Reference.create "some.long.module")
     "from ..relative import path as other"
     ["other", "some.relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.long.module")
+    ~qualifier:(Reference.create "some.long.module")
     "from ...relative import path as other"
     ["other", "relative.path"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.module")
+    ~qualifier:(Reference.create "some.module")
     "from some.module.derp import path as other"
     ["other", "some.module.derp.path"];
 
   assert_aliased_exports
-    ~qualifier:(!+"some.module")
+    ~qualifier:(Reference.create "some.module")
     "from some.module.other import other as other"
     ["other", "other.other"];
 
@@ -131,7 +130,7 @@ let test_aliased_export _ =
 
   (* Exports through assignments. *)
   assert_aliased_exports
-    ~qualifier:(!+"requests")
+    ~qualifier:(Reference.create "requests")
     ~handle:(File.Handle.create "requests/__init__.pyi")
     {|
       from . import api
@@ -151,26 +150,26 @@ let test_wildcard_exports _ =
     let { Source.statements; _ } = parse source in
     Module.create ~qualifier ~local_mode:Source.Default ~stub:false statements
   in
-  let assert_wildcard_exports ?(qualifier = []) source expected =
+  let assert_wildcard_exports ?(qualifier = Reference.empty) source expected =
     assert_equal
-      ~cmp:(List.equal ~equal:Access.equal)
+      ~cmp:(List.equal ~equal:Reference.equal)
       ~printer:(fun expression_list ->
-          List.map expression_list ~f:(Access.show)
+          List.map expression_list ~f:(Reference.show)
           |> String.concat ~sep:", ")
-      (List.map expected ~f:Access.create)
+      (List.map expected ~f:Reference.create)
       (module_from_source ~source ~qualifier |> Module.wildcard_exports)
   in
-  let assert_in_wildcard_exports ?(qualifier = []) source access expected_bool =
+  let assert_in_wildcard_exports ?(qualifier = Reference.empty) source reference expected_bool =
     if expected_bool then
       assert_true
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (!+access))
+           (Reference.create reference))
     else
       assert_false
         (Module.in_wildcard_exports
            (module_from_source ~source ~qualifier)
-           (!+access))
+           (Reference.create reference))
   in
   assert_wildcard_exports
     {|
@@ -216,7 +215,7 @@ let test_wildcard_exports _ =
     [];
 
   assert_wildcard_exports
-    ~qualifier:(!+"_underscore")
+    ~qualifier:(Reference.create "_underscore")
     {|
       def foo(): ...
       variable = ...
@@ -225,7 +224,7 @@ let test_wildcard_exports _ =
     ["foo"; "variable"; "Bar"];
 
   assert_wildcard_exports
-    ~qualifier:(!+"qualified")
+    ~qualifier:(Reference.create "qualified")
     {|
       def qualified.foo(): ...
       qualified.variable = ...

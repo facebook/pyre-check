@@ -41,7 +41,7 @@ type t = {
   aliases: Type.t -> Type.t option;
 
   global: Reference.t -> global option;
-  module_definition: Access.t -> Module.t option;
+  module_definition: Reference.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
   class_representation: Type.t -> class_representation option;
   constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
@@ -231,7 +231,7 @@ let function_definitions resolution access =
           match tail with
           | head :: tail ->
               let new_lead = lead @ [head] in
-              if Option.is_none (module_definition resolution new_lead) then
+              if Option.is_none (module_definition resolution (Reference.from_access new_lead)) then
                 lead
               else
                 qualifier ~lead:new_lead ~tail
@@ -402,9 +402,8 @@ let parse_annotation
   let constraints = function
     | Type.Primitive name ->
         let originates_from_empty_stub =
-          name
-          |> Access.create
-          |> fun access -> Module.from_empty_stub ~access ~module_definition
+          Reference.create name
+          |> fun reference -> Module.from_empty_stub ~reference ~module_definition
         in
         if originates_from_empty_stub then
           Some Type.Any

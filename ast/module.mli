@@ -4,14 +4,11 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-open Statement
-
-
 type t
 [@@deriving compare, eq, sexp, show]
 
 val create
-  :  qualifier: Access.t
+  :  qualifier: Reference.t
   -> local_mode: Source.mode
   -> ?handle: File.Handle.t
   -> stub: bool
@@ -19,12 +16,12 @@ val create
   -> t
 
 val empty_stub: t -> bool
-val from_empty_stub: access: Access.t -> module_definition: (Access.t -> t option) -> bool
+val from_empty_stub: reference: Reference.t -> module_definition: (Reference.t -> t option) -> bool
 
 val handle: t -> File.Handle.t option
 
-val wildcard_exports: t -> Access.t list
+val wildcard_exports: t -> Reference.t list
 
-val aliased_export: t -> Access.t -> Access.t option
+val aliased_export: t -> Reference.t -> Reference.t option
 
-val in_wildcard_exports: t -> Access.t -> bool
+val in_wildcard_exports: t -> Reference.t -> bool

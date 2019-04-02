@@ -143,7 +143,7 @@ let test_prefix _ =
       (prefix >>| Reference.create)
       (Reference.prefix (Reference.create reference))
   in
-  assert_prefix "a" None;
+  assert_prefix "a" (Some "");
   assert_prefix "a.b" (Some "a");
   assert_prefix "a.b.c" (Some "a.b");
 

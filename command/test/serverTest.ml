@@ -1343,10 +1343,10 @@ let test_decode_serialized_ocaml_values context =
                 undecodable_keys = [];
               })));
   assert_decode
-    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key !+"handle")
+    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle"))
     ~value:(
       Ast.Module.create
-        ~qualifier:(!+"handle")
+        ~qualifier:((Reference.create "handle"))
         ~local_mode:Ast.Source.Default
         ~stub:false
         [Test.parse_single_statement "x = 2"])
@@ -1358,13 +1358,13 @@ let test_decode_serialized_ocaml_values context =
                 TypeQuery.decoded = [
                   {
                     TypeQuery.serialized_key =
-                      Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
+                      Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle");
                     kind = "Module";
                     actual_key = "handle";
                     actual_value =
                       Some
                         "((aliased_exports())(empty_stub false)(handle())\
-                         (wildcard_exports(((Identifier x)))))";
+                         (wildcard_exports((x))))";
                   };
                 ];
                 undecodable_keys = [];

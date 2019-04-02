@@ -8,7 +8,6 @@ open OUnit2
 open Test
 
 open Ast
-open Expression
 
 open Pyre
 open Path.AppendOperator
@@ -367,7 +366,6 @@ let test_register_modules _ =
       File.handle ~configuration file
       |> Ast.SharedMemory.Sources.get
       >>| (fun { Source.qualifier; _ } -> qualifier)
-      >>| Reference.access
     in
     let file =
       File.create
@@ -405,11 +403,11 @@ let test_register_modules _ =
 
     let assert_exports ~qualifier =
       assert_equal
-        ~cmp:(List.equal ~equal:Access.equal)
+        ~cmp:(List.equal ~equal:Reference.equal)
         ~printer:(fun expression_list ->
-            List.map ~f:(Access.show) expression_list
+            List.map ~f:(Reference.show) expression_list
             |> String.concat ~sep:", ")
-        (List.map ~f:Access.create expected_exports)
+        (List.map ~f:Reference.create expected_exports)
         (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
     in
 

@@ -11,7 +11,6 @@ open Analysis
 open Service.EnvironmentSharedMemory
 
 open OUnit2
-open Test
 
 module Handler = Service.Environment.SharedHandler
 module DependencyHandler = Handler.DependencyHandler
@@ -101,7 +100,7 @@ let test_register_modules _ =
   |> Service.EnvironmentSharedMemory.Globals.remove_batch;
 
   Handler.register_module
-    ~qualifier:(!+"a")
+    ~qualifier:(Reference.create "a")
     ~local_mode:Ast.Source.Default
     ~handle:None
     ~stub:false

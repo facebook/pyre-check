@@ -1309,10 +1309,11 @@ let expand_wildcard_imports ~force source =
         | Import { Import.from = Some from; imports }
           when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
             let expanded_import =
-              match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
+              let qualifier = Reference.from_access from in
+              match Ast.SharedMemory.Modules.get_exports ~qualifier with
               | Some exports ->
                   exports
-                  |> List.map ~f:(fun name -> { Import.name; alias = None })
+                  |> List.map ~f:(fun name -> { Import.name = Reference.access name; alias = None })
                   |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
                   |> (fun value -> { statement with Node.value })
               | None ->

@@ -100,8 +100,7 @@ let build
   let sources =
     (* If a stub matching a handle's qualifier already exists, we shouldn't override. *)
     let should_keep { Source.handle; qualifier; _ } =
-      Reference.access qualifier
-      |> Handler.module_definition
+      Handler.module_definition qualifier
       >>= Module.handle
       >>| File.Handle.equal handle
       |> Option.value ~default:true
@@ -204,7 +203,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       Annotation.create_immutable ~global:true Type.string
       |> Node.create_with_default_location
     in
-    let global_key = Reference.create ~prefix:(Reference.from_access qualifier) in
+    let global_key = Reference.create ~prefix:qualifier in
     Globals.write_through (global_key "__file__") string;
     Globals.write_through (global_key "__name__") string;
     let dictionary_annotation =
@@ -488,7 +487,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> purge_dependents;
 
     DependencyHandler.clear_keys_batch handles;
-    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access) handles
+    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers;
 
     if debug then

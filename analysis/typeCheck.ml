@@ -145,12 +145,11 @@ module AccessState = struct
           let rec resolve_exports ~lead ~tail =
             match tail with
             | head :: tail ->
-                Resolution.module_definition resolution lead
+                Resolution.module_definition resolution (Reference.from_access lead)
                 >>| (fun definition ->
-                    match
-                      Module.aliased_export definition [head] with
+                    match Module.aliased_export definition (Reference.from_access [head]) with
                     | Some export ->
-                        export @ tail
+                        (Reference.access export) @ tail
                     | _ ->
                         resolve_exports ~lead:(lead @ [head]) ~tail)
                 |> Option.value ~default:access
@@ -171,7 +170,9 @@ module AccessState = struct
     (* Sanity check that resolved exports map to existing modules. *)
     let exported_is_valid_module =
       List.hd exported
-      >>| (fun head -> Resolution.module_definition resolution [head] |> Option.is_some)
+      >>| (fun head ->
+            Resolution.module_definition resolution (Reference.from_access [head])
+            |> Option.is_some)
       |> Option.value ~default:false
     in
     if not (Access.equal exported access) && not exported_is_valid_module then
@@ -1169,7 +1170,12 @@ module State = struct
                           | head :: tail ->
                               begin
                                 let lead = lead @ [head] in
-                                match Resolution.module_definition resolution lead with
+                                let definition =
+                                  Resolution.module_definition
+                                    resolution
+                                    (Reference.from_access lead)
+                                in
+                                match definition with
                                 | Some definition when Module.empty_stub definition -> true
                                 | _ -> suppressed lead tail
                               end
@@ -1186,7 +1192,12 @@ module State = struct
                         abort state ~lead ()
                   | None ->
                       begin
-                        match Resolution.module_definition resolution lead with
+                        let definition =
+                          Resolution.module_definition
+                            resolution
+                            (Reference.from_access lead)
+                        in
+                        match definition with
                         | Some definition when Module.empty_stub definition ->
                             abort state ~lead ()
                         | Some _ ->

@@ -84,7 +84,6 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
               metadata = { Source.Metadata.local_mode; _ };
               _;
             } =
-          let qualifier = Reference.access qualifier in
           Module.create
             ~qualifier
             ~local_mode
@@ -168,7 +167,6 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
     let get_qualifier file =
       File.handle ~configuration file
       |> (fun handle -> Source.qualifier ~handle)
-      |> Reference.access
     in
     List.map files ~f:get_qualifier
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers

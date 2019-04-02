@@ -252,7 +252,7 @@ let test_register_aliases _ =
           } as source) =
         let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
         Handler.register_module
-          ~qualifier:(Reference.access qualifier)
+          ~qualifier
           ~local_mode
           ~handle:(Some handle)
           ~stub
@@ -1387,16 +1387,16 @@ let test_modules _ =
   in
   let module Handler = (val environment) in
 
-  assert_is_some (Handler.module_definition (!+"wingus"));
-  assert_is_some (Handler.module_definition (!+"dingus"));
-  assert_is_none (Handler.module_definition (!+"zap"));
+  assert_is_some (Handler.module_definition (Reference.create "wingus"));
+  assert_is_some (Handler.module_definition (Reference.create "dingus"));
+  assert_is_none (Handler.module_definition (Reference.create "zap"));
 
-  assert_is_some (Handler.module_definition (!+"os"));
-  assert_is_some (Handler.module_definition (!+"os.path"));
+  assert_is_some (Handler.module_definition (Reference.create "os"));
+  assert_is_some (Handler.module_definition (Reference.create "os.path"));
 
-  assert_true (Handler.is_module (!+"wingus"));
-  assert_true (Handler.is_module (!+"dingus"));
-  assert_false (Handler.is_module (!+"zap"));
+  assert_true (Handler.is_module (Reference.create "wingus"));
+  assert_true (Handler.is_module (Reference.create "dingus"));
+  assert_false (Handler.is_module (Reference.create "zap"));
   ()
 
 

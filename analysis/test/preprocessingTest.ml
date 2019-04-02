@@ -1412,7 +1412,6 @@ let test_expand_wildcard_imports _ =
         File.handle ~configuration file
         |> Ast.SharedMemory.Sources.get
         >>| (fun { Source.qualifier; _ } -> qualifier)
-        >>| Reference.access
       in
       Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
       Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);

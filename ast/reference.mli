@@ -15,7 +15,8 @@ include Hashable with type t := t
 
 val empty: t
 val create: ?prefix: t -> string -> t
-val create_from_list: string list -> t
+val create_from_list: Identifier.t list -> t
+val as_list: t -> Identifier.t list
 val combine: t -> t -> t
 
 val from_access: Expression.Access.t -> t

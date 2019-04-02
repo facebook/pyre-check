@@ -34,7 +34,7 @@ val create
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> aliases: (Type.t -> Type.t option)
   -> global: (Reference.t -> global option)
-  -> module_definition: (Access.t -> Module.t option)
+  -> module_definition: (Reference.t -> Module.t option)
   -> class_definition: (Type.t -> (Class.t Node.t) option)
   -> class_representation: (Type.t -> class_representation option)
   -> constructor: (instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t)
@@ -71,7 +71,7 @@ val resolve_mutable_literals
 
 val global: t -> Reference.t -> global option
 
-val module_definition: t -> Access.t -> Module.t option
+val module_definition: t -> Reference.t -> Module.t option
 val class_definition: t -> Type.t -> (Class.t Node.t) option
 val class_representation: t -> Type.t -> class_representation option
 

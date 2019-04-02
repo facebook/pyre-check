@@ -16,8 +16,8 @@ let global_prefix ~resolution access =
     match tail with
     | (Access.Identifier _ as identifier) :: new_tail ->
         let new_lead = lead @ [identifier] in
-        let access = lead in
-        if Resolution.module_definition resolution access |> Option.is_some then
+        let reference = Reference.from_access lead in
+        if Resolution.module_definition resolution reference |> Option.is_some then
           module_prefix ~lead:new_lead ~tail:new_tail
         else
           lead, tail

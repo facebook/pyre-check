@@ -27,17 +27,6 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-
-module AccessKey = struct
-  type t = Expression.Access.t
-  let to_string = Expression.Access.show
-  let compare = Expression.Access.compare
-
-  type out = t
-  let from_string = Expression.Access.create
-end
-
-
 module ReferenceKey = struct
   type t = Reference.t
   let to_string = Reference.show
@@ -230,14 +219,14 @@ module Modules = struct
     let description = "Module"
   end
 
-  module Modules = SharedMemory.WithCache (AccessKey) (ModuleValue)
+  module Modules = SharedMemory.WithCache (ReferenceKey) (ModuleValue)
 
   let add ~qualifier ~ast_module =
     Modules.write_through qualifier ast_module
 
   let remove ~qualifiers =
-    let accesses = List.filter ~f:Modules.mem qualifiers in
-    Modules.remove_batch (Modules.KeySet.of_list accesses)
+    let references = List.filter ~f:Modules.mem qualifiers in
+    Modules.remove_batch (Modules.KeySet.of_list references)
 
   let get ~qualifier =
     Modules.get qualifier

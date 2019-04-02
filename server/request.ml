@@ -485,10 +485,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Modules.compute_hashes_to_keys
-                ~keys:(
-                  List.map
-                    ~f:(fun handle -> Ast.Source.qualifier ~handle |> Reference.access)
-                    handles))
+                ~keys:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
           |> extend_map
             ~new_map:(
               Ast.SharedMemory.Handles.compute_hashes_to_keys
@@ -751,7 +748,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = Ast.SharedMemory.Modules.ModuleValue.description;
-                        actual_key = Expression.Access.show key;
+                        actual_key = Reference.show key;
                         actual_value =
                           value
                           >>| Module.sexp_of_t
@@ -886,7 +883,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
     | TypeQuery.PathOfModule module_access ->
-        Handler.module_definition module_access
+        Handler.module_definition (Reference.from_access module_access)
         >>= Module.handle
         >>= File.Handle.to_path ~configuration
         >>| Path.absolute
@@ -1090,13 +1087,13 @@ let compute_dependencies
     (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
        them to analyze possible dependencies. *)
     let old_exports =
-      let old_exports = Expression.Access.Table.create () in
+      let old_exports = Reference.Table.create () in
       let store_exports qualifier =
         Ast.SharedMemory.Modules.get_exports ~qualifier
         >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
         |> ignore
       in
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle |> Reference.access)
+      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:store_exports;
       old_exports
     in
@@ -1155,11 +1152,12 @@ let compute_dependencies
               begin
                 let check_against_imports ~exports =
                   let import_names =
-                    List.map imports ~f:(fun { Import.name; _ } -> name )
+                    List.map imports ~f:(fun { Import.name; _ } -> Reference.from_access name )
                   in
-                  List.equal ~equal:Access.equal import_names exports
+                  List.equal ~equal:Reference.equal import_names exports
                 in
 
+                let from = Reference.from_access from in
                 match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
                 | Some exports ->
                     check_against_imports ~exports
@@ -1221,8 +1219,7 @@ let process_type_check_files
           updated, removed
       | handle ->
           begin
-            let qualifier = Source.qualifier ~handle |> Reference.access in
-            match Ast.SharedMemory.Modules.get ~qualifier with
+            match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
             | Some existing ->
                 let existing_handle =
                   Module.handle existing
@@ -1319,7 +1316,6 @@ let process_type_check_files
       let keep file =
         (handle file
          >>= fun handle -> Some (Source.qualifier ~handle)
-         >>| Reference.access
          >>= Handler.module_definition
          >>= Module.handle
          >>| (fun existing_handle -> File.Handle.equal handle existing_handle))
