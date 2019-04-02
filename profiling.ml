@@ -46,3 +46,11 @@ let log_event event =
   Configuration.Analysis.get_global ()
   >>= (fun { Configuration.Analysis.profiling_output; _ } -> profiling_output)
   |> Option.iter ~f:log_to_path
+
+
+let track_duration_event ?(tags = []) ~f name =
+  let timer = Timer.start () in
+  let result = f () in
+  let duration = Timer.stop_in_ms timer in
+  log_event (Event.create name ~tags ~event_type:(Duration duration));
+  result

@@ -22,3 +22,5 @@ module Event : sig
 end
 
 val log_event: Event.t -> unit
+
+val track_duration_event: ?tags:(string * string) list -> f: (unit -> 'a) -> string -> 'a
