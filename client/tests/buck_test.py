@@ -231,3 +231,8 @@ class BuckTest(unittest.TestCase):
                     "/BUCK_ROOT/src/python/package.py": "com/companyname/package.py",
                 },
             )
+
+        with patch.object(
+            subprocess, "check_output", side_effect=subprocess.TimeoutExpired("cmd", 30)
+        ):
+            self.assertRaises(buck.BuckException, buck.resolve_relative_paths, [])

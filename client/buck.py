@@ -191,11 +191,15 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
     ]
     try:
         output = json.loads(
-            subprocess.check_output(command, timeout=10, stderr=subprocess.DEVNULL)
+            subprocess.check_output(command, timeout=30, stderr=subprocess.DEVNULL)
             .decode()
             .strip()
         )
-    except (subprocess.CalledProcessError, json.decoder.JSONDecodeError) as error:
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        json.decoder.JSONDecodeError,
+    ) as error:
         raise BuckException("Querying buck for relative paths failed: {}".format(error))
     # TODO(T40580762) we should use the owner name to determine which files are a
     # part of the pyre project
