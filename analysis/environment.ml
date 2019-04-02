@@ -503,7 +503,16 @@ let register_aliases (module Handler: Handler) sources =
             body
             ~init:aliases
             ~f:(visit_statement ~qualifier:name ~in_class_body:true)
-      | Import { Import.from = Some from; imports } ->
+      | Import {
+          Import.from = Some _;
+          imports = [{ Import.name = [Access.Identifier "*"]; _ }];
+        } ->
+          (* Don't register x.* as an alias when a user writes `from x import *`. *)
+          aliases
+      | Import {
+          Import.from = Some from;
+          imports;
+        } ->
           let from =
             match Access.show from with
             | "future.builtins"

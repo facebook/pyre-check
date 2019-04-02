@@ -447,7 +447,22 @@ let test_register_aliases _ =
       "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
       "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
     ];
-
+  assert_resolved
+    [
+      parse
+        ~qualifier:(Reference.create "t")
+        {|
+          from typing import Dict
+        |};
+      parse
+        ~qualifier:(Reference.create "x")
+        {|
+          from t import *
+        |};
+    ]
+    [
+      "x.Dict", "x.Dict";
+    ];
   assert_resolved
     [
       parse
