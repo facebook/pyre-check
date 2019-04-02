@@ -152,9 +152,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             status=IssueStatus.UNCATEGORIZED,
             first_seen=run.date,
             run_id=run.id,
-            json=self.summary["compress"](
-                json.dumps(entry.get("json", {})).encode("utf-8")
-            ),
         )
 
         self.graph.add_issue(issue)

@@ -138,7 +138,6 @@ def analyze(
     # Store all options in the right places
     summary_blob = {
         "run_kind": run_kind,
-        "compress": lambda x: x,
         "repository": ctx.repository,
         "branch": branch,
         "commit_hash": commit_hash,

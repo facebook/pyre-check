@@ -66,7 +66,6 @@ class TestSappCli(TestCase):
         self.assertEqual(summary_blob["commit_hash"], "abc123")
         self.assertEqual(summary_blob["old_linemap_file"][:4], "/tmp")
         self.assertEqual(summary_blob["store_unused_models"], True)
-        self.assertTrue(callable(summary_blob["compress"]))
 
     def test_base_summary_blob(self, mock_analysis_output):
         with patch(PIPELINE_RUN, self.verify_base_summary_blob):
