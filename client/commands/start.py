@@ -56,9 +56,12 @@ class Start(Reporting):
             # a message when the lock is being waited on.
             try:
                 with filesystem.acquire_lock(".pyre/client.lock", blocking):
-                    monitor.Monitor(
-                        self._arguments, self._configuration, self._analysis_directory
-                    ).daemonize()
+                    if self._arguments.local_configuration:
+                        monitor.Monitor(
+                            self._arguments,
+                            self._configuration,
+                            self._analysis_directory,
+                        ).daemonize()
                     # This unsafe call is OK due to the client lock always
                     # being acquired before starting a server - no server can
                     # spawn in the interim which would cause a race.

@@ -8,7 +8,7 @@ import os
 from typing import Any, Dict, List
 
 from .commands import stop
-from .filesystem import AnalysisDirectory
+from .filesystem import AnalysisDirectory, is_parent
 from .watchman_subscriber import Subscription, WatchmanSubscriber
 
 
@@ -23,7 +23,6 @@ class Monitor(WatchmanSubscriber):
         self.arguments = arguments
         self.configuration = configuration
         self.analysis_directory = analysis_directory
-        self.analysis_directory_root = analysis_directory.get_root()
 
     @property
     def _name(self) -> str:
@@ -51,5 +50,16 @@ class Monitor(WatchmanSubscriber):
             "Update to local configuration at %s",
             os.path.join(response["root"], ",".join(response["files"])),
         )
-        LOG.info("Stopping running pyre server.")
-        stop.Stop(self.arguments, self.configuration, self.analysis_directory).run()
+        absolute_files = [
+            os.path.join(response["root"], file) for file in response["files"]
+        ]
+        if any(
+            is_parent(self.arguments.local_configuration, file)
+            for file in absolute_files
+        ):
+            LOG.info("Stopping running pyre server.")
+            stop.Stop(self.arguments, self.configuration, self.analysis_directory).run()
+        else:
+            LOG.info(
+                "None of these paths correspond to the current local configuration."
+            )

@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from unittest.mock import call, patch
 
 from .. import monitor, watchman_subscriber
+from ..commands import stop
 from ..filesystem import AnalysisDirectory
 from .infer_test import mock_arguments, mock_configuration
 
@@ -62,3 +63,32 @@ class MonitorTest(unittest.TestCase):
                         )._run()
         except ImportError:
             pass
+
+    def test_handle_response(self) -> None:
+        arguments = mock_arguments()
+        arguments.local_configuration = "/ROOT/a/b/c"
+        configuration = mock_configuration()
+        analysis_directory = AnalysisDirectory("/tmp")
+        monitor_instance = monitor.Monitor(arguments, configuration, analysis_directory)
+
+        with patch.object(stop, "Stop") as stop_command:
+            monitor_instance._handle_response(
+                {"files": ["a/b/c/.pyre_configuration.local"], "root": "/ROOT"}
+            )
+            stop_command.assert_called_once_with(
+                arguments, configuration, analysis_directory
+            )
+
+        with patch.object(stop, "Stop") as stop_command:
+            monitor_instance._handle_response(
+                {
+                    "files": [
+                        "a/b/.pyre_configuration.local",
+                        "c/d/.pyre_configuration.local",
+                        "c/a/b/c/.pyre_configuration.local",
+                        "a/.pyre_configuration.local",
+                    ],
+                    "root": "/ROOT",
+                }
+            )
+            stop_command.assert_not_called()
