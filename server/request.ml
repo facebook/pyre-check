@@ -1306,6 +1306,7 @@ let process_type_check_files
     Handler.purge ~debug (handles @ removed_handles);
     update_environment_with
     |> List.iter ~f:(LookupCache.evict ~state ~configuration);
+    SharedMem.collect `aggressive;
 
     let stubs, sources =
       let is_stub file =
