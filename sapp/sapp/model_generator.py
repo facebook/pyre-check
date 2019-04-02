@@ -457,7 +457,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                     TraceFrameAnnotation.Record(
                         id=DBID(),
                         trace_frame_id=frame_id,
-                        trace_frame_id2=frame_id,  # TODO: Deprecate id2 field
                         location=SourceLocation(
                             location["line"], location["start"], location["end"]
                         ),

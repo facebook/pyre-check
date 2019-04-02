@@ -8,6 +8,7 @@ from .db import DB
 from .decorators import log_time
 from .models import (
     Issue,
+    IssueInstanceSharedTextAssoc,
     PrimaryKeyGenerator,
     Run,
     RunStatus,

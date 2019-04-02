@@ -482,80 +482,6 @@ class IssueInstanceTraceFrameAssoc(Base, PrepareMixin, RecordMixin):  # noqa
         )
 
 
-class IssueInstancePostconditionAssoc(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "issue_instance_postcondition_assoc"
-
-    issue_instance_id = Column(
-        "issue_instance_id", BIGDBIDType, primary_key=True, nullable=False
-    )
-
-    postcondition_id = Column(
-        "postcondition_id", BIGDBIDType, primary_key=True, nullable=False, index=True
-    )
-
-    issue_instance = relationship(
-        "IssueInstance",
-        primaryjoin=(
-            "IssueInstancePostconditionAssoc.issue_instance_id == "
-            "foreign(IssueInstance.id)"
-        ),
-        uselist=False,
-    )
-
-    postcondition = relationship(
-        "Postcondition",
-        primaryjoin=(
-            "IssueInstancePostconditionAssoc.postcondition_id == "
-            "foreign(Postcondition.id)"
-        ),
-        uselist=False,
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_assocs(
-            session, items, cls.issue_instance_id, cls.postcondition_id
-        )
-
-
-class IssueInstancePreconditionAssoc(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "issue_instance_precondition_assoc"
-
-    issue_instance_id = Column(
-        "issue_instance_id", BIGDBIDType, primary_key=True, nullable=False
-    )
-
-    precondition_id = Column(
-        "precondition_id", BIGDBIDType, nullable=False, primary_key=True, index=True
-    )
-
-    issue_instance = relationship(
-        "IssueInstance",
-        primaryjoin=(
-            "IssueInstancePreconditionAssoc.issue_instance_id == "
-            "foreign(IssueInstance.id)"
-        ),
-        uselist=False,
-    )
-
-    precondition = relationship(
-        "Precondition",
-        primaryjoin=(
-            "IssueInstancePreconditionAssoc.precondition_id == "
-            "foreign(Precondition.id)"
-        ),
-        uselist=False,
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_assocs(
-            session, items, cls.issue_instance_id, cls.precondition_id
-        )
-
-
 class SharedTextKind(enum.Enum):
     feature = enum.auto()
     message = enum.auto()
@@ -747,30 +673,6 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         "SharedText",
         primaryjoin="foreign(SharedText.id) == IssueInstance.message_id",
         uselist=False,
-    )
-
-    preconditions_deprecated = association_proxy(
-        "issue_instance_precondition_deprecated", "precondition"
-    )
-
-    issue_instance_precondition_deprecated = relationship(
-        "IssueInstancePreconditionAssoc",
-        primaryjoin=(
-            "IssueInstance.id == "
-            "foreign(IssueInstancePreconditionAssoc.issue_instance_id)"
-        ),
-    )
-
-    postconditions_deprecated = association_proxy(
-        "issue_instance_postcondition_deprecated", "postcondition"
-    )
-
-    issue_instance_postcondition_deprecated = relationship(
-        "IssueInstancePostconditionAssoc",
-        primaryjoin=(
-            "IssueInstance.id == "
-            "foreign(IssueInstancePostconditionAssoc.issue_instance_id)"
-        ),
     )
 
     trace_frames = association_proxy("issue_instance_trace_frame", "trace_frame")
@@ -1146,110 +1048,6 @@ class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
         return cls._merge_assocs(session, items, cls.trace_frame_id, cls.leaf_id)
 
 
-class Sink(Base, PrepareMixin, RecordMixin):  # noqa
-    """Defines a sink for the analysis"""
-
-    __tablename__ = "sinks"
-
-    id: DBID = Column(BIGDBIDType, primary_key=True)
-
-    name: str = Column(CaseSensitiveStringType(), nullable=False, unique=True)
-
-    preconditions = association_proxy("sink_precondition", "precondition")
-
-    sink_precondition = relationship(
-        "PreconditionSinkAssoc",
-        primaryjoin="Sink.id == foreign(PreconditionSinkAssoc.sink_id)",
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_by_key(session, items, cls.name)
-
-
-class Source(Base, PrepareMixin, RecordMixin):  # noqa
-    """Defines a source for the analysis"""
-
-    __tablename__ = "sources"
-
-    id: DBID = Column(BIGDBIDType, primary_key=True)
-
-    name: str = Column(CaseSensitiveStringType(), nullable=False, unique=True)
-
-    postconditions = association_proxy("source_postcondition", "postcondition")
-
-    source_postcondition = relationship(
-        "PostconditionSourceAssoc",
-        primaryjoin="Source.id == foreign(PostconditionSourceAssoc.source_id)",
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_by_key(session, items, cls.name)
-
-
-class PostconditionSourceAssoc(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "postcondition_source_assoc"
-
-    postcondition_id = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    source_id = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    trace_length = Column(
-        Integer, doc="minimum trace length to given source", nullable=True
-    )
-
-    postcondition = relationship(
-        "Postcondition",
-        primaryjoin=(
-            "PostconditionSourceAssoc.postcondition_id == " "foreign(Postcondition.id)"
-        ),
-        uselist=False,
-    )
-
-    source = relationship(
-        "Source",
-        primaryjoin="PostconditionSourceAssoc.source_id == foreign(Source.id)",
-        uselist=False,
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_assocs(session, items, cls.postcondition_id, cls.source_id)
-
-
-class PreconditionSinkAssoc(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "precondition_sink_assoc"
-
-    precondition_id = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    sink_id = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    trace_length = Column(
-        Integer, doc="minimum trace length to given source", nullable=True
-    )
-
-    precondition = relationship(
-        "Precondition",
-        primaryjoin=(
-            "PreconditionSinkAssoc.precondition_id == " "foreign(Precondition.id)"
-        ),
-        uselist=False,
-    )
-
-    sink = relationship(
-        "Sink",
-        primaryjoin="PreconditionSinkAssoc.sink_id == foreign(Sink.id)",
-        uselist=False,
-    )
-
-    @classmethod
-    def merge(cls, session, items):
-        return cls._merge_assocs(session, items, cls.precondition_id, cls.sink_id)
-
-
 class IssueInstanceFixInfo(Base, PrepareMixin, RecordMixin):  # noqa
     __tablename__ = "issue_instance_fix_info"
 
@@ -1383,189 +1181,6 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
     )
 
 
-class Postcondition(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "postconditions"
-
-    __table_args__ = (Index("ix_caller", "caller"),)
-
-    id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    caller: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The function/method that produces tainted postcondition(s)",
-    )
-
-    callee: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The function/method within the caller that produces tainted "
-        "postcondition(s). Same as the caller if this is a Source.",
-    )
-
-    callee_location = Column(
-        SourceLocationType,
-        nullable=False,
-        doc="The location the callee in the source code (line|start|end)",
-    )
-
-    filename = Column(
-        String(length=4096), doc="Filename containing the call", nullable=False
-    )
-
-    sources = association_proxy("postcondition_source", "source")
-
-    postcondition_source = relationship(
-        "PostconditionSourceAssoc",
-        primaryjoin=(
-            "Postcondition.id == " "foreign(PostconditionSourceAssoc.postcondition_id)"
-        ),
-    )
-
-    run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
-
-    issue_instances = association_proxy(
-        "postcondition_issue_instance", "issue_instance"
-    )
-
-    postcondition_issue_instance = relationship(
-        "IssueInstancePostconditionAssoc",
-        primaryjoin=(
-            "Postcondition.id == "
-            "foreign(IssueInstancePostconditionAssoc.postcondition_id)"
-        ),
-    )
-
-    caller_condition: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        doc="The caller port of this call edge",
-        nullable=False,
-        server_default="",
-    )
-
-    callee_condition: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        doc="The callee port of this call edge",
-        nullable=False,
-        server_default="",
-    )
-
-    type_interval_lower = Column(
-        Integer, doc="Class interval lower-bound (inclusive)", nullable=True
-    )
-
-    type_interval_upper = Column(
-        Integer, doc="Class interval upper-bound (inclusive)", nullable=True
-    )
-
-    preserves_type_context = Column(
-        Boolean,
-        doc="Whether the call preserves calling type context.",
-        default=False,
-        server_default="0",
-        nullable=False,
-    )
-
-
-class Precondition(Base, PrepareMixin, RecordMixin):  # noqa
-
-    __tablename__ = "preconditions"
-
-    __table_args__ = (Index("ix_caller_and_condition", "caller", "caller_condition"),)
-
-    id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
-
-    caller: str = Column(String(length=INNODB_MAX_INDEX_LENGTH), nullable=False)
-
-    caller_condition: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc=(
-            "The condition that must be true for the "
-            "caller for the callee to be interesting"
-        ),
-    )
-
-    callee: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The call within the callable name",
-    )
-
-    callee_condition: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The condition that must match to proceed to the next call",
-    )
-
-    callee_location = Column(
-        SourceLocationType, nullable=False, doc="The location the call"
-    )
-
-    filename = Column(
-        String(length=4096), doc="Filename containing the call", nullable=False
-    )
-
-    message = Column(
-        String(length=4096),
-        doc="Message describing why this precondition is interesting",
-        nullable=False,
-    )
-
-    sinks = association_proxy("precondition_sink", "sink")
-
-    precondition_sink = relationship(
-        "PreconditionSinkAssoc",
-        primaryjoin=(
-            "Precondition.id == " "foreign(PreconditionSinkAssoc.precondition_id)"
-        ),
-    )
-
-    run_id = Column("run_id", BIGDBIDType, nullable=True, index=True)
-
-    issue_instances = association_proxy("precondition_issue_instance", "issue_instance")
-
-    precondition_issue_instance = relationship(
-        "IssueInstancePreconditionAssoc",
-        primaryjoin=(
-            "Precondition.id == "
-            "foreign(IssueInstancePreconditionAssoc.precondition_id)"
-        ),
-    )
-
-    titos = Column(
-        SourceLocationsType,
-        doc="Locations of TITOs aka abductions for the precondition",
-        nullable=False,
-        server_default="",
-    )
-
-    type_interval_lower = Column(
-        Integer, doc="Class interval lower-bound (inclusive)", nullable=True
-    )
-
-    type_interval_upper = Column(
-        Integer, doc="Class interval upper-bound (inclusive)", nullable=True
-    )
-
-    preserves_type_context = Column(
-        Boolean,
-        doc="Whether the call preserves calling type context.",
-        default=False,
-        server_default="0",
-        nullable=False,
-    )
-
-    annotations = relationship(
-        "TraceFrameAnnotation",
-        primaryjoin=(
-            "Precondition.id == " "foreign(TraceFrameAnnotation.trace_frame_id)"
-        ),
-        uselist=True,
-    )
-
-
 # Extra bits of information we can show on a TraceFrame.
 class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
 
@@ -1595,25 +1210,11 @@ class TraceFrameAnnotation(Base, PrepareMixin, RecordMixin):  # noqa
         doc="Link to possible pre/post traces (caller_condition).",
     )
 
-    # For now we have relationships with both TraceFrame and Precondition.
-    # trace_frame_id and trace_frame are historically connected to a Precondition
-    # but that will change when the unification of Pre and Post conditions is
-    # complete.
-
     trace_frame_id: DBID = Column(BIGDBIDType, nullable=False, index=True)
     trace_frame = relationship(
-        "Precondition",
-        primaryjoin=(
-            "Precondition.id == " "foreign(TraceFrameAnnotation.trace_frame_id)"
-        ),
-        uselist=True,
-    )
-
-    trace_frame_id2: DBID = Column(BIGDBIDType, nullable=True, index=True)
-    trace_frame2 = relationship(
         "TraceFrame",
         primaryjoin=(
-            "TraceFrame.id == " "foreign(TraceFrameAnnotation.trace_frame_id2)"
+            "TraceFrame.id == " "foreign(TraceFrameAnnotation.trace_frame_id)"
         ),
         uselist=True,
     )
@@ -1775,11 +1376,7 @@ class PrimaryKeyGenerator:
         IssueInstance,
         IssueInstanceFixInfo,
         SharedText,
-        Postcondition,
-        Precondition,
         Run,
-        Sink,
-        Source,
         TraceFrame,
         TraceFrameAnnotation,
     }
