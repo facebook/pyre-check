@@ -287,13 +287,12 @@ class TrimmedTraceGraph(TraceGraph):
         """
         instance = graph._issue_instances[instance_id]
         issue = graph._issues[instance.issue_id.local_id]
-        message = graph._shared_texts[instance.message_id.local_id]
+        self._populate_shared_text(graph, instance.message_id)
+        self._populate_shared_text(graph, instance.filename_id)
+        self._populate_shared_text(graph, instance.callable_id)
 
         self.add_issue_instance(instance)
         self.add_issue(issue)
-
-        if message.id.local_id not in self._shared_texts:
-            self.add_shared_text(message)
 
         if instance_id in graph._issue_instance_fix_info:
             issue_fix_info = graph._issue_instance_fix_info[instance_id]
@@ -336,6 +335,9 @@ class TrimmedTraceGraph(TraceGraph):
         """
         trace_frame_id = trace_frame.id.local_id
         self.add_trace_frame(trace_frame)
+        self._populate_shared_text(graph, trace_frame.filename_id)
+        self._populate_shared_text(graph, trace_frame.caller_id)
+        self._populate_shared_text(graph, trace_frame.callee_id)
         for (leaf_id, depth) in graph._trace_frame_leaf_assoc[trace_frame_id]:
             leaf = graph._shared_texts[leaf_id]
             if leaf_id not in self._shared_texts:
@@ -345,3 +347,8 @@ class TrimmedTraceGraph(TraceGraph):
     @staticmethod
     def _is_filename_prefixed_with(filename: str, prefixes: Iterable[str]) -> bool:
         return any([filename.startswith(p) for p in prefixes])
+
+    def _populate_shared_text(self, graph, id) -> None:
+        text = graph._shared_texts[id.local_id]
+        if text.id.local_id not in self._shared_texts:
+            self.add_shared_text(text)

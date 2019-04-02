@@ -168,12 +168,18 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             fix_info_id = fix_info.id
 
         message = self._get_shared_text(SharedTextKind.MESSAGE, entry["message"])
+        filename_record = self._get_shared_text(
+            SharedTextKind.FILENAME, entry["filename"]
+        )
+        callable_record = self._get_shared_text(SharedTextKind.CALLABLE, callable)
 
         instance = IssueInstance.Record(
             id=DBID(),
             issue_id=issue.id,
             location=self.get_location(entry),
             filename=entry["filename"],
+            filename_id=filename_record.id,
+            callable_id=callable_record.id,
             run_id=run.id,
             fix_info_id=fix_info_id,
             message_id=message.id,
@@ -271,17 +277,23 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
 
+        caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
+        callee_record = self._get_shared_text(SharedTextKind.CALLABLE, callee)
+        filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.POSTCONDITION,
             caller=caller,
+            caller_id=caller_record.id,
             callee=callee,
+            callee_id=callee_record.id,
             callee_location=SourceLocation(
                 callee_location["line"],
                 callee_location["start"],
                 callee_location["end"],
             ),
             filename=filename,
+            filename_id=filename_record.id,
             run_id=run.id,
             caller_port=caller_port,
             callee_port=callee_port,
@@ -384,12 +396,17 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         features,
     ):
         lb, ub, preserves_type_context = self._get_interval(type_interval)
+        caller_record = self._get_shared_text(SharedTextKind.CALLABLE, caller)
+        callee_record = self._get_shared_text(SharedTextKind.CALLABLE, callee)
+        filename_record = self._get_shared_text(SharedTextKind.FILENAME, filename)
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.PRECONDITION,
             caller=caller,
+            caller_id=caller_record.id,
             caller_port=caller_port,
             callee=callee,
+            callee_id=callee_record.id,
             callee_port=callee_port,
             callee_location=SourceLocation(
                 callee_location["line"],
@@ -397,6 +414,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 callee_location["end"],
             ),
             filename=filename,
+            filename_id=filename_record.id,
             titos=titos,
             run_id=run.id,
             preserves_type_context=preserves_type_context,

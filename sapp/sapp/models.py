@@ -561,6 +561,8 @@ class SharedTextKind(enum.Enum):
     message = enum.auto()
     source = enum.auto()
     sink = enum.auto()
+    callable = enum.auto()
+    filename = enum.auto()
 
     @classproperty
     def FEATURE(cls):
@@ -577,6 +579,14 @@ class SharedTextKind(enum.Enum):
     @classproperty
     def SINK(cls):
         return cls.sink
+
+    @classproperty
+    def CALLABLE(cls):
+        return cls.callable
+
+    @classproperty
+    def FILENAME(cls):
+        return cls.filename
 
 
 class SharedText(Base, PrepareMixin, RecordMixin):  # noqa
@@ -705,6 +715,10 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         nullable=True,
         index=True,
     )
+
+    filename_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
+
+    callable_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
     is_new_issue = Column(
         Boolean,
@@ -1271,6 +1285,8 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         doc="The function/method that produces the tainted trace",
     )
 
+    caller_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
+
     caller_port: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
         nullable=False,
@@ -1283,6 +1299,8 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         nullable=False,
         doc="The function/method within the caller that produces the tainted trace.",
     )
+
+    callee_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
     callee_location = Column(
         SourceLocationType,
@@ -1300,6 +1318,8 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
     filename = Column(
         String(length=4096), doc="Filename containing the call", nullable=False
     )
+
+    filename_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
     run_id = Column("run_id", BIGDBIDType, nullable=False, index=True)
 

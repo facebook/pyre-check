@@ -39,9 +39,9 @@ class BulkSaver:
 
     # order is significant, objects will be saved in this order.
     SAVING_CLASSES_ORDER = [
+        SharedText,
         Issue,
         IssueInstanceFixInfo,
-        SharedText,
         IssueInstance,
         IssueInstanceSharedTextAssoc,
         Postcondition,
