@@ -677,6 +677,7 @@ let run_start_command
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)
+      ~store_type_check_resolution:false
       ()
   in
   let log_path = log_path >>| Path.create_absolute in

@@ -34,6 +34,7 @@ module Analysis = struct
     profiling_output: string option;
     excludes: Str.regexp list [@opaque];
     extensions: string list;
+    store_type_check_resolution: bool;
   }
   [@@deriving show]
 
@@ -73,6 +74,7 @@ module Analysis = struct
       ?profiling_output
       ?(excludes = [])
       ?(extensions = [])
+      ?(store_type_check_resolution = true)
       () =
     {
       start_time;
@@ -99,6 +101,7 @@ module Analysis = struct
       profiling_output;
       excludes = List.map excludes ~f:Str.regexp;
       extensions;
+      store_type_check_resolution;
     }
 
 

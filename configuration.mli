@@ -31,6 +31,7 @@ module Analysis: sig
     profiling_output: string option;
     excludes: Str.regexp list;
     extensions: string list;
+    store_type_check_resolution: bool;
   }
   [@@deriving show, eq]
 
@@ -59,6 +60,7 @@ module Analysis: sig
     -> ?profiling_output: string
     -> ?excludes: string list
     -> ?extensions: string list
+    -> ?store_type_check_resolution: bool
     -> unit
     -> t
 

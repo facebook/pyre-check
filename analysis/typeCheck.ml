@@ -4089,7 +4089,8 @@ let run
 
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
-      ResolutionSharedMemory.add ~handle name resolution_fixpoint
+      if configuration.store_type_check_resolution then
+        ResolutionSharedMemory.add ~handle name resolution_fixpoint
     in
     exit
     >>| dump_resolutions
