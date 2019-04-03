@@ -50,6 +50,32 @@ class BuildTarget:
         return BuildTarget.BaseInformation(keywords, name, dependencies)
 
 
+def create_non_python_rule(rule_name: str) -> Type[BuildTarget]:
+    """
+        There are some rules we don't want to actually build, but we still want
+        to parse them if they are used as dependencies.
+    """
+
+    class NonPythonTarget(BuildTarget):
+        def __init__(
+            self, build_file_directory: str, name: str, dependencies: List[str]
+        ) -> None:
+            super(NonPythonTarget, self).__init__(
+                build_file_directory, name, dependencies
+            )
+
+        def rule_name(self) -> str:
+            return rule_name
+
+        @staticmethod
+        def parse(call: ast.Call, build_file_directory: str) -> "NonPythonTarget":
+            keywords = _get_keywords(call)
+            name = _get_string(keywords["name"])
+            return NonPythonTarget(build_file_directory, name, [])
+
+    return NonPythonTarget
+
+
 class PythonBinary(BuildTarget):
     def rule_name(self) -> str:
         return "python_binary"
@@ -183,4 +209,5 @@ SUPPORTED_RULES = {
     "python_binary": PythonBinary,
     "python_library": PythonLibrary,
     "python_unittest": PythonUnitTest,
+    "cpp_python_extension": create_non_python_rule("cpp_python_extension"),
 }  # type: Mapping[str, Type[BuildTarget]]

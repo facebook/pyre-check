@@ -6,7 +6,12 @@
 import ast
 import unittest
 
-from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest
+from ..build_target import (
+    PythonBinary,
+    PythonLibrary,
+    PythonUnitTest,
+    create_non_python_rule,
+)
 
 
 def _get_call(tree: ast.AST) -> ast.Call:
@@ -68,6 +73,14 @@ python_unittest(
     name = "test_target",
     srcs = glob(["tests/*.py"]),
     deps = [":library_target_1"],
+)
+"""
+
+NON_PYTHON_TARGET = """
+non_python(
+    name = "non_python_target",
+    field = 1234,
+    other_field = "abc",
 )
 """
 
@@ -133,3 +146,11 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.name, "test_target")
         self.assertListEqual(target.sources, ["tests/*.py"])
         self.assertListEqual(target.dependencies, ["//some/project:library_target_1"])
+
+    def test_non_python_target(self):
+        tree = ast.parse(NON_PYTHON_TARGET)
+        call = _get_call(tree)
+        target = create_non_python_rule("non_python").parse(call, "some/project")
+        self.assertEqual(target.target, "//some/project:non_python_target")
+        self.assertEqual(target.name, "non_python_target")
+        self.assertListEqual(target.dependencies, [])

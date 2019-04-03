@@ -40,6 +40,11 @@ python_unittest(
     name = "test_target",
     srcs = glob(["tests/*.py"]),
 )
+
+cpp_python_extension(
+    name = "cpp_python_target",
+    deps = [":other_target"],
+)
 """
 
 
@@ -53,7 +58,7 @@ class ParserTest(unittest.TestCase):
             mocked_open.reset_mock()
 
             self.assertEqual(result.path, "my/module")
-            self.assertEqual(len(result.targets), 4)
+            self.assertEqual(len(result.targets), 5)
 
             target = result.targets["binary_target"]
             self.assertIsInstance(target, PythonBinary)
@@ -79,6 +84,10 @@ class ParserTest(unittest.TestCase):
             self.assertEqual(target.target, "//my/module:test_target")
             self.assertListEqual(target.sources, ["tests/*.py"])
             self.assertListEqual(target.dependencies, [])
+
+            target = result.targets["cpp_python_target"]
+            self.assertEqual(target.target, "//my/module:cpp_python_target")
+            self.assertEqual(target.dependencies, [])
 
             # The parser should cache files it has already parsed.
             parser.parse_file("my/module")
