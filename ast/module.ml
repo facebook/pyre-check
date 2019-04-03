@@ -88,7 +88,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
             aliases
       | Import { Import.from = Some from; imports } ->
           let from =
-            Source.expand_relative_import ?handle ~qualifier:(Reference.access qualifier) ~from
+            Source.expand_relative_import ?handle ~qualifier ~from
             |> Reference.from_access
           in
           let export aliases { Import.name; alias } =

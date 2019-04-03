@@ -17,7 +17,7 @@ exception MissingWildcardImport
 
 let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
-      type t = Access.t
+      type t = Reference.t
 
       let statement qualifier { Node.location; value } =
         let value =
@@ -34,7 +34,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         qualifier, [{ Node.location; value }]
     end)
   in
-  Transform.transform (Reference.access qualifier) source
+  Transform.transform qualifier source
   |> Transform.source
 
 

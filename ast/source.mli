@@ -70,6 +70,6 @@ val statements: t -> Statement.t list
 val qualifier: handle: File.Handle.t -> Reference.t
 val expand_relative_import
   :  ?handle: File.Handle.t
-  -> qualifier: Access.t
+  -> qualifier: Reference.t
   -> from: Access.t
   -> Access.t

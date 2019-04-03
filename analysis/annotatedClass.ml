@@ -641,7 +641,7 @@ module Attribute = struct
       transitive: bool;
       class_attributes: bool;
       include_generated_attributes: bool;
-      name: Access.t;
+      name: Reference.t;
       instantiated: Type.t option;
     }
     [@@deriving compare, sexp, hash]
@@ -682,7 +682,7 @@ let attributes
       Attribute.Cache.transitive;
       class_attributes;
       include_generated_attributes;
-      name = (Reference.access name);
+      name;
       instantiated;
     }
   in

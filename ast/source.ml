@@ -422,7 +422,7 @@ let expand_relative_import ?handle ~qualifier ~from =
             | None ->
                 0
           in
-          List.rev qualifier
+          List.rev (Reference.access qualifier)
           |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
           |> List.rev
         else
