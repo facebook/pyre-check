@@ -871,6 +871,20 @@ let test_check_variable_arguments _ =
       "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
     ];
 
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[typing.Any]) -> int:
+        return foo ( *b )
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type that " ^
+      "does not contain `Any`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `typing.Any`.";
+    ];
+
   assert_strict_type_errors
     {|
       def foo(a: int, b: int) -> int:
@@ -1051,6 +1065,16 @@ let test_check_keyword_arguments _ =
       "Invalid argument [32]: Keyword argument `x` has type `int` " ^
       "but must be a mapping with string keys."
     ];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: int, y: str) -> None:
+        pass
+
+      def bar(x: typing.Dict[typing.Any, typing.Any]) -> None:
+        test = foo( **x )
+    |}
+    [];
   assert_type_errors
     {|
       def foo(x: int, y: int) -> None:

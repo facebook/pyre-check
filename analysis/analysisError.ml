@@ -1392,9 +1392,12 @@ let due_to_builtin_import { kind; _ } =
 
 
 let due_to_mismatch_with_any resolution { kind; _ } =
+  let is_consistent_with ~actual ~expected =
+    (Type.contains_any actual || Type.contains_any expected) &&
+    Resolution.is_consistent_with resolution actual expected
+  in
   match kind with
   | IncompatibleAwaitableType actual
-  | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
@@ -1408,8 +1411,11 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
   | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
   | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
-      (Type.contains_any actual || Type.contains_any expected) &&
-      Resolution.is_consistent_with resolution actual expected
+      is_consistent_with ~actual ~expected
+  | InvalidArgument (Keyword { annotation = actual; _ }) ->
+      is_consistent_with
+        ~actual
+        ~expected:(Type.parametric "typing.Mapping" [Type.string; Type.Top])
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _

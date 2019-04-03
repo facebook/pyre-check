@@ -528,6 +528,13 @@ let test_due_to_mismatch_with_any _ =
           annotation = Type.Any;
         }
       ));
+  assert_due_to_mismatch_with_any
+    (InvalidArgument (
+        Keyword {
+          expression = !"name";
+          annotation = Type.dictionary ~key:Type.Any ~value:Type.Any;
+        }
+      ));
 
   (* NotCallable *)
   assert_due_to_mismatch_with_any (Error.NotCallable Type.Any);
