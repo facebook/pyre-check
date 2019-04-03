@@ -553,31 +553,56 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       state
 
 
-    let rec analyze_assignment target taint surrounding_taint state =
-      match target.Node.value with
+    let rec analyze_assignment
+        ~resolution
+        ({ Node.location; value } as target)
+        taint
+        surrounding_taint
+        state =
+      match value with
       | Starred (Once target | Twice target) ->
           (* This is approximate. Unless we can get the tuple type on the right
              to tell how many total elements there will be, we just pick up the
              entire collection. *)
-          analyze_assignment target surrounding_taint surrounding_taint state
+          analyze_assignment ~resolution target surrounding_taint surrounding_taint state
       | List targets
       | Tuple targets ->
           let analyze_target_element i state target =
             let index = AbstractTreeDomain.Label.Field (string_of_int i) in
             let indexed_taint = ForwardState.Tree.read [index] taint in
-            analyze_assignment target indexed_taint taint state
+            analyze_assignment ~resolution target indexed_taint taint state
           in
           List.foldi targets ~f:analyze_target_element ~init:state
       | _ ->
+          (* Check flows to tainted globals/attributes. *)
+          let source_tree = taint in
+          let sink_tree =
+            Model.get_global_model ~resolution ~expression:target
+            >>| (fun {
+                Model.model = {
+                  TaintResult.backward = { TaintResult.Backward.sink_taint; _ };
+                  _;
+                };
+                _;
+              } ->
+                BackwardState.read
+                  ~root:(Root.PositionalParameter { position = 0; name = "$global" })
+                  ~path:[]
+                  sink_taint
+              )
+            |> Option.value ~default:BackwardState.Tree.empty
+          in
+          FunctionContext.check_flow ~location ~source_tree ~sink_tree;
+
+          (* Propagate taint. *)
           let access_path = AccessPath.of_expression target in
           store_taint_option access_path taint state
-
 
     let rec analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
       | Assign { target; value; _ } ->
           let taint = analyze_expression ~resolution ~state ~expression:value in
-          analyze_assignment target taint taint state
+          analyze_assignment ~resolution target taint taint state
       | Assert _
       | Break
       | Class _

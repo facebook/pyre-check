@@ -509,6 +509,30 @@ let get_callsite_model ~resolution ~call_target ~arguments =
           { is_obscure = model.is_obscure; call_target; model = taint_model }
 
 
+let get_global_model ~resolution ~expression =
+  Node.value expression
+  |> (function
+      | Access (SimpleAccess access) ->
+          (match AccessPath.normalize_access ~resolution access with
+           | Global access ->
+               Some access
+           | Access { expression; member } ->
+               AccessPath.as_access expression
+               |> (fun access -> Expression.Access access)
+               |> Node.create_with_default_location
+               |> Resolution.resolve resolution
+               |> Type.class_name
+               |> (fun class_name -> class_name @ [Access.Identifier member])
+               |> Option.some
+           | _ ->
+               None)
+          >>| Reference.from_access
+          >>| Callable.create_object
+      | _ ->
+          None)
+  >>| (fun call_target -> get_callsite_model ~resolution ~call_target ~arguments:[])
+
+
 let parse ~resolution ~source ~configuration models =
   create ~resolution ~configuration source
   |> List.map ~f:(fun model -> (model.call_target, model.model))

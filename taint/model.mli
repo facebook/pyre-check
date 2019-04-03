@@ -24,6 +24,11 @@ val get_callsite_model
   -> arguments: Argument.t list
   -> t
 
+val get_global_model
+  :  resolution: Resolution.t
+  -> expression: Expression.t
+  -> t option
+
 val parse
   :  resolution: Resolution.t
   -> source: string
