@@ -539,6 +539,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           |> extend_map ~new_map:(ResolutionSharedMemory.compute_hashes_to_keys ~keys)
           |> extend_map ~new_map:(ResolutionSharedMemory.Keys.compute_hashes_to_keys ~keys:handles)
         in
+        (* Coverage. *)
+        let map =
+          extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:handles)
+        in
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
