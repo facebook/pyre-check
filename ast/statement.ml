@@ -258,8 +258,11 @@ module Define = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let create_toplevel ~qualifier ~statements =
-    let signature =
+  module Signature = struct
+    type t = Record.Define.signature
+    [@@deriving compare, eq, sexp, show, hash]
+
+    let create_toplevel ~qualifier =
       {
         name = Reference.create ?prefix:qualifier "$toplevel";
         parameters = [];
@@ -269,15 +272,9 @@ module Define = struct
         async = false;
         parent = None;
       }
-    in
-    {
-      signature;
-      body = statements;
-    }
 
 
-  let create_class_toplevel ~qualifier ~statements =
-    let signature =
+    let create_class_toplevel ~qualifier =
       {
         name = Reference.create ~prefix:qualifier "$class_toplevel";
         parameters = [];
@@ -287,106 +284,188 @@ module Define = struct
         async = false;
         parent = Some qualifier;
       }
-    in
+
+
+    let unqualified_name { name; _ } =
+      Reference.last name
+
+
+    let self_identifier { parameters; _ } =
+      match parameters with
+      | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
+      | _ -> "self"
+
+
+    let is_method { parent; _ } =
+      Option.is_some parent
+
+
+    let has_decorator ?(match_prefix=false) { decorators; _ } decorator =
+      Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
+
+
+    let has_return_annotation { return_annotation; _ } =
+      Option.is_some return_annotation
+
+
+    let is_coroutine signature =
+      has_decorator signature "asyncio.coroutines.coroutine"
+
+
+    let is_abstract_method signature =
+      has_decorator signature "abstractmethod" ||
+      has_decorator signature "abc.abstractmethod" ||
+      has_decorator signature "abstractproperty" ||
+      has_decorator signature "abc.abstractproperty"
+
+
+    let is_overloaded_method signature =
+      has_decorator signature "overload" ||
+      has_decorator signature "typing.overload"
+
+
+    let is_static_method signature =
+      has_decorator signature "staticmethod"
+
+
+    let is_dunder_method signature =
+      let name = unqualified_name signature in
+      String.is_prefix ~prefix:"__" name &&
+      String.is_suffix ~suffix:"__" name
+
+
+    let is_class_method ({ parent; _ } as signature) =
+      let valid_names =
+        ["__init_subclass__"; "__new__"; "__class_getitem__"]
+      in
+      Option.is_some parent &&
+      (Set.exists Recognized.classmethod_decorators ~f:(has_decorator signature) ||
+       List.mem valid_names (unqualified_name signature) ~equal:String.equal)
+
+
+    let is_class_property ({ parent; _ } as signature) =
+      Option.is_some parent &&
+      Set.exists Recognized.classproperty_decorators ~f:(has_decorator signature)
+
+
+    let is_constructor ?(in_test = false) ({ parent; _ } as signature) =
+      let name = unqualified_name signature in
+      if Option.is_none parent then
+        false
+      else
+        name = "__init__" ||
+        (in_test &&
+         List.mem
+           ~equal:String.equal
+           ["async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
+           name)
+
+
+    let is_property_setter signature =
+      has_decorator signature ((unqualified_name signature) ^ ".setter")
+
+
+    let is_untyped { return_annotation; _ } =
+      Option.is_none return_annotation
+
+
+    let is_async { async; _ } =
+      async
+
+
+    let is_toplevel signature =
+      unqualified_name signature = "$toplevel"
+
+
+    let is_class_toplevel signature =
+      unqualified_name signature = "$class_toplevel"
+  end
+
+
+  let create_toplevel ~qualifier ~statements =
     {
-      signature;
+      signature = Signature.create_toplevel ~qualifier;
       body = statements;
     }
 
 
-  let unqualified_name { signature = { name; _ }; _ } =
-    Reference.last name
+  let create_class_toplevel ~qualifier ~statements =
+    {
+      signature = Signature.create_class_toplevel ~qualifier;
+      body = statements;
+    }
 
 
-  let self_identifier { signature = { parameters; _ }; _ } =
-    match parameters with
-    | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
-    | _ -> "self"
+  let unqualified_name { signature; _ } =
+    Signature.unqualified_name signature
 
 
-  let is_method { signature = { parent; _ }; _ } =
-    Option.is_some parent
+  let self_identifier { signature; _ } =
+    Signature.self_identifier signature
 
 
-  let has_decorator ?(match_prefix=false) { signature = { decorators; _ }; _ } decorator =
-    Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
+  let is_method { signature; _ } =
+    Signature.is_method signature
 
 
-  let has_return_annotation { signature = { return_annotation; _ }; _ } =
-    Option.is_some return_annotation
+  let has_decorator ?(match_prefix=false) { signature; _ } decorator =
+    Signature.has_decorator ~match_prefix signature decorator
 
 
-  let is_coroutine define =
-    has_decorator define "asyncio.coroutines.coroutine"
+  let has_return_annotation { signature; _ } =
+    Signature.has_return_annotation signature
 
 
-  let is_abstract_method define =
-    has_decorator define "abstractmethod" ||
-    has_decorator define "abc.abstractmethod" ||
-    has_decorator define "abstractproperty" ||
-    has_decorator define "abc.abstractproperty"
+  let is_coroutine { signature; _ } =
+    Signature.is_coroutine signature
 
 
-  let is_overloaded_method define =
-    has_decorator define "overload" ||
-    has_decorator define "typing.overload"
+  let is_abstract_method { signature; _ } =
+    Signature.is_abstract_method signature
 
 
-  let is_static_method define =
-    has_decorator define "staticmethod"
+  let is_overloaded_method { signature; _ } =
+    Signature.is_overloaded_method signature
 
 
-  let is_dunder_method define =
-    let name = unqualified_name define in
-    String.is_prefix ~prefix:"__" name &&
-    String.is_suffix ~suffix:"__" name
+  let is_static_method { signature; _ } =
+    Signature.is_static_method signature
 
 
-  let is_class_method ({ signature = { parent; _ }; _ } as define) =
-    let valid_names =
-      ["__init_subclass__"; "__new__"; "__class_getitem__"]
-    in
-    Option.is_some parent &&
-    (Set.exists Recognized.classmethod_decorators ~f:(has_decorator define) ||
-     List.mem valid_names (unqualified_name define) ~equal:String.equal)
+  let is_dunder_method { signature; _ } =
+    Signature.is_dunder_method signature
 
 
-  let is_class_property ({ signature = { parent; _ }; _ } as define) =
-    Option.is_some parent &&
-    Set.exists Recognized.classproperty_decorators ~f:(has_decorator define)
+  let is_class_method { signature; _ } =
+    Signature.is_class_method signature
 
 
-  let is_constructor ?(in_test = false) ({ signature = { parent; _ }; _ } as define) =
-    let name = unqualified_name define in
-    if Option.is_none parent then
-      false
-    else
-      name = "__init__" ||
-      (in_test &&
-       List.mem
-         ~equal:String.equal
-         ["async_setUp"; "setUp"; "_setup"; "_async_setup"; "with_context"]
-         name)
+  let is_class_property { signature; _ } =
+    Signature.is_class_property signature
 
 
-  let is_property_setter define =
-    has_decorator define ((unqualified_name define) ^ ".setter")
+  let is_constructor ?(in_test = false) { signature; _ } =
+    Signature.is_constructor ~in_test signature
 
 
-  let is_untyped { signature = { return_annotation; _ }; _ } =
-    Option.is_none return_annotation
+  let is_property_setter { signature; _ } =
+    Signature.is_property_setter signature
 
 
-  let is_async { signature = { async; _ }; _ } =
-    async
+  let is_untyped { signature; _ } =
+    Signature.is_untyped signature
 
 
-  let is_toplevel define =
-    unqualified_name define = "$toplevel"
+  let is_async { signature; _ } =
+    Signature.is_async signature
 
 
-  let is_class_toplevel define =
-    unqualified_name define = "$class_toplevel"
+  let is_toplevel { signature; _ } =
+    Signature.is_toplevel signature
+
+
+  let is_class_toplevel { signature; _ } =
+    Signature.is_class_toplevel signature
 
 
   let contains_call { body; _ } name =

@@ -1035,16 +1035,19 @@ let environment
   environment
 
 
+let mock_signature = {
+  Define.name = Reference.create "$empty";
+  parameters = [];
+  decorators = [];
+  docstring = None;
+  return_annotation = None;
+  async = false;
+  parent = None;
+}
+
+
 let mock_define = {
-  Define.signature = {
-    name = Reference.create "$empty";
-    parameters = [];
-    decorators = [];
-    docstring = None;
-    return_annotation = None;
-    async = false;
-    parent = None;
-  };
+  Define.signature = mock_signature;
   body = [];
 }
 

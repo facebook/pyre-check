@@ -196,6 +196,31 @@ module Define : sig
   type t = statement_t Record.Define.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  module Signature : sig
+    type t = Record.Define.signature
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val create_toplevel: qualifier: Reference.t option -> t
+    val create_class_toplevel: qualifier: Reference.t -> t
+    val unqualified_name: t -> Identifier.t
+    val self_identifier: t -> Identifier.t
+    val is_method: t -> bool
+    val is_coroutine: t -> bool
+    val is_abstract_method: t -> bool
+    val is_overloaded_method: t -> bool
+    val is_static_method: t -> bool
+    val is_class_method: t -> bool
+    val is_class_property: t -> bool
+    val is_dunder_method: t -> bool
+    val is_constructor: ?in_test: bool -> t -> bool
+    val is_property_setter: t -> bool
+    val is_untyped: t -> bool
+    val is_toplevel: t -> bool
+    val is_class_toplevel: t -> bool
+    val has_decorator: ?match_prefix:bool -> t -> string -> bool
+    val has_return_annotation: t -> bool
+  end
+
   val create_toplevel: qualifier: Reference.t option -> statements: statement_t list -> t
   val create_class_toplevel: qualifier: Reference.t -> statements: statement_t list -> t
 
