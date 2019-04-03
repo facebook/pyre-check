@@ -596,15 +596,19 @@ let test_implements _ =
         def len() -> int: pass
     |}
     DoesNotImplement;
+  (* Not sure whats meant to happen here... *)
   assert_conforms
     {|
       class List():
         def empty() -> bool: pass
         @typing.overload
-        def length(x: int) -> str: pass
-        def length() -> str: pass
         def length(x: int) -> int: pass
+        @typing.overload
         def length() -> int: pass
+        @typing.overload
+        def length(x: int) -> str: pass
+        @typing.overload
+        def length() -> str: pass
     |}
     {|
       class Sized(typing.Protocol):
@@ -618,8 +622,10 @@ let test_implements _ =
         def empty() -> bool: pass
         @typing.overload
         def length(x: int) -> str: pass
-        def length() -> str: pass
+        @typing.overload
         def length(x: int) -> int: pass
+        @typing.overload
+        def length() -> str: pass
     |}
     {|
       class Sized(typing.Protocol):
@@ -1151,7 +1157,7 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        "typing.Callable('Attributes.baz')[[Named(x, str)], str]");
+        "typing.Callable('Attributes.baz')[[Named(x, int)], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))

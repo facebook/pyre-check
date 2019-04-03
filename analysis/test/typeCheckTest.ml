@@ -1809,13 +1809,13 @@ let test_forward_access _ =
           overload ~return_annotation:Type.integer ~name:"x" (Type.literal_integer 0);
           overload ~return_annotation:Type.string ~name:"x" (Type.literal_integer 1);
           overload
-            ~return_annotation:(Type.Tuple (Unbounded (Type.union [Type.integer; Type.string])))
-            ~name:"x"
-            (Type.Primitive "slice");
-          overload
             ~return_annotation:(Type.union [Type.integer; Type.string])
             ~name:"x"
             (Type.integer);
+          overload
+            ~return_annotation:(Type.Tuple (Unbounded (Type.union [Type.integer; Type.string])))
+            ~name:"x"
+            (Type.Primitive "slice");
         ];
         implicit = None;
       };

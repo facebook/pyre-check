@@ -699,20 +699,9 @@ let attributes
           attributes
           ({ Node.value = ({ Class.name = parent_name; _ } as definition); _ } as parent) =
         let collect_attributes attributes attribute =
-          let reverse_define_order
-              { Node.value = { Statement.Attribute.defines; _ } as attribute_value; location } =
-            {
-              Node.location;
-              value = {
-                attribute_value with Statement.Attribute.defines = defines >>| List.rev
-              };
-            }
-          in
           let attribute_node =
-            (* Map fold returns the reverse order; order matters when constructing callables *)
-            attribute
-            |> reverse_define_order
-            |> Attribute.create
+            Attribute.create
+              attribute
               ~resolution
               ~parent
               ~instantiated

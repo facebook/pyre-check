@@ -540,12 +540,12 @@ let test_lookup_unbound _ =
       "3:2-3:3/typing.List[]";
       "3:6-3:21/typing.List[]";
       "4:15-4:16/typing.List[]";
-      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown]\
-       [[[Named(s, slice)], typing.List[Variable[_T]]][[Named(i, int)], Variable[_T]]]";
+      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], Variable[_T]]" ^
+      "[[Named(s, slice)], typing.List[Variable[_T]]]]";
       "4:22-4:23/typing.List[]";
       "4:24-4:25/typing_extensions.Literal[1]";
-      "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(s, slice)], \
-       typing.List[Variable[_T]]][[Named(i, int)], Variable[_T]]]";
+      "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], Variable[_T]]" ^
+      "[[Named(s, slice)], typing.List[Variable[_T]]]]";
       "4:7-4:8/typing.List[]";
       "4:9-4:10/typing_extensions.Literal[0]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";

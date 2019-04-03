@@ -432,10 +432,7 @@ let test_check_function_parameters _ =
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[typing.Tuple[int, int]]` " ^
-      "for 1st anonymous parameter to call `dict.update` but got `typing.Dict[int, typing.Any]`."
-    ];
+    [];
 
   assert_default_type_errors
     {|
@@ -713,10 +710,7 @@ let test_check_function_overloads _ =
       def herp(x: Foo) -> int:
         return x.derp(True)
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Missing argument [20]: Call `Foo.derp` expects argument `y`.";
-    ];
+    ["Missing argument [20]: Call `Foo.derp` expects argument `y`."];
 
   assert_type_errors
     {|
