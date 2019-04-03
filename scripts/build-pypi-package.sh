@@ -18,6 +18,7 @@ URL='https://pyre-check.org/'
 DOWNLOAD_URL='https://github.com/facebook/pyre-check'
 # https://www.python.org/dev/peps/pep-0008/#package-and-module-names
 MODULE_NAME="pyre_check"
+SAPP_MODULE_NAME="sapp"
 RUNTIME_DEPENDENCIES="'typeshed'"
 
 # helpers
@@ -85,6 +86,12 @@ done
 
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
+# sapp directory is either beside or inside pyre-check directory
+SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../sapp/"
+if [[ ! -d "${SAPP_DIRECTORY}" ]]; then
+  SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../../sapp/"
+fi
+
 cd "${SCRIPTS_DIRECTORY}/"
 BUILD_ROOT="$(mktemp -d)"
 cd "${BUILD_ROOT}"
@@ -94,6 +101,10 @@ echo "Using build root: ${BUILD_ROOT}"
 mkdir "${MODULE_NAME}"
 # i.e. copy all *.py files from all directories, except "tests"
 rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
+# copy *.py and requirements.txt files from sapp, exclude everything else
+rsync -avm --filter='- tests/' --filter='+ */' --filter='+ *.py' \
+  --filter='+ *requirements.txt' --filter='- *' "${SAPP_DIRECTORY}" \
+  "${BUILD_ROOT}/${MODULE_NAME}/${SAPP_MODULE_NAME}"
 # Patch version number.
 sed -i -e "/__version__/s/= \".*\"/= \"${PACKAGE_VERSION}\"/" "${BUILD_ROOT}/${MODULE_NAME}/version.py"
 
@@ -149,6 +160,11 @@ def find_typeshed_files(base):
 with open('README.md') as f:
     long_description = f.read()
 
+with open(
+    os.path.join("${MODULE_NAME}", "${SAPP_MODULE_NAME}", "requirements.txt")
+) as file:
+    sapp_requirements = file.read().splitlines()
+
 setup(
     name='${PACKAGE_NAME}',
     version='${PACKAGE_VERSION}',
@@ -182,11 +198,12 @@ setup(
     packages=find_packages(exclude=['tests']),
     data_files=[('bin', ['bin/pyre.bin'])] + find_typeshed_files("${BUILD_ROOT}/"),
     python_requires='>=3.5',
-    install_requires=[${RUNTIME_DEPENDENCIES}],
+    install_requires=[${RUNTIME_DEPENDENCIES}] + sapp_requirements,
     entry_points={
         'console_scripts': [
             'pyre = ${MODULE_NAME}.pyre:main',
             'pyre-upgrade = ${MODULE_NAME}.upgrade:main'
+            'sapp = ${MODULE_NAME}.${SAPP_MODULE_NAME}.sapp.cli:cli',
         ],
     }
 )
