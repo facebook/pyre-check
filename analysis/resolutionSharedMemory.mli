@@ -18,11 +18,6 @@ type annotation_map = {
 
 type annotations = annotation_map Int.Map.Tree.t
 
-val add: Reference.t -> annotations -> unit
-val remove: Reference.t list -> unit
-
-val get: Reference.t -> annotations option
-
 
 module TypeAnnotationsValue: sig
   type t = annotations
@@ -31,3 +26,16 @@ module TypeAnnotationsValue: sig
 end
 
 include module type of Memory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
+
+module AnnotationsKeyValue: sig
+  type t = Reference.t list
+  val prefix: Prefix.t
+  val description: string
+end
+
+module Keys: module type of Memory.NoCache (Ast.SharedMemory.HandleKey) (AnnotationsKeyValue)
+
+val add: handle: File.Handle.t -> Reference.t -> annotations -> unit
+val remove: File.Handle.t list -> unit
+val get: Reference.t -> annotations option
+val get_keys: handles: File.Handle.t list -> Reference.t list

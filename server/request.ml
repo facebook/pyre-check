@@ -1376,10 +1376,7 @@ let process_type_check_files
   let new_source_handles = List.filter_map ~f:handle check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
-  |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
-  |> List.map ~f:(fun { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } -> name)
-  |> ResolutionSharedMemory.remove;
+  ResolutionSharedMemory.remove new_source_handles;
 
   let new_errors =
     Service.Check.analyze_sources

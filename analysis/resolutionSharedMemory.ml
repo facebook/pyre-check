@@ -24,12 +24,37 @@ module TypeAnnotationsValue = struct
   let description = "Node type resolution"
 end
 
+
+module AnnotationsKeyValue = struct
+  type t = Reference.t list
+  let prefix = Prefix.make ()
+  let description = "Node type resolution keys"
+end
+
 (** A map of function definitions (indexed by Reference.t key) to
     to annotations for each statement *)
 include SharedMemory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
 
+module Keys = SharedMemory.NoCache (Ast.SharedMemory.HandleKey) (AnnotationsKeyValue)
 
-let remove accesses =
-  accesses
-  |> List.filter ~f:mem
-  |> Fn.compose remove_batch KeySet.of_list
+let remove handles =
+  let accesses =
+    List.filter_map ~f:Keys.get handles
+    |> List.concat
+    |> List.filter ~f:mem
+    |> KeySet.of_list
+  in
+  remove_batch accesses;
+  Keys.remove_batch (Keys.KeySet.of_list handles)
+
+let add ~handle name value =
+  begin
+    match Keys.get handle with
+    | None -> Keys.add handle [name]
+    | Some names -> Keys.add handle (name :: names)
+  end;
+  add name value
+
+let get_keys ~handles =
+  List.filter_map handles ~f:Keys.get
+  |> List.concat

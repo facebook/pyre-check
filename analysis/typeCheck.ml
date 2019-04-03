@@ -4040,6 +4040,7 @@ let run
       ~declare
   in
 
+  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   let check
       ~define:{ Node.value = ({ Define.signature = { name; parent; _ }; _ } as define); _ }
       ~initial
@@ -4093,7 +4094,7 @@ let run
 
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
-      ResolutionSharedMemory.add name resolution_fixpoint
+      ResolutionSharedMemory.add ~handle name resolution_fixpoint
     in
     exit
     >>| dump_resolutions
@@ -4189,6 +4190,10 @@ let run
     results ~queue
   in
 
+  (* These local changes allow us to add keys incrementally in a worker process without
+     worrying about removing (which can only be done by a master. *)
+  ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
+  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
   let errors =
     let filter errors =
       if configuration.debug then

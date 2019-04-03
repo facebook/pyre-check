@@ -357,6 +357,24 @@ let test_function_definitions _ =
   ()
 
 
+let test_resolution_shared_memory _ =
+  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
+  ResolutionSharedMemory.add
+    ~handle:(File.Handle.create "a.py")
+    (Reference.create "name")
+    Int.Map.Tree.empty;
+  ResolutionSharedMemory.add
+    ~handle:(File.Handle.create "a.py")
+    (Reference.create "other")
+    Int.Map.Tree.empty;
+  assert_equal
+    ~printer:(List.to_string ~f:Reference.show)
+    (ResolutionSharedMemory.get_keys ~handles:[File.Handle.create "a.py"])
+    [Reference.create "other"; Reference.create "name"];
+  ResolutionSharedMemory.Keys.LocalChanges.revert_all ();
+  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
+
+
 let () =
   "resolution">:::[
     "set_local">::test_set_local;
@@ -365,5 +383,6 @@ let () =
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
     "function_definitions">::test_function_definitions;
+    "resolve_shared_memory">::test_resolution_shared_memory;
   ]
   |> Test.run
