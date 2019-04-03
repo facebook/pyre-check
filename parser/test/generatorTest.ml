@@ -1664,6 +1664,21 @@ let test_binary_operator _ =
             }));
     ];
   assert_parsed_equal
+    "1 >> 2 >> 3"
+    [
+      +Expression
+        (+Access
+          (ExpressionAccess {
+              expression = +Integer 1;
+              access = [
+                Access.Identifier "__rshift__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
+                Access.Identifier "__rshift__";
+                Access.Call (+[{ Argument.name = None; value = +Integer 3 }]);
+              ];
+            }))
+    ];
+  assert_parsed_equal
     "1 - 2 + 3"
     [
       +Expression
