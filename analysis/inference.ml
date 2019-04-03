@@ -123,14 +123,14 @@ module State = struct
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
       let add_missing_parameter_error ~given_annotation =
-        Resolution.get_local resolution ~reference:(Reference.create name)
+        let reference = Reference.create name in
+        Resolution.get_local resolution ~reference
         >>| (fun { Annotation.annotation; _ } ->
-            let name = Access.create_from_identifiers [name] in
             let error =
               Error.create
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
-                    name;
+                    name = reference;
                     annotation = Some annotation;
                     given_annotation;
                     evidence_locations = [];
@@ -494,8 +494,8 @@ let run
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
         let module Handler = (val environment : Environment.Handler) in
-        let add_missing_annotation_error ~access ~name ~location ~annotation =
-          match Handler.globals (Reference.from_access name) with
+        let add_missing_annotation_error ~reference ~name ~location ~annotation =
+          match Handler.globals name with
           | Some { Node.value; _ }
             when not (Type.is_unknown (Annotation.annotation value)) ->
               changed, globals_added_sofar
@@ -504,7 +504,7 @@ let run
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~handle ~reference:(Reference.from_access access) ~global;
+              Handler.register_global ~handle ~reference ~global;
               true, error :: globals_added_sofar
         in
         (* TODO(T31680236): use inferred annotations in global fixpoint. *)
@@ -517,7 +517,7 @@ let run
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:((Type.show parent |> Access.create) @ name)
+              ~reference:(Reference.combine (Type.show parent |> Reference.create) name)
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation
@@ -530,7 +530,7 @@ let run
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:name
+              ~reference:name
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation

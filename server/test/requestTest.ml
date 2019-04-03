@@ -264,7 +264,7 @@ let test_process_display_type_errors_request _ =
                 let location = { Location.Instantiated.any with Location.path } in
                 {
                   Analysis.Error.location;
-                  kind = Analysis.Error.UndefinedName (Expression.Access.create undefined);
+                  kind = Analysis.Error.UndefinedName (Reference.create undefined);
                   define = +mock_define;
                 }
               in

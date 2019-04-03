@@ -26,14 +26,15 @@ module State (Context: Context) = struct
 
 
   type t = {
-    unawaited: state Access.Map.t;
+    unawaited: state Reference.Map.t;
   }
 
 
   let show { unawaited; _ } =
     Map.to_alist unawaited
     |> List.map
-      ~f:(fun (access, state) -> Format.asprintf "%a -> %a" Access.pp access pp_state state)
+      ~f:(fun (reference, state) ->
+          Format.asprintf "%a -> %a" Reference.pp reference pp_state state)
     |> String.concat ~sep:", "
 
 
@@ -42,17 +43,17 @@ module State (Context: Context) = struct
 
 
   let initial =
-    { unawaited = Access.Map.empty }
+    { unawaited = Reference.Map.empty }
 
 
   let errors { unawaited; _ } =
-    let error (access, state) =
+    let error (reference, state) =
       match state with
       | Unawaited location ->
           [
             Error.create
               ~location
-              ~kind:(Error.UnawaitedAwaitable (Access.delocalize access))
+              ~kind:(Error.UnawaitedAwaitable (Reference.delocalize reference))
               ~define:Context.define;
           ]
       | _ ->
@@ -114,14 +115,14 @@ module State (Context: Context) = struct
       match value with
       | Assign { target = { Node.value = Access (SimpleAccess access); location }; value; _ }
         when is_awaitable value ->
-          Map.set unawaited ~key:access ~data:(Unawaited location)
+          Map.set unawaited ~key:(Reference.from_access access) ~data:(Unawaited location)
 
       | Assign {
           value = { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ };
           _
         }
       | Expression { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ } ->
-          Map.set unawaited ~key:access ~data:Awaited
+          Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
 
       | _ ->
           unawaited

@@ -10,7 +10,7 @@ open Expression
 
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
-  | Module of Access.t
+  | Module of Reference.t
 [@@deriving compare, eq, show, hash]
 
 type mismatch = {
@@ -21,7 +21,7 @@ type mismatch = {
 [@@deriving compare, eq, show, hash]
 
 type missing_annotation = {
-  name: Access.t;
+  name: Reference.t;
   annotation: Type.t option;
   given_annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
@@ -30,7 +30,7 @@ type missing_annotation = {
 [@@deriving compare, eq, sexp, hash]
 
 type incompatible_type = {
-  name: Access.t;
+  name: Reference.t;
   mismatch: mismatch;
   declare_location: Location.Instantiated.t;
 }
@@ -78,14 +78,14 @@ type kind =
   | IncompatibleParameterType of {
       name: Identifier.t option;
       position: int;
-      callee: Access.t option;
+      callee: Reference.t option;
       mismatch: mismatch;
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
   | InconsistentOverride of {
       overridden_method: Identifier.t;
-      parent: Access.t;
+      parent: Reference.t;
       override: override;
     }
   | InvalidArgument of invalid_argument
@@ -98,32 +98,32 @@ type kind =
     }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
-  | MissingArgument of { callee: Access.t option; name: Identifier.t }
+  | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
-  | MutuallyRecursiveTypeVariables of Access.t option
+  | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
-  | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
+  | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
-  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryAccessWithNonLiteral of Identifier.t list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
   | UndefinedAttribute of { attribute: Identifier.t; origin: origin }
-  | UndefinedImport of Access.t
-  | UndefinedName of Access.t
+  | UndefinedImport of Reference.t
+  | UndefinedName of Reference.t
   | UndefinedType of Type.t
-  | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
+  | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
   (* Additional errors. *)
   | Deobfuscation of Source.t
-  | UnawaitedAwaitable of Access.t
+  | UnawaitedAwaitable of Reference.t
 [@@deriving compare, eq, show, hash]
 
 include BaseError.Error with type kind := kind

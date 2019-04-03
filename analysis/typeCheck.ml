@@ -1354,7 +1354,7 @@ module State = struct
                 ~state
                 ~location
                 ~kind:(Error.IncompatibleVariableType {
-                    name = [Expression.Access.Identifier name];
+                    name = Reference.create name;
                     mismatch =
                       Error.create_mismatch
                         ~resolution
@@ -1379,7 +1379,7 @@ module State = struct
                 ~state
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
-                    name = Access.create name;
+                    name = Reference.create name;
                     annotation;
                     given_annotation;
                     evidence_locations = [];
@@ -1659,7 +1659,7 @@ module State = struct
                              parent =
                                Attribute.parent overridden_attribute
                                |> Type.show
-                               |> Expression.Access.create;
+                               |> Reference.create;
                              override =
                                Error.WeakenedPostcondition
                                  (Error.create_mismatch
@@ -1714,7 +1714,7 @@ module State = struct
                                      parent =
                                        Attribute.parent overridden_attribute
                                        |> Type.show
-                                       |> Expression.Access.create;
+                                       |> Reference.create;
                                      override =
                                        Error.StrengthenedPrecondition
                                          (Error.Found
@@ -1763,7 +1763,7 @@ module State = struct
                                  parent =
                                    Attribute.parent overridden_attribute
                                    |> Type.show
-                                   |> Expression.Access.create;
+                                   |> Reference.create;
                                  override =
                                    Error.StrengthenedPrecondition (
                                      Error.NotFound (Identifier.sanitized name)
@@ -1933,7 +1933,13 @@ module State = struct
         Type.exists
           (Annotation.annotation resolved)
           ~predicate:(fun annotation -> Type.equal annotation Type.undeclared) then
-        let state = emit_error ~state ~location ~kind:(Error.UndefinedName lead) ~define in
+        let state =
+          emit_error
+            ~state
+            ~location
+            ~kind:(Error.UndefinedName (Reference.from_access lead))
+            ~define
+        in
         true, state, Annotation.annotation resolved
       else
         let error =
@@ -1951,7 +1957,7 @@ module State = struct
                 let callee =
                   match kind with
                   | Type.Callable.Named access ->
-                      Some access
+                      Some (Reference.from_access access)
                   | _ ->
                       None
                 in
@@ -1992,12 +1998,12 @@ module State = struct
                           })
                       in
                       begin
-                        match implicit, callee with
+                        match implicit, callee >>| Reference.as_list with
                         | Some {
                             implicit_annotation = Type.TypedDictionary { fields; name; total};
                             _;
                           },
-                          Some [ _ ; Identifier method_name ] ->
+                          Some [ _; method_name ] ->
                             if
                               Type.TypedDictionary.is_special_mismatch ~method_name ~position ~total
                             then
@@ -2058,7 +2064,7 @@ module State = struct
                   | Instance { attribute = class_attribute; instantiated_target } ->
                       let open Annotated in
                       if Type.equal instantiated_target Type.undeclared then
-                        Error.UndefinedName lead
+                        Error.UndefinedName (Reference.from_access lead)
                       else
                         Error.UndefinedAttribute {
                           attribute;
@@ -2070,9 +2076,10 @@ module State = struct
                         }
 
                   | Module access when List.is_empty access ->
-                      Error.UndefinedName (Access.create attribute)
+                      Error.UndefinedName (Reference.create attribute)
                   | Module access ->
-                      Error.UndefinedAttribute { attribute; origin = Error.Module access }
+                      let reference = Reference.from_access access in
+                      Error.UndefinedAttribute { attribute; origin = Error.Module reference }
                   | TypeWithoutClass annotation ->
                       Error.UndefinedAttribute {
                         attribute;
@@ -2131,7 +2138,7 @@ module State = struct
               ~state
               ~location
               ~kind:(Error.ProhibitedAny {
-                  Error.name = Access.create "typing.cast";
+                  Error.name = Reference.create "typing.cast";
                   annotation = None;
                   given_annotation = Some cast_annotation;
                   evidence_locations = [];
@@ -2196,7 +2203,7 @@ module State = struct
                 ~kind:(Error.IncompatibleParameterType {
                     name = None;
                     position = 2;
-                    callee = Some [Access.Identifier "isinstance"];
+                    callee = Some (Reference.create "isinstance");
                     mismatch = {
                       Error.actual = non_meta;
                       expected = Type.meta Type.Any;
@@ -2652,7 +2659,7 @@ module State = struct
             ~state
             ~location:define_location
             ~kind:(Error.MissingReturnAnnotation {
-                name = Access.create "$return_annotation";
+                name = Reference.create "$return_annotation";
                 annotation = Some actual;
                 given_annotation;
                 evidence_locations = [instantiate location];
@@ -2883,7 +2890,7 @@ module State = struct
                         Error.IncompatibleAttributeType {
                           parent = Attribute.parent attribute;
                           incompatible_type = {
-                            Error.name = Access.create access;
+                            Error.name = Reference.create access;
                             mismatch =
                               (Error.create_mismatch
                                  ~resolution
@@ -2895,7 +2902,7 @@ module State = struct
                         }
                     | _ ->
                         Error.IncompatibleVariableType {
-                          Error.name = access;
+                          Error.name = Reference.from_access access;
                           mismatch =
                             (Error.create_mismatch
                                ~resolution
@@ -2973,7 +2980,7 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.MissingGlobalAnnotation {
-                          Error.name = Access.create access;
+                          Error.name = Reference.create access;
                           annotation = actual_annotation;
                           given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
@@ -2998,7 +3005,7 @@ module State = struct
                       ~kind:(Error.MissingAttributeAnnotation {
                           parent = Annotated.Attribute.parent attribute;
                           missing_annotation = {
-                            Error.name = Access.create access;
+                            Error.name = Reference.create access;
                             annotation = actual_annotation;
                             given_annotation = Option.some_if is_immutable expected;
                             evidence_locations;
@@ -3011,7 +3018,7 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.ProhibitedAny {
-                          Error.name = access;
+                          Error.name = Reference.from_access access;
                           annotation = actual_annotation;
                           given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
@@ -3035,7 +3042,7 @@ module State = struct
                     Error.create
                       ~location:global_location
                       ~kind:(Error.MissingGlobalAnnotation {
-                          Error.name = access;
+                          Error.name = Reference.from_access access;
                           annotation = actual_annotation;
                           given_annotation = Option.some_if is_immutable expected;
                           evidence_locations;
@@ -3051,7 +3058,7 @@ module State = struct
                       Error.create
                         ~location
                         ~kind:(Error.ProhibitedAny {
-                            Error.name = access;
+                            Error.name = Reference.from_access access;
                             annotation = None;
                             given_annotation = Some value_annotation;
                             evidence_locations;
@@ -3353,7 +3360,7 @@ module State = struct
                            ~kind:(Error.IncompatibleParameterType {
                                name = None;
                                position = 1;
-                               callee = Some (Access.create "isinstance");
+                               callee = Some (Reference.create "isinstance");
                                mismatch = {
                                  Error.expected = Type.meta (Type.variable "T");
                                  actual = resolved;
@@ -3692,7 +3699,7 @@ module State = struct
             | AccessState.Attribute { definition = Undefined (Module _); _ } ->
                 Error.create
                   ~location
-                  ~kind:(Error.UndefinedImport import)
+                  ~kind:(Error.UndefinedImport (Reference.from_access import))
                   ~define:define_node
                 :: errors
             | _ ->
