@@ -480,9 +480,9 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           taint, false
       | _ ->
-          let access_path = of_expression target in
           let taint =
             let local_taint =
+              let access_path = of_expression target in
               get_taint access_path state
             in
             let global_taint =
@@ -490,10 +490,21 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               Node.value target
               |> (function
                   | Access (SimpleAccess access) ->
-                      Reference.from_access access
-                      |> Reference.delocalize
-                      |> Callable.create_object
-                      |> Option.some
+                      (match AccessPath.normalize_access ~resolution access with
+                       | Global access ->
+                           Some access
+                       | Access { expression; member } ->
+                           AccessPath.as_access expression
+                           |> (fun access -> Expression.Access access)
+                           |> Node.create_with_default_location
+                           |> Resolution.resolve resolution
+                           |> Type.class_name
+                           |> (fun class_name -> class_name @ [Access.Identifier member])
+                           |> Option.some
+                       | _ ->
+                           None)
+                      >>| Reference.from_access
+                      >>| Callable.create_object
                   | _ ->
                       None)
               >>| (fun call_target ->
