@@ -404,6 +404,13 @@ let test_attributes _ =
 
   assert_implicit_attributes
     {|
+      def foo(self, attribute: MyType):
+        self.attribute = attribute
+    |}
+    ["attribute", Some (!"MyType"), Some !"attribute", true];
+
+  assert_implicit_attributes
+    {|
       def foo(self, attribute: str, test: bool):
         if test:
           self.attribute = attribute

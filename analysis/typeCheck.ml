@@ -2908,6 +2908,18 @@ module State = struct
               (* Check for missing annotations. *)
               let error =
                 let insufficiently_annotated, thrown_at_source =
+                  let is_reassignment =
+                    (* Special-casing re-use of typed parameters as attributes *)
+                    match Node.value value with
+                    | Access (SimpleAccess value_access) ->
+                        let target_access = Access.show_sanitized (List.tl_exn access) in
+                        let value_access = Access.show_sanitized value_access in
+                        Annotation.is_immutable target_annotation &&
+                        not (Type.is_unknown expected) &&
+                        (target_access = value_access || target_access = "_" ^ value_access)
+                    | _ ->
+                        false
+                  in
                   match annotation with
                   | Some annotation when Type.expression_contains_any annotation ->
                       original_annotation
@@ -2915,7 +2927,7 @@ module State = struct
                       |> Option.value ~default:false
                       |> not
                       |> (fun insufficient -> insufficient, true)
-                  | None when is_immutable ->
+                  | None when is_immutable && not is_reassignment ->
                       let is_toplevel =
                         Define.is_toplevel define ||
                         Define.is_class_toplevel define ||

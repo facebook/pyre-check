@@ -832,6 +832,15 @@ let test_check_missing_attribute _ =
     [];
   assert_type_errors
     {|
+      MyType = typing.Any
+      class Foo:
+        def __init__(self, a: MyType) -> None:
+          self.a = a
+          self.b: MyType = 1
+    |}
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+  assert_type_errors
+    {|
       class Foo:
         a = unknown
     |}
@@ -859,11 +868,7 @@ let test_check_missing_attribute _ =
           def __init__(self, a: typing.Any) -> None:
             self.a = a
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other " ^
-      "than `Any`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`."];
 
   assert_type_errors
     {|
