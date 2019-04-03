@@ -1388,6 +1388,7 @@ let process_type_check_files
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
   ResolutionSharedMemory.remove new_source_handles;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list new_source_handles);
 
   let new_errors =
     Service.Check.analyze_sources
