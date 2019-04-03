@@ -1301,22 +1301,13 @@ let test_decode_serialized_ocaml_values context =
       ["dependentA.py"; "dependentB.py"]
       |> List.map ~f:File.Handle.create
       |> File.Handle.Set.Tree.of_list)
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Dependents.serialize_key (!&"module");
-                    kind = "Dependent";
-                    actual_key = "module";
-                    actual_value = Some "(dependentA.py dependentB.py)";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+    ~response: {
+      TypeQuery.serialized_key =
+        Dependents.serialize_key (!&"module");
+      kind = "Dependent";
+      actual_key = "module";
+      actual_value = Some "(dependentA.py dependentB.py)";
+    };
   assert_decode
     ~key:(Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py")
     ~value: (Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
@@ -1359,13 +1350,13 @@ let test_decode_serialized_ocaml_values context =
         [Test.parse_single_statement "x = 2"])
     ~response:{
       TypeQuery.serialized_key =
-        Ast.SharedMemory.Modules.Modules.serialize_key !+"handle";
+        Ast.SharedMemory.Modules.Modules.serialize_key !&"handle";
       kind = "Module";
       actual_key = "handle";
       actual_value =
         Some
           "((aliased_exports())(empty_stub false)(handle())\
-           (wildcard_exports(((Identifier x)))))";
+           (wildcard_exports((x))))";
     };
   assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
@@ -1387,6 +1378,31 @@ let test_decode_serialized_ocaml_values context =
       actual_value =
         Some
           "{ Coverage.full = 5; partial = 3; untyped = 0; ignore = 0; crashes = 0 }";
+    };
+  assert_decode
+    ~key:(ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"))
+    ~value:(
+      Int.Map.Tree.singleton
+        0
+        {
+          ResolutionSharedMemory.precondition =
+            Reference.Map.Tree.of_alist_exn [
+              !&"x", Annotation.create Type.integer;
+            ];
+          postcondition =
+            Reference.Map.Tree.of_alist_exn [
+              !&"x", Annotation.create Type.string;
+              !&"y", Annotation.create Type.integer;
+            ];
+        })
+    ~response:{
+      TypeQuery.serialized_key =
+        ResolutionSharedMemory.serialize_key (Reference.create "$toplevel");
+      kind = "Node type resolution";
+      actual_key = "$toplevel";
+      actual_value = Some
+          "{0: { \"Precondition\": {\"x\": \"(int: m)\", }, \
+           \"Postcondition\": {\"x\": \"(str: m)\", \"y\": \"(int: m)\", }}";
     }
 
 

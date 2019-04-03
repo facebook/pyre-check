@@ -785,6 +785,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                           value
                           >>| Coverage.show;
                       }
+                  | Ok (ResolutionSharedMemory.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ResolutionSharedMemory.TypeAnnotationsValue.description;
+                        actual_key = Reference.show key;
+                        actual_value =
+                          value
+                          >>| ResolutionSharedMemory.show_annotations;
+                      }
                   | Ok _ ->
                       None
 

@@ -17,6 +17,7 @@ type annotation_map = {
 }
 
 type annotations = annotation_map Int.Map.Tree.t
+[@@deriving show]
 
 
 module TypeAnnotationsValue: sig
