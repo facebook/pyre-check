@@ -177,20 +177,20 @@ module HandleKeys = struct
     let description = "All handles"
   end
 
-  module HandleKeys = SharedMemory.WithCache (IntKey) (HandleKeysValue)
+  module HandleKeys = SharedMemory.WithCache (SharedMemory.SingletonKey) (HandleKeysValue)
 
   let get () =
-    HandleKeys.get 0
+    HandleKeys.get SharedMemory.SingletonKey.key
     |> Option.value ~default:File.Handle.Set.Tree.empty
 
   let clear () =
-    HandleKeys.remove_batch (HandleKeys.KeySet.singleton 0)
+    HandleKeys.remove_batch (HandleKeys.KeySet.singleton SharedMemory.SingletonKey.key)
 
   let add ~handles:new_keys =
     let handles = get () in
     clear ();
     let handles = File.Handle.Set.Tree.union handles new_keys in
-    HandleKeys.add 0 handles
+    HandleKeys.add SharedMemory.SingletonKey.key handles
 
   let remove ~handles:old_keys =
     let handles = get () in
@@ -200,7 +200,7 @@ module HandleKeys = struct
       |> File.Handle.Set.Tree.of_list
       |> File.Handle.Set.Tree.diff handles
     in
-    HandleKeys.add 0 handles
+    HandleKeys.add SharedMemory.SingletonKey.key handles
 
   let normalize () =
     let handles = get () in
@@ -209,16 +209,10 @@ module HandleKeys = struct
     |> File.Handle.Set.Tree.to_list
     |> List.sort ~compare:File.Handle.compare
     |> File.Handle.Set.Tree.of_list
-    |> HandleKeys.add 0
-
-  let hash_of_key =
-    HandleKeys.hash_of_key
-
-  let serialize_key =
-    HandleKeys.serialize_key
+    |> HandleKeys.add SharedMemory.SingletonKey.key
 
   let compute_hashes_to_keys () =
-    HandleKeys.compute_hashes_to_keys ~keys:[0]
+    HandleKeys.compute_hashes_to_keys ~keys:[SharedMemory.SingletonKey.key]
 end
 
 

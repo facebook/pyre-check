@@ -190,12 +190,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
     ClassDefinitions.get
 
   let register_protocol protocol =
-    let protocols = Protocols.get 0 |> Option.value ~default:[] in
-    Protocols.add 0 (protocol :: protocols)
+    let protocols = Protocols.get SharedMemory.SingletonKey.key |> Option.value ~default:[] in
+    Protocols.add SharedMemory.SingletonKey.key (protocol :: protocols)
 
 
   let protocols () =
-    Protocols.get 0
+    Protocols.get SharedMemory.SingletonKey.key
     |> Option.value ~default:[]
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
@@ -543,7 +543,7 @@ let populate_shared_memory
 
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
-      OrderKeys.write_through "Order" (Hashtbl.keys annotations);
+      OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations);
     in
     add_type_order order;
 
@@ -557,7 +557,7 @@ let populate_shared_memory
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
-    Protocols.write_through 0 (Hash_set.to_list protocols);
+    Protocols.write_through SharedMemory.SingletonKey.key (Hash_set.to_list protocols);
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;
@@ -584,13 +584,13 @@ let normalize_shared_memory () =
   (* Since we don't provide an API to the raw order keys in the type order handler,
      handle it inline here. *)
   begin
-    match OrderKeys.get "Order" with
+    match OrderKeys.get SharedMemory.SingletonKey.key with
     | None ->
         ()
     | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
         List.sort ~compare:Int.compare keys
-        |> OrderKeys.add "Order";
+        |> OrderKeys.add SharedMemory.SingletonKey.key;
   end;
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in

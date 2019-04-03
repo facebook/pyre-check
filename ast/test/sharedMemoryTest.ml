@@ -66,7 +66,10 @@ let test_compute_hashes_to_keys _ =
        ~keys:[File.Handle.create "first.py"; File.Handle.create "second/__init__.py"]
     );
   assert_mapping_equal
-    [HandleKeys.hash_of_key 0, HandleKeys.serialize_key 0]
+    [
+      HandleKeys.HandleKeys.hash_of_key Memory.SingletonKey.key,
+      HandleKeys.HandleKeys.serialize_key Memory.SingletonKey.key;
+    ]
     (HandleKeys.compute_hashes_to_keys ());
   assert_mapping_equal
     [

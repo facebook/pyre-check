@@ -57,7 +57,7 @@ end
 
 module HandleKeys: sig
   module HandleKeysValue: Value.Type with type t = File.Handle.Set.Tree.t
-  module HandleKeys: module type of Memory.NoCache (IntKey) (HandleKeysValue)
+  module HandleKeys: module type of Memory.NoCache (Memory.SingletonKey) (HandleKeysValue)
 
   val get: unit -> File.Handle.Set.Tree.t
 
@@ -69,11 +69,6 @@ module HandleKeys: sig
   val clear: unit -> unit
 
   val normalize: unit -> unit
-
-  (* Exposed for testing. *)
-  val hash_of_key: int -> string
-  val serialize_key: int -> string
-
 
   val compute_hashes_to_keys: unit -> string String.Map.t
 end

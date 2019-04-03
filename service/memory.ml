@@ -231,3 +231,14 @@ let save_shared_memory ~path =
 
 let load_shared_memory ~path =
   SharedMem.load_table path
+
+
+module SingletonKey = struct
+  type t = int
+  let to_string = Core.Int.to_string
+  let compare = Core.Int.compare
+
+  type out = int
+  let from_string = Core.Int.of_string
+  let key = 0
+end

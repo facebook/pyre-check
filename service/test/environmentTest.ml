@@ -186,7 +186,7 @@ let test_normalize_order_keys _ =
   in
   Service.Environment.normalize_shared_memory ();
   assert_equal
-    (Service.EnvironmentSharedMemory.OrderKeys.get "Order")
+    (Service.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
     (Some indices)
 
 

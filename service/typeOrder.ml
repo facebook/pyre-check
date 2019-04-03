@@ -79,19 +79,19 @@ module Handler = struct
     set key data
 
   let length _ =
-    (OrderKeys.get "Order"
+    (OrderKeys.get SharedMemory.SingletonKey.key
      >>| List.length)
     |> Option.value ~default:0
 
   let add_key key =
-    match OrderKeys.get "Order" with
-    | None -> OrderKeys.add "Order" [key]
+    match OrderKeys.get SharedMemory.SingletonKey.key with
+    | None -> OrderKeys.add SharedMemory.SingletonKey.key [key]
     | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
-        OrderKeys.add "Order" (key :: keys)
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
+        OrderKeys.add SharedMemory.SingletonKey.key (key :: keys)
 
   let keys () =
-    Option.value ~default:[] (OrderKeys.get "Order")
+    Option.value ~default:[] (OrderKeys.get SharedMemory.SingletonKey.key)
 
   let show () =
     let keys =

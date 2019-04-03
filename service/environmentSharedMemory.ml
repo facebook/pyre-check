@@ -148,7 +148,7 @@ module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
-module Protocols = Memory.WithCache (Ast.SharedMemory.IntKey) (ProtocolValue)
+module Protocols = Memory.WithCache (Memory.SingletonKey) (ProtocolValue)
 
 (** Keys *)
 module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)
@@ -170,7 +170,7 @@ module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
 
 module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
 
-module OrderKeys = Memory.WithCache (StringKey) (OrderKeyValue)
+module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
 
 module StoredConfiguration = Memory.NoCache (StringKey) (ConfigurationValue)
 

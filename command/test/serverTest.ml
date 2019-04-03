@@ -1087,8 +1087,8 @@ let test_compute_hashes_to_keys context =
     @
     [
       to_binding
-        (OrderKeys.hash_of_key "Order")
-        (OrderKeys.serialize_key "Order");
+        (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
+        (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
       to_binding
         (OrderIndices.hash_of_key (Type.Primitive "sixteen"))
         (OrderIndices.serialize_key (Type.Primitive "sixteen"));
@@ -1144,7 +1144,9 @@ let test_compute_hashes_to_keys context =
       to_binding
         (Coverage.SharedMemory.hash_of_key (File.Handle.create "sample.py"))
         (Coverage.SharedMemory.serialize_key (File.Handle.create "sample.py"));
-      to_binding (Protocols.hash_of_key 0) (Protocols.serialize_key 0);
+      to_binding
+        (Protocols.hash_of_key SharedMemory.SingletonKey.key)
+        (Protocols.serialize_key SharedMemory.SingletonKey.key);
     ]
     |> List.sort ~compare
   in
