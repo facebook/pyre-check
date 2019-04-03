@@ -629,16 +629,27 @@ details()                show additional information about the current trace fra
 
         with self.db.make_session() as session:
             branches = self._get_trace_frame_branches(session)
-            leaves_strings = [
-                ", ".join(
-                    [
-                        leaf.contents
-                        for leaf in frame.leaves
-                        if leaf.contents in filter_leaves
-                    ]
+
+            leaves_strings = []
+            for frame in branches:
+                if frame.kind == TraceKind.POSTCONDITION:
+                    shared_text_kind = SharedTextKind.SOURCE
+                elif frame.kind == TraceKind.PRECONDITION:
+                    shared_text_kind = SharedTextKind.SINK
+                else:
+                    assert False, f"{frame.kind} is invalid"
+                leaves_strings.append(
+                    ", ".join(
+                        [
+                            leaf
+                            for leaf in self._get_leaves_trace_frame(
+                                session, frame.id, shared_text_kind
+                            )
+                            if leaf in filter_leaves
+                        ]
+                    )
                 )
-                for frame in branches
-            ]
+
             self._output_trace_expansion(branches, leaves_strings)
 
     @catch_keyboard_interrupt()
