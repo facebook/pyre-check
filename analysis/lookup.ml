@@ -249,8 +249,8 @@ let create_of_source environment source =
       let pre_annotations, post_annotations =
         Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
         >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
-            Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
-        |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
+            Reference.Map.of_tree precondition, Reference.Map.of_tree postcondition)
+        |> Option.value ~default:(Reference.Map.empty, Reference.Map.empty)
       in
       let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
       let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in

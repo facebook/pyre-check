@@ -6,14 +6,13 @@
 open Core
 
 open Ast
-open Expression
 
 module SharedMemory = Memory
 
 
 type annotation_map = {
-  precondition: Annotation.t Access.Map.Tree.t;
-  postcondition: Annotation.t Access.Map.Tree.t;
+  precondition: Annotation.t Reference.Map.Tree.t;
+  postcondition: Annotation.t Reference.Map.Tree.t;
 }
 
 type annotations =

@@ -14,31 +14,31 @@ open Test
 
 
 let test_set_local _ =
-  let assert_local ~resolution ~access ~expected =
+  let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
-      (Resolution.get_local resolution ~access:(!+access) >>| Annotation.annotation)
+      (Resolution.get_local resolution ~reference:(!&name) >>| Annotation.annotation)
   in
 
   let resolution = Test.resolution ~sources:[] () in
-  assert_local ~resolution ~access:"local" ~expected:None;
+  assert_local ~resolution ~name:"local" ~expected:None;
 
   let resolution =
     Resolution.set_local
       resolution
-      ~access:(!+"local")
+      ~reference:(!&"local")
       ~annotation:(Annotation.create Type.integer)
   in
-  assert_local ~resolution ~access:"local" ~expected:(Some "int");
+  assert_local ~resolution ~name:"local" ~expected:(Some "int");
 
   let resolution =
     Resolution.set_local
       resolution
-      ~access:(!+"local")
+      ~reference:(!&"local")
       ~annotation:(Annotation.create Type.float)
   in
-  assert_local ~resolution ~access:"local" ~expected:(Some "float")
+  assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
 
 let test_parse_annotation _ =

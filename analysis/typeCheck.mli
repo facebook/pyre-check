@@ -136,7 +136,7 @@ module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 val resolution
   :  (module Environment.Handler)
-  -> ?annotations: Annotation.t Expression.Access.Map.t
+  -> ?annotations: Annotation.t Reference.Map.t
   -> unit
   -> Resolution.t
 

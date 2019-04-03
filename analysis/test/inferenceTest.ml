@@ -8,7 +8,6 @@ open OUnit2
 
 open Ast
 open Analysis
-open Statement
 open Inference
 
 open Test
@@ -34,10 +33,10 @@ let create
           in
           create annotation
         in
-        !+name, annotation
+        !&name, annotation
       in
       List.map annotations ~f:annotify
-      |> Access.Map.of_alist_exn
+      |> Reference.Map.of_alist_exn
     in
     Resolution.with_annotations (Test.resolution ()) ~annotations
   in

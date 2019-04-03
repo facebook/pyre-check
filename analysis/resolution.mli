@@ -29,7 +29,7 @@ type type_parameters_mismatch = {
 }
 
 val create
-  :  annotations: Annotation.t Access.Map.t
+  :  annotations: Annotation.t Reference.Map.t
   -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
   -> aliases: (Type.t -> Type.t option)
@@ -44,16 +44,16 @@ val create
   -> unit
   -> t
 
-val set_local: t -> access: Access.t -> annotation: Annotation.t -> t
-val get_local: ?global_fallback: bool -> access: Access.t -> t -> Annotation.t option
-val unset_local: t -> access: Access.t -> t
-val is_global: t -> access: Access.t -> bool
+val set_local: t -> reference: Reference.t -> annotation: Annotation.t -> t
+val get_local: ?global_fallback: bool -> reference: Reference.t -> t -> Annotation.t option
+val unset_local: t -> reference: Reference.t -> t
+val is_global: t -> reference: Reference.t -> bool
 
 val add_type_variable: t -> variable: Type.t -> t
 val type_variable_exists: t -> variable: Type.t -> bool
 
-val annotations: t -> Annotation.t Access.Map.t
-val with_annotations: t -> annotations: Annotation.t Access.Map.t -> t
+val annotations: t -> Annotation.t Reference.Map.t
+val with_annotations: t -> annotations: Annotation.t Reference.Map.t -> t
 
 val parent: t -> Reference.t option
 val with_parent: t -> parent: Reference.t option -> t

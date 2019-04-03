@@ -33,7 +33,7 @@ type type_parameters_mismatch = {
 
 
 type t = {
-  annotations: Annotation.t Access.Map.t;
+  annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Set.t;
   order: (module TypeOrder.Handler);
 
@@ -84,10 +84,10 @@ let create
 
 
 let pp format { annotations; type_variables; _ } =
-  let annotation_map_entry (access, annotation) =
+  let annotation_map_entry (reference, annotation) =
     Format.asprintf
       "%a -> %a"
-      Access.pp access
+      Reference.pp reference
       Annotation.pp annotation;
   in
   Type.Set.to_list type_variables
@@ -104,34 +104,32 @@ let show resolution =
   Format.asprintf "%a" pp resolution
 
 
-let set_local ({ annotations; _ } as resolution) ~access ~annotation =
-  { resolution with annotations = Map.set annotations ~key:access ~data:annotation }
+let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
+  { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }
 
 
-let get_local ?(global_fallback=true) ~access { annotations; global; _ } =
-  match Map.find annotations access with
+let get_local ?(global_fallback=true) ~reference { annotations; global; _ } =
+  match Map.find annotations reference with
   | Some result ->
       Some result
   | _ when global_fallback ->
-      Access.delocalize access
-      |> Reference.from_access
+      Reference.delocalize reference
       |> global
       >>| Node.value
   | _ ->
       None
 
 
-let unset_local ({ annotations; _ } as resolution) ~access =
-  { resolution with annotations = Map.remove annotations access }
+let unset_local ({ annotations; _ } as resolution) ~reference =
+  { resolution with annotations = Map.remove annotations reference }
 
 
-let is_global { annotations; global; _ } ~access =
-  match Map.find annotations access with
+let is_global { annotations; global; _ } ~reference =
+  match Map.find annotations reference with
   | Some annotation ->
       Annotation.is_global annotation
   | _ ->
-      Access.delocalize access
-      |> Reference.from_access
+      Reference.delocalize reference
       |> global
       |> Option.is_some
 

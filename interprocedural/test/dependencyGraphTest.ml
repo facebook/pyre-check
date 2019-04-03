@@ -230,7 +230,7 @@ let test_type_collection _ =
       let annotations =
         Map.find_exn lookup key
         |> (fun { ResolutionSharedMemory.precondition; _ } ->
-            Access.Map.of_tree precondition)
+            Reference.Map.of_tree precondition)
       in
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in

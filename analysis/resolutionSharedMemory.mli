@@ -6,15 +6,14 @@
 open Core
 
 open Ast
-open Expression
 
 
 (** Maps a key, unique to each statement for a function CFG, to type
     annotations.  They key is computed from a tuple CFG node ID and and statement
     index (see Fixpoint.forward) *)
 type annotation_map = {
-  precondition: Annotation.t Access.Map.Tree.t;
-  postcondition: Annotation.t Access.Map.Tree.t;
+  precondition: Annotation.t Reference.Map.Tree.t;
+  postcondition: Annotation.t Reference.Map.Tree.t;
 }
 
 type annotations = annotation_map Int.Map.Tree.t

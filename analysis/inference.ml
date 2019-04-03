@@ -18,7 +18,7 @@ module State = struct
   include TypeCheck.State
 
 
-  let return_access = Access.create "$return"
+  let return_reference = Reference.create "$return"
 
 
   let initial_forward
@@ -39,12 +39,12 @@ module State = struct
         | _ ->
             match annotation, value with
             | None, None ->
-                let access =
+                let reference =
                   name
                   |> String.filter ~f:(fun character -> character <> '*')
-                  |> fun name -> [Access.Identifier name]
+                  |> Reference.create
                 in
-                Map.set annotations ~key:access ~data:(Annotation.create Type.Bottom)
+                Map.set annotations ~key:reference ~data:(Annotation.create Type.Bottom)
             | _ ->
                 annotations
       in
@@ -65,7 +65,7 @@ module State = struct
       let resolution =
         Resolution.with_annotations
           resolution
-          ~annotations:(Access.Map.of_alist_exn [return_access, expected_return])
+          ~annotations:(Reference.Map.of_alist_exn [return_reference, expected_return])
       in
       create ~configuration ~resolution ~define ()
     in
@@ -73,7 +73,7 @@ module State = struct
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
            Type.is_not_instantiated data.Annotation.annotation ||
-           Access.equal key return_access then
+           Reference.equal key return_reference then
           map
         else
           Map.set ~key ~data map
@@ -122,9 +122,8 @@ module State = struct
     let add_parameter_errors
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
-      let access = [Access.Identifier name] in
       let add_missing_parameter_error ~given_annotation =
-        Resolution.get_local resolution ~access
+        Resolution.get_local resolution ~reference:(Reference.create name)
         >>| (fun { Annotation.annotation; _ } ->
             let name = Access.create_from_identifiers [name] in
             let error =
@@ -188,7 +187,7 @@ module State = struct
                   >>| (fun refined ->
                       Resolution.set_local
                         resolution
-                        ~access:value
+                        ~reference:(Reference.from_access value)
                         ~annotation:(Annotation.create refined))
                   |> Option.value ~default:resolution
               | Tuple arguments ->
@@ -280,7 +279,7 @@ module State = struct
                       >>| (fun refined ->
                           Resolution.set_local
                             resolution
-                            ~access:value_access
+                            ~reference:(Reference.from_access value_access)
                             ~annotation:(Annotation.create refined))
                       |> Option.value ~default:resolution
                   | _ ->
@@ -338,12 +337,12 @@ module State = struct
 
       | Return { Return.expression = Some { Node.value = Access (SimpleAccess access); _ }; _ } ->
           let return_annotation =
-            Option.value_exn (Resolution.get_local resolution ~access:return_access)
+            Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
             |> Annotation.annotation
           in
           Resolution.set_local
             resolution
-            ~access:access
+            ~reference:(Reference.from_access access)
             ~annotation:(Annotation.create return_annotation)
 
       | _ ->

@@ -40,10 +40,10 @@ let create
           in
           create annotation
         in
-        !+name, annotation
+        !&name, annotation
       in
       List.map annotations ~f:annotify
-      |> Access.Map.of_alist_exn
+      |> Reference.Map.of_alist_exn
     in
     Resolution.with_annotations resolution ~annotations
   in
@@ -355,8 +355,8 @@ let test_redirect _ =
       access
       (Access.SimpleAccess (parse_single_access expected_access));
     let assert_in_scope (expected_name, expected_type) =
-      !+expected_name
-      |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
+      !&expected_name
+      |> (fun reference -> Option.value_exn (Resolution.get_local ~reference resolution))
       |> Annotation.annotation
       |> assert_equal ~printer:Type.show expected_type
     in

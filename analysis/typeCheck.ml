@@ -94,14 +94,13 @@ module AccessState = struct
          >>| List.hd
          >>| function
          | Some superclass ->
-             let super = Access.Identifier "$super" in
              let resolution =
                Resolution.set_local
                  resolution
-                 ~access:[super]
+                 ~reference:(Reference.create "$super")
                  ~annotation:(Annotation.create superclass)
              in
-             Access.SimpleAccess (super :: tail), resolution
+             Access.SimpleAccess (Access.Identifier "$super" :: tail), resolution
          | None ->
              Access.SimpleAccess access, resolution)
         |> Option.value ~default:(Access.SimpleAccess access, resolution)
@@ -109,16 +108,15 @@ module AccessState = struct
     | (Access.Identifier "type")
       :: (Access.Call { Node.value = [{ Argument.value; _ }]; _ })
       :: tail ->
-        let access = Access.Identifier "$type" in
         let resolution =
           let annotation =
             Resolution.resolve resolution value
             |> Type.meta
             |> Annotation.create
           in
-          Resolution.set_local resolution ~access:[access] ~annotation
+          Resolution.set_local resolution ~reference:(Reference.create "$type") ~annotation
         in
-        SimpleAccess (access :: tail), resolution
+        SimpleAccess (Access.Identifier "$type" :: tail), resolution
     (* Resolve function redirects. *)
     | (Access.Identifier name) :: (Access.Call { Node.value = arguments; location }) :: tail ->
         Access.redirect ~arguments ~location ~name:[Access.Identifier name]
@@ -263,7 +261,7 @@ module State = struct
       let annotation_to_string (name, annotation) =
         Format.asprintf
           "    %a -> %a"
-          Access.pp name
+          Reference.pp name
           Annotation.pp annotation
       in
       Resolution.annotations resolution
@@ -472,11 +470,10 @@ module State = struct
            | name
              when not (Type.equal expected Type.Top ||
                        Attribute.initialized attribute) ->
-               let access =
-                 (Expression.Access.Identifier (Statement.Define.self_identifier define)) ::
-                 [Expression.Access.Identifier name]
+               let reference =
+                  Reference.create_from_list [(Statement.Define.self_identifier define); name]
                in
-               if Map.mem (Resolution.annotations resolution) access &&
+               if Map.mem (Resolution.annotations resolution) reference &&
                   not (Statement.Define.is_class_toplevel define) then
                  errors
                else
@@ -671,7 +668,7 @@ module State = struct
         | `Both (previous, next) ->
             Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
         | `Left previous
-        | `Right previous when List.length key = 1 ->
+        | `Right previous when Reference.length key = 1 ->
             let widened =
               Refinement.widen
                 ~resolution
@@ -784,17 +781,17 @@ module State = struct
                             in
                             Resolution.resolve resolution backup_argument
                           in
-                          let argument_as_identifier = Access.Identifier "$backup_argument" in
+                          let backup_argument = [Access.Identifier "$backup_argument"] in
                           let resolution =
                             Resolution.set_local
                               resolution
-                              ~access:[argument_as_identifier]
+                              ~reference:(Reference.create "$backup_argument")
                               ~annotation:(Annotation.create argument_type)
                           in
                           let arguments = [{
                               Argument.value = {
                                 Node.location;
-                                value = Access (Access.SimpleAccess [argument_as_identifier]);
+                                value = Access (Access.SimpleAccess backup_argument);
                               };
                               name = None;
                             }]
@@ -842,7 +839,7 @@ module State = struct
                     | [Access.Identifier _] ->
                         Resolution.set_local
                           resolution
-                          ~access
+                          ~reference:(Reference.from_access access)
                           ~annotation:(Annotation.create determined)
                     | _ ->
                         resolution))
@@ -991,7 +988,7 @@ module State = struct
             | Some resolved, Access.Identifier _
               when Type.is_callable (Annotation.annotation resolved) ->
                 (* Nested function. *)
-                Resolution.get_local resolution ~access:lead
+                Resolution.get_local resolution ~reference:(Reference.from_access lead)
                 >>| (fun resolved -> step state ~resolved ~lead ())
                 |> Option.value ~default:(abort ~lead state ())
 
@@ -1079,8 +1076,13 @@ module State = struct
                   let join_resolveds ~head_resolved ~tail_resolveds =
                     let apply_global_override resolved =
                       let open Annotation in
-                      let global_fallback = Type.is_meta parent_annotation in
-                      match Resolution.get_local resolution ~access:lead ~global_fallback with
+                      let annotation =
+                        Resolution.get_local
+                          resolution
+                          ~reference:(Reference.from_access lead)
+                          ~global_fallback:(Type.is_meta parent_annotation)
+                      in
+                      match annotation with
                       | Some { annotation; mutability = Immutable { scope = Global; original } }
                         when Type.is_unknown original ->
                           {
@@ -1130,7 +1132,10 @@ module State = struct
                 (* Module or global variable. *)
                 begin
                   let annotation =
-                    match Resolution.get_local resolution ~access:lead with
+                    let local_annotation =
+                      Resolution.get_local resolution ~reference:(Reference.from_access lead)
+                    in
+                    match local_annotation with
                     | Some annotation ->
                         Some annotation
                     | _ ->
@@ -1138,10 +1143,10 @@ module State = struct
                         let getattr =
                           Resolution.get_local
                             resolution
-                            ~access:(
-                              qualifier @
-                              [Access.Identifier "__getattr__"]
-                            )
+                            ~reference:(
+                              Reference.create
+                                ~prefix:(Reference.from_access qualifier)
+                                "__getattr__")
                           >>| Annotation.annotation
                         in
                         let correct_getattr_arity signature =
@@ -1333,11 +1338,6 @@ module State = struct
             index
             (state, annotations)
             { Node.location; value = { Parameter.name; value; annotation } } =
-          let access =
-            name
-            |> String.filter ~f:(fun character -> character <> '*')
-            |> fun name -> [Access.Identifier name]
-          in
           let add_incompatible_variable_error ~state annotation default =
             if Type.equal default Type.Any ||
                Resolution.less_or_equal resolution ~left:default ~right:annotation ||
@@ -1557,7 +1557,12 @@ module State = struct
             | _ ->
                 mutability
           in
-          state, Map.set annotations ~key:access ~data:{ Annotation.annotation; mutability }
+          let reference =
+            name
+            |> String.filter ~f:(fun character -> character <> '*')
+            |> Reference.create
+          in
+          state, Map.set annotations ~key:reference ~data:{ Annotation.annotation; mutability }
         in
         match parameters, parent with
         | [], Some _
@@ -1584,10 +1589,10 @@ module State = struct
       in
       let resolution = Resolution.with_annotations resolution ~annotations in
       let resolution_fixpoint =
-        let precondition = Access.Map.Tree.empty in
+        let precondition = Reference.Map.Tree.empty in
         let postcondition =
           Resolution.annotations resolution
-          |> Access.Map.to_tree
+          |> Reference.Map.to_tree
         in
         let key = ([%hash: int * int] (Cfg.entry_index, 0)) in
         Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
@@ -2439,7 +2444,7 @@ module State = struct
             in
             Resolution.set_local
               resolution
-              ~access:(Access.create name)
+              ~reference:(Reference.create name)
               ~annotation:(Annotation.create Type.Any)
           in
           List.fold ~f:add_parameter ~init:resolution parameters
@@ -2961,6 +2966,7 @@ module State = struct
                   in
                   explicit && (not (Type.equal parent_annotation attribute_parent))
                 in
+                let reference = Reference.from_access access in
                 match element with
                 | Attribute { attribute = access; definition = Defined (Module _) }
                   when insufficiently_annotated ->
@@ -3016,7 +3022,7 @@ module State = struct
                 | Attribute _ ->
                     None
                 | Value
-                  when (Resolution.is_global ~access resolution) &&
+                  when (Resolution.is_global ~reference resolution) &&
                        insufficiently_annotated &&
                        not is_type_alias ->
                     let global_location =
@@ -3076,12 +3082,13 @@ module State = struct
 
               (* Propagate annotations. *)
               let state =
+                let reference = Reference.from_access access in
                 let resolution =
                   let annotation =
                     if explicit && is_valid_annotation then
                       let annotation =
                         Annotation.create_immutable
-                          ~global:(Resolution.is_global ~access resolution)
+                          ~global:(Resolution.is_global ~reference resolution)
                           guide
                       in
                       if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
@@ -3093,7 +3100,7 @@ module State = struct
                     else
                       Annotation.create guide
                   in
-                  Resolution.set_local resolution ~access ~annotation
+                  Resolution.set_local resolution ~reference ~annotation
                 in
                 { state with resolution }
               in
@@ -3289,6 +3296,7 @@ module State = struct
                     _;
                   }
                 ]) ->
+              let reference = Reference.from_access access in
               let annotation = parse_isinstance_annotation annotation in
               let updated_annotation =
                 let refinement_unnecessary existing_annotation =
@@ -3299,7 +3307,7 @@ module State = struct
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
                 in
-                match Resolution.get_local resolution ~access with
+                match Resolution.get_local resolution ~reference with
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
                     existing_annotation
                 | _ ->
@@ -3308,7 +3316,7 @@ module State = struct
               let resolution =
                 Resolution.set_local
                   resolution
-                  ~access
+                  ~reference
                   ~annotation:updated_annotation
               in
               { state with resolution }
@@ -3376,8 +3384,8 @@ module State = struct
                                })
                              ~define:define_node)
                 in
-                let resolve ~access =
-                  match Resolution.get_local resolution ~access with
+                let resolve ~reference =
+                  match Resolution.get_local resolution ~reference with
                   | Some {
                       Annotation.annotation = (Type.Optional (Type.Union parameters)) as unrefined;
                       _;
@@ -3410,7 +3418,7 @@ module State = struct
                       in
                       Resolution.set_local
                         resolution
-                        ~access
+                        ~reference
                         ~annotation:(Annotation.create constrained)
                   | _ ->
                       resolution
@@ -3419,7 +3427,7 @@ module State = struct
                 | Some error, _ ->
                     emit_raw_error ~state:{ state with bottom = true } error
                 | _, { Node.value = Access (Access.SimpleAccess access); _ } ->
-                    { state with resolution = resolve ~access }
+                    { state with resolution = resolve ~reference:(Reference.from_access access) }
                 | _ ->
                     state
               end
@@ -3438,7 +3446,8 @@ module State = struct
                   }
                 ]) ->
               let resolution =
-                match Resolution.get_local resolution ~access with
+                let reference = Reference.from_access access in
+                match Resolution.get_local resolution ~reference with
                 | Some {
                     Annotation.annotation =
                       (Type.Parametric { name; parameters = [Type.Optional parameter] })
@@ -3450,7 +3459,7 @@ module State = struct
                       ~right:(Type.iterable (Type.Optional parameter)) ->
                     Resolution.set_local
                       resolution
-                      ~access
+                      ~reference
                       ~annotation:(
                         Annotation.create
                           (Type.Parametric {
@@ -3465,12 +3474,13 @@ module State = struct
 
           | Access (SimpleAccess access) ->
               let element = last_element ~resolution access in
+              let reference = Reference.from_access access in
               let resolution =
-                match Resolution.get_local resolution ~access, element with
+                match Resolution.get_local resolution ~reference, element with
                 | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
                     Resolution.set_local
                       resolution
-                      ~access
+                      ~reference
                       ~annotation:(Annotation.create parameter)
                 | _, Attribute { definition = Defined (Instance attribute); _ } ->
                     begin
@@ -3494,7 +3504,7 @@ module State = struct
                           in
                           Resolution.set_local
                             resolution
-                            ~access
+                            ~reference
                             ~annotation:refined
                       | _ ->
                           resolution
@@ -3560,6 +3570,7 @@ module State = struct
               operator = ComparisonOperator.Is;
               right = { Node.value = Access (SimpleAccess [Access.Identifier "None"]); _ };
             } ->
+              let reference = Reference.from_access access in
               begin
                 let refined =
                   let element = last_element ~resolution access in
@@ -3572,11 +3583,11 @@ module State = struct
                   | _ ->
                       Annotation.create (Type.Optional Type.Bottom)
                 in
-                match Resolution.get_local ~global_fallback:false resolution ~access with
+                match Resolution.get_local ~global_fallback:false resolution ~reference with
                 | Some previous ->
                     if Refinement.less_or_equal ~resolution refined previous then
                       let resolution =
-                        Resolution.set_local resolution ~access ~annotation:refined
+                        Resolution.set_local resolution ~reference ~annotation:refined
                       in
                       { state with resolution }
                     else
@@ -3586,7 +3597,9 @@ module State = struct
                          this is an obvious contradiction. *)
                       state
                 | None ->
-                    let resolution = Resolution.set_local resolution ~access ~annotation:refined in
+                    let resolution =
+                      Resolution.set_local resolution ~reference ~annotation:refined
+                    in
                     { state with resolution }
               end
           | ComparisonOperator {
@@ -3594,22 +3607,25 @@ module State = struct
               operator = ComparisonOperator.In;
               right;
             } ->
+              let reference = Reference.from_access access in
               let { resolved; _ } = forward_expression ~state ~expression:right in
               let iterable = Resolution.join resolution resolved (Type.iterable Type.Bottom) in
               if Type.is_iterable iterable then
                 let refined = Annotation.create (Type.single_parameter iterable) in
-                match Resolution.get_local ~global_fallback:false resolution ~access with
+                match Resolution.get_local ~global_fallback:false resolution ~reference with
                 | Some previous when not (Annotation.is_immutable previous) ->
                     if Refinement.less_or_equal ~resolution refined previous then
                       let resolution =
-                        Resolution.set_local resolution ~access ~annotation:refined
+                        Resolution.set_local resolution ~reference ~annotation:refined
                       in
                       { state with resolution }
                     else
                       (* Keeping previous state, since it is more refined. *)
                       state
-                | None when not (Resolution.is_global resolution ~access) ->
-                    let resolution = Resolution.set_local resolution ~access ~annotation:refined in
+                | None when not (Resolution.is_global resolution ~reference) ->
+                    let resolution =
+                      Resolution.set_local resolution ~reference ~annotation:refined
+                    in
                     { state with resolution }
                 | _ ->
                     state
@@ -3659,7 +3675,7 @@ module State = struct
           in
           Resolution.set_local
             resolution
-            ~access
+            ~reference:(Reference.from_access access)
             ~annotation
         in
         { state with resolution }
@@ -3786,7 +3802,7 @@ module State = struct
                 in
                 let nested_resolution =
                   let update ~key ~data initial_resolution =
-                    Resolution.set_local initial_resolution ~access:key ~annotation:data
+                    Resolution.set_local initial_resolution ~reference:key ~annotation:data
                   in
                   let add_variable resolution variable =
                     Resolution.add_type_variable resolution ~variable
@@ -3839,11 +3855,11 @@ module State = struct
         | Some key, { resolution = post_resolution; _ } ->
             let precondition =
               Resolution.annotations resolution
-              |> Access.Map.to_tree
+              |> Reference.Map.to_tree
             in
             let postcondition =
               Resolution.annotations post_resolution
-              |> Access.Map.to_tree
+              |> Reference.Map.to_tree
             in
             Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
         | None, _ ->
@@ -3869,7 +3885,7 @@ type result = {
 }
 
 
-let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.empty) () =
+let resolution (module Handler: Environment.Handler) ?(annotations = Reference.Map.empty) () =
   let aliases = Handler.aliases in
 
   let class_representation annotation =
@@ -3889,7 +3905,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Access.Map.
   let state_without_resolution =
     let empty_resolution =
       Resolution.create
-        ~annotations:Access.Map.empty
+        ~annotations:Reference.Map.empty
         ~order:(module Handler.TypeOrderHandler)
         ~resolve:(fun ~resolution:_ _ -> Type.Top)
         ~aliases:(fun _ -> None)
@@ -3973,10 +3989,10 @@ let resolution_with_key ~environment ~parent ~name ~key =
         |> Int.Map.of_tree
         |> (fun map -> Int.Map.find map key)
         >>| (fun { precondition; _ } -> precondition)
-        >>| Access.Map.of_tree
-        |> Option.value ~default:Access.Map.empty
+        >>| Reference.Map.of_tree
+        |> Option.value ~default:Reference.Map.empty
     | _ ->
-        Access.Map.empty
+        Reference.Map.empty
   in
   resolution environment ~annotations ()
   |> Resolution.with_parent ~parent
@@ -4040,7 +4056,7 @@ let run
                 Type.show (Annotation.annotation data)
                 |> String.strip ~drop:((=) '`')
               in
-              label ^ "\n" ^ Access.show key ^ ": " ^ annotation_string
+              label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
             in
             Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
         | None -> ""
