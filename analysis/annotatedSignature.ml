@@ -101,7 +101,7 @@ type reasons = {
 type signature_match = {
   callable: Type.Callable.t;
   argument_mapping: (argument list) Type.Callable.Parameter.Map.t;
-  constraints: Type.t Type.Map.t;
+  constraints: TypeConstraints.t;
   ranks: ranks;
   reasons: reasons;
 }
@@ -114,24 +114,11 @@ let select
   let open Type.Callable in
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let all_arguments = arguments in
-    let initial_constraints =
-      let to_bottom constraints variable =
-        Map.set constraints ~key:variable ~data:Type.Bottom
-      in
-      Type.Callable {
-        Type.Callable.kind = Anonymous;
-        implementation;
-        overloads = [];
-        implicit = None;
-      }
-      |> Type.free_variables
-      |> List.fold ~f:to_bottom ~init:Type.Map.empty
-    in
     let base_signature_match =
       {
         callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
-        constraints = initial_constraints;
+        constraints = TypeConstraints.empty;
         ranks = {
           arity = 0;
           annotation = 0;
@@ -520,32 +507,17 @@ let select
           List.rev arguments
           |> check signature_match
     in
-    let reduce_constraints
+    let check_if_solution_exists
         ({ constraints; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
-      let rec reduce_constraint_solution ?previous_free_count constraints =
-        let concrete, free = Type.Map.partition_tf constraints ~f:Type.is_resolved in
-        match Type.Map.length free, previous_free_count with
-        | 0, _ ->
-            Some constraints
-        | current_free_count, Some previous_free_count
-          when current_free_count >= previous_free_count ->
-            None
-        | current_free_count, _ ->
-            let take_either_preferring_left ~key:_ =
-              function | `Left value | `Right value | `Both (value, _) -> Some value
-            in
-            Type.Map.map free ~f:(Type.instantiate ~constraints:(Type.Map.find concrete))
-            |> Type.Map.merge concrete ~f:take_either_preferring_left
-            |> reduce_constraint_solution ~previous_free_count:current_free_count
-      in
-      match reduce_constraint_solution constraints with
-      | Some constraints ->
-          { signature_match with constraints }
-      | None ->
-          {
-            signature_match with
-            reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation}
-          }
+      if Option.is_some (Resolution.solve_constraints resolution constraints) then
+        signature_match
+      else
+        (* All other cases should have been able to been blamed on a specefic argument, this is the
+           only global failure. *)
+        {
+          signature_match with
+          reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation }
+        }
     in
     let special_case_dictionary_constructor
         ({ argument_mapping; callable; constraints; _ } as signature_match) =
@@ -574,15 +546,14 @@ let select
           >>| (fun updated_constraints ->
               { signature_match with constraints = updated_constraints }
             )
-          (* TODO(T41074174): Error here, could come from instantiating a class that inherits from
-             dict[int, str] with the kwargs constructor *)
+          (* TODO(T41074174): Error here *)
           |> Option.value ~default:signature_match
       | _ ->
           signature_match
     in
     Map.fold ~init:signature_match ~f:update argument_mapping
-    |> reduce_constraints
     |> special_case_dictionary_constructor
+    |> check_if_solution_exists
   in
   let calculate_rank
       ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
@@ -632,9 +603,21 @@ let select
     in
     let determine_reason
         { callable; constraints; reasons = { arity; annotation; _ }; _ } =
+      let solution =
+        let solution =
+          Resolution.solve_constraints resolution constraints
+          |> Option.value ~default:Type.Map.empty
+        in
+        let to_bottom constraints variable =
+          Map.update constraints variable ~f:(function | None -> Type.Bottom | Some value -> value)
+        in
+        Type.Callable callable
+        |> Type.free_variables
+        |> List.fold ~f:to_bottom ~init:solution
+      in
       let callable =
         Type.Callable.map
-          ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
+          ~f:(Type.instantiate ~widen:false ~constraints:(Map.find solution))
           callable
         |> (function
             | Some callable -> callable
@@ -642,7 +625,7 @@ let select
       in
       match List.rev arity, List.rev annotation with
       | [], [] ->
-          Found { callable; constraints }
+          Found { callable; constraints = solution }
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function

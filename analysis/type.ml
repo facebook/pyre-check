@@ -122,6 +122,7 @@ and variable = {
   constraints: constraints;
   variance: variance;
   state: variable_state;
+  namespace: int;
 }
 
 
@@ -156,6 +157,13 @@ module Map = Map.Make(struct
     let sexp_of_t = sexp_of_t
     let t_of_sexp = t_of_sexp
   end)
+
+
+let default_to_bottom map keys =
+  let to_bottom solution key =
+    Map.update solution key ~f:(function | None -> Bottom | Some value -> value)
+  in
+  List.fold keys ~f:to_bottom ~init:map
 
 
 module Set = Set.Make(struct
@@ -469,7 +477,7 @@ let parametric name parameters =
 
 
 let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = name; constraints; variance; state = Free }
+  Variable { variable = name; constraints; variance; state = Free; namespace = 0 }
 
 
 let awaitable parameter =
@@ -2190,6 +2198,19 @@ let mark_variables_as_bound ?(simulated = false) annotation =
   let constraints annotation =
     match annotation with
     | Variable variable -> Some (Variable { variable with state })
+    | _ -> None
+  in
+  instantiate annotation ~constraints
+
+
+let namespace_variable ({ namespace = namespace; _ } as variable) =
+  { variable with namespace = namespace + 1 }
+
+
+let namespace_free_variables annotation =
+  let constraints annotation =
+    match annotation with
+    | Variable ({ state = Free; _ } as variable) -> Some (Variable (namespace_variable variable))
     | _ -> None
   in
   instantiate annotation ~constraints

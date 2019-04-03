@@ -264,9 +264,15 @@ let solve_less_or_equal resolution =
   full_order resolution
   |> TypeOrder.solve_less_or_equal
 
+
 let constraints_solution_exists ~left ~right resolution =
-  solve_less_or_equal resolution ~constraints:Type.Map.empty ~left ~right
+  solve_less_or_equal resolution ~constraints:TypeConstraints.empty ~left ~right
+  >>= TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
   |> Option.is_some
+
+
+let solve_constraints resolution =
+  TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
 
 
 let less_or_equal resolution =

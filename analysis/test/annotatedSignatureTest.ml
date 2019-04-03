@@ -608,13 +608,14 @@ let test_select _ =
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "(a=1)"
     (`Found "[[Keywords(kwargs, $literal_one)], dict[str, $literal_one]]");
+  (* TODO(T41074174): Error here rather than defaulting back to the initial signature *)
   assert_select
     ~name:"dict.__init__"
     "[[Named(map, typing.Mapping[_T, _S]), Keywords(kwargs, _S)], dict[_T, _S]]"
     "({1: 1}, a=1)"
     (`Found
-       ("[[Named(map, typing.Mapping[typing.Union[int, str], int]), Keywords(kwargs, int)], " ^
-        "dict[typing.Union[int, str], int]]")
+       ("[[Named(map, typing.Mapping[int, int]), Keywords(kwargs, int)], " ^
+        "dict[int, int]]")
     );
   assert_select
     ~name:"dict.__init__"

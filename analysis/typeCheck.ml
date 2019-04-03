@@ -471,7 +471,7 @@ module State = struct
              when not (Type.equal expected Type.Top ||
                        Attribute.initialized attribute) ->
                let reference =
-                  Reference.create_from_list [(Statement.Define.self_identifier define); name]
+                 Reference.create_from_list [(Statement.Define.self_identifier define); name]
                in
                if Map.mem (Resolution.annotations resolution) reference &&
                   not (Statement.Define.is_class_toplevel define) then
@@ -836,12 +836,12 @@ module State = struct
                 Annotated.Signature.determine signature ~resolution ~annotation
                 >>| (fun determined ->
                     if Reference.length reference = 1 then
-                        Resolution.set_local
-                          resolution
-                          ~reference
-                          ~annotation:(Annotation.create determined)
+                      Resolution.set_local
+                        resolution
+                        ~reference
+                        ~annotation:(Annotation.create determined)
                     else
-                        resolution))
+                      resolution))
             |> Option.value ~default:resolution
           in
           List.fold signatures ~init:resolution ~f:update_resolution
@@ -1695,16 +1695,11 @@ module State = struct
                    | Some actual ->
                        begin
                          let is_compatible =
-                           Resolution.less_or_equal
+                           let expected = Type.mark_variables_as_bound expected in
+                           Resolution.constraints_solution_exists
                              resolution
-                             ~left:expected
-                             ~right:actual ||
-                           Resolution.solve_less_or_equal
-                             resolution
-                             ~constraints:Type.Map.empty
                              ~left:expected
                              ~right:actual
-                           |> Option.is_some
                          in
                          try
                            if not (Type.equal Type.Top expected) && not is_compatible then

@@ -118,10 +118,10 @@ type order = {
 
 val solve_less_or_equal
   :  order
-  -> constraints: Type.t Type.Map.t
+  -> constraints: TypeConstraints.t
   -> left: Type.t
   -> right: Type.t
-  -> Type.t Type.Map.t option
+  -> TypeConstraints.t option
 val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
 val is_compatible_with: order -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
@@ -136,6 +136,8 @@ val widen
   -> iteration: int
   -> Type.t
 val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
+
+module OrderedConstraints: TypeConstraints.OrderedConstraintsType with type order = order
 
 
 val instantiate_successors_parameters

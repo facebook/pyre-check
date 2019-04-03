@@ -3119,22 +3119,45 @@ let test_solve_less_or_equal _ =
       |> Type.instantiate ~constraints
     in
     let right = parse_annotation right in
-    let parse_map map =
-      let mark =
-        if leave_constraint_values_unbound then
-          Fn.id
-        else
-          Type.mark_variables_as_bound ~simulated:false
-      in
-      map
-      >>| List.map
-        ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
+    let mark =
+      if leave_constraint_values_unbound then
+        Fn.id
+      else
+        Type.mark_variables_as_bound ~simulated:false
+    in
+    let expected =
+      expected
+      >>| List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
       >>| Type.Map.of_alist_exn
     in
-    let expected = parse_map expected in
     let constraints =
-      parse_map constraints
-      |> Option.value ~default:(Type.Map.empty)
+      let add_bounds sofar (key, (lower_bound, upper_bound)) =
+        let variable =
+          match parse_annotation key with
+          | Type.Variable variable -> variable
+          | _ -> failwith "not a variable"
+        in
+        let unwrap optional =
+          Option.value_exn ~message:"given pre-constraints are invalid" optional
+        in
+        let sofar =
+          lower_bound
+          >>| parse_annotation
+          >>| mark
+          >>| (fun bound ->
+              OrderedConstraints.add_lower_bound sofar ~order:handler ~variable ~bound |> unwrap)
+          |> Option.value ~default:sofar
+        in
+        upper_bound
+        >>| parse_annotation
+        >>| mark
+        >>| (fun bound ->
+            OrderedConstraints.add_upper_bound sofar ~order:handler ~variable ~bound |> unwrap)
+        |> Option.value ~default:sofar
+      in
+      constraints
+      >>| List.fold ~init:TypeConstraints.empty ~f:add_bounds
+      |> Option.value ~default:TypeConstraints.empty
     in
     let optional_map_compare left right =
       match left, right with
@@ -3154,7 +3177,8 @@ let test_solve_less_or_equal _ =
       ~cmp:optional_map_compare
       ~printer:optional_map_print
       expected
-      (TypeOrder.solve_less_or_equal handler ~constraints ~left ~right)
+      (solve_less_or_equal handler ~constraints ~left ~right
+       >>= OrderedConstraints.solve ~order:handler)
   in
   assert_solve ~left:"C" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
   assert_solve ~left:"D" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
@@ -3180,12 +3204,12 @@ let test_solve_less_or_equal _ =
   assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
 
   assert_solve
-    ~constraints:["T_Unconstrained", "Q"]
+    ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_invariant[C]"
     ~right:"G_invariant[T_Unconstrained]"
     None;
   assert_solve
-    ~constraints:["T_Unconstrained", "Q"]
+    ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_covariant[C]"
     ~right:"G_covariant[T_Unconstrained]"
     (Some ["T_Unconstrained", "typing.Union[Q, C]"]);
@@ -3229,7 +3253,11 @@ let test_solve_less_or_equal _ =
   assert_solve
     ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    (Some ["T", "typing.Union[C, Q, int]"]);
+    (None);
+  assert_solve
+    ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
+    ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
+    (Some ["T", "C"]);
 
   (* Bound => Bound *)
   assert_solve
@@ -3297,13 +3325,12 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     (Some []);
-  (* This will be handled in signature selection *)
   assert_solve
     ~leave_constraint_values_unbound:true
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], G_invariant[T]]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some ["T_Unconstrained", "G_invariant[T_Unconstrained]"]);
+    None;
   assert_solve
     ~leave_unbound_in_left:["T1"]
     ~left:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
@@ -3317,16 +3344,10 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[typing.Union[int, str]], str]"
     ~right:"typing.Callable[[int], T4]"
     (Some ["T4", "str"]);
-  (* This should solve to T3 => int, T4 => str, but can't because the simulated signature select
-     will fail because T3 isnt leq to int, so it has to fall back to pairwise solve, which breaks
-     because Union[int, str] isn't leq int.
-     Fundamentally the problem is that callable parameters need to be solved in both directions at
-     the same time, i.e. finding constraints such that x leq y where the variables you're trying
-     to constrain exist on both sides of the leq. *)
   assert_solve
     ~left:"typing.Callable[[typing.Union[int, str], int], str]"
     ~right:"typing.Callable[[int, T3], T4]"
-    (None);
+    (Some ["T3", "int"; "T4", "str"]);
 
   (* Callback protocols *)
   assert_solve

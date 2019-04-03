@@ -83,6 +83,7 @@ and variable = {
   constraints: constraints;
   variance: variance;
   state: variable_state;
+  namespace: int;
 }
 
 and t =
@@ -104,6 +105,7 @@ type type_t = t
 [@@deriving compare, eq, sexp, show]
 
 module Map : Map.S with type Key.t = t
+val default_to_bottom: t Map.t -> t list -> t Map.t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
@@ -284,6 +286,8 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val mark_variables_as_bound: ?simulated: bool -> t -> t
+val namespace_variable: variable -> variable
+val namespace_free_variables: t -> t
 val free_variables: t -> t list
 val free_simulated_bound_variables: t -> t
 (* Does not contain free variables. *)

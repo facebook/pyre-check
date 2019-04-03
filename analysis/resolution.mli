@@ -112,8 +112,9 @@ val parse_annotation
 val is_invariance_mismatch: t -> left: Type.t -> right: Type.t -> bool
 val solve_less_or_equal
   :  t
-  -> constraints: Type.t Type.Map.t
+  -> constraints: TypeConstraints.t
   -> left: Type.t
   -> right: Type.t
-  -> Type.t Type.Map.t option
+  -> TypeConstraints.t option
 val constraints_solution_exists: left: Type.t -> right: Type.t -> t -> bool
+val solve_constraints: t -> TypeConstraints.t -> Type.t Type.Map.t option
