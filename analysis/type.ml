@@ -2250,20 +2250,20 @@ let instantiate_free_variables ~replacement annotation =
 
 let rec dequalify map annotation =
   let dequalify_identifier identifier =
-    let rec fold accumulator access =
-      if Access.Map.mem map access then
-        (Access.Map.find_exn map access) @ accumulator
+    let rec fold accumulator reference =
+      if Reference.Map.mem map reference then
+        Reference.combine
+          (Reference.Map.find_exn map reference)
+          (Reference.create_from_list accumulator)
       else
-        match access with
-        | tail :: rest ->
-            fold (tail :: accumulator) rest
-        | [] -> accumulator
+        match Reference.prefix reference with
+        | Some prefix -> fold (Reference.last reference :: accumulator) prefix
+        | None -> Reference.create_from_list accumulator
     in
     identifier
-    |> Access.create
-    |> List.rev
+    |> Reference.create
     |> fold []
-    |> Access.show
+    |> Reference.show
   in
   let dequalify_string string = string |> dequalify_identifier in
   let module DequalifyTransform = Transform.Make(struct

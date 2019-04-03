@@ -295,7 +295,7 @@ val is_resolved: t -> bool
 val instantiate_free_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
-val dequalify: Access.t Access.Map.t -> t -> t
+val dequalify: Reference.t Reference.Map.t -> t -> t
 
 module TypedDictionary : sig
   val anonymous: total: bool -> typed_dictionary_field list -> t

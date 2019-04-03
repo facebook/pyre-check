@@ -182,6 +182,10 @@ let length =
   List.length
 
 
+let reverse =
+  List.rev
+
+
 let is_empty =
   List.is_empty
 

@@ -5,7 +5,6 @@
 
 open Ast
 open Core
-open Expression
 
 
 type origin =
@@ -147,7 +146,7 @@ val join_at_source: resolution: Resolution.t -> t list -> t list
 val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t -> t list -> t list
 val suppress: mode: Source.mode -> resolution: Resolution.t -> t -> bool
 
-val dequalify: Access.t Access.Map.t -> resolution: Resolution.t -> t -> t
+val dequalify: Reference.t Reference.Map.t -> resolution: Resolution.t -> t -> t
 
 val create_mismatch
   :  resolution: Resolution.t

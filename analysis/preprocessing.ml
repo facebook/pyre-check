@@ -1476,7 +1476,7 @@ let classes source =
 let dequalify_map source =
   let module ImportDequalifier = Transform.MakeStatementTransformer(struct
       include Transform.Identity
-      type t = Access.t Access.Map.t
+      type t = Reference.t Reference.Map.t
 
       let statement map ({ Node.value; _ } as statement) =
         match value with
@@ -1485,7 +1485,7 @@ let dequalify_map source =
               match alias with
               | Some alias ->
                   (* Add `name -> alias`. *)
-                  Map.set map ~key:(List.rev name) ~data:alias
+                  Map.set map ~key:(Reference.from_access name) ~data:(Reference.from_access alias)
               | None ->
                   map
             in
@@ -1495,11 +1495,17 @@ let dequalify_map source =
             let add_import map { Import.name; alias } =
               match alias with
               | Some alias ->
-                  (* Add `alias -> from.name`. *)
-                  Map.set map ~key:(List.rev (from @ name)) ~data:alias
+                  (* Add `from.name -> alias`. *)
+                  Map.set
+                    map
+                    ~key:(Reference.from_access (from @ name))
+                    ~data:(Reference.from_access alias)
               | None ->
-                  (* Add `name -> from.name`. *)
-                  Map.set map ~key:(List.rev (from @ name)) ~data:name
+                  (* Add `from.name -> name`. *)
+                  Map.set
+                    map
+                    ~key:(Reference.from_access (from @ name))
+                    ~data:(Reference.from_access name)
             in
             List.fold_left imports ~f:add_import ~init:map,
             [statement]
@@ -1507,9 +1513,7 @@ let dequalify_map source =
             map, [statement]
     end)
   in
-  (* Note that map keys are reversed accesses because it makes life much easier in dequalify *)
-  let qualifier = Reference.access source.Source.qualifier in
-  let map = Map.set ~key:(List.rev qualifier) ~data:[] Access.Map.empty in
+  let map = Map.set ~key:source.Source.qualifier ~data:Reference.empty Reference.Map.empty in
   ImportDequalifier.transform map source
   |> fun { ImportDequalifier.state; _ } -> state
 
