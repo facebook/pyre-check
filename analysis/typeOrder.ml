@@ -522,7 +522,7 @@ module type FullOrderTypeWithoutT = sig
     -> constraints: TypeConstraints.t
     -> left: Type.t
     -> right: Type.t
-    -> TypeConstraints.t option
+    -> TypeConstraints.t list
   val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
   val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
   val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
@@ -583,9 +583,9 @@ module OrderImplementation = struct
                     ~constraints
                     ~left:right_annotation
                     ~right:left_annotation
-                  >>= solve_parameters left_parameters right_parameters
+                  |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
                 else
-                  None
+                  []
 
             | Parameter.Variable { Parameter.annotation = left_annotation; _ }
               :: _,
@@ -597,7 +597,7 @@ module OrderImplementation = struct
                   ~constraints
                   ~left:right_annotation
                   ~right:left_annotation
-                >>= solve_parameters left right_parameters
+                |> List.concat_map ~f:(solve_parameters left right_parameters)
             | Parameter.Variable _ :: left_parameters, []
             | Parameter.Keywords _ :: left_parameters, [] ->
                 solve_parameters left_parameters [] constraints
@@ -617,23 +617,23 @@ module OrderImplementation = struct
                 if is_compatible then
                   solve_parameters left right constraints
                 else
-                  None
+                  []
 
             | left :: left_parameters, [] ->
                 if Parameter.default left then
                   solve_parameters left_parameters [] constraints
                 else
-                  None
+                  []
 
             | [], [] ->
-                Some constraints
+                [constraints]
 
             | _ ->
-                None
+                []
           in
           solve_parameters (parameters implementation) (parameters called_as) initial_constraints
         with _ ->
-          None
+          []
       in
       let overload_to_instantiated_return_and_altered_constraints overload =
         let namespaced_variables =
@@ -665,8 +665,10 @@ module OrderImplementation = struct
           instantiated_return, external_constraints
         in
         solve overload ~initial_constraints:constraints
-        >>= OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables
-        >>| instantiate_return
+        |> List.map
+          ~f:(OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables)
+        |> List.concat_map ~f:Option.to_list
+        |> List.map ~f: instantiate_return
       in
       let overloads =
         if List.is_empty overloads then
@@ -678,29 +680,27 @@ module OrderImplementation = struct
              implementation as last resort *)
           overloads @ [implementation]
       in
-      List.filter_map overloads ~f:overload_to_instantiated_return_and_altered_constraints
-      |> List.hd
+      List.concat_map overloads ~f:overload_to_instantiated_return_and_altered_constraints
 
 
     and solve_less_or_equal_safe
         ({ handler; constructor; implements; _ } as order) ~constraints ~left ~right =
       let rec solve_less_or_equal_throws order ~constraints ~left ~right =
         if (Type.is_resolved left) && (Type.is_resolved right) then
-          Option.some_if (less_or_equal order ~left ~right) constraints
+          if less_or_equal order ~left ~right then [constraints] else []
         else
-          let solve_all ?(ignore_length_mismatch = false) constraints ~lefts ~rights =
+          let solve_all constraints ~lefts ~rights =
             let folded_constraints =
               let solve_pair constraints left right =
                 constraints
-                >>= (fun constraints ->
-                    solve_less_or_equal_throws order ~constraints ~left ~right)
+                |> List.concat_map
+                  ~f:(fun constraints -> solve_less_or_equal_throws order ~constraints ~left ~right)
               in
-              List.fold2 ~init:(Some constraints) ~f:solve_pair lefts rights
+              List.fold2 ~init:[constraints] ~f:solve_pair lefts rights
             in
-            match folded_constraints, ignore_length_mismatch with
-            | List.Or_unequal_lengths.Ok constraints, _ -> constraints
-            | List.Or_unequal_lengths.Unequal_lengths, true -> Some constraints
-            | List.Or_unequal_lengths.Unequal_lengths, false -> None
+            match folded_constraints with
+            | List.Or_unequal_lengths.Ok constraints -> constraints
+            | List.Or_unequal_lengths.Unequal_lengths -> []
           in
           match left, right with
           | Type.Bottom, _
@@ -708,7 +708,7 @@ module OrderImplementation = struct
               (* This is needed for representing unbound variables between statements, which can't
                  totally be done by filtering because of the promotion done for explicit type
                  variables *)
-              Some constraints
+              [constraints]
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
           | Type.Variable left_variable, Type.Variable right_variable
@@ -716,10 +716,13 @@ module OrderImplementation = struct
               constraints
               |> OrderedConstraints.add_lower_bound ~order ~variable:right_variable ~bound:left
               >>= OrderedConstraints.add_upper_bound ~order ~variable:left_variable ~bound:right
+              |> Option.to_list
           | Type.Variable variable, bound when (not (Type.is_resolved left)) ->
               OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
+              |> Option.to_list
           | bound, Type.Variable variable when (not (Type.is_resolved right)) ->
               OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
+              |> Option.to_list
           | Type.Callable _, Type.Parametric { name; _ } ->
               begin
                 match implements ~protocol:right left with
@@ -727,25 +730,28 @@ module OrderImplementation = struct
                     let left = Type.parametric name parameters in
                     solve_less_or_equal_throws order ~constraints ~left ~right
                 | _ ->
-                    None
+                    []
               end
           | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
               let solve_parameters left_parameters =
                 let solve_parameter_pair constraints (variable, (left, right)) =
-                  constraints
-                  >>= begin fun constraints ->
-                    match variable with
-                    | Type.Variable { variance = Covariant; _ } ->
-                        solve_less_or_equal_throws order ~constraints ~left ~right
-                    | Type.Variable { variance = Contravariant; _ } ->
-                        solve_less_or_equal_throws order ~constraints ~left:right ~right:left
-                    | Type.Variable { variance = Invariant; _ } ->
-                        solve_less_or_equal_throws order ~constraints ~left ~right
-                        >>= (fun constraints ->
-                            solve_less_or_equal_throws order ~constraints ~left:right ~right:left)
-                    | _ ->
-                        None
-                  end
+                  match variable with
+                  | Type.Variable { variance = Covariant; _ } ->
+                      constraints
+                      |> List.concat_map ~f:(fun constraints ->
+                          solve_less_or_equal_throws order ~constraints ~left ~right)
+                  | Type.Variable { variance = Contravariant; _ } ->
+                      constraints
+                      |> List.concat_map ~f:(fun constraints ->
+                          solve_less_or_equal_throws order ~constraints ~left:right ~right:left)
+                  | Type.Variable { variance = Invariant; _ } ->
+                      constraints
+                      |> List.concat_map ~f:(fun constraints ->
+                          solve_less_or_equal_throws order ~constraints ~left ~right)
+                      |> List.concat_map ~f:(fun constraints ->
+                          solve_less_or_equal_throws order ~constraints ~left:right ~right:left)
+                  | _ ->
+                      []
                 in
                 let zip_on_parameters variables =
                   List.zip left_parameters right_parameters
@@ -753,13 +759,14 @@ module OrderImplementation = struct
                 in
                 variables handler right
                 >>= zip_on_parameters
-                >>= List.fold ~f:solve_parameter_pair ~init:(Some constraints)
+                >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
               in
               instantiate_successors_parameters
                 order
                 ~source:left
                 ~target:(Type.Primitive right_name)
               >>= solve_parameters
+              |> Option.value ~default:[]
           | Optional left, Optional right
           | left, Optional right
           | Type.Tuple (Type.Unbounded left),
@@ -779,17 +786,14 @@ module OrderImplementation = struct
               let left = Type.union lefts in
               solve_less_or_equal_throws order ~constraints ~left ~right
           | _, Type.Union rights ->
-              (* When doing multiple solves, all of these options ought to be considered, *)
-              (* and solved in a fixpoint *)
-              List.filter_map rights
-                ~f:(fun right ->
-                    solve_less_or_equal_throws order ~constraints ~left ~right)
-              |> List.hd
+              List.concat_map
+                rights
+                ~f:(fun right -> solve_less_or_equal_throws order ~constraints ~left ~right)
           | Type.Callable callable,
             Type.Callable { implementation = called_as; _ }
             ->
               simulate_signature_select order ~callable ~called_as ~constraints
-              >>= (fun (left, constraints) ->
+              |> List.concat_map ~f:(fun (left, constraints) ->
                   solve_less_or_equal_throws
                     order
                     ~constraints
@@ -798,13 +802,14 @@ module OrderImplementation = struct
           | _, Type.Callable _  when Type.is_meta left ->
               Type.single_parameter left
               |> constructor
-              >>= (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
+              >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
+              |> Option.value ~default:[]
           | _ ->
-              None
+              []
       in
       (* TODO(T39612118): unwrap this when attributes are safe *)
       try solve_less_or_equal_throws order ~constraints ~left ~right
-      with Untracked _ -> None
+      with Untracked _ -> []
 
 
     and less_or_equal
@@ -1058,8 +1063,8 @@ module OrderImplementation = struct
       | Type.Callable callable,
         Type.Callable { Callable.implementation = called_as; _ } ->
           simulate_signature_select order ~callable ~called_as ~constraints:TypeConstraints.empty
-          >>| (fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
-          |> Option.value ~default:false
+          |> List.map ~f:(fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
+          |> List.exists ~f:Fn.id
       | _, Type.Callable _  when Type.is_meta left ->
           Type.single_parameter left
           |> constructor

@@ -115,6 +115,6 @@ val solve_less_or_equal
   -> constraints: TypeConstraints.t
   -> left: Type.t
   -> right: Type.t
-  -> TypeConstraints.t option
+  -> TypeConstraints.t list
 val constraints_solution_exists: left: Type.t -> right: Type.t -> t -> bool
 val solve_constraints: t -> TypeConstraints.t -> Type.t Type.Map.t option

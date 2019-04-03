@@ -101,7 +101,7 @@ type reasons = {
 type signature_match = {
   callable: Type.Callable.t;
   argument_mapping: (argument list) Type.Callable.Parameter.Map.t;
-  constraints: TypeConstraints.t;
+  constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
 }
@@ -118,7 +118,7 @@ let select
       {
         callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
-        constraints = TypeConstraints.empty;
+        constraints_set = [TypeConstraints.empty];
         ranks = {
           arity = 0;
           annotation = 0;
@@ -387,7 +387,7 @@ let select
               ~position
               ~argument:{ Argument.name; value = { Node.location; _ } }
               ~argument_annotation
-              ({ constraints; reasons = { annotation; _ }; _; } as signature_match) =
+              ({ constraints_set; reasons = { annotation; _ }; _; } as signature_match) =
             let reasons_with_mismatch =
               let mismatch =
                 let location =
@@ -406,16 +406,18 @@ let select
               in
               { reasons with annotation = mismatch :: annotation }
             in
-            Resolution.solve_less_or_equal
-              resolution
-              ~constraints
-              ~left:argument_annotation
-              ~right:parameter_annotation
-            >>| (fun updated_constraints ->
-                { signature_match with constraints = updated_constraints }
-              )
-            |> Option.value
-              ~default:{ signature_match with constraints; reasons = reasons_with_mismatch }
+            match
+              List.concat_map constraints_set ~f:(fun constraints ->
+                  Resolution.solve_less_or_equal
+                    resolution
+                    ~constraints
+                    ~left:argument_annotation
+                    ~right:parameter_annotation)
+            with
+            | [] ->
+                { signature_match with constraints_set; reasons = reasons_with_mismatch }
+            | updated_constraints_set ->
+                { signature_match with constraints_set = updated_constraints_set }
           in
           let rec check signature_match = function
             | [] ->
@@ -508,8 +510,11 @@ let select
           |> check signature_match
     in
     let check_if_solution_exists
-        ({ constraints; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
-      if Option.is_some (Resolution.solve_constraints resolution constraints) then
+        ({ constraints_set; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
+      let solutions =
+        List.filter_map constraints_set ~f:(Resolution.solve_constraints resolution)
+      in
+      if not (List.is_empty solutions) then
         signature_match
       else
         (* All other cases should have been able to been blamed on a specefic argument, this is the
@@ -520,7 +525,7 @@ let select
         }
     in
     let special_case_dictionary_constructor
-        ({ argument_mapping; callable; constraints; _ } as signature_match) =
+        ({ argument_mapping; callable; constraints_set; _ } as signature_match) =
       let open Type.Record.Callable in
       let has_matched_keyword_parameter parameters =
         List.find parameters ~f:(function RecordParameter.Keywords _ -> true | _ -> false)
@@ -538,16 +543,19 @@ let select
         };
         _;
       } when Access.show name = "dict.__init__" && has_matched_keyword_parameter parameters ->
-          Resolution.solve_less_or_equal
-            resolution
-            ~constraints
-            ~left:Type.string
-            ~right:key_type
-          >>| (fun updated_constraints ->
-              { signature_match with constraints = updated_constraints }
-            )
-          (* TODO(T41074174): Error here *)
-          |> Option.value ~default:signature_match
+          let updated_constraints =
+            List.concat_map constraints_set ~f:(fun constraints ->
+                Resolution.solve_less_or_equal
+                  resolution
+                  ~constraints
+                  ~left:Type.string
+                  ~right:key_type)
+          in
+          if List.is_empty updated_constraints then
+            (* TODO(T41074174): Error here *)
+            signature_match
+          else
+            { signature_match with constraints_set = updated_constraints }
       | _ ->
           signature_match
     in
@@ -602,10 +610,11 @@ let select
             get_best_rank ~best_matches ~best_rank ~getter tail
     in
     let determine_reason
-        { callable; constraints; reasons = { arity; annotation; _ }; _ } =
+        { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
       let solution =
         let solution =
-          Resolution.solve_constraints resolution constraints
+          List.filter_map constraints_set ~f:(Resolution.solve_constraints resolution)
+          |> List.hd
           |> Option.value ~default:Type.Map.empty
         in
         let to_bottom constraints variable =

@@ -85,6 +85,38 @@ let test_check_unbounded_variables _ =
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call " ^
       "`Foo.__init__` but got `float`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, TypeVar, List, Callable, Tuple
+      @overload
+      def overloaded(x: int) -> str: ...
+      @overload
+      def overloaded(x: bool) -> float: ...
+      @overload
+      def overloaded(x: float) -> bool: ...
+      @overload
+      def overloaded(x: str) -> int: ...
+
+      T1 = typing.TypeVar("T1")
+      T2 = typing.TypeVar("T2")
+      def generic(x: Callable[[T1], T2], y: List[T1], z: List[T2]) -> Tuple[T1, T2]: ...
+
+      def foo() -> None:
+        reveal_type(generic(overloaded, [1], ["1"]))
+        reveal_type(generic(overloaded, [True], [1.0]))
+        reveal_type(generic(overloaded, [1.0], [False]))
+        reveal_type(generic(overloaded, ["1"], [7]))
+
+        generic(overloaded, [1], [7])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[bool, float]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[float, bool]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[str, int]`.";
+      "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd anonymous " ^
+      "parameter to call `generic` but got `List[int]`.";
+    ];
   ()
 
 

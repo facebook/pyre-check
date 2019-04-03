@@ -249,7 +249,8 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
         ~constraints:TypeConstraints.empty
         ~left:instantiated
         ~right
-      >>= Resolution.solve_constraints resolution
+      |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+      |> List.hd
       (* TODO(T39598018): error in this case somehow, something must be wrong *)
       |> Option.value ~default:Type.Map.empty
 
@@ -836,7 +837,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
         ~right:(Type.Callable.create_from_implementation protocol_overload)
         ~constraints
     else
-      None
+      []
   in
   (* TODO(T40727281): This needs to be transitive once we're actually checking based on
        transitive *)
@@ -849,16 +850,17 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
   let rec implements ~constraints instance_methods protocol_methods =
     match instance_methods, protocol_methods with
     | _, [] ->
-        Some constraints
+        [constraints]
     | [], _ :: _ ->
-        None
+        []
     | instance_method :: instance_methods,
       ((protocol_method :: protocol_methods) as old_protocol_methods) ->
         match overload_implements ~constraints instance_method protocol_method with
-        | Some constraints ->
-            implements ~constraints all_instance_methods protocol_methods
-        | None ->
+        | [] ->
             implements ~constraints instance_methods old_protocol_methods
+        | constraints_set ->
+            List.concat_map constraints_set ~f:(fun constraints ->
+                implements ~constraints all_instance_methods protocol_methods)
   in
   let instantiate_protocol_generics solution =
     let generics = generics ~resolution protocol in
@@ -866,7 +868,8 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
     List.map generics ~f:(Type.instantiate ~constraints:(Type.Map.find solution))
   in
   implements ~constraints:TypeConstraints.empty all_instance_methods all_protocol_methods
-  >>= Resolution.solve_constraints resolution
+  |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+  |> List.hd
   >>| Type.Map.map ~f:Type.free_simulated_bound_variables
   >>| instantiate_protocol_generics
   >>| (fun parameters -> TypeOrder.Implements { parameters })

@@ -260,15 +260,16 @@ let full_order ({ order; _ } as resolution) =
   { TypeOrder.handler = order; constructor; implements; any_is_bottom = false }
 
 
-let solve_less_or_equal resolution =
+let solve_less_or_equal resolution ~constraints ~left ~right =
   full_order resolution
-  |> TypeOrder.solve_less_or_equal
+  |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
 
 
 let constraints_solution_exists ~left ~right resolution =
-  solve_less_or_equal resolution ~constraints:TypeConstraints.empty ~left ~right
-  >>= TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
-  |> Option.is_some
+  not (
+    solve_less_or_equal resolution ~left ~right ~constraints:TypeConstraints.empty
+    |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order:(full_order resolution))
+    |> List.is_empty)
 
 
 let solve_constraints resolution =

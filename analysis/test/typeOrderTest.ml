@@ -3126,9 +3126,12 @@ let test_solve_less_or_equal _ =
         Type.mark_variables_as_bound ~simulated:false
     in
     let expected =
+      let parse_pairs =
+        List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
+      in
       expected
-      >>| List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
-      >>| Type.Map.of_alist_exn
+      |> List.map ~f:parse_pairs
+      |> List.map ~f:Type.Map.of_alist_exn
     in
     let constraints =
       let add_bounds sofar (key, (lower_bound, upper_bound)) =
@@ -3159,201 +3162,229 @@ let test_solve_less_or_equal _ =
       >>| List.fold ~init:TypeConstraints.empty ~f:add_bounds
       |> Option.value ~default:TypeConstraints.empty
     in
-    let optional_map_compare left right =
-      match left, right with
-      | Some left, Some right -> Type.Map.equal Type.equal left right
-      | None, None -> true
-      | _ , _ -> false
+    let list_of_maps_compare left right =
+      let and_map_equal sofar left right  = sofar && (Type.Map.equal Type.equal left right) in
+      match List.fold2 left right ~init:true ~f:and_map_equal with
+      | List.Or_unequal_lengths.Ok comparison -> comparison
+      | List.Or_unequal_lengths.Unequal_lengths -> false
     in
-    let optional_map_print map =
+    let list_of_map_print map =
       let show_line ~key ~data accumulator =
-        Format.sprintf "%s \n %s -> %s" accumulator (Type.show key) (Type.show data)
+        (Format.sprintf "%s -> %s" (Type.show key) (Type.show data)) :: accumulator
       in
       map
-      >>| Map.fold ~init:"" ~f:show_line
-      |> Option.value ~default:"None"
+      |> List.map ~f:(Map.fold ~init:[] ~f:show_line)
+      |> List.map ~f:(String.concat ~sep:", ")
+      |> List.map ~f:(Printf.sprintf "[%s]")
+      |> String.concat ~sep:";\n"
+      |> Printf.sprintf "{\n%s\n}"
     in
     assert_equal
-      ~cmp:optional_map_compare
-      ~printer:optional_map_print
+      ~cmp:list_of_maps_compare
+      ~printer:list_of_map_print
       expected
       (solve_less_or_equal handler ~constraints ~left ~right
-       >>= OrderedConstraints.solve ~order:handler)
+       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
   in
-  assert_solve ~left:"C" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
-  assert_solve ~left:"D" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
-  assert_solve ~left:"Q" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "Q"]);
+  assert_solve ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
+  assert_solve ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
+  assert_solve ~left:"Q" ~right:"T_Unconstrained" [["T_Unconstrained", "Q"]];
 
-  assert_solve ~left:"C" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
-  assert_solve ~left:"D" ~right:"T_Bound_C" (Some ["T_Bound_C", "D"]);
-  assert_solve ~left:"Q" ~right:"T_Bound_C" (None);
-  assert_solve ~left:"C" ~right:"T_Bound_D" (None);
+  assert_solve ~left:"C" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
+  assert_solve ~left:"D" ~right:"T_Bound_C" [["T_Bound_C", "D"]];
+  assert_solve ~left:"Q" ~right:"T_Bound_C" [];
+  assert_solve ~left:"C" ~right:"T_Bound_D" [];
 
-  assert_solve ~left:"C" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
+  assert_solve ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
   (* An explicit type variable can only be bound to its constraints *)
-  assert_solve ~left:"D" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
-  assert_solve ~left:"C" ~right:"T_D_Q" (None);
+  assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];
+  assert_solve ~left:"C" ~right:"T_D_Q" [];
 
-  assert_solve ~left:"$bottom" ~right:"T_Unconstrained" (Some []);
+  assert_solve ~left:"$bottom" ~right:"T_Unconstrained" [[]];
 
 
   assert_solve
     ~left:"typing.Union[int, G_invariant[str], str]"
     ~right:"T_Unconstrained"
-    (Some ["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]);
-  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+    [["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]];
+  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
 
   assert_solve
     ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_invariant[C]"
     ~right:"G_invariant[T_Unconstrained]"
-    None;
+    [];
   assert_solve
     ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_covariant[C]"
     ~right:"G_covariant[T_Unconstrained]"
-    (Some ["T_Unconstrained", "typing.Union[Q, C]"]);
+    [["T_Unconstrained", "typing.Union[Q, C]"]];
 
   assert_solve
     ~left:"typing.Optional[C]"
     ~right:"typing.Optional[T_Unconstrained]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
   assert_solve
     ~left:"C"
     ~right:"typing.Optional[T_Unconstrained]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
 
   assert_solve
     ~left:"typing.Tuple[C, ...]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
   assert_solve
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    (Some ["T_Unconstrained", "D"]);
+    [["T_Unconstrained", "D"]];
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
 
   assert_solve
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
 
   assert_solve
     ~left:"typing.Type[int]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    (Some ["T_Unconstrained", "int"]);
+    (* there are two int constructor overloads *)
+    [["T_Unconstrained", "int"]; ["T_Unconstrained", "int"]];
 
   assert_solve
     ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    (None);
+    [];
   assert_solve
     ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    (Some ["T", "C"]);
+    [["T", "C"]];
 
   (* Bound => Bound *)
   assert_solve
     ~left:"T_Bound_D"
     ~right:"T_Bound_C"
-    (Some ["T_Bound_C", "T_Bound_D"]);
+    [["T_Bound_C", "T_Bound_D"]];
   assert_solve
     ~left:"T_Bound_C"
     ~right:"T_Bound_D"
-    None;
+    [];
   assert_solve
     ~left:"T_Bound_Union"
     ~right:"T_Bound_Union"
-    (Some ["T_Bound_Union", "T_Bound_Union"]);
+    [["T_Bound_Union", "T_Bound_Union"]];
 
   (* Bound => Explicit *)
   assert_solve
     ~left:"T_Bound_D"
     ~right:"T_C_Q"
-    (Some ["T_C_Q", "C"]);
+    [["T_C_Q", "C"]];
   assert_solve
     ~left:"T_Bound_C"
     ~right:"T_D_Q"
-    None;
+    [];
 
   (* Explicit => Bound *)
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_Bound_Union_C_Q"
-    (Some ["T_Bound_Union_C_Q", "T_D_Q"]);
+    [["T_Bound_Union_C_Q", "T_D_Q"]];
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_Bound_D"
-    None;
+    [];
 
   (* Explicit => Explicit *)
   assert_solve
     ~left:"T_C_Q"
     ~right:"T_C_Q_int"
-    (Some ["T_C_Q_int", "T_C_Q"]);
+    [["T_C_Q_int", "T_C_Q"]];
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
      T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_C_Q_int"
-    None;
+    [];
 
   assert_solve
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     ~right:"typing.Callable[[int], int]"
-    (Some []);
+    [[]];
   assert_solve
     ~left:"typing.Callable[[int], int]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some ["T_Unconstrained", "int"]);
+    [["T_Unconstrained", "int"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    (Some ["T_Unconstrained", "G_invariant[$bottom]"]);
+    [["T_Unconstrained", "G_invariant[$bottom]"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some []);
+    [[]];
   assert_solve
     ~leave_constraint_values_unbound:true
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], G_invariant[T]]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    None;
+    [];
   assert_solve
     ~leave_unbound_in_left:["T1"]
     ~left:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
     ~right:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
-    (Some ["T4", "T2"]);
+    [["T4", "T2"]];
   assert_solve
     ~left:"typing.Type[Constructable]"
     ~right:"typing.Callable[[T3], T4]"
-    (Some ["T3", "int"; "T4", "Constructable"]);
+    [["T3", "int"; "T4", "Constructable"]];
   assert_solve
     ~left:"typing.Callable[[typing.Union[int, str]], str]"
     ~right:"typing.Callable[[int], T4]"
-    (Some ["T4", "str"]);
+    [["T4", "str"]];
   assert_solve
     ~left:"typing.Callable[[typing.Union[int, str], int], str]"
     ~right:"typing.Callable[[int, T3], T4]"
-    (Some ["T3", "int"; "T4", "str"]);
+    [["T3", "int"; "T4", "str"]];
 
   (* Callback protocols *)
   assert_solve
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
-    (Some ["T1", "int"]);
+    [["T1", "int"]];
+
+  (* Multiple options *)
+  assert_solve
+    ~left:"typing.List[int]"
+    ~right:"typing.Union[typing.List[T1], T1]"
+    [["T1", "int"]; ["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
+    ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
+    [["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
+    ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
+    [["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:(
+      "typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]" ^
+      "[[[int], str][[str], int]]")
+    ~right:"typing.Callable[[T3], T4]"
+    [
+      ["T3", "int"; "T4", "str"];
+      ["T3", "str"; "T4", "int"];
+      ["T3", "typing.Union[int, str]"; "T4", "typing.Union[int, str]"];
+    ];
   ()
 
 
