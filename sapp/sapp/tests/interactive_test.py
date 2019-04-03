@@ -1056,14 +1056,15 @@ class InteractiveTest(TestCase):
         self.assertIn("     3 +2 call2      param2 file.py:2|2|2", output)
         self.assertIn("     4 +2 leaf       sink   file.py:4|4|4", output)
 
-    def testExpand(self):
+    def testShowBranches(self):
         self._set_up_branched_trace()
 
         self.interactive.setup()
         self.interactive.set_issue_instance(1)
         # Parent at root
         self.interactive.prev_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] leaf : source\n        [0 hops: source1]\n        [file.py:0|0|0]",
@@ -1078,7 +1079,8 @@ class InteractiveTest(TestCase):
         # Move to call2:param2
         self.interactive.next_cursor_location()
         self.interactive.next_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:2|2|2]",
@@ -1092,7 +1094,8 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         # Move to leaf:sink
         self.interactive.next_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:4|4|4]", output
@@ -1161,7 +1164,7 @@ class InteractiveTest(TestCase):
 
         self.interactive.branch(3)  # location 4|4|4 -> 5|5|5
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("out of bounds", stderr)
+        self.assertIn("Branch number invalid", stderr)
 
     def testBranchPrefixLengthChanges(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -1268,7 +1271,8 @@ class InteractiveTest(TestCase):
         )
 
         self._clear_stdout()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn("[*] prev_call : result", output)
         self.assertIn("        [1 hops: source1]", output)

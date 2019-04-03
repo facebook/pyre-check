@@ -92,7 +92,6 @@ trace()                  show a trace of the selected issue or trace frame
 prev()/p()               move backward within the trace
 next()/n()               move forward within the trace
 jump(NUM)                jump to a specific trace frame in a trace
-expand()                 show alternative trace branches
 branch(INDEX)            select a trace branch
 {list_string}                   show source code at the current trace frame
 
@@ -123,7 +122,6 @@ details()                show additional information about the current trace fra
             "prev": self.prev_cursor_location,
             "p": self.prev_cursor_location,
             "jump": self.jump,
-            "expand": self.expand,
             "branch": self.branch,
             "list": self.list_source_code,
             "frames": self.frames,
@@ -461,6 +459,7 @@ details()                show additional information about the current trace fra
         print(f"Set trace frame to {frame_id}.")
         self.show()
 
+    @catch_keyboard_interrupt()
     @catch_user_error()
     def parents(self) -> None:
         self._verify_entrypoint_selected()
@@ -486,8 +485,6 @@ details()                show additional information about the current trace fra
             return
 
         parent_trace_frame = self._select_parent_trace_frame(parent_trace_frames)
-        if not parent_trace_frame:
-            return
 
         self._update_trace_tuples_new_parent(parent_trace_frame)
         self.trace()
@@ -594,11 +591,50 @@ details()                show additional information about the current trace fra
         self.current_trace_frame_index = selected_number - 1
         self.trace()
 
+    def _get_branch_options(
+        self, session: Session
+    ) -> Tuple[List[TraceFrame], List[str]]:
+        current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
+        filter_leaves = (
+            self.sources
+            if current_trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION
+            else self.sinks
+        )
+
+        branches = self._get_trace_frame_branches(session)
+
+        leaves_strings = []
+        for frame in branches:
+            if frame.kind == TraceKind.POSTCONDITION:
+                shared_text_kind = SharedTextKind.SOURCE
+            elif frame.kind == TraceKind.PRECONDITION:
+                shared_text_kind = SharedTextKind.SINK
+            else:
+                assert False, f"{frame.kind} is invalid"
+            leaves_strings.append(
+                ", ".join(
+                    [
+                        leaf
+                        for leaf in self._get_leaves_trace_frame(
+                            session, int(frame.id), shared_text_kind
+                        )
+                        if leaf in filter_leaves
+                    ]
+                )
+            )
+
+        return branches, leaves_strings
+
     @catch_keyboard_interrupt()
     @catch_user_error()
-    def expand(self):
+    def branch(self, selected_number: Optional[int] = None) -> None:
         """Show and select branches for a branched trace.
         - [*] signifies the current branch that is selected
+        - will prompt for branch selection if called with no argument
+        - will automatically select a branch if called with an argument
+
+        Parameters (optional):
+            selected_number: int    branch number from expand() output
 
         Example output:
 
@@ -620,58 +656,21 @@ details()                show additional information about the current trace fra
         self._verify_entrypoint_selected()
         self._verify_multiple_branches()
 
-        current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
-        filter_leaves = (
-            self.sources
-            if current_trace_tuple.trace_frame.kind == TraceKind.POSTCONDITION
-            else self.sinks
-        )
-
         with self.db.make_session() as session:
-            branches = self._get_trace_frame_branches(session)
+            branches, leaves_strings = self._get_branch_options(session)
 
-            leaves_strings = []
-            for frame in branches:
-                if frame.kind == TraceKind.POSTCONDITION:
-                    shared_text_kind = SharedTextKind.SOURCE
-                elif frame.kind == TraceKind.PRECONDITION:
-                    shared_text_kind = SharedTextKind.SINK
-                else:
-                    assert False, f"{frame.kind} is invalid"
-                leaves_strings.append(
-                    ", ".join(
-                        [
-                            leaf
-                            for leaf in self._get_leaves_trace_frame(
-                                session, frame.id, shared_text_kind
-                            )
-                            if leaf in filter_leaves
-                        ]
-                    )
+            if selected_number is None:
+                selected_number = self._select_branch_trace_frame(
+                    branches, leaves_strings
                 )
 
-            self._output_trace_expansion(branches, leaves_strings)
-
-    @catch_keyboard_interrupt()
-    @catch_user_error()
-    def branch(self, selected_number: int) -> None:
-        """Selects a branch when there are multiple possible traces to follow.
-
-        The trace output that follows includes the new branch and its children
-        frames.
-
-        Parameters:
-            selected_number: int    branch number from expand() output
-        """
-        self._verify_entrypoint_selected()
-        self._verify_multiple_branches()
-
-        with self.db.make_session() as session:
-            branches = self._get_trace_frame_branches(session)
-
-            if selected_number < 1 or selected_number > len(branches):
+            if (
+                not isinstance(selected_number, int)
+                or selected_number < 1
+                or selected_number > len(branches)
+            ):
                 raise UserError(
-                    "Branch number out of bounds "
+                    "Branch number invalid "
                     f"(expected 1-{len(branches)} but got {selected_number})."
                 )
 
@@ -1089,21 +1088,31 @@ details()                show additional information about the current trace fra
 
     def _select_parent_trace_frame(
         self, parent_trace_frames: List[TraceFrame]
-    ) -> Optional[TraceFrame]:
+    ) -> TraceFrame:
         for i, parent in enumerate(parent_trace_frames):
             print(f"[{i + 1}] {parent.caller} : {parent.caller_port}")
+        parent_number = self._prompt_for_number(
+            "Parent number", len(parent_trace_frames)
+        )
+        return parent_trace_frames[parent_number - 1]
 
+    def _select_branch_trace_frame(
+        self, branch_trace_frames: List[TraceFrame], leaves_string: List[str]
+    ) -> int:
+        self._output_trace_expansion(branch_trace_frames, leaves_string)
+        return self._prompt_for_number("Branch number", len(branch_trace_frames))
+
+    def _prompt_for_number(self, prefix: str, max_valid: int) -> int:
         try:
-            parent_number = click.prompt(
-                f"\nParent number (1-{len(parent_trace_frames)})", type=int
+            selected_number = click.prompt(
+                f"{prefix} (1-{max_valid}, ctrl-D to abort)", type=int
             )
-            if parent_number < 1 or parent_number > len(parent_trace_frames):
+            if selected_number < 1 or selected_number > max_valid:
                 raise UserError("Out of bounds.")
             print()
-            return parent_trace_frames[parent_number - 1]  # pyre-ignore
+            return selected_number
         except click.Abort:
-            print("\nParent not selected.")
-            pass
+            raise KeyboardInterrupt()
 
     def _update_trace_tuples_new_parent(self, parent_trace_frame: TraceFrame) -> None:
         # Construct the placeholder trace tuple and the actual one.
