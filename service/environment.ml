@@ -190,12 +190,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
     ClassDefinitions.get
 
   let register_protocol protocol =
-    let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
-    Protocols.add "Protocols" (protocol :: protocols)
+    let protocols = Protocols.get 0 |> Option.value ~default:[] in
+    Protocols.add 0 (protocol :: protocols)
 
 
   let protocols () =
-    Protocols.get "Protocols"
+    Protocols.get 0
     |> Option.value ~default:[]
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
@@ -557,7 +557,7 @@ let populate_shared_memory
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
 
-    Protocols.write_through "Protocols" (Hash_set.to_list protocols);
+    Protocols.write_through 0 (Hash_set.to_list protocols);
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;

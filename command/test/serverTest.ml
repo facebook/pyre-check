@@ -1144,6 +1144,7 @@ let test_compute_hashes_to_keys context =
       to_binding
         (Coverage.SharedMemory.hash_of_key (File.Handle.create "sample.py"))
         (Coverage.SharedMemory.serialize_key (File.Handle.create "sample.py"));
+      to_binding (Protocols.hash_of_key 0) (Protocols.serialize_key 0);
     ]
     |> List.sort ~compare
   in

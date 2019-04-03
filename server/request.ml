@@ -543,6 +543,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let map =
           extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:handles)
         in
+        (* Protocols. *)
+        let map = extend_map map ~new_map:(Protocols.compute_hashes_to_keys ~keys:[0]) in
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
@@ -618,7 +620,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = ProtocolValue.description;
-                        actual_key = key;
+                        actual_key = Int.to_string key;
                         actual_value =
                           value
                           >>| List.to_string ~f:Type.show;

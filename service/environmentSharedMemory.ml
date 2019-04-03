@@ -148,7 +148,7 @@ module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
-module Protocols = Memory.WithCache (StringKey) (ProtocolValue)
+module Protocols = Memory.WithCache (Ast.SharedMemory.IntKey) (ProtocolValue)
 
 (** Keys *)
 module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)
