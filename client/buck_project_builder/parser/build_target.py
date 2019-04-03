@@ -77,13 +77,24 @@ def create_non_python_rule(rule_name: str) -> Type[BuildTarget]:
 
 
 class PythonBinary(BuildTarget):
+    def __init__(
+        self,
+        build_file_directory: str,
+        name: str,
+        dependencies: List[str],
+        sources: Optional[List[str]] = None,
+    ) -> None:
+        super(PythonBinary, self).__init__(build_file_directory, name, dependencies)
+        self.sources = sources or []  # type: List[str]
+
     def rule_name(self) -> str:
         return "python_binary"
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonBinary":
         base = BuildTarget.parse_base_information(call, build_file_directory)
-        return PythonBinary(build_file_directory, base.name, base.dependencies)
+        sources = _get_sources(base.keywords.get("srcs"))
+        return PythonBinary(build_file_directory, base.name, base.dependencies, sources)
 
 
 class PythonLibrary(BuildTarget):

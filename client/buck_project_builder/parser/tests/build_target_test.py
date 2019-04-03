@@ -35,7 +35,8 @@ python_binary(
 PYTHON_BINARY_TARGET_2 = """
 python_binary(
     name = "binary_target_2",
-    deps = []
+    deps = [],
+    srcs = ["a.py"],
 )
 """
 
@@ -96,6 +97,7 @@ class BuildTargetTest(unittest.TestCase):
             target.dependencies,
             ["//some/project:another_target", "//some/other:target"],
         )
+        self.assertListEqual(target.sources, [])
 
         tree = ast.parse(PYTHON_BINARY_TARGET_2)
         call = _get_call(tree)
@@ -103,6 +105,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:binary_target_2")
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.sources, ["a.py"])
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
         call = _get_call(tree)
