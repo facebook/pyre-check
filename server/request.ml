@@ -302,6 +302,7 @@ module LookupCache = struct
       base_normals @ normals
     in
     Statistics.performance
+      ~section:`Event
       ~category:"perfpipe_pyre_ide_integration"
       ~name
       ~timer

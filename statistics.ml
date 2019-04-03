@@ -152,6 +152,7 @@ let performance
     ?(flush = false)
     ?randomly_log_every
     ?always_log_time_threshold
+    ?(section = `Performance)
     ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
@@ -166,7 +167,7 @@ let performance
     | None ->
         randomly_log_every
   in
-  Log.log ~section:`Performance "%s: %fs"
+  Log.log ~section "%s: %fs"
     (String.capitalize name)
     ((Int.to_float milliseconds) /. 1000.0);
   Profiling.log_event
