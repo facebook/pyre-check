@@ -87,7 +87,7 @@ let test_select _ =
             failwith "Undefined parameters"
           else
             name
-            >>| Access.create
+            >>| Reference.create
             >>| (fun name -> { callable with kind = Named name })
             |> Option.value ~default:callable
       | _ ->

@@ -254,7 +254,7 @@ let test_type_collection _ =
                 { Type.Callable.kind = Type.Callable.Named callable_type; _ };
             _;
           } ->
-            assert_equal expected_type (Expression.Access.show callable_type)
+            assert_equal expected_type (Reference.show callable_type)
         | _ ->
             assert false
     in

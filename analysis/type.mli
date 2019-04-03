@@ -27,7 +27,7 @@ module Record : sig
 
     type kind =
       | Anonymous
-      | Named of Access.t
+      | Named of Reference.t
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
@@ -215,7 +215,7 @@ module Callable : sig
   val with_return_annotation: t -> annotation: type_t -> t
 
   val create
-    :  ?name: Access.t
+    :  ?name: Reference.t
     -> ?overloads: (type_t overload) list
     -> ?parameters: type_t parameters
     -> ?implicit: implicit

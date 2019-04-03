@@ -242,7 +242,7 @@ let test_create _ =
   assert_create
     "typing.Callable('name')[..., int]"
     (Type.Callable {
-        kind = Type.Callable.Named (!+"name");
+        kind = Type.Callable.Named (!&"name");
         implementation = { annotation = Type.integer; parameters = Undefined };
         overloads = [];
         implicit = None;
@@ -251,7 +251,7 @@ let test_create _ =
   assert_create
     "typing.Callable('foo')[..., $unknown]"
     (Type.Callable {
-        kind = Type.Callable.Named (!+"foo");
+        kind = Type.Callable.Named (!&"foo");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [];
         implicit = None;
@@ -446,7 +446,7 @@ let test_expression _ =
     (Type.Callable.create ~annotation:Type.integer ())
     "typing.Callable.__getitem__((..., int))";
   assert_expression
-    (Type.Callable.create ~name:(!+"name") ~annotation:Type.integer ())
+    (Type.Callable.create ~name:(!&"name") ~annotation:Type.integer ())
     "typing.Callable.__getitem__((..., int))";
 
   assert_expression
@@ -566,14 +566,14 @@ let test_concise _ =
   assert_concise Type.Top "unknown";
   assert_concise
     (Type.Callable.create
-       ~name:(!+"foo")
+       ~name:(!&"foo")
        ~annotation:Type.integer
        ~parameters:(Type.Callable.Undefined)
        ())
     "Callable[..., int]";
   assert_concise
     (Type.Callable.create
-       ~name:(!+"foo")
+       ~name:(!&"foo")
        ~annotation:Type.integer
        ~parameters:(Type.Callable.Defined [
            Type.Callable.Parameter.Named {

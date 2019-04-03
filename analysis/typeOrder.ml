@@ -1054,7 +1054,7 @@ module OrderImplementation = struct
 
       | Type.Callable { Callable.kind = Callable.Named left; _ },
         Type.Callable { Callable.kind = Callable.Named right; _ }
-        when Expression.Access.equal left right ->
+        when Reference.equal left right ->
           true
       | Type.Callable callable,
         Type.Callable { Callable.implementation = called_as; _ } ->
@@ -1490,7 +1490,7 @@ module OrderImplementation = struct
 
         | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
           Type.Callable { Callable.kind = Callable.Named right; _ }
-          when Expression.Access.equal left right ->
+          when Reference.equal left right ->
             callable
         | Type.TypedDictionary { fields = left_fields; total = left_total; _  },
           Type.TypedDictionary { fields = right_fields; total = right_total; _ } ->
@@ -1740,7 +1740,7 @@ module OrderImplementation = struct
             |> Option.value ~default:Type.Bottom
         | (Type.Callable { Callable.kind = Callable.Named left; _ } as callable),
           Type.Callable { Callable.kind = Callable.Named right; _ }
-          when Expression.Access.equal left right ->
+          when Reference.equal left right ->
             callable
         | Type.Callable callable, other
         | other, Type.Callable callable ->

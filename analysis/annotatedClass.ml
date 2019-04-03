@@ -530,17 +530,8 @@ module Attribute = struct
           { annotation with annotation = Type.Callable { callable with overloads } }
       | Some (Type.Primitive name),
         Access (SimpleAccess [Identifier "__getitem__"]),
-        {
-          annotation = Type.Callable ({
-              kind = Named [
-                  Access.Identifier "typing";
-                  Access.Identifier "Generic";
-                  Access.Identifier "__getitem__";
-                ];
-              _
-            } as callable);
-          _;
-        } ->
+        { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
+        when Reference.show callable_name = "typing.Generic.__getitem__" ->
           let implementation =
             let generics =
               Resolution.class_definition resolution (Type.Primitive name)
@@ -808,7 +799,7 @@ let callables_of_attributes =
            "dict" classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
         let parent = fst (Type.split parent) in
         let local_name =
-          Access.drop_prefix callable_name ~prefix:(Expression.Access.create (Type.show parent))
+          Reference.drop_prefix callable_name ~prefix:(Reference.create (Type.show parent))
         in
         List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
     | _ -> []
@@ -817,7 +808,7 @@ let callables_of_attributes =
 
 let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
   let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
-    if Access.equal name protocol_name then
+    if Reference.equal name protocol_name then
       let left =
         Type.Callable.create_from_implementation overload
         |> Type.mark_variables_as_bound ~simulated:true
@@ -868,7 +859,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
 
 
 let callable_implements ~resolution { Type.Callable.implementation; overloads; _ } ~protocol =
-  List.map (implementation :: overloads) ~f:(fun overload -> (Access.create "__call__", overload))
+  List.map (implementation :: overloads) ~f:(fun overload -> (Reference.create "__call__", overload))
   |> map_of_name_to_annotation_implements ~resolution ~protocol
 
 

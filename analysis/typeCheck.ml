@@ -781,7 +781,7 @@ module State = struct
                 let name, backup_argument =
                   match target, List.rev lead, callable with
                   | Some _, _ :: rest, { Type.Callable.kind = Type.Callable.Named name; _ } ->
-                      name, List.rev rest
+                      (Reference.access name), List.rev rest
                   | _ ->
                       [], []
                 in
@@ -1958,10 +1958,8 @@ module State = struct
               let error =
                 let callee =
                   match kind with
-                  | Type.Callable.Named access ->
-                      Some (Reference.from_access access)
-                  | _ ->
-                      None
+                  | Type.Callable.Named access -> Some access
+                  | _ -> None
                 in
                 match reason with
                 | InvalidKeywordArgument {

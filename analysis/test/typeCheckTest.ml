@@ -526,7 +526,7 @@ let test_forward_access _ =
                 let callees =
                   let show_callee { Type.Callable.kind; _ } =
                     match kind with
-                    | Type.Callable.Named name -> Access.show name
+                    | Type.Callable.Named name -> Reference.show name
                     | _ -> "Anonymous"
                   in
                   List.map callees ~f:show_callee
@@ -1049,7 +1049,7 @@ let test_forward_access _ =
         annotation =
           Type.Union [
             Type.Callable {
-              kind = Named (!+"Class.method");
+              kind = Named (!&"Class.method");
               implementation = {
                 annotation= Type.integer;
                 parameters= Defined [];
@@ -1061,7 +1061,7 @@ let test_forward_access _ =
                 };
             };
             Type.Callable {
-              kind = Named (!+"Other.method");
+              kind = Named (!&"Other.method");
               implementation = {
                 annotation= Type.string;
                 parameters= Defined [];
@@ -1438,7 +1438,7 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"TypedDictionary.__getitem__");
+        kind = Named (!&"TypedDictionary.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1664,7 +1664,7 @@ let test_forward_access _ =
   let set_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"TypedDictionary.__setitem__");
+        kind = Named (!&"TypedDictionary.__setitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1804,7 +1804,7 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"tuple.__getitem__");
+        kind = Named (!&"tuple.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           overload ~return_annotation:Type.integer ~name:"x" (Type.literal_integer 0);

@@ -851,7 +851,7 @@ let test_query context =
            {
              Protocol.TypeQuery.name = "foo";
              annotation = Type.Callable {
-                 Type.Callable.kind = Type.Callable.Named (!+"C.foo");
+                 Type.Callable.kind = Type.Callable.Named (!&"C.foo");
                  implementation = {
                    Type.Callable.annotation = Type.integer;
                    parameters = Type.Callable.Defined [];

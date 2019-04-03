@@ -38,7 +38,7 @@ module Record = struct
 
     type kind =
       | Anonymous
-      | Named of Access.t
+      | Named of Reference.t
 
 
     and 'annotation implicit_record = {
@@ -253,7 +253,7 @@ let rec pp format annotation =
       let kind =
         match kind with
         | Anonymous -> ""
-        | Named name -> Format.asprintf "(%a)" Access.pp name
+        | Named name -> Format.asprintf "(%a)" Reference.pp name
       in
       let signature_to_string { annotation; parameters } =
         let parameters =
@@ -1458,7 +1458,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 Argument.value = { Node.value = Expression.String { StringLiteral.value; _ }; _ };
                 _;
               } :: _) ->
-                Named (Access.create value)
+                Named (Reference.create value)
             | _ ->
                 Anonymous
           in
@@ -2393,7 +2393,7 @@ module TypedDictionary = struct
 
   let constructor ~name ~fields ~total =
     {
-      Callable.kind = Named (Access.create "__init__");
+      Callable.kind = Named (Reference.create "__init__");
       implementation = {
         annotation = TypedDictionary { name; fields; total };
         parameters = field_named_parameters ~default:(not total) fields

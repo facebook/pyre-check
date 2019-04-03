@@ -847,7 +847,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"function")
+          ~name:(!&"function")
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
           ()));
@@ -868,7 +868,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"Class.__init__")
+          ~name:(!&"Class.__init__")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
@@ -894,7 +894,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"Class.property")
+          ~name:(!&"Class.property")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
