@@ -1443,6 +1443,27 @@ let test_decode_serialized_ocaml_values context =
                   };
                 ];
                 undecodable_keys = [];
+              })));
+  assert_decode
+    ~key:(Coverage.SharedMemory.serialize_key (File.Handle.create "file.py"))
+    ~value:(Coverage.create ~full:5 ~partial:3 ())
+    ~response:(
+      Protocol.TypeQueryResponse
+        (TypeQuery.Response
+           (TypeQuery.Decoded
+              {
+                TypeQuery.decoded = [
+                  {
+                    TypeQuery.serialized_key =
+                      Coverage.SharedMemory.serialize_key (File.Handle.create "file.py");
+                    kind = "Coverage";
+                    actual_key = "file.py";
+                    actual_value =
+                      Some
+                        "{ Coverage.full = 5; partial = 3; untyped = 0; ignore = 0; crashes = 0 }";
+                  };
+                ];
+                undecodable_keys = [];
               })))
 
 

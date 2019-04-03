@@ -773,9 +773,18 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         TypeQuery.serialized_key;
                         kind = Ast.SharedMemory.Handles.PathValue.description;
                         actual_key = Int.to_string key;
-                        actual_value = value
+                        actual_value = value;
                       }
 
+                  | Ok (Coverage.SharedMemory.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Coverage.CoverageValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value =
+                          value
+                          >>| Coverage.show;
+                      }
                   | Ok _ ->
                       None
 
