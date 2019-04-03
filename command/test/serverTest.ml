@@ -298,6 +298,8 @@ let assert_response
     ~request
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
+  Ast.SharedMemory.HandleKeys.add
+    ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create handle));
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
   let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
@@ -1053,6 +1055,13 @@ let test_compute_hashes_to_keys context =
       (Handler.TypeOrderHandler.backedges ())
       ~key:16
       ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
+    ResolutionSharedMemory.Keys.remove_batch
+      (File.Handle.create "sample.py"
+       |> ResolutionSharedMemory.Keys.KeySet.singleton);
+    ResolutionSharedMemory.add
+      ~handle:(File.Handle.create "sample.py")
+      (Reference.create "name")
+      Int.Map.Tree.empty;
   in
   let tear_down_shared_memory () _ =
     let open Service.EnvironmentSharedMemory in
@@ -1061,7 +1070,8 @@ let test_compute_hashes_to_keys context =
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
     OrderIndices.remove_batch
       (OrderIndices.KeySet.of_list
-         [Type.Primitive "fifteen"; Type.Primitive "sixteen"])
+         [Type.Primitive "fifteen"; Type.Primitive "sixteen"]);
+    Ast.SharedMemory.HandleKeys.clear ();
   in
   OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
 
@@ -1077,6 +1087,9 @@ let test_compute_hashes_to_keys context =
     @
     [
       to_binding
+        (OrderKeys.hash_of_key "Order")
+        (OrderKeys.serialize_key "Order");
+      to_binding
         (OrderIndices.hash_of_key (Type.Primitive "sixteen"))
         (OrderIndices.serialize_key (Type.Primitive "sixteen"));
       to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
@@ -1089,13 +1102,52 @@ let test_compute_hashes_to_keys context =
 
       to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
       to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
-      to_binding (OrderKeys.hash_of_key "Order") (OrderKeys.serialize_key "Order");
+      to_binding
+        (Ast.SharedMemory.SymlinksToPaths.hash_of_key ("sample.py"))
+        (Ast.SharedMemory.SymlinksToPaths.serialize_key ("sample.py"));
+      to_binding
+        (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
+        (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
+      to_binding
+        (Ast.SharedMemory.Sources.Sources.hash_of_key (File.Handle.create "sample.py"))
+        (Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (Ast.SharedMemory.Sources.QualifiersToHandles.hash_of_key (Reference.create "sample"))
+        (Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "sample"));
+      to_binding
+        (Ast.SharedMemory.Modules.hash_of_key (!&"sample"))
+        (Ast.SharedMemory.Modules.serialize_key (!&"sample"));
+      to_binding
+        (FunctionKeys.hash_of_key (File.Handle.create "sample.py"))
+        (FunctionKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (ClassKeys.hash_of_key (File.Handle.create "sample.py"))
+        (ClassKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (GlobalKeys.hash_of_key (File.Handle.create "sample.py"))
+        (GlobalKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (AliasKeys.hash_of_key (File.Handle.create "sample.py"))
+        (AliasKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (DependentKeys.hash_of_key (File.Handle.create "sample.py"))
+        (DependentKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "$toplevel"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "name"));
+      to_binding
+        (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create "sample.py"))
+        (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create "sample.py"));
     ]
     |> List.sort ~compare
   in
   assert_response
     ~local_root
     ~source:""
+    ~handle:"sample.py"
     ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
     (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping expected))))
 
@@ -1454,8 +1506,8 @@ let test_incremental_typecheck context =
     |}
     |> trim_extra_indentation
   in
-  let assert_response ?state ~request response =
-    assert_response ~local_root ~handle:path ~source ?state ~request (Some response)
+  let assert_response ?(handle = handle) ?state ~request response =
+    assert_response ~local_root ~handle ~source ?state ~request (Some response)
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
@@ -1490,7 +1542,10 @@ let test_incremental_typecheck context =
     (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename path), []]);
   let () =
     let stub_file = file ~local_root ~content:"" stub_path in
-    assert_response ~request:(Request.TypeCheckRequest [stub_file]) (Protocol.TypeCheckResponse []);
+    assert_response
+      ~handle:(relativize stub_path)
+      ~request:(Request.TypeCheckRequest [stub_file])
+      (Protocol.TypeCheckResponse []);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
