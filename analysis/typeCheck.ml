@@ -4227,7 +4227,7 @@ let run
     |> Coverage.aggregate_over_source ~source
   in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
-  Coverage.put coverage ~handle;
+  Coverage.add coverage ~handle;
 
   Statistics.performance
     ~flush:false

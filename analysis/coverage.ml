@@ -97,7 +97,7 @@ end
 module SharedMemory = Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
 
 
-let put coverage ~handle =
+let add coverage ~handle =
   SharedMemory.add handle coverage
 
 

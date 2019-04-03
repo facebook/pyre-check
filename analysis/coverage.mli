@@ -36,7 +36,7 @@ val aggregate_over_source: source: Source.t -> t list -> t
 
 val log: t -> total_errors: int -> path: string -> unit
 
-val put: t -> handle: File.Handle.t -> unit
+val add: t -> handle: File.Handle.t -> unit
 val get: handle: File.Handle.t -> t option
 
 type aggregate = {
