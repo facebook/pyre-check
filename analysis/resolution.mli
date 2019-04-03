@@ -94,6 +94,7 @@ val widen
   -> iteration: int
   -> Type.t
 val is_consistent_with: t -> Type.t -> Type.t -> bool
+val consistent_solution_exists: t -> Type.t -> Type.t -> bool
 val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool
 val contains_untracked: t -> Type.t -> bool
@@ -118,3 +119,8 @@ val solve_less_or_equal
   -> TypeConstraints.t list
 val constraints_solution_exists: left: Type.t -> right: Type.t -> t -> bool
 val solve_constraints: t -> TypeConstraints.t -> Type.t Type.Map.t option
+val partial_solve_constraints
+  :  t
+  -> TypeConstraints.t
+  -> variables: Type.variable list
+  -> (TypeConstraints.t * TypeConstraints.solution) option

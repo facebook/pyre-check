@@ -637,10 +637,6 @@ module OrderImplementation = struct
       in
       let overload_to_instantiated_return_and_altered_constraints overload =
         let namespaced_variables =
-          let variable = function
-            | Type.Variable variable -> variable
-            | _ -> failwith "free_variables returned non-variable"
-          in
           Type.Callable {
             Type.Callable.kind = Anonymous;
             implementation = overload;
@@ -648,19 +644,15 @@ module OrderImplementation = struct
             implicit = None;
           }
           |> Type.free_variables
-          |> List.map ~f:variable
           |> List.map ~f:Type.namespace_variable
         in
         let overload =
           map_implementation overload ~f:(Type.namespace_free_variables)
         in
         let instantiate_return (external_constraints, partial_solution) =
-          let partial_solution =
-            List.map namespaced_variables ~f:(fun variable -> Type.Variable variable)
-            |> Type.default_to_bottom partial_solution
-          in
           let instantiated_return =
             Type.instantiate overload.annotation ~constraints:(Type.Map.find partial_solution)
+            |> Type.mark_free_variables_as_escaped ~specific:namespaced_variables
           in
           instantiated_return, external_constraints
         in
@@ -684,7 +676,7 @@ module OrderImplementation = struct
 
 
     and solve_less_or_equal_safe
-        ({ handler; constructor; implements; _ } as order) ~constraints ~left ~right =
+        ({ handler; constructor; implements; any_is_bottom } as order) ~constraints ~left ~right =
       let rec solve_less_or_equal_throws order ~constraints ~left ~right =
         if (Type.is_resolved left) && (Type.is_resolved right) then
           if less_or_equal order ~left ~right then [constraints] else []
@@ -703,11 +695,10 @@ module OrderImplementation = struct
             | List.Or_unequal_lengths.Unequal_lengths -> []
           in
           match left, right with
-          | Type.Bottom, _
-          | _, Type.Bottom ->
-              (* This is needed for representing unbound variables between statements, which can't
-                 totally be done by filtering because of the promotion done for explicit type
-                 variables *)
+          | _, Type.Any
+          | _, Type.Top ->
+              [constraints]
+          | Type.Any, _ when any_is_bottom ->
               [constraints]
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
@@ -767,6 +758,11 @@ module OrderImplementation = struct
                 ~target:(Type.Primitive right_name)
               >>= solve_parameters
               |> Option.value ~default:[]
+          | Type.Parametric _, Type.Primitive _ ->
+              if less_or_equal order ~left:(Type.mark_variables_as_bound left) ~right then
+                [constraints]
+              else
+                []
           | Optional left, Optional right
           | left, Optional right
           | Type.Tuple (Type.Unbounded left),
@@ -1313,15 +1309,17 @@ module OrderImplementation = struct
       >>| fun parameters ->
       { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
-
     and join
         ({ handler = ((module Handler: Handler) as handler); constructor; _ } as order)
         left
         right =
+      let union = Type.union [left; right] in
       if Type.equal left right then
         left
+      else if Type.contains_escaped_free_variable left ||
+              Type.contains_escaped_free_variable right then
+        union
       else
-        let union = Type.union [left; right] in
         match left, right with
         | Type.Bottom, other
         | other, Type.Bottom ->
@@ -2062,6 +2060,14 @@ let rec is_consistent_with order left right =
     { order with any_is_bottom = true }
     ~left
     ~right
+
+
+let rec consistent_solution_exists order left right =
+  let order = { order with any_is_bottom = true } in
+  solve_less_or_equal order ~left ~right ~constraints:TypeConstraints.empty
+  |> List.filter_map ~f:(OrderedConstraints.solve ~order)
+  |> List.is_empty
+  |> not
 
 
 let widen order ~widening_threshold ~previous ~next ~iteration =

@@ -447,6 +447,17 @@ let test_check_function_parameters _ =
         a = {"key": set()}
         b = a.get("key", set())
     |}
+    [
+      "Incomplete Type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for " ^
+      "`a` is incomplete, add an explicit annotation.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        a: typing.Dict[str, typing.Set[int]] = {"key": set()}
+        b = a.get("key", set())
+    |}
     [];
 
   assert_type_errors

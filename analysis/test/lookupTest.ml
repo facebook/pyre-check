@@ -218,15 +218,16 @@ let test_lookup_class_attributes _ =
 
 let test_lookup_comprehensions _ =
   let source =
-    {|a = [x for x in []]|}
+    {|a = [x for x in [1.0]]|}
   in
   let (lookup, _) = generate_lookup source in
   assert_annotation_list
     ~lookup
     [
-      "1:0-1:1/typing.List[]";
-      "1:16-1:18/typing.List[]";
-      "1:4-1:19/typing.List[]";
+      "1:0-1:1/typing.List[float]";
+      "1:16-1:21/typing.List[float]";
+      "1:17-1:20/float";
+      "1:4-1:22/typing.List[float]";
     ]
 
 
@@ -536,17 +537,17 @@ let test_lookup_unbound _ =
       "2:14-2:25/typing.TypeAlias";
       "2:34-2:38/None";
       "2:8-2:12/typing.List[Variable[_T]]";
-      "3:18-3:20/typing.List[]";
-      "3:2-3:3/typing.List[]";
-      "3:6-3:21/typing.List[]";
-      "4:15-4:16/typing.List[]";
-      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], Variable[_T]]" ^
-      "[[Named(s, slice)], typing.List[Variable[_T]]]]";
-      "4:22-4:23/typing.List[]";
+      "3:18-3:20/typing.List[Variable[_T]]";
+      "3:2-3:3/typing.List[typing.Any]";
+      "3:6-3:21/typing.List[typing.Any]";
+      "4:15-4:16/typing.List[typing.Any]";
+      "4:2-4:3/typing.Any";
+      "4:22-4:23/typing.Any";
+      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], typing.Any]" ^
+      "[[Named(s, slice)], typing.List[typing.Any]]]";
+      "4:22-4:23/typing.List[typing.Any]";
       "4:24-4:25/typing_extensions.Literal[1]";
-      "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], Variable[_T]]" ^
-      "[[Named(s, slice)], typing.List[Variable[_T]]]]";
-      "4:7-4:8/typing.List[]";
+      "4:7-4:8/typing.Any";
       "4:9-4:10/typing_extensions.Literal[0]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
@@ -555,16 +556,16 @@ let test_lookup_unbound _ =
     ];
   assert_annotation
     ~position:{ Location.line = 3; column = 6 }
-    ~annotation:(Some "3:6-3:21/typing.List[]");
+    ~annotation:(Some "3:6-3:21/typing.List[typing.Any]");
   assert_annotation
     ~position:{ Location.line = 3; column = 18 }
-    ~annotation:(Some "3:18-3:20/typing.List[]");
+    ~annotation:(Some "3:18-3:20/typing.List[Variable[_T]]");
   assert_annotation
     ~position:{ Location.line = 4; column = 7 }
-    ~annotation:(Some "4:7-4:8/typing.List[]");
+    ~annotation:(Some "4:7-4:8/typing.Any");
   assert_annotation
     ~position:{ Location.line = 4; column = 22 }
-    ~annotation:(Some "4:22-4:23/typing.List[]")
+    ~annotation:(Some "4:22-4:23/typing.List[typing.Any]")
 
 
 let test_lookup_if_statements _ =

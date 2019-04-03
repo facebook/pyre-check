@@ -66,6 +66,12 @@ type type_variance_origin =
   | Return
 [@@deriving compare, eq, sexp, show, hash]
 
+type illegal_action_on_incomplete_type =
+  | Naming
+  | Calling
+  | AttributeAccess of Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
 
 type kind =
   | AnalysisFailure of Type.t
@@ -82,6 +88,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompleteType of {
+      target: Expression.Access.general_access;
+      annotation: Type.t;
+      attempted_action: illegal_action_on_incomplete_type;
+    }
   | InconsistentOverride of {
       overridden_method: Identifier.t;
       parent: Reference.t;

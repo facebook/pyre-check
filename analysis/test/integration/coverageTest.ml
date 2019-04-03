@@ -118,27 +118,27 @@ let test_check_coverage _ =
   (* Dictionaries. *)
   assert_covered "{ ERROR: 1 }";
   assert_covered "{ 1: ERROR }";
-  assert_covered "{ ERROR: i for i in dict() }";
-  assert_covered "{ i: ERROR for i in dict() }";
+  assert_covered "{ ERROR: i for i in {1: 1} }";
+  assert_covered "{ i: ERROR for i in {1: 1} }";
   assert_covered "{ i: 1 for i in ERROR }";
 
   (* Format string. *)
   assert_covered {|f"format{ERROR}"|};
 
   (* Generator. *)
-  assert_covered "(ERROR for i in list())";
+  assert_covered "(ERROR for i in [1])";
 
   (* Lambdas. *)
   assert_covered "lambda x: ERROR";
 
   (* Lists. *)
   assert_covered "[1, ERROR]";
-  assert_covered "[ERROR for i in list()]";
+  assert_covered "[ERROR for i in [1]]";
   assert_covered "[i for i in ERROR]";
 
   (* Sets. *)
   assert_covered "{1, ERROR}";
-  assert_covered "{ERROR for i in list()}";
+  assert_covered "{ERROR for i in [1]}";
   assert_covered "{i for i in ERROR}";
 
   (* Starred. *)

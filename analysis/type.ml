@@ -88,7 +88,7 @@ type literal =
 [@@deriving compare, eq, sexp, show, hash]
 
 type variable_state =
-  | Free
+  | Free of { escaped: bool }
   | InFunction
   | InSimulatedCall
 [@@deriving compare, eq, sexp, show, hash]
@@ -218,6 +218,21 @@ module Cache = struct
   let enable () =
     enabled := true
 end
+
+
+let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
+  Variable {
+    variable = name;
+    constraints;
+    variance;
+    state = Free { escaped = false };
+    namespace = 0;
+  }
+
+
+let is_escaped_free_variable = function
+  | Variable { state = Free { escaped }; _ } -> escaped
+  | _ -> false
 
 
 let reverse_substitute name =
@@ -476,10 +491,6 @@ let parametric name parameters =
   Parametric { name; parameters }
 
 
-let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = name; constraints; variance; state = Free; namespace = 0 }
-
-
 let awaitable parameter =
   Parametric {
     name = "typing.Awaitable";
@@ -695,6 +706,7 @@ let union parameters =
   else
     let normalize parameters =
       let parameters = List.filter parameters ~f:(function | Bottom -> false | _ -> true) in
+      let parameters = List.filter parameters ~f:(Fn.non is_escaped_free_variable) in
       match parameters with
       | [] -> Bottom
       | [parameter] -> parameter
@@ -1813,37 +1825,6 @@ let is_callable = function
   | _ -> false
 
 
-let is_concrete annotation =
-  let module ConcreteTransform = Transform.Make(struct
-      type state = bool
-
-      let visit_children_before _ = function
-        | Optional Bottom -> false
-        | Parametric { name; parameters }
-          when (name = "typing.Optional" or name = "Optional") &&
-               parameters = [Bottom] ->
-            false
-        | _ -> true
-
-      let visit_children_after =
-        false
-
-      let visit sofar annotation =
-        let new_state =
-          match annotation with
-          | Bottom
-          | Top
-          | Any ->
-              false
-          | _ ->
-              sofar
-        in
-        { Transform.transformed_annotation = annotation; new_state }
-    end)
-  in
-  fst (ConcreteTransform.visit true annotation)
-
-
 let is_contravariant annotation =
   match annotation with
   | Variable { variance = Contravariant; _ } -> true
@@ -2204,13 +2185,14 @@ let mark_variables_as_bound ?(simulated = false) annotation =
 
 
 let namespace_variable ({ namespace = namespace; _ } as variable) =
+  (* TODO(T42603764): use process unique ids instead *)
   { variable with namespace = namespace + 1 }
 
 
 let namespace_free_variables annotation =
   let constraints annotation =
     match annotation with
-    | Variable ({ state = Free; _ } as variable) -> Some (Variable (namespace_variable variable))
+    | Variable ({ state = Free _; _ } as variable) -> Some (Variable (namespace_variable variable))
     | _ -> None
   in
   instantiate annotation ~constraints
@@ -2220,7 +2202,7 @@ let free_simulated_bound_variables annotation =
   let constraints annotation =
     match annotation with
     | Variable ({ state = InSimulatedCall;  _ } as variable) ->
-        Some (Variable { variable with state = Free })
+        Some (Variable { variable with state = Free { escaped = false } })
     | _ -> None
   in
   instantiate annotation ~constraints
@@ -2228,10 +2210,15 @@ let free_simulated_bound_variables annotation =
 
 let free_variables annotation =
   let is_free_variable = function
-    | Variable { state = Free; _ } -> true
+    | Variable { state = Free _; _ } -> true
     | _ -> false
   in
+  let to_variable = function
+    | Variable variable -> variable
+    | _ -> failwith("collect got a non-variable")
+  in
   collect annotation ~predicate:is_free_variable
+  |> List.map ~f:to_variable
 
 
 let is_resolved annotation =
@@ -2241,11 +2228,73 @@ let is_resolved annotation =
 let instantiate_free_variables ~replacement annotation =
   let constraints =
     free_variables annotation
+    |> List.map ~f:(fun variable -> Variable variable)
     |> List.fold
       ~init:Map.empty
       ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
   in
   instantiate annotation ~constraints:(Map.find constraints)
+
+let mark_free_variables_as_escaped ?specific annotation =
+  let constraints =
+    let variables =
+      match specific with
+      | Some variables ->
+          variables
+      | None ->
+          free_variables annotation
+    in
+    let mark_as_escaped sofar variable =
+      Map.set
+        sofar
+        ~key:(Variable variable)
+        ~data:(Variable {variable with state = Free { escaped = true }})
+    in
+    List.fold variables ~init:Map.empty ~f:mark_as_escaped
+  in
+  instantiate annotation ~constraints:(Map.find constraints)
+
+
+let contains_escaped_free_variable =
+  exists ~predicate:is_escaped_free_variable
+
+let convert_escaped_free_variables_to_anys annotation =
+  let constraints annotation =
+    Option.some_if (is_escaped_free_variable annotation) Any
+  in
+  instantiate annotation ~constraints
+
+
+let is_concrete annotation =
+  let module ConcreteTransform = Transform.Make(struct
+      type state = bool
+
+      let visit_children_before _ = function
+        | Optional Bottom -> false
+        | Parametric { name; parameters }
+          when (name = "typing.Optional" or name = "Optional") &&
+               parameters = [Bottom] ->
+            false
+        | _ -> true
+
+      let visit_children_after =
+        false
+
+      let visit sofar annotation =
+        let new_state =
+          match annotation with
+          | Bottom
+          | Top
+          | Any ->
+              false
+          | _ ->
+              sofar
+        in
+        { Transform.transformed_annotation = annotation; new_state }
+    end)
+  in
+  fst (ConcreteTransform.visit true annotation) &&
+  not (contains_escaped_free_variable annotation)
 
 
 let rec dequalify map annotation =

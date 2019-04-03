@@ -147,6 +147,7 @@ val instantiate_successors_parameters
   -> Type.t List.t Option.t
 
 val is_consistent_with: order -> Type.t -> Type.t -> bool
+val consistent_solution_exists: order -> Type.t -> Type.t -> bool
 
 val deduplicate: (module Handler) -> annotations: Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit

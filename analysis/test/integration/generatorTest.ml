@@ -125,7 +125,7 @@ let test_check_comprehensions _ =
     {|
       def f() -> int:
           x = {
-              "a": [k[0] for x in {}] for k in []
+              "a": [k[0] for x in {1: 1}] for k in [[1]]
           }
           return 0
     |}

@@ -250,10 +250,8 @@ let test_type_collection _ =
         match last_element with
         | Signature {
             signature =
-              Annotated.Signature.Found {
-                callable = { Type.Callable.kind = Type.Callable.Named callable_type; _ };
-                _;
-              };
+              Annotated.Signature.Found
+                { Type.Callable.kind = Type.Callable.Named callable_type; _ };
             _;
           } ->
             assert_equal expected_type (Expression.Access.show callable_type)

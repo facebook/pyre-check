@@ -288,11 +288,16 @@ val assume_any: t -> t
 val mark_variables_as_bound: ?simulated: bool -> t -> t
 val namespace_variable: variable -> variable
 val namespace_free_variables: t -> t
-val free_variables: t -> t list
+val free_variables: t -> variable list
 val free_simulated_bound_variables: t -> t
 (* Does not contain free variables. *)
 val is_resolved: t -> bool
 val instantiate_free_variables: replacement:t -> t -> t
+val mark_free_variables_as_escaped: ?specific: variable list -> t -> t
+
+val is_escaped_free_variable: t -> bool
+val contains_escaped_free_variable: t -> bool
+val convert_escaped_free_variables_to_anys: t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Reference.t Reference.Map.t -> t -> t

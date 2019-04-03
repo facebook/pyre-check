@@ -1314,7 +1314,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_T]):
         pass
     |}
-    [];
+    [Type.variable "_T", Type.Bottom];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])

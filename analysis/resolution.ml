@@ -272,8 +272,16 @@ let constraints_solution_exists ~left ~right resolution =
     |> List.is_empty)
 
 
+let consistent_solution_exists resolution =
+  TypeOrder.consistent_solution_exists (full_order resolution)
+
+
 let solve_constraints resolution =
   TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
+
+
+let partial_solve_constraints resolution =
+  TypeOrder.OrderedConstraints.extract_partial_solution ~order:(full_order resolution)
 
 
 let less_or_equal resolution =
@@ -594,7 +602,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
           when Identifier.equal actual_name "list" &&
                Identifier.equal expected_name "list" &&
-               less_or_equal resolution ~left:actual ~right:expected_parameter ->
+               constraints_solution_exists resolution ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
             resolved
@@ -608,7 +616,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
           when Identifier.equal actual_name "set" &&
                Identifier.equal expected_name "set" &&
-               less_or_equal resolution ~left:actual ~right:expected_parameter ->
+               constraints_solution_exists resolution ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
             resolved
@@ -624,7 +632,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
               let resolved = resolve resolution value in
               let matching_name { Type.name = expected_name; _ } = name = expected_name in
               let relax { Type.annotation; _ } =
-                if less_or_equal resolution ~left:resolved ~right:annotation then
+                if constraints_solution_exists resolution ~left:resolved ~right:annotation then
                   annotation
                 else
                   resolved
@@ -653,8 +661,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           }
           when Identifier.equal actual_name "dict" &&
                Identifier.equal expected_name "dict" &&
-               less_or_equal resolution ~left:actual_key ~right:expected_key &&
-               less_or_equal
+               constraints_solution_exists resolution ~left:actual_key ~right:expected_key &&
+               constraints_solution_exists
                  resolution
                  ~left:actual_value
                  ~right:expected_value ->

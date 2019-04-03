@@ -43,8 +43,13 @@ module AccessState = struct
         signature: AnnotatedSignature.t;
         callees: Type.Callable.t list;
         arguments: Argument.t list;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
       }
-    | Attribute of { attribute: Identifier.t; definition: definition }
+    | Attribute of {
+        attribute: Identifier.t;
+        definition: definition;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
+      }
     | NotCallable of Type.t
     | Value
   [@@deriving show]
@@ -389,6 +394,7 @@ module State = struct
           let parameters =
             List.map parameters ~f:Type.Callable.Parameter.annotation
             |> List.concat_map ~f:Type.free_variables
+            |> List.map ~f:(fun variable -> Type.Variable variable)
           in
           List.fold
             parameters
@@ -400,8 +406,9 @@ module State = struct
     let critical_errors =
       List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
       |> (fun errors ->
-          List.fold
-            (Type.free_variables annotation)
+          Type.free_variables annotation
+          |> List.map ~f:(fun variable -> Type.Variable variable)
+          |> List.fold
             ~f:(check_invalid_variables resolution)
             ~init:errors)
     in
@@ -731,6 +738,26 @@ module State = struct
     let open AccessState in
     let rec fold ~state ~lead ~tail =
       let { accumulator; resolved; target; resolution; _ } = state in
+      let accesses_incomplete_type =
+        match resolved with
+        | Some { Annotation.annotation; _ } when Type.contains_escaped_free_variable annotation ->
+            let full_lead =
+              expression
+              >>| (fun expression -> Access.ExpressionAccess { expression; access = lead })
+              |> Option.value ~default:(Access.SimpleAccess lead)
+            in
+            Some (full_lead, annotation)
+        | _ ->
+            None
+      in
+      let resolved =
+        let convert_escaped_to_anys ({ Annotation.annotation; _ } as full_annotation) =
+          let annotation = Type.convert_escaped_free_variables_to_anys annotation in
+          { full_annotation with annotation }
+        in
+        resolved
+        >>| convert_escaped_to_anys
+      in
       let find_method ~parent ~name =
         parent
         |> Resolution.class_definition resolution
@@ -828,60 +855,29 @@ module State = struct
           List.map callables ~f:signature
         in
 
-        (* Determine type. E.g. `[].append(1)` will determine the list to be of type `List[int]`. *)
-        let resolution =
-          let update_resolution resolution signature =
-            target
-            >>= (fun { reference; annotation } ->
-                Annotated.Signature.determine signature ~resolution ~annotation
-                >>| (fun determined ->
-                    if Reference.length reference = 1 then
-                      Resolution.set_local
-                        resolution
-                        ~reference
-                        ~annotation:(Annotation.create determined)
-                    else
-                      resolution))
-            |> Option.value ~default:resolution
-          in
-          List.fold signatures ~init:resolution ~f:update_resolution
-        in
-
         let signature, callees =
           let not_found = function | Annotated.Signature.NotFound _ -> true | _ -> false in
           match List.partition_tf signatures ~f:not_found with
           (* Prioritize missing signatures for union type checking. *)
           | not_found :: _, _ ->
               Some not_found, []
-          | [], (Annotated.Signature.Found { callable; constraints } ) :: found ->
-              let callables, all_constraints =
+          | [], (Annotated.Signature.Found callable) :: found ->
+              let callables =
                 let extract = function
-                  | Annotated.Signature.Found { callable; constraints } -> callable, constraints
+                  | Annotated.Signature.Found callable -> callable
                   | _ -> failwith "Not all signatures were found."
                 in
                 List.map found ~f:extract
-                |> List.unzip
               in
               let callees = callable :: callables in
               let signature =
-                let constraints =
-                  let join_constraints left right =
-                    let merge ~key:_ = function
-                      | `Left value -> Some value
-                      | `Right value -> Some value
-                      | `Both (left, right) -> Some (Resolution.join resolution left right)
-                    in
-                    Map.merge left right ~f:merge
-                  in
-                  List.fold all_constraints ~init:constraints ~f:join_constraints
-                in
                 let joined_callable =
                   List.map callables ~f:(fun callable -> Type.Callable callable)
                   |> List.fold ~init:(Type.Callable callable) ~f:(Resolution.join resolution)
                 in
                 match joined_callable with
                 | Type.Callable callable ->
-                    Annotated.Signature.Found { callable; constraints }
+                    Annotated.Signature.Found callable
                 | _ ->
                     Annotated.Signature.NotFound { callable; reason = None }
               in
@@ -893,7 +889,7 @@ module State = struct
         let step signature annotation =
           step
             { state with resolution }
-            ~element:(Signature { signature; callees; arguments })
+            ~element:(Signature { signature; callees; arguments; accesses_incomplete_type})
             ~resolved:(Annotation.create annotation)
             ~lead
             ()
@@ -901,20 +897,14 @@ module State = struct
 
         match signature with
         | Some
-            (Annotated.Signature.Found {
-                callable = { implementation = { annotation; _ }; _ };
-                _;
-              } as signature)
-          when Type.is_resolved annotation ->
-            step signature annotation
+            (Annotated.Signature.Found { implementation = { annotation; _ }; _ } as signature)
         | Some
             (Annotated.Signature.NotFound {
                 callable = { implementation = { annotation; _ }; _ };
                 _;
               } as signature) ->
-            let annotation = if Type.is_resolved annotation then annotation else Type.Top in
             step signature annotation
-        | _ ->
+        | None ->
             abort state ~lead ()
       in
 
@@ -1040,7 +1030,9 @@ module State = struct
                       annotation = parent_annotation;
                     }
                   in
-                  let element = AccessState.Attribute { attribute = name; definition } in
+                  let element =
+                    AccessState.Attribute { attribute = name; definition; accesses_incomplete_type }
+                  in
                   step state ~resolved ~target ~element ~continue ~lead ()
                 in
                 let find_attributes ~head_data ~tail_data =
@@ -1214,6 +1206,7 @@ module State = struct
                               AccessState.Attribute {
                                 attribute = name;
                                 definition = Undefined (Module (Reference.from_access qualifier));
+                                accesses_incomplete_type;
                               }
                             in
                             abort state ~element ~lead ()
@@ -1913,8 +1906,19 @@ module State = struct
             let { state; resolved = new_resolved } = forward_expression ~state ~expression in
             { state; resolved = Resolution.join resolution resolved new_resolved }
       in
+      let correct_bottom { state; resolved } =
+        let resolved =
+          if Type.equal Type.Bottom resolved then
+            Type.variable "_T"
+            |> Type.mark_free_variables_as_escaped
+          else
+            resolved
+        in
+        { state; resolved }
+      in
       List.fold elements ~init:{ state; resolved = Type.Bottom } ~f:forward_element
       |> (fun { state; resolved } -> { state; resolved = Type.weaken_literals resolved })
+      |> correct_bottom
     in
     let join_resolved ~resolution left right =
       {
@@ -2046,7 +2050,12 @@ module State = struct
               in
               Some error
 
-          | Attribute { attribute; definition = Undefined origin } ->
+          | AccessState.Signature { accesses_incomplete_type = Some (target, annotation); _ } ->
+              let kind =
+                Error.IncompleteType { target; annotation; attempted_action = Error.Calling }
+              in
+              Some (Error.create ~location ~kind ~define)
+          | Attribute { attribute; definition = Undefined origin; _ } ->
               if Location.Reference.equal location Location.Reference.any then
                 begin
                   Statistics.event
@@ -2083,6 +2092,15 @@ module State = struct
                       }
                 in
                 Some (Error.create ~location ~kind ~define)
+          | Attribute { accesses_incomplete_type = Some (target, annotation); attribute; _ } ->
+              let kind =
+                Error.IncompleteType {
+                  target;
+                  annotation;
+                  attempted_action = Error.AttributeAccess attribute;
+                }
+              in
+              Some (Error.create ~location ~kind ~define)
           | NotCallable Type.Any ->
               None
           | NotCallable annotation ->
@@ -2398,6 +2416,20 @@ module State = struct
           in
           List.fold entries ~f:forward_entry ~init:(Type.Bottom, Type.Bottom, state)
         in
+        let key =
+          if List.is_empty keywords && Type.equal Type.Bottom key then
+            Type.variable "_KT"
+            |> Type.mark_free_variables_as_escaped
+          else
+            key
+        in
+        let value =
+          if List.is_empty keywords && Type.equal Type.Bottom value then
+            Type.variable "_VT"
+            |> Type.mark_free_variables_as_escaped
+          else
+            value
+        in
         let resolved, state =
           let forward_keyword (resolved, state) keyword =
             let { state; resolved = keyword_resolved } =
@@ -2616,7 +2648,8 @@ module State = struct
           ~expected:return_annotation
       in
       let check_incompatible_return state =
-        if not (Resolution.less_or_equal resolution ~left:actual ~right:return_annotation) &&
+        if not (Resolution.constraints_solution_exists
+                  resolution ~left:actual ~right:return_annotation) &&
            not (Define.is_abstract_method define) &&
            not (Define.is_overloaded_method define) &&
            not (Type.is_none actual && (Annotated.Callable.is_generator define)) &&
@@ -2869,7 +2902,8 @@ module State = struct
                 in
                 if is_immutable &&
                    not (Type.equal resolved Type.ellipsis) &&
-                   not (Resolution.less_or_equal resolution ~left:resolved ~right:expected) &&
+                   not (Resolution.constraints_solution_exists
+                          resolution ~left:resolved ~right:expected) &&
                    not is_typed_dictionary_initialization &&
                    not is_valid_enumeration_assignment then
                   let kind =
@@ -2971,7 +3005,7 @@ module State = struct
                 in
                 let reference = Reference.from_access access in
                 match element with
-                | Attribute { attribute = access; definition = Defined (Module _) }
+                | Attribute { attribute = access; definition = Defined (Module _); _ }
                   when insufficiently_annotated ->
                     Error.create
                       ~location
@@ -2993,7 +3027,7 @@ module State = struct
                       ~kind:(Error.IllegalAnnotationTarget target)
                       ~define:define_node
                     |> Option.some
-                | Attribute { attribute = access; definition = Defined (Instance attribute) }
+                | Attribute { attribute = access; definition = Defined (Instance attribute); _ }
                   when insufficiently_annotated ->
                     let attribute_location = Annotated.Attribute.location attribute in
                     Error.create
@@ -3086,25 +3120,42 @@ module State = struct
               (* Propagate annotations. *)
               let state =
                 let reference = Reference.from_access access in
-                let resolution =
-                  let annotation =
-                    if explicit && is_valid_annotation then
-                      let annotation =
-                        Annotation.create_immutable
-                          ~global:(Resolution.is_global ~reference resolution)
-                          guide
-                      in
-                      if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
-                        Refinement.refine ~resolution annotation resolved
-                      else
-                        annotation
-                    else if Annotation.is_immutable target_annotation then
-                      Refinement.refine ~resolution target_annotation guide
+                let annotation =
+                  if explicit && is_valid_annotation then
+                    let annotation =
+                      Annotation.create_immutable
+                        ~global:(Resolution.is_global ~reference resolution)
+                        guide
+                    in
+                    if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                      Refinement.refine ~resolution annotation resolved
                     else
-                      Annotation.create guide
-                  in
-                  Resolution.set_local resolution ~reference ~annotation
+                      annotation
+                  else if Annotation.is_immutable target_annotation then
+                    Refinement.refine ~resolution target_annotation guide
+                  else
+                    Annotation.create guide
                 in
+                let state, annotation =
+                  if not explicit &&
+                     not is_type_alias &&
+                     Type.contains_escaped_free_variable (Annotation.annotation annotation) then
+                    let kind =
+                      Error.IncompleteType {
+                        target = Access.SimpleAccess access;
+                        annotation = resolved;
+                        attempted_action = Naming;
+                      }
+                    in
+                    let converted =
+                      Type.convert_escaped_free_variables_to_anys (Annotation.annotation annotation)
+                    in
+                    emit_error ~state ~location ~kind ~define:define_node,
+                    { annotation with annotation = converted }
+                  else
+                    state, annotation
+                in
+                let resolution = Resolution.set_local resolution ~reference ~annotation in
                 { state with resolution }
               in
               state
@@ -3841,6 +3892,7 @@ module State = struct
                 | Some annotation ->
                     let annotation = Resolution.parse_annotation resolution annotation in
                     Type.free_variables annotation
+                    |> List.map ~f:(fun variable -> Type.Variable variable)
               in
               List.concat_map parameters ~f:extract_variables
               |> List.dedup_and_sort ~compare:Type.compare

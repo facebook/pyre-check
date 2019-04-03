@@ -3100,7 +3100,7 @@ let test_solve_less_or_equal _ =
       ~right
       ?constraints
       ?(leave_unbound_in_left = [])
-      ?(leave_constraint_values_unbound = false)
+      ?(postprocess = Type.mark_variables_as_bound ~simulated:false)
       expected =
     let parse_annotation annotation =
       annotation
@@ -3119,15 +3119,10 @@ let test_solve_less_or_equal _ =
       |> Type.instantiate ~constraints
     in
     let right = parse_annotation right in
-    let mark =
-      if leave_constraint_values_unbound then
-        Fn.id
-      else
-        Type.mark_variables_as_bound ~simulated:false
-    in
     let expected =
       let parse_pairs =
-        List.map ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
+        List.map
+          ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> postprocess))
       in
       expected
       |> List.map ~f:parse_pairs
@@ -3146,14 +3141,14 @@ let test_solve_less_or_equal _ =
         let sofar =
           lower_bound
           >>| parse_annotation
-          >>| mark
+          >>| postprocess
           >>| (fun bound ->
               OrderedConstraints.add_lower_bound sofar ~order:handler ~variable ~bound |> unwrap)
           |> Option.value ~default:sofar
         in
         upper_bound
         >>| parse_annotation
-        >>| mark
+        >>| postprocess
         >>| (fun bound ->
             OrderedConstraints.add_upper_bound sofar ~order:handler ~variable ~bound |> unwrap)
         |> Option.value ~default:sofar
@@ -3199,8 +3194,6 @@ let test_solve_less_or_equal _ =
   (* An explicit type variable can only be bound to its constraints *)
   assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];
   assert_solve ~left:"C" ~right:"T_D_Q" [];
-
-  assert_solve ~left:"$bottom" ~right:"T_Unconstrained" [[]];
 
 
   assert_solve
@@ -3324,16 +3317,17 @@ let test_solve_less_or_equal _ =
     [["T_Unconstrained", "int"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
+    ~postprocess:(fun value ->
+        Type.namespace_free_variables value |> Type.mark_free_variables_as_escaped)
     ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    [["T_Unconstrained", "G_invariant[$bottom]"]];
+    [["T_Unconstrained", "G_invariant[T]"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     [[]];
   assert_solve
-    ~leave_constraint_values_unbound:true
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], G_invariant[T]]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"

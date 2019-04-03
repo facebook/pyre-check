@@ -1136,6 +1136,7 @@ let test_variables _ =
     let variables =
       Type.create ~aliases (parse_single_expression source)
       |> Type.free_variables
+      |> List.map ~f:(fun variable -> Type.Variable variable)
     in
     assert_equal (List.map expected ~f:Type.variable) variables
   in

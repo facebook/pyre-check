@@ -39,8 +39,13 @@ module AccessState: sig
         signature: AnnotatedSignature.t;
         callees: Type.Callable.t list;
         arguments: Argument.t list;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
       }
-    | Attribute of { attribute: Identifier.t; definition: definition }
+    | Attribute of {
+        attribute: Identifier.t;
+        definition: definition;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
+      }
     | NotCallable of Type.t
     | Value
   [@@deriving show]

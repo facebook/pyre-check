@@ -45,6 +45,8 @@ let resolution =
       unknown: $unknown = ...
       g: typing.Callable[[int], bool]
       f: typing.Callable[[int], typing.List[bool]]
+
+      class ESCAPED(typing.Generic[_T]): ...
     |}
   |> fun environment -> TypeCheck.resolution environment ()
 
@@ -67,6 +69,13 @@ let test_select _ =
         ~with_:"typing_extensions.Literal[\"string\"]"
       |> Format.asprintf "typing.Callable%s"
       |> parse_annotation
+      |> Type.instantiate ~constraints:begin
+        function
+        | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
+            Some (Type.mark_free_variables_as_escaped variable)
+        | _ ->
+            None
+      end
       |> function
       | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
           let undefined { Type.Callable.parameters; _ } =
@@ -97,7 +106,7 @@ let test_select _ =
     let expected =
       match expected with
       | `Found expected ->
-          Found { callable = parse_callable expected; constraints = Type.Map.empty }
+          Found (parse_callable expected)
       | `NotFoundNoReason ->
           NotFound { callable; reason = None }
       | `NotFoundInvalidKeywordArgument (expression, annotation) ->
@@ -374,7 +383,7 @@ let test_select _ =
     "[[typing.Union[int, typing.List[_T]]], _T]"
     "([1])"
     (`Found "[[typing.Union[int, typing.List[int]]], int]");
-  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], $bottom]");
+  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], ESCAPED[_S]]");
 
   assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
@@ -404,7 +413,7 @@ let test_select _ =
     "[[typing.Sequence[_T]], int]"
     "(1)"
     (`NotFoundMismatchWithClosest
-       ("[[typing.Sequence[$bottom]], int]",
+       ("[[typing.Sequence[ESCAPED[_T]]], int]",
         Type.literal_integer 1, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
 
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
@@ -412,18 +421,18 @@ let test_select _ =
     "[[_R], _R]"
     "('string')"
     (`NotFoundMismatchWithClosest
-       ("[[$bottom], $bottom]", Type.literal_string "string",
+       ("[[ESCAPED[_R]], ESCAPED[_R]]", Type.literal_string "string",
         Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
     "(['string'])"
     (`NotFoundMismatchWithClosest
-       ("[[typing.List[$bottom]], $bottom]", Type.list Type.string,
+       ("[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]", Type.list Type.string,
         Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
-  assert_select "[[], _R]" "()" (`Found "[[], $bottom]");
+  assert_select "[[], _R]" "()" (`Found "[[], ESCAPED[_R]]");
 
   assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select
@@ -448,7 +457,7 @@ let test_select _ =
     "[[_T_float_or_str], None]"
     "(union)"
     (`NotFoundMismatchWithClosest
-       ("[[$bottom], None]",
+       ("[[ESCAPED[_T_float_or_str]], None]",
         Type.union [Type.integer; Type.string],
         Type.variable "_T_float_or_str" ~constraints:(Type.Explicit [Type.float; Type.string]),
         None,
@@ -466,28 +475,28 @@ let test_select _ =
   assert_select
     "[[int], _T]"
     "(5)"
-    (`Found "[[int], $bottom]");
+    (`Found "[[int], ESCAPED[_T]]");
   assert_select
     "[[int], _T_float_or_str]"
     "(5)"
-    (`Found "[[int], $bottom]");
+    (`Found "[[int], ESCAPED[_T_float_or_str]]");
   assert_select
     "[[int], _T_bound_by_float_str_union]"
     "(5)"
-    (`Found "[[int], $bottom]");
+    (`Found "[[int], ESCAPED[_T_bound_by_float_str_union]]");
 
   assert_select
     "[[], _T]"
     "()"
-    (`Found "[[], $bottom]");
+    (`Found "[[], ESCAPED[_T]]");
   assert_select
     "[[], _T_float_or_str]"
     "()"
-    (`Found "[[], $bottom]");
+    (`Found "[[], ESCAPED[_T_float_or_str]]");
   assert_select
     "[[], _T_bound_by_float_str_union]"
     "()"
-    (`Found "[[], $bottom]");
+    (`Found "[[], ESCAPED[_T_bound_by_float_str_union]]");
 
   (* Ranking. *)
   assert_select
@@ -621,57 +630,17 @@ let test_select _ =
     ~name:"dict.__init__"
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "()"
-    (`Found "[[Keywords(kwargs, $bottom)], dict[$bottom, $bottom]]");
+    (`Found "[[Keywords(kwargs, ESCAPED[_S])], dict[ESCAPED[_T], ESCAPED[_S]]]");
   assert_select
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords(kwargs, $literal_one)], dict[$bottom, $literal_one]]");
+    (`Found "[[Keywords(kwargs, $literal_one)], dict[ESCAPED[_T], $literal_one]]");
 
   ()
-
-
-let test_determine _ =
-  let assert_determine ?(found = true) constraints actual expected =
-    let signature =
-      let callable =
-        match Type.Callable.create ~annotation:Type.integer () with
-        | Type.Callable callable -> callable
-        | _ -> failwith "Could not extract callable"
-      in
-      if found then
-        Found { callable; constraints = Type.Map.of_alist_exn constraints }
-      else
-        NotFound { callable; reason = None }
-    in
-    assert_equal
-      ~cmp:(Option.equal Type.equal)
-      ~printer:(function | Some annotation -> Type.show annotation | _ -> "None")
-      expected
-      (Signature.determine signature ~resolution ~annotation:actual)
-  in
-  assert_determine [] Type.integer None;
-  assert_determine
-    [Type.variable "_T", Type.integer]
-    (Type.list Type.Bottom)
-    (Some (Type.list Type.integer));
-
-  (* Unrelated variable does not determine a type. *)
-  assert_determine
-    [Type.variable "_S", Type.integer]
-    (Type.list Type.Bottom)
-    (Some (Type.list Type.Bottom));
-
-  (* Unresolved signatures do not determine types. *)
-  assert_determine
-    ~found:false
-    [Type.variable "_T", Type.integer]
-    (Type.list Type.Bottom)
-    None
 
 
 let () =
   "signature">:::[
     "select">::test_select;
-    "determine">::test_determine;
   ]
   |> Test.run;

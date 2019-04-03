@@ -10,8 +10,6 @@ open Pyre
 open Ast
 open Expression
 
-module Class = AnnotatedClass
-
 
 type mismatch = {
   actual: Type.t;
@@ -40,14 +38,7 @@ type reason =
 [@@deriving eq, show, compare]
 
 
-type found = {
-  callable: Type.Callable.t;
-  constraints: Type.t Type.Map.t;
-}
-[@@deriving eq]
-
-
-let pp_found format { callable; _ } =
+let pp_found format callable =
   Format.fprintf format "%a" Type.Callable.pp callable
 
 
@@ -55,9 +46,9 @@ let show_found =
   Format.asprintf "%a" pp_found
 
 
-let equal_found (left: found) (right: found) =
+let equal_found left right =
   (* Ignore constraints. *)
-  Type.Callable.equal left.callable right.callable
+  Type.Callable.equal left right
 
 
 type closest = {
@@ -74,7 +65,7 @@ let equal_closest (left: closest) (right: closest) =
 
 
 type t =
-  | Found of found
+  | Found of Type.Callable.t
   | NotFound of closest
 [@@deriving eq, show]
 
@@ -510,9 +501,17 @@ let select
           |> check signature_match
     in
     let check_if_solution_exists
-        ({ constraints_set; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
+        ({
+          constraints_set;
+          reasons = ({ annotation; _ } as reasons);
+          callable;
+          _;
+        } as signature_match) =
       let solutions =
-        List.filter_map constraints_set ~f:(Resolution.solve_constraints resolution)
+        let variables = Type.free_variables (Type.Callable callable) in
+        List.filter_map
+          constraints_set
+          ~f:(Resolution.partial_solve_constraints ~variables resolution)
       in
       if not (List.is_empty solutions) then
         signature_match
@@ -611,30 +610,28 @@ let select
     in
     let determine_reason
         { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
-      let solution =
-        let solution =
-          List.filter_map constraints_set ~f:(Resolution.solve_constraints resolution)
-          |> List.hd
-          |> Option.value ~default:Type.Map.empty
-        in
-        let to_bottom constraints variable =
-          Map.update constraints variable ~f:(function | None -> Type.Bottom | Some value -> value)
-        in
-        Type.Callable callable
-        |> Type.free_variables
-        |> List.fold ~f:to_bottom ~init:solution
-      in
       let callable =
-        Type.Callable.map
-          ~f:(Type.instantiate ~widen:false ~constraints:(Map.find solution))
-          callable
+        let instantiate annotation =
+          let solution =
+            let variables = Type.free_variables (Type.Callable callable) in
+            List.filter_map
+              constraints_set
+              ~f:(Resolution.partial_solve_constraints ~variables resolution)
+            |> List.map ~f:snd
+            |> List.hd
+            |> Option.value ~default:Type.Map.empty
+          in
+          Type.instantiate annotation ~widen:false ~constraints:(Map.find solution)
+          |> Type.mark_free_variables_as_escaped
+        in
+        Type.Callable.map ~f:instantiate callable
         |> (function
             | Some callable -> callable
             | _ -> failwith "Instantiate did not return a callable")
       in
       match List.rev arity, List.rev annotation with
       | [], [] ->
-          Found { callable; constraints = solution }
+          Found callable
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function
@@ -683,36 +680,3 @@ let select
     match get_match overloads with
     | Found signature_match -> Found signature_match
     | NotFound _ -> get_match [implementation]
-
-
-let determine signature ~resolution ~annotation =
-  match annotation, signature with
-  | Type.Parametric { name; parameters } as annotation,
-    Found { constraints; _ } ->
-      Resolution.class_definition resolution annotation
-      >>| Class.create
-      >>| Class.generics ~resolution
-      >>= (fun generics ->
-          if List.length generics = List.length parameters then
-            let instantiated =
-              let uninstantiated =
-                let uninstantiated generic parameter =
-                  match parameter with
-                  | Type.Bottom -> generic
-                  | _ -> parameter
-                in
-                let parameters = List.map2_exn ~f:uninstantiated generics parameters in
-                Type.Parametric { name; parameters }
-              in
-              let constraints annotation =
-                Map.find constraints annotation
-                >>| Type.weaken_literals
-              in
-              Type.instantiate ~constraints  uninstantiated
-              |> Type.instantiate_free_variables ~replacement:Type.Bottom
-            in
-            Some instantiated
-          else
-            None)
-  | _ ->
-      None

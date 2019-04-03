@@ -79,6 +79,13 @@ type type_variance_origin =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type illegal_action_on_incomplete_type =
+  | Naming
+  | Calling
+  | AttributeAccess of Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -94,6 +101,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompleteType of {
+      target: Access.general_access;
+      annotation: Type.t;
+      attempted_action: illegal_action_on_incomplete_type;
+    }
   | InconsistentOverride of {
       overridden_method: Identifier.t;
       parent: Reference.t;
@@ -183,6 +195,8 @@ let code = function
   | MutuallyRecursiveTypeVariables _ -> 36
   | InvalidTypeVariance _ -> 35
   | InvalidMethodSignature _ -> 36
+  | IncompleteType _ -> 37
+
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -201,6 +215,7 @@ let name = function
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
+  | IncompleteType _ -> "Incomplete Type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidType _ -> "Invalid type"
@@ -349,6 +364,33 @@ let messages ~concise ~define location kind =
         Format.asprintf
           "Target `%a` cannot be annotated."
           Expression.pp_sanitized expression
+      ]
+  | IncompleteType { target; annotation; attempted_action } ->
+      let inferred =
+        if Type.is_escaped_free_variable annotation then
+          ""
+        else
+          Format.asprintf "`%a` " pp_type annotation
+      in
+      let consequence =
+        match attempted_action with
+        | Naming ->
+            "add an explicit annotation."
+        | Calling ->
+            "cannot be called. " ^
+            "Separate the expression into an assignment and give it an explicit annotation"
+        | AttributeAccess attribute ->
+            Format.asprintf
+              "so attribute `%s` cannot be accessed. Separate the expression \
+               into an assignment and give it an explicit annotation."
+              attribute
+      in
+      [
+        Format.asprintf
+          "Type %sinferred for `%s` is incomplete, %s"
+          inferred
+          (Expression.show_sanitized (Node.create_with_default_location (Expression.Access target)))
+          consequence
       ]
   | ImpossibleIsinstance _ when concise ->
       ["isinstance check will always fail."]
@@ -1361,6 +1403,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidMethodSignature _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
+  | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
@@ -1394,7 +1437,7 @@ let due_to_builtin_import { kind; _ } =
 let due_to_mismatch_with_any resolution { kind; _ } =
   let is_consistent_with ~actual ~expected =
     (Type.contains_any actual || Type.contains_any expected) &&
-    Resolution.is_consistent_with resolution actual expected
+    Resolution.consistent_solution_exists resolution actual expected
   in
   match kind with
   | IncompatibleAwaitableType actual
@@ -1421,6 +1464,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | IncompleteType _
   | InvalidMethodSignature _
   | InvalidType _
   | InvalidTypeParameters _
@@ -1476,6 +1520,13 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left.mismatch right.mismatch
+    | IncompleteType
+        { target = left_target; annotation = left; attempted_action = left_attempted_action },
+      IncompleteType
+        { target = right_target; annotation = right; attempted_action = right_attempted_action }
+      when Access.equal_general_access left_target right_target &&
+           left_attempted_action = right_attempted_action ->
+        Resolution.less_or_equal resolution ~left ~right
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
            left.incompatible_type.name = right.incompatible_type.name ->
@@ -1609,6 +1660,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
@@ -1680,6 +1732,17 @@ let join ~resolution left right =
         IllegalAnnotationTarget left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
+    | IncompleteType
+        { target = left_target; annotation = left; attempted_action = left_attempted_action },
+      IncompleteType
+        { target = right_target; annotation = right; attempted_action = right_attempted_action }
+      when Access.equal_general_access left_target right_target &&
+           left_attempted_action = right_attempted_action ->
+        IncompleteType {
+          target = left_target;
+          annotation = Resolution.join resolution left right;
+          attempted_action = left_attempted_action;
+        }
     | InvalidTypeParameters {
         annotation = left;
         expected_number_of_parameters = left_expected;
@@ -1884,6 +1947,7 @@ let join ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
@@ -2175,6 +2239,9 @@ let suppress ~mode ~resolution error =
       match kind with
       | UndefinedImport _ ->
           due_to_builtin_import error
+      | IncompleteType _ ->
+          (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
+          true
       | _ ->
           due_to_mismatch_with_any resolution error
   in
@@ -2190,6 +2257,9 @@ let suppress ~mode ~resolution error =
         true
     | InvalidTypeParameters { given_number_of_parameters; _ }
       when given_number_of_parameters = 0 ->
+        true
+    | IncompleteType _ ->
+        (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
         true
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
@@ -2272,6 +2342,8 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | IncompleteType { target; annotation; attempted_action } ->
+        IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
     | InvalidArgument (Variable { expression; annotation }) ->

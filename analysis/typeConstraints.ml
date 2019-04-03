@@ -107,10 +107,6 @@ module OrderedConstraints(Order: OrderType) = struct
             | _ ->
                 explicits
           in
-          let override_with_bottom selected =
-            (* necessary for post-inference, will be removed *)
-            if Type.equal (lower_bound interval) Type.Bottom then Type.Bottom else selected
-          in
           let contains { upper_bound; lower_bound } candidate ~order =
             Order.less_or_equal order ~left:candidate ~right:upper_bound &&
             Order.less_or_equal order ~left:lower_bound ~right:candidate
@@ -118,7 +114,6 @@ module OrderedConstraints(Order: OrderType) = struct
           (* When doing multiple solves, all of these options ought to be considered, *)
           (* and solved in a fixpoint *)
           List.find ~f:(contains interval ~order) explicits
-          >>| override_with_bottom
       | Type.Bound exogenous_bound ->
           join order interval (create ~upper_bound:exogenous_bound ())
           |> lowest_non_bottom_member ~order

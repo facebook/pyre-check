@@ -224,7 +224,7 @@ module State = struct
         let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
           match element with
           | TypeCheck.AccessState.Signature {
-              signature = Annotated.Signature.Found { callable; _ };
+              signature = Annotated.Signature.Found callable;
               arguments;
               _;
             }

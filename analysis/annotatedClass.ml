@@ -167,6 +167,7 @@ let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.free_variables
+    |> List.map ~f:(fun variable -> Type.Variable variable)
   in
   List.concat_map ~f:find_type_variables bases
   |> List.dedup ~compare:Type.compare
@@ -467,6 +468,7 @@ module Attribute = struct
         let variables =
           Annotation.annotation annotation
           |> Type.free_variables
+          |> List.map ~f:(fun variable -> Type.Variable variable)
           |> Type.Set.of_list
         in
         let generics =

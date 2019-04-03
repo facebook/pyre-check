@@ -89,6 +89,7 @@ let test_initial _ =
           | Some annotation ->
               let annotation = Resolution.parse_annotation resolution annotation in
               Type.free_variables annotation
+              |> List.map ~f:(fun variable -> Type.Variable variable)
         in
         List.concat_map define.signature.parameters ~f:extract_variables
         |> List.dedup_and_sort ~compare:Type.compare
@@ -504,9 +505,9 @@ let test_forward_access _ =
             | Attribute { definition = Undefined (Module reference); _ }
               when Reference.is_empty reference ->
                 Unknown
-            | Attribute { attribute; definition = Defined _ } ->
+            | Attribute { attribute; definition = Defined _; _ } ->
                 Attribute attribute
-            | Attribute { attribute; definition = Undefined origin } ->
+            | Attribute { attribute; definition = Undefined origin; _ } ->
                 let missing_definer =
                   match origin with
                   | Instance { instantiated_target; _ } ->
@@ -518,7 +519,7 @@ let test_forward_access _ =
                 in
                 MissingAttribute { name = attribute; missing_definer }
             | Signature {
-                signature = Annotated.Signature.Found { callable; _ };
+                signature = Annotated.Signature.Found callable;
                 callees;
                 _;
               } ->
@@ -2109,8 +2110,6 @@ let test_forward_expression _ =
         ~state:(create precondition)
         ~expression
     in
-    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
-    assert_state_equal (create postcondition) forwarded;
     let errors =
       match errors with
       | `Specific errors ->
@@ -2124,11 +2123,13 @@ let test_forward_expression _ =
           in
           errors [] count
     in
+    assert_state_equal (create postcondition) forwarded;
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
+      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
+    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
   in
 
   (* Access. *)
@@ -2138,21 +2139,6 @@ let test_forward_expression _ =
     "x"
     Type.integer;
   assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
-    "x.add_key(1)"
-    Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer]
-    "x.add_value(1)"
-    Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.string]
-    "x.add_both(1, 'string')"
-    Type.none;
-  assert_forward
     ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~errors:(`Specific [
@@ -2160,12 +2146,6 @@ let test_forward_expression _ =
         "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
       ])
     "x.add_key('string')"
-    Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.Top ~value:Type.Bottom]
-    ~errors:(`Undefined 1)
-    "x.add_key(undefined)"
     Type.none;
 
   (* Await. *)
@@ -2274,7 +2254,14 @@ let test_forward_expression _ =
 
   (* Generators. *)
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
-  assert_forward "(element for element in [])" (Type.generator Type.Bottom);
+  assert_forward
+    ~errors:(`Specific [
+        "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[].` is " ^
+        "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into " ^
+        "an assignment and give it an explicit annotation.";
+      ])
+    "(element for element in [])"
+    (Type.generator Type.Any);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
     (Type.generator (Type.tuple [Type.integer; Type.string]));
@@ -2317,7 +2304,7 @@ let test_forward_expression _ =
     (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
-  assert_forward "[]" (Type.list Type.Bottom);
+  assert_forward "[]" (Type.list (Type.variable "_T" |> Type.mark_free_variables_as_escaped));
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
@@ -2743,10 +2730,6 @@ let test_forward_statement _ =
     ["x", Type.list Type.Top; "y", Type.integer]
     "assert y in x"
     ["x", Type.list Type.Top; "y", Type.integer];
-  assert_forward
-    []
-    "assert None in []"
-    [];
   assert_forward
     []
     "assert None in [1]"
