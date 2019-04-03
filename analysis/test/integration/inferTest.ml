@@ -149,7 +149,7 @@ let test_check_missing_return _ =
 
   assert_type_errors
     ~update_environment_with:[{
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "MyType = typing.List[typing.Any]"
       }]

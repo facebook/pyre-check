@@ -10,6 +10,7 @@ open Ast
 open Analysis
 open Service.EnvironmentSharedMemory
 
+open Test
 open OUnit2
 
 module Handler = Service.Environment.SharedHandler
@@ -100,7 +101,7 @@ let test_register_modules _ =
   |> Service.EnvironmentSharedMemory.Globals.remove_batch;
 
   Handler.register_module
-    ~qualifier:(Reference.create "a")
+    ~qualifier:(!&"a")
     ~local_mode:Ast.Source.Default
     ~handle:None
     ~stub:false
@@ -112,47 +113,46 @@ let test_register_modules _ =
   in
   assert_equal
     ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe (Reference.create "a.__name__")) (annotation Type.string);
+    (Globals.find_unsafe (!&"a.__name__")) (annotation Type.string);
   assert_equal
     ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe (Reference.create "a.__file__")) (annotation Type.string);
+    (Globals.find_unsafe (!&"a.__file__")) (annotation Type.string);
   assert_equal
     ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe (Reference.create "a.__dict__"))
+    (Globals.find_unsafe (!&"a.__dict__"))
     (annotation (Type.dictionary ~key:Type.string ~value:Type.Any))
 
 
 let test_normalize_dependencies _ =
   let handle = File.Handle.create "dummy.py" in
-  let reference = Reference.create in
   DependencyHandler.clear_keys_batch [handle];
-  DependencyHandler.add_function_key ~handle (reference "f");
+  DependencyHandler.add_function_key ~handle (!&"f");
   (* Only keep one copy. *)
-  DependencyHandler.add_function_key ~handle (reference "f");
-  DependencyHandler.add_function_key ~handle (reference "h");
-  DependencyHandler.add_function_key ~handle (reference "g");
+  DependencyHandler.add_function_key ~handle (!&"f");
+  DependencyHandler.add_function_key ~handle (!&"h");
+  DependencyHandler.add_function_key ~handle (!&"g");
   DependencyHandler.normalize [handle];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
     (DependencyHandler.get_function_keys ~handle)
-    [reference "f"; reference "g"; reference "h"];
+    [!&"f"; !&"g"; !&"h"];
 
-  DependencyHandler.add_global_key ~handle (reference "b");
-  DependencyHandler.add_global_key ~handle (reference "c");
-  DependencyHandler.add_global_key ~handle (reference "a");
+  DependencyHandler.add_global_key ~handle (!&"b");
+  DependencyHandler.add_global_key ~handle (!&"c");
+  DependencyHandler.add_global_key ~handle (!&"a");
   DependencyHandler.normalize [handle];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_global_keys ~handle) [reference "a"; reference "b"; reference "c"];
+    (DependencyHandler.get_global_keys ~handle) [!&"a"; !&"b"; !&"c"];
 
-  DependencyHandler.add_dependent_key ~handle (reference "first.module");
-  DependencyHandler.add_dependent_key ~handle (reference "second.module");
-  DependencyHandler.add_dependent_key ~handle (reference "aardvark");
+  DependencyHandler.add_dependent_key ~handle (!&"first.module");
+  DependencyHandler.add_dependent_key ~handle (!&"second.module");
+  DependencyHandler.add_dependent_key ~handle (!&"aardvark");
   DependencyHandler.normalize [handle];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
     (DependencyHandler.get_dependent_keys ~handle)
-    [reference "aardvark"; reference "first.module"; reference "second.module"];
+    [!&"aardvark"; !&"first.module"; !&"second.module"];
 
 
   DependencyHandler.add_class_key ~handle (Type.Primitive "T1");

@@ -20,7 +20,7 @@ let test_is_method _ =
   let define ~name ~parent =
     {
       Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [];
         decorators = [];
         docstring = None;
@@ -39,13 +39,13 @@ let test_is_classmethod _ =
   let define name decorators =
     {
       Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [];
         decorators;
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = Some (Reference.create "bar");
+        parent = Some (!&"bar");
       };
       body = [+Pass];
     } in
@@ -62,13 +62,13 @@ let test_is_class_property _ =
   let define name decorators =
     {
       Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [];
         decorators;
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = Some (Reference.create "bar");
+        parent = Some (!&"bar");
       };
       body = [+Pass];
     }
@@ -83,7 +83,7 @@ let test_decorator _ =
   let define decorators =
     {
       Define.signature = {
-        name = Reference.create "foo";
+        name = !&"foo";
         parameters = [];
         decorators;
         docstring = None;
@@ -120,7 +120,7 @@ let test_is_constructor _ =
     let define =
       {
         Define.signature = {
-          name = Reference.create name;
+          name = !&name;
           parameters = [];
           decorators = [];
           docstring = None;
@@ -206,7 +206,7 @@ let test_defines _ =
     | Some define when exists ->
         assert_equal
           define.Node.value.Define.signature.name
-          (Reference.create method_id)
+          (!&method_id)
           ~printer:Reference.show
     | None when not exists ->
         ()
@@ -312,7 +312,7 @@ let test_attributes _ =
     in
     let definition =
       {
-        Record.Class.name = Reference.create "";
+        Record.Class.name = !&"";
         bases = [];
         body = [];
         decorators = [];
@@ -451,7 +451,7 @@ let test_attributes _ =
     in
     let define =
       let define = parse_single_define source in
-      let signature = { define.signature with parent = Some (Reference.create "Parent") } in
+      let signature = { define.signature with parent = Some (!&"Parent") } in
       { define with signature  }
     in
     assert_equal
@@ -504,7 +504,7 @@ let test_attributes _ =
           if number_of_defines > 0 then
             let define = {
               Statement.Define.signature = {
-                name = Reference.create "foo";
+                name = !&"foo";
                 parameters = [];
                 decorators = [];
                 docstring = None;

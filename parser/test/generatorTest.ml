@@ -591,7 +591,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -613,7 +613,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "*";
@@ -640,7 +640,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "**a";
@@ -662,7 +662,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -678,7 +678,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -694,7 +694,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [!"foo"];
           docstring = None;
@@ -710,7 +710,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -732,7 +732,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -763,7 +763,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -785,7 +785,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          Define.name = Reference.create "foo";
+          Define.name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -812,7 +812,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -839,7 +839,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -861,7 +861,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -877,7 +877,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -894,7 +894,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -905,7 +905,7 @@ let test_define _ =
         body = [
           +Define {
             signature = {
-              name = Reference.create "bar";
+              name = !&"bar";
               parameters = [];
               decorators = [];
               docstring = None;
@@ -925,7 +925,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -947,7 +947,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -969,7 +969,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -996,7 +996,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1033,7 +1033,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1060,7 +1060,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1080,7 +1080,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1104,7 +1104,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1129,7 +1129,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1153,7 +1153,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1178,7 +1178,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name= Reference.create "foo";
+          name= !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1208,7 +1208,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1239,7 +1239,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1269,7 +1269,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1305,7 +1305,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1341,7 +1341,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "self";
@@ -1382,7 +1382,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "self";
@@ -1423,7 +1423,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -1451,7 +1451,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "self";
@@ -1489,7 +1489,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1522,7 +1522,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -1552,7 +1552,7 @@ let test_define _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -2799,7 +2799,7 @@ let test_class _ =
     "@bar\nclass foo():\n\tpass"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [+Pass];
         decorators = [!"bar"];
@@ -2810,7 +2810,7 @@ let test_class _ =
     "class foo: pass"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [+Pass];
         decorators = [];
@@ -2822,18 +2822,18 @@ let test_class _ =
     "class foo():\n\tdef bar(): pass"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Define {
             signature = {
-              name = Reference.create "bar";
+              name = !&"bar";
               parameters = [];
               decorators = [];
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some (Reference.create "foo");
+              parent = Some (!&"foo");
             };
             body = [+Pass];
           };
@@ -2847,23 +2847,23 @@ let test_class _ =
     "class foo():\n\tdef bar():\n\t\tdef baz(): pass"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Define {
             signature = {
-              name = Reference.create "bar";
+              name = !&"bar";
               parameters = [];
               decorators = [];
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some (Reference.create "foo");
+              parent = Some (!&"foo");
             };
             body = [
               +Define {
                 signature = {
-                  name = Reference.create "baz";
+                  name = !&"baz";
                   parameters = [];
                   decorators = [];
                   docstring = None;
@@ -2885,7 +2885,7 @@ let test_class _ =
     "class foo.bar: pass"
     [
       +Class {
-        Class.name = Reference.create "foo.bar";
+        Class.name = !&"foo.bar";
         bases = [];
         body = [+Pass];
         decorators = [];
@@ -2896,7 +2896,7 @@ let test_class _ =
     "class foo(1, 2):\n\t1"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [
           { Argument.name = None; value = +Integer 1 };
           { Argument.name = None; value = +Integer 2 };
@@ -2910,7 +2910,7 @@ let test_class _ =
     "class foo(1, **kwargs):\n\t1"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [
           { Argument.name = None; value = +Integer 1 };
           {
@@ -2928,14 +2928,14 @@ let test_class _ =
     "class foo:\n\tattribute: int = 1"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Assign {
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = +Integer 1;
-            parent = Some (Reference.create "foo");
+            parent = Some (!&"foo");
           };
         ];
         decorators = [];
@@ -2946,14 +2946,14 @@ let test_class _ =
     "class foo:\n\tattribute = 1 # type: int"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Assign {
             Assign.target = !"attribute";
             annotation = Some (+String (StringLiteral.create "int"));
             value = +Integer 1;
-            parent = Some (Reference.create "foo");
+            parent = Some (!&"foo");
           };
         ];
         decorators = [];
@@ -2964,14 +2964,14 @@ let test_class _ =
     "class foo:\n\tattribute: int"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Assign {
             Assign.target = !"attribute";
             annotation = Some !"int";
             value = +Ellipsis;
-            parent = Some (Reference.create "foo");
+            parent = Some (!&"foo");
           };
         ];
         decorators = [];
@@ -2983,18 +2983,18 @@ let test_class _ =
     "class foo(superfoo):\n\tdef bar(): pass"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [{ Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
             signature = {
-              name = Reference.create "bar";
+              name = !&"bar";
               parameters = [];
               decorators = [];
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some (Reference.create "foo");
+              parent = Some (!&"foo");
             };
             body = [+Pass];
           };
@@ -3008,12 +3008,12 @@ let test_class _ =
     "class foo():\n\tdef __init__(self): self.bar = 0"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +Define {
             signature = {
-              name = Reference.create "__init__";
+              name = !&"__init__";
               parameters = [
                 +{
                   Parameter.name = "self";
@@ -3025,7 +3025,7 @@ let test_class _ =
               docstring = None;
               return_annotation = None;
               async = false;
-              parent = Some (Reference.create "foo");
+              parent = Some (!&"foo");
             };
             body = [
               +Assign {
@@ -3052,7 +3052,7 @@ let test_class _ =
     |})
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [
           +If {
@@ -3060,13 +3060,13 @@ let test_class _ =
             body = [
               +Define {
                 signature = {
-                  name = Reference.create "bar";
+                  name = !&"bar";
                   parameters = [];
                   decorators = [];
                   docstring = None;
                   return_annotation = None;
                   async = false;
-                  parent = Some (Reference.create "foo");
+                  parent = Some (!&"foo");
                 };
                 body = [+Pass];
               };
@@ -4368,14 +4368,14 @@ let test_stubs _ =
     "class A:\n\ta = ... # type: int"
     [
       +Class {
-        Class.name = Reference.create "A";
+        Class.name = !&"A";
         bases = [];
         body = [
           +Assign {
             Assign.target = !"a";
             annotation = Some (+String (StringLiteral.create "int"));
             value = +Ellipsis;
-            parent = Some (Reference.create "A");
+            parent = Some (!&"A");
           };
         ];
         decorators = [];
@@ -4388,7 +4388,7 @@ let test_stubs _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -4410,7 +4410,7 @@ let test_stubs _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -4432,7 +4432,7 @@ let test_stubs _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -4455,7 +4455,7 @@ let test_stubs _ =
     [
       +Define {
         signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [
             +{
               Parameter.name = "a";
@@ -4477,7 +4477,7 @@ let test_stubs _ =
     "class foo(): ..."
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -4488,7 +4488,7 @@ let test_stubs _ =
     "class foo():\n\t..."
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -4499,7 +4499,7 @@ let test_stubs _ =
     "class foo(): ... # type: ignore"
     [
       +Class {
-        Class.name = Reference.create "foo";
+        Class.name = !&"foo";
         bases = [];
         body = [+Expression (+Ellipsis)];
         decorators = [];
@@ -4521,7 +4521,7 @@ let test_ellipsis _ =
     [
       +Define {
         signature = {
-          name = Reference.create "__init__";
+          name = !&"__init__";
           parameters = [
             +{
               Parameter.name = "debug";

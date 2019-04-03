@@ -29,7 +29,7 @@ let test_return_annotation _ =
       in
       {
         Statement.Define.signature = {
-          name = Reference.create "derp";
+          name = !&"derp";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -55,7 +55,7 @@ let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
     {
       Statement.Define.signature = {
-        name = Reference.create "define";
+        name = !&"define";
         parameters;
         decorators;
         docstring = None;

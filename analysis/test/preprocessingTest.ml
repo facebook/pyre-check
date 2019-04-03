@@ -1514,7 +1514,7 @@ let test_expand_implicit_returns _ =
          [
            +Define {
              signature = {
-               name = Reference.create "foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1614,7 +1614,7 @@ let test_defines _ =
   let create_define name =
     {
       Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [
           +{
             Parameter.name = "a";
@@ -1634,7 +1634,7 @@ let test_defines _ =
   let create_toplevel body =
     {
       Define.signature = {
-        name = Reference.create "$toplevel";
+        name = !&"$toplevel";
         parameters = [];
         decorators = [];
         docstring = None;
@@ -1654,7 +1654,7 @@ let test_defines _ =
   let inner =
     {
       Define.signature = {
-        name = Reference.create "foo";
+        name = !&"foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1674,7 +1674,7 @@ let test_defines _ =
   let define =
     {
       Define.signature = {
-        name = Reference.create "foo";
+        name = !&"foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1700,7 +1700,7 @@ let test_defines _ =
   let define_bar = create_define "bar" in
   let parent =
     {
-      Statement.Class.name = Reference.create "Foo";
+      Statement.Class.name = !&"Foo";
       bases = [];
       body = [+Define define_foo; +Define define_bar];
       decorators = [];
@@ -1722,18 +1722,18 @@ let test_classes _ =
 
   let class_define =
     {
-      Class.name = Reference.create "foo";
+      Class.name = !&"foo";
       bases = [];
       body = [
         +Define {
           signature = {
-            name = Reference.create "bar";
+            name = !&"bar";
             parameters = [];
             decorators = [];
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Reference.create "foo");
+            parent = Some (!&"foo");
           };
           body = [+Pass];
         };
@@ -1748,7 +1748,7 @@ let test_classes _ =
 
   let inner =
     {
-      Class.name = Reference.create "bar";
+      Class.name = !&"bar";
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -1757,7 +1757,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = Reference.create "foo";
+      Class.name = !&"foo";
       bases = [];
       body = [
         +Class inner;
@@ -1864,7 +1864,7 @@ let test_expand_typed_dictionaries _ =
     ("Movie: " ^
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]")
-    ~qualifier:(Reference.create "foo.bar");
+    ~qualifier:(!&"foo.bar");
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):

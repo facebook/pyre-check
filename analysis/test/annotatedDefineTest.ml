@@ -22,7 +22,7 @@ let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
       Statement.Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [];
         decorators = [];
         docstring = None;
@@ -49,7 +49,7 @@ let test_parent_definition _ =
     ~cmp:Reference.equal
     ~printer:Reference.show
     (Class.name parent)
-    (Reference.create "foo");
+    (!&"foo");
 
   let environment =
     populate {|
@@ -81,7 +81,7 @@ let test_parent_definition _ =
     ~cmp:Reference.equal
     ~printer:Reference.show
     (Class.name parent)
-    (Reference.create "foo");
+    (!&"foo");
   assert_equal base_type (Type.Primitive "superfoo")
 
 

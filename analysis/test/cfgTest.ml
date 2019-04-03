@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 
-open Ast
 open Ast.Expression
 open Ast.Statement
 open Analysis.Cfg
@@ -19,7 +18,7 @@ let test_to_dot _ =
     let define =
       {
         Define.signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -105,7 +104,7 @@ let test_to_dot _ =
 let assert_cfg body expected =
   let define = {
     Define.signature = {
-      name = Reference.create "foo";
+      name = !&"foo";
       parameters = [];
       decorators = [];
       docstring = None;

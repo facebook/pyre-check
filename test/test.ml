@@ -299,6 +299,10 @@ let (!+) name =
   Access.create name
 
 
+let (!&) name =
+  Reference.create name
+
+
 (* Assertion helpers. *)
 let assert_true =
   assert_bool ""

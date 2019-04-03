@@ -16,7 +16,7 @@ open Test
 let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
   {
     Statement.Define.signature = {
-      name = Reference.create name;
+      name = !&name;
       parameters = [];
       decorators = [];
       docstring = None;

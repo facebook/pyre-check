@@ -44,7 +44,7 @@ let test_index _ =
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys (primitive "baz.baz");
-  assert_table_contains_key function_keys (Reference.create "foo");
+  assert_table_contains_key function_keys (!&"foo");
   assert_table_contains_key alias_keys (primitive "_T")
 
 
@@ -190,7 +190,7 @@ let test_normalize _ =
     let add_dependent (left, right) =
       Handler.DependencyHandler.add_dependent
         ~handle:(File.Handle.create (left ^ ".py"))
-        (Reference.create right)
+        (!&right)
     in
     List.iter edges ~f:add_dependent;
     let all_handles =
@@ -216,7 +216,7 @@ let test_normalize _ =
       assert_equal
         ~printer
         (Some expected)
-        (Handler.DependencyHandler.dependents (Reference.create node))
+        (Handler.DependencyHandler.dependents (!&node))
     in
     List.iter expected ~f:assert_dependents_equal
   in

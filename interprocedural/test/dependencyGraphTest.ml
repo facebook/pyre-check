@@ -42,10 +42,10 @@ let create_call_graph ?(update_environment_with = []) source_text =
 
 let create_callable = function
   | `Function name ->
-      Reference.create name
+      !&name
       |> Callable.create_function
   | `Method name ->
-      Reference.create name
+      !&name
       |> Callable.create_method
 
 
@@ -136,7 +136,7 @@ let test_construction _ =
   assert_call_graph
     ~update_environment_with:[
       {
-        qualifier = Reference.create "foobar";
+        qualifier = !&"foobar";
         handle = "foobar.pyi";
         source =
           {|
@@ -153,7 +153,7 @@ let test_construction _ =
   assert_call_graph
     ~update_environment_with:[
       {
-        qualifier = Reference.create "bar.baz.qux";
+        qualifier = !&"bar.baz.qux";
         handle = "bar.baz.pyi";
         source =
           {|
@@ -280,7 +280,7 @@ let test_type_collection _ =
             a = B()
             a.foo()
         |}
-    ~qualifier:(Reference.create "test1")
+    ~qualifier:(!&"test1")
     ~expected:
       [
         (5, 1, "$local_0$a.foo.(...)", "test1.A.foo");
@@ -301,7 +301,7 @@ let test_type_collection _ =
          def caller(self):
            a = B().foo().foo()
     |}
-    ~qualifier:(Reference.create "test2")
+    ~qualifier:(!&"test2")
     ~expected:[(5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo")]
 
 
@@ -309,7 +309,7 @@ let test_method_overrides _ =
   let assert_method_overrides source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
-        Reference.create member, List.map overriding_types ~f:Reference.create
+        !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
@@ -352,7 +352,7 @@ let test_method_overrides _ =
 
 let test_strongly_connected_components _ =
   let assert_strongly_connected_components source ~qualifier ~expected =
-    let qualifier = Reference.create qualifier in
+    let qualifier = !&qualifier in
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
     let source = parse_source ~qualifier source in
     let configuration = Test.mock_configuration in

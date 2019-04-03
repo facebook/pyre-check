@@ -1009,7 +1009,7 @@ let test_query context =
   |> File.write;
 
   assert_type_query_response
-    ~qualifier:(Reference.create "a")
+    ~qualifier:(!&"a")
     ~handle:"a.py"
     ~source:"pass"
     ~query:"path_of_module(a)"
@@ -1240,7 +1240,7 @@ let test_decode_serialized_ocaml_values context =
                 undecodable_keys = [];
               })));
   assert_decode
-    ~key:(Globals.serialize_key (Reference.create "string_global"))
+    ~key:(Globals.serialize_key (!&"string_global"))
     ~value:(
       Annotation.create Type.string
       |> Node.create_with_default_location
@@ -1253,7 +1253,7 @@ let test_decode_serialized_ocaml_values context =
                  TypeQuery.decoded = [
                    {
                      TypeQuery.serialized_key =
-                       Globals.serialize_key (Reference.create "string_global");
+                       Globals.serialize_key (!&"string_global");
                      kind = "Global";
                      actual_key = "string_global";
                      actual_value = Some "(str: m)";
@@ -1262,7 +1262,7 @@ let test_decode_serialized_ocaml_values context =
                  undecodable_keys = [];
                }))));
   assert_decode
-    ~key:(Dependents.serialize_key (Reference.create "module"))
+    ~key:(Dependents.serialize_key (!&"module"))
     ~value:(
       ["dependentA.py"; "dependentB.py"]
       |> List.map ~f:File.Handle.create
@@ -1275,7 +1275,7 @@ let test_decode_serialized_ocaml_values context =
                 TypeQuery.decoded = [
                   {
                     TypeQuery.serialized_key =
-                      Dependents.serialize_key (Reference.create "module");
+                      Dependents.serialize_key (!&"module");
                     kind = "Dependent";
                     actual_key = "module";
                     actual_value = Some "(dependentA.py dependentB.py)";
@@ -1323,7 +1323,7 @@ let test_decode_serialized_ocaml_values context =
                 undecodable_keys = [];
               })));
   assert_decode
-    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "handle"))
+    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (!&"handle"))
     ~value:(File.Handle.create "handle.py")
     ~response:(
       Protocol.TypeQueryResponse
@@ -1334,7 +1334,7 @@ let test_decode_serialized_ocaml_values context =
                   {
                     TypeQuery.serialized_key =
                       Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
-                        (Reference.create "handle");
+                        (!&"handle");
                     kind = "File handle";
                     actual_key = "handle";
                     actual_value = Some "handle.py";
@@ -1343,10 +1343,10 @@ let test_decode_serialized_ocaml_values context =
                 undecodable_keys = [];
               })));
   assert_decode
-    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle"))
+    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key (!&"handle"))
     ~value:(
       Ast.Module.create
-        ~qualifier:((Reference.create "handle"))
+        ~qualifier:((!&"handle"))
         ~local_mode:Ast.Source.Default
         ~stub:false
         [Test.parse_single_statement "x = 2"])
@@ -1358,7 +1358,7 @@ let test_decode_serialized_ocaml_values context =
                 TypeQuery.decoded = [
                   {
                     TypeQuery.serialized_key =
-                      Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle");
+                      Ast.SharedMemory.Modules.Modules.serialize_key (!&"handle");
                     kind = "Module";
                     actual_key = "handle";
                     actual_value =
@@ -1623,8 +1623,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~qualifier:(Reference.create "a") a_source;
-        parse ~handle:"b.py" ~qualifier:(Reference.create "b") b_source;
+        parse ~handle:"a.py" ~qualifier:(!&"a") a_source;
+        parse ~handle:"b.py" ~qualifier:(!&"b") b_source;
       ]
     in
     List.zip_exn handles sources

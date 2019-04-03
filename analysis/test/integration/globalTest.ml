@@ -256,7 +256,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "a, b, c = 1, 2, 3"
       };
@@ -271,7 +271,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "a, (b, c) = 1, (2, 3)"
       };
@@ -286,7 +286,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ..."
       };
@@ -301,7 +301,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = {|
           class Foo:
@@ -319,7 +319,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = {|
           str_to_int_dictionary = {"a": 1}
@@ -336,7 +336,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "x = 1"
       };

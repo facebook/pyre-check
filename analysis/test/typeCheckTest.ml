@@ -364,7 +364,7 @@ let test_redirect _ =
   in
   assert_redirect ~source:"a = 1" "a" ("a", []);
   assert_redirect
-    ~parent:(Reference.create "Subclass")
+    ~parent:(!&"Subclass")
     ~source:
       {|
         class Superclass: pass
@@ -373,7 +373,7 @@ let test_redirect _ =
     "super()"
     ("$super", ["$super", Type.Primitive "Superclass"]);
   assert_redirect
-    ~parent:(Reference.create "Superclass")
+    ~parent:(!&"Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -383,7 +383,7 @@ let test_redirect _ =
     ("$super.foo()", ["$super", Type.object_primitive]);
 
   assert_redirect
-    ~parent:(Reference.create "Superclass")
+    ~parent:(!&"Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -423,7 +423,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~qualifier:(Reference.create qualifier)
+            ~qualifier:(!&qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
@@ -1135,7 +1135,7 @@ let test_forward_access _ =
           attribute: int = 1
           def method(self) -> int: ...
       |}
-    ~parent:(Reference.create "Class")
+    ~parent:(!&"Class")
     "super().__init__()"
     [
       { annotation = Type.Primitive "Super"; element = Value };
@@ -1252,7 +1252,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "os")
+        ~qualifier:(!&"os")
         {|
           sep: str = '/'
         |};
@@ -1264,7 +1264,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1277,7 +1277,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1292,7 +1292,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1306,7 +1306,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "has_getattr")
+        ~qualifier:(!&"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
     ]
@@ -1994,32 +1994,32 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Reference.create "loop.b")
+          ~qualifier:(!&"loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Reference.create "loop.a")
+          ~qualifier:(!&"loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~qualifier:(Reference.create "loop")
+          ~qualifier:(!&"loop")
           {|
             from loop.a import b
           |};
         parse
-          ~qualifier:(Reference.create "no_loop.b")
+          ~qualifier:(!&"no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Reference.create "no_loop.a")
+          ~qualifier:(!&"no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~qualifier:(Reference.create "no_loop")
+          ~qualifier:(!&"no_loop")
           {|
             from no_loop.a import c
           |};
@@ -2034,7 +2034,7 @@ let test_object_callables _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Reference.create "module")
+          ~qualifier:(!&"module")
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')

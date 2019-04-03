@@ -108,7 +108,7 @@ let test_superclasses _ =
     |} in
   let (!) name =
     {
-      Statement.Class.name = Reference.create name;
+      Statement.Class.name = !&name;
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -455,7 +455,7 @@ let test_is_protocol _ =
   let assert_is_protocol bases expected =
     let is_protocol =
       {
-        Statement.Class.name = Reference.create "Derp";
+        Statement.Class.name = !&"Derp";
         bases;
         body = [];
         decorators = [];

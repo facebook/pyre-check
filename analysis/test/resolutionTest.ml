@@ -54,9 +54,9 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:([
-          parse ~qualifier:(Reference.create "empty") ~handle:"empty.pyi" "class Empty: ...";
+          parse ~qualifier:(!&"empty") ~handle:"empty.pyi" "class Empty: ...";
           parse
-            ~qualifier:(Reference.create "empty.stub")
+            ~qualifier:(!&"empty.stub")
             ~local_mode:Source.PlaceholderStub
             ~handle:"empty/stub.pyi"
             "";
@@ -105,7 +105,7 @@ let test_parse_reference _ =
   let assert_parse_reference reference expected =
     assert_equal
       ~printer:Type.show expected
-      (Resolution.parse_reference resolution (Reference.create reference))
+      (Resolution.parse_reference resolution (!&reference))
   in
   assert_parse_reference "undefined" Type.Top;
   assert_parse_reference "MyType" Type.integer;
@@ -292,7 +292,7 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~qualifier:(Reference.create (String.chop_suffix_exn path ~suffix:".py"))
+            ~qualifier:(!&(String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content
           |> Preprocessing.qualify

@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 open Core
 
+open Test
 open OUnit2
 
 let test_normalize_handle_keys context =
@@ -43,7 +44,6 @@ let test_compute_hashes_to_keys _ =
       (String.Map.of_alist_exn expected)
       actual
   in
-  let open Ast in
   assert_mapping_equal
     [
       SymlinksToPaths.hash_of_key "first", SymlinksToPaths.serialize_key "first";
@@ -54,12 +54,12 @@ let test_compute_hashes_to_keys _ =
     [
       Sources.hash_of_handle (File.Handle.create "first.py"),
       Sources.serialize_handle (File.Handle.create "first.py");
-      Sources.hash_of_qualifier (Reference.create "first"),
-      Sources.serialize_qualifier (Reference.create "first");
+      Sources.hash_of_qualifier (!&"first"),
+      Sources.serialize_qualifier (!&"first");
       Sources.hash_of_handle (File.Handle.create "second/__init__.py"),
       Sources.serialize_handle (File.Handle.create "second/__init__.py");
-      Sources.hash_of_qualifier (Reference.create "second"),
-      Sources.serialize_qualifier (Reference.create "second");
+      Sources.hash_of_qualifier (!&"second"),
+      Sources.serialize_qualifier (!&"second");
 
     ]
     (Sources.compute_hashes_to_keys
@@ -70,16 +70,16 @@ let test_compute_hashes_to_keys _ =
     (HandleKeys.compute_hashes_to_keys ());
   assert_mapping_equal
     [
-      Modules.hash_of_key (Reference.create "foo"), Modules.serialize_key (Reference.create "foo");
-      Modules.hash_of_key (Reference.create "bar"), Modules.serialize_key (Reference.create "bar");
-      Modules.hash_of_key (Reference.create "foo.b"),
-      Modules.serialize_key (Reference.create "foo.b");
+      Modules.hash_of_key (!&"foo"), Modules.serialize_key (!&"foo");
+      Modules.hash_of_key (!&"bar"), Modules.serialize_key (!&"bar");
+      Modules.hash_of_key (!&"foo.b"),
+      Modules.serialize_key (!&"foo.b");
     ]
     (Modules.compute_hashes_to_keys
        ~keys:[
-         Reference.create "foo";
-         Reference.create "bar";
-         Reference.create "foo.b";
+         !&"foo";
+         !&"bar";
+         !&"foo.b";
        ]);
   assert_mapping_equal
     [
