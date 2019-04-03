@@ -16,7 +16,8 @@
         let decorated = { value with Class.decorators = decorators; } in
         { Node.location; value = Class decorated }
     | { Node.location; value = Define value } ->
-        let decorated = { value with Define.decorators = decorators; } in
+        let signature = { value.signature with Define.decorators = decorators } in
+        let decorated = { value with signature } in
         { Node.location; value = Define decorated }
     | _ -> raise (ParserError "Cannot decorate statement")
 
@@ -571,9 +572,10 @@ compound_statement:
                 value = Assign { assign with Assign.parent = Some name };
               }
           | { Node.location; value = Define define } ->
+              let signature = { define.signature with Define.parent = Some name } in
               {
                 Node.location;
-                value = Define { define with Define.parent = Some name };
+                value = Define { define with signature };
               }
           | {
               Node.location;
@@ -679,14 +681,16 @@ compound_statement:
       {
         Node.location;
         value = Define {
-          Define.name = snd name;
-          parameters;
+          signature = {
+            name = snd name;
+            parameters;
+            decorators = [];
+            return_annotation = annotation;
+            async = false;
+            parent = None;
+            docstring = docstring;
+          };
           body;
-          decorators = [];
-          return_annotation = annotation;
-          async = false;
-          parent = None;
-          docstring = docstring;
         };
       }
     }
@@ -778,7 +782,8 @@ async_statement:
       let location = location_create_with_stop ~start:(fst position) ~stop:(Node.stop statement) in
       match statement with
       | { Node.value = Define value; _ } ->
-          let decorated = { value with Define.async = true } in
+          let signature = { value.signature with Define.async = true } in
+          let decorated = { value with signature } in
           {
             Node.location;
             value = Define decorated;

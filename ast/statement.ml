@@ -13,15 +13,20 @@ module Argument = Expression.Argument
 
 module Record = struct
   module Define = struct
-    type 'statement record = {
+    type signature = {
       name: Reference.t;
       parameters: (Expression.t Parameter.t) list;
-      body: 'statement list;
       decorators: Expression.t list;
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
       parent: Reference.t option; (* The class owning the method. *)
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'statement record = {
+      signature: signature;
+      body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -254,50 +259,60 @@ module Define = struct
 
 
   let create_toplevel ~qualifier ~statements =
+    let signature =
+      {
+        name = Reference.create ?prefix:qualifier "$toplevel";
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      }
+    in
     {
-      name = Reference.create ?prefix:qualifier "$toplevel";
-      parameters = [];
+      signature;
       body = statements;
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     }
 
 
   let create_class_toplevel ~qualifier ~statements =
+    let signature =
+      {
+        name = Reference.create ~prefix:qualifier "$class_toplevel";
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = Some qualifier;
+      }
+    in
     {
-      name = Reference.create ~prefix:qualifier "$class_toplevel";
-      parameters = [];
+      signature;
       body = statements;
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = Some qualifier;
     }
 
 
-  let unqualified_name { name; _ } =
+  let unqualified_name { signature = { name; _ }; _ } =
     Reference.last name
 
 
-  let self_identifier { parameters; _ } =
+  let self_identifier { signature = { parameters; _ }; _ } =
     match parameters with
     | { Node.value = { Parameter.name; _ }; _ } :: _ -> name
     | _ -> "self"
 
 
-  let is_method { parent; _ } =
+  let is_method { signature = { parent; _ }; _ } =
     Option.is_some parent
 
 
-  let has_decorator ?(match_prefix=false) { decorators; _ } decorator =
+  let has_decorator ?(match_prefix=false) { signature = { decorators; _ }; _ } decorator =
     Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
 
 
-  let has_return_annotation { return_annotation; _ } =
+  let has_return_annotation { signature = { return_annotation; _ }; _ } =
     Option.is_some return_annotation
 
 
@@ -327,7 +342,7 @@ module Define = struct
     String.is_suffix ~suffix:"__" name
 
 
-  let is_class_method ({ parent; _ } as define) =
+  let is_class_method ({ signature = { parent; _ }; _ } as define) =
     let valid_names =
       ["__init_subclass__"; "__new__"; "__class_getitem__"]
     in
@@ -336,12 +351,12 @@ module Define = struct
      List.mem valid_names (unqualified_name define) ~equal:String.equal)
 
 
-  let is_class_property ({ parent; _ } as define) =
+  let is_class_property ({ signature = { parent; _ }; _ } as define) =
     Option.is_some parent &&
     Set.exists Recognized.classproperty_decorators ~f:(has_decorator define)
 
 
-  let is_constructor ?(in_test = false) ({ parent; _ } as define) =
+  let is_constructor ?(in_test = false) ({ signature = { parent; _ }; _ } as define) =
     let name = unqualified_name define in
     if Option.is_none parent then
       false
@@ -358,11 +373,11 @@ module Define = struct
     has_decorator define ((unqualified_name define) ^ ".setter")
 
 
-  let is_untyped { return_annotation; _ } =
+  let is_untyped { signature = { return_annotation; _ }; _ } =
     Option.is_none return_annotation
 
 
-  let is_async { async; _ } =
+  let is_async { signature = { async; _ }; _ } =
     async
 
 
@@ -413,11 +428,11 @@ module Define = struct
 
 
   let implicit_attributes
-      ({ body; parameters; _ } as define)
+      ({ body; signature = { parameters; _ } } as define)
       ~definition:{
-        Record.Class.body = definition_body;
-        _;
-      } : Attribute.t Identifier.SerializableMap.t =
+      Record.Class.body = definition_body;
+      _;
+    } : Attribute.t Identifier.SerializableMap.t =
     let open Expression in
     let parameter_annotations =
       let add_parameter map = function
@@ -437,10 +452,10 @@ module Define = struct
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
-                Node.value = Access (
+              Node.value = Access (
                   SimpleAccess ((Access.Identifier self) :: [Access.Identifier name]));
-                _;
-              } when Identifier.equal self (self_identifier define) ->
+              _;
+            } when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   Attribute.create ~primitive:true ~toplevel ~location ~name ?annotation ~value ()
                 in
@@ -548,7 +563,11 @@ module Define = struct
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
-              | { Node.value = Define { name = callee; body; parent = Some parent; _ }; _ }
+              | { Node.value =
+                    Define {
+                      signature = { name = callee; parent = Some parent ; _ }
+                    ; body }
+                ; _ }
                 when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
               | _ ->
@@ -573,7 +592,8 @@ module Define = struct
     |> Identifier.SerializableMap.map merge_attributes
 
 
-  let property_attribute ~location ({ name; return_annotation; parameters; parent; _ } as define) =
+  let property_attribute ~location
+      ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define) =
     let attribute ?(setter = false) annotation =
       parent
       >>= (fun parent ->
@@ -772,8 +792,8 @@ module Class = struct
       constructors ~in_test definition
       |> List.map ~f:(Define.implicit_attributes ~definition)
       |> List.fold
-          ~init:Identifier.SerializableMap.empty
-          ~f:(Identifier.SerializableMap.merge merge)
+        ~init:Identifier.SerializableMap.empty
+        ~f:(Identifier.SerializableMap.merge merge)
     in
     let property_attributes =
       let property_attributes map = function
@@ -828,27 +848,27 @@ module Class = struct
     let callable_attributes =
       let callable_attributes map { Node.location; value } =
         match value with
-        | Define ({ Define.name = target; _ } as define) ->
+        | Define ({ Define.signature = { name = target; _ }; _ } as define) ->
             Attribute.name
               (Reference.expression ~location target)
               ~parent:(Reference.access name)
             >>| (fun name ->
-                  let attribute =
-                    match Identifier.SerializableMap.find_opt name map with
-                    | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~defines:(define :: defines)
-                          ()
-                    | _ ->
-                        Attribute.create
-                          ~location
-                          ~name
-                          ~defines:[define]
-                          ()
-                  in
-                  Identifier.SerializableMap.set map ~key:name ~data:attribute)
+                let attribute =
+                  match Identifier.SerializableMap.find_opt name map with
+                  | Some { Node.value = { Attribute.defines = Some defines; _ }; _ } ->
+                      Attribute.create
+                        ~location
+                        ~name
+                        ~defines:(define :: defines)
+                        ()
+                  | _ ->
+                      Attribute.create
+                        ~location
+                        ~name
+                        ~defines:[define]
+                        ()
+                in
+                Identifier.SerializableMap.set map ~key:name ~data:attribute)
             |> Option.value ~default:map
         | _ ->
             map
@@ -921,7 +941,7 @@ module Class = struct
                     ~name:value
                     ()
                   |> fun attribute ->
-                    Identifier.SerializableMap.set map ~key:value ~data:attribute
+                  Identifier.SerializableMap.set map ~key:value ~data:attribute
               | _ ->
                   map
             in
@@ -991,15 +1011,16 @@ module Class = struct
               | _ ->
                   statement :: updated, undefined
             end
-        | { Node.location; value = Define ({ Record.Define.name; parameters; _ } as define)} ->
+        | { Node.location;
+            value = Define ({ Record.Define.signature = { name; parameters; _ }; _ } as define)} ->
             begin
               let is_stub = function
                 | {
-                  Node.value = Define {
+                  Node.value = Define { signature = {
                       Record.Define.name = stub_name;
                       parameters = stub_parameters;
                       _;
-                    };
+                    }; _ };
                   _;
                 } when Reference.equal name stub_name &&
                        List.length parameters = List.length stub_parameters ->
@@ -1009,17 +1030,18 @@ module Class = struct
               in
               match List.find ~f:is_stub stub with
               | Some {
-                  Node.value = Define ({
-                      Define.parameters;
+                  Node.value = Define ({ signature = {
+                      parameters;
                       return_annotation;
                       _;
-                    } as stub);
+                    }; _ } as stub);
                   _;
                 } when Define.is_stub stub ->
+                  let updated_signature = { define.signature with parameters; return_annotation } in
                   let updated_define =
                     {
                       Node.location;
-                      value = Define { define with Define.parameters; return_annotation }
+                      value = Define { define with signature = updated_signature }
                     }
                   in
                   updated_define :: updated,
@@ -1162,29 +1184,29 @@ module Try = struct
               annotation = None;
               value = Node.create ~location Ellipsis;
               parent = None;
-          }
+            }
         };
         {
           Node.location;
           value = Assert {
-            Assert.test = {
-              Node.location;
-              value = Access (
-                Access.SimpleAccess [
-                  Access.Identifier "isinstance";
-                  Access.Call {
-                    Node.location;
-                    Node.value = [
-                      { Argument.name = None; value = target };
-                      { Argument.name = None; value = annotation };
-                    ];
-                  };
-                ]
-              );
-            };
-            message = None;
-            origin = Assert.Assertion
-          }
+              Assert.test = {
+                Node.location;
+                value = Access (
+                    Access.SimpleAccess [
+                      Access.Identifier "isinstance";
+                      Access.Call {
+                        Node.location;
+                        Node.value = [
+                          { Argument.name = None; value = target };
+                          { Argument.name = None; value = annotation };
+                        ];
+                      };
+                    ]
+                  );
+              };
+              message = None;
+              origin = Assert.Assertion
+            }
         }
       ]
     in
@@ -1349,7 +1371,8 @@ module PrettyPrinter = struct
 
   and pp_define
       formatter
-      { Define.name; parameters; body; decorators; return_annotation; async; parent; _ } =
+      { Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
+        body } =
     let return_annotation =
       match return_annotation with
       | Some annotation -> Format.asprintf " -> %a" Expression.pp annotation

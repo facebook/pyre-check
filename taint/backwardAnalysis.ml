@@ -25,11 +25,11 @@ end
 
 
 let initial_taint define =
-  match Reference.last define.Define.name with
+  match Reference.last define.Define.signature.name with
   | "__init__" ->
       begin
         (* Constructor. Make self the return value *)
-        match define.Define.parameters with
+        match define.Define.signature.parameters with
         | { Node.value = { Parameter.name; _ }; _ } :: _ ->
             BackwardState.assign
               ~root:(Root.Variable name)
@@ -566,8 +566,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let resolution =
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
-          ~parent:FunctionContext.definition.value.parent
-          ~name:FunctionContext.definition.value.name
+          ~parent:FunctionContext.definition.value.signature.parent
+          ~name:FunctionContext.definition.value.signature.name
           ~key
       in
       analyze_statement ~resolution state statement
@@ -637,7 +637,7 @@ let extract_tito_and_sink_models parameters entry_taint =
 
 
 let run ~environment ~define ~existing_model:_ =
-  let ({ Node.value = { Define.name; parameters; _ }; _ } as define) =
+  let ({ Node.value = { Define.signature = { name; parameters; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeCheck.resolution environment () in
     Node.map

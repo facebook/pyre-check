@@ -624,8 +624,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       let resolution =
         TypeCheck.resolution_with_key
           ~environment:FunctionContext.environment
-          ~parent:FunctionContext.definition.value.parent
-          ~name:FunctionContext.definition.value.name
+          ~parent:FunctionContext.definition.value.signature.parent
+          ~name:FunctionContext.definition.value.signature.name
           ~key
       in
       analyze_statement ~resolution statement state
@@ -654,7 +654,7 @@ let extract_source_model _parameters exit_taint =
 
 let run
     ~environment
-    ~define:({ Node.value = { Define.parameters; _ }; _ } as define)
+    ~define:({ Node.value = { Define.signature = { parameters; _ }; _ }; _ } as define)
     ~existing_model =
   let module Context = struct
     let definition = define

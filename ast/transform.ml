@@ -269,26 +269,30 @@ module Make (Transformer : Transformer) = struct
         | Continue ->
             value
         | Define {
-            Define.name;
-            parameters;
-            body;
-            decorators;
-            return_annotation;
-            async;
-            parent;
-            docstring;
-          } ->
-            Define {
-              Define.name;
-              parameters = transform_list
-                  parameters
-                  ~f:(transform_parameter ~transform_expression);
-              body = transform_list body ~f:transform_statement |> List.concat;
-              decorators = transform_list decorators ~f:transform_expression;
-              return_annotation = return_annotation >>| transform_expression;
+            signature = {
+              name;
+              parameters;
+              decorators;
+              return_annotation;
               async;
               parent;
               docstring;
+            };
+            body
+          } ->
+            Define {
+              signature = {
+                name;
+                parameters = transform_list
+                    parameters
+                    ~f:(transform_parameter ~transform_expression);
+                decorators = transform_list decorators ~f:transform_expression;
+                return_annotation = return_annotation >>| transform_expression;
+                async;
+                parent;
+                docstring;
+              };
+              body = transform_list body ~f:transform_statement |> List.concat;
             }
         | Delete expression ->
             Delete (transform_expression expression)

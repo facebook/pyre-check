@@ -302,14 +302,14 @@ let create ~resolution ?(verify = true) ~configuration source =
       match node with
       | { Node.value = Define define; _ } ->
           let class_candidate =
-            Reference.prefix define.name
+            Reference.prefix define.signature.name
             >>| Resolution.parse_reference resolution
             >>= Resolution.class_definition resolution
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method define.name
-            | None -> Callable.create_function define.name
+            | Some _ -> Callable.create_method define.signature.name
+            | None -> Callable.create_function define.signature.name
           in
           Some (define, call_target)
       | {
@@ -325,17 +325,19 @@ let create ~resolution ?(verify = true) ~configuration source =
           let name = Reference.from_access target in
           let define =
             {
-              Define.name;
-              parameters = [];
+              Define.signature = {
+                name;
+                parameters = [];
+                decorators = [];
+                docstring = None;
+                return_annotation = Some annotation;
+                async = false;
+                parent = None;
+              };
               body = [];
-              decorators = [];
-              docstring = None;
-              return_annotation = Some annotation;
-              async = false;
-              parent = None;
             }
           in
-          Some (define, Callable.create_object define.name)
+          Some (define, Callable.create_object define.signature.name)
       | {
         Node.value =
           Assign {
@@ -349,14 +351,16 @@ let create ~resolution ?(verify = true) ~configuration source =
           let name = Reference.from_access target in
           let define =
             {
-              Define.name;
-              parameters = [Parameter.create ~annotation ~name:"$global" ()];
+              Define.signature = {
+                name;
+                parameters = [Parameter.create ~annotation ~name:"$global" ()];
+                decorators = [];
+                docstring = None;
+                return_annotation = None;
+                async = false;
+                parent = None;
+              };
               body = [];
-              decorators = [];
-              docstring = None;
-              return_annotation = None;
-              async = false;
-              parent = None;
             }
           in
           Some (define, Callable.create_object name)
@@ -367,7 +371,8 @@ let create ~resolution ?(verify = true) ~configuration source =
     |> Parser.parse
     |> List.filter_map ~f:filter_define
   in
-  let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
+  let create_model
+      ({ Define.signature = { name; parameters; return_annotation; _ }; _ }, call_target) =
     try
       begin
         (* Make sure we know about what we model. *)

@@ -19,14 +19,16 @@ open Test
 let test_is_method _ =
   let define ~name ~parent =
     {
-      Define.name = Reference.create name;
-      parameters = [];
+      Define.signature = {
+        name = Reference.create name;
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = parent >>| Reference.create;
+      };
       body = [+Pass];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = parent >>| Reference.create;
     }
   in
   assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
@@ -36,14 +38,16 @@ let test_is_method _ =
 let test_is_classmethod _ =
   let define name decorators =
     {
-      Define.name = Reference.create name;
-      parameters = [];
+      Define.signature = {
+        name = Reference.create name;
+        parameters = [];
+        decorators;
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = Some (Reference.create "bar");
+      };
       body = [+Pass];
-      decorators;
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = Some (Reference.create "bar");
     } in
 
   assert_false (Define.is_class_method (define "foo" []));
@@ -57,14 +61,16 @@ let test_is_classmethod _ =
 let test_is_class_property _ =
   let define name decorators =
     {
-      Define.name = Reference.create name;
-      parameters = [];
+      Define.signature = {
+        name = Reference.create name;
+        parameters = [];
+        decorators;
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = Some (Reference.create "bar");
+      };
       body = [+Pass];
-      decorators;
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = Some (Reference.create "bar");
     }
   in
   assert_false (Define.is_class_property (define "foo" []));
@@ -76,14 +82,16 @@ let test_is_class_property _ =
 let test_decorator _ =
   let define decorators =
     {
-      Define.name = Reference.create "foo";
-      parameters = [];
+      Define.signature = {
+        name = Reference.create "foo";
+        parameters = [];
+        decorators;
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
       body = [+Pass];
-      decorators;
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     } in
 
   assert_false (Define.is_static_method (define []));
@@ -111,14 +119,16 @@ let test_is_constructor _ =
   let assert_is_constructor ?(in_test = false) ~name ?(parent = None) expected =
     let define =
       {
-        Define.name = Reference.create name;
-        parameters = [];
+        Define.signature = {
+          name = Reference.create name;
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = parent >>| Reference.create;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = parent >>| Reference.create;
       }
     in
     assert_equal expected (Define.is_constructor ~in_test define)
@@ -195,12 +205,12 @@ let test_defines _ =
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
         assert_equal
-          define.Node.value.Define.name
+          define.Node.value.Define.signature.name
           (Reference.create method_id)
           ~printer:Reference.show
     | None when not exists ->
         ()
-    | Some { Node.value = { Define.name; _ }; _ } ->
+    | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
           Reference.pp name
@@ -441,7 +451,8 @@ let test_attributes _ =
     in
     let define =
       let define = parse_single_define source in
-      { define with Define.parent = Some (Reference.create "Parent") }
+      let signature = { define.signature with parent = Some (Reference.create "Parent") } in
+      { define with signature  }
     in
     assert_equal
       ~cmp:(Option.equal Attribute.equal)
@@ -492,14 +503,16 @@ let test_attributes _ =
         let defines =
           if number_of_defines > 0 then
             let define = {
-              Statement.Define.name = Reference.create "foo";
-              parameters = [];
+              Statement.Define.signature = {
+                name = Reference.create "foo";
+                parameters = [];
+                decorators = [];
+                docstring = None;
+                return_annotation = Some !"int";
+                async = false;
+                parent = None;
+              };
               body = [];
-              decorators = [];
-              docstring = None;
-              return_annotation = Some !"int";
-              async = false;
-              parent = None;
             }
             in
             Some (List.init ~f:(fun _ -> define) number_of_defines)
@@ -911,7 +924,7 @@ let test_docstring _ =
            pass
     |}
      |> (function
-         | { Node.value = Define { Define.docstring; _ }; _ } -> docstring
+         | { Node.value = Define { Define.signature = { docstring; _ }; _ }; _ } -> docstring
          | _ -> None))
     (Some "doc\nstring\n end")
 

@@ -64,14 +64,16 @@ module CountingFixpoint = Fixpoint.Make(CountingState)
 
 let assert_fixpoint body expected =
   let define = {
-    Define.name = Reference.create "foo";
-    parameters = [];
+    Define.signature = {
+      name = Reference.create "foo";
+      parameters = [];
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      parent = None;
+    };
     body;
-    decorators = [];
-    docstring = None;
-    return_annotation = None;
-    async = false;
-    parent = None;
   } in
   assert_equal
     ~cmp:(CountingFixpoint.equal ~f:Int.equal)

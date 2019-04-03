@@ -94,7 +94,7 @@ module State (Context: Context) = struct
       ?key
       ({ unawaited } as state)
       ~statement:{ Node.value; _ } =
-    let { Node.value = { Define.name; parent; _ }; _ } = Context.define in
+    let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = Context.define in
     let resolution =
       TypeCheck.resolution_with_key
         ~environment:Context.environment

@@ -302,7 +302,7 @@ let messages ~concise ~define location kind =
     _;
   } = location
   in
-  let { Node.value = { Define.name = define_name; _ }; _ } = define in
+  let { Node.value = { Define.signature = { name = define_name; _ }; _ }; _ } = define in
   let ordinal number =
     let suffix =
       if (number % 10 = 1) && (number % 100 <> 11) then "st"
@@ -1188,14 +1188,17 @@ let inference_information
     ~define:
     {
       Node.value = {
-        Define.name;
-        parameters;
-        return_annotation;
-        decorators;
-        parent;
-        async;
-        _ };
-      _;
+        Define.signature = {
+          name;
+          parameters;
+          return_annotation;
+          decorators;
+          parent;
+          async;
+          _ };
+        _
+      };
+      _
     }
     kind =
   let print_annotation annotation =
@@ -2251,9 +2254,10 @@ let dequalify
     ~resolution
     ({
       kind;
-      define = { Node.location; value = ({ Define.parameters; return_annotation; _ } as define) };
-      _;
-    } as error) =
+      define = {
+        Node.location;
+        value = ({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
+      }; _ } as error) =
   let dequalify = Type.dequalify dequalify_map in
   let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
     {
@@ -2408,7 +2412,8 @@ let dequalify
       >>| dequalify
       >>| Type.expression
     in
-    { define with Define.parameters; return_annotation }
+    let signature = { define.signature with parameters; return_annotation } in
+    { define with signature }
   in
   { error with kind; define = { Node.location; value = define} }
 

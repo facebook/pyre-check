@@ -24,7 +24,9 @@ module State = struct
   let initial_forward
       ~configuration
       ~resolution
-      ({ Node.value = ({ Define.parameters; parent; _ } as define); _ } as define_node) =
+      ({
+        Node.value = ({ Define.signature = { parameters; parent; _ }; _ } as define)
+      ; _ } as define_node) =
     let state = State.initial ~configuration ~resolution define_node in
     let annotations =
       let reset_parameter
@@ -111,7 +113,9 @@ module State = struct
   let check_entry
       ({
         resolution;
-        define = ({ Node.value = { Define.parameters; _ } as define; _ } as define_node);
+        define = (
+          { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ }
+          as define_node);
         errors;
         _;
       } as state) =
@@ -406,7 +410,8 @@ let run
 
   let dequalify_map = Preprocessing.dequalify_map source in
 
-  let check ({ Node.location; value = { Define.name; _ } as define } as define_node) =
+  let check
+      ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node) =
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     let dump = Define.dump define in
 

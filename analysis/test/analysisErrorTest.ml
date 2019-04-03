@@ -15,14 +15,16 @@ open Test
 
 let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
   {
-    Statement.Define.name = Reference.create name;
-    parameters = [];
+    Statement.Define.signature = {
+      name = Reference.create name;
+      parameters = [];
+      decorators = [];
+      docstring = None;
+      return_annotation;
+      async = false;
+      parent = None;
+    };
     body;
-    decorators = [];
-    docstring = None;
-    return_annotation;
-    async = false;
-    parent = None;
   }
 
 

@@ -144,7 +144,8 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
             Assign.annotation = annotation >>| transform_string_annotation_expression handle
           }
         in
-        let transform_define ~define:({ Define.parameters; return_annotation; _ } as define) =
+        let transform_define
+            ~define:({ Define.signature = { parameters; return_annotation; _ }; _ } as define) =
           let parameter ({ Node.value = ({ Parameter.annotation; _ } as parameter); _ } as node) =
             {
               node with
@@ -154,10 +155,16 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               };
             }
           in
+          let signature =
+            {
+              define.signature with
+              parameters = List.map parameters ~f:parameter;
+              return_annotation =
+                return_annotation >>| transform_string_annotation_expression handle;
+            }
+          in
           {
-            define with
-            Define.parameters = List.map parameters ~f:parameter;
-            return_annotation = return_annotation >>| transform_string_annotation_expression handle;
+            define with signature
           }
         in
         let statement =
@@ -389,7 +396,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
           }
-      | Define { Define.name; _ } ->
+      | Define { Define.signature = { name; _ }; _ } ->
           let name = Reference.access name in
           {
             scope with
@@ -603,12 +610,15 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       let qualify_define
           ({ qualifier; _ } as scope)
           ({
-            Define.name;
-            parameters;
+            Define.signature = {
+              name;
+              parameters;
+              decorators;
+              return_annotation;
+              parent;
+              _
+            };
             body;
-            decorators;
-            return_annotation;
-            parent;
             _;
           } as define) =
         let scope = { scope with is_top_level = false } in
@@ -630,16 +640,18 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         let scope, parameters = qualify_parameters ~scope parameters in
         let qualifier = qualifier @ (Reference.access name) in
         let _, body = qualify_statements ~scope:{ scope with qualifier } body in
-        {
-          define with
-          Define.name =
-            qualify_reference ~suppress_synthetics:true ~qualify_strings:false ~scope name;
-          parameters;
-          body;
-          decorators;
-          return_annotation;
-          parent;
-        }
+        let signature =
+          {
+            define.signature with
+            name =
+              qualify_reference ~suppress_synthetics:true ~qualify_strings:false ~scope name;
+            parameters;
+            decorators;
+            return_annotation;
+            parent;
+          }
+        in
+        { define with signature; body }
       in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
@@ -658,7 +670,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
               match value with
-              | Define ({ Define.name; parameters; return_annotation; decorators; _ } as define) ->
+              | Define ({
+                  signature = { name; parameters; return_annotation; decorators; _ }
+                ; _ } as define) ->
                   let define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
@@ -683,15 +697,18 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                         qualify_expression ~qualify_strings:false ~scope decorator
                   in
                   let decorators = List.map decorators ~f:qualify_decorator in
+                  let signature =
+                    {
+                      define.signature with
+                      name = qualify_reference ~qualify_strings:false ~scope name;
+                      parameters;
+                      decorators;
+                      return_annotation;
+                    }
+                  in
                   scope, {
                     Node.location;
-                    value = Define {
-                        define with
-                        Define.name = qualify_reference ~qualify_strings:false ~scope name;
-                        parameters;
-                        decorators;
-                        return_annotation;
-                      };
+                    value = Define { define with signature };
                   }
               | _ ->
                   qualify_statement statement ~qualify_assign:true ~scope
@@ -1509,7 +1526,10 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
       } |> node
     in
     let replace_typed_dictionary_define = function
-      | { Node.location; value = Define { name; _ } } when Reference.show name = "TypedDict" ->
+      | {
+        Node.location;
+        value = Define { signature = { name; _ }; _ }
+      } when Reference.show name = "TypedDict" ->
           typed_dictionary_stub ~location
       | statement ->
           statement

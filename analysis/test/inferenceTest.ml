@@ -42,10 +42,12 @@ let create
     Resolution.with_annotations (Test.resolution ()) ~annotations
   in
   let define =
-    +{
-      define with
-      Define.return_annotation = Some (Type.expression expected_return);
-    }
+    let signature =
+      {
+        define.signature with return_annotation = Some (Type.expression expected_return)
+      }
+    in
+    +{ define with signature }
   in
   State.create ~resolution ~define ()
 

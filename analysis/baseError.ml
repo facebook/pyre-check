@@ -153,10 +153,10 @@ module Make(Kind: Kind) = struct
         "description", `String (description error ~show_error_traces);
         "long_description", `String (description error ~show_error_traces:true ~separator:"\n");
         "concise_description", `String (
-            description error ~show_error_traces ~concise:true ~separator:"\n"
+          description error ~show_error_traces ~concise:true ~separator:"\n"
         );
         "inference", (Kind.inference_information ~define:define_node kind);
-        "define", `String (Reference.show_sanitized define.Define.name);
+        "define", `String (Reference.show_sanitized define.Define.signature.name);
       ])
 
 

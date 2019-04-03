@@ -244,7 +244,7 @@ let function_definitions resolution access =
         Ast.SharedMemory.Sources.get_for_qualifier (Reference.from_access qualifier)
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter
-          ~f:(fun { Node.value = { Define.name; _ }; _ } ->
+          ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
               Access.equal access (Reference.access name))
       in
       FunctionDefinitionsCache.set access result;

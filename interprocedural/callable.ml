@@ -80,9 +80,9 @@ let create_override reference =
 
 
 let create { Node.value = define; _ } =
-  match define.Define.parent with
-  | Some _ -> create_method define.name
-  | None -> create_function define.name
+  match define.Define.signature.parent with
+  | Some _ -> create_method define.signature.name
+  | None -> create_function define.signature.name
 
 
 let create_derived_override override ~at_type =

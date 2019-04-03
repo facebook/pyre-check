@@ -2444,17 +2444,19 @@ module TypedDictionary = struct
     let class_name = if total then "TypedDictionary" else "NonTotalTypedDictionary" in
     let define ?self_parameter ?return_annotation name =
       Statement.Define {
-        name = Reference.create_from_list [class_name; name];
-        parameters = [
-          { Ast.Parameter.name = "self"; value = None; annotation = self_parameter}
-          |> Node.create_with_default_location;
-        ];
+        signature = {
+          name = Reference.create_from_list [class_name; name];
+          parameters = [
+            { Ast.Parameter.name = "self"; value = None; annotation = self_parameter}
+            |> Node.create_with_default_location;
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation;
+          async = false;
+          parent = Some (Reference.create class_name);
+        };
         body = [];
-        decorators = [];
-        docstring = None;
-        return_annotation;
-        async = false;
-        parent = Some (Reference.create class_name);
       }
       |> Node.create_with_default_location
     in

@@ -21,14 +21,16 @@ module Define = Annotated.Define
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
-      Statement.Define.name = Reference.create name;
-      parameters = [];
+      Statement.Define.signature = {
+        name = Reference.create name;
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = parent >>| Reference.create;
+      };
       body = [+Pass];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = parent >>| Reference.create;
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(TypeCheck.resolution environment ())

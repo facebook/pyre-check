@@ -171,8 +171,8 @@ module AccessState = struct
     let exported_is_valid_module =
       List.hd exported
       >>| (fun head ->
-            Resolution.module_definition resolution (Reference.from_access [head])
-            |> Option.is_some)
+          Resolution.module_definition resolution (Reference.from_access [head])
+          |> Option.is_some)
       |> Option.value ~default:false
     in
     if not (Access.equal exported access) && not exported_is_valid_module then
@@ -229,7 +229,7 @@ module State = struct
   }
 
 
-  let pp_nested_define format { nested = { Define.name; _ }; _ } =
+  let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
     Format.fprintf format "%a" Reference.pp name
 
 
@@ -453,7 +453,7 @@ module State = struct
         resolution;
         errors;
         define = ({
-            Node.value = { Define.name; _ } as define;
+            Node.value = { Define.signature = { name; _ }; _ } as define;
             _;
           } as define_node);
         _;
@@ -1246,7 +1246,9 @@ module State = struct
       ~resolution
       ({
         Node.location;
-        value = ({ Define.name; parent; parameters; return_annotation; decorators; _ } as define);
+        value = ({
+            Define.signature = { name; parent; parameters; return_annotation; decorators; _ }
+          ; _ } as define)
       } as define_node) =
     let check_decorators state =
       let check_decorator state decorator =
@@ -1310,7 +1312,10 @@ module State = struct
       let update_define (state, annotation) =
         let updated_define =
           if Type.is_unknown annotation then
-            { define with return_annotation = Some (Type.expression annotation) }
+            let signature =
+              { define.signature with return_annotation = Some (Type.expression annotation) }
+            in
+            { define with signature }
           else
             define
         in
@@ -2568,12 +2573,12 @@ module State = struct
           resolution;
           define = ({
               Node.location = define_location;
-              value = {
-                Define.async;
-                parent = define_parent;
-                return_annotation = return_annotation_expression;
-                _;
-              } as define;
+              value = { Define.signature = {
+                  async;
+                  parent = define_parent;
+                  return_annotation = return_annotation_expression;
+                  _;
+                }; _ } as define;
             } as define_node);
           _;
         } as state)
@@ -3796,7 +3801,8 @@ module State = struct
             schedule
               ~variables
               ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
-        | Define ({ Define.parameters; _ } as define) when not (Define.is_stub define) ->
+        | Define ({ Define.signature = { parameters; _ }; _ } as define)
+          when not (Define.is_stub define) ->
             let variables =
               let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
                 match annotation with
@@ -3999,7 +4005,7 @@ let run
   in
 
   let check
-      ~define:{ Node.value = ({ Define.name; parent; _ } as define); _ }
+      ~define:{ Node.value = ({ Define.signature = { name; parent; _ }; _ } as define); _ }
       ~initial
       ~queue =
     Log.log ~section:`Check "Checking %a" Reference.pp name;
@@ -4100,7 +4106,9 @@ let run
     let rec results ~queue =
       match Queue.dequeue queue with
       | Some (
-          ({ Node.location; value = ({ Define.name; _ } as define) } as define_node),
+          ({
+            Node.location;
+            value = ({ Define.signature = { name; _ }; _ } as define) } as define_node),
           resolution
         ) ->
           let result =

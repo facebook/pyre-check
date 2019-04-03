@@ -209,7 +209,7 @@ module Visit = struct
       | Define { Define.body; _ } when not (List.is_empty body) ->
           (* No type info available for nested defines; they are analyzed on their own. *)
           ()
-      | Define { Define.parameters; decorators; return_annotation; _ } ->
+      | Define { Define.signature = { parameters; decorators; return_annotation; _ }; _ } ->
           let visit_parameter
               { Node.value = { Parameter.annotation; value; name }; location }
               ~visit_expression =
@@ -236,7 +236,9 @@ end
 let create_of_source environment source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
-  let walk_define ({ Node.value = ({ Define.name = caller; _ } as define); _ } as define_node) =
+  let walk_define ({
+      Node.value = ({ Define.signature = { name = caller; _ }; _ } as define);
+      _ } as define_node) =
     let cfg = Cfg.create define in
     let annotation_lookup =
       ResolutionSharedMemory.get caller

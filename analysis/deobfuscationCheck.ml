@@ -125,7 +125,11 @@ module ConstantPropagationState(Context: Context) = struct
 
   let forward
       ?key
-      ({ constants; define = { Define.name; parent; _ }; nested_defines } as state)
+      ({
+        constants;
+        define = { Define.signature = { name; parent; _ }; _ };
+        nested_defines
+      } as state)
       ~statement =
     let resolution =
       TypeCheck.resolution_with_key
@@ -527,7 +531,7 @@ let run
           let transformed =
             let value =
               match Node.value statement with
-              | Define ({ Define.name; parameters; body; _ } as define) ->
+              | Define ({ Define.signature = { name; parameters; _ }; body } as define) ->
                   (* Scope parameters to the function. *)
                   let names = String.Hash_set.create () in
                   let scope_name identifier =
@@ -589,7 +593,10 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter
                   in
-                  Define { define with Define.name = sanitize_reference name; parameters; body }
+                  let signature =
+                    { define.signature with name = sanitize_reference name; parameters }
+                  in
+                  Define { signature; body }
               | For ({
                   For.target = { Node.value = Access (SimpleAccess access); _ } as target;
                   _;
@@ -707,7 +714,7 @@ let run
           let transformed =
             let value =
               match Node.value statement with
-              | Define ({ Define.name; parameters; _ } as define) ->
+              | Define ({ Define.signature = { name; parameters; _ }; _ } as define) ->
                   let parameters =
                     let sanitize_parameter =
                       let sanitize_parameter ({ Parameter.name; _ } as parameter) =
@@ -717,7 +724,10 @@ let run
                     in
                     List.map parameters ~f:sanitize_parameter;
                   in
-                  Define { define with Define.name = dequalify_reference name; parameters }
+                  let signature =
+                    { define.signature with name = dequalify_reference name; parameters }
+                  in
+                  Define { define with signature }
               | Try ({ Try.handlers; _ } as block) ->
                   let handlers =
                     let sanitize_handler ({ Try.name; _ } as handler) =
@@ -763,7 +773,8 @@ let run
                     fix_statement_list body
                     |> remove_docstring
                   in
-                  Define { define with Define.body; docstring = None }
+                  let signature = { define.signature with docstring = None } in
+                  Define { signature; body }
               | value ->
                   value
             in

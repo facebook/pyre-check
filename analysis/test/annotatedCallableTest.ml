@@ -28,14 +28,16 @@ let test_return_annotation _ =
         |}
       in
       {
-        Statement.Define.name = Reference.create "derp";
-        parameters = [];
+        Statement.Define.signature = {
+          name = Reference.create "derp";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation;
+          async;
+          parent = None;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation;
-        async;
-        parent = None;
       }
       |> (fun define ->
           Callable.return_annotation ~define ~resolution:(TypeCheck.resolution environment ()))
@@ -52,14 +54,16 @@ let test_return_annotation _ =
 let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
     {
-      Statement.Define.name = Reference.create "define";
-      parameters;
+      Statement.Define.signature = {
+        name = Reference.create "define";
+        parameters;
+        decorators;
+        docstring = None;
+        return_annotation;
+        async = false;
+        parent = None;
+      };
       body = [+Pass];
-      decorators;
-      docstring = None;
-      return_annotation;
-      async = false;
-      parent = None;
     }
   in
 
@@ -114,7 +118,7 @@ let test_apply_decorators _ =
         |> fun environment -> TypeCheck.resolution environment ()
       in
       Callable.apply_decorators ~define ~resolution
-      |> fun { Statement.Define.parameters; _ } -> List.length parameters
+      |> fun { Statement.Define.signature = { parameters; _ }; _ } -> List.length parameters
     in
     assert_equal
       ~cmp:Int.equal
@@ -158,7 +162,7 @@ let test_apply_decorators _ =
     ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
     ~return_annotation:None
   |> (fun define -> Callable.apply_decorators ~define ~resolution)
-  |> (fun { Define.parameters; _ } ->
+  |> (fun { Define.signature = { parameters; _ }; _ } ->
       assert_equal
         ~cmp:(List.equal ~equal:(Parameter.equal Expression.equal))
         [Parameter.create ~name:"other" ()]
@@ -199,7 +203,10 @@ let test_create _ =
       |> Preprocessing.defines ~include_stubs:true
       |> List.rev
       |> List.map ~f:Node.value
-      |> List.map ~f:(fun define -> { define with Statement.Define.parent })
+      |> List.map ~f:(fun define ->
+          let signature = { define.Define.signature with parent } in
+          { define with signature }
+        )
       |> Callable.create ~parent:parent_annotation ~resolution
       |> (fun callable -> check_implicit callable; callable)
       |> fun callable -> Type.Callable { callable with Type.Callable.implicit }

@@ -218,7 +218,7 @@ let test_type_collection _ =
       Preprocessing.defines source ~extract_into_toplevel:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
-    let { Define.name; body = statements; _ } = List.nth_exn defines 1 in
+    let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 1 in
     let lookup =
       ResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)

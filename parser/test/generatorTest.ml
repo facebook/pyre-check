@@ -590,274 +590,302 @@ let test_define _ =
     "def foo(a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(*, a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "*";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "*";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(**a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "**a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "**a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "async def foo():\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = true;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = true;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "async def foo():\n  ..."
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = true;
+          parent = None;
+        };
         body = [+Expression (+Ellipsis)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = true;
-        parent = None;
       }
     ];
   assert_parsed_equal
     "@foo\nasync def foo():\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [!"foo"];
+          docstring = None;
+          return_annotation = None;
+          async = true;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [!"foo"];
-        docstring = None;
-        return_annotation = None;
-        async = true;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "@decorator\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [!"decorator"];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [!"decorator"];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "@decorator(a=b, c=d)\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [
+            (simple_access [
+                Access.Identifier "decorator";
+                Access.Call
+                  (+[
+                     { Argument.name = Some ~+"a"; value = !"b" };
+                     { Argument.name = Some ~+"c"; value = !"d" };
+                   ]);
+              ]);
+          ];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [
-          (simple_access [
-              Access.Identifier "decorator";
-              Access.Call
-                (+[
-                   { Argument.name = Some ~+"a"; value = !"b" };
-                   { Argument.name = Some ~+"c"; value = !"d" };
-                 ]);
-            ]);
-        ];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "@foo\n\n@bar\ndef foo(a):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [!"foo"; !"bar"];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [!"foo"; !"bar"];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a, b):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          Define.name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a = 1, b):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = Some (+Integer 1);
-            annotation = None;
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = Some (+Integer 1);
+              annotation = None;
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a=()):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = Some (+Tuple []);
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = Some (+Tuple []);
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(): 1; 2"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo():\n  1\n  2\n3"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
       +Expression (+Integer 3)
     ];
@@ -865,25 +893,29 @@ let test_define _ =
     "def foo():\n  def bar():\n    1\n    2\n3"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [
           +Define {
-            Define.name = Reference.create "bar";
-            parameters = [];
+            signature = {
+              name = Reference.create "bar";
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = None;
+            };
             body = [+Expression (+Integer 1); +Expression (+Integer 2)];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = None;
           };
         ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
       +Expression (+Integer 3)
     ];
@@ -892,139 +924,151 @@ let test_define _ =
     "def foo(a: int):  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some !"int";
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some !"int";
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a: int = 1):  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = Some (+Integer 1);
-            annotation = Some !"int";
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = Some (+Integer 1);
+              annotation = Some !"int";
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a: int, b: string):  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some !"int";
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some !"string";
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some !"int";
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some !"string";
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a: Tuple[int, str]):\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some
-                (simple_access [
-                    Access.Identifier "Tuple";
-                    Access.Identifier "__getitem__";
-                    Access.Call
-                      (+[
-                         {
-                           Argument.name = None;
-                           value =
-                             +Tuple [
-                               simple_access [Access.Identifier "int"];
-                               simple_access [Access.Identifier "str"];
-                             ];
-                         };
-                       ]);
-                  ]);
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some
+                  (simple_access [
+                      Access.Identifier "Tuple";
+                      Access.Identifier "__getitem__";
+                      Access.Call
+                        (+[
+                           {
+                             Argument.name = None;
+                             value =
+                               +Tuple [
+                                 simple_access [Access.Identifier "int"];
+                                 simple_access [Access.Identifier "str"];
+                               ];
+                           };
+                         ]);
+                    ]);
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a, b,) -> c:\n  1"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some !"c";
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1)];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some !"c";
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo() -> str:\n  1\n  2"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some !"str";
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Integer 1); +Expression (+Integer 2)];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some !"str";
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
@@ -1035,18 +1079,20 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "int"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "int"));
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
@@ -1057,18 +1103,20 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "int"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "int"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1080,42 +1128,46 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
-        body = [
-          +Return {
-            Return.expression = Some (+Integer 4);
-            is_implicit = false;
-          }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
-      };
-    ];
-
-   assert_parsed_equal
-      (trim_extra_indentation {|
-        def foo(): # type: ()-> str
-          return 4
-      |})
-      [
-        +Define {
-          Define.name = Reference.create "foo";
+        signature = {
+          name = Reference.create "foo";
           parameters = [];
-          body = [
-            +Return {
-              Return.expression = Some (+Integer 4);
-              is_implicit = false;
-            }];
           decorators = [];
           docstring = None;
           return_annotation = Some (+String (StringLiteral.create "str"));
           async = false;
           parent = None;
         };
-      ];
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+      };
+    ];
+
+  assert_parsed_equal
+    (trim_extra_indentation {|
+        def foo(): # type: ()-> str
+          return 4
+      |})
+    [
+      +Define {
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
+        body = [
+          +Return {
+            Return.expression = Some (+Integer 4);
+            is_implicit = false;
+          }];
+      };
+    ];
 
   assert_parsed_equal
     (trim_extra_indentation {|
@@ -1125,24 +1177,26 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "str"));
-          };
-        ];
+        signature = {
+          name= Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "str"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1153,24 +1207,26 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "str"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "str"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1182,24 +1238,26 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1210,30 +1268,32 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some
-                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "str"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some
+                  (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "str"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1244,30 +1304,32 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some
-                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "typing.List[str]"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some
+                  (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "typing.List[str]"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1278,35 +1340,37 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "self";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some
-                (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "typing.List[str]"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "self";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some
+                  (+String (StringLiteral.create "typing.Union[typing.List[int], str]"));
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "typing.List[str]"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1317,34 +1381,36 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "self";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "self";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1356,18 +1422,20 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "List[str]"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+Integer 4);
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "List[str]"));
-        async = false;
-        parent = None;
       };
     ];
 
@@ -1382,30 +1450,32 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "self";
-            value = None;
-            annotation = None;
-          };
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "bool"));
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "bool"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "self";
+              value = None;
+              annotation = None;
+            };
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "bool"));
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "bool"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "int"));
+          async = false;
+          parent = None;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "int"));
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
@@ -1418,25 +1488,27 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "bool"));
-          };
-          +{
-            Parameter.name = "b";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "bool"));
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "bool"));
+            };
+            +{
+              Parameter.name = "b";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "bool"));
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
@@ -1449,25 +1521,27 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "bool"));
-          };
-          +{
-            Parameter.name = "**kwargs";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "bool"));
+            };
+            +{
+              Parameter.name = "**kwargs";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
@@ -1477,23 +1551,25 @@ let test_define _ =
     |})
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = Some (+String (StringLiteral.create "A_b.C"));
-          }];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = Some (+String (StringLiteral.create "A_b.C"));
+            }];
+          decorators = [];
+          docstring = None;
+          return_annotation = Some (+String (StringLiteral.create "str"));
+          async = false;
+          parent = None;
+        };
         body = [
           +Return {
             Return.expression = Some (+String (StringLiteral.create "hi"));
             is_implicit = false;
           }];
-        decorators = [];
-        docstring = None;
-        return_annotation = Some (+String (StringLiteral.create "str"));
-        async = false;
-        parent = None;
       };
     ]
 
@@ -2750,14 +2826,16 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Reference.create "bar";
-            parameters = [];
+            signature = {
+              name = Reference.create "bar";
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = Some (Reference.create "foo");
+            };
             body = [+Pass];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2773,25 +2851,29 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Reference.create "bar";
-            parameters = [];
+            signature = {
+              name = Reference.create "bar";
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = Some (Reference.create "foo");
+            };
             body = [
               +Define {
-                Define.name = Reference.create "baz";
-                parameters = [];
+                signature = {
+                  name = Reference.create "baz";
+                  parameters = [];
+                  decorators = [];
+                  docstring = None;
+                  return_annotation = None;
+                  async = false;
+                  parent = None;
+                };
                 body = [+Pass];
-                decorators = [];
-                docstring = None;
-                return_annotation = None;
-                async = false;
-                parent = None;
               };
             ];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2905,14 +2987,16 @@ let test_class _ =
         bases = [{ Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
-            Define.name = Reference.create "bar";
-            parameters = [];
+            signature = {
+              name = Reference.create "bar";
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = Some (Reference.create "foo");
+            };
             body = [+Pass];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2928,14 +3012,21 @@ let test_class _ =
         bases = [];
         body = [
           +Define {
-            Define.name = Reference.create "__init__";
-            parameters = [
-              +{
-                Parameter.name = "self";
-                value = None;
-                annotation = None;
-              };
-            ];
+            signature = {
+              name = Reference.create "__init__";
+              parameters = [
+                +{
+                  Parameter.name = "self";
+                  value = None;
+                  annotation = None;
+                };
+              ];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = Some (Reference.create "foo");
+            };
             body = [
               +Assign {
                 Assign.target = simple_access (!+"self.bar");
@@ -2944,11 +3035,6 @@ let test_class _ =
                 parent = None;
               };
             ];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (Reference.create "foo");
           };
         ];
         decorators = [];
@@ -2973,14 +3059,16 @@ let test_class _ =
             If.test = +Expression.True;
             body = [
               +Define {
-                Define.name = Reference.create "bar";
-                parameters = [];
+                signature = {
+                  name = Reference.create "bar";
+                  parameters = [];
+                  decorators = [];
+                  docstring = None;
+                  return_annotation = None;
+                  async = false;
+                  parent = Some (Reference.create "foo");
+                };
                 body = [+Pass];
-                decorators = [];
-                docstring = None;
-                return_annotation = None;
-                async = false;
-                parent = Some (Reference.create "foo");
               };
             ];
             orelse = []
@@ -4299,60 +4387,66 @@ let test_stubs _ =
     "def foo(a): ..."
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Ellipsis)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a): ... # type: ignore"
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Ellipsis)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
   assert_parsed_equal
     "def foo(a):\n\t..."
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = None;
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Ellipsis)];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
 
@@ -4360,20 +4454,22 @@ let test_stubs _ =
     "@overload\ndef foo(a: int = ...):  ..."
     [
       +Define {
-        Define.name = Reference.create "foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = Some (+Ellipsis);
-            annotation = Some !"int";
-          };
-        ];
+        signature = {
+          name = Reference.create "foo";
+          parameters = [
+            +{
+              Parameter.name = "a";
+              value = Some (+Ellipsis);
+              annotation = Some !"int";
+            };
+          ];
+          decorators = [!"overload"];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Expression (+Ellipsis)];
-        decorators = [!"overload"];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       };
     ];
 
@@ -4424,20 +4520,22 @@ let test_ellipsis _ =
     "def __init__(debug = ...):\n\tpass"
     [
       +Define {
-        Define.name = Reference.create "__init__";
-        parameters = [
-          +{
-            Parameter.name = "debug";
-            value = Some (+Ellipsis);
-            annotation = None;
-          };
-        ];
+        signature = {
+          name = Reference.create "__init__";
+          parameters = [
+            +{
+              Parameter.name = "debug";
+              value = Some (+Ellipsis);
+              annotation = None;
+            };
+          ];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body = [+Pass];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       }
     ];
   assert_parsed_equal

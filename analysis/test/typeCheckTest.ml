@@ -47,11 +47,14 @@ let create
     in
     Resolution.with_annotations resolution ~annotations
   in
-  let define =
-    +{
-      define with
-      Define.return_annotation = expected_return >>| Type.expression;
+  let signature =
+    {
+      define.signature with
+      return_annotation = expected_return >>| Type.expression;
     }
+  in
+  let define =
+    +{ define with signature }
   in
   State.create ~bottom ~resolution ~define ()
 
@@ -74,7 +77,8 @@ let test_initial _ =
       let define =
         match parse_single_statement define with
         | { Node.value = Define define; _ } ->
-            { define with Define.parent = parent >>| Reference.create }
+            let signature = { define.signature with parent = parent >>| Reference.create } in
+            { define with signature }
         | _ ->
             failwith "Unable to parse define."
       in
@@ -86,7 +90,7 @@ let test_initial _ =
               let annotation = Resolution.parse_annotation resolution annotation in
               Type.free_variables annotation
         in
-        List.concat_map define.parameters ~f:extract_variables
+        List.concat_map define.signature.parameters ~f:extract_variables
         |> List.dedup_and_sort ~compare:Type.compare
       in
       let add_variable resolution variable =

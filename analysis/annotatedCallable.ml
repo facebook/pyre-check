@@ -32,7 +32,9 @@ let is_generator { Define.body; _ } =
   YieldVisit.visit false (Source.create body)
 
 
-let return_annotation ~define:({ Define.return_annotation; async; _ } as define) ~resolution =
+let return_annotation
+    ~define:({ Define.signature = { return_annotation; async; _ }; _ } as define)
+    ~resolution =
   let annotation =
     Option.value_map
       return_annotation
@@ -66,13 +68,16 @@ let apply_decorators ~define ~resolution =
           Type.Any
     in
     if Type.is_iterator joined then
-      {
-        define with
-        Define.return_annotation =
-          Type.parametric "contextlib.GeneratorContextManager" [Type.single_parameter joined]
-          |> Type.expression
-          |> Option.some
-      }
+      let signature =
+        {
+          define.signature with
+          return_annotation =
+            Type.parametric "contextlib.GeneratorContextManager" [Type.single_parameter joined]
+            |> Type.expression
+            |> Option.some
+        }
+      in
+      { define with signature }
     else
       define
   else if
@@ -88,13 +93,16 @@ let apply_decorators ~define ~resolution =
           Type.Any
     in
     if Type.is_async_iterator joined then
-      {
-        define with
-        Define.return_annotation =
-          Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
-          |> Type.expression
-          |> Option.some
-      }
+      let signature =
+        {
+          define.signature with
+          return_annotation =
+            Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
+            |> Type.expression
+            |> Option.some
+        }
+      in
+      { define with signature }
     else
       define
   else if Define.has_decorator ~match_prefix:true define "click.command" ||
@@ -103,20 +111,23 @@ let apply_decorators ~define ~resolution =
           Define.has_decorator define "click.pass_obj" then
     (* Suppress caller/callee parameter matching by altering the click entry
        point to have a generic parameter list. *)
-    {
-      define with
-      parameters = [
-        Parameter.create ~name:"*args" ();
-        Parameter.create ~name:"**kwargs" ();
-      ];
-    }
+    let signature =
+      {
+        define.signature with
+        parameters = [
+          Parameter.create ~name:"*args" ();
+          Parameter.create ~name:"**kwargs" ();
+        ]
+      }
+    in
+    { define with signature }
   else
     Decorators.apply ~define ~resolution
 
 
 let create ~parent ~resolution defines =
   let open Type.Callable in
-  let { Define.name; _ } = List.hd_exn defines in
+  let { Define.signature = { name; _ }; _ } = List.hd_exn defines in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let bare_name = String.lstrip ~drop:(function | '*' -> true | _ -> false) name in
     let annotation =
@@ -132,7 +143,9 @@ let create ~parent ~resolution defines =
       Parameter.Named { Parameter.name = bare_name; annotation; default = Option.is_some value }
   in
   let implementation, overloads =
-    let to_signature (implementation, overloads) ({ Define.parameters; _ } as define) =
+    let to_signature
+        (implementation, overloads)
+        ({ Define.signature = { parameters; _ }; _ } as define) =
       let signature =
         {
           annotation = return_annotation ~define ~resolution;

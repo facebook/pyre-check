@@ -245,7 +245,7 @@ let analyze_define
     analyses
     callable
     environment
-    ({ Node.value = { Define.name; _ }; _ } as define) =
+    ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
   let () =
     Log.log
       ~section:`Interprocedural
@@ -664,7 +664,7 @@ let compute_fixpoint
 
     let dump_callable callable =
       let resolution = Analysis.TypeCheck.resolution environment () in
-      let { Define.name; _ } =
+      let { Define.signature = { name; _ }; _ } =
         match callable with
         | #Callable.real_target as callable ->
             Callable.get_definition callable ~resolution

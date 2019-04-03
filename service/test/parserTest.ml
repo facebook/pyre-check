@@ -51,7 +51,8 @@ let test_parse_stubs_modules_list _ =
       | Some {
           Source.statements = [
             {
-              Node.value = Statement.Define ({ Statement.Define.name; _ } as define);
+              Node.value =
+                Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define);
               _;
             };
           ];
@@ -67,7 +68,7 @@ let test_parse_stubs_modules_list _ =
       | Some {
           Source.statements = [
             {
-              Node.value = Statement.Define { Statement.Define.name; _ };
+              Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ };
               _;
             };
           ];
@@ -251,7 +252,7 @@ let test_parse_source _ =
   assert_equal number_of_lines 3;
   begin
     match statements with
-    | [{ Node.value = Statement.Define { Statement.Define.name; _ }; _ }] ->
+    | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
         assert_equal
           ~cmp:Reference.equal
           ~printer:Reference.show

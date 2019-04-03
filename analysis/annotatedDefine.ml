@@ -25,7 +25,7 @@ let define annotated =
   annotated
 
 
-let parameter_annotations { Define.parameters; _ } ~resolution =
+let parameter_annotations { Define.signature = { parameters; _ }; _ } ~resolution =
   let element index { Node.value = { Parameter.annotation; _ }; _ } =
     let annotation =
       (annotation
@@ -38,7 +38,7 @@ let parameter_annotations { Define.parameters; _ } ~resolution =
   |> Int.Map.of_alist_exn
 
 
-let parent_definition { Define.parent; _ } ~resolution =
+let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
   match parent with
   | Some parent ->
       let annotation = Resolution.parse_reference resolution parent in

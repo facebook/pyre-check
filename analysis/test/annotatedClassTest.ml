@@ -385,7 +385,7 @@ let test_methods _ =
           |> fun environment -> TypeCheck.resolution environment ()
         in
         let actuals =
-          let method_name { Define.name; _ } = Reference.last name in
+          let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
           Node.create_with_default_location definition
           |> Class.create
           |> Class.methods ~resolution

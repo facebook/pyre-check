@@ -9,15 +9,20 @@ module Argument = Expression.Argument
 
 module Record : sig
   module Define : sig
-    type 'statement record = {
+    type signature = {
       name: Reference.t;
       parameters: (Expression.t Parameter.t) list;
-      body: 'statement list;
       decorators: Expression.t list;
       docstring: string option;
       return_annotation: Expression.t option;
       async: bool;
       parent: Reference.t option;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'statement record = {
+      signature: signature;
+      body: 'statement list;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end

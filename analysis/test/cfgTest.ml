@@ -18,14 +18,16 @@ let test_to_dot _ =
   let assert_dot ?(precondition=fun _ -> "") body expected =
     let define =
       {
-        Define.name = Reference.create "foo";
-        parameters = [];
+        Define.signature = {
+          name = Reference.create "foo";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None;
+        };
         body;
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
       }
     in
     let make_dot dot_list =
@@ -102,14 +104,16 @@ let test_to_dot _ =
 
 let assert_cfg body expected =
   let define = {
-    Define.name = Reference.create "foo";
-    parameters = [];
+    Define.signature = {
+      name = Reference.create "foo";
+      parameters = [];
+      decorators = [];
+      docstring = None;
+      return_annotation = None;
+      async = false;
+      parent = None;
+    };
     body;
-    decorators = [];
-    docstring = None;
-    return_annotation = None;
-    async = false;
-    parent = None;
   } in
   assert_equal
     ~cmp:equal

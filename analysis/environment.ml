@@ -648,7 +648,7 @@ let register_values
             ~parent
             ~location
             callables
-            ({ Define.name; _ } as define) =
+            ({ Define.signature = { name; _ }; _ } as define) =
 
           Handler.DependencyHandler.add_function_key ~handle name;
 
@@ -674,7 +674,10 @@ let register_values
           Map.change callables (Reference.access name) ~f:(change callable)
         in
         match statement with
-        | { Node.location; value = Define ({ Statement.Define.parent; _ } as define) } ->
+        | {
+          Node.location;
+          value = Define ({ Statement.Define.signature = { parent; _ }; _ } as define)
+        } ->
             Annotated.Callable.apply_decorators ~resolution ~define
             |> collect_callable ~parent ~location callables
 
@@ -1184,17 +1187,19 @@ module Builder = struct
         [],
         [
           Define {
-            Define.name = Reference.create "typing.Generic.__getitem__";
-            parameters = [
-              { Parameter.name = "*args"; value = None; annotation = None}
-              |> Node.create_with_default_location;
-            ];
+            signature = {
+              name = Reference.create "typing.Generic.__getitem__";
+              parameters = [
+                { Parameter.name = "*args"; value = None; annotation = None}
+                |> Node.create_with_default_location;
+              ];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = Some (Reference.create "typing.Generic");
+            };
             body = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (Reference.create "typing.Generic");
           }
           |> Node.create_with_default_location
         ];

@@ -224,14 +224,14 @@ let rec source_statement_codex_representation
         ty = "class";
       };
     ]
-  | Statement.Define {
+  | Statement.Define { signature = {
       Statement.Define.name;
       docstring;
       parent;
       decorators;
       parameters;
       _;
-    } -> [
+    }; _ } -> [
       let source =
         try
           path

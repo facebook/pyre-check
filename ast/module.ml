@@ -22,7 +22,7 @@ let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
   let aliased_exports =
     List.map aliased_exports
       ~f:(fun (source, target) ->
-        Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
+          Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
     |> String.concat ~sep:", "
   in
   let wildcard_exports =
@@ -170,7 +170,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           public_values @ (filter_private [target |> Reference.from_access]), dunder_all
       | Class { Record.Class.name; _ } ->
           public_values @ (filter_private [name]), dunder_all
-      | Define { Define.name; _ } ->
+      | Define { Define.signature = { name; _ }; _ } ->
           public_values @ (filter_private [name]), dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } =

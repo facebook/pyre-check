@@ -37,20 +37,22 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                   let generated_methods =
                     let create_method ~name ~parameters ~return_annotation =
                       {
-                        Define.name = Reference.create ~prefix:parent name;
-                        parameters =
-                          Parameter.create ~name:"self" ()
-                          :: parameters;
+                        Define.signature = {
+                          name = Reference.create ~prefix:parent name;
+                          parameters =
+                            Parameter.create ~name:"self" ()
+                            :: parameters;
+                          decorators = [];
+                          docstring = None;
+                          return_annotation =
+                            Some
+                              (Node.create
+                                 ~location
+                                 (Access (SimpleAccess (Access.create return_annotation))));
+                          async = false;
+                          parent = Some parent;
+                        };
                         body = [Node.create ~location Pass];
-                        decorators = [];
-                        docstring = None;
-                        return_annotation =
-                          Some
-                            (Node.create
-                               ~location
-                               (Access (SimpleAccess (Access.create return_annotation))));
-                        async = false;
-                        parent = Some parent;
                       }
                     in
                     let methods =

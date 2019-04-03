@@ -126,16 +126,18 @@ let transform_ast ({ Source.statements; _ } as source) =
         self_parameter :: List.map attributes ~f:to_parameter
       in
       Statement.Define {
-        Define.name = Reference.create ~prefix:parent "__init__";
-        parameters;
+        signature = {
+          name = Reference.create ~prefix:parent "__init__";
+          parameters;
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = Some parent;
+        };
         body = [
           Node.create ~location (Statement.Expression (Node.create ~location Expression.Ellipsis));
         ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = Some parent;
       }
       |> Node.create ~location
     in

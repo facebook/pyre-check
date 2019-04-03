@@ -137,7 +137,7 @@ module Make (Visitor: Visitor) = struct
           List.iter bases ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression;
-      | Define { Define.parameters; body; decorators; return_annotation; _ } ->
+      | Define { Define.signature = { parameters; decorators; return_annotation; _ }; body } ->
           List.iter parameters ~f:(visit_parameter ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression;

@@ -1030,14 +1030,16 @@ let environment
 
 
 let mock_define = {
-  Define.name = Reference.create "$empty";
-  parameters = [];
+  Define.signature = {
+    name = Reference.create "$empty";
+    parameters = [];
+    decorators = [];
+    docstring = None;
+    return_annotation = None;
+    async = false;
+    parent = None;
+  };
   body = [];
-  decorators = [];
-  docstring = None;
-  return_annotation = None;
-  async = false;
-  parent = None;
 }
 
 

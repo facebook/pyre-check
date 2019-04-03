@@ -47,17 +47,19 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           let name = Reference.create ~prefix:qualifier name in
           let constructor =
             Define {
-              Define.name = Reference.create ~prefix:name "__init__";
-              parameters = [
-                Parameter.create ~location ~name:"self" ();
-                Parameter.create ~location ~annotation:base ~name:"input" ();
-              ];
+              signature = {
+                name = Reference.create ~prefix:name "__init__";
+                parameters = [
+                  Parameter.create ~location ~name:"self" ();
+                  Parameter.create ~location ~annotation:base ~name:"input" ();
+                ];
+                decorators = [];
+                docstring = None;
+                return_annotation = None;
+                async = false;
+                parent = Some name;
+              };
               body = [Node.create Pass ~location];
-              decorators = [];
-              docstring = None;
-              return_annotation = None;
-              async = false;
-              parent = Some name;
             }
             |> Node.create ~location
           in

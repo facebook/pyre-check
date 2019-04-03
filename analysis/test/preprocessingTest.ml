@@ -1513,14 +1513,16 @@ let test_expand_implicit_returns _ =
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
-             Define.name = Reference.create "foo";
-             parameters = [];
+             signature = {
+               name = Reference.create "foo";
+               parameters = [];
+               decorators = [];
+               docstring = None;
+               return_annotation = None;
+               async = false;
+               parent = None;
+             };
              body = expected_body;
-             decorators = [];
-             docstring = None;
-             return_annotation = None;
-             async = false;
-             parent = None;
            };
          ])
   in
@@ -1611,32 +1613,36 @@ let test_defines _ =
   in
   let create_define name =
     {
-      Define.name = Reference.create name;
-      parameters = [
-        +{
-          Parameter.name = "a";
-          value = None;
-          annotation = None;
-        };
-      ];
+      Define.signature = {
+        name = Reference.create name;
+        parameters = [
+          +{
+            Parameter.name = "a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
       body = [+Expression (+Float 1.0)];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     }
   in
   let create_toplevel body =
     {
-      Define.name = Reference.create "$toplevel";
-      parameters = [];
+      Define.signature = {
+        name = Reference.create "$toplevel";
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
       body;
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     }
   in
 
@@ -1647,38 +1653,42 @@ let test_defines _ =
 
   let inner =
     {
-      Define.name = Reference.create "foo";
-      parameters = [
-        +{
-          Parameter.name = "a";
-          value = None;
-          annotation = None;
-        };
-      ];
+      Define.signature = {
+        name = Reference.create "foo";
+        parameters = [
+          +{
+            Parameter.name = "a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
       body = [+Expression (+Float 1.0)];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     }
   in
   let define =
     {
-      Define.name = Reference.create "foo";
-      parameters = [
-        +{
-          Parameter.name = "a";
-          value = None;
-          annotation = None;
-        };
-      ];
+      Define.signature = {
+        name = Reference.create "foo";
+        parameters = [
+          +{
+            Parameter.name = "a";
+            value = None;
+            annotation = None;
+          };
+        ];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = None;
+      };
       body = [+Expression (+Float 1.0); +Define inner];
-      decorators = [];
-      docstring = None;
-      return_annotation = None;
-      async = false;
-      parent = None;
     }
   in
   assert_defines
@@ -1716,14 +1726,16 @@ let test_classes _ =
       bases = [];
       body = [
         +Define {
-          Define.name = Reference.create "bar";
-          parameters = [];
+          signature = {
+            name = Reference.create "bar";
+            parameters = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = None;
+            async = false;
+            parent = Some (Reference.create "foo");
+          };
           body = [+Pass];
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          parent = Some (Reference.create "foo");
         };
       ];
       decorators = [];

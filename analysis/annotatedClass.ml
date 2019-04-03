@@ -107,7 +107,9 @@ module Method = struct
     parent
 
 
-  let parameter_annotations { define = { Define.parameters; _ }; _ } ~resolution =
+  let parameter_annotations
+      { define = { Define.signature = { parameters; _ }; _ }; _ }
+      ~resolution =
     let element { Node.value = { Parameter.name; annotation; _ }; _ } =
       let annotation =
         (annotation
@@ -120,7 +122,9 @@ module Method = struct
     |> Identifier.Map.of_alist_exn
 
 
-  let parameter_annotations_positional { define = { Define.parameters; _ }; _ } ~resolution =
+  let parameter_annotations_positional
+      { define = { Define.signature = { parameters; _ }; _ }; _ }
+      ~resolution =
     let element index { Node.value = { Parameter.annotation; _ }; _ } =
       let annotation =
         (annotation
@@ -134,7 +138,7 @@ module Method = struct
 
 
   let return_annotation
-      { define = { Define.return_annotation; async; _ } as define; _ }
+      { define = { Define.signature = { return_annotation; async; _ }; _ } as define; _ }
       ~resolution =
     let annotation =
       Option.value_map
@@ -1143,7 +1147,7 @@ let has_method ?transitive definition ~resolution ~name =
 
 let inferred_callable_type definition ~resolution =
   let explicit_callables =
-    let extract_callable { Method.define = ({ Define.name; _ } as define); _ } =
+    let extract_callable { Method.define = ({ Define.signature = { name; _ }; _ } as define); _ } =
       Option.some_if (Reference.is_suffix ~suffix:(Reference.create "__call__") name) define
     in
     methods definition ~resolution
