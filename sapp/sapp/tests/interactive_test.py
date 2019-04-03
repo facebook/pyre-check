@@ -75,7 +75,7 @@ class InteractiveTest(TestCase):
 
     def testState(self):
         self.interactive.current_run_id = 1
-        self.interactive.current_issue_id = 2
+        self.interactive.current_issue_instance_id = 2
         self.interactive.current_frame_id = 3
         self.interactive.sources = {1}
         self.interactive.sinks = {2}
@@ -85,7 +85,7 @@ class InteractiveTest(TestCase):
         self.assertIn("Database: memory:sapp.db", output)
         self.assertIn("Repository directory: ", output)
         self.assertIn("Current run: 1", output)
-        self.assertIn("Current issue: 2", output)
+        self.assertIn("Current issue instance: 2", output)
         self.assertIn("Current trace frame: 3", output)
         self.assertIn("Sources filter: {1}", output)
         self.assertIn("Sinks filter: {2}", output)
@@ -321,14 +321,14 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
 
-        self.interactive.set_issue(2)
+        self.interactive.set_issue_instance(2)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", stdout)
         self.assertIn("Issue 2", stdout)
         self.assertNotIn("Issue 3", stdout)
 
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", stdout)
@@ -342,7 +342,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         stderr = self.stderr.getvalue().strip()
 
         self.assertIn("Issue 1 doesn't exist", stderr)
@@ -718,9 +718,9 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("Use 'set_issue(ID)' or 'set_frame(ID)'", stderr)
+        self.assertIn("Use 'set_issue_instance(ID)' or 'set_frame(ID)'", stderr)
 
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("     1    leaf       source file.py:1|1|1", output)
@@ -806,7 +806,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Missing trace frame: call2:param0", stdout)
@@ -856,7 +856,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.next_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
@@ -914,7 +914,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
 
         self.interactive.jump(1)
@@ -960,7 +960,7 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
         self.interactive.sources = {"source1"}
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self._clear_stdout()
         self.interactive.trace()
         self.assertEqual(
@@ -1044,7 +1044,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
 
         self.assertEqual(self.interactive.sources, {"source1"})
         self.assertEqual(self.interactive.sinks, {"sink1"})
@@ -1060,7 +1060,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         # Parent at root
         self.interactive.prev_cursor_location()
         self.interactive.expand()
@@ -1105,7 +1105,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         # Parent at root
         self.interactive.prev_cursor_location()
 
@@ -1129,7 +1129,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
         self.interactive.prev_cursor_location()
 
         # We are testing for the source location, which differs between branches
@@ -1238,7 +1238,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue(1)
+        self.interactive.set_issue_instance(1)
 
         self._clear_stdout()
         self.interactive.prev_cursor_location()
@@ -1289,25 +1289,25 @@ class InteractiveTest(TestCase):
         self.assertEqual(-1, self.interactive._current_branch_index(trace_frames))
 
     def testVerifyEntrypointSelected(self):
-        self.interactive.current_issue_id = -1
+        self.interactive.current_issue_instance_id = -1
         self.interactive.current_frame_id = -1
         with self.assertRaises(UserError):
             self.interactive._verify_entrypoint_selected()
 
-        self.interactive.current_issue_id = 1
+        self.interactive.current_issue_instance_id = 1
         try:
             self.interactive._verify_entrypoint_selected()
         except UserError:
             self.fail("Unexpected UserError")
 
-        self.interactive.current_issue_id = -1
+        self.interactive.current_issue_instance_id = -1
         self.interactive.current_frame_id = 1
         try:
             self.interactive._verify_entrypoint_selected()
         except UserError:
             self.fail("Unexpected UserError")
 
-        self.interactive.current_issue_id = 1
+        self.interactive.current_issue_instance_id = 1
         with self.assertRaises(AssertionError):
             self.interactive._verify_entrypoint_selected()
 
@@ -1398,7 +1398,7 @@ else:
     print("This was false")
         """
         self.interactive.setup()
-        self.interactive.current_issue_id = 1
+        self.interactive.current_issue_instance_id = 1
 
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
@@ -1445,7 +1445,7 @@ else:
 
     def testListSourceCodeFileNotFound(self):
         self.interactive.setup()
-        self.interactive.current_issue_id = 1
+        self.interactive.current_issue_instance_id = 1
 
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
@@ -1804,7 +1804,7 @@ else:
 
         self.interactive.setup()
         self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frame)]
-        self.interactive.current_issue_id = 1
+        self.interactive.current_issue_instance_id = 1
         self.interactive.current_trace_frame_index = 0
 
         self._clear_stdout()

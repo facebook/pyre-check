@@ -79,27 +79,27 @@ class Interactive:
     help_message = f"""
 Commands =======================================================================
 
-commands()      show this message
-help(COMAMND)   more info about a command
-state()         show the internal state of the tool for debugging
+commands()               show this message
+help(COMAMND)            more info about a command
+state()                  show the internal state of the tool for debugging
 
-runs()          list all completed static analysis runs
-set_run(ID)     select a specific run for browsing issues
-issues()        list all issues for the selected run
-set_issue(ID)   select a specific issue for browsing a trace
-show()          show info about selected issue or trace frame
-trace()         show a trace of the selected issue or trace frame
-prev()/p()      move backward within the trace
-next()/n()      move forward within the trace
-jump(NUM)       jump to a specific trace frame in a trace
-expand()        show alternative trace branches
-branch(INDEX)   select a trace branch
-{list_string}          show source code at the current trace frame
+runs()                   list all completed static analysis runs
+set_run(ID)              select a specific run for browsing issues
+issues()                 list all issues for the selected run
+set_issue_instance(ID)   select a specific issue for browsing a trace
+show()                   show info about selected issue or trace frame
+trace()                  show a trace of the selected issue or trace frame
+prev()/p()               move backward within the trace
+next()/n()               move forward within the trace
+jump(NUM)                jump to a specific trace frame in a trace
+expand()                 show alternative trace branches
+branch(INDEX)            select a trace branch
+{list_string}                   show source code at the current trace frame
 
-frames()        show trace frames independently of an issue
-set_frame(ID)   select a trace frame to explore
-parents()       show trace frames that call the current trace frame
-details()       show additional information about the current trace frame
+frames()                 show trace frames independently of an issue
+set_frame(ID)            select a trace frame to explore
+parents()                show trace frames that call the current trace frame
+details()                show additional information about the current trace frame
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -115,7 +115,7 @@ details()       show additional information about the current trace frame
             "runs": self.runs,
             "issues": self.issues,
             "set_run": self.set_run,
-            "set_issue": self.set_issue,
+            "set_issue_instance": self.set_issue_instance,
             "show": self.show,
             "trace": self.trace,
             "next": self.next_cursor_location,
@@ -136,7 +136,7 @@ details()       show additional information about the current trace frame
         self.current_run_id: int = -1
 
         # Trace exploration relies on either of these
-        self.current_issue_id: int = -1
+        self.current_issue_instance_id: int = -1
         self.current_frame_id: int = -1
 
         self.sources: Set[str] = set()
@@ -176,13 +176,13 @@ details()       show additional information about the current trace frame
         print(self.help_message)
 
     def state(self):
-        print(f"            Database: {self.db.dbtype}:{self.db.dbname}")
-        print(f"Repository directory: {self.repository_directory}")
-        print(f"         Current run: {self.current_run_id}")
-        print(f"       Current issue: {self.current_issue_id}")
-        print(f" Current trace frame: {self.current_frame_id}")
-        print(f"      Sources filter: {self.sources}")
-        print(f"        Sinks filter: {self.sinks}")
+        print(f"              Database: {self.db.dbtype}:{self.db.dbname}")
+        print(f"  Repository directory: {self.repository_directory}")
+        print(f"           Current run: {self.current_run_id}")
+        print(f"Current issue instance: {self.current_issue_instance_id}")
+        print(f"   Current trace frame: {self.current_frame_id}")
+        print(f"        Sources filter: {self.sources}")
+        print(f"          Sinks filter: {self.sinks}")
 
     @catch_keyboard_interrupt()
     def runs(self, use_pager=None):
@@ -221,37 +221,39 @@ details()       show additional information about the current trace frame
         print(f"Set run to {run_id}.")
 
     @catch_keyboard_interrupt()
-    def set_issue(self, issue_id):
+    def set_issue_instance(self, issue_instance_id):
         with self.db.make_session() as session:
             selected_issue = (
                 session.query(IssueInstance)
-                .filter(IssueInstance.id == issue_id)
+                .filter(IssueInstance.id == issue_instance_id)
                 .scalar()
             )
 
             if selected_issue is None:
                 self.warning(
-                    f"Issue {issue_id} doesn't exist. "
+                    f"Issue {issue_instance_id} doesn't exist. "
                     "Type 'issues()' for available issues."
                 )
                 return
 
             self.sources = set(
                 self._get_leaves_issue_instance(
-                    session, issue_id, SharedTextKind.SOURCE
+                    session, issue_instance_id, SharedTextKind.SOURCE
                 )
             )
             self.sinks = set(
-                self._get_leaves_issue_instance(session, issue_id, SharedTextKind.SINK)
+                self._get_leaves_issue_instance(
+                    session, issue_instance_id, SharedTextKind.SINK
+                )
             )
 
-        self.current_issue_id = selected_issue.id
+        self.current_issue_instance_id = selected_issue.id
         self.current_frame_id = -1
         self.current_trace_frame_index = 1  # first one after the source
 
         self._generate_trace_from_issue()
 
-        print(f"Set issue to {issue_id}.")
+        print(f"Set issue to {issue_instance_id}.")
         self.show()
 
     @catch_keyboard_interrupt()
@@ -261,7 +263,7 @@ details()       show additional information about the current trace frame
         """
         self._verify_entrypoint_selected()
 
-        if self.current_issue_id != -1:
+        if self.current_issue_instance_id != -1:
             self._show_current_issue_instance()
             return
 
@@ -452,7 +454,7 @@ details()       show additional information about the current trace frame
                 self.sources = set()
 
         self.current_frame_id = selected_frame.id
-        self.current_issue_id = -1
+        self.current_issue_instance_id = -1
 
         self._generate_trace_from_frame()
 
@@ -518,7 +520,7 @@ details()       show additional information about the current trace frame
             ]
             + self._create_trace_tuples(precondition_navigation)
         )
-        self.trace_tuples_id = self.current_issue_id
+        self.trace_tuples_id = self.current_issue_instance_id
         self.current_trace_frame_index = len(postcondition_navigation)
 
     def _generate_trace_from_frame(self):
@@ -746,7 +748,9 @@ details()       show additional information about the current trace frame
                 if self._is_before_root()
                 else TraceKind.PRECONDITION
             )
-            return self._initial_trace_frames(session, self.current_issue_id, kind)
+            return self._initial_trace_frames(
+                session, self.current_issue_instance_id, kind
+            )
 
         parent_trace_frame = self.trace_tuples[parent_index].trace_frame
         return self._next_forward_trace_frames(session, parent_trace_frame)
@@ -1139,7 +1143,7 @@ details()       show additional information about the current trace frame
                 Issue.callable,
                 SharedText.contents,
             )
-            .filter(IssueInstance.id == self.current_issue_id)
+            .filter(IssueInstance.id == self.current_issue_instance_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
             .join(SharedText, SharedText.id == IssueInstance.message_id)
             .first()
@@ -1199,11 +1203,11 @@ details()       show additional information about the current trace frame
         page.display_page(self._create_trace_frame_output_string(trace_frame))
 
     def _verify_entrypoint_selected(self) -> None:
-        assert self.current_issue_id == -1 or self.current_frame_id == -1
+        assert self.current_issue_instance_id == -1 or self.current_frame_id == -1
 
-        if self.current_issue_id == -1 and self.current_frame_id == -1:
+        if self.current_issue_instance_id == -1 and self.current_frame_id == -1:
             raise UserError(
-                "Use 'set_issue(ID)' or 'set_frame(ID)' to select an"
+                "Use 'set_issue_instance(ID)' or 'set_frame(ID)' to select an"
                 " entrypoint first."
             )
 
