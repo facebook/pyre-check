@@ -20,6 +20,7 @@ type section = [
   | `Interprocedural
   | `Memory
   | `Parser
+  | `Performance
   | `Progress
   | `Protocols
   | `Server

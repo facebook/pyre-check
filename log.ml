@@ -22,6 +22,7 @@ type section = [
   | `Interprocedural
   | `Memory
   | `Parser
+  | `Performance
   | `Progress
   | `Protocols
   | `Server
@@ -46,6 +47,7 @@ let section_to_string = function
   | `Interprocedural -> "Interprocedural"
   | `Memory -> "Memory"
   | `Parser -> "Parser"
+  | `Performance -> "Performance"
   | `Progress -> "Progress"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
@@ -60,6 +62,7 @@ let enabled =
     "Info";
     "Memory";
     "Progress";
+    "Performance";
     "Warning";
   ]
 
