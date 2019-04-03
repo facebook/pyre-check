@@ -1201,16 +1201,16 @@ let test_decode_serialized_ocaml_values context =
                     {
                       TypeQuery.serialized_key = OrderBackedges.serialize_key 15;
                       kind = "Backedges";
-                      actual_key = "15";
+                      actual_key = "Undecodable(15)";
                       actual_value =
-                        Some "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
+                        Some "(\"Undecodable(16)[str]\")";
                     };
                     {
                       TypeQuery.serialized_key = OrderEdges.serialize_key 16;
                       kind = "Edges";
-                      actual_key = "16";
+                      actual_key = "Undecodable(16)";
                       actual_value =
-                        Some "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
+                        Some "(\"Undecodable(15)[int]\")";
                     };
                   ];
                   undecodable_keys = ["Can't decode this"];
@@ -1405,6 +1405,16 @@ let test_decode_serialized_ocaml_values context =
       actual_value = Some
           "{0: { \"Precondition\": {\"x\": \"(int: m)\", }, \
            \"Postcondition\": {\"x\": \"(str: m)\", \"y\": \"(int: m)\", }}";
+    };
+  assert_decode
+    ~key:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
+    ~value:[15; 16]
+    ~response:{
+      TypeQuery.serialized_key =
+        OrderKeys.serialize_key SharedMemory.SingletonKey.key;
+      kind = "Order keys";
+      actual_key = "0";
+      actual_value = Some "(\"Undecodable(15)\"\"Undecodable(16)\")";
     }
 
 

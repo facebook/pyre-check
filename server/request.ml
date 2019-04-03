@@ -560,6 +560,25 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             { TypeQuery.decoded; undecodable_keys }
             { TypeQuery.serialized_key; serialized_value } =
           let decode_value serialized_key value =
+            let decode index =
+              let annotation =
+                Handler.TypeOrderHandler.find
+                  (Handler.TypeOrderHandler.annotations ())
+                  index
+              in
+              match annotation with
+              | None ->
+                  Format.sprintf "Undecodable(%d)" index
+              | Some annotation ->
+                  Type.show annotation
+            in
+            let decode_target { TypeOrder.Target.target; parameters } =
+              Format.sprintf
+                "%s[%s]"
+                (decode target)
+                (List.map parameters ~f:Type.show
+                 |> String.concat ~sep:", ")
+            in
             let key, value = Base64.decode serialized_key, Base64.decode value in
             match key, value with
             | Ok key, Ok value ->
@@ -697,19 +716,19 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = EdgeValue.description;
-                        actual_key = Int.to_string key;
+                        actual_key = decode key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:TypeOrder.Target.show;
+                          >>| List.to_string ~f:decode_target;
                       }
                   | Ok (OrderBackedges.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
                         kind = BackedgeValue.description;
-                        actual_key = Int.to_string key;
+                        actual_key = decode key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:TypeOrder.Target.show;
+                          >>| List.to_string ~f:decode_target;
                       }
                   | Ok (OrderKeys.Decoded (key, value)) ->
                       Some {
@@ -718,7 +737,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = Int.to_string key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Int.to_string;
+                          >>| List.to_string ~f:decode
                       }
 
                   | Ok (Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value)) ->
