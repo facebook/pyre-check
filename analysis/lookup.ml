@@ -110,7 +110,7 @@ module ExpressionVisitor = struct
       let store_access access =
         (* `filter` receives the prefix and current element, should return `Some entry` if one
            should be added for the current prefix+entry, `None` otherwise. *)
-        let collect_and_store ~access ~lookup_table ~filter =
+        let collect_and_store ~lookup_table ~filter =
           let _, entries =
             let fold_callback (prefix, entries_sofar) element =
               let access = prefix @ [element] in
@@ -149,10 +149,11 @@ module ExpressionVisitor = struct
               (* Resolve prefix to check if this is a method. *)
               resolve ~expression:(Access.expression prefix)
               >>| Type.class_name
+              >>| Reference.access
               >>| (fun resolved_prefix -> resolved_prefix @ [element])
               >>= find_definition
         in
-        collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
+        collect_and_store ~lookup_table:definitions_lookup ~filter:filter_definition;
 
         (* Annotations. *)
         let filter_annotation ~prefix ~element =
@@ -163,7 +164,7 @@ module ExpressionVisitor = struct
                  ~location:expression_location
                  (Expression.Access (SimpleAccess access)))
         in
-        collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
+        collect_and_store ~lookup_table:annotations_lookup ~filter:filter_annotation
       in
       match expression_value with
       | Expression.Access (SimpleAccess access) ->

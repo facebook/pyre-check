@@ -279,7 +279,7 @@ val single_parameter: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 val weaken_literals: t -> t
 val split: t -> t * (t list)
-val class_name: t -> Access.t
+val class_name: t -> Reference.t
 
 val class_variable: t -> t
 val class_variable_value: t -> t option

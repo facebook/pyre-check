@@ -1172,7 +1172,7 @@ module State = struct
                                 let definition =
                                   Resolution.module_definition
                                     resolution
-                                    (Reference.from_access lead)
+                                    (Reference.create_from_list lead)
                                 in
                                 match definition with
                                 | Some definition when Module.empty_stub definition -> true
@@ -1183,6 +1183,7 @@ module State = struct
                         in
                         Annotation.annotation resolved
                         |> Type.class_name
+                        |> Reference.as_list
                         |> suppressed []
                       in
                       if not suppressed then

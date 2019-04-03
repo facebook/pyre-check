@@ -8,7 +8,6 @@ open OUnit2
 
 open Ast
 open Analysis
-open Expression
 open Pyre
 
 open Test
@@ -939,9 +938,9 @@ let test_is_resolved _ =
 let test_class_name _ =
   let assert_class_name annotation expected =
     assert_equal
-      ~cmp:Access.equal
-      ~printer:Access.show
-      (parse_single_access expected)
+      ~cmp:Reference.equal
+      ~printer:Reference.show
+      (Reference.create expected)
       (Type.class_name annotation)
   in
 
@@ -949,7 +948,7 @@ let test_class_name _ =
   assert_class_name (Type.list Type.integer) "list";
   assert_class_name
     (Type.union [Type.string; Type.integer])
-    "typing.Union.__getitem__((int, str))"; (* Ugh... *)
+    "typing.Union";
   assert_class_name (Type.variable "_T") "_T"
 
 

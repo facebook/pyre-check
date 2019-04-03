@@ -376,7 +376,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               annotation :: successors
             in
             let attribute_taint sofar annotation =
-              Reference.create ~prefix:(Reference.from_access (Type.class_name annotation)) member
+              Reference.create ~prefix:(Type.class_name annotation) member
               |> global_model
               |> ForwardState.Tree.join sofar
             in

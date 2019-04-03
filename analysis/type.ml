@@ -2146,15 +2146,21 @@ let split = function
 
 
 let class_name annotation =
+  let open Expression in
   split annotation
   |> fst
   |> expression
   |> Node.value
   |> function
-  | Expression.Access (SimpleAccess access) ->
-      access
+  | Access (SimpleAccess access) ->
+      let rec remove_calls stripped = function
+        | []
+        | Access.Identifier _ :: Access.Call _ :: _ -> List.rev stripped
+        | head :: tail -> remove_calls (head :: stripped) tail
+      in
+      Reference.from_access (remove_calls [] access)
   | _ ->
-      Access.create "typing.Any"
+      Reference.create "typing.Any"
 
 
 let class_variable annotation =

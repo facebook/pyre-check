@@ -515,18 +515,17 @@ let get_global_model ~resolution ~expression =
       | Access (SimpleAccess access) ->
           (match AccessPath.normalize_access ~resolution access with
            | Global access ->
-               Some access
+               Some (Reference.from_access access)
            | Access { expression; member } ->
                AccessPath.as_access expression
                |> (fun access -> Expression.Access access)
                |> Node.create_with_default_location
                |> Resolution.resolve resolution
                |> Type.class_name
-               |> (fun class_name -> class_name @ [Access.Identifier member])
+               |> (fun class_name -> Reference.create ~prefix:class_name member)
                |> Option.some
            | _ ->
                None)
-          >>| Reference.from_access
           >>| Callable.create_object
       | _ ->
           None)
