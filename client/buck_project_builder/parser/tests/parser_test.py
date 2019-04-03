@@ -47,8 +47,10 @@ class ParserTest(unittest.TestCase):
     def test_parse_file(self):
         parser = Parser("/buck_root")
 
-        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_1)):
+        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_1)) as mocked_open:
             result = parser.parse_file("my/module")
+            mocked_open.assert_called_once_with("/buck_root/my/module/TARGETS", "r")
+            mocked_open.reset_mock()
 
             self.assertEqual(result.path, "my/module")
             self.assertEqual(len(result.targets), 4)
@@ -77,3 +79,7 @@ class ParserTest(unittest.TestCase):
             self.assertEqual(target.target, "//my/module:test_target")
             self.assertListEqual(target.sources, ["tests/*.py"])
             self.assertListEqual(target.dependencies, [])
+
+            # The parser should cache files it has already parsed.
+            parser.parse_file("my/module")
+            mocked_open.assert_not_called()

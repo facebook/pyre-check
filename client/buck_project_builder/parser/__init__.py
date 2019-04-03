@@ -21,8 +21,12 @@ class Parser(object):
     def __init__(self, buck_root: str, build_file_name: str = "TARGETS") -> None:
         self.buck_root = buck_root
         self.build_file_name = build_file_name
+        self.build_files = {}  # type: Dict[str, BuildFile]
 
     def parse_file(self, build_file_directory: str) -> BuildFile:
+        if build_file_directory in self.build_files:
+            return self.build_files[build_file_directory]
+
         build_file_path = os.path.join(
             self.buck_root, build_file_directory, self.build_file_name
         )
@@ -41,6 +45,7 @@ class Parser(object):
 
         build_targets = self._parse_targets(tree, build_file_directory)
         build_file = BuildFile(build_file_directory, build_targets)
+        self.build_files[build_file_directory] = build_file
         return build_file
 
     def _parse_targets(
