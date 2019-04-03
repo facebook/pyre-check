@@ -124,6 +124,7 @@ let test_register_modules _ =
 
 
 let test_purge _ =
+  Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
   Handler.register_protocol ~handle:(File.Handle.create "test.py") (Type.Primitive "MyProtocol");
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
@@ -188,9 +189,13 @@ let test_normalize_dependencies _ =
     [Type.Primitive "A_Alias"; Type.Primitive "B_Alias"; Type.Primitive "C_Alias"]
 
 
-let test_normalize_order_keys _ =
+let test_normalize _ =
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.integer;
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.string;
+  Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
+  [Type.Primitive "C"; Type.Primitive "B"; Type.Primitive "A"]
+  |> Type.Set.Tree.of_list
+  |> Protocols.add SharedMemory.SingletonKey.key;
   let indices =
     let index_of annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
@@ -201,7 +206,10 @@ let test_normalize_order_keys _ =
   Service.Environment.normalize_shared_memory ();
   assert_equal
     (Service.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
-    (Some indices)
+    (Some indices);
+  assert_equal
+    (Protocols.get SharedMemory.SingletonKey.key)
+    (Some (Type.Set.Tree.of_list [Type.Primitive "A"; Type.Primitive "B"; Type.Primitive "C"]))
 
 
 let () =
@@ -212,7 +220,7 @@ let () =
     "function_keys">::test_function_keys;
     "global_keys">::test_global_keys;
     "normalize_dependencies">::test_normalize_dependencies;
-    "normalize_order_keys">::test_normalize_order_keys;
+    "normalize">::test_normalize;
     "register_modules">::test_register_modules;
     "purge">::test_purge;
   ]

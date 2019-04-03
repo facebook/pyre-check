@@ -626,6 +626,18 @@ let normalize_shared_memory () =
         List.sort ~compare:Int.compare keys
         |> OrderKeys.add SharedMemory.SingletonKey.key;
   end;
+  begin
+    match Protocols.get SharedMemory.SingletonKey.key with
+    | None ->
+        ()
+    | Some protocols ->
+        Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
+        let protocols =
+          Type.Set.Tree.to_list protocols
+          |> Type.Set.Tree.of_list
+        in
+        Protocols.add SharedMemory.SingletonKey.key protocols
+  end;
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in
   File.Handle.Set.Tree.to_list handles
