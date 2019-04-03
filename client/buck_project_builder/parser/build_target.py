@@ -6,10 +6,16 @@
 # pyre-strict
 
 import ast
-from typing import Dict, List, Mapping, Optional, Type  # noqa
+from typing import Dict, List, Mapping, NamedTuple, Optional, Type  # noqa
 
 
 class BuildTarget:
+    # A minimal set of information that can be parsed from (almost) all targets.
+    BaseInformation = NamedTuple(
+        "BaseInformation",
+        [("keywords", Dict[str, ast.expr]), ("name", str), ("dependencies", List[str])],
+    )
+
     def __init__(
         self, build_file_directory: str, name: str, dependencies: List[str]
     ) -> None:
@@ -34,6 +40,15 @@ class BuildTarget:
     def parse(call: ast.Call, build_file_directory: str) -> "BuildTarget":
         raise NotImplementedError
 
+    @staticmethod
+    def parse_base_information(
+        call: ast.Call, build_file_directory: str
+    ) -> BaseInformation:
+        keywords = _get_keywords(call)
+        name = _get_string(keywords["name"])
+        dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
+        return BuildTarget.BaseInformation(keywords, name, dependencies)
+
 
 class PythonBinary(BuildTarget):
     def rule_name(self) -> str:
@@ -41,10 +56,8 @@ class PythonBinary(BuildTarget):
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonBinary":
-        keywords = _get_keywords(call)
-        name = _get_string(keywords["name"])
-        dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
-        return PythonBinary(build_file_directory, name, dependencies)
+        base = BuildTarget.parse_base_information(call, build_file_directory)
+        return PythonBinary(build_file_directory, base.name, base.dependencies)
 
 
 class PythonLibrary(BuildTarget):
@@ -65,15 +78,38 @@ class PythonLibrary(BuildTarget):
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonLibrary":
-        keywords = _get_keywords(call)
-        name = _get_string(keywords["name"])
-        dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
-        sources = _get_sources(keywords.get("srcs"))
+        base = BuildTarget.parse_base_information(call, build_file_directory)
+        sources = _get_sources(base.keywords.get("srcs"))
         base_module = (
-            _get_string(keywords["base_module"]) if "base_module" in keywords else None
+            _get_string(base.keywords["base_module"])
+            if "base_module" in base.keywords
+            else None
         )
         return PythonLibrary(
-            build_file_directory, name, dependencies, sources, base_module
+            build_file_directory, base.name, base.dependencies, sources, base_module
+        )
+
+
+class PythonUnitTest(BuildTarget):
+    def __init__(
+        self,
+        build_file_directory: str,
+        name: str,
+        dependencies: List[str],
+        sources: List[str],
+    ) -> None:
+        super(PythonUnitTest, self).__init__(build_file_directory, name, dependencies)
+        self.sources = sources
+
+    def rule_name(self) -> str:
+        return "python_unittest"
+
+    @staticmethod
+    def parse(call: ast.Call, build_file_directory: str) -> "PythonUnitTest":
+        base = BuildTarget.parse_base_information(call, build_file_directory)
+        sources = _get_sources(base.keywords.get("srcs"))
+        return PythonUnitTest(
+            build_file_directory, base.name, base.dependencies, sources
         )
 
 
@@ -146,4 +182,5 @@ def _get_sources(sources: Optional[ast.AST]) -> List[str]:
 SUPPORTED_RULES = {
     "python_binary": PythonBinary,
     "python_library": PythonLibrary,
+    "python_unittest": PythonUnitTest,
 }  # type: Mapping[str, Type[BuildTarget]]

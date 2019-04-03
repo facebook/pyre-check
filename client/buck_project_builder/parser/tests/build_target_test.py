@@ -6,7 +6,7 @@
 import ast
 import unittest
 
-from ..build_target import PythonBinary, PythonLibrary
+from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest
 
 
 def _get_call(tree: ast.AST) -> ast.Call:
@@ -63,6 +63,14 @@ python_library(
 )
 """
 
+PYTHON_UNIT_TEST_TARGET = """
+python_unittest(
+    name = "test_target",
+    srcs = glob(["tests/*.py"]),
+    deps = [":library_target_1"],
+)
+"""
+
 
 class BuildTargetTest(unittest.TestCase):
     def test_python_binary(self):
@@ -116,3 +124,12 @@ class BuildTargetTest(unittest.TestCase):
             target.sources, ["a.py", "b.py", "folder/*.py", "other/**/*.py"]
         )
         self.assertListEqual(target.dependencies, [])
+
+    def test_python_unittest(self):
+        tree = ast.parse(PYTHON_UNIT_TEST_TARGET)
+        call = _get_call(tree)
+        target = PythonUnitTest.parse(call, "some/project")
+        self.assertEqual(target.target, "//some/project:test_target")
+        self.assertEqual(target.name, "test_target")
+        self.assertListEqual(target.sources, ["tests/*.py"])
+        self.assertListEqual(target.dependencies, ["//some/project:library_target_1"])
