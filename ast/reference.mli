@@ -34,6 +34,7 @@ val show_sanitized: t -> string
 
 val single: t -> Identifier.t option
 val length: t -> int
+val is_empty: t -> bool
 val is_prefix: prefix: t -> t -> bool
 val is_suffix: suffix: t -> t -> bool
 val is_strict_prefix: prefix: t -> t -> bool

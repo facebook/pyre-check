@@ -13,18 +13,18 @@ module AccessState: sig
   (* Keep track of objects whose type might be determined later on or that might serve as implicit
      argument to a call. *)
   type target = {
-    access: Access.t;
+    reference: Reference.t;
     annotation: Type.t;
   }
 
   type found_origin =
     | Instance of Annotated.Attribute.t
-    | Module of Access.t
+    | Module of Reference.t
   [@@deriving show]
 
   type undefined_origin =
     | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
-    | Module of Access.t
+    | Module of Reference.t
     | TypeWithoutClass of Type.t
   [@@deriving show]
 

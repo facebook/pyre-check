@@ -18,18 +18,18 @@ module AccessState = struct
   (* Keep track of objects whose type might be determined later on or that might serve as implicit
      argument to a call. *)
   type target = {
-    access: Access.t;
+    reference: Reference.t;
     annotation: Type.t;
   }
 
   type found_origin =
     | Instance of Annotated.Attribute.t
-    | Module of Access.t
+    | Module of Reference.t
   [@@deriving show]
 
   type undefined_origin =
     | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
-    | Module of Access.t
+    | Module of Reference.t
     | TypeWithoutClass of Type.t
   [@@deriving show]
 
@@ -832,16 +832,15 @@ module State = struct
         let resolution =
           let update_resolution resolution signature =
             target
-            >>= (fun { access; annotation } ->
+            >>= (fun { reference; annotation } ->
                 Annotated.Signature.determine signature ~resolution ~annotation
                 >>| (fun determined ->
-                    match access with
-                    | [Access.Identifier _] ->
+                    if Reference.length reference = 1 then
                         Resolution.set_local
                           resolution
-                          ~reference:(Reference.from_access access)
+                          ~reference
                           ~annotation:(Annotation.create determined)
-                    | _ ->
+                    else
                         resolution))
             |> Option.value ~default:resolution
           in
@@ -1036,7 +1035,10 @@ module State = struct
                     | Undefined _ -> false
                   in
                   let target =
-                    { AccessState.access = qualifier; annotation = parent_annotation }
+                    {
+                      AccessState.reference = (Reference.from_access qualifier);
+                      annotation = parent_annotation;
+                    }
                   in
                   let element = AccessState.Attribute { attribute = name; definition } in
                   step state ~resolved ~target ~element ~continue ~lead ()
@@ -1211,7 +1213,7 @@ module State = struct
                             let element =
                               AccessState.Attribute {
                                 attribute = name;
-                                definition = Undefined (Module qualifier);
+                                definition = Undefined (Module (Reference.from_access qualifier));
                               }
                             in
                             abort state ~element ~lead ()
@@ -2075,10 +2077,9 @@ module State = struct
                             };
                         }
 
-                  | Module access when List.is_empty access ->
+                  | Module reference when Reference.is_empty reference ->
                       Error.UndefinedName (Reference.create attribute)
-                  | Module access ->
-                      let reference = Reference.from_access access in
+                  | Module reference ->
                       Error.UndefinedAttribute { attribute; origin = Error.Module reference }
                   | TypeWithoutClass annotation ->
                       Error.UndefinedAttribute {

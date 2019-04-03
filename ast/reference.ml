@@ -182,6 +182,10 @@ let length =
   List.length
 
 
+let is_empty =
+  List.is_empty
+
+
 let rec is_prefix ~prefix reference =
   match prefix, reference with
   | [], _ -> true

@@ -305,7 +305,7 @@ let test_check_annotation _ =
 
 
 type definer =
-  | Module of Access.t
+  | Module of Reference.t
   | Type of Type.t
 [@@deriving compare, eq, show]
 
@@ -501,7 +501,8 @@ let test_forward_access _ =
           let stripped element: stripped =
             let open TypeCheck.AccessState in
             match element with
-            | Attribute { definition = Undefined (Module []); _ } ->
+            | Attribute { definition = Undefined (Module reference); _ }
+              when Reference.is_empty reference ->
                 Unknown
             | Attribute { attribute; definition = Defined _ } ->
                 Attribute attribute
