@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from .. import Parser
-from ..build_target import PythonBinary
+from ..build_target import PythonBinary, PythonLibrary
 
 
 TARGETS_FILE_1 = """
@@ -30,6 +30,12 @@ python_binary(
     deps = [],
 )
 
+python_library(
+    name = "library_target",
+    base_module = "foo.bar",
+    srcs = ["a.py", "b.py"],
+)
+
 """
 
 
@@ -41,7 +47,7 @@ class ParserTest(unittest.TestCase):
             result = parser.parse_file("my/module")
 
             self.assertEqual(result.path, "my/module")
-            self.assertEqual(len(result.targets), 2)
+            self.assertEqual(len(result.targets), 3)
 
             target = result.targets["binary_target"]
             self.assertIsInstance(target, PythonBinary)
@@ -54,4 +60,10 @@ class ParserTest(unittest.TestCase):
             target = result.targets["other_target"]
             self.assertIsInstance(target, PythonBinary)
             self.assertEqual(target.target, "//my/module:other_target")
+            self.assertListEqual(target.dependencies, [])
+
+            target = result.targets["library_target"]
+            self.assertIsInstance(target, PythonLibrary)
+            self.assertEqual(target.target, "//my/module:library_target")
+            self.assertListEqual(target.sources, ["a.py", "b.py"])
             self.assertListEqual(target.dependencies, [])

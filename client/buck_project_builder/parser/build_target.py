@@ -43,13 +43,41 @@ class PythonBinary(BuildTarget):
     def parse(call: ast.Call, build_file_directory: str) -> "PythonBinary":
         keywords = _get_keywords(call)
         name = _get_string(keywords["name"])
-        dependencies = [
-            _absolutize_target(dependency, build_file_directory)
-            for dependency in _get_string_list(keywords.get("deps"))
-        ]
+        dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
         return PythonBinary(build_file_directory, name, dependencies)
 
 
+class PythonLibrary(BuildTarget):
+    def __init__(
+        self,
+        build_file_directory: str,
+        name: str,
+        dependencies: List[str],
+        sources: List[str],
+        base_module: Optional[str] = None,
+    ) -> None:
+        super(PythonLibrary, self).__init__(build_file_directory, name, dependencies)
+        self.sources = sources
+        self.base_module = base_module
+
+    def rule_name(self) -> str:
+        return "python_library"
+
+    @staticmethod
+    def parse(call: ast.Call, build_file_directory: str) -> "PythonLibrary":
+        keywords = _get_keywords(call)
+        name = _get_string(keywords["name"])
+        dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
+        sources = _get_sources(keywords.get("srcs"))
+        base_module = (
+            _get_string(keywords["base_module"]) if "base_module" in keywords else None
+        )
+        return PythonLibrary(
+            build_file_directory, name, dependencies, sources, base_module
+        )
+
+
+# AST helper methods
 def _get_string(tree: ast.AST) -> str:
     assert isinstance(tree, ast.Str)
     return tree.s
@@ -77,12 +105,45 @@ def _get_keywords(tree: ast.AST) -> Dict[str, ast.expr]:
     return result
 
 
+# Buck-specific helper methods
 def _absolutize_target(target: str, build_file_directory: str) -> str:
     if target.startswith(":"):
         return "//{}{}".format(build_file_directory, target)
     return target
 
 
+def _get_dependencies(
+    build_file_directory: str, dependencies: Optional[ast.AST]
+) -> List[str]:
+    return [
+        _absolutize_target(dependency, build_file_directory)
+        for dependency in _get_string_list(dependencies)
+    ]
+
+
+def _get_sources(sources: Optional[ast.AST]) -> List[str]:
+    if not sources:
+        return []
+
+    # Sources can be a list, a glob, or a concatenation of sources.
+    def _get_sources(tree: ast.AST) -> List[str]:
+        if isinstance(tree, ast.List):
+            return _get_string_list(tree)
+        elif isinstance(tree, ast.Call):
+            function = tree.func
+            assert isinstance(function, ast.Name) and function.id == "glob"
+            return _get_string_list(tree.args[0])
+        elif isinstance(tree, ast.BinOp):
+            assert isinstance(tree.op, ast.Add)
+            return _get_sources(tree.left) + _get_sources(tree.right)
+        raise ValueError(
+            "Tree of type {} unexpected for sources field.".format(type(tree))
+        )
+
+    return _get_sources(sources)
+
+
 SUPPORTED_RULES = {
-    "python_binary": PythonBinary
+    "python_binary": PythonBinary,
+    "python_library": PythonLibrary,
 }  # type: Mapping[str, Type[BuildTarget]]
