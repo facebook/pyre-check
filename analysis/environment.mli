@@ -36,7 +36,7 @@ module type Handler = sig
 
   val class_definition: Type.t -> Resolution.class_representation option
 
-  val register_protocol: Type.t -> unit
+  val register_protocol: handle: File.Handle.t -> Type.t -> unit
   val protocols: unit -> Type.t list
 
   val register_module

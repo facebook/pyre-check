@@ -626,6 +626,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = Int.to_string key;
                         actual_value =
                           value
+                          >>| Type.Set.Tree.to_list
                           >>| List.to_string ~f:Type.show;
                       }
                   | Ok (FunctionKeys.Decoded (key, value)) ->

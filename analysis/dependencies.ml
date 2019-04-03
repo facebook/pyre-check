@@ -15,6 +15,7 @@ type index = {
   alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   global_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   dependent_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
+  protocol_keys: (Type.t Hash_set.t) File.Handle.Table.t;
 }
 
 
@@ -30,6 +31,7 @@ module type Handler = sig
   val add_alias_key: handle: File.Handle.t -> Type.t -> unit
   val add_global_key: handle: File.Handle.t -> Reference.t -> unit
   val add_dependent_key: handle: File.Handle.t -> Reference.t -> unit
+  val add_protocol_key: handle: File.Handle.t -> Type.t -> unit
 
   val add_dependent: handle: File.Handle.t -> Reference.t -> unit
   val dependents: Reference.t -> File.Handle.Set.Tree.t option
@@ -39,6 +41,7 @@ module type Handler = sig
   val get_alias_keys: handle: File.Handle.t -> Type.t list
   val get_global_keys: handle: File.Handle.t -> Reference.t list
   val get_dependent_keys: handle: File.Handle.t -> Reference.t list
+  val get_protocol_keys: handle: File.Handle.t -> Type.t list
 
   val clear_keys_batch: File.Handle.t list -> unit
 
@@ -47,7 +50,7 @@ end
 
 
 let handler {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; protocol_keys };
     dependents;
   } =
   (module struct
@@ -105,6 +108,15 @@ let handler {
       | Some hash_set ->
           Hash_set.add hash_set dependent
 
+    let add_protocol_key ~handle protocol =
+      match Hashtbl.find protocol_keys handle with
+      | None ->
+          Hashtbl.set
+            protocol_keys
+            ~key:handle
+            ~data:(Type.Hash_set.of_list [protocol])
+      | Some hash_set ->
+          Hash_set.add hash_set protocol
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
@@ -154,12 +166,19 @@ let handler {
       |> Option.value ~default:[]
 
 
+    let get_protocol_keys ~handle =
+      Hashtbl.find protocol_keys handle
+      >>| Hash_set.to_list
+      |> Option.value ~default:[]
+
+
     let clear_keys_batch handles =
       List.iter ~f:(Hashtbl.remove function_keys) handles;
       List.iter ~f:(Hashtbl.remove class_keys) handles;
       List.iter ~f:(Hashtbl.remove alias_keys) handles;
       List.iter ~f:(Hashtbl.remove global_keys) handles;
-      List.iter ~f:(Hashtbl.remove dependent_keys) handles
+      List.iter ~f:(Hashtbl.remove dependent_keys) handles;
+      List.iter ~f:(Hashtbl.remove protocol_keys) handles
 
 
     let normalize handles =
@@ -186,13 +205,14 @@ let create () =
     alias_keys = File.Handle.Table.create ();
     global_keys = File.Handle.Table.create ();
     dependent_keys = File.Handle.Table.create ();
+    protocol_keys = File.Handle.Table.create ();
   }
   in
   { index = index; dependents = Reference.Table.create () }
 
 
 let copy {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; protocol_keys };
     dependents } =
   {
     index = {
@@ -201,6 +221,7 @@ let copy {
       alias_keys = Hashtbl.copy alias_keys;
       global_keys = Hashtbl.copy global_keys;
       dependent_keys = Hashtbl.copy dependent_keys;
+      protocol_keys = Hashtbl.copy protocol_keys;
     };
     dependents = Hashtbl.copy dependents;
   }

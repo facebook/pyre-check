@@ -1490,6 +1490,7 @@ let test_purge _ =
   let ((module Handler: Environment.Handler) as handler) = Environment.handler environment in
   let source = {|
       import a
+      class P(typing.Protocol): pass
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       x = 5
@@ -1511,11 +1512,15 @@ let test_purge _ =
   assert_equal
     (dependencies "a.py")
     (Some ["test.py"]);
+  assert_equal
+    (Handler.protocols ())
+    [Type.Primitive "P"];
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
+  assert_equal (Handler.protocols ()) [];
   assert_equal
     (dependencies "a.py")
     (Some [])

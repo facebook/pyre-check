@@ -35,7 +35,7 @@ module type Handler = sig
 
   val class_definition: Type.t -> Resolution.class_representation option
 
-  val register_protocol: Type.t -> unit
+  val register_protocol: handle: File.Handle.t -> Type.t -> unit
   val protocols: unit -> Type.t list
 
   val register_module
@@ -269,6 +269,8 @@ let handler
       |> purge_table_given_keys globals;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
+      |> List.iter ~f:(Hash_set.remove protocols);
       DependencyHandler.clear_keys_batch handles;
       List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
@@ -281,7 +283,8 @@ let handler
     let class_definition =
       Hashtbl.find class_definitions
 
-    let register_protocol protocol =
+    let register_protocol ~handle protocol =
+      DependencyHandler.add_protocol_key ~handle protocol;
       Hash_set.add protocols protocol
 
     let protocols () =
@@ -403,7 +406,9 @@ let register_class_definitions (module Handler: Handler) source =
             let annotated = Annotated.Class.create { Node.location; value = definition } in
 
             if Annotated.Class.is_protocol annotated then
-              Handler.register_protocol primitive;
+              begin
+                Handler.register_protocol ~handle primitive
+              end;
 
             Handler.set_class_definition
               ~primitive

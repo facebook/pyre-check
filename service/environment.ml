@@ -127,12 +127,12 @@ let build
     end
 
 
-
 module SharedHandler: Analysis.Environment.Handler = struct
   let transaction ~f () =
     Ast.SharedMemory.Modules.begin_transaction ();
 
     Protocols.LocalChanges.push_stack ();
+    ProtocolKeys.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     ClassKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
@@ -153,6 +153,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Ast.SharedMemory.Modules.end_transaction ();
 
     Protocols.LocalChanges.commit_all ();
+    ProtocolKeys.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     ClassKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
@@ -169,6 +170,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderIndices.LocalChanges.commit_all ();
 
     Protocols.LocalChanges.pop_stack ();
+    ProtocolKeys.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     ClassKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();
@@ -185,69 +187,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderIndices.LocalChanges.pop_stack ();
     result
 
-
-  let class_definition =
-    ClassDefinitions.get
-
-  let register_protocol protocol =
-    let protocols = Protocols.get SharedMemory.SingletonKey.key |> Option.value ~default:[] in
-    Protocols.add SharedMemory.SingletonKey.key (protocol :: protocols)
-
-
-  let protocols () =
-    Protocols.get SharedMemory.SingletonKey.key
-    |> Option.value ~default:[]
-
-  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-    let string =
-      Annotation.create_immutable ~global:true Type.string
-      |> Node.create_with_default_location
-    in
-    let global_key = Reference.create ~prefix:qualifier in
-    Globals.write_through (global_key "__file__") string;
-    Globals.write_through (global_key "__name__") string;
-    let dictionary_annotation =
-      Type.dictionary ~key:Type.string ~value:Type.Any
-      |> Annotation.create_immutable ~global:true
-      |> Node.create_with_default_location
-    in
-    Globals.write_through (global_key "__dict__") dictionary_annotation;
-
-    let is_registered_empty_stub =
-      Ast.SharedMemory.Modules.get ~qualifier
-      >>| Module.empty_stub
-      |> Option.value ~default:false
-    in
-    if not is_registered_empty_stub then
-      begin
-        Ast.SharedMemory.Modules.add
-          ~qualifier
-          ~ast_module:
-            (Module.create
-               ~qualifier
-               ~local_mode
-               ?handle
-               ~stub
-               statements)
-      end
-
-  let is_module qualifier =
-    Ast.SharedMemory.Modules.exists ~qualifier
-
-  let module_definition qualifier =
-    Ast.SharedMemory.Modules.get ~qualifier
-
-  let in_class_definition_keys annotation =
-    ClassDefinitions.mem annotation
-
-  let aliases =
-    Aliases.get
-
-  let globals =
-    Globals.get
-
-  let dependencies =
-    Dependents.get
 
   module DependencyHandler = (struct
     let add_new_key ~get ~add ~handle ~key =
@@ -292,6 +231,13 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~get:DependentKeys.get
         ~add:DependentKeys.add
 
+    let add_protocol_key ~handle protocol =
+      add_new_key
+        ~handle
+        ~key:protocol
+        ~get:ProtocolKeys.get
+        ~add:ProtocolKeys.add
+
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
       match Dependents.get dependent with
@@ -303,13 +249,15 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
     let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
     let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
+    let get_protocol_keys ~handle = ProtocolKeys.get handle |> Option.value ~default:[]
 
     let clear_keys_batch handles =
       FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list handles);
       ClassKeys.remove_batch (ClassKeys.KeySet.of_list handles);
       AliasKeys.remove_batch (AliasKeys.KeySet.of_list handles);
       GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list handles);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles);
+      ProtocolKeys.remove_batch (ProtocolKeys.KeySet.of_list handles)
 
     let dependents = Dependents.get
 
@@ -372,6 +320,75 @@ module SharedHandler: Analysis.Environment.Handler = struct
       |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize_dependents
   end: Dependencies.Handler)
+
+
+  let class_definition =
+    ClassDefinitions.get
+
+  let register_protocol ~handle protocol =
+    DependencyHandler.add_protocol_key ~handle protocol;
+    match Protocols.get SharedMemory.SingletonKey.key with
+    | None ->
+        Protocols.add SharedMemory.SingletonKey.key (Type.Set.Tree.singleton protocol)
+    | Some protocols ->
+        Protocols.add SharedMemory.SingletonKey.key (Type.Set.Tree.add protocols protocol)
+
+  let protocols () =
+    Protocols.get SharedMemory.SingletonKey.key
+    |> Option.value ~default:Type.Set.Tree.empty
+    |> Type.Set.Tree.to_list
+
+  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
+    let string =
+      Annotation.create_immutable ~global:true Type.string
+      |> Node.create_with_default_location
+    in
+    let global_key = Reference.create ~prefix:qualifier in
+    Globals.write_through (global_key "__file__") string;
+    Globals.write_through (global_key "__name__") string;
+    let dictionary_annotation =
+      Type.dictionary ~key:Type.string ~value:Type.Any
+      |> Annotation.create_immutable ~global:true
+      |> Node.create_with_default_location
+    in
+    Globals.write_through (global_key "__dict__") dictionary_annotation;
+
+    let is_registered_empty_stub =
+      Ast.SharedMemory.Modules.get ~qualifier
+      >>| Module.empty_stub
+      |> Option.value ~default:false
+    in
+    if not is_registered_empty_stub then
+      begin
+        Ast.SharedMemory.Modules.add
+          ~qualifier
+          ~ast_module:
+            (Module.create
+               ~qualifier
+               ~local_mode
+               ?handle
+               ~stub
+               statements)
+      end
+
+  let is_module qualifier =
+    Ast.SharedMemory.Modules.exists ~qualifier
+
+  let module_definition qualifier =
+    Ast.SharedMemory.Modules.get ~qualifier
+
+  let in_class_definition_keys annotation =
+    ClassDefinitions.mem annotation
+
+  let aliases =
+    Aliases.get
+
+  let globals =
+    Globals.get
+
+  let dependencies =
+    Dependents.get
+
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let refine_class_definition annotation =
     let open Statement in
@@ -486,6 +503,18 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
 
+    let purge_protocols removed_protocols =
+      match Protocols.get Memory.SingletonKey.key with
+      | None ->
+          ()
+      | Some protocols ->
+          Protocols.remove_batch (Protocols.KeySet.singleton Memory.SingletonKey.key);
+          Protocols.add Memory.SingletonKey.key (Type.Set.Tree.diff protocols removed_protocols)
+    in
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
+    |> Type.Set.Tree.of_list
+    |> purge_protocols;
+
     DependencyHandler.clear_keys_batch handles;
     List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers;
@@ -520,6 +549,7 @@ let populate_shared_memory
             alias_keys;
             global_keys;
             dependent_keys;
+            protocol_keys;
           };
           dependents;
         };
@@ -556,8 +586,12 @@ let populate_shared_memory
     add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
+    add_table ProtocolKeys.write_through (Hashtbl.map ~f:Hash_set.to_list protocol_keys);
 
-    Protocols.write_through SharedMemory.SingletonKey.key (Hash_set.to_list protocols);
+    protocols
+    |> Hash_set.to_list
+    |> Type.Set.Tree.of_list
+    |> Protocols.write_through SharedMemory.SingletonKey.key;
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;

@@ -123,6 +123,20 @@ let test_register_modules _ =
     (annotation (Type.dictionary ~key:Type.string ~value:Type.Any))
 
 
+let test_purge _ =
+  Handler.register_protocol ~handle:(File.Handle.create "test.py") (Type.Primitive "MyProtocol");
+  assert_equal
+    ~printer:(List.to_string ~f:Type.show)
+    (Handler.protocols ())
+    [Type.Primitive "MyProtocol"];
+
+  Handler.purge [File.Handle.create "test.py"];
+  assert_equal
+    ~printer:(List.to_string ~f:Type.show)
+    (Handler.protocols ())
+    []
+
+
 let test_normalize_dependencies _ =
   let handle = File.Handle.create "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
@@ -200,5 +214,6 @@ let () =
     "normalize_dependencies">::test_normalize_dependencies;
     "normalize_order_keys">::test_normalize_order_keys;
     "register_modules">::test_register_modules;
+    "purge">::test_purge;
   ]
   |> Test.run
