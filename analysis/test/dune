@@ -26,6 +26,7 @@
   RefinementTest
   ResolutionTest
   TypeCheckTest
+  TypeConstraintsTest
   TypeOrderTest
   TypeTest
   annotatedCallableTest

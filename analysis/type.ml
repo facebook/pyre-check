@@ -117,6 +117,14 @@ and typed_dictionary_field = {
 }
 
 
+and variable = {
+  variable: Identifier.t;
+  constraints: constraints;
+  variance: variance;
+  state: variable_state;
+}
+
+
 and t =
   | Bottom
   | Callable of t Record.Callable.record
@@ -129,12 +137,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of {
-      variable: Identifier.t;
-      constraints: constraints;
-      variance: variance;
-      state: variable_state;
-    }
+  | Variable of variable
 [@@deriving compare, eq, sexp, show, hash]
 
 
