@@ -396,6 +396,7 @@ let is_property_access ~resolution ~expression:{ Node.location; value = expressi
           Recognized.property_decorators
       in
       (Type.access annotation) @ [Identifier member]
+      |> Reference.from_access
       |> Resolution.function_definitions resolution
       >>| (function
           | [{ Node.value = define; _ }] -> is_property define

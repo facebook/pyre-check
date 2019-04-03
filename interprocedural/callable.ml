@@ -7,7 +7,6 @@ open Core
 
 open Ast
 open Statement
-open Expression
 open Analysis
 open Pyre
 
@@ -173,7 +172,7 @@ let class_matches search { Node.value = { Class.name; _ } ; _ } =
 
 let get_definition ~resolution = function
   | `Function name ->
-      (Access.create name)
+      (Reference.create name)
       |> Resolution.function_definitions resolution
       >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
   | `Method { class_name; method_name; } ->

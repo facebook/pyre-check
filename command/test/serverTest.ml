@@ -1826,7 +1826,7 @@ let test_incremental_repopulate context =
       errors
   in
   let get_annotation access_name =
-    match Resolution.function_definitions resolution (!+access_name) with
+    match Resolution.function_definitions resolution (!&access_name) with
     | Some [ { Node.value = { Statement.Define.signature = { return_annotation; _ }; _ }; _ } ] ->
         return_annotation
     | _ -> None

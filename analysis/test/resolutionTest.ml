@@ -268,7 +268,7 @@ let test_resolve_mutable_literals _ =
 
 
 let test_function_definitions _ =
-  let assert_functions sources access expected =
+  let assert_functions sources function_name expected =
     let sources =
       let source (path, content) = path, trim_extra_indentation content in
       List.map sources ~f:source
@@ -302,7 +302,7 @@ let test_function_definitions _ =
       resolution ~sources ()
     in
     let functions =
-      Resolution.function_definitions resolution (!+access)
+      Resolution.function_definitions resolution (!&function_name)
       >>| List.map
         ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } -> Reference.show name)
       |> Option.value ~default:[]

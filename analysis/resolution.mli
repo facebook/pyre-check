@@ -80,7 +80,7 @@ module FunctionDefinitionsCache : sig
   val invalidate: unit -> unit
 end
 
-val function_definitions: t -> Access.t -> ((Define.t Node.t) list) option
+val function_definitions: t -> Reference.t -> ((Define.t Node.t) list) option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
 val is_compatible_with: t -> left: Type.t -> right: Type.t -> bool

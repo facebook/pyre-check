@@ -198,7 +198,7 @@ let generics ({ generics; _ } as resolution) =
 
 module FunctionDefinitionsCache = struct
   let cache =
-    Access.Table.create ()
+    Reference.Table.create ()
 
   let enabled =
     (* Only enable this in nonincremental mode for now. *)
@@ -221,8 +221,8 @@ module FunctionDefinitionsCache = struct
 end
 
 
-let function_definitions resolution access =
-  match FunctionDefinitionsCache.get access with
+let function_definitions resolution reference =
+  match FunctionDefinitionsCache.get reference with
   | Some result ->
       result
   | None ->
@@ -230,24 +230,24 @@ let function_definitions resolution access =
         let rec qualifier ~lead ~tail =
           match tail with
           | head :: tail ->
-              let new_lead = lead @ [head] in
-              if Option.is_none (module_definition resolution (Reference.from_access new_lead)) then
+              let new_lead = Reference.create ~prefix:lead head in
+              if Option.is_none (module_definition resolution new_lead) then
                 lead
               else
                 qualifier ~lead:new_lead ~tail
           | _ ->
               lead
         in
-        qualifier ~lead:[] ~tail:access
+        qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
       in
       let result =
-        Ast.SharedMemory.Sources.get_for_qualifier (Reference.from_access qualifier)
+        Ast.SharedMemory.Sources.get_for_qualifier qualifier
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter
           ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-              Access.equal access (Reference.access name))
+              Reference.equal reference name)
       in
-      FunctionDefinitionsCache.set access result;
+      FunctionDefinitionsCache.set reference result;
       result
 
 
