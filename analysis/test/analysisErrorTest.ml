@@ -13,27 +13,40 @@ open Statement
 open Test
 
 
+let signature_value ?(return_annotation = Some !"int") ?(name = "foo") () =
+  {
+    Define.name = Reference.create name;
+    parameters = [];
+    decorators = [];
+    docstring = None;
+    return_annotation;
+    async = false;
+    parent = None;
+  }
+
+
+
 let define_value ?(return_annotation = Some !"int") ?(body = []) ?(name = "foo") () =
   {
-    Statement.Define.signature = {
-      name = !&name;
-      parameters = [];
-      decorators = [];
-      docstring = None;
-      return_annotation;
-      async = false;
-      parent = None;
-    };
+    Define.signature = signature_value ~return_annotation ~name ();
     body;
   }
 
 
-let untyped_define =
-  +(define_value ~return_annotation:None ~body:[] ())
+let untyped_signature =
+  +(signature_value ~return_annotation:None ())
+
+
+let signature () =
+  +(signature_value ())
 
 
 let define ?(body = []) () =
   +(define_value ~body ())
+
+
+let mock_signature =
+  signature ()
 
 
 let mock_define =
@@ -43,8 +56,8 @@ let mock_define =
 let mock_parent = Type.Primitive "foo"
 
 
-let error ?(define = mock_define) ?(location = Location.Instantiated.any) kind =
-  { Error.location; kind; define }
+let error ?(signature = mock_signature) ?(location = Location.Instantiated.any) kind =
+  { Error.location; kind; signature }
 
 
 let revealed_type access annotation =
@@ -64,10 +77,12 @@ let missing_return annotation =
   }
 
 
-let incompatible_return_type ?(due_to_invariance = false) actual expected =
+let incompatible_return_type
+    ?(is_unimplemented = false) ?(due_to_invariance = false) actual expected =
   Error.IncompatibleReturnType {
     mismatch = { Error.actual; expected; due_to_invariance };
     is_implicit = false;
+    is_unimplemented;
   }
 
 
@@ -316,6 +331,7 @@ let test_due_to_analysis_limitations _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType {
@@ -325,6 +341,7 @@ let test_due_to_analysis_limitations _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleReturnType {
@@ -334,6 +351,7 @@ let test_due_to_analysis_limitations _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
 
   (* UndefinedType. *)
@@ -419,6 +437,7 @@ let test_due_to_mismatch_with_any _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType {
@@ -428,6 +447,7 @@ let test_due_to_mismatch_with_any _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
   assert_not_due_to_mismatch_with_any
     (Error.IncompatibleReturnType {
@@ -437,6 +457,7 @@ let test_due_to_mismatch_with_any _ =
           due_to_invariance = false;
         };
         is_implicit = false;
+        is_unimplemented = false;
       });
 
   (* IncompatibleVariableType *)
@@ -1006,14 +1027,14 @@ let test_filter _ =
       |};
     ];
   let resolution = TypeCheck.resolution environment () in
-  let assert_filtered ?(location = Location.Instantiated.any) ?(define = mock_define) kind =
-    let errors = [error ~define ~location kind] in
+  let assert_filtered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
+    let errors = [error ~signature ~location kind] in
     assert_equal
       []
       (filter ~configuration ~resolution errors)
   in
-  let assert_unfiltered ?(location = Location.Instantiated.any) ?(define = mock_define) kind =
-    let errors = [error ~define ~location kind] in
+  let assert_unfiltered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
+    let errors = [error ~signature ~location kind] in
     assert_equal
       ~cmp:(List.equal ~equal)
       errors
@@ -1039,10 +1060,7 @@ let test_filter _ =
 
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
-  assert_filtered
-    ~define:(define ~body:[+Statement.Pass;
-                           +Statement.Return { Return.expression = None; is_implicit = false }] ())
-    (incompatible_return_type Type.integer Type.float);
+  assert_filtered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
 
   (* Suppress errors due to importing builtins. *)
   let undefined_import import = UndefinedImport (!&import) in
@@ -1085,15 +1103,15 @@ let test_filter _ =
 
 let test_suppress _ =
   let resolution = Test.resolution () in
-  let assert_suppressed mode ?(define = mock_define) ?location kind =
+  let assert_suppressed mode ?(signature = mock_signature) ?location kind =
     assert_equal
       true
-      (Error.suppress ~mode ~resolution (error ~define ?location kind))
+      (Error.suppress ~mode ~resolution (error ~signature ?location kind))
   in
-  let assert_not_suppressed mode ?(define = mock_define) kind =
+  let assert_not_suppressed mode ?(signature = mock_signature) kind =
     assert_equal
       false
-      (Error.suppress ~mode ~resolution (error ~define kind))
+      (Error.suppress ~mode ~resolution (error ~signature kind))
   in
 
   (* Test different modes. *)
@@ -1112,7 +1130,8 @@ let test_suppress _ =
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
   assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Any);
   assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
-  assert_not_suppressed ~define:untyped_define Source.Default (revealed_type "a" Type.integer);
+  assert_not_suppressed
+    ~signature:untyped_signature Source.Default (revealed_type "a" Type.integer);
   assert_suppressed Source.Default (Error.UndefinedName (!&"reveal_type"));
   assert_not_suppressed Source.Default (Error.AnalysisFailure Type.integer);
 

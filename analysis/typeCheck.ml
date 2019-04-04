@@ -2617,7 +2617,7 @@ module State = struct
                   parent = define_parent;
                   return_annotation = return_annotation_expression;
                   _;
-                }; _ } as define;
+                }; body } as define;
             } as define_node);
           _;
         } as state)
@@ -2653,6 +2653,18 @@ module State = struct
            not (Define.is_overloaded_method define) &&
            not (Type.is_none actual && (Annotated.Callable.is_generator define)) &&
            not (Type.is_none actual && Type.is_noreturn return_annotation) then
+          let rec check_unimplemented = function
+            | [{ Node.value = Statement.Pass; _ };
+               { Node.value = Statement.Return { Return.expression = None; _ }; _ }] ->
+                true
+            | {
+              Node.value = Statement.Expression { Node.value = Expression.String _; _ };
+              _;
+            } :: tail ->
+                check_unimplemented tail
+            | _ ->
+                false
+          in
           emit_error
             ~state
             ~location
@@ -2665,6 +2677,7 @@ module State = struct
                             ~expected:return_annotation
                             ~covariant:true);
                        is_implicit;
+                       is_unimplemented = check_unimplemented body
                      })
             ~define:define_node
         else

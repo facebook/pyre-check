@@ -86,7 +86,7 @@ type kind =
       callee: Reference.t option;
       mismatch: mismatch;
     }
-  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
+  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
   | IncompleteType of {
       target: Expression.Access.general_access;

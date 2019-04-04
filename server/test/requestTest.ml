@@ -265,7 +265,7 @@ let test_process_display_type_errors_request _ =
                 {
                   Analysis.Error.location;
                   kind = Analysis.Error.UndefinedName (Reference.create undefined);
-                  define = +mock_define;
+                  signature = +mock_signature;
                 }
               in
               List.map errors ~f:error

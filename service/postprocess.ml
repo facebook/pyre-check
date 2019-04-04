@@ -139,9 +139,9 @@ let ignore ~configuration scheduler handles errors =
             (Ignore.location unused_ignore)
             ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
-        define = {
+        signature = {
           Node.location = Ignore.location unused_ignore;
-          value = Statement.Define.create_toplevel ~qualifier:None ~statements:[];
+          value = Statement.Define.Signature.create_toplevel ~qualifier:None;
         };
       }
     in

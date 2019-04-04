@@ -18,12 +18,12 @@ module type Kind = sig
   val name: t -> string
   val messages:
     concise: bool
-    -> define: Define.t Node.t
+    -> signature: Define.signature Node.t
     -> Location.Instantiated.t
     -> t
     -> string list
   val inference_information:
-    define: Define.t Node.t
+    signature: Define.signature Node.t
     -> t
     -> Yojson.Safe.json
 end
@@ -35,13 +35,13 @@ module type Error = sig
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    define: Statement.Define.t Node.t;
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
   include Hashable with type t := t
 
-  val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
+  val create: location: Location.t -> kind: kind -> define: Define.t Node.t -> t
 
   val kind: t -> kind
   val path: t -> string
@@ -66,7 +66,7 @@ module Make(Kind: Kind) = struct
   type t = {
     location: Location.Instantiated.t;
     kind: Kind.t;
-    define: Define.t Node.t;
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -82,11 +82,12 @@ module Make(Kind: Kind) = struct
 
 
   let create ~location ~kind ~define  =
+    let { Node.value = { Define.signature; _ }; location = define_location } = define in
     {
       location =
         Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location;
       kind;
-      define
+      signature = { Node.value = signature; location = define_location };
     }
 
 
@@ -114,11 +115,11 @@ module Make(Kind: Kind) = struct
       ({
         kind;
         location;
-        define;
+        signature;
         _;
       })
       ~show_error_traces =
-    let messages = Kind.messages ~concise ~define location kind in
+    let messages = Kind.messages ~concise ~signature location kind in
     Format.asprintf
       "%s [%d]: %s"
       (Kind.name kind)
@@ -141,7 +142,7 @@ module Make(Kind: Kind) = struct
         location =
           { Location.path; start = { Location.line = start_line; column = start_column }; _ };
         kind;
-        define = ({ Node.value = define; _ } as define_node);
+        signature = ({ Node.value = signature; _ } as signature_node);
         _;
       } as error) =
     `Assoc ([
@@ -155,8 +156,8 @@ module Make(Kind: Kind) = struct
         "concise_description", `String (
           description error ~show_error_traces ~concise:true ~separator:"\n"
         );
-        "inference", (Kind.inference_information ~define:define_node kind);
-        "define", `String (Reference.show_sanitized define.Define.signature.name);
+        "inference", (Kind.inference_information ~signature:signature_node kind);
+        "define", `String (Reference.show_sanitized signature.name);
       ])
 
 

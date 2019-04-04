@@ -99,7 +99,7 @@ type kind =
       callee: Reference.t option;
       mismatch: mismatch;
     }
-  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
+  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
   | IncompleteType of {
       target: Access.general_access;
@@ -310,14 +310,14 @@ let weaken_literals kind =
       kind
 
 
-let messages ~concise ~define location kind =
+let messages ~concise ~signature location kind =
   let {
     Location.start = { Location.line = start_line; _ };
     Location.stop = { Location.line = stop_line; _ };
     _;
   } = location
   in
-  let { Node.value = { Define.signature = { name = define_name; _ }; _ }; _ } = define in
+  let { Node.value = { Define.name = define_name; _ }; location = define_location } = signature in
   let ordinal number =
     let suffix =
       if (number % 10 = 1) && (number % 100 <> 11) then "st"
@@ -457,13 +457,13 @@ let messages ~concise ~define location kind =
           pp_type
           annotation;
       ]
-  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit } ->
+  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit; _ } ->
       let trace =
         Format.asprintf
           "Type `%a` expected on line %d, specified on line %d.%s"
           pp_type expected
           stop_line
-          define.Node.location.Location.start.Location.line
+          define_location.Location.start.Location.line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
       let message =
@@ -1216,17 +1216,15 @@ let messages ~concise ~define location kind =
 
 
 let inference_information
-    ~define:
+    ~signature:
     {
       Node.value = {
-        Define.signature = {
-          name;
-          parameters;
-          return_annotation;
-          decorators;
-          parent;
-          async;
-          _ };
+        Define.name;
+        parameters;
+        return_annotation;
+        decorators;
+        parent;
+        async;
         _
       };
       _
@@ -1806,6 +1804,7 @@ let join ~resolution left right =
         IncompatibleReturnType {
           mismatch = join_mismatch left.mismatch right.mismatch;
           is_implicit = left.is_implicit && right.is_implicit;
+          is_unimplemented = left.is_unimplemented && right.is_unimplemented
         }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
@@ -1985,7 +1984,7 @@ let join ~resolution left right =
           pp_kind right.kind;
         Top
   in
-  { location = left.location; kind; define = left.define }
+  { location = left.location; kind; signature = left.signature }
 
 
 let meet ~resolution:_ left _ =
@@ -2088,20 +2087,8 @@ let filter ~configuration ~resolution errors =
     in
     let is_unimplemented_return_error error =
       match error with
-      | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
-          let rec check_statements = function
-            | [{ Node.value = Statement.Pass; _ };
-               { Node.value = Statement.Return { Return.expression = None; _ }; _ }] ->
-                true
-            | {
-              Node.value = Statement.Expression { Node.value = Expression.String _; _ };
-              _;
-            } :: tail ->
-                check_statements tail
-            | _ ->
-                false
-          in
-          check_statements body
+      | { kind = IncompatibleReturnType { is_unimplemented; _ } ; _ } ->
+          is_unimplemented
       | _ ->
           false
     in
@@ -2246,7 +2233,9 @@ let suppress ~mode ~resolution error =
           due_to_mismatch_with_any resolution error
   in
 
-  let suppress_in_default ~resolution ({ kind; define = { Node.value = define; _ }; _ } as error) =
+  let suppress_in_default
+      ~resolution
+      ({ kind; signature = { Node.value = signature; _ }; _ } as error) =
     match kind with
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
@@ -2278,7 +2267,7 @@ let suppress ~mode ~resolution error =
     | _ ->
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any resolution error ||
-        (Define.is_untyped define && not (Define.is_toplevel define))
+        (Define.Signature.is_untyped signature && not (Define.Signature.is_toplevel signature))
   in
 
   let suppress_in_infer { kind; _ } =
@@ -2316,9 +2305,9 @@ let dequalify
     ~resolution
     ({
       kind;
-      define = {
+      signature = {
         Node.location;
-        value = ({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
+        value = ({ parameters; return_annotation; _ } as signature)
       }; _ } as error) =
   let dequalify = Type.dequalify dequalify_map in
   let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
@@ -2460,7 +2449,7 @@ let dequalify
     | Unpack unpack ->
         Unpack unpack
   in
-  let define =
+  let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
       value.Parameter.annotation
       >>| Resolution.parse_annotation ~allow_untracked:true resolution
@@ -2476,10 +2465,9 @@ let dequalify
       >>| dequalify
       >>| Type.expression
     in
-    let signature = { define.signature with parameters; return_annotation } in
-    { define with signature }
+    { signature with parameters; return_annotation }
   in
-  { error with kind; define = { Node.location; value = define} }
+  { error with kind; signature = { Node.location; value = signature} }
 
 
 let create_mismatch ~resolution ~actual ~expected ~covariant =
