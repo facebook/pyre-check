@@ -373,7 +373,15 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 >>| (fun { Resolution.successors; _ } -> successors)
                 |> Option.value ~default:[]
               in
-              annotation :: successors
+              let base_annotation =
+                (* Our model definitions are ambiguous. Models could either refer to a class
+                   variable or an instance variable. We explore both. *)
+                if Type.is_meta annotation then
+                  [Type.single_parameter annotation]
+                else
+                  []
+              in
+              annotation :: successors @ base_annotation
             in
             let attribute_taint sofar annotation =
               Reference.create ~prefix:(Type.class_name annotation) member
