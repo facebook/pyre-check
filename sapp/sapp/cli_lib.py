@@ -91,6 +91,8 @@ def explore(ctx: Context):
     scope_vars = Interactive(ctx.database, ctx.repository).setup()
     config = Config()
     config.InteractiveShellApp.extensions = ctx.ipython_extensions
+    config.InteractiveShellApp.profile = "sapp"
+    config.InteractiveShellApp.display_banner = False
     IPython.start_ipython(argv=[], user_ns=scope_vars, config=config)
 
 
