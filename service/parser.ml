@@ -253,7 +253,8 @@ let find_stubs
                      path <> "tests" &&
                      not (String.is_prefix path ~prefix:".")
                   then
-                    (Path.create_relative ~root:typeshed_path ~relative:path) :: sofar
+                    (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))
+                    :: sofar
                   else
                     sofar
                 in
@@ -270,7 +271,8 @@ let find_stubs
         Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
       in
       let stubs root =
-        Log.info "Finding type stubs in `%a`..." Path.pp root;
+        let search_root = Path.SearchPath.to_path root in
+        Log.info "Finding type stubs in `%a`..." Path.pp search_root;
         let directory_filter path =
           let is_python_2_directory path =
             String.is_suffix ~suffix:"/2" path ||
@@ -292,15 +294,14 @@ let find_stubs
             File.create path
             |> File.handle ~configuration
             |> File.Handle.show
-            |> fun relative -> Path.create_relative ~root ~relative
+            |> fun relative -> Path.create_relative ~root:(Path.SearchPath.get_root root) ~relative
           in
           Path.equal reconstructed path
         in
-        Path.list ~file_filter ~directory_filter ~root ()
+        Path.list ~file_filter ~directory_filter ~root:(search_root) ()
         |> List.filter ~f:keep
       in
-      let search_path = List.map search_path ~f:Path.SearchPath.to_path in
-      List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))
+      List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
     in
     let modules =
       let modules root =
