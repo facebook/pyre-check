@@ -1,0 +1,176 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Pyre Static Analysis · Pyre</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="&lt;p&gt;Pyre has applications beyond typechecking python code. It can also run static&lt;/p&gt;
+"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Pyre Static Analysis · Pyre"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pyre-check.org/index.html"/><meta property="og:description" content="&lt;p&gt;Pyre has applications beyond typechecking python code. It can also run static&lt;/p&gt;
+"/><meta name="twitter:card" content="summary"/><link rel="shortcut icon" href="/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/integrated_logo_light.png" alt="Pyre"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/docs/installation.html" target="_self">Getting Started</a></li><li class="siteNavGroupActive"><a href="/docs/overview.html" target="_self">Documentation</a></li><li class=""><a href="https://github.com/facebook/pyre-check" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><i></i></div><h2><i>›</i><span>Contents</span></h2></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Contents</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/overview.html">Overview</a></li><li class="navListItem"><a class="navItem" href="/docs/installation.html">Installation</a></li><li class="navListItem"><a class="navItem" href="/docs/guided-tour.html">Guided Tour</a></li><li class="navListItem"><a class="navItem" href="/docs/configuration.html">Configuring Pyre</a></li><li class="navListItem"><a class="navItem" href="/docs/gradual-typing.html">Gradual Typing</a></li><li class="navListItem"><a class="navItem" href="/docs/error-suppression.html">Error Suppression</a></li><li class="navListItem"><a class="navItem" href="/docs/error-types.html">Error Types</a></li><li class="navListItem"><a class="navItem" href="/docs/lsp-integration.html">Editor Integration</a></li><li class="navListItem"><a class="navItem" href="/docs/watchman-integration.html">Watchman Integration</a></li><li class="navListItem"><a class="navItem" href="/docs/querying-pyre.html">Querying Pyre</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/docs/static-analysis.html">Pyre Static Analysis</a></li><li class="navListItem"><a class="navItem" href="/docs/static-analysis-post-processor.html">Static Analysis Processor</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              const headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                if (event.target.tagName === 'A') {
+                  document.body.classList.remove('tocActive');
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">Pyre Static Analysis</h1></header><article><div><span><p>Pyre has applications beyond typechecking python code. It can also run static
+analysis and identify potential security issues in python code.</p>
+<h2><a class="anchor" aria-hidden="true" id="taint-analysis"></a><a href="#taint-analysis" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Taint Analysis</h2>
+<p><strong>Tainted data</strong> is data that must be treated carefully. As general examples,
+sensitive data should not be logged and user-controlled data should be sanitized.</p>
+<p>Using stubs, we can define where in our code there exist taint sources
+(ex. user input) and sinks (ex. system call). Pyre uses these stubs to surface
+data flows from sources to sinks as potential security issues.</p>
+<h2><a class="anchor" aria-hidden="true" id="example"></a><a href="#example" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Example</h2>
+<p>Let's look at a simple taint analysis example. To follow along, create a
+directory <code>static_analysis_example</code> and navigate to it.</p>
+<h3><a class="anchor" aria-hidden="true" id="setup"></a><a href="#setup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Setup</h3>
+<p>The setup requires the following 4 files.</p>
+<h4><a class="anchor" aria-hidden="true" id="1-source-code"></a><a href="#1-source-code" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>1. Source Code</h4>
+<pre><code class="hljs css language-python"><span class="hljs-comment"># static_analysis_example/source.py</span>
+
+<span class="hljs-keyword">import</span> os
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_image</span><span class="hljs-params">(url)</span>:</span>
+    command = <span class="hljs-string">"wget -q https:{}"</span>.format(url)
+    <span class="hljs-keyword">return</span> os.system(command)
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">convert</span><span class="hljs-params">()</span>:</span>
+    image_link = input(<span class="hljs-string">"image link: "</span>)
+    image = get_image(image_link)
+</code></pre>
+<p>Notice the following:</p>
+<ul>
+<li>The <code>input</code> function is a taint source since it gets input directly from
+the user.</li>
+<li>The <code>os.system</code> function is a taint sink, since we do not want user-controlled
+values to flow into it.</li>
+<li>The return value of <code>input</code> is used as the URL for a <code>wget</code> call, which is
+executed by <code>os.system</code>. The <code>wget</code> can therefore be doing anything, out of
+the programmer's control.</li>
+<li>This data flow should be identified as a potential security issue.</li>
+</ul>
+<h4><a class="anchor" aria-hidden="true" id="2-taint-config"></a><a href="#2-taint-config" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>2. Taint Config</h4>
+<pre><code class="hljs css language-python"><span class="hljs-comment"># static_analysis_example/stubs/taint/taint.config</span>
+
+{
+  sources: [
+    {
+      name: <span class="hljs-string">"UserSpecified"</span>,
+      comment: <span class="hljs-string">"use to annotate user input"</span>
+    }
+  ],
+
+  sinks: [
+    {
+      name: <span class="hljs-string">"RemoteCodeExecution"</span>,
+      comment: <span class="hljs-string">"use to annotate execution of code"</span>
+    }
+  ],
+
+  features: [],
+
+  rules: [
+    {
+      name: <span class="hljs-string">"Possible shell injection"</span>,
+      code: <span class="hljs-number">5001</span>,
+      sources: [ <span class="hljs-string">"UserSpecified"</span> ],
+      sinks: [ <span class="hljs-string">"RemoteCodeExecution"</span> ],
+      message_format: <span class="hljs-string">"Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"</span>
+    }
+  ]
+}
+</code></pre>
+<p>This declares the valid sources and sinks that Pyre should recognize. We
+also tell Pyre that data flowing from a <code>UserSpecified</code> source to a
+<code>RemoteCodeExecution</code> sink is a possible shell injection.</p>
+<h4><a class="anchor" aria-hidden="true" id="3-taint-stubs"></a><a href="#3-taint-stubs" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>3. Taint Stubs</h4>
+<pre><code class="hljs css language-python"><span class="hljs-comment"># static_analysis_example/stubs/taint/general.pysa</span>
+
+<span class="hljs-comment"># model for raw_input</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">input</span><span class="hljs-params">(prompt = ...)</span> -&gt; TaintSource[UserSpecified]:</span> ...
+
+<span class="hljs-comment"># model for os.system</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">os</span>.<span class="hljs-title">system</span><span class="hljs-params">(command: TaintSink[RemoteCodeExecution])</span>:</span> ...
+</code></pre>
+<p>This file links together the information in <code>source.py</code> and <code>taint.config</code>. We
+use it to tell Pyre where in our code there exist sources and sinks.</p>
+<h4><a class="anchor" aria-hidden="true" id="4-pyre-configuration"></a><a href="#4-pyre-configuration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>4. Pyre Configuration</h4>
+<pre><code class="hljs css language-python"><span class="hljs-comment"># static_analysis_example/.pyre_configuration</span>
+
+{
+  <span class="hljs-string">"source_directories"</span>: [<span class="hljs-string">"."</span>],
+  <span class="hljs-string">"taint_models_path"</span>: <span class="hljs-string">"stubs/taint"</span>
+}
+</code></pre>
+<p>Pyre needs to know what directory to analyze, as well as where to find the config
+and stub files.</p>
+<h3><a class="anchor" aria-hidden="true" id="analysis"></a><a href="#analysis" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Analysis</h3>
+<p>Now let's run the static analysis:</p>
+<pre><code class="hljs css language-shell">[~/static_analysis_example] $ pyre analyze
+ ƛ Fixpoint iterations: 2
+[
+  {
+    "line": 9,
+    "column": 22,
+    "path": "source.py",
+    "code": 5001,
+    "name": "Possible shell injection",
+    "description":
+      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "long_description":
+      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "concise_description":
+      "Possible shell injection [5001]: Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "inference": null,
+    "define": "source.convert"
+  }
+]
+</code></pre>
+<p>Looking at the output, we see that pyre surfaces the tainted data flow that we
+expected.</p>
+<p>Let's run it again and save the results:</p>
+<pre><code class="hljs css language-shell">[~/static_analysis_example] $ pyre analyze --save-results-to ./
+</code></pre>
+<p>The <code>--save-results-to</code> option will save more detailed results to
+<code>./taint-output.json</code>.</p>
+<h3><a class="anchor" aria-hidden="true" id="understanding-the-results"></a><a href="#understanding-the-results" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Understanding the results</h3>
+<p>See <a href="./static-analysis-post-processor.html">Static Analysis Post Processor</a>.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/querying-pyre.html"><span class="arrow-prev">← </span><span>Querying Pyre</span></a><a class="docs-next button" href="/docs/static-analysis-post-processor.html"><span>Static Analysis Processor</span><span class="arrow-next"> →</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>

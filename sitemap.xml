@@ -13,5 +13,6 @@
 <url> <loc>https://pyre-check.org/docs/overview.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/overview.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/querying-pyre.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/querying-pyre.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/static-analysis-post-processor.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/static-analysis-post-processor.html" /> </url>
+<url> <loc>https://pyre-check.org/docs/static-analysis.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/static-analysis.html" /> </url>
 <url> <loc>https://pyre-check.org/docs/watchman-integration.html</loc> <changefreq>hourly</changefreq> <priority>1.0</priority> <xhtml:link rel="alternate" hreflang="en" href="https://pyre-check.org/docs/watchman-integration.html" /> </url>
 </urlset>
