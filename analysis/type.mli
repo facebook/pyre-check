@@ -67,6 +67,7 @@ and constraints =
   | Bound of t
   | Explicit of t list
   | Unconstrained
+  | LiteralIntegers
 
 and variance =
   | Covariant

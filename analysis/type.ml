@@ -103,6 +103,7 @@ and constraints =
   | Bound of t
   | Explicit of t list
   | Unconstrained
+  | LiteralIntegers
 
 
 and variance =
@@ -364,6 +365,15 @@ let rec pp format annotation =
         (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Variable { variable; constraints; variance; _ } ->
+      let name =
+        match constraints with
+        | Bound _
+        | Explicit _
+        | Unconstrained ->
+            "Variable"
+        | LiteralIntegers ->
+            "IntegerVariable"
+      in
       let constraints =
         match constraints with
         | Bound bound ->
@@ -375,6 +385,8 @@ let rec pp format annotation =
               constraints
         | Unconstrained ->
             ""
+        | LiteralIntegers ->
+            ""
       in
       let variance =
         match variance with
@@ -384,7 +396,8 @@ let rec pp format annotation =
       in
       Format.fprintf
         format
-        "Variable[%s%s]%s"
+        "%s[%s%s]%s"
+        name
         (Identifier.sanitized variable)
         constraints
         variance
@@ -1030,6 +1043,8 @@ module Transform = struct
                   Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained ->
                   Unconstrained
+              | LiteralIntegers ->
+                  LiteralIntegers
             in
             Variable { variable with constraints }
 
@@ -1661,6 +1676,21 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
             variable value ~constraints ~variance
 
         | Access
+            (SimpleAccess [
+                Access.Identifier "pyre_check";
+                Access.Identifier "extensions";
+                Access.Identifier "IntVar";
+                Access.Call ({
+                    Node.value = {
+                      Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                      _;
+                    } :: [];
+                    _;
+                  });
+              ]) ->
+            variable value ~constraints:LiteralIntegers
+
+        | Access
             (SimpleAccess
                ((Access.Identifier "typing")
                 :: (Access.Identifier "Callable")
@@ -2269,6 +2299,8 @@ let upper_bound { constraints; _ } =
       bound
   | Explicit explicits ->
       union explicits
+  | LiteralIntegers ->
+      integer
 
 
 let contains_escaped_free_variable =

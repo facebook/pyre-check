@@ -114,11 +114,22 @@ module OrderedConstraints(Order: OrderType) = struct
           (* When doing multiple solves, all of these options ought to be considered, *)
           (* and solved in a fixpoint *)
           List.find ~f:(contains interval ~order) explicits
-      | Type.Bound exogenous_bound ->
+      | Bound exogenous_bound ->
           join order interval (create ~upper_bound:exogenous_bound ())
           |> lowest_non_bottom_member ~order
-      | Type.Unconstrained ->
+      | Unconstrained ->
           lowest_non_bottom_member interval ~order
+      | LiteralIntegers ->
+          let is_literal_integer = function
+            | Type.Literal Type.Integer _ -> true
+            | Variable { constraints = LiteralIntegers; _ } -> true
+            | _ -> false
+          in
+          let member = lowest_non_bottom_member interval ~order in
+          match member with
+          | Some found_member when is_literal_integer found_member -> member
+          | Some (Type.Union union) when List.for_all union ~f:is_literal_integer -> member
+          | _ -> None
   end
 
   type order = Order.t

@@ -1075,6 +1075,17 @@ let test_less_or_equal _ =
        ~left:Type.integer
        ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"));
 
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.LiteralIntegers) "T"));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.LiteralIntegers) "T")
+       ~right:Type.integer);
+
   (* Behavioral subtyping of callables. *)
   let less_or_equal ?implements order ~left ~right =
     let aliases = function
@@ -2144,6 +2155,18 @@ let test_join _ =
        Type.string
        (Type.variable ~constraints:(Type.Explicit [Type.float; Type.integer]) "T"))
     (Type.union [Type.float; Type.integer; Type.string]);
+  assert_type_equal
+    (join
+       order
+       Type.string
+       (Type.variable ~constraints:(Type.LiteralIntegers) "T"))
+    (Type.union [Type.integer; Type.string]);
+  assert_type_equal
+    (join
+       order
+       (Type.literal_integer 7)
+       (Type.variable ~constraints:(Type.LiteralIntegers) "T"))
+    Type.integer;
 
   (* Variance. *)
   assert_type_equal

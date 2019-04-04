@@ -626,6 +626,40 @@ let test_distinguish _ =
   ()
 
 
+let test_integer_variables _ =
+  assert_type_errors
+    {|
+      T = pyre_check.extensions.IntVar("T")
+      X = pyre_check.extensions.IntVar("X")
+      def baz(x: X) -> X:
+        return x
+      def bop(x: int) -> None:
+        pass
+      def foo(x: T) -> T:
+        y = x.__add__(5)
+        z = baz(x)
+        bop(x)
+        return z
+      def bar() -> None:
+        x = foo(1)
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
+  assert_type_errors
+    {|
+      X = pyre_check.extensions.IntVar("X")
+      def baz(x: X) -> X:
+        return x
+      def bar(y: int) -> None:
+        baz(y)
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `IntegerVariable[X]` for 1st anonymous " ^
+      "parameter to call `baz` but got `int`.";
+    ];
+  ()
+
+
 
 let () =
   "typeVariable">:::[
@@ -633,5 +667,6 @@ let () =
     "check_variable_bindings">::test_check_variable_bindings;
     "unbound_variables">::test_unbound_variables;
     "distinguish">::test_distinguish;
+    "integer_variables">::test_integer_variables;
   ]
   |> Test.run
