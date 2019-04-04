@@ -13,6 +13,7 @@ open Expression
 
 type mismatch = {
   actual: Type.t;
+  actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
   position: int;
@@ -376,7 +377,7 @@ let select
           let rec set_constraints_and_reasons
               ~resolution
               ~position
-              ~argument:{ Argument.name; value = { Node.location; _ } }
+              ~argument:{ Argument.name; value = ({ Node.location; _ } as actual_expression) }
               ~argument_annotation
               ({ constraints_set; reasons = { annotation; _ }; _; } as signature_match) =
             let reasons_with_mismatch =
@@ -388,6 +389,7 @@ let select
                 in
                 {
                   actual = argument_annotation;
+                  actual_expression;
                   expected = parameter_annotation;
                   name = Option.map name ~f:Node.value;
                   position;

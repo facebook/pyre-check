@@ -18,6 +18,7 @@ type origin =
 
 type mismatch = {
   actual: Type.t;
+  actual_expressions: Expression.t list;
   expected: Type.t;
   due_to_invariance: bool;
 }
@@ -248,14 +249,14 @@ let name = function
 
 
 let weaken_literals kind =
-  let weaken_mismatch { actual; expected; due_to_invariance } =
+  let weaken_mismatch { actual; actual_expressions; expected; due_to_invariance } =
     let actual =
       if (Type.contains_literal expected) then
         actual
       else
         Type.weaken_literals actual
     in
-    { actual; expected; due_to_invariance }
+    { actual; actual_expressions; expected; due_to_invariance }
   in
   let weaken_missing_annotation = function
     | { given_annotation = Some given; _ } as missing when Type.contains_literal given ->
@@ -415,7 +416,7 @@ let messages ~concise ~signature location kind =
       name;
       position;
       callee;
-      mismatch = { actual; expected; due_to_invariance };
+      mismatch = { actual; expected; due_to_invariance; _ };
     } ->
       let trace =
         if due_to_invariance then
@@ -457,7 +458,8 @@ let messages ~concise ~signature location kind =
           pp_type
           annotation;
       ]
-  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit; _ } ->
+  | IncompatibleReturnType
+      { mismatch = { actual; expected; due_to_invariance; _ }; is_implicit; _ } ->
       let trace =
         Format.asprintf
           "Type `%a` expected on line %d, specified on line %d.%s"
@@ -482,7 +484,7 @@ let messages ~concise ~signature location kind =
       parent;
       incompatible_type = {
         name;
-        mismatch = { actual; expected; due_to_invariance };
+        mismatch = { actual; expected; due_to_invariance; _ };
         declare_location;
       };
     } ->
@@ -513,7 +515,7 @@ let messages ~concise ~signature location kind =
       [message; trace]
   | IncompatibleVariableType {
       name;
-      mismatch = { actual; expected; due_to_invariance };
+      mismatch = { actual; expected; due_to_invariance; _ };
       _;
     } ->
       let message =
@@ -543,7 +545,7 @@ let messages ~concise ~signature location kind =
   | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
-        | WeakenedPostcondition { actual; expected; due_to_invariance } ->
+        | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
             if Type.equal actual Type.Top then
               Format.asprintf
                 "The overriding method is not annotated but should return a subtype of `%a`."
@@ -555,7 +557,7 @@ let messages ~concise ~signature location kind =
                 "Returned type `%a` is not a subtype of the overridden return `%a`."
                 pp_type actual
                 pp_type expected
-        | StrengthenedPrecondition (Found { actual; expected; due_to_invariance }) ->
+        | StrengthenedPrecondition (Found { actual; expected; due_to_invariance; _ }) ->
             let extra_detail =
               if due_to_invariance then " " ^ invariance_message else ""
             in
@@ -1444,15 +1446,29 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
       Type.equal actual Type.Any
-  | ImpossibleIsinstance { mismatch = { actual; expected; _ }; _ }
-  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected; _ }); _ }
-  | InconsistentOverride { override = WeakenedPostcondition { actual; expected; _ }; _ }
-  | IncompatibleParameterType { mismatch = { actual; expected; _ }; _ }
-  | IncompatibleReturnType { mismatch = { actual; expected; _ }; _ }
-  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
-  | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
-      is_consistent_with ~actual ~expected
+  | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | InconsistentOverride
+      { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ }); _ }
+  | InconsistentOverride
+      { override = WeakenedPostcondition { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleParameterType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleReturnType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleAttributeType
+      { incompatible_type = { mismatch = { actual; actual_expressions; expected; _ }; _ }; _ }
+  | IncompatibleVariableType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | UninitializedAttribute { mismatch = { actual; actual_expressions; expected; _ }; _ } ->
+      let consistent () =
+        let expressions =
+          match actual_expressions with
+          | [] -> [None]
+          | expressions -> List.map expressions ~f:Option.some
+        in
+        let check_consistent sofar expression =
+          sofar && Resolution.is_consistent_with resolution actual expected ~expression
+        in
+        List.fold expressions ~init:true ~f:check_consistent
+      in
+      (Type.contains_any actual || Type.contains_any expected) && consistent ()
   | InvalidArgument (Keyword { annotation = actual; _ }) ->
       is_consistent_with
         ~actual
@@ -1699,6 +1715,7 @@ let join ~resolution left right =
     {
       expected = Resolution.join resolution left.expected right.expected;
       actual = Resolution.join resolution left.actual right.actual;
+      actual_expressions = left.actual_expressions @ right.actual_expressions;
       due_to_invariance = left.due_to_invariance || right.due_to_invariance;
     }
   in
@@ -2470,7 +2487,7 @@ let dequalify
   { error with kind; signature = { Node.location; value = signature} }
 
 
-let create_mismatch ~resolution ~actual ~expected ~covariant =
+let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant =
   let left, right =
     if covariant then
       actual, expected
@@ -2481,4 +2498,5 @@ let create_mismatch ~resolution ~actual ~expected ~covariant =
     expected;
     actual;
     due_to_invariance = Resolution.is_invariance_mismatch resolution ~left ~right;
+    actual_expressions = Option.to_list actual_expression;
   }

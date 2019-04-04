@@ -78,9 +78,13 @@ let missing_return annotation =
 
 
 let incompatible_return_type
-    ?(is_unimplemented = false) ?(due_to_invariance = false) actual expected =
+    ?(is_unimplemented = false)
+    ?(due_to_invariance = false)
+    ?(actual_expressions = [])
+    actual
+    expected =
   Error.IncompatibleReturnType {
-    mismatch = { Error.actual; expected; due_to_invariance };
+    mismatch = { Error.actual; actual_expressions; expected; due_to_invariance };
     is_implicit = false;
     is_unimplemented;
   }
@@ -121,6 +125,7 @@ let test_due_to_analysis_limitations _ =
           Error.name = !&"";
           mismatch = {
             Error.actual = Type.Top;
+            actual_expressions = [];
             expected = Type.Top;
             due_to_invariance = false;
           };
@@ -134,6 +139,7 @@ let test_due_to_analysis_limitations _ =
           Error.name = !&"";
           mismatch = {
             Error.actual = Type.Top;
+            actual_expressions = [];
             expected = Type.string;
             due_to_invariance = false;
           };
@@ -147,6 +153,7 @@ let test_due_to_analysis_limitations _ =
           Error.name = !&"";
           mismatch = {
             Error.actual = Type.string;
+            actual_expressions = [];
             expected = Type.Top;
             due_to_invariance = false;
           };
@@ -161,6 +168,7 @@ let test_due_to_analysis_limitations _ =
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.Top;
+          actual_expressions = [];
           expected = Type.Optional Type.Top;
           due_to_invariance = false;
         };
@@ -172,6 +180,7 @@ let test_due_to_analysis_limitations _ =
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Optional Type.string;
           due_to_invariance = false;
         };
@@ -283,6 +292,7 @@ let test_due_to_analysis_limitations _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.Top;
+          actual_expressions = [];
           expected = Type.Top;
           due_to_invariance = false;
         };
@@ -294,6 +304,7 @@ let test_due_to_analysis_limitations _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.Top;
+          actual_expressions = [];
           expected = Type.string;
           due_to_invariance = false;
         };
@@ -305,6 +316,7 @@ let test_due_to_analysis_limitations _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Top;
           due_to_invariance = false;
         };
@@ -317,6 +329,7 @@ let test_due_to_analysis_limitations _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.Primitive "typing.TypeAlias";
+          actual_expressions = [];
           expected = Type.Top;
           due_to_invariance = false;
         };
@@ -327,6 +340,7 @@ let test_due_to_analysis_limitations _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Top;
+          actual_expressions = [];
           expected = Type.Top;
           due_to_invariance = false;
         };
@@ -337,6 +351,7 @@ let test_due_to_analysis_limitations _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Top;
+          actual_expressions = [];
           expected = Type.string;
           due_to_invariance = false;
         };
@@ -347,6 +362,7 @@ let test_due_to_analysis_limitations _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Top;
           due_to_invariance = false;
         };
@@ -381,6 +397,7 @@ let test_due_to_mismatch_with_any _ =
         expression = !"expression";
         mismatch = {
           Error.actual = Type.Any;
+          actual_expressions = [];
           expected = Type.Any;
           due_to_invariance = false;
         };
@@ -394,6 +411,7 @@ let test_due_to_mismatch_with_any _ =
           Error.name = !&"";
           mismatch = {
             Error.actual = Type.Any;
+            actual_expressions = [];
             expected = Type.Any;
             due_to_invariance = false;
           };
@@ -412,6 +430,7 @@ let test_due_to_mismatch_with_any _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.Any;
+          actual_expressions = [];
           expected = Type.Any;
           due_to_invariance = false;
         };
@@ -423,6 +442,7 @@ let test_due_to_mismatch_with_any _ =
         callee = Some (!&"callee");
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Any;
           due_to_invariance = false;
         };
@@ -433,6 +453,7 @@ let test_due_to_mismatch_with_any _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Any;
+          actual_expressions = [];
           expected = Type.Any;
           due_to_invariance = false;
         };
@@ -443,6 +464,7 @@ let test_due_to_mismatch_with_any _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.Any;
+          actual_expressions = [];
           expected = Type.string;
           due_to_invariance = false;
         };
@@ -453,6 +475,7 @@ let test_due_to_mismatch_with_any _ =
     (Error.IncompatibleReturnType {
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.integer;
           due_to_invariance = false;
         };
@@ -466,6 +489,7 @@ let test_due_to_mismatch_with_any _ =
         name = !&"name";
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Any;
           due_to_invariance = false;
         };
@@ -485,6 +509,7 @@ let test_due_to_mismatch_with_any _ =
         parent = !&(Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Top;
+            actual_expressions = [];
             expected = Type.integer;
             due_to_invariance = false;
           });
@@ -495,6 +520,7 @@ let test_due_to_mismatch_with_any _ =
         parent = !&(Type.show mock_parent);
         override = (WeakenedPostcondition {
             actual = Type.Any;
+            actual_expressions = [];
             expected = Type.integer;
             due_to_invariance = false;
           });
@@ -505,6 +531,7 @@ let test_due_to_mismatch_with_any _ =
         parent = !&(Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
+            actual_expressions = [];
             expected = Type.integer;
             due_to_invariance = false;
           }));
@@ -515,6 +542,7 @@ let test_due_to_mismatch_with_any _ =
         parent = !&(Type.show mock_parent);
         override = (StrengthenedPrecondition (Found {
             actual = Type.none;
+            actual_expressions = [];
             expected = Type.Any;
             due_to_invariance = false;
           }));
@@ -584,6 +612,7 @@ let test_due_to_mismatch_with_any _ =
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.Any;
+          actual_expressions = [];
           expected = Type.Optional Type.integer;
           due_to_invariance = false;
         };
@@ -595,6 +624,7 @@ let test_due_to_mismatch_with_any _ =
         parent = mock_parent;
         mismatch = {
           Error.actual = Type.string;
+          actual_expressions = [];
           expected = Type.Optional Type.string;
           due_to_invariance = false;
         };
@@ -657,6 +687,7 @@ let test_join _ =
              Error.name = !&"";
              mismatch = {
                Error.actual = Type.Top;
+               actual_expressions = [];
                expected = Type.Top;
                due_to_invariance = false;
              };
@@ -667,6 +698,7 @@ let test_join _ =
          Error.name = !&"";
          mismatch = {
            Error.actual = Type.Top;
+           actual_expressions = [];
            expected = Type.Top;
            due_to_invariance = false;
          };
@@ -681,6 +713,7 @@ let test_join _ =
            callee = Some (!&"callee");
            mismatch = {
              Error.actual = Type.integer;
+             actual_expressions = [];
              expected = Type.string;
              due_to_invariance = false;
            };
@@ -692,6 +725,7 @@ let test_join _ =
            callee = Some (!&"callee");
            mismatch = {
              Error.actual = Type.float;
+             actual_expressions = [];
              expected = Type.string;
              due_to_invariance = false;
            };
@@ -703,6 +737,7 @@ let test_join _ =
            callee = Some (!&"callee");
            mismatch = {
              Error.actual = Type.float;
+             actual_expressions = [];
              expected = Type.string;
              due_to_invariance = false;
            };
@@ -1084,6 +1119,7 @@ let test_filter _ =
        "__foo__"
        (WeakenedPostcondition {
            actual = Type.Top;
+           actual_expressions = [];
            expected = Type.integer;
            due_to_invariance = false;
          }));
@@ -1092,6 +1128,7 @@ let test_filter _ =
        "__foo__"
        (StrengthenedPrecondition (Found {
             actual = Type.none;
+            actual_expressions = [];
             expected = Type.integer;
             due_to_invariance = false;
           })));

@@ -93,7 +93,7 @@ val widen
   -> next: Type.t
   -> iteration: int
   -> Type.t
-val is_consistent_with: t -> Type.t -> Type.t -> bool
+val is_consistent_with: t -> Type.t -> Type.t -> expression: Ast.Expression.t option -> bool
 val consistent_solution_exists: t -> Type.t -> Type.t -> bool
 val is_instantiated: t -> Type.t -> bool
 val is_tracked: t -> Type.t -> bool

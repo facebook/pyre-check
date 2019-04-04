@@ -14,6 +14,7 @@ type origin =
 
 type mismatch = {
   actual: Type.t;
+  actual_expressions: Expression.t list;
   expected: Type.t;
   due_to_invariance: bool;
 }
@@ -162,6 +163,7 @@ val dequalify: Reference.t Reference.Map.t -> resolution: Resolution.t -> t -> t
 val create_mismatch
   :  resolution: Resolution.t
   -> actual: Type.t
+  -> actual_expression: Expression.t option
   -> expected: Type.t
   -> covariant: bool
   -> mismatch

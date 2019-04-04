@@ -666,6 +666,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "string";
+            actual_expression = parse_single_expression "\"string\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1376,6 +1377,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "seven";
+            actual_expression = parse_single_expression "\"seven\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1530,6 +1532,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
+            actual_expression = parse_single_expression "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1556,6 +1559,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
+            actual_expression = parse_single_expression "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1630,6 +1634,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "Blade Runner";
+            actual_expression = parse_single_expression "\"Blade Runner\"";
             expected = parse_annotation ~resolution:resolution_with_movie "int";
             name = (Some "$parameter$year");
             position = 1;
@@ -1731,6 +1736,7 @@ let test_forward_access _ =
         element =
           +{
             Annotated.Signature.actual = Type.literal_string "string";
+            actual_expression = parse_single_expression "\"string\"";
             expected = Type.integer;
             name = None;
             position = 2;
@@ -1756,6 +1762,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
+            actual_expression = parse_single_expression "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1783,6 +1790,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
+            actual_expression = parse_single_expression "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;

@@ -308,10 +308,6 @@ let widen resolution =
   full_order resolution
   |> TypeOrder.widen
 
-let is_consistent_with resolution =
-  full_order resolution
-  |> TypeOrder.is_consistent_with
-
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order
 
@@ -592,7 +588,7 @@ let rec resolve_literal resolution expression =
       Type.Any
 
 
-let resolve_mutable_literals resolution ~expression ~resolved ~expected =
+let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =
   match expression, expected with
   | Some { Node.value = Expression.List _; _ }, _
   | Some { Node.value = Expression.ListComprehension _; _ }, _ ->
@@ -602,7 +598,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
           when Identifier.equal actual_name "list" &&
                Identifier.equal expected_name "list" &&
-               constraints_solution_exists resolution ~left:actual ~right:expected_parameter ->
+               comparator ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
             resolved
@@ -616,7 +612,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           Type.Parametric { name = expected_name; parameters = [expected_parameter] }
           when Identifier.equal actual_name "set" &&
                Identifier.equal expected_name "set" &&
-               constraints_solution_exists resolution ~left:actual ~right:expected_parameter ->
+               comparator ~left:actual ~right:expected_parameter ->
             expected
         | _ ->
             resolved
@@ -632,7 +628,7 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
               let resolved = resolve resolution value in
               let matching_name { Type.name = expected_name; _ } = name = expected_name in
               let relax { Type.annotation; _ } =
-                if constraints_solution_exists resolution ~left:resolved ~right:annotation then
+                if comparator ~left:resolved ~right:annotation then
                   annotation
                 else
                   resolved
@@ -661,9 +657,8 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
           }
           when Identifier.equal actual_name "dict" &&
                Identifier.equal expected_name "dict" &&
-               constraints_solution_exists resolution ~left:actual_key ~right:expected_key &&
-               constraints_solution_exists
-                 resolution
+               comparator ~left:actual_key ~right:expected_key &&
+               comparator
                  ~left:actual_value
                  ~right:expected_value ->
             expected
@@ -673,3 +668,24 @@ let resolve_mutable_literals resolution ~expression ~resolved ~expected =
 
   | _ ->
       resolved
+
+
+let resolve_mutable_literals resolution =
+  weaken_mutable_literals
+    resolution
+    ~comparator:(constraints_solution_exists resolution)
+
+
+let is_consistent_with resolution left right ~expression =
+  let comparator ~left ~right =
+    consistent_solution_exists resolution left right
+  in
+  let left =
+    weaken_mutable_literals
+      resolution
+      ~expression
+      ~resolved:left
+      ~expected:right
+      ~comparator
+  in
+  comparator ~left ~right

@@ -147,16 +147,19 @@ let test_select _ =
             callable = parse_callable closest;
             reason = Some (UnexpectedKeyword name);
           }
-      | `NotFoundMismatch (actual, expected, name, position) ->
+      | `NotFoundMismatch (actual, actual_expression, expected, name, position) ->
+          let actual_expression = parse_single_expression actual_expression in
           let reason =
-            { actual; expected; name; position }
+            { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
           NotFound { callable; reason }
-      | `NotFoundMismatchWithClosest (closest, actual, expected, name, position) ->
+      | `NotFoundMismatchWithClosest (closest, actual, actual_expression, expected, name, position)
+        ->
+          let actual_expression = parse_single_expression actual_expression in
           let reason =
-            { actual; expected; name; position }
+            { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location
             |> fun mismatch -> Some (Mismatch mismatch)
           in
@@ -199,18 +202,20 @@ let test_select _ =
   assert_select
     "[[int], int]"
     "('string')"
-    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
+    (`NotFoundMismatch (Type.literal_string "string", "\"string\"", Type.integer, None, 1));
   assert_select "[[int], int]" "(name='string')" (`NotFoundUnexpectedKeyword "name");
 
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
-  assert_select "[[str], int]" "(*[1])" (`NotFoundMismatch (Type.integer, Type.string, None, 1));
+  assert_select "[[str], int]"
+    "(*[1])"
+    (`NotFoundMismatch (Type.integer, "*[1]", Type.string, None, 1));
   assert_select "[[int, str], int]" "(*[1], 'asdf')" (`NotFoundTooManyArguments (2, 3));
 
   assert_select "[[object], None]" "(union)" (`Found "[[object], None]");
   assert_select
     "[[int], None]"
     "(union)"
-    (`NotFoundMismatch (Type.union [Type.integer; Type.string], Type.integer, None, 1));
+    (`NotFoundMismatch (Type.union [Type.integer; Type.string], "union", Type.integer, None, 1));
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
 
   (* Traverse variable arguments. *)
@@ -223,11 +228,11 @@ let test_select _ =
   assert_select
     "[[Variable(variable, str)], int]"
     "(1, 2)"
-    (`NotFoundMismatch (Type.literal_integer 1, Type.string, None, 1));
+    (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, None, 1));
   assert_select
     "[[Variable(variable, str)], int]"
     "('string', 2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, None, 2));
+    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, None, 2));
   assert_select
     "[[Variable(variable, int)], int]"
     "(*[1, 2], 3)"
@@ -243,7 +248,7 @@ let test_select _ =
   assert_select
     "[[Variable(variable, int)], int]"
     "(*['string'])"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    (`NotFoundMismatch (Type.string, "*[\"string\"]", Type.integer, None, 1));
   (* A single * is special. *)
   assert_select
     "[[Variable($parameter$, int), Named(i, int)], int]"
@@ -295,7 +300,7 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, str)], int]"
     "(i=1, j=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "j", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "j", 2));
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 1, 'i': 2})"
@@ -303,7 +308,7 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 'string', 'i': 'string'})"
-    (`NotFoundMismatch (Type.string, Type.integer, None, 1));
+    (`NotFoundMismatch (Type.string, "**{'j': 'string', 'i': 'string'}", Type.integer, None, 1));
   assert_select
     "[[int], int]" "(**a)"
     (`NotFoundInvalidKeywordArgument (!"a", Type.Top));
@@ -330,6 +335,7 @@ let test_select _ =
     "(str)"
     (`NotFoundMismatch (
         Type.meta Type.string,
+        "str",
         Type.Callable.create
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
@@ -355,11 +361,11 @@ let test_select _ =
   assert_select
     "[[Keywords(keywords, str)], int]"
     "(a=1, b=2)"
-    (`NotFoundMismatch (Type.literal_integer 1, Type.string, Some "a", 1));
+    (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, Some "a", 1));
   assert_select
     "[[Keywords(keywords, str)], int]"
     "(a='string', b=2)"
-    (`NotFoundMismatch (Type.literal_integer 2, Type.string, Some "b", 2));
+    (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "b", 2));
 
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[$literal_one], $literal_one]");
@@ -414,21 +420,24 @@ let test_select _ =
     "(1)"
     (`NotFoundMismatchWithClosest
        ("[[typing.Sequence[ESCAPED[_T]]], int]",
-        Type.literal_integer 1, Type.parametric "typing.Sequence" [Type.variable "_T"], None, 1));
+        Type.literal_integer 1, "1",
+        Type.parametric "typing.Sequence" [Type.variable "_T"],
+        None,
+        1));
 
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");
   assert_select
     "[[_R], _R]"
     "('string')"
     (`NotFoundMismatchWithClosest
-       ("[[ESCAPED[_R]], ESCAPED[_R]]", Type.literal_string "string",
+       ("[[ESCAPED[_R]], ESCAPED[_R]]", Type.literal_string "string", "\"string\"",
         Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
     "(['string'])"
     (`NotFoundMismatchWithClosest
-       ("[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]", Type.list Type.string,
+       ("[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]", Type.list Type.string, "['string']",
         Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
@@ -459,6 +468,7 @@ let test_select _ =
     (`NotFoundMismatchWithClosest
        ("[[ESCAPED[_T_float_or_str]], None]",
         Type.union [Type.integer; Type.string],
+        "union",
         Type.variable "_T_float_or_str" ~constraints:(Type.Explicit [Type.float; Type.string]),
         None,
         1)
@@ -513,28 +523,28 @@ let test_select _ =
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
     (`NotFoundMismatchWithClosest
-       ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
+       ("[[str], str]", Type.literal_integer 1, "1", Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, Keywords(keywords)], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest
-       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+       ("[[int, str], int]", Type.literal_integer 1, "1", Type.string, None, 2));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str], str][[], str]]"
     "(1)"
     (`NotFoundMismatchWithClosest
-       ("[[str], str]", Type.literal_integer 1, Type.string, None, 1));
+       ("[[str], str]", Type.literal_integer 1, "1", Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str, Keywords(keywords)], int][[Keywords(keywords)], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest
-       ("[[str, Keywords(keywords)], int]", Type.literal_integer 1, Type.string, None, 1));
+       ("[[str, Keywords(keywords)], int]", Type.literal_integer 1, "1", Type.string, None, 1));
 
   assert_select
     ~allow_undefined:true
@@ -556,17 +566,17 @@ let test_select _ =
   assert_select
     "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.union [Type.integer; Type.string], None, 1));
+    (`NotFoundMismatch (Type.Top, "unknown", Type.union [Type.integer; Type.string], None, 1));
 
   assert_select
     "[[bool], bool][[[str], str][[int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
+    (`NotFoundMismatch (Type.Top, "unknown", Type.bool, None, 1));
 
   assert_select
     "[[bool], bool][[[str, str], str][[int, int], int]]"
     "(unknown)"
-    (`NotFoundMismatch (Type.Top, Type.bool, None, 1));
+    (`NotFoundMismatch (Type.Top, "unknown", Type.bool, None, 1));
 
   assert_select
     "[[bool], bool][[[str, str], str][[int, int], int]]"
@@ -585,13 +595,13 @@ let test_select _ =
     "[..., $unknown][[[int, str], int][[str, int], str]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest
-       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+       ("[[int, str], int]", Type.literal_integer 1, "1", Type.string, None, 2));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[str, int], str][[int, str], int]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest
-       ("[[int, str], int]", Type.literal_integer 1, Type.string, None, 2));
+       ("[[int, str], int]", Type.literal_integer 1, "1", Type.string, None, 2));
 
   (* Void functions. *)
   assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");
@@ -599,7 +609,7 @@ let test_select _ =
   assert_select
     "[[int], None]"
     "('string')"
-    (`NotFoundMismatch (Type.literal_string "string", Type.integer, None, 1));
+    (`NotFoundMismatch (Type.literal_string "string", "\"string\"", Type.integer, None, 1));
 
   assert_select
     "[[typing.Callable[[_T], bool]], _T]"
