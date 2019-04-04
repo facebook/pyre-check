@@ -297,21 +297,20 @@ let taint_return ~configuration model expression =
 
 
 let create ~resolution ?(verify = true) ~configuration source =
-  let defines =
-    let filter_define node =
-      match node with
-      | { Node.value = Define define; _ } ->
+  let signatures =
+    let filter_define_signature = function
+      | { Node.value = Define { signature = { name; _ } as signature; _ }; _ } ->
           let class_candidate =
-            Reference.prefix define.signature.name
+            Reference.prefix name
             >>| Resolution.parse_reference resolution
             >>= Resolution.class_definition resolution
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method define.signature.name
-            | None -> Callable.create_function define.signature.name
+            | Some _ -> Callable.create_method name
+            | None -> Callable.create_function name
           in
-          Some (define, call_target)
+          Some (signature, call_target)
       | {
         Node.value =
           Assign {
@@ -323,21 +322,18 @@ let create ~resolution ?(verify = true) ~configuration source =
       }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
           let name = Reference.from_access target in
-          let define =
+          let signature =
             {
-              Define.signature = {
-                name;
-                parameters = [];
-                decorators = [];
-                docstring = None;
-                return_annotation = Some annotation;
-                async = false;
-                parent = None;
-              };
-              body = [];
+              Define.name;
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = Some annotation;
+              async = false;
+              parent = None;
             }
           in
-          Some (define, Callable.create_object define.signature.name)
+          Some (signature, Callable.create_object name)
       | {
         Node.value =
           Assign {
@@ -349,30 +345,27 @@ let create ~resolution ?(verify = true) ~configuration source =
       }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
           let name = Reference.from_access target in
-          let define =
+          let signature =
             {
-              Define.signature = {
-                name;
-                parameters = [Parameter.create ~annotation ~name:"$global" ()];
-                decorators = [];
-                docstring = None;
-                return_annotation = None;
-                async = false;
-                parent = None;
-              };
-              body = [];
+              Define.name;
+              parameters = [Parameter.create ~annotation ~name:"$global" ()];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = None;
             }
           in
-          Some (define, Callable.create_object name)
+          Some (signature, Callable.create_object name)
       | _ ->
           None
     in
     String.split ~on:'\n' source
     |> Parser.parse
-    |> List.filter_map ~f:filter_define
+    |> List.filter_map ~f:filter_define_signature
   in
   let create_model
-      ({ Define.signature = { name; parameters; return_annotation; _ }; _ }, call_target) =
+      ({ Define.name; parameters; return_annotation; _ }, call_target) =
     try
       begin
         (* Make sure we know about what we model. *)
@@ -414,7 +407,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       Format.asprintf "Invalid model for `%a`: %s" Reference.pp name message
       |> raise_invalid_model
   in
-  List.map defines ~f:create_model
+  List.map signatures ~f:create_model
 
 
 let subprocess_calls =
