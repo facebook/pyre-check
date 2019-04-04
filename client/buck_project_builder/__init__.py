@@ -17,6 +17,10 @@ from .parser import BuildTarget
 Target = NamedTuple("Target", [("build_file_directory", str), ("name", str)])
 
 
+class BuilderException(Exception):
+    pass
+
+
 class Builder(object):
     def __init__(self, buck_root: str, build_file_name: str = "TARGETS") -> None:
         self.buck_root = buck_root
@@ -53,14 +57,16 @@ class Builder(object):
             targets_seen.update(new_targets)
 
         if targets_not_found:
-            raise ValueError(
+            raise BuilderException(
                 "Target(s) not found: {}".format(", ".join(targets_not_found))
             )
         return build_targets
 
     def _parse_target(self, target: str) -> Target:
         if target.endswith("...") or target.endswith(":"):
-            raise ValueError("Target {} is not an absolute target.".format(target))
+            raise BuilderException(
+                "Target {} is not an absolute target.".format(target)
+            )
         split = _strip(target, left="//").split(":")
         return Target(split[0], split[1])
 

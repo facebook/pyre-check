@@ -17,6 +17,10 @@ BuildFile = NamedTuple(
 )
 
 
+class ParserException(Exception):
+    pass
+
+
 class Parser(object):
     def __init__(self, buck_root: str, build_file_name: str = "TARGETS") -> None:
         self.buck_root = buck_root
@@ -27,17 +31,15 @@ class Parser(object):
         if build_file_directory in self.build_files:
             return self.build_files[build_file_directory]
 
-        build_file_path = os.path.join(
-            self.buck_root, build_file_directory, self.build_file_name
-        )
+        build_file_path = self._build_file_path(build_file_directory)
         try:
             with open(build_file_path, "r") as build_file:
                 file_contents = build_file.read()
                 tree = ast.parse(file_contents)
         except FileNotFoundError:
-            raise ValueError("No build file found at {}.".format(build_file_path))
+            raise ParserException("No build file found at {}.".format(build_file_path))
         except SyntaxError as error:
-            raise ValueError(
+            raise ParserException(
                 "Could not parse build file at {}. Reason: {}".format(
                     build_file_path, error
                 )
@@ -48,6 +50,9 @@ class Parser(object):
         self.build_files[build_file_directory] = build_file
         return build_file
 
+    def _build_file_path(self, build_file_directory: str) -> str:
+        return os.path.join(self.buck_root, build_file_directory, self.build_file_name)
+
     def _parse_targets(
         self, tree: ast.AST, build_file_directory: str
     ) -> Dict[str, BuildTarget]:
@@ -56,14 +61,25 @@ class Parser(object):
 
         targets = {}
         for expression in expressions:
-            assert isinstance(expression, ast.Expr)
-            call = expression.value
-            assert isinstance(call, ast.Call)
-            named = call.func
-            assert isinstance(named, ast.Name)
-            rule = named.id
-            if rule in SUPPORTED_RULES:
-                target = SUPPORTED_RULES[rule].parse(call, build_file_directory)
-                targets[target.name] = target
+            try:
+                assert isinstance(expression, ast.Expr)
+                call = expression.value
+                assert isinstance(call, ast.Call)
+                named = call.func
+                assert isinstance(named, ast.Name)
+                rule = named.id
+                if rule in SUPPORTED_RULES:
+                    target = SUPPORTED_RULES[rule].parse(call, build_file_directory)
+                    targets[target.name] = target
+            except (AssertionError, ValueError) as error:
+                raise ParserException(
+                    "Error occurred parsing targets in file {}, "
+                    "at line {}, column {}: {}".format(
+                        self._build_file_path(build_file_directory),
+                        expression.lineno,
+                        expression.col_offset,
+                        error,
+                    )
+                )
 
         return targets

@@ -8,7 +8,7 @@ import unittest
 from typing import List
 from unittest.mock import MagicMock, patch
 
-from .. import Builder, parser
+from .. import Builder, BuilderException, parser
 from ..parser.build_target import BuildTarget, PythonBinary, PythonLibrary
 
 
@@ -62,7 +62,7 @@ class BuilderTest(unittest.TestCase):
             self.assert_targets_equal(targets, ["//project:e"])
 
             self.assertRaises(
-                ValueError, builder.compute_targets_to_build, "//project:f"
+                BuilderException, builder.compute_targets_to_build, "//project:f"
             )
 
     def test_compute_targets_to_build_complex(self):
@@ -116,7 +116,7 @@ class BuilderTest(unittest.TestCase):
             self.assert_targets_equal(targets, ["//project2:e", "//project2:d"])
 
             self.assertRaises(
-                ValueError, builder.compute_targets_to_build, "//project1:f"
+                BuilderException, builder.compute_targets_to_build, "//project1:f"
             )
 
     def test_targets_to_build_file_wildcard(self):

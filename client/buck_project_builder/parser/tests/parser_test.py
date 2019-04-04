@@ -6,7 +6,7 @@
 import unittest
 from unittest.mock import mock_open, patch
 
-from .. import Parser
+from .. import Parser, ParserException
 from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest
 
 
@@ -44,6 +44,12 @@ python_unittest(
 cpp_python_extension(
     name = "cpp_python_target",
     deps = [":other_target"],
+)
+"""
+
+TARGETS_FILE_2 = """
+python_binary(
+    name = 1234,
 )
 """
 
@@ -92,3 +98,9 @@ class ParserTest(unittest.TestCase):
             # The parser should cache files it has already parsed.
             parser.parse_file("my/module")
             mocked_open.assert_not_called()
+
+        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_2)) as mocked_open:
+            self.assertRaises(ParserException, parser.parse_file, "my/other_module")
+            mocked_open.assert_called_once_with(
+                "/buck_root/my/other_module/TARGETS", "r"
+            )
