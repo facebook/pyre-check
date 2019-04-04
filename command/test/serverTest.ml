@@ -1262,16 +1262,13 @@ let test_decode_serialized_ocaml_values context =
     ~key:(ClassMetadata.serialize_key Type.integer)
     ~value:{
       Resolution.successors = [Type.string];
-      explicit_attributes = Identifier.SerializableMap.empty;
-      implicit_attributes = Identifier.SerializableMap.empty;
       is_test = false;
-      methods = [];
     }
     ~response:{
       TypeQuery.serialized_key = ClassMetadata.serialize_key Type.integer;
       kind = "Class metadata";
       actual_key = "int";
-      actual_value = Some {|{"successors":"(str)","is_test":false,"methods":"()"}|};
+      actual_value = Some {|{"successors":"(str)","is_test":false}|};
     };
   assert_decode
     ~key:(Aliases.serialize_key (Type.Primitive "my_integer"))

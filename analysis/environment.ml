@@ -195,31 +195,21 @@ let handler
 
 
     let register_class_metadata annotation =
-      let refine { Node.value = class_definition; _ } =
-        let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
-        let in_test =
-          let is_unit_test { Node.value = definition; _ } =
-            Class.is_unit_test definition
-          in
-          List.filter_map successors ~f:(Hashtbl.find class_definitions)
-          |> List.exists ~f:is_unit_test
+      let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+      let in_test =
+        let is_unit_test { Node.value = definition; _ } =
+          Class.is_unit_test definition
         in
-        let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
-        let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-        Hashtbl.set
-          class_metadata
-          ~key:annotation
-          ~data:{
-            is_test = in_test;
-            successors;
-            explicit_attributes;
-            implicit_attributes;
-            methods = [];
-          }
+        List.filter_map successors ~f:(Hashtbl.find class_definitions)
+        |> List.exists ~f:is_unit_test
       in
-      Hashtbl.find class_definitions annotation
-      >>| refine
-      |> ignore
+      Hashtbl.set
+        class_metadata
+        ~key:annotation
+        ~data:{
+          is_test = in_test;
+          successors;
+        }
 
 
     let register_alias ~handle ~key ~data =
@@ -1149,10 +1139,7 @@ module Builder = struct
       Hashtbl.set
         ~key:(Type.Primitive name)
         ~data:{
-          Resolution.methods = [];
-          successors;
-          explicit_attributes = Identifier.SerializableMap.empty;
-          implicit_attributes = Identifier.SerializableMap.empty;
+          Resolution.successors;
           is_test = false;
         }
         class_metadata;

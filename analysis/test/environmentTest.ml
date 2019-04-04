@@ -184,35 +184,6 @@ let test_register_class_metadata _ =
   Handler.register_class_metadata (Type.Primitive "C");
   Handler.register_class_metadata (Type.Primitive "D");
   Handler.register_class_metadata (Type.Primitive "E");
-  let attribute_equal
-      (expected_name, expected_value)
-      { Node.value = { Statement.Attribute.name; value; _ }; _ } =
-    String.equal expected_name name &&
-    Option.equal Expression.equal expected_value value
-  in
-  let assert_attribute ~implicit class_name attribute_name expected =
-    let { Resolution.explicit_attributes; implicit_attributes; _ } =
-      Option.value_exn (Handler.class_metadata (Type.Primitive class_name))
-    in
-    let map =
-      if implicit then
-        implicit_attributes
-      else
-        explicit_attributes
-    in
-    let actual = Identifier.SerializableMap.find_opt attribute_name map in
-    match expected, actual with
-    | Some expected, Some actual ->
-        assert_true (attribute_equal expected actual)
-    | None, None ->
-        ()
-    | _ ->
-        assert_unreached ()
-  in
-  assert_attribute ~implicit:false "C" "x" None;
-  assert_attribute ~implicit:true "C" "x" (Some ("x", Some ~+(Expression.Integer 3)));
-  assert_attribute ~implicit:true "D" "y" (Some ("y", Some ~+(Expression.Integer 4)));
-  assert_attribute ~implicit:false "D" "z" (Some ("z", Some ~+(Expression.Integer 5)));
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =
@@ -231,8 +202,7 @@ let test_register_class_metadata _ =
   assert_successors "C" [];
   assert_successors "D" ["C"];
   assert_successors "B" ["A"];
-  assert_successors "E" ["D"; "C"; "A"];
-  ()
+  assert_successors "E" ["D"; "C"; "A"]
 
 
 let test_register_aliases _ =

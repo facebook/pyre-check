@@ -606,11 +606,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                   | Ok (ClassMetadata.Decoded (key, value)) ->
                       let value =
                         match value with
-                        | Some { Resolution.successors; is_test; methods; _ } ->
+                        | Some { Resolution.successors; is_test } ->
                             `Assoc [
                               "successors", `String (List.to_string ~f:Type.show successors);
                               "is_test", `Bool is_test;
-                              "methods", `String (List.to_string ~f:Type.show methods);
                             ]
                             |> Yojson.to_string
                             |> Option.some

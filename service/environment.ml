@@ -398,33 +398,24 @@ module SharedHandler: Analysis.Environment.Handler = struct
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let register_class_metadata annotation =
     let open Statement in
-    let refine { Node.value = class_definition; _ } =
-      let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
-      let in_test =
-        let is_unit_test { Node.value = definition; _ } =
-          Class.is_unit_test definition
-        in
-        let successor_classes =
-          successors
-          |> List.filter_map ~f:ClassDefinitions.get
-        in
-        List.exists ~f:is_unit_test successor_classes
+    let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+    let in_test =
+      let is_unit_test { Node.value = definition; _ } =
+        Class.is_unit_test definition
       in
-      let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
-      let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-      ClassMetadata.add
-        annotation
-        {
-          Resolution.is_test = in_test;
-          successors;
-          explicit_attributes;
-          implicit_attributes;
-          methods = [];
-        };
+      let successor_classes =
+        successors
+        |> List.filter_map ~f:ClassDefinitions.get
+      in
+      List.exists ~f:is_unit_test successor_classes
     in
-    ClassDefinitions.get annotation
-    >>| refine
-    |> ignore
+    ClassMetadata.add
+      annotation
+      {
+        Resolution.is_test = in_test;
+        successors;
+      }
+
 
   let register_dependency ~handle ~dependency =
     Log.log

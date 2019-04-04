@@ -12,10 +12,7 @@ type global = Annotation.t Node.t
 
 type class_metadata = {
   successors: Type.t list;
-  explicit_attributes: Attribute.t Identifier.SerializableMap.t;
-  implicit_attributes: Attribute.t Identifier.SerializableMap.t;
   is_test: bool;
-  methods: Type.t list;
 }
 
 type t
