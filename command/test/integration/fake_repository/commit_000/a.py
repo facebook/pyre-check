@@ -2,8 +2,8 @@
 # flake8: noqa
 
 
-def foo() -> str:
-    def bar() -> str:
-        return ""
+def foo() -> int:
+    def bar() -> int:
+        return 0
 
     return bar()
