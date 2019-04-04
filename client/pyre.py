@@ -210,7 +210,7 @@ def main() -> int:
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(
-        metavar="{analyze, check, kill, incremental, initialize (init), "
+        metavar="{analyze, check, color, kill, incremental, initialize (init), "
         "query, rage, restart, start, stop}"
     )
 
@@ -230,6 +230,10 @@ def main() -> int:
 
     check = parsed_commands.add_parser(commands.Check.NAME)
     check.set_defaults(command=commands.Check)
+
+    color = parsed_commands.add_parser(commands.Color.NAME)
+    color.add_argument("path")
+    color.set_defaults(command=commands.Color)
 
     deobfuscate = parsed_commands.add_parser(commands.Deobfuscate.NAME)
     deobfuscate.set_defaults(command=commands.Deobfuscate)
