@@ -457,7 +457,7 @@ let register_aliases (module Handler: Handler) sources =
                 _;
               } ->
                 if not (Type.equal target_annotation Type.Top) then
-                  (handle, target, annotation) :: aliases
+                  (handle, Reference.from_access target, annotation) :: aliases
                 else
                   aliases
             | _, Some ({
@@ -470,7 +470,7 @@ let register_aliases (module Handler: Handler) sources =
                 _;
               } as annotation) ->
                 if not (Type.equal target_annotation Type.Top) then
-                  (handle, target, annotation) :: aliases
+                  (handle, Reference.from_access target, annotation) :: aliases
                 else
                   aliases
             | Access _, None ->
@@ -479,7 +479,7 @@ let register_aliases (module Handler: Handler) sources =
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then
-                  (handle, target, value) :: aliases
+                  (handle, Reference.from_access target, value) :: aliases
                 else
                   aliases
             | _ ->
@@ -490,10 +490,8 @@ let register_aliases (module Handler: Handler) sources =
             body
             ~init:aliases
             ~f:(visit_statement ~qualifier:name ~in_class_body:true)
-      | Import {
-          Import.from = Some _;
-          imports = [{ Import.name = [Access.Identifier "*"]; _ }];
-        } ->
+      | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
+        when Reference.show name = "*" ->
           (* Don't register x.* as an alias when a user writes `from x import *`. *)
           aliases
       | Import {
@@ -501,25 +499,25 @@ let register_aliases (module Handler: Handler) sources =
           imports;
         } ->
           let from =
-            match Access.show from with
+            match Reference.show from with
             | "future.builtins"
-            | "builtins" -> []
+            | "builtins" -> Reference.empty
             | _ -> from
           in
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
-              | None -> Reference.access qualifier @ name
-              | Some alias -> Reference.access qualifier @ alias
+              | None -> Reference.combine qualifier name
+              | Some alias -> Reference.combine qualifier alias
             in
-            let original_name = from @ name in
-            match qualified_name, original_name with
-            | Identifier single_identifier :: [], (Identifier typing) :: [Identifier identifier]
+            let original_name = Reference.combine from name in
+            match Reference.as_list qualified_name, Reference.as_list original_name with
+            | single_identifier :: [], typing :: [identifier]
               when typing = "typing" && single_identifier = identifier ->
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [handle, qualified_name, Access.expression original_name]
+                [handle, qualified_name, Reference.expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
@@ -530,13 +528,13 @@ let register_aliases (module Handler: Handler) sources =
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
       Type.create
-        (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
+        (Reference.expression ~location:(Node.location value) target)
         ~aliases:Handler.aliases
     in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
-          Type.Variable { variable with variable = Access.show target }
+          Type.Variable { variable with variable = Reference.show target }
       | annotation ->
           annotation
     in
@@ -599,7 +597,7 @@ let register_aliases (module Handler: Handler) sources =
           Log.debug
             "Unresolved alias %a:%a <- %a"
             File.Handle.pp handle
-            Access.pp target
+            Reference.pp target
             Expression.pp value
         in
         List.iter ~f:show_unresolved unresolved
@@ -834,8 +832,8 @@ let register_dependencies (module Handler: Handler) source =
                    Otherwise, add all dependencies. *)
                 | None ->
                     imports
-                    |> List.map ~f:(fun { Import.name; _ } -> Reference.from_access name)
-                | Some base_module -> [Reference.from_access base_module]
+                    |> List.map ~f:(fun { Import.name; _ } -> name)
+                | Some base_module -> [base_module]
               in
               let qualify_builtins import =
                 match Reference.single import with

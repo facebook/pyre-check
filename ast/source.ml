@@ -5,7 +5,6 @@
 
 open Core
 
-open Expression
 open Pyre
 
 
@@ -393,17 +392,17 @@ let qualifier ~handle =
 
 
 let expand_relative_import ?handle ~qualifier ~from =
-  match Access.show from with
+  match Reference.show from with
   | "builtins" ->
-      []
+      Reference.empty
   | serialized ->
       (* Expand relative imports according to PEP 328 *)
       let dots = String.take_while ~f:(fun dot -> dot = '.') serialized in
       let postfix =
         match String.drop_prefix serialized (String.length dots) with
         (* Special case for single `.`, `..`, etc. in from clause. *)
-        | "" -> []
-        | nonempty -> Access.create nonempty
+        | "" -> Reference.empty
+        | nonempty -> Reference.create nonempty
       in
       let prefix =
         if not (String.is_empty dots) then
@@ -422,10 +421,11 @@ let expand_relative_import ?handle ~qualifier ~from =
             | None ->
                 0
           in
-          List.rev (Reference.access qualifier)
+          List.rev (Reference.as_list qualifier)
           |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
           |> List.rev
+          |> Reference.create_from_list
         else
-          []
+          Reference.empty
       in
-      prefix @ postfix
+      Reference.combine prefix postfix

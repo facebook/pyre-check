@@ -1237,13 +1237,9 @@ let compute_dependencies
           | Import { Import.from = Some from; imports } ->
               begin
                 let check_against_imports ~exports =
-                  let import_names =
-                    List.map imports ~f:(fun { Import.name; _ } -> Reference.from_access name )
-                  in
+                  let import_names = List.map imports ~f:(fun { Import.name; _ } -> name ) in
                   List.equal ~equal:Reference.equal import_names exports
                 in
-
-                let from = Reference.from_access from in
                 match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
                 | Some exports ->
                     check_against_imports ~exports

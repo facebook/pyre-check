@@ -3948,7 +3948,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = !+"a";
+            Import.name = !&"a";
             alias = None;
           };
         ];
@@ -3961,7 +3961,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = !+"async";
+            Import.name = !&"async";
             alias = None;
           };
         ];
@@ -3974,7 +3974,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = (!+"a.async");
+            Import.name = (!&"a.async");
             alias = None;
           };
         ];
@@ -3987,7 +3987,7 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = (!+"a.b");
+            Import.name = (!&"a.b");
             alias = None;
           };
         ];
@@ -4000,8 +4000,8 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = !+"a";
-            alias = Some (!+"b");
+            Import.name = !&"a";
+            alias = Some (!&"b");
           };
         ];
       };
@@ -4013,16 +4013,16 @@ let test_import _ =
         Import.from = None;
         imports = [
           {
-            Import.name = !+"a";
-            alias = Some (!+"b");
+            Import.name = !&"a";
+            alias = Some (!&"b");
           };
           {
-            Import.name = !+"c";
+            Import.name = !&"c";
             alias = None;
           };
           {
-            Import.name = !+"d";
-            alias = Some (!+"e");
+            Import.name = !&"d";
+            alias = Some (!&"e");
           };
         ];
       };
@@ -4031,10 +4031,10 @@ let test_import _ =
     "from a import b"
     [
       +Import {
-        Import.from = Some (!+"a");
+        Import.from = Some (!&"a");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4044,10 +4044,10 @@ let test_import _ =
     "from a import *"
     [
       +Import {
-        Import.from = Some (!+"a");
+        Import.from = Some (!&"a");
         imports = [
           {
-            Import.name = !+"*";
+            Import.name = !&"*";
             alias = None;
           };
         ];
@@ -4058,10 +4058,10 @@ let test_import _ =
     "from . import b"
     [
       +Import {
-        Import.from = Some (!+".");
+        Import.from = Some (!&".");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4071,10 +4071,10 @@ let test_import _ =
     "from ...foo import b"
     [
       +Import {
-        Import.from = Some (!+"...foo");
+        Import.from = Some (!&"...foo");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4084,10 +4084,10 @@ let test_import _ =
     "from .....foo import b"
     [
       +Import {
-        Import.from = Some (!+".....foo");
+        Import.from = Some (!&".....foo");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4097,10 +4097,10 @@ let test_import _ =
     "from .a import b"
     [
       +Import {
-        Import.from = Some (!+".a");
+        Import.from = Some (!&".a");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4110,10 +4110,10 @@ let test_import _ =
     "from ..a import b"
     [
       +Import {
-        Import.from = Some (!+"..a");
+        Import.from = Some (!&"..a");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
         ];
@@ -4124,14 +4124,14 @@ let test_import _ =
     "from a import (b, c)"
     [
       +Import {
-        Import.from = Some (!+"a");
+        Import.from = Some (!&"a");
         imports = [
           {
-            Import.name = !+"b";
+            Import.name = !&"b";
             alias = None;
           };
           {
-            Import.name = !+"c";
+            Import.name = !&"c";
             alias = None;
           };
         ];
@@ -4141,10 +4141,10 @@ let test_import _ =
     "from a.b import c"
     [
       +Import {
-        Import.from = Some (!+"a.b");
+        Import.from = Some (!&"a.b");
         imports = [
           {
-            Import.name = !+"c";
+            Import.name = !&"c";
             alias = None;
           };
         ]
@@ -4154,19 +4154,19 @@ let test_import _ =
     "from f import a as b, c, d as e"
     [
       +Import {
-        Import.from = Some (!+"f");
+        Import.from = Some (!&"f");
         imports = [
           {
-            Import.name = !+"a";
-            alias = Some (!+"b");
+            Import.name = !&"a";
+            alias = Some (!&"b");
           };
           {
-            Import.name = !+"c";
+            Import.name = !&"c";
             alias = None;
           };
           {
-            Import.name = !+"d";
-            alias = Some (!+"e");
+            Import.name = !&"d";
+            alias = Some (!&"e");
           };
         ];
       };

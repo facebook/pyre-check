@@ -3,7 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Expression
 
 type mode =
   | Default
@@ -71,5 +70,5 @@ val qualifier: handle: File.Handle.t -> Reference.t
 val expand_relative_import
   :  ?handle: File.Handle.t
   -> qualifier: Reference.t
-  -> from: Access.t
-  -> Access.t
+  -> from: Reference.t
+  -> Reference.t

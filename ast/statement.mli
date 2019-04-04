@@ -110,13 +110,13 @@ end
 
 module Import : sig
   type import = {
-    name: Access.t;
-    alias: Access.t option;
+    name: Reference.t;
+    alias: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
   type t = {
-    from: Access.t option;
+    from: Reference.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]

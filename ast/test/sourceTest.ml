@@ -221,9 +221,9 @@ let test_expand_relative_import _ =
       | _ -> failwith "Could not parse import"
     in
     assert_equal
-      ~cmp:Access.equal
-      ~printer:Access.show
-      (parse_single_access expected)
+      ~cmp:Reference.equal
+      ~printer:Reference.show
+      (Reference.create expected)
       (Source.expand_relative_import ~qualifier ~handle ~from)
   in
 

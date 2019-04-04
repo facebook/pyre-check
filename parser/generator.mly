@@ -1038,7 +1038,7 @@ handler:
 
 from:
   | from = from_string {
-      Access.create from
+      Reference.create from
       |> Option.some
     }
   ;
@@ -1081,23 +1081,23 @@ import:
       let start, stop = position in
       Location.create ~start ~stop,
       {
-        Import.name = Access.create "*";
+        Import.name = Reference.create "*";
         alias = None;
       }
     }
-  | name = simple_access {
+  | name = reference {
       fst name,
       {
         Import.name = snd name;
         alias = None;
       }
     }
-  | name = simple_access;
+  | name = reference;
     AS; alias = identifier {
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = snd name;
-        alias = Some [Access.Identifier (snd alias)];
+        alias = Some (Reference.create (snd alias));
       }
     }
   ;

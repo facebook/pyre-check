@@ -87,17 +87,10 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           else
             aliases
       | Import { Import.from = Some from; imports } ->
-          let from =
-            Source.expand_relative_import ?handle ~qualifier ~from
-            |> Reference.from_access
-          in
+          let from = Source.expand_relative_import ?handle ~qualifier ~from in
           let export aliases { Import.name; alias } =
-            let alias =
-              Option.value alias ~default:name
-              |> Reference.from_access
-            in
+            let alias = Option.value alias ~default:name in
             let name =
-              let name = Reference.from_access name in
               if Reference.show alias = "*" then from else Reference.combine from name
             in
             (* The problem this bit solves is that we may generate an alias prefix <- prefix.rest
@@ -115,11 +108,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           List.fold imports ~f:export ~init:aliases
       | Import { Import.from = None; imports } ->
           let export aliases { Import.name; alias } =
-            let alias =
-              Option.value alias ~default:name
-              |> Reference.from_access
-            in
-            let name = Reference.from_access name in
+            let alias = Option.value alias ~default:name in
             let source, target =
               if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then
                 alias, Reference.drop_prefix ~prefix:qualifier name
@@ -173,10 +162,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       | Define { Define.signature = { name; _ }; _ } ->
           public_values @ (filter_private [name]), dunder_all
       | Import { Import.imports; _ } ->
-          let get_import_name { Import.alias; name } =
-            Option.value alias ~default:name
-            |> Reference.from_access
-          in
+          let get_import_name { Import.alias; name } = Option.value alias ~default:name in
           public_values @ (filter_private (List.map imports ~f:get_import_name)), dunder_all
       | _ ->
           public_values, dunder_all

@@ -23,7 +23,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
-            when Access.show from <> "builtins" && Access.show from <> "future.builtins" ->
+            when Reference.show from <> "builtins" && Reference.show from <> "future.builtins" ->
               Import {
                 Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;
@@ -795,15 +795,17 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           join_scopes body_scope orelse_scope,
           If { If.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse }
       | Import { Import.from = Some from; imports }
-        when Access.show from <> "builtins" ->
+        when Reference.show from <> "builtins" ->
           let import aliases { Import.name; alias } =
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~access:(from @ name))
+                let access = Reference.access (Reference.combine from name) in
+                Map.set aliases ~key:(Reference.access alias) ~data:(local_alias ~qualifier ~access)
             | None ->
                 (* Add `name -> from.name`. *)
-                Map.set aliases ~key:name ~data:(local_alias ~qualifier ~access:(from @ name))
+                let access = Reference.access (Reference.combine from name) in
+                Map.set aliases ~key:(Reference.access name) ~data:(local_alias ~qualifier ~access)
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import },
           value
@@ -812,7 +814,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~access:name)
+                let access = Reference.access name in
+                Map.set aliases ~key:(Reference.access alias) ~data:(local_alias ~qualifier ~access)
             | None ->
                 aliases
           in
@@ -1324,13 +1327,12 @@ let expand_wildcard_imports ~force source =
       let statement state ({ Node.value; _ } as statement) =
         match value with
         | Import { Import.from = Some from; imports }
-          when List.exists ~f:(fun { Import.name; _ } -> Access.show name = "*") imports ->
+          when List.exists ~f:(fun { Import.name; _ } -> Reference.show name = "*") imports ->
             let expanded_import =
-              let qualifier = Reference.from_access from in
-              match Ast.SharedMemory.Modules.get_exports ~qualifier with
+              match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
               | Some exports ->
                   exports
-                  |> List.map ~f:(fun name -> { Import.name = Reference.access name; alias = None })
+                  |> List.map ~f:(fun name -> { Import.name; alias = None })
                   |> (fun expanded -> Import { Import.from = Some from; imports = expanded })
                   |> (fun value -> { statement with Node.value })
               | None ->
@@ -1485,7 +1487,7 @@ let dequalify_map source =
               match alias with
               | Some alias ->
                   (* Add `name -> alias`. *)
-                  Map.set map ~key:(Reference.from_access name) ~data:(Reference.from_access alias)
+                  Map.set map ~key:name ~data:alias
               | None ->
                   map
             in
@@ -1496,16 +1498,10 @@ let dequalify_map source =
               match alias with
               | Some alias ->
                   (* Add `from.name -> alias`. *)
-                  Map.set
-                    map
-                    ~key:(Reference.from_access (from @ name))
-                    ~data:(Reference.from_access alias)
+                  Map.set map ~key:(Reference.combine from name) ~data:alias
               | None ->
                   (* Add `from.name -> name`. *)
-                  Map.set
-                    map
-                    ~key:(Reference.from_access (from @ name))
-                    ~data:(Reference.from_access name)
+                  Map.set map ~key:(Reference.combine from name) ~data:name
             in
             List.fold_left imports ~f:add_import ~init:map,
             [statement]

@@ -3773,13 +3773,13 @@ module State = struct
             | AccessState.Attribute { definition = Undefined (Module _); _ } ->
                 Error.create
                   ~location
-                  ~kind:(Error.UndefinedImport (Reference.from_access import))
+                  ~kind:(Error.UndefinedImport import)
                   ~define:define_node
                 :: errors
             | _ ->
                 errors
           in
-          forward_access ~f:add_import_error ~resolution ~initial:[] import
+          forward_access ~f:add_import_error ~resolution ~initial:[] (Reference.access import)
         in
         List.concat_map ~f:to_import_error imports
         |> List.fold ~init:state ~f:(fun state error -> emit_raw_error ~state error)

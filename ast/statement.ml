@@ -127,14 +127,14 @@ end
 
 module Import = struct
   type import = {
-    name: Access.t;
-    alias: Access.t option;
+    name: Reference.t;
+    alias: Reference.t option;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
 
   type t = {
-    from: Access.t option;
+    from: Reference.t option;
     imports: import list;
   }
   [@@deriving compare, eq, sexp, show, hash]
@@ -1535,18 +1535,12 @@ module PrettyPrinter = struct
             pp_statement_list orelse
 
     | Import { Import.from; imports } ->
-        let pp_from formatter access_list =
-          pp_option ~prefix:"from " ~suffix:" " formatter access_list pp_access_list
-        in
         let pp_import formatter { Import.name; alias } =
-          let pp_alias_option formatter access_list =
-            pp_option ~prefix:" as " formatter access_list pp_access_list
-          in
           Format.fprintf
             formatter
             "%a%a"
-            pp_access_list name
-            pp_alias_option alias
+            Reference.pp name
+            pp_reference_option alias
         in
         let pp_imports formatter import_list =
           pp_list formatter pp_import ", " import_list
@@ -1554,7 +1548,7 @@ module PrettyPrinter = struct
         Format.fprintf
           formatter
           "@[<v>%aimport %a@]"
-          pp_from from
+          pp_reference_option from
           pp_imports imports
 
     | Nonlocal nonlocal_list ->
