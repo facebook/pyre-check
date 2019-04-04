@@ -97,6 +97,20 @@ let access =
   List.map ~f:(fun identifier -> Access.Identifier identifier)
 
 
+let from_name name =
+  let rec get_reversed_identifiers = function
+    | Name.Identifier identifier ->
+        [identifier]
+    | Name.Attribute { base = { Node.value = Name base; _ }; attribute } ->
+        attribute :: (get_reversed_identifiers base)
+    | _ ->
+        failwith "Cannot convert expression with non-identifiers to reference."
+  in
+  get_reversed_identifiers name
+  |> List.rev
+  |> create_from_list
+
+
 let name reference =
   let rec create = function
     | [] ->
