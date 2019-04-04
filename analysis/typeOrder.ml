@@ -983,12 +983,9 @@ module OrderImplementation = struct
             left
 
       (* We have to consider both the variables' constraint and its full value against the union. *)
-      | Type.Variable { constraints = Type.Explicit constraints; _ }, Type.Union union ->
+      | Type.Variable variable, Type.Union union ->
           List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
-          less_or_equal order ~left:(Type.union constraints) ~right
-      | Type.Variable { constraints = Type.Bound bound; _ }, Type.Union union ->
-          List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
-          less_or_equal order ~left:bound ~right
+          less_or_equal order ~left:(Type.upper_bound variable) ~right
 
       (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
       | left, Type.Union right ->
@@ -996,11 +993,9 @@ module OrderImplementation = struct
 
       (* We have to consider both the variables' constraint and its full value against the
          optional. *)
-      | Type.Variable { constraints = Type.Explicit constraints; _ }, Type.Optional optional ->
+      | Type.Variable variable, Type.Optional optional ->
           less_or_equal order ~left ~right:optional ||
-          less_or_equal order ~left:(Type.union constraints) ~right
-      | Type.Variable { constraints = Type.Bound bound; _ }, Type.Optional optional ->
-          less_or_equal order ~left ~right:optional || less_or_equal order ~left:bound ~right
+          less_or_equal order ~left:(Type.upper_bound variable) ~right
 
       (* A <= B -> A <= Optional[B].*)
       | Type.Optional left, Type.Optional right ->
@@ -1010,12 +1005,8 @@ module OrderImplementation = struct
       | Type.Optional _, _ ->
           false
 
-      | Type.Variable { constraints = Type.Explicit left; _ }, right ->
-          less_or_equal order ~left:(Type.union left) ~right
-      | Type.Variable { constraints = Type.Bound left; _ }, right ->
-          less_or_equal order ~left ~right
-      | Type.Variable { constraints = Type.Unconstrained; _ }, _ ->
-          false
+      | Type.Variable variable, right ->
+          less_or_equal order ~left:(Type.upper_bound variable) ~right
 
       (* Tuple variables are covariant. *)
       | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
@@ -1357,17 +1348,9 @@ module OrderImplementation = struct
                     |> List.fold ~f:(join order) ~init:Type.Bottom
               end
 
-        | (Type.Variable { constraints = Type.Unconstrained; _ } as variable), other
-        | other, (Type.Variable { constraints = Type.Unconstrained; _ } as variable) ->
-            Type.union [variable; other]
-        | Type.Variable { constraints = Type.Bound left; _ }, right ->
-            join order left right
-        | left, Type.Variable { constraints = Type.Bound right; _ } ->
-            join order left right
-        | Type.Variable { constraints = Type.Explicit left; _ }, right ->
-            join order (Type.union left) right
-        | left, Type.Variable { constraints = Type.Explicit right; _ } ->
-            join order left (Type.union right)
+        | other, Type.Variable variable
+        | Type.Variable variable, other ->
+            join order (Type.upper_bound variable) other
 
         | Type.Parametric _, Type.Parametric _
         | Type.Parametric _, Type.Primitive _

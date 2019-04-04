@@ -294,6 +294,7 @@ val free_simulated_bound_variables: t -> t
 val is_resolved: t -> bool
 val instantiate_free_variables: replacement:t -> t -> t
 val mark_free_variables_as_escaped: ?specific: variable list -> t -> t
+val upper_bound: variable -> t
 
 val is_escaped_free_variable: t -> bool
 val contains_escaped_free_variable: t -> bool

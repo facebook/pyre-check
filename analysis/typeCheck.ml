@@ -985,37 +985,36 @@ module State = struct
                 (* Attribute access. *)
                 let rec extract_access_data annotation ~inside_meta =
                   let reset_instantiated data = { data with instantiated = annotation } in
-                  match annotation with
-                  | Type.Top | Type.Bottom | Type.Any ->
-                      []
-                  | annotation when Type.equal annotation Type.ellipsis ->
-                      []
-                  | Type.Union annotations ->
-                      List.concat_map annotations ~f:(extract_access_data ~inside_meta)
-                  | Type.Variable { constraints = Unconstrained; _ } ->
-                      extract_access_data Type.object_primitive ~inside_meta
-                      |> List.map ~f:reset_instantiated
-                  | Type.Variable { constraints = Explicit annotations; _ } ->
-                      List.concat_map annotations ~f:(extract_access_data ~inside_meta)
-                      |> List.map ~f:reset_instantiated
-                  | Type.Variable { constraints = Bound bound; _ } ->
-                      extract_access_data bound ~inside_meta
-                      |> List.map ~f:reset_instantiated
-                  | annotation when Type.is_meta annotation ->
-                      Type.single_parameter annotation
-                      |> extract_access_data ~inside_meta:true
-                  | _ ->
-                      begin
-                        match Resolution.class_definition resolution annotation with
-                        | Some class_definition ->
-                            [{
-                              instantiated = annotation;
-                              class_attributes = inside_meta;
-                              class_definition = Annotated.Class.create class_definition;
-                            }]
-                        | None ->
-                            raise (TypeWithoutClass annotation)
-                      end
+                  let was_variable, annotation =
+                    match annotation with
+                    | Type.Variable variable -> true, Type.upper_bound variable
+                    | _ -> false, annotation
+                  in
+                  let data =
+                    match annotation with
+                    | Type.Top | Type.Bottom | Type.Any ->
+                        []
+                    | Type.Union annotations ->
+                        List.concat_map annotations ~f:(extract_access_data ~inside_meta)
+                    | annotation when Type.equal annotation Type.ellipsis ->
+                        []
+                    | annotation when Type.is_meta annotation ->
+                        Type.single_parameter annotation
+                        |> extract_access_data ~inside_meta:true
+                    | _ ->
+                        begin
+                          match Resolution.class_definition resolution annotation with
+                          | Some class_definition ->
+                              [{
+                                instantiated = annotation;
+                                class_attributes = inside_meta;
+                                class_definition = Annotated.Class.create class_definition;
+                              }]
+                          | None ->
+                              raise (TypeWithoutClass annotation)
+                        end
+                  in
+                  if was_variable then List.map data ~f:reset_instantiated else data
                 in
                 let parent_annotation = Annotation.annotation resolved in
                 let attribute_step ~definition ~resolved =

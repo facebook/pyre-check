@@ -2261,6 +2261,16 @@ let mark_free_variables_as_escaped ?specific annotation =
   instantiate annotation ~constraints:(Map.find constraints)
 
 
+let upper_bound { constraints; _ } =
+  match constraints with
+  | Unconstrained ->
+      object_primitive
+  | Bound bound ->
+      bound
+  | Explicit explicits ->
+      union explicits
+
+
 let contains_escaped_free_variable =
   exists ~predicate:is_escaped_free_variable
 

@@ -836,6 +836,7 @@ let test_less_or_equal _ =
     insert order Type.Bottom;
     insert order Type.Any;
     insert order Type.Top;
+    insert order Type.object_primitive;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
@@ -1881,6 +1882,7 @@ let test_join _ =
     insert order Type.Bottom;
     insert order Type.Any;
     insert order Type.Top;
+    add_simple Type.object_primitive;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
@@ -1897,7 +1899,7 @@ let test_join _ =
 
     connect order ~predecessor:Type.Bottom ~successor:Type.integer;
     connect order ~predecessor:Type.integer ~successor:Type.float;
-    connect order ~predecessor:Type.float ~successor:Type.Top;
+    connect order ~predecessor:Type.float ~successor:Type.object_primitive;
 
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
@@ -2132,7 +2134,7 @@ let test_join _ =
   (* Variables. *)
   assert_type_equal
     (join order Type.integer (Type.variable "T"))
-    (Type.union [Type.integer; Type.variable "T"]);
+    Type.object_primitive;
   assert_type_equal
     (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.string) "T"))
     (Type.union [Type.string; Type.integer]);
