@@ -241,7 +241,7 @@ let test_populate context =
     ~stubs:[]
     ~sources:[File.Handle.create "a.py"];
   let assert_successors name expected_successors =
-    let { Resolution.successors; _ } = ClassDefinitions.find_unsafe (Type.Primitive name) in
+    let { Resolution.successors; _ } = ClassMetadata.find_unsafe (Type.Primitive name) in
     assert_equal
       ~printer:(List.to_string ~f:Type.show)
       expected_successors

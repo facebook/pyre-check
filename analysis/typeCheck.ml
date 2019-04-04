@@ -92,7 +92,7 @@ module AccessState = struct
     | (Access.Identifier "super") :: (Access.Call _) :: tail ->
         (Resolution.parent resolution
          >>| (fun parent -> Resolution.parse_reference resolution parent)
-         >>= Resolution.class_representation resolution
+         >>= Resolution.class_metadata resolution
          >>| (fun { Resolution.successors; _ } -> successors)
          >>|  List.filter
            ~f:(fun name -> Option.is_some (Resolution.class_definition resolution name))
@@ -3970,17 +3970,14 @@ type result = {
 let resolution (module Handler: Environment.Handler) ?(annotations = Reference.Map.empty) () =
   let aliases = Handler.aliases in
 
-  let class_representation annotation =
+  let class_metadata annotation =
     let primitive, _ = Type.split annotation in
-    Handler.class_definition primitive
+    Handler.class_metadata primitive
   in
 
   let class_definition annotation =
-    match class_representation annotation with
-    | Some { class_definition; _ } ->
-        Some class_definition
-    | None ->
-        None
+    let primitive, _ = Type.split annotation in
+    Handler.class_definition primitive
   in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -3994,7 +3991,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
         ~class_definition:(fun _ -> None)
-        ~class_representation:(fun _ -> None)
+        ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~instantiated:_ ~resolution:_ _ -> Type.Top)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ~generics:(fun ~resolution:_ _ -> [])
@@ -4056,7 +4053,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
     ~class_definition
-    ~class_representation
+    ~class_metadata
     ~constructor
     ~implements
     ~generics

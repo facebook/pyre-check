@@ -80,9 +80,15 @@ module ProtocolKeyValue = struct
 end
 
 module ClassValue = struct
-  type t = Analysis.Resolution.class_representation
+  type t = Statement.Class.t Node.t
   let prefix = Prefix.make ()
   let description = "Class"
+end
+
+module ClassMetadataValue = struct
+  type t = Analysis.Resolution.class_metadata
+  let prefix = Prefix.make ()
+  let description = "Class metadata"
 end
 
 module AliasValue = struct
@@ -147,6 +153,8 @@ end
 
 (** Shared memory maps *)
 module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
+
+module ClassMetadata = Memory.WithCache (TypeKey) (ClassMetadataValue)
 
 module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 

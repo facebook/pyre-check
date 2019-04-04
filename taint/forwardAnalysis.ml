@@ -369,7 +369,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let attribute_taint =
             let annotations =
               let successors =
-                Resolution.class_representation resolution annotation
+                Resolution.class_metadata resolution annotation
                 >>| (fun { Resolution.successors; _ } -> successors)
                 |> Option.value ~default:[]
               in

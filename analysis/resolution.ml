@@ -15,8 +15,7 @@ type global = Annotation.t Node.t
 [@@deriving eq, show]
 
 
-type class_representation = {
-  class_definition: Class.t Node.t;
+type class_metadata = {
   successors: Type.t list;
   explicit_attributes: Attribute.t Identifier.SerializableMap.t;
   implicit_attributes: Attribute.t Identifier.SerializableMap.t;
@@ -43,7 +42,7 @@ type t = {
   global: Reference.t -> global option;
   module_definition: Reference.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
-  class_representation: Type.t -> class_representation option;
+  class_metadata: Type.t -> class_metadata option;
   constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
   generics: resolution: t -> Class.t Node.t -> Type.t list;
@@ -60,7 +59,7 @@ let create
     ~global
     ~module_definition
     ~class_definition
-    ~class_representation
+    ~class_metadata
     ~constructor
     ~implements
     ~generics
@@ -75,7 +74,7 @@ let create
     global;
     module_definition;
     class_definition;
-    class_representation;
+    class_metadata;
     constructor;
     implements;
     generics;
@@ -178,8 +177,8 @@ let class_definition { class_definition; _ } =
   class_definition
 
 
-let class_representation { class_representation; _ } =
-  class_representation
+let class_metadata { class_metadata; _ } =
+  class_metadata
 
 
 let constructor ({ constructor; _ } as resolution) =

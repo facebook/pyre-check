@@ -48,9 +48,7 @@ let assert_environment_contains source expected =
     |> List.map ~f:get_type
   in
   let assert_class_equal class_type expected =
-    let { Resolution.class_definition; _ } =
-      Option.value_exn (Handler.class_definition class_type)
-    in
+    let class_definition = Option.value_exn (Handler.class_definition class_type) in
     assert_source_equal
       expected
       (Source.create

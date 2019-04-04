@@ -143,7 +143,7 @@ let test_register_class_definitions _ =
     new_annotations
 
 
-let test_refine_class_definitions _ =
+let test_register_class_metadata _ =
   let (module Handler: Environment.Handler) =
     Environment.handler (create_environment ~include_helpers:false ())
   in
@@ -179,11 +179,11 @@ let test_refine_class_definitions _ =
     ~top:Type.Any
     all_annotations;
 
-  Handler.refine_class_definition (Type.Primitive "A");
-  Handler.refine_class_definition (Type.Primitive "B");
-  Handler.refine_class_definition (Type.Primitive "C");
-  Handler.refine_class_definition (Type.Primitive "D");
-  Handler.refine_class_definition (Type.Primitive "E");
+  Handler.register_class_metadata (Type.Primitive "A");
+  Handler.register_class_metadata (Type.Primitive "B");
+  Handler.register_class_metadata (Type.Primitive "C");
+  Handler.register_class_metadata (Type.Primitive "D");
+  Handler.register_class_metadata (Type.Primitive "E");
   let attribute_equal
       (expected_name, expected_value)
       { Node.value = { Statement.Attribute.name; value; _ }; _ } =
@@ -192,7 +192,7 @@ let test_refine_class_definitions _ =
   in
   let assert_attribute ~implicit class_name attribute_name expected =
     let { Resolution.explicit_attributes; implicit_attributes; _ } =
-      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
+      Option.value_exn (Handler.class_metadata (Type.Primitive class_name))
     in
     let map =
       if implicit then
@@ -216,7 +216,7 @@ let test_refine_class_definitions _ =
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =
-      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
+      Option.value_exn (Handler.class_metadata (Type.Primitive class_name))
     in
     let expected =
       List.map expected ~f:(fun annotation -> Type.Primitive annotation)
@@ -1778,7 +1778,7 @@ let () =
     "populate">::test_populate;
     "protocols">::test_protocols;
     "purge">::test_purge;
-    "refine_class_definitions">::test_refine_class_definitions;
+    "register_class_metadata">::test_register_class_metadata;
     "register_aliases">::test_register_aliases;
     "register_class_definitions">::test_register_class_definitions;
     "register_dependencies">::test_register_dependencies;

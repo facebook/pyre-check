@@ -1241,16 +1241,7 @@ let test_decode_serialized_ocaml_values context =
   in
   assert_decode
     ~key:(ClassDefinitions.serialize_key Type.integer)
-    ~value:{
-      Resolution.class_definition =
-        Node.create_with_default_location
-          (Test.parse_single_class "class C: pass");
-      successors = [];
-      explicit_attributes = Identifier.SerializableMap.empty;
-      implicit_attributes = Identifier.SerializableMap.empty;
-      is_test = false;
-      methods = [];
-    }
+    ~value:(Node.create_with_default_location (Test.parse_single_class "class C: pass"))
     ~response:{
       TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
       kind = "Class";
@@ -1262,17 +1253,25 @@ let test_decode_serialized_ocaml_values context =
              [Statement.Pass];\n  decorators = []; docstring = None }"
           in
           Format.sprintf
-            {|
-                              {
-                                "class_definition": "%s",
-                                "successors": "()",
-                                "is_test": false,
-                                "methods": "()"
-                              }
-                            |}
+            {|{"class_definition": "%s"}|}
             class_definition
         in
         Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
+    };
+  assert_decode
+    ~key:(ClassMetadata.serialize_key Type.integer)
+    ~value:{
+      Resolution.successors = [Type.string];
+      explicit_attributes = Identifier.SerializableMap.empty;
+      implicit_attributes = Identifier.SerializableMap.empty;
+      is_test = false;
+      methods = [];
+    }
+    ~response:{
+      TypeQuery.serialized_key = ClassMetadata.serialize_key Type.integer;
+      kind = "Class metadata";
+      actual_key = "int";
+      actual_value = Some {|{"successors":"(str)","is_test":false,"methods":"()"}|};
     };
   assert_decode
     ~key:(Aliases.serialize_key (Type.Primitive "my_integer"))

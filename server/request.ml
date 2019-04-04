@@ -435,7 +435,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         parse_and_validate (Reference.access annotation)
         |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
         >>| List.map ~f:to_attribute
@@ -508,6 +507,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             |> List.concat
           in
           extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
+          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
         in
         (* Aliases. *)
         let map =
@@ -588,15 +588,26 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                   | Ok (ClassDefinitions.Decoded (key, value)) ->
                       let value =
                         match value with
-                        | Some {
-                            Resolution.class_definition = { Node.value = definition; _ };
-                            successors;
-                            is_test;
-                            methods;
-                            _;
-                          } ->
+                        | Some { Node.value = definition; _ } ->
                             `Assoc [
                               "class_definition", `String (Ast.Statement.Class.show definition);
+                            ]
+                            |> Yojson.to_string
+                            |> Option.some
+                        | None ->
+                            None
+                      in
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ClassValue.description;
+                        actual_key = key;
+                        actual_value = value;
+                      }
+                  | Ok (ClassMetadata.Decoded (key, value)) ->
+                      let value =
+                        match value with
+                        | Some { Resolution.successors; is_test; methods; _ } ->
+                            `Assoc [
                               "successors", `String (List.to_string ~f:Type.show successors);
                               "is_test", `Bool is_test;
                               "methods", `String (List.to_string ~f:Type.show methods);
@@ -608,7 +619,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       in
                       Some {
                         TypeQuery.serialized_key;
-                        kind = ClassValue.description;
+                        kind = ClassMetadataValue.description;
                         actual_key = key;
                         actual_value = value;
                       }
@@ -921,7 +932,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         parse_and_validate (Reference.access annotation)
         |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| Annotated.Class.methods ~resolution
         >>| List.map ~f:to_method
@@ -1013,7 +1023,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
         |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
         >>| List.map ~f:(Annotated.Class.annotation ~resolution)

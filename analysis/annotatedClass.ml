@@ -73,7 +73,7 @@ let successors class_node ~resolution =
   annotation class_node ~resolution
   |> Type.split
   |> (fun (primitive, _ ) -> primitive)
-  |> Resolution.class_representation resolution
+  |> Resolution.class_metadata resolution
   >>| (fun { Resolution.successors; _ } -> successors)
   |> Option.value ~default:[]
 

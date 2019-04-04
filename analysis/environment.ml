@@ -12,7 +12,8 @@ open Statement
 
 
 type t = {
-  class_definitions: Resolution.class_representation Type.Table.t;
+  class_definitions: (Class.t Node.t) Type.Table.t;
+  class_metadata: Resolution.class_metadata Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
@@ -29,11 +30,12 @@ module type Handler = sig
     -> global: Resolution.global
     -> unit
   val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
-  val refine_class_definition: Type.t -> unit
+  val register_class_metadata: Type.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
-  val class_definition: Type.t -> Resolution.class_representation option
+  val class_definition: Type.t -> Class.t Node.t option
+  val class_metadata: Type.t -> Resolution.class_metadata option
 
   val register_protocol: handle: File.Handle.t -> Type.t -> unit
   val protocols: unit -> Type.t list
@@ -149,6 +151,7 @@ let connect_definition
 let handler
     {
       class_definitions;
+      class_metadata;
       protocols;
       modules;
       order;
@@ -180,35 +183,22 @@ let handler
     let set_class_definition ~primitive ~definition =
       let definition =
         match Hashtbl.find class_definitions primitive with
-        | Some ({
-            class_definition = { Node.location; value = preexisting };
-            _;
-          } as class_representation) ->
+        | Some { Node.location; value = preexisting } ->
             {
-              class_representation with
-              class_definition = {
-                Node.location;
-                value = Class.update preexisting ~definition:(Node.value definition);
-              };
-            }
+              Node.location;
+              value = Class.update preexisting ~definition:(Node.value definition);
+            };
         | _ ->
-            {
-              class_definition = definition;
-              methods = [];
-              successors = [];
-              explicit_attributes = Identifier.SerializableMap.empty;
-              implicit_attributes = Identifier.SerializableMap.empty;
-              is_test = false;
-            }
+            definition
       in
       Hashtbl.set class_definitions ~key:primitive ~data:definition
 
 
-    let refine_class_definition annotation =
-      let refine { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
+    let register_class_metadata annotation =
+      let refine { Node.value = class_definition; _ } =
         let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
         let in_test =
-          let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
+          let is_unit_test { Node.value = definition; _ } =
             Class.is_unit_test definition
           in
           List.filter_map successors ~f:(Hashtbl.find class_definitions)
@@ -217,10 +207,9 @@ let handler
         let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
         let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
         Hashtbl.set
-          class_definitions
+          class_metadata
           ~key:annotation
           ~data:{
-            class_definition = { Node.location; value = class_definition };
             is_test = in_test;
             successors;
             explicit_attributes;
@@ -282,6 +271,9 @@ let handler
 
     let class_definition =
       Hashtbl.find class_definitions
+
+    let class_metadata =
+      Hashtbl.find class_metadata
 
     let register_protocol ~handle protocol =
       DependencyHandler.add_protocol_key ~handle protocol;
@@ -916,7 +908,6 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
         in
         let implements annotation =
           Handler.class_definition annotation
-          >>| (fun { class_definition; _ } -> class_definition)
           >>| Class.create
           >>= validate
           >>| Class.implements ~resolution ~protocol:protocol_definition
@@ -957,7 +948,7 @@ let infer_protocol_edges
     (* Skip useless protocols for better performance. *)
     let skip_protocol protocol =
       match Handler.class_definition protocol with
-      | Some { class_definition = protocol_definition; _ } ->
+      | Some protocol_definition ->
           let protocol_definition = Annotated.Class.create protocol_definition in
           List.is_empty (Annotated.Class.methods protocol_definition ~resolution)
       | _ ->
@@ -972,7 +963,6 @@ let infer_protocol_edges
       let protocol_methods =
         let names_of_methods protocol =
           Handler.class_definition protocol
-          >>| (fun { class_definition; _ } -> class_definition)
           >>| Annotated.Class.create
           >>| Annotated.Class.methods ~resolution
           >>| List.map ~f:Annotated.Class.Method.name
@@ -990,7 +980,7 @@ let infer_protocol_edges
         match class_definition with
         | None ->
             methods_to_implementing_classes
-        | Some { class_definition = { Node.value = { Class.name = class_name; body; _ }; _ }; _ } ->
+        | Some { Node.value = { Class.name = class_name; body; _ }; _ } ->
             (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
@@ -1049,11 +1039,8 @@ let infer_protocols
 
 let propagate_nested_classes (module Handler: Handler) resolution annotation =
   let propagate
-      {
-        Resolution.class_definition = { Node.location; value = ({ name; _ } as definition) };
-        successors;
-        _;
-      }
+      { Node.location; value = { Statement.Class.name; _ } as definition }
+      successors
     =
     let handle =
       Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
@@ -1089,8 +1076,9 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
   in
-  Handler.class_definition annotation
-  >>| propagate
+  (Handler.class_definition annotation
+  >>= fun definition -> Handler.class_metadata annotation
+  >>| (fun { Resolution.successors; _ } -> propagate definition successors))
   |> ignore
 
 
@@ -1102,6 +1090,7 @@ let built_in_annotations =
 module Builder = struct
   let create () =
     let class_definitions = Type.Table.create () in
+    let class_metadata = Type.Table.create () in
     let protocols = Type.Hash_set.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
@@ -1160,13 +1149,16 @@ module Builder = struct
       Hashtbl.set
         ~key:(Type.Primitive name)
         ~data:{
-          Resolution.class_definition = Node.create_with_default_location definition;
-          methods = [];
+          Resolution.methods = [];
           successors;
           explicit_attributes = Identifier.SerializableMap.empty;
           implicit_attributes = Identifier.SerializableMap.empty;
           is_test = false;
         }
+        class_metadata;
+      Hashtbl.set
+        ~key:(Type.Primitive name)
+        ~data:(Node.create_with_default_location definition)
         class_definitions;
     in
     let t_self_expression =
@@ -1256,6 +1248,7 @@ module Builder = struct
 
     {
       class_definitions;
+      class_metadata;
       protocols;
       modules;
       order;
@@ -1268,6 +1261,7 @@ module Builder = struct
   let copy
       {
         class_definitions;
+        class_metadata;
         protocols;
         modules;
         order;
@@ -1277,6 +1271,7 @@ module Builder = struct
       } =
     {
       class_definitions = Hashtbl.copy class_definitions;
+      class_metadata = Hashtbl.copy class_metadata;
       protocols = Hash_set.copy protocols;
       modules = Hashtbl.copy modules;
       order = TypeOrder.Builder.copy order;

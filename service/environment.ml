@@ -56,7 +56,7 @@ let populate
       all_annotations;
     Type.Cache.disable ();
     (* TODO(T30713406): Merge with class registration. *)
-    List.iter ~f:Handler.refine_class_definition all_annotations;
+    List.iter ~f:Handler.register_class_metadata all_annotations;
     Type.Cache.enable ();
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
@@ -140,6 +140,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.push_stack ();
     Dependents.LocalChanges.push_stack ();
     ClassDefinitions.LocalChanges.push_stack ();
+    ClassMetadata.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack ();
     Aliases.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
@@ -161,6 +162,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.commit_all ();
     Dependents.LocalChanges.commit_all ();
     ClassDefinitions.LocalChanges.commit_all ();
+    ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
     Aliases.LocalChanges.commit_all ();
     OrderEdges.LocalChanges.commit_all ();
@@ -178,6 +180,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.pop_stack ();
     Dependents.LocalChanges.pop_stack ();
     ClassDefinitions.LocalChanges.pop_stack ();
+    ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
     Aliases.LocalChanges.pop_stack ();
     OrderEdges.LocalChanges.pop_stack ();
@@ -325,6 +328,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let class_definition =
     ClassDefinitions.get
 
+  let class_metadata =
+    ClassMetadata.get
+
   let register_protocol ~handle protocol =
     DependencyHandler.add_protocol_key ~handle protocol;
     match Protocols.get SharedMemory.SingletonKey.key with
@@ -390,13 +396,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Dependents.get
 
   module TypeOrderHandler = ServiceTypeOrder.Handler
-  let refine_class_definition annotation =
+  let register_class_metadata annotation =
     let open Statement in
-    let refine
-        { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
+    let refine { Node.value = class_definition; _ } =
       let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
       let in_test =
-        let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
+        let is_unit_test { Node.value = definition; _ } =
           Class.is_unit_test definition
         in
         let successor_classes =
@@ -407,11 +412,10 @@ module SharedHandler: Analysis.Environment.Handler = struct
       in
       let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
       let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-      ClassDefinitions.add
+      ClassMetadata.add
         annotation
         {
-          class_definition = { Node.location; value = class_definition };
-          is_test = in_test;
+          Resolution.is_test = in_test;
           successors;
           explicit_attributes;
           implicit_attributes;
@@ -439,26 +443,13 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let set_class_definition ~primitive ~definition =
     let definition =
       match ClassDefinitions.get primitive with
-      | Some ({
-          Resolution.class_definition = { Node.location; value = preexisting };
-          _;
-        } as representation) ->
+      | Some { Node.location; value = preexisting } ->
           {
-            representation with
-            Resolution.class_definition = {
-              Node.location;
-              value = Statement.Class.update preexisting ~definition:(Node.value definition);
-            };
-          }
+            Node.location;
+            value = Statement.Class.update preexisting ~definition:(Node.value definition);
+          };
       | _ ->
-          {
-            Resolution.class_definition = definition;
-            methods = [];
-            successors = [];
-            explicit_attributes = Identifier.SerializableMap.empty;
-            implicit_attributes = Identifier.SerializableMap.empty;
-            is_test = false;
-          }
+          definition
     in
     ClassDefinitions.add primitive definition
 
@@ -537,6 +528,7 @@ let populate_shared_memory
   let add_to_shared_memory
       {
         Environment.class_definitions;
+        class_metadata;
         protocols;
         modules;
         aliases;
@@ -578,6 +570,7 @@ let populate_shared_memory
     add_type_order order;
 
     add_table ClassDefinitions.write_through class_definitions;
+    add_table ClassMetadata.write_through class_metadata;
     add_table Aliases.add aliases;
     add_table Globals.write_through globals;
     add_table Dependents.write_through (Hashtbl.map ~f:Set.to_tree dependents);
