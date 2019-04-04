@@ -82,6 +82,7 @@ non_python(
     name = "non_python_target",
     field = 1234,
     other_field = "abc",
+    deps = [":other_target"],
 )
 """
 
@@ -98,6 +99,7 @@ class BuildTargetTest(unittest.TestCase):
             ["//some/project:another_target", "//some/other:target"],
         )
         self.assertListEqual(target.sources, [])
+        self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_2)
         call = _get_call(tree)
@@ -106,6 +108,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.sources, ["a.py"])
+        self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
         call = _get_call(tree)
@@ -149,6 +152,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.name, "test_target")
         self.assertListEqual(target.sources, ["tests/*.py"])
         self.assertListEqual(target.dependencies, ["//some/project:library_target_1"])
+        self.assertIsNone(target.base_module)
 
     def test_non_python_target(self):
         tree = ast.parse(NON_PYTHON_TARGET)
@@ -157,3 +161,5 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:non_python_target")
         self.assertEqual(target.name, "non_python_target")
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.sources, [])
+        self.assertIsNone(target.base_module)

@@ -13,15 +13,23 @@ class BuildTarget:
     # A minimal set of information that can be parsed from (almost) all targets.
     BaseInformation = NamedTuple(
         "BaseInformation",
-        [("keywords", Dict[str, ast.expr]), ("name", str), ("dependencies", List[str])],
+        [
+            ("keywords", Dict[str, ast.expr]),
+            ("name", str),
+            ("dependencies", List[str]),
+            ("sources", List[str]),
+            ("base_module", Optional[str]),
+        ],
     )
 
     def __init__(
-        self, build_file_directory: str, name: str, dependencies: List[str]
+        self, build_file_directory: str, base_information: BaseInformation
     ) -> None:
         self.build_file_directory = build_file_directory
-        self.name = name
-        self.dependencies = dependencies
+        self.name = base_information.name  # type: str
+        self.dependencies = base_information.dependencies  # type: List[str]
+        self.sources = base_information.sources  # type: List[str]
+        self.base_module = base_information.base_module  # type: Optional[str]
 
     def __str__(self) -> str:
         return "{}(name={})".format(self.rule_name(), self.name)
@@ -47,7 +55,13 @@ class BuildTarget:
         keywords = _get_keywords(call)
         name = _get_string(keywords["name"])
         dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
-        return BuildTarget.BaseInformation(keywords, name, dependencies)
+        sources = _get_sources(keywords.get("srcs"))
+        base_module = (
+            _get_string(keywords["base_module"]) if "base_module" in keywords else None
+        )
+        return BuildTarget.BaseInformation(
+            keywords, name, dependencies, sources, base_module
+        )
 
 
 def create_non_python_rule(rule_name: str) -> Type[BuildTarget]:
@@ -57,97 +71,47 @@ def create_non_python_rule(rule_name: str) -> Type[BuildTarget]:
     """
 
     class NonPythonTarget(BuildTarget):
-        def __init__(
-            self, build_file_directory: str, name: str, dependencies: List[str]
-        ) -> None:
-            super(NonPythonTarget, self).__init__(
-                build_file_directory, name, dependencies
-            )
-
         def rule_name(self) -> str:
             return rule_name
 
         @staticmethod
         def parse(call: ast.Call, build_file_directory: str) -> "NonPythonTarget":
-            keywords = _get_keywords(call)
-            name = _get_string(keywords["name"])
-            return NonPythonTarget(build_file_directory, name, [])
+            base = BuildTarget.parse_base_information(call, build_file_directory)
+            # We don't want to include dependencies of these targets.
+            base_no_dependencies = base._replace(dependencies=[])
+            return NonPythonTarget(build_file_directory, base_no_dependencies)
 
     return NonPythonTarget
 
 
 class PythonBinary(BuildTarget):
-    def __init__(
-        self,
-        build_file_directory: str,
-        name: str,
-        dependencies: List[str],
-        sources: Optional[List[str]] = None,
-    ) -> None:
-        super(PythonBinary, self).__init__(build_file_directory, name, dependencies)
-        self.sources = sources or []  # type: List[str]
-
     def rule_name(self) -> str:
         return "python_binary"
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonBinary":
         base = BuildTarget.parse_base_information(call, build_file_directory)
-        sources = _get_sources(base.keywords.get("srcs"))
-        return PythonBinary(build_file_directory, base.name, base.dependencies, sources)
+        return PythonBinary(build_file_directory, base)
 
 
 class PythonLibrary(BuildTarget):
-    def __init__(
-        self,
-        build_file_directory: str,
-        name: str,
-        dependencies: List[str],
-        sources: List[str],
-        base_module: Optional[str] = None,
-    ) -> None:
-        super(PythonLibrary, self).__init__(build_file_directory, name, dependencies)
-        self.sources = sources
-        self.base_module = base_module
-
     def rule_name(self) -> str:
         return "python_library"
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonLibrary":
         base = BuildTarget.parse_base_information(call, build_file_directory)
-        sources = _get_sources(base.keywords.get("srcs"))
-        base_module = (
-            _get_string(base.keywords["base_module"])
-            if "base_module" in base.keywords
-            else None
-        )
-        return PythonLibrary(
-            build_file_directory, base.name, base.dependencies, sources, base_module
-        )
+        return PythonLibrary(build_file_directory, base)
 
 
 class PythonUnitTest(BuildTarget):
-    def __init__(
-        self,
-        build_file_directory: str,
-        name: str,
-        dependencies: List[str],
-        sources: List[str],
-    ) -> None:
-        super(PythonUnitTest, self).__init__(build_file_directory, name, dependencies)
-        self.sources = sources
-
     def rule_name(self) -> str:
         return "python_unittest"
 
     @staticmethod
     def parse(call: ast.Call, build_file_directory: str) -> "PythonUnitTest":
         base = BuildTarget.parse_base_information(call, build_file_directory)
-        sources = _get_sources(base.keywords.get("srcs"))
-        return PythonUnitTest(
-            build_file_directory, base.name, base.dependencies, sources
-        )
+        return PythonUnitTest(build_file_directory, base)
 
 
 # AST helper methods
