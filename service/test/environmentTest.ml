@@ -9,6 +9,7 @@ open Core
 open Ast
 open Analysis
 open Service.EnvironmentSharedMemory
+open Pyre
 
 open Test
 open OUnit2
@@ -212,6 +213,50 @@ let test_normalize _ =
     (Some (Type.Set.Tree.of_list [Type.Primitive "A"; Type.Primitive "B"; Type.Primitive "C"]))
 
 
+let test_populate context =
+  let directory = bracket_tmpdir context in
+  let configuration = {
+    mock_configuration with Configuration.Analysis.local_root = Path.create_absolute directory;
+  }
+  in
+  Service.Parser.parse_sources
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~preprocessing_state:None
+    ~files:[
+      File.create
+        ~content:(
+          {|
+            class D: pass
+            class C(D): pass
+          |}
+          |> Test.trim_extra_indentation)
+        (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py");
+    ]
+  |> ignore;
+
+  Service.Environment.populate_shared_memory
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~stubs:[]
+    ~sources:[File.Handle.create "a.py"];
+  let assert_successors name expected_successors =
+    let { Resolution.successors; _ } = ClassDefinitions.find_unsafe (Type.Primitive name) in
+    assert_equal
+      ~printer:(List.to_string ~f:Type.show)
+      expected_successors
+      successors
+  in
+  assert_successors "a.C" [Type.Primitive "a.D"; Type.Primitive "object"; Type.Any; Type.Top];
+  (* Ensure that the memory doesn't get clobbered on a re-write. *)
+  Service.Environment.populate
+    (module Handler)
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    [Option.value_exn (Ast.SharedMemory.Sources.get (File.Handle.create "a.py"))];
+  assert_successors "a.C" [Type.Primitive "a.D"; Type.Primitive "object"; Type.Any; Type.Top]
+
+
 let () =
   "environment">:::[
     "alias_keys">::test_alias_keys;
@@ -222,6 +267,7 @@ let () =
     "normalize_dependencies">::test_normalize_dependencies;
     "normalize">::test_normalize;
     "register_modules">::test_register_modules;
+    "populate">::test_populate;
     "purge">::test_purge;
   ]
   |> Test.run
