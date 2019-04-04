@@ -50,9 +50,9 @@ module AccessState: sig
     | Value
   [@@deriving show]
 
-  val redirect: resolution: Resolution.t -> Access.t -> Access.general_access * Resolution.t
+  val redirect: resolution: Resolution.t -> access: Access.t -> Access.general_access * Resolution.t
 
-  val resolve_exports: resolution: Resolution.t -> Access.t -> Access.t
+  val resolve_exports: resolution: Resolution.t -> access: Access.t -> Access.t
 end
 
 

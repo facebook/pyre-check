@@ -334,7 +334,7 @@ let split_root ~resolution = function
 
 let normalize_access ~resolution access =
   (* TODO(T42218730): should we also handle redirects here? *)
-  let access = TypeCheck.AccessState.resolve_exports ~resolution access in
+  let access = TypeCheck.AccessState.resolve_exports ~resolution ~access in
   let (root, rest) = split_root access ~resolution in
   List.fold rest ~init:root ~f:normalize_access_list
 

@@ -85,7 +85,7 @@ module AccessState = struct
     annotation
 
 
-  let redirect ~resolution access =
+  let redirect ~resolution ~access =
     (* Resolve special-cased calls. *)
     match access with
     (* Resolve `super()` calls. *)
@@ -137,7 +137,7 @@ module AccessState = struct
         Access.SimpleAccess access, resolution
 
 
-  let resolve_exports ~resolution access =
+  let resolve_exports ~resolution ~access =
     (* This is necessary due to export/module name conflicts: P59503092 *)
     let exported =
       let widening_threshold = 25 in
@@ -1222,7 +1222,7 @@ module State = struct
       | _ ->
           accumulator
     in
-    let access = resolve_exports ~resolution access in
+    let access = resolve_exports ~resolution ~access in
     let resolved =
       expression
       >>| Resolution.resolve resolution
@@ -1812,7 +1812,7 @@ module State = struct
     let value, ({ resolution; _ } as state) =
       match value with
       | Access (SimpleAccess access) ->
-          let access, resolution = AccessState.redirect ~resolution access in
+          let access, resolution = AccessState.redirect ~resolution ~access in
           Access access, { state with resolution }
       | _ ->
           value, state

@@ -349,7 +349,7 @@ let test_redirect _ =
       |> Resolution.with_parent ~parent
     in
     let access = parse_single_access access in
-    let access, resolution = AccessState.redirect ~resolution access in
+    let access, resolution = AccessState.redirect ~resolution ~access in
     assert_equal
       ~printer:Expression.Access.show_general_access
       ~cmp:Expression.Access.equal_general_access
@@ -436,7 +436,7 @@ let test_resolve_exports _ =
     in
     let access =
       parse_single_access access
-      |> AccessState.resolve_exports ~resolution
+      |> (fun access -> AccessState.resolve_exports ~resolution ~access)
     in
     assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_single_access expected_access)
   in
@@ -490,7 +490,7 @@ let test_forward_access _ =
     in
     let access, resolution =
       let access = parse_single_access access ~preprocess:true in
-      match AccessState.redirect ~resolution access with
+      match AccessState.redirect ~resolution ~access with
       | Access.SimpleAccess access, resolution ->
           access, resolution
       | _ ->
