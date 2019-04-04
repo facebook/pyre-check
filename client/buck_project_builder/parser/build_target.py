@@ -227,4 +227,5 @@ SUPPORTED_RULES = {
     "python_library": PythonLibrary,
     "python_unittest": PythonUnitTest,
     "cpp_python_extension": create_non_python_rule("cpp_python_extension"),
+    "bundled_util": create_non_python_rule("bundled_util"),
 }  # type: Mapping[str, Type[BuildTarget]]
