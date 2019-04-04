@@ -112,10 +112,10 @@ let test_parse_query context =
   assert_fails_to_parse "types_in_file(a.py)";
   assert_fails_to_parse "types_in_file('a.py', 1, 2)";
 
-  assert_parses "attributes(C)" (Attributes (!+"C"));
+  assert_parses "attributes(C)" (Attributes (!&"C"));
   assert_fails_to_parse "attributes(C, D)";
 
-  assert_parses "signature(a.b)" (Signature (!+"a.b"));
+  assert_parses "signature(a.b)" (Signature (!&"a.b"));
   assert_fails_to_parse "signature(a.b, a.c)";
 
   assert_parses "save_server_state('state')"
@@ -152,7 +152,7 @@ let test_parse_query context =
        (Path.create_relative
           ~root:(Path.current_working_directory ())
           ~relative:"absolute.sqlite"));
-  assert_parses "path_of_module(a.b.c)" (PathOfModule (!+"a.b.c"));
+  assert_parses "path_of_module(a.b.c)" (PathOfModule (!&"a.b.c"));
   assert_fails_to_parse "path_of_module('a.b.c')";
   assert_fails_to_parse "path_of_module(a.b, b.c)";
 

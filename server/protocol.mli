@@ -34,7 +34,7 @@ module TypeQuery: sig
   [@@deriving eq, show, to_yojson]
 
   type request =
-    | Attributes of Access.t
+    | Attributes of Reference.t
     | ComputeHashesToKeys
     | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
@@ -43,11 +43,11 @@ module TypeQuery: sig
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t
-    | Methods of Access.t
+    | Methods of Reference.t
     | NormalizeType of Access.t
-    | PathOfModule of Access.t
+    | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Signature of Access.t
+    | Signature of Reference.t
     | Superclasses of Access.t
     | Type of Expression.t
     | TypeAtPosition of {

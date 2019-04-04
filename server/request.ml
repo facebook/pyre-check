@@ -433,7 +433,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             annotation;
           }
         in
-        parse_and_validate annotation
+        parse_and_validate (Reference.access annotation)
         |> Handler.class_definition
         >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
@@ -446,7 +446,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error (
               Format.sprintf
                 "No class definition found for %s"
-                (Expression.Access.show annotation)))
+                (Reference.show annotation)))
 
     | TypeQuery.ComputeHashesToKeys ->
         let open Service.EnvironmentSharedMemory in
@@ -919,7 +919,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let return_annotation = return_annotation ~resolution annotated_method in
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
-        parse_and_validate annotation
+        parse_and_validate (Reference.access annotation)
         |> Handler.class_definition
         >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
         >>| Annotated.Class.create
@@ -931,14 +931,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error
               (Format.sprintf
                  "No class definition found for %s"
-                 (Expression.Access.show annotation)))
+                 (Reference.show annotation)))
 
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
     | TypeQuery.PathOfModule module_access ->
-        Handler.module_definition (Reference.from_access module_access)
+        Handler.module_definition module_access
         >>= Module.handle
         >>= File.Handle.to_path ~configuration
         >>| Path.absolute
@@ -948,7 +948,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error
               (Format.sprintf
                  "No path found for module `%s`"
-                 (Expression.Access.show module_access)))
+                 (Reference.show module_access)))
 
     | TypeQuery.SaveServerState path ->
         let path = Path.absolute path in
@@ -965,7 +965,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               Some annotation
         in
         begin
-          let function_name = Reference.from_access function_name in
           match Resolution.global resolution function_name with
           | Some { Node.value; _ } ->
               begin

@@ -39,6 +39,11 @@ let parse_query
         | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } -> access
         | _ -> raise (InvalidQuery "expected access")
       in
+      let reference = function
+        | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } ->
+            Reference.from_access access
+        | _ -> raise (InvalidQuery "expected access")
+      in
       let string_of_expression = function
         | {Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } ->
             value
@@ -53,7 +58,7 @@ let parse_query
       begin
         match String.lowercase name, arguments with
         | "attributes", [name] ->
-            Request.TypeQueryRequest (Attributes (access name))
+            Request.TypeQueryRequest (Attributes (reference name))
         | "compute_hashes_to_keys", [] ->
             Request.TypeQueryRequest ComputeHashesToKeys
         | "decode_ocaml_values", pairs ->
@@ -129,11 +134,11 @@ let parse_query
         | "meet", [left; right] ->
             Request.TypeQueryRequest (Meet (access left, access right))
         | "methods", [name] ->
-            Request.TypeQueryRequest (Methods (access name))
+            Request.TypeQueryRequest (Methods (reference name))
         | "normalize_type", [name] ->
             Request.TypeQueryRequest (NormalizeType (access name))
         | "path_of_module", [module_access] ->
-            Request.TypeQueryRequest (PathOfModule (access module_access))
+            Request.TypeQueryRequest (PathOfModule (reference module_access))
         | "save_server_state", [path] ->
             Request.TypeQueryRequest
               (SaveServerState
@@ -141,7 +146,7 @@ let parse_query
                     ~follow_symbolic_links:false
                     (string path)))
         | "signature", [name] ->
-            Request.TypeQueryRequest (Signature (access name))
+            Request.TypeQueryRequest (Signature (reference name))
         | "superclasses", [name] ->
             Request.TypeQueryRequest (Superclasses (access name))
         | "type", [argument] ->
