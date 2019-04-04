@@ -216,9 +216,17 @@ let test_process_type_query_request _ =
       |> Yojson.Safe.from_string
       |> Yojson.Safe.to_string
     in
-    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response in
+  let coverage_check_file =
+    "test.py",
+    {|
+        def foo(a: int) -> int:
+          return a
+      |};
   in
-
+  assert_response
+    (Protocol.TypeQuery.CoverageInFile (write_file coverage_check_file))
+    {| {"response":{"types":[]}}|};
   assert_response
     (Protocol.TypeQuery.Join (parse_single_access "int", parse_single_access "float"))
     {|{"response":{"type":"float"}}|};
