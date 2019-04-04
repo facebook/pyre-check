@@ -1,6 +1,6 @@
 # pyre-strict
 
-from typing import NamedTuple, Optional, Type
+from typing import List, NamedTuple, Optional, Type
 
 import click
 
@@ -12,6 +12,7 @@ class Context(NamedTuple):
     database: DB
     parser_class: Type[BaseParser]
     repository: Optional[str]
+    ipython_extensions: List[str] = []
 
 
 # pyre-fixme[5]: Global expression must be annotated.
