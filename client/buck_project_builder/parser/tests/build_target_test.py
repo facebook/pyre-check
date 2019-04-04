@@ -28,7 +28,7 @@ PYTHON_BINARY_TARGET_1 = """
 python_binary(
     name = "binary_target_1",
     main_module = "some.project.main",
-    deps = [":another_target", "//some/other:target"]
+    deps = [":another_target", "//some/other" + ":target"]
 )
 """
 
@@ -109,7 +109,7 @@ class BuildTargetTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
         call = _get_call(tree)
-        self.assertRaises(AssertionError, PythonBinary.parse, call, "some/project")
+        self.assertRaises(ValueError, PythonBinary.parse, call, "some/project")
 
     def test_python_library(self):
         tree = ast.parse(PYTHON_LIBRARY_TARGET_1)

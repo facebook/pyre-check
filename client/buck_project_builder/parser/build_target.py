@@ -152,8 +152,14 @@ class PythonUnitTest(BuildTarget):
 
 # AST helper methods
 def _get_string(tree: ast.AST) -> str:
-    assert isinstance(tree, ast.Str)
-    return tree.s
+    if isinstance(tree, ast.Str):
+        return tree.s
+    elif isinstance(tree, ast.BinOp):
+        assert isinstance(tree.op, ast.Add)
+        return _get_string(tree.left) + _get_string(tree.right)
+    raise ValueError(
+        "Tree of type {} cannot be interpreted as a string.".format(type(tree))
+    )
 
 
 def _get_list(tree: ast.AST) -> List[ast.expr]:
