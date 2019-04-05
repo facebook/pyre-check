@@ -1408,9 +1408,11 @@ let test_forward_access _ =
     [
       { annotation = Type.meta (Type.Primitive "Class"); element = Value };
       {
-        annotation = Type.parametric "Class" [Type.bool];
+        annotation = Type.parametric "Class" [Type.Literal (Boolean true)];
         element = SignatureFound {
-            callable = "typing.Callable(Class.__init__)[[Named(x, bool)], Class[bool]]";
+            callable = "typing.Callable(Class.__init__)" ^
+                       "[[Named(x, typing_extensions.Literal[True])], " ^
+                       "Class[typing_extensions.Literal[True]]]";
             callees = ["Class.__init__"];
           };
       };
@@ -2262,7 +2264,7 @@ let test_forward_expression _ =
   assert_forward "..." Type.ellipsis;
 
   (* False literal. *)
-  assert_forward "False" Type.bool;
+  assert_forward "False" (Type.Literal (Type.Boolean false));
 
   (* Float literal. *)
   assert_forward "1.0" Type.float;
@@ -2396,7 +2398,7 @@ let test_forward_expression _ =
     Type.integer;
 
   (* True literal. *)
-  assert_forward "True" Type.bool;
+  assert_forward "True" (Type.Literal (Boolean true));
 
   (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.literal_integer 1]);

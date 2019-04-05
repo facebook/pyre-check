@@ -2468,7 +2468,7 @@ module State = struct
         { state; resolved = Type.ellipsis }
 
     | False ->
-        { state; resolved = Type.bool }
+        { state; resolved = Type.Literal (Type.Boolean false) }
 
     | Float _ ->
         { state; resolved = Type.float }
@@ -2586,7 +2586,7 @@ module State = struct
         { state = { state with resolution }; resolved }
 
     | True ->
-        { state; resolved = Type.bool }
+        { state; resolved = Type.Literal (Type.Boolean true) }
 
     | Tuple elements ->
         let state, resolved =

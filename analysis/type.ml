@@ -83,9 +83,11 @@ module Parameter = Record.Callable.RecordParameter
 
 
 type literal =
-  | String of string
+  | Boolean of bool
   | Integer of int
+  | String of string
 [@@deriving compare, eq, sexp, show, hash]
+
 
 type variable_state =
   | Free of { escaped: bool }
@@ -305,6 +307,8 @@ let rec pp format annotation =
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Any ->
       Format.fprintf format "typing.Any"
+  | Literal Boolean literal ->
+      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal Integer literal ->
       Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
@@ -443,6 +447,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "Callable[%s]" (signature_to_string implementation)
   | Any ->
       Format.fprintf format "Any"
+  | Literal Boolean literal ->
+      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal Integer literal ->
       Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
@@ -881,6 +887,10 @@ let rec expression annotation =
     | Literal literal ->
         let literal =
           match literal with
+          | Boolean true ->
+              Expression.True
+          | Boolean false ->
+              Expression.False
           | Integer literal ->
               Expression.Integer literal
           | String literal ->
@@ -2148,6 +2158,7 @@ let weaken_literals annotation =
     function
     | Literal Integer _ -> Some integer
     | Literal String _ -> Some string
+    | Literal Boolean _ -> Some bool
     | _ -> None
   in
   instantiate ~constraints annotation

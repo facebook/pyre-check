@@ -54,8 +54,9 @@ module Record : sig
 end
 
 type literal =
-  | String of string
+  | Boolean of bool
   | Integer of int
+  | String of string
 
 type variable_state
 

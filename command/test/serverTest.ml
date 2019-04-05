@@ -681,7 +681,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (3, 5, 3, 9, Type.bool);
+            (3, 5, 3, 9, Type.Literal (Boolean true));
             (4, 3, 4, 4, Type.literal_integer 1);
             (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
@@ -747,7 +747,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (2, 11, 2, 15, Type.bool);
+            (2, 11, 2, 15, Type.Literal (Boolean true));
             (2, 6, 2, 7, Type.bool);
             (3, 2, 3, 3, Type.literal_integer 1);
             (3, 6, 3, 7, Type.literal_integer 1);

@@ -469,7 +469,8 @@ let test_check_typed_dictionaries _ =
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[True], str]`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
     ];
 
@@ -562,7 +563,8 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[False], str]`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
     ];
 
@@ -614,7 +616,8 @@ let test_check_typed_dictionaries _ =
         reveal_type(v)
     |}
     [
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[False], str]`.";
       "Revealed type [-1]: Revealed type for `v` is `int`.";
       "Revealed type [-1]: Revealed type for `v` is `str`.";
     ];
