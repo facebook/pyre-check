@@ -21,7 +21,7 @@ SUPPORTED_RULES = {
         "cpp_python_extension"
     ),
     "bundled_util": build_rules.non_python_target_parser("bundled_util"),
-}  # type: Mapping[str, Callable[[ast.Call, str], BuildTarget]]
+}  # type: Mapping[str, Callable[[ast.Call, str, str], BuildTarget]]
 
 BuildFile = NamedTuple(
     "BuildFile", [("path", str), ("targets", Mapping[str, BuildTarget])]
@@ -80,7 +80,9 @@ class Parser(object):
                 assert isinstance(named, ast.Name)
                 rule = named.id
                 if rule in SUPPORTED_RULES:
-                    target = SUPPORTED_RULES[rule](call, build_file_directory)
+                    target = SUPPORTED_RULES[rule](
+                        call, self.buck_root, build_file_directory
+                    )
                     targets[target.name] = target
             except (AssertionError, ValueError) as error:
                 raise ParserException(

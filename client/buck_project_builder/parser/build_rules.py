@@ -33,29 +33,35 @@ def parse_base_information(
     )
 
 
-def parse_python_binary(call: ast.Call, build_file_directory: str) -> PythonBinary:
+def parse_python_binary(
+    call: ast.Call, buck_root: str, build_file_directory: str
+) -> PythonBinary:
     base = parse_base_information(call, build_file_directory)
-    return PythonBinary(build_file_directory, base)
+    return PythonBinary(buck_root, build_file_directory, base)
 
 
-def parse_python_library(call: ast.Call, build_file_directory: str) -> PythonLibrary:
+def parse_python_library(
+    call: ast.Call, buck_root: str, build_file_directory: str
+) -> PythonLibrary:
     base = parse_base_information(call, build_file_directory)
-    return PythonLibrary(build_file_directory, base)
+    return PythonLibrary(buck_root, build_file_directory, base)
 
 
-def parse_python_unittest(call: ast.Call, build_file_directory: str) -> PythonUnitTest:
+def parse_python_unittest(
+    call: ast.Call, buck_root: str, build_file_directory: str
+) -> PythonUnitTest:
     base = parse_base_information(call, build_file_directory)
-    return PythonUnitTest(build_file_directory, base)
+    return PythonUnitTest(buck_root, build_file_directory, base)
 
 
 def non_python_target_parser(
     rule_name: str
-) -> Callable[[ast.Call, str], NonPythonTarget]:
+) -> Callable[[ast.Call, str, str], NonPythonTarget]:
     def parse_non_python_target(
-        call: ast.Call, build_file_directory: str
+        call: ast.Call, buck_root: str, build_file_directory: str
     ) -> NonPythonTarget:
         base = parse_base_information(call, build_file_directory)
-        return NonPythonTarget(build_file_directory, base, rule_name)
+        return NonPythonTarget(buck_root, build_file_directory, base, rule_name)
 
     return parse_non_python_target
 

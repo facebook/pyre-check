@@ -43,11 +43,15 @@ class BuilderTest(unittest.TestCase):
         # d      e
         build_file = MagicMock()
         build_file.targets = {
-            "a": PythonBinary("project", base("a", ["//project:b", "//project:c"])),
-            "b": PythonLibrary("project", base("b", ["//project:d"])),
-            "c": PythonLibrary("project", base("c", ["//project:b", "//project:d"])),
-            "d": PythonLibrary("project", base("d")),
-            "e": PythonLibrary("project", base("e")),
+            "a": PythonBinary(
+                "/ROOT", "project", base("a", ["//project:b", "//project:c"])
+            ),
+            "b": PythonLibrary("/ROOT", "project", base("b", ["//project:d"])),
+            "c": PythonLibrary(
+                "/ROOT", "project", base("c", ["//project:b", "//project:d"])
+            ),
+            "d": PythonLibrary("/ROOT", "project", base("d")),
+            "e": PythonLibrary("/ROOT", "project", base("e")),
         }
 
         with patch.object(parser.Parser, "parse_file", return_value=build_file):
@@ -85,14 +89,16 @@ class BuilderTest(unittest.TestCase):
         # d <- e
         build_file_1 = MagicMock()
         build_file_1.targets = {
-            "a": PythonBinary("project1", base("a", ["//project1:b", "//project2:c"])),
-            "b": PythonLibrary("project1", base("b", ["//project2:d"])),
+            "a": PythonBinary(
+                "/ROOT", "project1", base("a", ["//project1:b", "//project2:c"])
+            ),
+            "b": PythonLibrary("/ROOT", "project1", base("b", ["//project2:d"])),
         }
         build_file_2 = MagicMock()
         build_file_2.targets = {
-            "c": PythonLibrary("project2", base("c", ["//project2:e"])),
-            "d": PythonLibrary("project2", base("d")),
-            "e": PythonLibrary("project2", base("e", ["//project2:d"])),
+            "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:e"])),
+            "d": PythonLibrary("/ROOT", "project2", base("d")),
+            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
         }
         build_file_mapping = {"project1": build_file_1, "project2": build_file_2}
         with patch.object(
@@ -135,14 +141,14 @@ class BuilderTest(unittest.TestCase):
         #  a -> c -> d <- e   b
         build_file_1 = MagicMock()
         build_file_1.targets = {
-            "a": PythonBinary("project1", base("a", ["//project2:c"])),
-            "b": PythonLibrary("project1", base("b")),
+            "a": PythonBinary("/ROOT", "project1", base("a", ["//project2:c"])),
+            "b": PythonLibrary("/ROOT", "project1", base("b")),
         }
         build_file_2 = MagicMock()
         build_file_2.targets = {
-            "c": PythonLibrary("project2", base("c", ["//project2:d"])),
-            "d": PythonLibrary("project2", base("d")),
-            "e": PythonLibrary("project2", base("e", ["//project2:d"])),
+            "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:d"])),
+            "d": PythonLibrary("/ROOT", "project2", base("d")),
+            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
         }
 
         build_file_mapping = {"project1": build_file_1, "project2": build_file_2}
@@ -167,19 +173,21 @@ class BuilderTest(unittest.TestCase):
         # a -> c   d   b <- e
         build_file_1 = MagicMock()
         build_file_1.targets = {
-            "a": PythonBinary("project1", base("a", ["//project1/subproject:c"])),
-            "b": PythonLibrary("project1", base("b")),
+            "a": PythonBinary(
+                "/ROOT", "project1", base("a", ["//project1/subproject:c"])
+            ),
+            "b": PythonLibrary("/ROOT", "project1", base("b")),
         }
 
         build_file_2 = MagicMock()
         build_file_2.targets = {
-            "c": PythonLibrary("project1/subproject", base("c")),
-            "d": PythonLibrary("project1/subproject", base("d")),
+            "c": PythonLibrary("/ROOT", "project1/subproject", base("c")),
+            "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
         }
 
         build_file_3 = MagicMock()
         build_file_3.targets = {
-            "e": PythonLibrary("project2", base("e", ["//project1:b"]))
+            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project1:b"]))
         }
 
         build_file_mapping = {
@@ -247,19 +255,19 @@ class BuilderTest(unittest.TestCase):
     def test_normalize_targets(self):
         build_file_1 = MagicMock()
         build_file_1.targets = {
-            "a": PythonLibrary("project1", base("a")),
-            "b": PythonLibrary("project1", base("b")),
-            "c": PythonLibrary("project1", base("c")),
+            "a": PythonLibrary("/ROOT", "project1", base("a")),
+            "b": PythonLibrary("/ROOT", "project1", base("b")),
+            "c": PythonLibrary("/ROOT", "project1", base("c")),
         }
 
         build_file_2 = MagicMock()
         build_file_2.targets = {
-            "d": PythonLibrary("project1/subproject", base("d")),
-            "e": PythonLibrary("project1/subproject", base("e")),
+            "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
+            "e": PythonLibrary("/ROOT", "project1/subproject", base("e")),
         }
 
         build_file_3 = MagicMock()
-        build_file_3.targets = {"f": PythonLibrary("project2", base("f"))}
+        build_file_3.targets = {"f": PythonLibrary("/ROOT", "project2", base("f"))}
 
         build_file_mapping = {
             "project1": build_file_1,

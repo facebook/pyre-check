@@ -34,8 +34,12 @@ class BuildTarget:
     )
 
     def __init__(
-        self, build_file_directory: str, base_information: BaseInformation
+        self,
+        buck_root: str,
+        build_file_directory: str,
+        base_information: BaseInformation,
     ) -> None:
+        self.buck_root = buck_root
         self.build_file_directory = build_file_directory
         self.name = base_information.name  # type: str
         self.dependencies = base_information.dependencies  # type: List[str]
@@ -59,6 +63,7 @@ class BuildTarget:
 class NonPythonTarget(BuildTarget):
     def __init__(
         self,
+        buck_root: str,
         build_file_directory: str,
         base_information: BuildTarget.BaseInformation,
         rule_name: str,
@@ -66,7 +71,9 @@ class NonPythonTarget(BuildTarget):
         self._rule_name = rule_name
         # We don't want to include dependencies of these targets.
         base_information = base_information._replace(dependencies=[])
-        super(NonPythonTarget, self).__init__(build_file_directory, base_information)
+        super(NonPythonTarget, self).__init__(
+            buck_root, build_file_directory, base_information
+        )
 
     def rule_name(self) -> str:
         return self._rule_name
