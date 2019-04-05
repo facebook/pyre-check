@@ -302,6 +302,33 @@ class InteractiveTest(TestCase):
         self.assertIn("Run 2 doesn't exist", stderr)
         self.assertIn("Run 3 doesn't exist", stderr)
 
+    def testSetLatestRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=3, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=4, date=datetime.now(), status=RunStatus.FINISHED, kind="b"),
+            Run(id=5, date=datetime.now(), status=RunStatus.FINISHED, kind="b"),
+            Run(id=6, date=datetime.now(), status=RunStatus.FINISHED, kind="c"),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, runs)
+            session.commit()
+
+        self.interactive.set_latest_run("c")
+        self.assertEqual(self.interactive.current_run_id, 6)
+
+        self.interactive.set_latest_run("b")
+        self.assertEqual(self.interactive.current_run_id, 5)
+
+        self.interactive.set_latest_run("a")
+        self.assertEqual(self.interactive.current_run_id, 3)
+
+        self.interactive.set_latest_run("d")
+        self.assertEqual(self.interactive.current_run_id, 3)
+        self.assertIn("No runs with kind 'd'", self.stderr.getvalue())
+
     def testSetIssue(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
         issue = self._generic_issue()

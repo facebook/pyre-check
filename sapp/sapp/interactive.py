@@ -85,6 +85,7 @@ state()                  show the internal state of the tool for debugging
 
 runs()                   list all completed static analysis runs
 set_run(ID)              select a specific run for browsing issues
+set_latest_run(KIND)     sets run to the latest of the specified kind
 issues()                 list all issues for the selected run
 set_issue_instance(ID)   select a specific issue for browsing a trace
 show()                   show info about selected issue or trace frame
@@ -114,6 +115,7 @@ details()                show additional information about the current trace fra
             "runs": self.runs,
             "issues": self.issues,
             "set_run": self.set_run,
+            "set_latest_run": self.set_latest_run,
             "set_issue_instance": self.set_issue_instance,
             "show": self.show,
             "trace": self.trace,
@@ -215,8 +217,36 @@ details()                show additional information about the current trace fra
             )
             return
 
-        self.current_run_id = selected_run.id
+        self.current_run_id = int(selected_run.id)
         print(f"Set run to {run_id}.")
+
+    @catch_user_error()
+    def set_latest_run(self, run_kind: str) -> None:
+        """Sets the current run to the latest run of a given kind.
+
+        Parameters (required):
+            run_kind: str    the run kind to filter by
+
+        Example:
+            set_latest_run("master") will set the current run to the latest
+            run whose kind field is "master"
+        """
+        if not run_kind or not isinstance(run_kind, str):
+            raise UserError("Please provide a non-empty string for 'run_kind'.")
+
+        with self.db.make_session() as session:
+            selected_run_id = (
+                session.query(func.max(Run.id))
+                .filter(Run.kind == run_kind)
+                .filter(Run.status == RunStatus.FINISHED)
+                .scalar()
+            )
+
+        if selected_run_id.resolved() is None:
+            raise UserError(f"No runs with kind '{run_kind}'.")
+
+        self.current_run_id = int(selected_run_id)
+        print(f"Set run to {self.current_run_id}.")
 
     @catch_keyboard_interrupt()
     def set_issue_instance(self, issue_instance_id):
