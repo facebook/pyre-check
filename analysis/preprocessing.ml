@@ -311,17 +311,17 @@ let expand_format_string ({ Source.handle; _ } as source) =
 
 
 type alias = {
-  access: Access.t;
-  qualifier: Access.t;
+  name: Reference.t;
+  qualifier: Reference.t;
   is_forward_reference: bool;
 }
 
 
 type scope = {
-  qualifier: Access.t;
-  aliases: alias Access.Map.t;
-  immutables: Access.Set.t;
-  locals: Access.Set.t;
+  qualifier: Reference.t;
+  aliases: alias Reference.Map.t;
+  immutables: Reference.Set.t;
+  locals: Reference.Set.t;
   use_forward_references: bool;
   is_top_level: bool;
   skip: Location.Reference.Set.t;
@@ -350,19 +350,19 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     let renamed =
       Format.asprintf "$%s$%s" prefix name
     in
-    let access = [Access.Identifier name] in
+    let reference = Reference.create name in
     {
       scope with
       aliases =
         Map.set
           aliases
-          ~key:access
+          ~key:reference
           ~data:{
-            access = [Access.Identifier renamed];
-            qualifier = Reference.access source_qualifier;
+            name = Reference.create renamed;
+            qualifier = source_qualifier;
             is_forward_reference = false;
           };
-      immutables = Set.add immutables access;
+      immutables = Set.add immutables reference;
     },
     stars,
     renamed
@@ -370,7 +370,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name =
       {
-        access = qualifier @ name;
+        name = Reference.combine qualifier name;
         qualifier;
         is_forward_reference = true;
       }
@@ -385,19 +385,18 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           _;
         }
         when Expression.show annotation = "_SpecialForm" ->
+          let name = Reference.from_access name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
             skip = Set.add skip location;
           }
       | Class { Class.name; _ } ->
-          let name = Reference.access name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
           }
       | Define { Define.signature = { name; _ }; _ } ->
-          let name = Reference.access name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -411,7 +410,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | Global identifiers ->
           let immutables =
             let register_global immutables identifier =
-              Set.add immutables [Access.Identifier identifier]
+              Set.add immutables (Reference.create identifier)
             in
             List.fold identifiers ~init:immutables ~f:register_global
           in
@@ -467,7 +466,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     let scope, parameters =
       List.fold
         parameters
-        ~init:({ scope with locals = Access.Set.empty }, [])
+        ~init:({ scope with locals = Reference.Set.empty }, [])
         ~f:rename_parameter
     in
     scope, List.rev parameters
@@ -488,7 +487,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       ~scope:({ qualifier; aliases; skip; is_top_level; _ } as scope)
       ({ Node.location; value } as statement) =
     let scope, value =
-      let local_alias ~qualifier ~access = { access; qualifier; is_forward_reference = false } in
+      let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
 
       let qualify_assign { Assign.target; annotation; value; parent } =
         let value =
@@ -537,17 +536,17 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       | access ->
                           access
                     in
+                    let qualified = (Reference.access qualifier) @ sanitized in
                     let scope =
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None -> local_alias ~qualifier ~access:(qualifier @ sanitized)
+                          | None -> local_alias ~qualifier ~name:(Reference.from_access qualified)
                         in
-                        Map.update aliases access ~f:update
+                        Map.update aliases (Reference.from_access access) ~f:update
                       in
                       { scope with aliases }
                     in
-                    let qualified = qualifier @ sanitized in
                     scope, Access (SimpleAccess qualified)
                 | Starred (Starred.Once access) ->
                     let scope, access = qualify_target ~scope access in
@@ -556,18 +555,21 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     (* Incrementally number local variables to avoid shadowing. *)
                     let scope =
                       let qualified = String.is_prefix name ~prefix:"$" in
+                      let reference = Reference.create name in
                       if not qualified &&
-                         not (Set.mem locals access) &&
-                         not (Set.mem immutables access) then
-                        let alias = qualify_local_identifier name ~qualifier in
+                         not (Set.mem locals reference) &&
+                         not (Set.mem immutables reference) then
+                        let alias =
+                          qualify_local_identifier name ~qualifier:(Reference.access qualifier)
+                        in
                         {
                           scope with
                           aliases =
                             Map.set
                               aliases
-                              ~key:access
-                              ~data:(local_alias ~qualifier ~access:alias);
-                          locals = Set.add locals access;
+                              ~key:reference
+                              ~data:(local_alias ~qualifier ~name:(Reference.from_access alias));
+                          locals = Set.add locals reference;
                         }
                       else
                         scope
@@ -584,7 +586,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                             qualified
                       in
                       if qualify_assign then
-                        qualifier @ qualified
+                        (Reference.access qualifier) @ qualified
                       else
                         qualified
                     in
@@ -638,7 +640,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   ~scope:{ scope with use_forward_references = true })
         in
         let scope, parameters = qualify_parameters ~scope parameters in
-        let qualifier = qualifier @ (Reference.access name) in
+        let qualifier = Reference.combine qualifier name in
         let _, body = qualify_statements ~scope:{ scope with qualifier } body in
         let signature =
           {
@@ -664,7 +666,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             ~f:(qualify_expression ~qualify_strings:false ~scope)
         in
         let body =
-          let qualifier = qualifier @ (Reference.access name) in
+          let qualifier = Reference.combine qualifier name in
           let original_scope = { scope with qualifier } in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
@@ -722,7 +724,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = Reference.combine (Reference.from_access scope.qualifier) name;
+          Class.name = Reference.combine scope.qualifier name;
           bases = List.map bases ~f:qualify_base;
           body;
           decorators;
@@ -759,8 +761,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             aliases =
               Map.set
                 aliases
-                ~key:(Reference.access name)
-                ~data:(local_alias ~qualifier ~access:(qualifier @ (Reference.access name)));
+                ~key:name
+                ~data:(local_alias ~qualifier ~name:(Reference.combine qualifier name));
           }
           in
           scope,
@@ -800,12 +802,14 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                let access = Reference.access (Reference.combine from name) in
-                Map.set aliases ~key:(Reference.access alias) ~data:(local_alias ~qualifier ~access)
+                Map.set aliases
+                  ~key:alias
+                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
             | None ->
                 (* Add `name -> from.name`. *)
-                let access = Reference.access (Reference.combine from name) in
-                Map.set aliases ~key:(Reference.access name) ~data:(local_alias ~qualifier ~access)
+                Map.set aliases
+                  ~key:name
+                  ~data:(local_alias ~qualifier ~name:(Reference.combine from name))
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import },
           value
@@ -814,8 +818,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             match alias with
             | Some alias ->
                 (* Add `alias -> from.name`. *)
-                let access = Reference.access name in
-                Map.set aliases ~key:(Reference.access alias) ~data:(local_alias ~qualifier ~access)
+                Map.set aliases ~key:alias ~data:(local_alias ~qualifier ~name)
             | None ->
                 aliases
           in
@@ -907,7 +910,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | { Node.value = Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
       | { Node.value = Access (SimpleAccess ([Access.Identifier name] as access)); _ } ->
-          if Set.mem locals access then
+          if Set.mem locals (Reference.from_access access) then
             scope
           else
             let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
@@ -926,14 +929,14 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     match access with
     | head :: tail ->
         let head =
-          match Map.find aliases [head] with
-          | Some { access; is_forward_reference; qualifier }
+          match Map.find aliases (Reference.from_access [head]) with
+          | Some { name; is_forward_reference; qualifier }
             when (not is_forward_reference) || use_forward_references ->
-              if Access.show access |> String.is_prefix ~prefix:"$" &&
+              if Reference.show name |> String.is_prefix ~prefix:"$" &&
                  suppress_synthetics then
-                qualifier @ [head]
+                (Reference.access qualifier) @ [head]
               else
-                access
+                Reference.access name
           | _ ->
               [head]
         in
@@ -1015,7 +1018,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             (* We still want to qualify sub-accesses, e.g. arguments; but not the access after the
                expression. *)
             qualify_access ~qualify_strings ~scope access
-            |> Access.drop_prefix ~prefix:qualifier
+            |> Access.drop_prefix ~prefix:(Reference.access qualifier)
           in
           Access
             (ExpressionAccess {
@@ -1143,10 +1146,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
 
   let scope =
     {
-      qualifier = Reference.access source_qualifier;
-      aliases = Access.Map.empty;
-      locals = Access.Set.empty;
-      immutables = Access.Set.empty;
+      qualifier = source_qualifier;
+      aliases = Reference.Map.empty;
+      locals = Reference.Set.empty;
+      immutables = Reference.Set.empty;
       use_forward_references = true;
       is_top_level = true;
       skip = Location.Reference.Set.empty;
