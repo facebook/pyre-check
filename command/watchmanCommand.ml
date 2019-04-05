@@ -251,7 +251,10 @@ let initialize watchman_directory ({ Configuration.Analysis.extensions; _ } as c
     | Server.Operations.ConnectionFailure -> stop_watchman None configuration
   in
   Socket.write server_socket (Protocol.Request.ClientConnectionRequest Protocol.FileNotifier);
-  if Socket.read server_socket <> Protocol.ClientConnectionResponse Protocol.FileNotifier then
+  if not (Protocol.equal_response
+            (Socket.read server_socket)
+            (Protocol.ClientConnectionResponse Protocol.FileNotifier)
+         ) then
     failwith "Unexpected connection response from server";
   let stop _ = stop_watchman (Some server_socket) configuration in
   Signal.Expert.handle Signal.int stop;

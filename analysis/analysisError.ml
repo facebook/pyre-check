@@ -1085,7 +1085,7 @@ let messages ~concise ~signature location kind =
           explanation
       ]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
-      if typed_dictionary_name = "$anonymous" then
+      if String.equal typed_dictionary_name "$anonymous" then
         [ Format.asprintf "TypedDict has no key `%s`." missing_key ]
       else
         [
@@ -1234,7 +1234,7 @@ let inference_information
     kind =
   let print_annotation annotation =
     Format.asprintf "`%a`" Type.pp annotation
-    |> String.strip ~drop:((=) '`')
+    |> String.strip ~drop:(Char.equal '`')
   in
   let parameters =
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
@@ -1429,7 +1429,7 @@ let due_to_analysis_limitations { kind; _ } =
 let due_to_builtin_import { kind; _ } =
   match kind with
   | UndefinedImport import ->
-      Reference.show import = "builtins"
+      String.equal (Reference.show import) "builtins"
   | _ ->
       false
 
@@ -1539,13 +1539,14 @@ let less_or_equal ~resolution left right =
       IncompleteType
         { target = right_target; annotation = right; attempted_action = right_attempted_action }
       when Access.equal_general_access left_target right_target &&
-           left_attempted_action = right_attempted_action ->
+           equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
-           left.incompatible_type.name = right.incompatible_type.name ->
+           Reference.equal left.incompatible_type.name right.incompatible_type.name ->
         less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
-    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+    | IncompatibleVariableType left, IncompatibleVariableType right
+      when Reference.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | InconsistentOverride left, InconsistentOverride right ->
         begin
@@ -1592,10 +1593,12 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
-        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+        Resolution.less_or_equal resolution ~left ~right &&
+        equal_type_variable_origin left_origin right_origin
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ->
-        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+        Resolution.less_or_equal resolution ~left ~right &&
+        equal_type_variance_origin left_origin right_origin
     | MissingArgument left, MissingArgument right ->
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -1626,7 +1629,8 @@ let less_or_equal ~resolution left right =
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
         left.provided = right.provided
-    | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
+    | UninitializedAttribute left, UninitializedAttribute right
+      when String.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | UnawaitedAwaitable left, UnawaitedAwaitable right ->
         Reference.equal_sanitized left right
@@ -1752,7 +1756,7 @@ let join ~resolution left right =
       IncompleteType
         { target = right_target; annotation = right; attempted_action = right_attempted_action }
       when Access.equal_general_access left_target right_target &&
-           left_attempted_action = right_attempted_action ->
+           equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
         IncompleteType {
           target = left_target;
           annotation = Resolution.join resolution left right;
@@ -1825,7 +1829,7 @@ let join ~resolution left right =
         }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
-           left.incompatible_type.name = right.incompatible_type.name ->
+           Reference.equal left.incompatible_type.name right.incompatible_type.name ->
         IncompatibleAttributeType {
           parent = left.parent;
           incompatible_type = {
@@ -1836,7 +1840,8 @@ let join ~resolution left right =
                 right.incompatible_type.mismatch;
           };
         }
-    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+    | IncompatibleVariableType left, IncompatibleVariableType right
+      when Reference.equal left.name right.name ->
         IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
       InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) ->
@@ -1882,11 +1887,11 @@ let join ~resolution left right =
         InvalidType left
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin }
-      when Type.equal left right && left_origin = right_origin ->
+      when Type.equal left right && equal_type_variable_origin left_origin right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin }
-      when Type.equal left right && left_origin = right_origin ->
+      when Type.equal left right && equal_type_variance_origin left_origin right_origin ->
         InvalidTypeVariance { annotation = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
       when Option.equal Reference.equal_sanitized left.callee right.callee &&
@@ -1894,7 +1899,7 @@ let join ~resolution left right =
            left.provided = right.provided ->
         TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
-      when left.name = right.name && Type.equal left.parent right.parent ->
+      when String.equal left.name right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | UnawaitedAwaitable left, UnawaitedAwaitable right when Reference.equal_sanitized left right ->
         UnawaitedAwaitable left
@@ -1946,10 +1951,10 @@ let join ~resolution left right =
 
     | TypedDictionaryKeyNotFound left, TypedDictionaryKeyNotFound right
       when Identifier.equal left.typed_dictionary_name right.typed_dictionary_name &&
-           left.missing_key = right.missing_key ->
+           String.equal left.missing_key right.missing_key ->
         TypedDictionaryKeyNotFound left
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
-      when left = right ->
+      when List.equal ~equal:String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
     | Top, _
     | _, Top ->
@@ -2064,7 +2069,7 @@ let join_at_source ~resolution errors =
         Map.set ~key ~data:error errors
     | Some existing_error, _ ->
         let joined_error = join ~resolution existing_error error in
-        if joined_error.kind <> Top then
+        if not (equal_kind joined_error.kind Top) then
           Map.set ~key ~data:joined_error errors
         else
           errors
@@ -2121,7 +2126,8 @@ let filter ~configuration ~resolution errors =
           false
     in
     let is_builtin_import_error = function
-      | { kind = UndefinedImport builtins; _ } when Reference.show builtins = "builtins" ->
+      | { kind = UndefinedImport builtins; _ }
+        when String.equal (Reference.show builtins) "builtins" ->
           true
       | _ ->
           false
@@ -2288,7 +2294,7 @@ let suppress ~mode ~resolution error =
         true
     | UndefinedImport _ ->
         false
-    | UndefinedName name when Reference.show name = "reveal_type" ->
+    | UndefinedName name when String.equal (Reference.show name) "reveal_type" ->
         true
     | RevealedType _ ->
         false

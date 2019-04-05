@@ -121,8 +121,8 @@ let coverage ~number_of_files ~sources =
           match Ast.SharedMemory.Sources.get handle with
           | Some { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
               (
-                prev_strict + (if local_mode = Source.Strict then 1 else 0),
-                prev_declare + (if local_mode = Source.Declare then 1 else 0)
+                prev_strict + (if Source.equal_mode local_mode Source.Strict then 1 else 0),
+                prev_declare + (if Source.equal_mode local_mode Source.Declare then 1 else 0)
               )
           | None -> (prev_strict, prev_declare)
         )

@@ -287,7 +287,7 @@ let select
         (Parameter.Variable _ as parameter) :: parameters_tail ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
-            if Identifier.sanitized (Parameter.name parameter) = "*" then
+            if String.equal (Identifier.sanitized (Parameter.name parameter)) "*" then
               let reasons =
                 arity_mismatch
                   reasons
@@ -543,7 +543,8 @@ let select
           annotation = Type.Parametric { parameters = [ key_type; _ ]; _ }
         };
         _;
-      } when Reference.show name = "dict.__init__" && has_matched_keyword_parameter parameters ->
+      } when String.equal (Reference.show name) "dict.__init__" &&
+             has_matched_keyword_parameter parameters ->
           let updated_constraints =
             List.concat_map constraints_set ~f:(fun constraints ->
                 Resolution.solve_less_or_equal

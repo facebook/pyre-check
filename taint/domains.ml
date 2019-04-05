@@ -139,7 +139,7 @@ module TraceInfo = struct
           |> List.map
             ~f:(fun callable -> `String (Interprocedural.Callable.external_target_name callable))
         in
-        if callee_json <> [] then
+        if not (List.is_empty callee_json) then
           let location_json =
             Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
             |> location_to_json

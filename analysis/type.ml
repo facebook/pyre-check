@@ -317,9 +317,8 @@ let rec pp format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Parametric { name; parameters }
-    when (name = "typing.Optional" or name = "Optional") &&
-         parameters = [Bottom] ->
+  | Parametric { name; parameters = [Bottom] }
+    when (String.equal name "typing.Optional" or String.equal name "Optional")  ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let parameters =
@@ -357,7 +356,7 @@ let rec pp format annotation =
       in
       let totality = if total then "" else " (non-total)" in
       let name =
-        if name = "$anonymous" then
+        if String.equal name "$anonymous" then
           ""
         else
           Format.sprintf " `%s`" name
@@ -457,9 +456,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Parametric { name; parameters }
-    when (name = "typing.Optional" or name = "Optional") &&
-         parameters = [Bottom] ->
+  | Parametric { name; parameters = [Bottom] }
+    when (String.equal name "typing.Optional" or String.equal name "Optional") ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let name = strip_qualification (reverse_substitute name) in
@@ -479,7 +477,7 @@ let rec pp_concise format annotation =
   | Tuple (Unbounded parameter) ->
       Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
   | TypedDictionary { name; fields; _ } ->
-      if name = "$anonymous" then
+      if String.equal name "$anonymous" then
         let fields =
           fields
           |> List.map
@@ -1383,7 +1381,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   in
                   let name = Access.show state in
                   let annotation =
-                    if name = "None" then
+                    if String.equal name "None" then
                       none
                     else
                       Primitive name
@@ -1402,7 +1400,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
             |  (Access.Identifier get_item)
                :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
                :: _
-              when Identifier.show get_item = "__getitem__" ->
+              when String.equal (Identifier.show get_item) "__getitem__" ->
                 begin
                   let parameters =
                     match Node.value argument with
@@ -1650,7 +1648,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
               let bound =
                 let bound = function
                   | { Argument.value; Argument.name = Some { Node.value = bound; _ }; }
-                    when Identifier.sanitized bound = "bound" ->
+                    when String.equal (Identifier.sanitized bound) "bound" ->
                       create_logic ~use_cache ~aliases value
                       |> Option.some
                   | _ ->
@@ -1670,12 +1668,12 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.sanitized name = "covariant" ->
+                } when String.equal (Identifier.sanitized name) "covariant" ->
                     Some Covariant
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.sanitized name = "contravariant" ->
+                } when String.equal (Identifier.sanitized name) "contravariant" ->
                     Some Contravariant
                 | _ ->
                     None
@@ -1878,7 +1876,7 @@ let is_covariant annotation =
 
 
 let is_dictionary ?(with_key = None) = function
-  | Parametric { name; parameters } when name = "dict" ->
+  | Parametric { name = "dict"; parameters } ->
       begin
         match with_key, parameters with
         | Some key, key_parameter :: [_] -> equal key key_parameter
@@ -1905,7 +1903,7 @@ let is_generator = function
 
 let is_generic = function
   | Parametric { name; _ } ->
-      name = "typing.Generic"
+      String.equal name "typing.Generic"
   | _ ->
       false
 
@@ -1932,7 +1930,7 @@ let is_async_iterator = function
 
 
 let is_meta = function
-  | Parametric { name; _ } -> name = "type"
+  | Parametric { name; _ } -> String.equal name "type"
   | _ -> false
 
 
@@ -1942,7 +1940,7 @@ let is_none = function
 
 
 let is_noreturn = function
-  | Primitive name -> name = "typing.NoReturn"
+  | Primitive name -> String.equal name "typing.NoReturn"
   | _ -> false
 
 
@@ -1952,7 +1950,7 @@ let is_optional = function
 
 
 let is_optional_primitive = function
-  | Primitive optional when optional = "typing.Optional" -> true
+  | Primitive "typing.Optional" -> true
   | _ -> false
 
 
@@ -1963,7 +1961,7 @@ let is_primitive = function
 
 let is_protocol = function
   | Parametric { name; _ } ->
-      name = "typing.Protocol"
+      String.equal name "typing.Protocol"
   | _ ->
       false
 
@@ -2330,9 +2328,7 @@ let is_concrete annotation =
 
       let visit_children_before _ = function
         | Optional Bottom -> false
-        | Parametric { name; parameters }
-          when (name = "typing.Optional" or name = "Optional") &&
-               parameters = [Bottom] ->
+        | Parametric { name = ("typing.Optional" | "Optional"); parameters = [Bottom] } ->
             false
         | _ -> true
 
@@ -2413,7 +2409,7 @@ module TypedDictionary = struct
   let fields_have_colliding_keys left_fields right_fields =
     let found_collision { name = needle_name; annotation = needle_annotation } =
       let same_name_different_annotation { name; annotation } =
-        name = needle_name && not (equal annotation needle_annotation)
+        String.equal name needle_name && not (equal annotation needle_annotation)
       in
       List.exists left_fields ~f:same_name_different_annotation
     in
@@ -2560,14 +2556,14 @@ module TypedDictionary = struct
     let special_methods =
       if total then total_special_methods else non_total_special_methods @ total_special_methods
     in
-    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>| (fun { overloads; _ } -> overloads fields)
 
   let is_special_mismatch ~method_name ~position ~total =
     let special_methods =
       if total then total_special_methods else non_total_special_methods @ total_special_methods
     in
-    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>= (fun { special_index; _ } -> special_index)
     >>| ((=) position)
     |> Option.value ~default:false

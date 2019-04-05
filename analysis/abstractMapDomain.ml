@@ -200,7 +200,8 @@ module Make(Key: KEY)(Element : AbstractDomain.S) = struct
     in
     let common_elements, key_values = split_into_alist parts in
     let () =
-      if key_values = [] && common_elements <> [] then failwith "No keys specified"
+      if List.is_empty key_values && not (List.is_empty common_elements) then
+        failwith "No keys specified"
     in
     let common = Element.create (List.rev common_elements) in
     List.map key_values ~f:(fun (key, value) -> (key, Element.join common value))

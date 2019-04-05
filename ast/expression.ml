@@ -484,9 +484,9 @@ module Access = struct
       match expression, access with
       | Some expression, Identifier identifier :: [] ->
           Name (Name.Attribute {
-            base = expression;
-            attribute = identifier;
-          })
+              base = expression;
+              attribute = identifier;
+            })
           |> Node.create ~location
       | Some expression, Call arguments :: [] ->
           create_call_expression expression (convert_arguments arguments)
@@ -496,9 +496,9 @@ module Access = struct
           |> Node.create ~location
       | None, Identifier identifier :: [Identifier base] ->
           Name (Name.Attribute {
-            base = (Name (Name.Identifier base)) |> Node.create ~location;
-            attribute = identifier;
-          })
+              base = (Name (Name.Identifier base)) |> Node.create ~location;
+              attribute = identifier;
+            })
           |> Node.create ~location
       | None, Call arguments :: [Identifier base] ->
           create_call_expression
@@ -507,9 +507,9 @@ module Access = struct
           |> Node.create ~location
       | _, Identifier identifier :: access ->
           Name (Name.Attribute {
-            base = create_nested_access expression access;
-            attribute = identifier;
-          })
+              base = create_nested_access expression access;
+              attribute = identifier;
+            })
           |> Node.create ~location
       | _, Call arguments :: access ->
           create_call_expression
@@ -956,7 +956,7 @@ let exists_in_list ?(match_prefix=false) ~expression_list target_string =
         Node.location;
         value = Access (SimpleAccess ((Access.Identifier identifier) :: identifiers));
       }
-      when identifier = expected ->
+      when String.equal identifier expected ->
         if List.is_empty expected_tail &&
            (match_prefix || List.is_empty identifiers)
         then

@@ -250,7 +250,7 @@ let find_stubs
             | entries ->
                 let select_directories sofar path =
                   if Core.Sys.is_directory (root ^/ path) = `Yes &&
-                     path <> "tests" &&
+                     not (String.equal path "tests") &&
                      not (String.is_prefix path ~prefix:".")
                   then
                     (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))

@@ -52,9 +52,9 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
     | { Node.value = Access (SimpleAccess access); _ } ->
         begin
           match Expression.Access.name_and_arguments ~call:access with
-          | Some { callee = name; arguments } when name = target ->
+          | Some { callee = name; arguments } when String.equal name target ->
               Some { access = name; arguments = Some arguments }
-          | None when Access.show access = target ->
+          | None when String.equal (Access.show access) target ->
               Some { access = Access.show access; arguments = None }
           | _ ->
               None
@@ -153,7 +153,7 @@ module Method = struct
       begin
         match annotation with
         | Type.Parametric { name; parameters = [_; _; return_annotation] }
-          when name = "typing.Generator" ->
+          when String.equal name "typing.Generator" ->
             Type.awaitable return_annotation
         | _ ->
             Type.Top
@@ -240,7 +240,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
         target
   in
   match instantiated, right with
-  | Type.Primitive name, Parametric { name = right_name; _ } when name = right_name ->
+  | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
       (* TODO(T42259381) This special case is only necessary because constructor calls attributes
          with an "instantiated" type of a bare parametric, which will fill with Anys *)
       Type.Map.empty
@@ -531,7 +531,7 @@ module Attribute = struct
       | Some (Type.Primitive name),
         Access (SimpleAccess [Identifier "__getitem__"]),
         { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
-        when Reference.show callable_name = "typing.Generic.__getitem__" ->
+        when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
           let implementation =
             let generics =
               Resolution.class_definition resolution (Type.Primitive name)
@@ -698,7 +698,7 @@ let attributes
               ~resolution
               ~parent
               ~instantiated
-              ~inherited:(name <> parent_name)
+              ~inherited:(not (Reference.equal name parent_name))
               ~default_class_attribute:class_attributes
           in
           let existing_attribute =
@@ -826,7 +826,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
   let all_protocol_methods =
     attributes ~resolution ~transitive:true protocol
     |> List.filter ~f:(fun { Node.value = {Attribute.parent; _}; _} ->
-        parent <> Type.object_primitive && parent <> Type.generic)
+        not (Type.equal parent Type.object_primitive) && not (Type.equal parent Type.generic))
     |> callables_of_attributes
   in
   let rec implements ~constraints instance_methods protocol_methods =
@@ -1024,7 +1024,7 @@ let constructor definition ~instantiated ~resolution =
     | Type.Parametric { name; _ } ->
         let generics = generics definition ~resolution in
         (* Tuples are special. *)
-        if name = "tuple" then
+        if String.equal name "tuple" then
           match generics with
           | [tuple_variable] ->
               Type.Tuple (Type.Unbounded tuple_variable)
@@ -1036,10 +1036,11 @@ let constructor definition ~instantiated ~resolution =
             match instantiated, generics with
             | _, [] ->
                 instantiated
-            | Type.Primitive instantiated_name, _ when instantiated_name = name ->
+            | Type.Primitive instantiated_name, _ when String.equal instantiated_name name ->
                 backup
             | Type.Parametric { parameters; name = instantiated_name }, _
-              when instantiated_name = name && List.length parameters <> List.length generics ->
+              when String.equal instantiated_name name &&
+                   List.length parameters <> List.length generics ->
                 backup
             | _ ->
                 instantiated

@@ -333,7 +333,7 @@ let method_resolution_order_linearize
           let is_valid_head head =
             let not_in_tail target = function
               | [] -> true
-              | _ :: tail -> not (List.exists ~f:(fun element -> element = target) tail)
+              | _ :: tail -> not (List.exists ~f:(Type.equal target) tail)
             in
             List.for_all ~f:(not_in_tail head) linearizations
           in
@@ -346,8 +346,8 @@ let method_resolution_order_linearize
         in
         let strip_head head = function
           | [] -> None
-          | successor_head :: [] when successor_head = head -> None
-          | successor_head :: tail when successor_head = head -> Some tail
+          | successor_head :: [] when (Type.equal successor_head head) -> None
+          | successor_head :: tail when (Type.equal successor_head head) -> Some tail
           | successor -> Some successor
         in
         let head = find_valid_head linearized_successors in
@@ -498,7 +498,9 @@ let variables (module Handler: Handler) annotation =
 
 let get_generic_parameters ~generic_index edges =
   let generic_parameters { Target.target; parameters } =
-    Option.some_if (generic_index = Some target) parameters
+    match generic_index with
+    | Some index when index = target -> Some parameters
+    | _ -> None
   in
   List.find_map ~f:generic_parameters edges
 
@@ -834,7 +836,7 @@ module OrderImplementation = struct
       | _, Type.Bottom ->
           false
 
-      | _, Type.Primitive name when name = "object" ->
+      | _, Type.Primitive "object" ->
           true
 
       | _ , Type.Variable _ ->
@@ -1038,7 +1040,7 @@ module OrderImplementation = struct
           let parameter = List.fold ~f:(join order) ~init:left tail in
           less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
       | Type.Primitive name, Type.Tuple _ ->
-          name = "tuple"
+          String.equal name "tuple"
       | Type.Tuple _, _
       | _, Type.Tuple _ ->
           false
@@ -1846,12 +1848,13 @@ module OrderImplementation = struct
         ~target =
       let primitive, parameters = Type.split source in
       let parameters =
-        if primitive = Type.Primitive "tuple" then
-          (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-          [List.fold ~init:Type.Bottom ~f:(join order) parameters]
-          |> List.map ~f:Type.weaken_literals
-        else
-          parameters
+        match primitive with
+        | Type.Primitive "tuple" ->
+            (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+            [List.fold ~init:Type.Bottom ~f:(join order) parameters]
+            |> List.map ~f:Type.weaken_literals
+        | _ ->
+            parameters
       in
 
       raise_if_untracked handler primitive;
@@ -1871,11 +1874,12 @@ module OrderImplementation = struct
               >>| get_instantiated_successors ~generic_index ~parameters
             in
             if target_index = index_of handler target then
-              if target = Type.Primitive "typing.Callable" then
-                Some parameters
-              else
-                instantiated_successors
-                >>= get_generic_parameters ~generic_index
+              match target with
+              | Type.Primitive "typing.Callable" ->
+                  Some parameters
+              | _ ->
+                  instantiated_successors
+                  >>= get_generic_parameters ~generic_index
             else
               begin
                 instantiated_successors

@@ -353,7 +353,7 @@ module Define = struct
       if Option.is_none parent then
         false
       else
-        name = "__init__" ||
+        String.equal name "__init__" ||
         (in_test &&
          List.mem
            ~equal:String.equal
@@ -374,11 +374,11 @@ module Define = struct
 
 
     let is_toplevel signature =
-      unqualified_name signature = "$toplevel"
+      String.equal (unqualified_name signature) "$toplevel"
 
 
     let is_class_toplevel signature =
-      unqualified_name signature = "$class_toplevel"
+      String.equal (unqualified_name signature) "$class_toplevel"
   end
 
 
@@ -481,7 +481,7 @@ module Define = struct
             _;
           };
         _;
-      } when identifier = name ->
+      } when String.equal identifier name ->
           true
       | _ ->
           false
@@ -553,7 +553,7 @@ module Define = struct
                   let is_reassignment target value =
                     let target = Access.show_sanitized target in
                     let value = Access.show_sanitized value in
-                    target = value || target = "_" ^ value
+                    String.equal target value || String.equal target ("_" ^ value)
                   in
                   match toplevel, annotation, target, value with
                   | true,
@@ -778,7 +778,7 @@ module Class = struct
   let find_define { Record.Class.body; _ } ~method_name =
     let is_define = function
       | { Node.value = Define define; location}
-        when Define.unqualified_name define = method_name ->
+        when String.equal (Define.unqualified_name define) method_name ->
           Some { Node.value = define; location }
       | _ ->
           None
@@ -1000,8 +1000,7 @@ module Class = struct
         let open Expression in
         let is_slots access =
           match List.last access with
-          | Some (Access.Identifier identifier)
-            when (identifier) = "__slots__" ->
+          | Some (Access.Identifier "__slots__") ->
               true
           | _ ->
               false
@@ -1146,7 +1145,7 @@ module Class = struct
 
   let is_unit_test { name; _ } =
     let name = Reference.show name in
-    name = "unittest.TestCase" || name = "unittest.case.TestCase"
+    String.equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
 end
 
 

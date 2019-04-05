@@ -622,7 +622,9 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
         | Type.Literal (Type.String name) ->
             let annotation =
               let resolved = resolve resolution value in
-              let matching_name { Type.name = expected_name; _ } = name = expected_name in
+              let matching_name { Type.name = expected_name; _ } =
+                String.equal name expected_name
+              in
               let relax { Type.annotation; _ } =
                 if comparator ~left:resolved ~right:annotation then
                   annotation

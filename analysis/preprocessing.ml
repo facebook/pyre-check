@@ -23,7 +23,8 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         let value =
           match value with
           | Import { Import.from = Some from; imports }
-            when Reference.show from <> "builtins" && Reference.show from <> "future.builtins" ->
+            when not (String.equal (Reference.show from) "builtins") &&
+                 not (String.equal (Reference.show from) "future.builtins") ->
               Import {
                 Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
                 imports;
@@ -384,7 +385,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           annotation = Some annotation;
           _;
         }
-        when Expression.show annotation = "_SpecialForm" ->
+        when String.equal (Expression.show annotation) "_SpecialForm" ->
           let name = Reference.from_access name in
           {
             scope with
@@ -797,7 +798,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           join_scopes body_scope orelse_scope,
           If { If.test = qualify_expression ~qualify_strings:false ~scope test; body; orelse }
       | Import { Import.from = Some from; imports }
-        when Reference.show from <> "builtins" ->
+        when not (String.equal (Reference.show from) "builtins") ->
           let import aliases { Import.name; alias } =
             match alias with
             | Some alias ->
@@ -1211,17 +1212,18 @@ let replace_version_specific_code source =
                      Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _);
                      _;
                    })
-                when Expression.show left = "sys.version_info" ->
+                when String.equal (Expression.show left) "sys.version_info" ->
                   (), add_pass_statement ~location orelse
               | Comparison (left, { Node.value = Expression.Integer 3; _ })
-                when Expression.show left = "sys.version_info[0]" ->
+                when String.equal (Expression.show left) "sys.version_info[0]" ->
                   (), add_pass_statement ~location orelse
               | Comparison
                   ({ Node.value = Expression.Tuple ({ Node.value = major; _ } :: _); _ }, right)
-                when Expression.show right = "sys.version_info" && major = Expression.Integer 3 ->
+                when String.equal (Expression.show right) "sys.version_info" &&
+                     Expression.equal_expression major (Expression.Integer 3) ->
                   (), add_pass_statement ~location body
               | Comparison ({ Node.value = Expression.Integer 3; _ }, right)
-                when Expression.show right = "sys.version_info[0]" ->
+                when String.equal (Expression.show right) "sys.version_info[0]" ->
                   (), add_pass_statement ~location body
               | Equality (left, right)
                 when String.is_prefix ~prefix:"sys.version_info" (Expression.show left) ||
@@ -1252,11 +1254,13 @@ let replace_platform_specific_code source =
                 let statements =
                   let open Expression in
                   let matches_removed_platform left right =
-                    let is_platform expression = Expression.show expression = "sys.platform" in
+                    let is_platform expression =
+                      String.equal (Expression.show expression) "sys.platform"
+                    in
                     let is_win32 { Node.value; _ } =
                       match value with
-                      | String { StringLiteral.value; _ } ->
-                          value = "win32"
+                      | String { StringLiteral.value = "win32"; _ } ->
+                          true
                       | _ ->
                           false
                     in
@@ -1330,7 +1334,8 @@ let expand_wildcard_imports ~force source =
       let statement state ({ Node.value; _ } as statement) =
         match value with
         | Import { Import.from = Some from; imports }
-          when List.exists ~f:(fun { Import.name; _ } -> Reference.show name = "*") imports ->
+          when List.exists imports
+              ~f:(fun { Import.name; _ } -> String.equal (Reference.show name) "*") ->
             let expanded_import =
               match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
               | Some exports ->
@@ -1532,7 +1537,7 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
       | {
         Node.location;
         value = Define { signature = { name; _ }; _ }
-      } when Reference.show name = "TypedDict" ->
+      } when String.equal (Reference.show name) "TypedDict" ->
           typed_dictionary_stub ~location
       | statement ->
           statement
@@ -1590,11 +1595,11 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         };
       in
       let is_typed_dictionary ~module_name ~typed_dictionary =
-        module_name = "mypy_extensions" &&
-        typed_dictionary = "TypedDict"
+        String.equal module_name "mypy_extensions" &&
+        String.equal typed_dictionary "TypedDict"
       in
       let extract_totality arguments =
-        let is_total ~total = Identifier.sanitized total = "total" in
+        let is_total ~total = String.equal (Identifier.sanitized total) "total" in
         List.find_map arguments ~f:(function
             | {
               Argument.name = Some { value = total; _ };

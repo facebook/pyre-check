@@ -83,7 +83,7 @@ let is_global annotation =
 
 
 let is_immutable { mutability; _ } =
-  mutability <> Mutable
+  not (equal_mutability mutability Mutable)
 
 
 let instantiate { annotation; mutability } ~constraints =

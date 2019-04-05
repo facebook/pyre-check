@@ -283,7 +283,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           begin
             let add_index_breadcrumb_if_necessary taint =
-              if method_name <> "get" then
+              if not (String.equal method_name "get") then
                 taint
               else
                 match arguments with

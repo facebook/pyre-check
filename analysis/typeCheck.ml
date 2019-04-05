@@ -1366,7 +1366,7 @@ module State = struct
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
             let name = name |> Identifier.sanitized in
             if
-              name = "*" ||
+              String.equal name "*" ||
               String.is_prefix ~prefix:"_" name ||
               Option.is_some given_annotation &&
               (String.is_prefix ~prefix:"**" name || String.is_prefix ~prefix:"*" name)
@@ -1452,8 +1452,8 @@ module State = struct
                           if compatible then
                             None
                           else if
-                            (is_class_method && name = "cls") ||
-                            (not is_class_method && name = "self")
+                            (is_class_method && String.equal name "cls") ||
+                            (not is_class_method && String.equal name "self")
                           then
                             (* Assume the user incorrectly tried to type the implicit parameter *)
                             Some (
@@ -1741,7 +1741,7 @@ module State = struct
                          in
                          let count_stars parameter =
                            parameter
-                           |> String.take_while ~f:(fun character -> character = '*')
+                           |> String.take_while ~f:(fun character -> Char.equal character '*')
                            |> String.length
                          in
                          List.exists ~f:(fun parameter -> count_stars parameter = 1) starred
@@ -2810,7 +2810,7 @@ module State = struct
                 in
                 let equals name field =
                   match Node.value field with
-                  | String { StringLiteral.value; _ } -> name = value
+                  | String { StringLiteral.value; _ } -> String.equal name value
                   | _ -> false
                 in
                 if List.exists ~f:(equals name) fields then
@@ -2984,7 +2984,8 @@ module State = struct
                         let value_access = Access.show_sanitized value_access in
                         Annotation.is_immutable target_annotation &&
                         not (Type.is_unknown expected) &&
-                        (target_access = value_access || target_access = "_" ^ value_access)
+                        (String.equal target_access value_access ||
+                         String.equal target_access ("_" ^ value_access))
                     | _ ->
                         false
                   in
@@ -4135,7 +4136,7 @@ let run
             let stringify ~key ~data label =
               let annotation_string =
                 Type.show (Annotation.annotation data)
-                |> String.strip ~drop:((=) '`')
+                |> String.strip ~drop:(Char.equal '`')
               in
               label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
             in

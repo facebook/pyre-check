@@ -62,8 +62,8 @@ let is_global ~resolution access =
   match access with
   | Access.Identifier head::_
     when not (is_local head)
-      && head <> "super"
-      && head <> "type" ->
+      && not (String.equal head "super")
+      && not (String.equal head "type") ->
       Reference.from_access access
       |> Resolution.global resolution
       |> Option.is_some

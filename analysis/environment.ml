@@ -106,7 +106,8 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.object_primitive) || Reference.show name = "object" then
+  if not (Type.equal primitive Type.object_primitive) ||
+     String.equal (Reference.show name) "object" then
     (* Register normal annotations. *)
     let register_supertype { Argument.value; _ } =
       let value = Expression.delocalize value in
@@ -513,7 +514,7 @@ let register_aliases (module Handler: Handler) sources =
             let original_name = Reference.combine from name in
             match Reference.as_list qualified_name, Reference.as_list original_name with
             | single_identifier :: [], typing :: [identifier]
-              when typing = "typing" && single_identifier = identifier ->
+              when String.equal typing "typing" && String.equal single_identifier identifier ->
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
@@ -885,10 +886,13 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             (
               not (Class.is_protocol definition) ||
               (
-                Class.name protocol_definition = Reference.create "typing.Sized" &&
+                Reference.equal
+                  (Class.name protocol_definition) (Reference.create "typing.Sized") &&
                 (
-                  Class.name definition = Reference.create "typing._Collection" ||
-                  Class.name definition = Reference.create "typing.Collection"
+                  Reference.equal
+                    (Class.name definition) (Reference.create "typing._Collection") ||
+                  Reference.equal
+                    (Class.name definition) (Reference.create "typing.Collection")
                 )
               )
             )
