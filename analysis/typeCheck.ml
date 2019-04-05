@@ -537,6 +537,7 @@ module State = struct
     Set.to_list errors
     |> Error.join_at_define
       ~resolution
+    |> Error.deduplicate
     |> class_initialization_errors
     |> Error.filter ~configuration ~resolution
 

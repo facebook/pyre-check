@@ -66,6 +66,13 @@ let assert_state_equal =
     ~pp_diff:(diff ~print:State.pp)
 
 
+let list_orderless_equal left right =
+  List.equal
+    ~equal:String.equal
+    (List.dedup_and_sort ~compare:String.compare left)
+    (List.dedup_and_sort ~compare:String.compare right)
+
+
 let test_initial _ =
   let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
     let resolution =
@@ -2133,7 +2140,7 @@ let test_forward_expression _ =
     in
     assert_state_equal (create postcondition) forwarded;
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       errors
       (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
@@ -2450,7 +2457,7 @@ let test_forward_statement _ =
       (create ~bottom ~immutables:postcondition_immutables postcondition)
       forwarded;
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
       errors

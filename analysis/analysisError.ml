@@ -2014,27 +2014,32 @@ let widen ~resolution ~previous ~next ~iteration:_ =
 
 
 let join_at_define ~resolution errors =
-  let key = function
+  let error_map = String.Table.create ~size:(List.length errors) () in
+  let add_error errors error =
+    let add_error_to_map key =
+      let update_error = function
+        | None -> error
+        | Some existing_error ->
+            let joined_error = join ~resolution existing_error error in
+            if joined_error.kind <> Top then
+              joined_error
+            else
+              existing_error
+      in
+      String.Table.update error_map key ~f:update_error;
+      errors
+    in
+    match error with
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
-        Reference.show_sanitized name
-    | error ->
-        show error
-  in
-  let add_error errors error =
-    let key = key error in
-    match Map.find errors key with
-    | Some existing_error ->
-        let joined_error = join ~resolution existing_error error in
-        if joined_error.kind <> Top then
-          Map.set ~key ~data:joined_error errors
-        else
-          errors
+        add_error_to_map (Reference.show_sanitized name)
     | _ ->
-        Map.set ~key ~data:error errors
+        error :: errors
   in
-  List.fold ~init:String.Map.empty ~f:add_error errors
-  |> Map.data
+  let unjoined_errors = List.fold ~init:[] ~f:add_error errors in
+  let joined_errors = String.Table.data error_map in
+  (* Preserve the order of the errors as much as possible *)
+  List.rev_append unjoined_errors joined_errors
 
 
 let join_at_source ~resolution errors =
@@ -2068,6 +2073,12 @@ let join_at_source ~resolution errors =
   in
   List.fold ~init:String.Map.empty ~f:add_error errors
   |> Map.data
+
+
+let deduplicate errors =
+  let error_set = Hash_set.create ~size:(List.length errors) () in
+  List.iter errors ~f:(Core.Hash_set.add error_set);
+  Core.Hash_set.to_list error_set
 
 
 let filter ~configuration ~resolution errors =
