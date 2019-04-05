@@ -109,7 +109,7 @@ module Call : sig
 
   type 'expression t = {
     callee: 'expression;
-    arguments: (('expression Argument.t) list) Node.t;
+    arguments: ('expression Argument.t) list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end

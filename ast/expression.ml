@@ -180,7 +180,7 @@ module Call = struct
 
   type 'expression t = {
     callee: 'expression;
-    arguments: (('expression Argument.t) list) Node.t;
+    arguments: ('expression Argument.t) list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -420,21 +420,17 @@ module Access = struct
       | Name (Name.Attribute { base; attribute }) ->
           let base_expression, access = flatten base in
           base_expression, (Identifier attribute) :: access
-      | Call { callee = { Node.value = Name (Name.Identifier callee); _ }; arguments } ->
+      | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
           let arguments =
-            let convert { Call.Argument.name; value } =
-              { Argument.name; value }
-            in
-            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
+            let convert { Call.Argument.name; value } = { Argument.name; value } in
+            { Node.location; value = List.map ~f:convert arguments }
           in
           None, [Call arguments; Identifier callee]
       | Call { callee; arguments } ->
           let base_expression, access = flatten callee in
           let arguments =
-            let convert { Call.Argument.name; value } =
-              { Argument.name; value }
-            in
-            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
+            let convert { Call.Argument.name; value } = { Argument.name; value } in
+            { Node.location = callee.Node.location; value = List.map ~f:convert arguments }
           in
           base_expression, (Call arguments) :: access
       | _ ->
@@ -480,10 +476,9 @@ module Access = struct
 
 
   let new_expression ?(location = Location.Reference.any) access =
-    let convert_arguments { Node.value = arguments; location } =
+    let convert_arguments { Node.value = arguments; _ } =
       let convert { Argument.name; value } = { Call.Argument.name; value } in
       List.map ~f:convert arguments
-      |> Node.create ~location
     in
     let rec create_nested_access expression access =
       match expression, access with
