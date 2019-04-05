@@ -7,14 +7,8 @@ import ast
 import unittest
 from typing import List, Optional
 
-from ..build_target import (
-    Glob,
-    PythonBinary,
-    PythonLibrary,
-    PythonUnitTest,
-    Sources,
-    create_non_python_rule,
-)
+from .. import build_rules
+from ...build_target import Glob, Sources
 
 
 def _get_call(tree: ast.AST) -> ast.Call:
@@ -103,7 +97,7 @@ class BuildTargetTest(unittest.TestCase):
     def test_python_binary(self):
         tree = ast.parse(PYTHON_BINARY_TARGET_1)
         call = _get_call(tree)
-        target = PythonBinary.parse(call, "some/project")
+        target = build_rules.parse_python_binary(call, "some/project")
         self.assertEqual(target.target, "//some/project:binary_target_1")
         self.assertEqual(target.name, "binary_target_1")
         self.assertListEqual(
@@ -115,7 +109,7 @@ class BuildTargetTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_BINARY_TARGET_2)
         call = _get_call(tree)
-        target = PythonBinary.parse(call, "some/project")
+        target = build_rules.parse_python_binary(call, "some/project")
         self.assertEqual(target.target, "//some/project:binary_target_2")
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
@@ -124,12 +118,14 @@ class BuildTargetTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
         call = _get_call(tree)
-        self.assertRaises(ValueError, PythonBinary.parse, call, "some/project")
+        self.assertRaises(
+            ValueError, build_rules.parse_python_binary, call, "some/project"
+        )
 
     def test_python_library(self):
         tree = ast.parse(PYTHON_LIBRARY_TARGET_1)
         call = _get_call(tree)
-        target = PythonLibrary.parse(call, "some/project")
+        target = build_rules.parse_python_library(call, "some/project")
         self.assertEqual(target.target, "//some/project:library_target_1")
         self.assertEqual(target.name, "library_target_1")
         self.assertIsNone(target.base_module)
@@ -138,7 +134,7 @@ class BuildTargetTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_2)
         call = _get_call(tree)
-        target = PythonLibrary.parse(call, "some/project")
+        target = build_rules.parse_python_library(call, "some/project")
         self.assertEqual(target.target, "//some/project:library_target_2")
         self.assertEqual(target.name, "library_target_2")
         self.assertEqual(target.base_module, "a.b.c")
@@ -150,7 +146,7 @@ class BuildTargetTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_3)
         call = _get_call(tree)
-        target = PythonLibrary.parse(call, "some/project")
+        target = build_rules.parse_python_library(call, "some/project")
         self.assertEqual(target.target, "//some/project:library_target_3")
         self.assertEqual(target.name, "library_target_3")
         self.assertIsNone(target.base_module)
@@ -164,7 +160,7 @@ class BuildTargetTest(unittest.TestCase):
     def test_python_unittest(self):
         tree = ast.parse(PYTHON_UNIT_TEST_TARGET)
         call = _get_call(tree)
-        target = PythonUnitTest.parse(call, "some/project")
+        target = build_rules.parse_python_unittest(call, "some/project")
         self.assertEqual(target.target, "//some/project:test_target")
         self.assertEqual(target.name, "test_target")
         self.assert_sources_equal(target.sources, globs=[Glob(["tests/*.py"], [])])
@@ -174,7 +170,9 @@ class BuildTargetTest(unittest.TestCase):
     def test_non_python_target(self):
         tree = ast.parse(NON_PYTHON_TARGET)
         call = _get_call(tree)
-        target = create_non_python_rule("non_python").parse(call, "some/project")
+        target = build_rules.non_python_target_parser("non_python")(
+            call, "some/project"
+        )
         self.assertEqual(target.target, "//some/project:non_python_target")
         self.assertEqual(target.name, "non_python_target")
         self.assertListEqual(target.dependencies, [])

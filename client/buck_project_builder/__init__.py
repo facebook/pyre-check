@@ -11,7 +11,7 @@ from collections import deque
 from typing import List, NamedTuple, Optional
 
 from . import parser
-from .parser import BuildTarget
+from .build_target import BuildTarget
 
 
 Target = NamedTuple("Target", [("build_file_directory", str), ("name", str)])

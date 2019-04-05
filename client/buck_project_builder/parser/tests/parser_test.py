@@ -7,9 +7,9 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from .. import Parser, ParserException
-from ..build_target import (
-    BuildTarget,
+from ...build_target import (
     Glob,
+    NonPythonTarget,
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
@@ -100,6 +100,7 @@ class ParserTest(unittest.TestCase):
             self.assertListEqual(target.dependencies, [])
 
             target = result.targets["cpp_python_target"]
+            self.assertIsInstance(target, NonPythonTarget)
             self.assertEqual(target.target, "//my/module:cpp_python_target")
             self.assertEqual(target.dependencies, [])
 

@@ -7,13 +7,24 @@
 
 import ast
 import os
-from typing import Dict, NamedTuple
+from typing import Callable, Dict, List, Mapping, NamedTuple  # noqa
 
-from .build_target import SUPPORTED_RULES, BuildTarget
+from . import build_rules
+from ..build_target import BuildTarget
 
+
+SUPPORTED_RULES = {
+    "python_binary": build_rules.parse_python_binary,
+    "python_library": build_rules.parse_python_library,
+    "python_unittest": build_rules.parse_python_unittest,
+    "cpp_python_extension": build_rules.non_python_target_parser(
+        "cpp_python_extension"
+    ),
+    "bundled_util": build_rules.non_python_target_parser("bundled_util"),
+}  # type: Mapping[str, Callable[[ast.Call, str], BuildTarget]]
 
 BuildFile = NamedTuple(
-    "BuildFile", [("path", str), ("targets", Dict[str, BuildTarget])]
+    "BuildFile", [("path", str), ("targets", Mapping[str, BuildTarget])]
 )
 
 
@@ -55,7 +66,7 @@ class Parser(object):
 
     def _parse_targets(
         self, tree: ast.AST, build_file_directory: str
-    ) -> Dict[str, BuildTarget]:
+    ) -> Mapping[str, BuildTarget]:
         assert isinstance(tree, ast.Module)
         expressions = tree.body
 
@@ -69,7 +80,7 @@ class Parser(object):
                 assert isinstance(named, ast.Name)
                 rule = named.id
                 if rule in SUPPORTED_RULES:
-                    target = SUPPORTED_RULES[rule].parse(call, build_file_directory)
+                    target = SUPPORTED_RULES[rule](call, build_file_directory)
                     targets[target.name] = target
             except (AssertionError, ValueError) as error:
                 raise ParserException(
