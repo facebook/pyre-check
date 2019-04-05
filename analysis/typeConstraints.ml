@@ -208,9 +208,7 @@ module OrderedConstraints(Order: OrderType) = struct
         else if VariableMap.is_empty independent_constraints then
           None
         else
-          let remaining_constraints =
-            merge_solution remaining_constraints partial_solution
-          in
+          let remaining_constraints = merge_solution dependent_constraints partial_solution in
           build_solution ~remaining_constraints ~partial_solution
       in
       Map.fold

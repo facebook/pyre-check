@@ -249,6 +249,13 @@ let test_multiple_variable_solution _ =
   expect_sequence_solution
     [unconstrained_a, `Lower, Type.Variable unrelated]
     (Some [unconstrained_a, Type.Variable unrelated]);
+  expect_sequence_solution
+    [
+      unconstrained_a, `Lower, Type.Variable unconstrained_b;
+      unconstrained_b, `Lower, Type.Variable unconstrained_a;
+      unconstrained_c, `Lower, child;
+    ]
+    None;
   ()
 
 
