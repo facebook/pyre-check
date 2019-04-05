@@ -199,6 +199,21 @@ let ignore_lines_test context =
           return bar(a.undefined)  # pyre-ignore[7, 5, 16]
       |}
       ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
+    assert_errors
+      {|
+        def foo(x: object, y: object) -> object:
+          return x
+        def main() -> None:
+          # pyre-ignore[18]: Global name `bar` is undefined.
+          # pyre-ignore[18]: Global name `baz` is undefined.
+          foo(bar, baz)
+          # pyre-ignore[18]: Global name `bar` is undefined.
+          # pyre-ignore[18]: Global name `baz` is undefined.
+          foo(bar, baz)
+      |}
+      (* We should only get 2 unused ignores instead of 4 *)
+      ["Unused ignore [0]: Pyre ignore [18] is extraneous."
+      ;"Unused ignore [0]: Pyre ignore [18] is extraneous."];
 
     assert_errors
       {|

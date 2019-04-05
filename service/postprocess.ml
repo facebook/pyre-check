@@ -99,6 +99,7 @@ let ignore ~configuration scheduler handles errors =
           ~init:[]
           ~f:key_to_ignores
       in
+      let ignores = List.dedup_and_sort ~compare:Ignore.compare ignores in
       let filter_active_ignores sofar ignore =
         match Ignore.kind ignore with
         | Ignore.TypeIgnore -> sofar
