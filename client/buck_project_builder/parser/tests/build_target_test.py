@@ -5,11 +5,14 @@
 
 import ast
 import unittest
+from typing import List, Optional
 
 from ..build_target import (
+    Glob,
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
+    Sources,
     create_non_python_rule,
 )
 
@@ -58,7 +61,7 @@ PYTHON_LIBRARY_TARGET_2 = """
 python_library(
     name = "library_target_2",
     base_module = "a.b.c",
-    srcs = glob(["folder/*.py", "other/**/*.py"]),
+    srcs = glob(["folder/*.py", "other/**/*.py"], exclude=["other/exclude/**.py"]),
 )
 """
 
@@ -88,6 +91,15 @@ non_python(
 
 
 class BuildTargetTest(unittest.TestCase):
+    def assert_sources_equal(
+        self,
+        sources: Sources,
+        files: Optional[List[str]] = None,
+        globs: Optional[List[Glob]] = None,
+    ) -> None:
+        self.assertListEqual(sources.files, files or [])
+        self.assertListEqual(sources.globs, globs or [])
+
     def test_python_binary(self):
         tree = ast.parse(PYTHON_BINARY_TARGET_1)
         call = _get_call(tree)
@@ -98,7 +110,7 @@ class BuildTargetTest(unittest.TestCase):
             target.dependencies,
             ["//some/project:another_target", "//some/other:target"],
         )
-        self.assertListEqual(target.sources, [])
+        self.assert_sources_equal(target.sources, files=[], globs=[])
         self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_2)
@@ -107,7 +119,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:binary_target_2")
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
-        self.assertListEqual(target.sources, ["a.py"])
+        self.assert_sources_equal(target.sources, files=["a.py"])
         self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
@@ -121,7 +133,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:library_target_1")
         self.assertEqual(target.name, "library_target_1")
         self.assertIsNone(target.base_module)
-        self.assertListEqual(target.sources, ["a.py", "b.py"])
+        self.assert_sources_equal(target.sources, files=["a.py", "b.py"])
         self.assertListEqual(target.dependencies, ["//some/project:other_target"])
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_2)
@@ -130,7 +142,10 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:library_target_2")
         self.assertEqual(target.name, "library_target_2")
         self.assertEqual(target.base_module, "a.b.c")
-        self.assertListEqual(target.sources, ["folder/*.py", "other/**/*.py"])
+        self.assert_sources_equal(
+            target.sources,
+            globs=[Glob(["folder/*.py", "other/**/*.py"], ["other/exclude/**.py"])],
+        )
         self.assertListEqual(target.dependencies, [])
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_3)
@@ -139,8 +154,10 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:library_target_3")
         self.assertEqual(target.name, "library_target_3")
         self.assertIsNone(target.base_module)
-        self.assertListEqual(
-            target.sources, ["a.py", "b.py", "folder/*.py", "other/**/*.py"]
+        self.assert_sources_equal(
+            target.sources,
+            files=["a.py", "b.py"],
+            globs=[Glob(["folder/*.py", "other/**/*.py"], [])],
         )
         self.assertListEqual(target.dependencies, [])
 
@@ -150,7 +167,7 @@ class BuildTargetTest(unittest.TestCase):
         target = PythonUnitTest.parse(call, "some/project")
         self.assertEqual(target.target, "//some/project:test_target")
         self.assertEqual(target.name, "test_target")
-        self.assertListEqual(target.sources, ["tests/*.py"])
+        self.assert_sources_equal(target.sources, globs=[Glob(["tests/*.py"], [])])
         self.assertListEqual(target.dependencies, ["//some/project:library_target_1"])
         self.assertIsNone(target.base_module)
 
@@ -161,5 +178,5 @@ class BuildTargetTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:non_python_target")
         self.assertEqual(target.name, "non_python_target")
         self.assertListEqual(target.dependencies, [])
-        self.assertListEqual(target.sources, [])
+        self.assert_sources_equal(target.sources, files=[], globs=[])
         self.assertIsNone(target.base_module)

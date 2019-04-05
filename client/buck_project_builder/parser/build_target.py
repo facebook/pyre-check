@@ -9,6 +9,17 @@ import ast
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type  # noqa
 
 
+Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
+
+
+class Sources:
+    def __init__(
+        self, files: Optional[List[str]] = None, globs: Optional[List[Glob]] = None
+    ) -> None:
+        self.files = files or []  # type: List[str]
+        self.globs = globs or []  # type: List[Glob]
+
+
 class BuildTarget:
     # A minimal set of information that can be parsed from (almost) all targets.
     BaseInformation = NamedTuple(
@@ -17,7 +28,7 @@ class BuildTarget:
             ("keywords", Dict[str, ast.expr]),
             ("name", str),
             ("dependencies", List[str]),
-            ("sources", List[str]),
+            ("sources", Sources),
             ("base_module", Optional[str]),
         ],
     )
@@ -28,7 +39,7 @@ class BuildTarget:
         self.build_file_directory = build_file_directory
         self.name = base_information.name  # type: str
         self.dependencies = base_information.dependencies  # type: List[str]
-        self.sources = base_information.sources  # type: List[str]
+        self.sources = base_information.sources  # type: Sources
         self.base_module = base_information.base_module  # type: Optional[str]
 
     def __str__(self) -> str:
@@ -164,21 +175,31 @@ def _get_dependencies(
     ]
 
 
-def _get_sources(sources: Optional[ast.AST]) -> List[str]:
+def _get_sources(sources: Optional[ast.AST]) -> Sources:
     if not sources:
-        return []
+        return Sources()
 
     # Sources can be a list, a glob, or a concatenation of sources.
-    def _get_sources(tree: ast.AST) -> List[str]:
+    def _get_sources(tree: ast.AST) -> Sources:
         if isinstance(tree, ast.List):
-            return _get_string_list(tree)
+            return Sources(files=_get_string_list(tree))
         elif isinstance(tree, ast.Call):
             function = tree.func
             assert isinstance(function, ast.Name) and function.id == "glob"
-            return _get_string_list(tree.args[0])
+            patterns = _get_string_list(tree.args[0])
+            keywords = _get_keywords(tree)
+            exclude = (
+                _get_string_list(keywords["exclude"]) if "exclude" in keywords else []
+            )
+
+            return Sources(globs=[Glob(patterns, exclude)])
         elif isinstance(tree, ast.BinOp):
             assert isinstance(tree.op, ast.Add)
-            return _get_sources(tree.left) + _get_sources(tree.right)
+            left = _get_sources(tree.left)
+            right = _get_sources(tree.right)
+            return Sources(
+                files=left.files + right.files, globs=left.globs + right.globs
+            )
         raise ValueError(
             "Tree of type {} unexpected for sources field.".format(type(tree))
         )

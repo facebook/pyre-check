@@ -7,7 +7,13 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from .. import Parser, ParserException
-from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest
+from ..build_target import (
+    BuildTarget,
+    Glob,
+    PythonBinary,
+    PythonLibrary,
+    PythonUnitTest,
+)
 
 
 TARGETS_FILE_1 = """
@@ -82,13 +88,15 @@ class ParserTest(unittest.TestCase):
             target = result.targets["library_target"]
             self.assertIsInstance(target, PythonLibrary)
             self.assertEqual(target.target, "//my/module:library_target")
-            self.assertListEqual(target.sources, ["a.py", "b.py"])
+            self.assertListEqual(target.sources.files, ["a.py", "b.py"])
+            self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, [])
 
             target = result.targets["test_target"]
             self.assertIsInstance(target, PythonUnitTest)
             self.assertEqual(target.target, "//my/module:test_target")
-            self.assertListEqual(target.sources, ["tests/*.py"])
+            self.assertListEqual(target.sources.files, [])
+            self.assertListEqual(target.sources.globs, [Glob(["tests/*.py"], [])])
             self.assertListEqual(target.dependencies, [])
 
             target = result.targets["cpp_python_target"]

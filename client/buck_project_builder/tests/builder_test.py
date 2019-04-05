@@ -9,17 +9,17 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import Builder, BuilderException, parser
-from ..parser.build_target import BuildTarget, PythonBinary, PythonLibrary
+from ..parser.build_target import BuildTarget, PythonBinary, PythonLibrary, Sources
 
 
 def base(
     name: str,
     dependencies: Optional[List[str]] = None,
-    sources: Optional[List[str]] = None,
+    sources: Optional[Sources] = None,
     base_module: Optional[str] = None,
 ) -> BuildTarget.BaseInformation:
     return BuildTarget.BaseInformation(
-        {}, name, dependencies or [], sources or [], base_module
+        {}, name, dependencies or [], sources or Sources(), base_module
     )
 
 
