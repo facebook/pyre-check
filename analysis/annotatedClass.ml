@@ -783,32 +783,18 @@ let attributes
       result
 
 let callables_of_attributes =
-  let callables_of_attribute =
-    function
-    | { Node.value =
-          { Attribute.annotation = {
-                Annotation.annotation = Type.Callable {
-                    kind = Type.Record.Callable.Named callable_name;
-                    implementation;
-                    overloads;
-                    _ };
-                _ };
-            parent;
-            _ }; _ } ->
-        (* We have to split the type here due to our built-in aliasing. Namely, the "list" and
-           "dict" classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
-        let parent = fst (Type.split parent) in
-        let local_name =
-          Reference.drop_prefix callable_name ~prefix:(Reference.create (Type.show parent))
-        in
-        List.map ~f:(fun overload -> (local_name, overload)) (implementation :: overloads)
+  let callables_of_attribute attribute =
+    match Annotation.annotation (Attribute.annotation attribute) with
+    |Type.Callable { kind = Type.Record.Callable.Named _; implementation; overloads; _ } ->
+        let name = Attribute.name attribute in
+        List.map ~f:(fun overload -> (name, overload)) (implementation :: overloads)
     | _ -> []
   in
   List.concat_map ~f:callables_of_attribute
 
 let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
   let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
-    if Reference.equal name protocol_name then
+    if Identifier.equal name protocol_name then
       let left =
         Type.Callable.create_from_implementation overload
         |> Type.mark_variables_as_bound ~simulated:true
@@ -859,7 +845,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
 
 
 let callable_implements ~resolution { Type.Callable.implementation; overloads; _ } ~protocol =
-  List.map (implementation :: overloads) ~f:(fun overload -> (Reference.create "__call__", overload))
+  List.map (implementation :: overloads) ~f:(fun overload -> ("__call__", overload))
   |> map_of_name_to_annotation_implements ~resolution ~protocol
 
 
