@@ -309,6 +309,14 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 'string', 'i': 'string'})"
     (`NotFoundMismatch (Type.string, "**{'j': 'string', 'i': 'string'}", Type.integer, None, 1));
+
+  (* Test iterable and mapping expansions. *)
+  assert_select
+    "[[int], int]" "(*[1])"
+    (`Found "[[int], int]");
+  assert_select
+    "[[int], int]" "(*a)"
+    (`NotFoundInvalidVariableArgument (!"a", Type.Top));
   assert_select
     "[[int], int]" "(**a)"
     (`NotFoundInvalidKeywordArgument (!"a", Type.Top));

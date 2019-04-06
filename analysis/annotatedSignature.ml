@@ -460,23 +460,32 @@ let select
                     _;
                   } ->
                       let annotation = Resolution.resolve resolution expression in
-                      let iterable =
-                        (* Unannotated parameters are assigned a type of Bottom for inference,
-                           in which case we should avoid joining with an iterable, as doing so
-                           would suppress errors. *)
-                        if Type.equal annotation Type.Bottom then
-                          Type.Top
-                        else
-                          Resolution.join resolution annotation (Type.iterable Type.Bottom)
-                      in
-                      if Type.is_iterable iterable then
-                        Type.single_parameter iterable
-                        |> set_constraints_and_reasons
-                      else
+                      let signature_with_error =
                         { expression; annotation }
                         |> Node.create ~location
                         |> (fun error -> InvalidVariableArgument error)
                         |> add_annotation_error signature_match
+                      in
+                      let iterable_constraints =
+                        if Type.equal annotation Type.Bottom then
+                          []
+                        else
+                          Resolution.solve_less_or_equal
+                            resolution
+                            ~constraints:TypeConstraints.empty
+                            ~left:annotation
+                            ~right:(Type.iterable (Type.variable "$_T"))
+                      in
+                      begin
+                        match iterable_constraints with
+                        | [] ->
+                            signature_with_error
+                        | iterable_constraint :: _ ->
+                            Resolution.solve_constraints resolution iterable_constraint
+                            >>= (fun solution -> Map.find solution (Type.variable "$_T"))
+                            >>| set_constraints_and_reasons
+                            |> Option.value ~default:signature_with_error
+                      end
                   | { Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in
                       let argument_annotation =
