@@ -53,31 +53,140 @@
         </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">Static Analysis Post Processor</h1></header><article><div><span><p>The <code>pyre analyze</code> command runs static analysis and outputs the result as JSON.
 The Static Analysis Post Processor (SAPP) tool can process these results and
 allows the user to explore the results.</p>
+<p>See <a href="#commands">commands</a> for the available commands in explore mode.</p>
 <h2><a class="anchor" aria-hidden="true" id="installation"></a><a href="#installation" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Installation</h2>
-<p>In the <code>pyre-check/sapp</code> directory run</p>
-<pre><code class="hljs css language-shell"><span class="hljs-meta">$</span><span class="bash"> python3 setup.py install</span>
-</code></pre>
-<p>(with <code>sudo</code> if not in a virtualenv).</p>
-<h2><a class="anchor" aria-hidden="true" id="parsing-the-json"></a><a href="#parsing-the-json" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Parsing the JSON</h2>
+<p>If you have installed pyre version <code>&gt;= 0.0.22</code> via <code>pip install pyre-check</code>,
+then you already have the <code>sapp</code> binary installed.</p>
+<h2><a class="anchor" aria-hidden="true" id="example"></a><a href="#example" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Example</h2>
+<p>This assumes you have followed the
+<a href="./static-analysis.html#example">static analysis example</a>.</p>
+<h3><a class="anchor" aria-hidden="true" id="parsing-the-json"></a><a href="#parsing-the-json" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Parsing the JSON</h3>
 <p>The JSON output from <code>pyre analyze</code> can be difficult to read.</p>
-<pre><code class="hljs css language-shell"><span class="hljs-meta">$</span><span class="bash"> sapp_cli.py analyze path/to/json/output</span>
+<pre><code class="hljs css language-shell">[~/static_analysis_example] $ sapp --database-name sapp.db analyze ./taint-output.json
 </code></pre>
 <p>will parse the JSON file and make it easier to work with. It will save the
 results to a local sqlite file <code>sapp.db</code>.</p>
-<h2><a class="anchor" aria-hidden="true" id="interacting-with-the-database"></a><a href="#interacting-with-the-database" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Interacting with the database</h2>
-<pre><code class="hljs css language-shell"><span class="hljs-meta">$</span><span class="bash"> sapp_cli.py explore --database-name sapp.db</span>
+<h3><a class="anchor" aria-hidden="true" id="issue-exploration"></a><a href="#issue-exploration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Issue Exploration</h3>
+<pre><code class="hljs css language-shell">[~/static_analysis_example] $ sapp --database-name sapp.db explore
 </code></pre>
-<p>will launch a custom IPython interface that's connected to the sqlite file.</p>
-<h3><a class="anchor" aria-hidden="true" id="commands"></a><a href="#commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Commands</h3>
-<p><code>commands()</code>: show the available commands</p>
+<p>This will launch a custom IPython interface that's connected to the sqlite file.
+In this mode, you can dig into the issues that Pyre surfaces. Following is an
+example of how to use the various commands.</p>
+<p>Start out by listing all known issues:</p>
+<pre><code class="hljs css language-text">==========================================================
+Interactive issue exploration. Type 'commands()' for help.
+==========================================================
+
+In [1]: issues()
+Issue 1
+    Code: 5001
+ Message: Possible shell injection Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)
+Callable: source.convert
+ Sources: input
+   Sinks: os.system
+Location: source.py:9|22|32
+Found 1 issues with run_id 1.
+</code></pre>
+<p>As expected, we have 1 issue. To select it:</p>
+<pre><code class="hljs css language-text">In [2]: set_issue_instance(1)
+Set issue to 1.
+Issue 1
+    Code: 5001
+ Message: Possible shell injection Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)
+Callable: source.convert
+ Sources: input
+   Sinks: os.system
+Location: source.py:9|22|32
+</code></pre>
+<p>View how the data flows from source to sink:</p>
+<pre><code class="hljs css language-text">In [3]: trace()
+     # ⎇  [callable]       [port]      [location]
+     1    leaf             source      source.py:8|22|38
+ --> 2    source.convert   root        source.py:9|22|32
+     3    source.get_image formal(url) source.py:9|22|32
+     4    leaf             sink        source.py:5|21|28
+</code></pre>
+<p>Move to the next callable:</p>
+<pre><code class="hljs css language-text">In [4]: n()
+     # ⎇  [callable]       [port]      [location]
+     1    leaf             source      source.py:8|22|38
+     2    source.convert   root        source.py:9|22|32
+ --> 3    source.get_image formal(url) source.py:9|22|32
+     4    leaf             sink        source.py:5|21|28
+</code></pre>
+<p>Show the source code at that callable:</p>
+<pre><code class="hljs css language-text">In [5]: list()
+In source.convert [source.py:9|22|32]
+     4       command = "wget -q https:{}".format(url)
+     5       return os.system(command)
+     6
+     7   def convert():
+     8       image_link = input("image link: ")
+ --> 9       image = get_image(image_link)
+</code></pre>
+<p>Move to the next callable and show source code:</p>
+<pre><code class="hljs css language-text">In [6]: n()
+     # ⎇  [callable]       [port]      [location]
+     1    leaf             source      source.py:8|22|38
+     2    source.convert   root        source.py:9|22|32
+     3    source.get_image formal(url) source.py:9|22|32
+ --> 4    leaf             sink        source.py:5|21|28
+
+In [7]: list()
+In source.get_image [source.py:5|21|28]
+     1   import os
+     2
+     3   def get_image(url):
+     4       command = "wget -q https:{}".format(url)
+ --> 5       return os.system(command)
+     6
+     7   def convert():
+     8       image_link = input("image link: ")
+     9       image = get_image(image_link)
+</code></pre>
+<p>Jump to the first callable and show source code:</p>
+<pre><code class="hljs css language-text">In [8]: jump(1)
+     # ⎇  [callable]       [port]      [location]
+ --> 1    leaf             source      source.py:8|22|38
+     2    source.convert   root        source.py:9|22|32
+     3    source.get_image formal(url) source.py:9|22|32
+     4    leaf             sink        source.py:5|21|28
+
+In [9]: list()
+In source.convert [source.py:8|22|38]
+     3   def get_image(url):
+     4       command = "wget -q https:{}".format(url)
+     5       return os.system(command)
+     6
+     7   def convert():
+ --> 8       image_link = input("image link: ")
+     9       image = get_image(image_link)
+
+In [10]:
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="commands"></a><a href="#commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Commands</h2>
+<h3><a class="anchor" aria-hidden="true" id="information-commands"></a><a href="#information-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Information commands</h3>
+<p><code>help()</code>: show the available commands</p>
 <p><code>help(COMMAND)</code>: show more info about a specific command</p>
+<p><code>state()</code>: show state and debugging information</p>
+<h3><a class="anchor" aria-hidden="true" id="display-commands"></a><a href="#display-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Display commands</h3>
 <p><code>runs()</code>: list all completed static analysis runs</p>
-<p><code>set_run(ID)</code>: select a specific run for browsing issues</p>
 <p><code>issues()</code>: list all issues for the selected run</p>
-<p><code>set_issue(ID)</code>: select a specific issue for browsing a trace</p>
 <p><code>show()</code>: show info about selected issue</p>
+<h3><a class="anchor" aria-hidden="true" id="selection-commands"></a><a href="#selection-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Selection commands</h3>
+<p><code>set_run(ID)</code>: select a specific run for browsing issues</p>
+<p><code>set_latest_run(KIND)</code>: select the latest run of the given kind</p>
+<p><code>set_issue_instance(ID)</code>: select a specific issue for browsing a trace</p>
+<h3><a class="anchor" aria-hidden="true" id="trace-commands"></a><a href="#trace-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Trace commands</h3>
 <p><code>trace()</code>: show a trace of the selected issue</p>
 <p><code>prev()</code>/<code>p()</code>: move backward within the trace</p>
 <p><code>next()</code>/<code>n()</code>: move forward within the trace</p>
-<p><code>expand()</code>: show alternative trace branches</p>
+<p><code>jump(NUM)</code>: jump within a trace</p>
+<p><code>branch()</code>: show and select alternative trace branches</p>
+<p><code>list()</code>: show source code</p>
+<h3><a class="anchor" aria-hidden="true" id="debugging-commands"></a><a href="#debugging-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Debugging commands</h3>
+<p><code>frames()</code>: show trace frames independently of an issue</p>
+<p><code>set_frame(ID)</code>: select a trace frame</p>
+<p><code>parents()</code>: show the callers of the current trace frame</p>
+<p><code>details()</code>: additional details about the current trace frame</p>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/static-analysis.html"><span class="arrow-prev">← </span><span>Pyre Static Analysis</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
