@@ -145,7 +145,7 @@ In [10]:
 
 ### Information commands
 
-`commands()`: show the available commands
+`help()`: show the available commands
 
 `help(COMMAND)`: show more info about a specific command
 

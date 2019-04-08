@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import builtins
 import os
 import sys
 from collections import defaultdict
@@ -79,8 +80,8 @@ class Interactive:
     help_message = f"""
 Commands =======================================================================
 
-commands()               show this message
-help(COMAMND)            more info about a command
+help()                   show this message
+help(COMMAND)            more info about a command
 state()                  show the internal state of the tool for debugging
 
 runs()                   list all completed static analysis runs
@@ -110,7 +111,7 @@ details()                show additional information about the current trace fra
         self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
             "precondition": TraceKind.PRECONDITION,
             "postcondition": TraceKind.POSTCONDITION,
-            "commands": self.help,
+            "help": self.help,
             "state": self.state,
             "runs": self.runs,
             "issues": self.issues,
@@ -172,8 +173,12 @@ details()                show additional information about the current trace fra
         print("=" * len(self.welcome_message))
         return self.scope_vars
 
-    def help(self):
-        print(self.help_message)
+    def help(self, object=None):
+        if object is None:
+            print(self.help_message)
+            return
+
+        builtins.help(object)
 
     def state(self):
         print(f"              Database: {self.db.dbtype}:{self.db.dbname}")
