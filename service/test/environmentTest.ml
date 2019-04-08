@@ -229,6 +229,8 @@ let test_populate context =
           {|
             class D: pass
             class C(D): pass
+            def foo(): pass
+            def bar(): pass
           |}
           |> Test.trim_extra_indentation)
         (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py");
@@ -240,6 +242,9 @@ let test_populate context =
     ~scheduler:(Scheduler.mock ())
     ~stubs:[]
     ~sources:[File.Handle.create "a.py"];
+  assert_equal
+    ~printer:(List.to_string ~f:Reference.show) (GlobalKeys.find_unsafe (File.Handle.create "a.py"))
+    (List.map ~f:Reference.create ["a.C"; "a.D"; "a.foo"; "a.bar"]);
   let assert_successors name expected_successors =
     let { Resolution.successors; _ } = ClassMetadata.find_unsafe (Type.Primitive name) in
     assert_equal

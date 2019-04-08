@@ -61,13 +61,16 @@ let populate
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
   Handler.transaction ~f:populate ();
+  let register_values sources =
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.push_stack ();
+    Environment.register_values (module Handler) resolution sources;
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.commit_all ();
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.pop_stack ()
+  in
   Scheduler.iter
     scheduler
     ~configuration
-    ~f:(fun sources ->
-        List.iter
-          sources
-          ~f:(Environment.register_values (module Handler) resolution))
+    ~f:(fun sources -> List.iter sources ~f:register_values)
     ~inputs:sources;
   Handler.transaction
     ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)
