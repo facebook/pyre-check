@@ -16,7 +16,7 @@ from typing import Type  # noqa
 
 from . import (
     EnvironmentException,
-    assert_readable_directory,
+    assert_writable_directory,
     buck,
     commands,
     get_binary_version,
@@ -45,8 +45,8 @@ def main() -> int:
             raise EnvironmentException("%s is not an executable file" % file_path)
         return file_path
 
-    def writable_path(path: str) -> str:
-        assert_readable_directory(os.path.dirname(path))
+    def writable_directory(path: str) -> str:
+        assert_writable_directory(path)
         return path
 
     parser = argparse.ArgumentParser(
@@ -249,8 +249,8 @@ def main() -> int:
     analyze.add_argument(
         "--save-results-to",
         default=None,
-        type=writable_path,
-        help="JSON file to write analysis results to.",
+        type=writable_directory,
+        help="Directory to write analysis results to.",
     )
     analyze.add_argument("--dump-call-graph", action="store_true")
 
