@@ -1,8 +1,12 @@
+import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
+from datetime import datetime, timedelta
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from .analysis_output import AnalysisOutput
 
+
+log = logging.getLogger("sapp")
 
 T = TypeVar("T")
 T_in = TypeVar("T_in")
@@ -11,6 +15,14 @@ T_out = TypeVar("T_out")
 Summary = Dict[str, Any]  # blob of objects that gets passed through the pipeline
 InputFiles = Tuple[AnalysisOutput, Optional[AnalysisOutput]]
 DictEntries = Dict[str, Any]
+
+
+def time_str(delta: timedelta):
+    minutes, seconds = divmod(delta.total_seconds(), 60)
+    ret = f"{int(seconds)}s"
+    if minutes > 0.0:
+        ret = "{int(minutes)}m " + ret
+    return ret
 
 
 class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
@@ -37,6 +49,13 @@ class Pipeline(object):
         if summary is None:
             summary = {}
         next_input = first_input
+        timing = []
         for step in self.steps:
+            start_time = datetime.now()
             next_input, summary = step.run(next_input, summary)
+            timing.append((step.__class__.__name__, datetime.now() - start_time))
+        log.info(
+            "Step timing: %s",
+            ", ".join([f"{name} took {time_str(delta)}" for name, delta in timing]),
+        )
         return next_input, summary
