@@ -330,7 +330,7 @@ type scope = {
 
 let qualify_local_identifier name ~qualifier =
   let qualifier =
-    Access.show qualifier
+    Reference.show qualifier
     |> String.substr_replace_all ~pattern:"." ~with_:"?"
   in
   name
@@ -561,7 +561,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                          not (Set.mem locals reference) &&
                          not (Set.mem immutables reference) then
                         let alias =
-                          qualify_local_identifier name ~qualifier:(Reference.access qualifier)
+                          qualify_local_identifier name ~qualifier
                         in
                         {
                           scope with
@@ -1694,7 +1694,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           in
           let declaration class_name =
             let qualified =
-              qualify_local_identifier class_name ~qualifier:(Reference.access qualifier)
+              qualify_local_identifier class_name ~qualifier
             in
             typed_dictionary_declaration_assignment
               ~name:(string_literal class_name)
