@@ -2006,7 +2006,13 @@ let join ~resolution left right =
           pp_kind right.kind;
         Top
   in
-  { location = left.location; kind; signature = left.signature }
+  let location =
+    if Location.Instantiated.compare left.location right.location <= 0 then
+      left.location
+    else
+      right.location
+  in
+  { location; kind; signature = left.signature }
 
 
 let meet ~resolution:_ left _ =

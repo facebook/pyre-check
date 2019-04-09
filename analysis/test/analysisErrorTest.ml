@@ -943,7 +943,23 @@ let test_join _ =
   assert_join
     (error (revealed_type "a" Type.integer))
     (error (revealed_type "b" Type.float))
-    (error (Error.Top))
+    (error (Error.Top));
+  assert_join
+    (error
+       ~location:({
+           Location.Instantiated.synthetic with Location.start = { Location.line = 1; column = 0 }
+         })
+       (revealed_type "a" Type.integer))
+    (error
+       ~location:({
+           Location.Instantiated.synthetic with Location.start = { Location.line = 2; column = 1 }
+         })
+       (revealed_type "a" Type.float))
+    (error
+       ~location:({
+           Location.Instantiated.synthetic with Location.start = { Location.line = 1; column = 0 }
+         })
+       (revealed_type "a" Type.float))
 
 
 let test_less_or_equal _ =
