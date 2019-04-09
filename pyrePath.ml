@@ -266,11 +266,14 @@ end
 
 let search_for_path ~search_path ~path =
   let under_root ~path root =
-    get_relative_to_root ~root ~path
-    |> Option.map ~f:(fun relative -> create_relative ~root ~relative)
+    if directory_contains ~directory:(SearchPath.to_path root) path then
+      let root = SearchPath.get_root root in
+      get_relative_to_root ~root ~path
+      |> Option.map ~f:(fun relative -> create_relative ~root ~relative)
+    else
+      None
   in
   search_path
-  |> List.map ~f:SearchPath.get_root
   |> List.find_map ~f:(under_root ~path)
 
 
@@ -284,6 +287,7 @@ let build_symlink_map ~links =
       map
   in
   List.fold links ~init:Map.empty ~f:add_symlink
+
 
 let with_suffix path ~suffix =
   match path with
