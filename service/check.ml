@@ -75,6 +75,7 @@ let analyze_sources
       let timer = Timer.start () in
       let map _ handles =
         Annotated.Class.Attribute.Cache.clear ();
+        Module.Cache.clear ();
         let analyze_source { errors; number_files } handle =
           match SharedMemory.Sources.get handle with
           | Some source ->
