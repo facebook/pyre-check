@@ -65,7 +65,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           in
           Class {
             Class.name;
-            bases = [base_argument];
+            bases = [Expression.convert_argument base_argument];
             body = [constructor];
             decorators = [];
             docstring = None;

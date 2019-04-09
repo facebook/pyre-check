@@ -72,7 +72,7 @@ let test_parent_definition _ =
   in
   let base_type =
     match (List.hd (Class.bases parent)) with
-    | Some {Argument.value; _ } ->
+    | Some { Expression.Call.Argument.value; _ } ->
         TypeCheck.resolution environment ()
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top

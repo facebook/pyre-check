@@ -190,7 +190,7 @@ let extract_options_from_decorator ~names ~default ~init ~repr ~eq annotated_cla
       in
       match argument with
       | {
-        Argument.name = Some { Node.value = argument_name; _ };
+        Expression.Call.Argument.name = Some { Node.value = argument_name; _ };
         value = { Node.value; _ };
       } ->
           let argument_name = Identifier.sanitized argument_name in

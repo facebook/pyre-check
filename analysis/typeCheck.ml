@@ -1600,7 +1600,7 @@ module State = struct
     let check_base_annotations state =
       if Define.is_class_toplevel define then
         let open Annotated in
-        let check_base state { Argument.value; _ } =
+        let check_base state { Call.Argument.value; _ } =
           parse_and_check_annotation ~state value
           |> fst
         in

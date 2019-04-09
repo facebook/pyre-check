@@ -143,7 +143,7 @@ let transform_ast ({ Source.statements; _ } as source) =
     in
     let tuple_base ~location =
       {
-        Argument.name = None;
+        Expression.Call.Argument.name = None;
         value = Node.create ~location (Access (SimpleAccess (Access.create "typing.NamedTuple")));
       }
     in
@@ -175,7 +175,10 @@ let transform_ast ({ Source.statements; _ } as source) =
           end
       | Class ({ Class.name; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
-            | { Statement.Argument.value = { Node.value = Access (SimpleAccess name); _ }; _ } ->
+            | {
+                Expression.Call.Argument.value = { Node.value = Access (SimpleAccess name); _ };
+                _;
+              } ->
                 Access.show name = "typing.NamedTuple"
             | _ ->
                 false
@@ -208,7 +211,9 @@ let transform_ast ({ Source.statements; _ } as source) =
             let fields_attribute = fields_attribute ~parent:name ~location attributes in
             Class { original with Class.body = constructor :: fields_attribute :: body }
           else
-            let extract_named_tuples (bases, attributes_sofar) ({ Argument.value; _ } as base) =
+            let extract_named_tuples
+              (bases, attributes_sofar)
+              ({ Expression.Call.Argument.value; _ } as base) =
               match extract_attributes value with
               | Some attributes ->
                   let constructor = tuple_constructor ~parent:name ~location attributes in

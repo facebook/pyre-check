@@ -658,8 +658,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
-        let qualify_base ({ Argument.value; _ } as argument) =
-          { argument with Argument.value = qualify_expression ~qualify_strings:false ~scope value }
+        let qualify_base ({ Expression.Call.Argument.value; _ } as argument) =
+          {
+            argument with
+            Expression.Call.Argument.value = qualify_expression ~qualify_strings:false ~scope value
+          }
         in
         let decorators =
           List.map
@@ -1602,12 +1605,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
         List.find_map arguments ~f:(function
             | {
-              Argument.name = Some { value = total; _ };
+              Expression.Call.Argument.name = Some { value = total; _ };
               value = { Node.value = Expression.True; _ }
             } when is_total ~total ->
                 Some true
             | {
-              Argument.name = Some { value = total; _ };
+              Expression.Call.Argument.name = Some { value = total; _ };
               value = { Node.value = Expression.False; _ }
             } when is_total ~total ->
                 Some false
@@ -1647,12 +1650,13 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             ~fields:(List.map entries ~f:(fun { Dictionary.key; value } -> key, value))
             ~target
             ~parent
-            ~total:(extract_totality argument_tail)
+            ~total:(extract_totality
+              (List.map ~f:(fun argument -> Expression.convert_argument argument) argument_tail))
       | Class {
           name = class_name;
           bases =
             {
-              Argument.name = None;
+              Expression.Call.Argument.name = None;
               value = {
                 Node.value =
                   Access

@@ -598,11 +598,12 @@ compound_statement:
               statement
         in
         List.map ~f:transform_toplevel_statements body in
+      let convert_base { Argument.name; value } = { Call.Argument.name; value } in
       {
         Node.location;
         value = Class {
           Class.name;
-          bases;
+          bases = List.map ~f:convert_base bases;
           body;
           decorators = [];
           docstring = Statement.extract_docstring body;

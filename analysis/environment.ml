@@ -109,7 +109,7 @@ let connect_definition
   if not (Type.equal primitive Type.object_primitive) ||
      String.equal (Reference.show name) "object" then
     (* Register normal annotations. *)
-    let register_supertype { Argument.value; _ } =
+    let register_supertype { Expression.Call.Argument.value; _ } =
       let value = Expression.delocalize value in
       match Node.value value with
       | Access (SimpleAccess name) ->
@@ -143,7 +143,7 @@ let connect_definition
     let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
     inferred_base @ bases
     (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-    |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
+    |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
     |> List.iter ~f:register_supertype
   else
     ()
@@ -1135,7 +1135,9 @@ module Builder = struct
         }
       in
       let successors =
-        let successor { Argument.value; _ } = Type.create value ~aliases:(fun _ -> None) in
+        let successor { Expression.Call.Argument.value; _ } =
+          Type.create value ~aliases:(fun _ -> None)
+        in
         (List.map bases ~f:successor) @ [Type.object_primitive]
       in
       Hashtbl.set
@@ -1164,7 +1166,7 @@ module Builder = struct
         "typing.Type",
         [
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value = Type.parametric "typing.Generic" [Type.variable "typing._T"] |> Type.expression
           };
         ],
@@ -1192,7 +1194,7 @@ module Builder = struct
         "TypedDictionary",
         [
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value =
               (Type.parametric "typing.Mapping" [Type.string; Type.Any])
               |> Type.expression
@@ -1202,7 +1204,7 @@ module Builder = struct
         "NonTotalTypedDictionary",
         [
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value =
               (Type.Primitive "TypedDictionary")
               |> Type.expression

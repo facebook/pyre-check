@@ -19,7 +19,7 @@ type t = Class.t Node.t
 
 type decorator = {
   access: string;
-  arguments: (Argument.t list) option
+  arguments: (Expression.t Expression.Call.Argument.t list) option
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -53,7 +53,10 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
         begin
           match Expression.Access.name_and_arguments ~call:access with
           | Some { callee = name; arguments } when String.equal name target ->
-              Some { access = name; arguments = Some arguments }
+              Some {
+                access = name;
+                arguments = Some (List.map ~f:Expression.convert_argument arguments)
+              }
           | None when String.equal (Access.show access) target ->
               Some { access = Access.show access; arguments = None }
           | _ ->
@@ -164,7 +167,7 @@ end
 
 
 let find_propagated_type_variables bases ~resolution =
-  let find_type_variables { Argument.value; _ } =
+  let find_type_variables { Expression.Call.Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.free_variables
     |> List.map ~f:(fun variable -> Type.Variable variable)
@@ -174,7 +177,7 @@ let find_propagated_type_variables bases ~resolution =
 
 
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
-  let generic { Argument.value; _ } =
+  let generic { Expression.Call.Argument.value; _ } =
     let annotation =
       Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     in
@@ -196,7 +199,7 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
 
 
 let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
-  let is_generic { Argument.value; _ } =
+  let is_generic { Expression.Call.Argument.value; _ } =
     let primitive, _ =
       Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
       |> Type.split
@@ -211,7 +214,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
       []
     else
       [{
-        Argument.name = None;
+        Expression.Call.Argument.name = None;
         value =
           Type.parametric "typing.Generic" variables
           |> Type.expression;
@@ -280,7 +283,7 @@ let immediate_superclasses definition ~resolution =
 let metaclass definition ~resolution =
   let get_metaclass { Node.value = { Class.bases; _ }; _ } =
     let get_metaclass = function
-      | { Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
+      | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
           Some (Resolution.parse_annotation resolution value)
       | _ ->
           None
@@ -303,7 +306,7 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
 
 
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
-  let is_protocol { Argument.name; value = { Node.value; _ } } =
+  let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
     match name, value with
     | None, Access (SimpleAccess ((Identifier "typing") :: (Identifier "Protocol") :: _))
     | None,

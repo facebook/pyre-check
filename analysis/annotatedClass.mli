@@ -14,7 +14,7 @@ type t
 
 type decorator = {
   access: string;
-  arguments: (Argument.t list) option
+  arguments: (Expression.t Expression.Call.Argument.t list) option
 }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -26,7 +26,7 @@ type class_t = t
 val create: Class.t Node.t -> t
 
 val name: t -> Reference.t
-val bases: t -> Argument.t list
+val bases: t -> Expression.t Expression.Call.Argument.t list
 val get_decorator: t -> decorator: string -> decorator list
 
 val annotation: t -> resolution: Resolution.t -> Type.t
@@ -64,7 +64,7 @@ val generics: t -> resolution: Resolution.t -> Type.t list
 val inferred_generic_base
   :  t
   -> resolution: Resolution.t
-  -> Argument.t list
+  -> Expression.t Expression.Call.Argument.t list
 
 val constraints
   :  ?target: t

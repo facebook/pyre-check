@@ -65,6 +65,10 @@ module Make (Transformer : Transformer) = struct
       { Argument.name; value = transform_expression value }
     in
 
+    let transform_new_argument { Expression.Call.Argument.name; value } ~transform_expression =
+      { Expression.Call.Argument.name; value = transform_expression value }
+    in
+
     let transform_parameter
         ({ Node.value = { Parameter.name; value; annotation }; _ } as node)
         ~transform_expression =
@@ -261,7 +265,7 @@ module Make (Transformer : Transformer) = struct
               Class.name = name;
               bases = transform_list
                   bases
-                  ~f:(transform_argument ~transform_expression);
+                  ~f:(transform_new_argument ~transform_expression);
               body = transform_list body ~f:transform_statement |> List.concat;
               decorators = transform_list decorators ~f:transform_expression;
               docstring;

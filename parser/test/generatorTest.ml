@@ -2913,8 +2913,8 @@ let test_class _ =
       +Class {
         Class.name = !&"foo";
         bases = [
-          { Argument.name = None; value = +Integer 1 };
-          { Argument.name = None; value = +Integer 2 };
+          { Expression.Call.Argument.name = None; value = +Integer 1 };
+          { Expression.Call.Argument.name = None; value = +Integer 2 };
         ];
         body = [+Expression (+Integer 1)];
         decorators = [];
@@ -2927,9 +2927,9 @@ let test_class _ =
       +Class {
         Class.name = !&"foo";
         bases = [
-          { Argument.name = None; value = +Integer 1 };
+          { Expression.Call.Argument.name = None; value = +Integer 1 };
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value = +Starred (Starred.Twice !"kwargs");
           };
         ];
@@ -2999,7 +2999,7 @@ let test_class _ =
     [
       +Class {
         Class.name = !&"foo";
-        bases = [{ Argument.name = None; value = !"superfoo" }];
+        bases = [{ Expression.Call.Argument.name = None; value = !"superfoo" }];
         body = [
           +Define {
             signature = {

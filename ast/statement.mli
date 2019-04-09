@@ -30,7 +30,7 @@ module Record : sig
   module Class : sig
     type 'statement record = {
       name: Reference.t;
-      bases: Argument.t list;
+      bases: Expression.t Expression.Call.Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
       docstring: string option;

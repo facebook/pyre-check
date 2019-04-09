@@ -17,7 +17,7 @@ open AnnotatedTest
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
-module Argument = Expression.Argument
+module Argument = Expression.Call.Argument
 
 
 let test_generics _ =
@@ -1529,7 +1529,7 @@ let test_inferred_generic_base _ =
     in
     let resolution = Test.resolution ~sources:[source] () in
     assert_equal
-      ~cmp:(List.equal ~equal:Argument.equal)
+      ~cmp:(List.equal ~equal:(Argument.equal Expression.equal))
       expected
       (Annotated.Class.inferred_generic_base target ~resolution)
   in

@@ -34,7 +34,7 @@ module Record = struct
   module Class = struct
     type 'statement record = {
       name: Reference.t;
-      bases: Argument.t list;
+      bases: Expression.t Expression.Call.Argument.t list;
       body: 'statement list;
       decorators: Expression.t list;
       docstring: string option;
@@ -1443,7 +1443,8 @@ module PrettyPrinter = struct
       "%a@[<v 2>class %a(%a):@;@[<v>%a@]@;@]"
       pp_decorators decorators
       Reference.pp name
-      Expression.pp_expression_argument_list bases
+      Expression.pp_expression_argument_list
+        (List.map ~f:(fun { name; value } -> { Argument.name; value }) bases)
       pp_statement_list body
 
 

@@ -753,6 +753,10 @@ let create_name ~location name =
   |> create_name_from_identifiers
 
 
+let convert_argument { Argument.name; value } =
+  { Call.Argument.name; value }
+
+
 let rec delocalize ({ Node.value; _ } as expression) =
   let value =
     let delocalize_element = function
